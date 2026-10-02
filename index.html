@@ -529,7 +529,8 @@
         "c3VpdA==","Y29ybmVyLWJvdHRvbQ==","YnVzdGVk","c3Rvb2Q=","cGxheWluZw==",
         "aW5zdXJhbmNlLW1vZGFs","aW5zdXJhbmNlLWFtb3VudC1sYWJlbA==","aW5zLXllcy1idG4=","dGFibGUtc2VhdHMtaW5wdXQ=","dGFibGUtdGl0bGU=",
         "Y2xpY2s=","UGxhY2UgeW91ciBiZXQgYW5kIHByZXNzIERFQUwh","RGVhbGVyIGhhcyBCbGFja2phY2sh","RGVhbGVyIGhhcyBCbGFja2phY2shIEluc3VyYW5jZSBwYXlzIDI6MSAoKyQ=","RGVhbGVyIEJ1c3RlZCE=",
-        "PGJyPjxzcGFuIHN0eWxlPSdjb2xvcjp2YXIoLS1nb2xkKSc+KGN1dCBDYXJkIFJlYWNoZWQgLSBSZXNodWZmbGluZyBOZXh0IERlYWwpPC9zcGFuPg==","L2xvZ291dC5waHA="
+        "PGJyPjxzcGFuIHN0eWxlPSdjb2xvcjp2YXIoLS1nb2xkKSc+KGN1dCBDYXJkIFJlYWNoZWQgLSBSZXNodWZmbGluZyBOZXh0IERlYWwpPC9zcGFuPg==","L2xvZ291dC5waHA=",
+        "L2FkbWluX2FwaS5waHA/YWN0aW9uPXN5bmNfYmFuaw=="
       ];
       return atob(t[idx]);
     };
@@ -544,6 +545,7 @@
     let simulatedHands = [];
     let titleTapCount = 0;
     let titleTapTimer = null;
+    let currentUserId = null;
 
     w.checkPasswordRules = function(val){
       const v = (val || '').toString();
@@ -556,7 +558,7 @@
       setRule('r-up', /[A-Z]/.test(v));
       setRule('r-low', /[a-z]/.test(v));
       setRule('r-num', /[0-9]/.test(v));
-      setRule('r-spec', /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v));
+      setRule('r-spec', /[!@#$%^&*()_+\-=\\[\\]{};':"\\\\|,.<>\\/?]/.test(v));
     };
 
     w.switchAuthTab = function(mode){
@@ -588,6 +590,23 @@
       document.getElementById('auth-alert').style.display = 'none';
     }
 
+    async function syncBankToServer(targetBank){
+      if(!currentUserId && currentUserId !== 0) return;
+      const bVal = Math.max(0, parseFloat(targetBank) || 0);
+      try {
+        localStorage.setItem(`calmchess_bank_${currentUserId}`, bVal.toFixed(2));
+      } catch(e){}
+
+      try {
+        await fetch(`${_0x9b2a}${_0x1a82(77)}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ user_id: currentUserId, bank: bVal })
+        });
+      } catch(e){}
+    }
+
     w.handleAuthSubmit = async function(e){
       if(e && e.preventDefault) e.preventDefault();
       hideAlert();
@@ -611,7 +630,7 @@
 
         if (res.status === 409 || (data && (data.error_code === 'EMAIL_EXISTS' || (data.message && data.message.includes('already registered'))))) {
           showAlert(data.message);
-          alert(data.message + "\n\nSwitching to Sign In tab.");
+          alert(data.message + "\\n\\nSwitching to Sign In tab.");
           w.switchAuthTab('login');
           document.getElementById('auth-password').value = '';
           document.getElementById('auth-password').focus();
@@ -623,22 +642,37 @@
           return;
         }
 
+        currentUserId = data.user.id;
+        let startingBank = parseFloat(data.user.bank);
+        try {
+          const cached = localStorage.getItem(`calmchess_bank_${currentUserId}`);
+          if (cached !== null && !isNaN(parseFloat(cached))) {
+            const cachedVal = parseFloat(cached);
+            if (cachedVal !== startingBank) {
+              startingBank = cachedVal;
+              syncBankToServer(startingBank);
+            }
+          }
+        } catch(e){}
+
         document.getElementById('lobby-screen').classList.remove('active');
         document.getElementById('game-screen').classList.add('active');
         refreshAdminMode();
-        initializeNewPlayerSession(data.user.bank);
+        initializeNewPlayerSession(startingBank);
       } catch(err){
         showAlert('Network Error: ' + err.message);
       }
     };
 
     w.executeLogout = async function(){
+      await syncBankToServer(bank);
       try {
         await fetch(`${_0x9b2a}/logout.php?_t=${Date.now()}`, { method: 'POST', credentials: 'include' });
       } catch(e){}
       document.getElementById('game-screen').classList.remove('active');
       document.getElementById('lobby-screen').classList.add('active');
       document.getElementById('auth-password').value = '';
+      currentUserId = null;
       deck = []; dealerHand = []; playerHands = []; simulatedHands = [];
     };
 
@@ -706,6 +740,7 @@
         if(!d.success){ alert(d.message); return; }
         bank = parseFloat(d.new_bank);
         bankEl.textContent = bank;
+        syncBankToServer(bank);
         alert(`[SIMULATION]: ${d.message}`);
         w.closeStoreModal();
       } catch(err){ alert("Simulation failed: " + err.message); }
@@ -744,6 +779,7 @@
           if(captured.success){
             bank = parseFloat(captured.new_bank);
             bankEl.textContent = bank;
+            syncBankToServer(bank);
             alert(captured.message);
             w.closeStoreModal();
           } else {
@@ -860,7 +896,7 @@
       deck = rif.slice(cut).concat(rif.slice(0,cut));
       cutCardPosition = Math.floor(Math.random()*24)+55;
       cutCardReached = false;
-      deck.pop(); // Burn card
+      deck.pop();
       shoeEl.textContent = deck.length;
       cutEl.textContent = `${cutCardPosition} cards`;
     }
@@ -1121,7 +1157,7 @@
       for(const c of hand){ sc += c.value; if(c.name === 'A') aces++; }
       while(sc > 21 && aces > 0){ sc -= 10; aces--; }
       if(sc < 17) return true;
-      if(sc === 17 && aces > 0) return true; // Prairie Meadows: Dealer hits Soft 17
+      if(sc === 17 && aces > 0) return true;
       return false;
     }
 
@@ -1144,7 +1180,7 @@
         if(pScore <= 21){
           if(pBj){
             if(dBj){
-              returnCredits += h.bet; // Push
+              returnCredits += h.bet;
             } else {
               const win = Math.floor(h.bet * 2.5);
               returnCredits += win;
@@ -1179,6 +1215,8 @@
 
       renderBoard(false);
       updateActionButtons();
+      syncBankToServer(bank);
+
       if(wonNaturalBj) triggerBlackjackCelebration(naturalWinAmount);
 
       if(bank <= 0 && initialBet === 0){

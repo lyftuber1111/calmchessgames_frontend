@@ -55,7 +55,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: clamp(4px, 1vh, 12px);
+      padding: clamp(6px, 1.2vh, 16px);
       color: #fff;
       overflow-x: hidden;
       overflow-y: auto;
@@ -64,7 +64,7 @@
     .view-screen { 
       display: none; 
       width: 100%; 
-      max-width: 1050px; 
+      max-width: 1080px; 
       height: 100%;
       justify-content: center;
       align-items: center;
@@ -76,8 +76,10 @@
     }
 
     #game-screen.active {
-      height: 100%;
-      max-height: calc(100dvh - clamp(6px, 1.5vh, 18px));
+      width: 100%;
+      max-width: 1080px;
+      height: calc(100dvh - clamp(12px, 2.5vh, 32px));
+      max-height: 860px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -168,31 +170,33 @@
     .auth-alert.error { background: rgba(231, 76, 60, 0.25); border: 1px solid var(--error-red); color: #ff7675; display: block; }
     .auth-alert.success { background: rgba(46, 204, 113, 0.25); border: 1px solid var(--success-green); color: #55efc4; display: block; }
 
+    /* --- THE CASINO FELT TABLE CONTAINER --- */
     #game-container {
+      --felt-cushion: clamp(14px, 2.6vh, 32px);
       width: 100%;
-      max-width: 960px;
-      height: auto;
-      max-height: calc(100dvh - clamp(8px, 1.5vh, 20px));
+      height: 100%;
+      max-height: 100%;
       background: radial-gradient(ellipse at center, var(--felt-green) 0%, var(--felt-dark) 100%);
-      border: clamp(6px, 1vh, 10px) solid #5a381e;
-      border-radius: clamp(20px, 3vh, 38px);
+      border: clamp(8px, 1.2vh, 12px) solid #5a381e;
+      border-radius: clamp(24px, 3.5vh, 42px);
       box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.7);
-      padding: clamp(8px, 1.3vh, 14px) clamp(10px, 1.5vw, 18px) clamp(6px, 1vh, 10px) clamp(10px, 1.5vw, 18px);
+      padding: clamp(10px, 1.6vh, 18px) clamp(12px, 1.8vw, 22px) clamp(6px, 1vh, 12px) clamp(12px, 1.8vw, 22px);
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      gap: clamp(5px, 1.1vh, 11px);
+      justify-content: space-between;
       position: relative;
       box-sizing: border-box;
       overflow: hidden;
     }
 
+    /* TOP BAR & STATS PILL */
     .top-bar-wrapper {
       display: flex;
       flex-direction: column;
       gap: clamp(3px, 0.6vh, 6px);
       border-bottom: 2px dashed rgba(255, 255, 255, 0.25);
       padding-bottom: clamp(4px, 0.8vh, 8px);
+      margin-bottom: var(--felt-cushion); /* Equal green cushion below top bar */
       width: 100%;
       flex-shrink: 0;
     }
@@ -224,14 +228,15 @@
     .buy-chips-hdr-btn { background: var(--gold); color: #000; }
     .logout-btn { background: rgba(231, 76, 60, 0.25); border-color: var(--error-red); color: #fff; }
 
+    /* Centered, cohesive stats info pill */
     .top-row-stats {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: clamp(12px, 2.5vw, 32px);
-      background: rgba(0, 0, 0, 0.32);
-      border-radius: 12px;
-      padding: clamp(3px, 0.6vh, 6px) clamp(14px, 2.2vw, 28px);
+      gap: clamp(14px, 2.8vw, 36px);
+      background: rgba(0, 0, 0, 0.35);
+      border-radius: 14px;
+      padding: clamp(3px, 0.6vh, 6px) clamp(16px, 2.5vw, 32px);
       font-size: clamp(0.72rem, 1.3vh, 0.86rem);
       font-weight: 600;
       width: fit-content;
@@ -240,22 +245,25 @@
     }
     .hud-val { color: var(--gold); font-weight: 800; }
 
+    /* DEALER SECTION */
     .table-section { 
       min-height: unset; 
       display: flex; 
       flex-direction: column; 
       align-items: center; 
       justify-content: center;
-      gap: 3px;
+      gap: 4px;
       flex-shrink: 0;
     }
+
+    /* CENTER FELT RULES & STATUS */
     .felt-rules-banner {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin: 1px 0;
-      gap: 1px;
+      margin: clamp(2px, 0.6vh, 6px) 0;
+      gap: 2px;
       pointer-events: none;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
       flex-shrink: 0;
@@ -263,6 +271,18 @@
     .felt-rule-main { font-size: clamp(0.68rem, 1.25vh, 0.85rem); font-weight: 900; color: rgba(241, 196, 15, 0.85); letter-spacing: 1.2px; text-transform: uppercase; }
     .felt-rule-sub { font-size: clamp(0.58rem, 1.1vh, 0.74rem); font-weight: 800; color: rgba(255, 255, 255, 0.7); letter-spacing: 1px; text-transform: uppercase; }
 
+    #message-banner { 
+      min-height: clamp(20px, 3vh, 30px); 
+      text-align: center; 
+      font-size: clamp(0.8rem, 1.4vh, 0.98rem); 
+      font-weight: bold; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    /* PLAYER HANDS AREA */
     .player-hands-container { 
       display: grid; 
       grid-template-columns: repeat(auto-fit, minmax(clamp(140px, 18vw, 180px), 1fr)); 
@@ -295,6 +315,7 @@
       align-items: center;
     }
 
+    /* PLAYING CARDS */
     .card { 
       width: clamp(40px, 5.8vh, 58px); 
       height: clamp(60px, 8.8vh, 86px); 
@@ -317,21 +338,13 @@
     .card.hidden { background: repeating-linear-gradient(45deg, #b33939, #b33939 8px, #852020 8px, #852020 16px); border: 2.5px solid #fff; }
     .card.hidden * { display: none; }
 
-    #message-banner { 
-      min-height: clamp(20px, 3vh, 30px); 
-      text-align: center; 
-      font-size: clamp(0.78rem, 1.4vh, 0.95rem); 
-      font-weight: bold; 
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
+    /* CONTROLS (CHIPS + ACTION BUTTONS) */
     .controls { 
       display: flex; 
       flex-direction: column; 
-      gap: clamp(4px, 0.9vh, 8px); 
+      gap: clamp(5px, 1vh, 9px); 
       align-items: center; 
+      margin-bottom: var(--felt-cushion); /* Equal green cushion below buttons */
       flex-shrink: 0;
     }
     .btn-row { display: flex; gap: clamp(4px, 0.8vw, 8px); flex-wrap: wrap; justify-content: center; }
@@ -372,6 +385,7 @@
     .chip-50 { background: #e74c3c; }
     .chip-100 { background: #34495e; }
 
+    /* FOOTER */
     .table-footer { 
       width: 100%; 
       text-align: center; 
@@ -382,11 +396,19 @@
       flex-shrink: 0;
     }
 
-    @media (max-height: 650px) {
+    /* COMPACT VIEWPORT FALLBACKS */
+    @media (max-height: 640px) {
+      #game-container {
+        --felt-cushion: clamp(8px, 1.6vh, 16px);
+      }
       .felt-rule-sub { display: none; }
       .title span { display: none; }
       .seats-hint { display: none; }
-      #game-container { gap: 3px; }
+    }
+
+    @media (max-height: 540px) {
+      .felt-rules-banner { display: none; }
+      .table-footer { display: none; }
     }
 
     .modal-overlay {
@@ -435,60 +457,7 @@
       animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
     @keyframes popIn { to { transform: scale(1); } }
-  
-    /* Ultra-Responsive Desktop & Laptop Scaling */
-    @media (min-width: 768px) and (max-height: 800px) {
-      body {
-        padding: 4px;
-        overflow: hidden;
-      }
-      #game-screen.active {
-        height: calc(100vh - 8px);
-        max-height: calc(100dvh - 8px);
-      }
-      #game-container {
-        border-width: 6px;
-        padding: 6px 14px 4px 14px;
-        gap: 4px;
-      }
-      .card {
-        width: clamp(38px, 5.2vh, 50px);
-        height: clamp(56px, 7.8vh, 74px);
-      }
-      .cards-row {
-        min-height: clamp(56px, 7.8vh, 74px);
-        gap: 4px;
-      }
-      .chip {
-        width: clamp(30px, 4.2vh, 36px);
-        height: clamp(30px, 4.2vh, 36px);
-      }
-      button.game-btn {
-        padding: 4px 10px;
-        font-size: 0.78rem;
-      }
-      .controls {
-        gap: 4px;
-      }
-      .felt-rules-banner {
-        margin: 0;
-      }
-      .felt-rule-sub {
-        display: none;
-      }
-    }
 
-    @media (max-height: 580px) {
-      .felt-rules-banner {
-        display: none;
-      }
-      .title span {
-        display: none;
-      }
-      .table-footer {
-        display: none;
-      }
-    }
 </style>
 </head>
 <body>
@@ -1109,7 +1078,6 @@ if(_0xdsc>21||_0xpsc>_0xdsc){_0xrc+=_0xh.bet*2;}
 else if(_0xpsc===_0xdsc){_0xrc+=_0xh.bet;}
 }
 }
-
 });
 _0xbnk+=_0xrc;
 var _0xmsg='';

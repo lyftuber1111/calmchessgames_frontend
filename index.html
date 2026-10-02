@@ -890,18 +890,33 @@
   <script>
 (function(w){
 
-var audioCtx=null,bgAudio=null,bgSource=null,bgGain=null,soundEnabled=!0;
+var audioCtx=null,bgGain=null,soundEnabled=!1,padInterval=null;
 function initAudioEngine(){
-if(audioCtx)return;
+if(audioCtx){if(audioCtx.state==='suspended')audioCtx.resume();return;}
 try{
 audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-bgAudio=new Audio('casnio_music.wav');
-bgAudio.loop=!0;bgAudio.crossOrigin='anonymous';
-bgSource=audioCtx.createMediaElementSource(bgAudio);
-bgGain=audioCtx.createGain();bgGain.gain.value=0.22;
-bgSource.connect(bgGain);bgGain.connect(audioCtx.destination);
-bgAudio.play().catch(function(){});
+bgGain=audioCtx.createGain();bgGain.gain.value=0.12;
+bgGain.connect(audioCtx.destination);
+startAmbientPad();
 }catch(e){}
+}
+function startAmbientPad(){
+if(padInterval)clearInterval(padInterval);
+padInterval=setInterval(function(){
+if(!soundEnabled||!audioCtx)return;
+var now=audioCtx.currentTime;
+var chords=[[261.63,329.63,392.00,493.88],[220.00,261.63,329.63,392.00],[174.61,220.00,261.63,329.63],[196.00,246.94,293.66,349.23]];
+var chord=chords[Math.floor(Math.random()*chords.length)];
+chord.forEach(function(freq){
+var osc=audioCtx.createOscillator(),g=audioCtx.createGain();
+osc.type='triangle';osc.frequency.value=freq;
+g.gain.setValueAtTime(0.001,now);
+g.gain.linearRampToValueAtTime(0.025,now+1.2);
+g.gain.linearRampToValueAtTime(0.001,now+3.8);
+osc.connect(g);g.connect(bgGain);
+osc.start(now);osc.stop(now+3.8);
+});
+},4200);
 }
 function duckBGM(){
 if(!bgGain||!audioCtx)return;
@@ -909,8 +924,8 @@ try{
 var now=audioCtx.currentTime;
 bgGain.gain.cancelScheduledValues(now);
 bgGain.gain.setValueAtTime(bgGain.gain.value,now);
-bgGain.gain.linearRampToValueAtTime(0.04,now+0.05);
-bgGain.gain.linearRampToValueAtTime(0.22,now+0.45);
+bgGain.gain.linearRampToValueAtTime(0.02,now+0.05);
+bgGain.gain.linearRampToValueAtTime(0.12,now+0.45);
 }catch(e){}
 }
 function playChipSound(){
@@ -960,13 +975,13 @@ osc.start(now+idx*0.08);osc.stop(now+idx*0.08+0.35);
 }catch(e){}
 }
 w.toggleAudio=function(){
+soundEnabled=!soundEnabled;
+if(soundEnabled){
 initAudioEngine();
-if(bgAudio){
-if(bgAudio.paused){
-bgAudio.play().then(function(){soundEnabled=!0;w.showNotification('Casino Music & SFX Enabled');}).catch(function(){soundEnabled=!0;w.showNotification('Tap again to enable audio');});
+w.showNotification('Casino Music & SFX Enabled');
 }else{
-bgAudio.pause();soundEnabled=!1;w.showNotification('Audio Disabled');
-}
+if(audioCtx&&audioCtx.state==='running')audioCtx.suspend();
+w.showNotification('Audio Disabled');
 }
 };
 

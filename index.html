@@ -832,6 +832,7 @@
               <span class="seats-hint"><span class="hint-range">(1-7)</span><span class="hint-max">Max 7</span></span>
             </div>
 
+            <button class="hdr-btn" onclick="toggleAudio()" style="background: rgba(241,196,15,0.2); border-color: var(--gold); color: var(--gold);">🎵 Audio</button>
             <button class="hdr-btn buy-chips-hdr-btn" onclick="openStoreModal()">+ Credits</button>
             <button class="hdr-btn logout-btn" onclick="executeLogout()">Exit</button>
           </div>
@@ -888,6 +889,87 @@
   <!-- OBFUSCATED ENGINE EXECUTION CORE -->
   <script>
 (function(w){
+
+var audioCtx=null,bgAudio=null,bgSource=null,bgGain=null,soundEnabled=!0;
+function initAudioEngine(){
+if(audioCtx)return;
+try{
+audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+bgAudio=new Audio('casnio_music.wav');
+bgAudio.loop=!0;bgAudio.crossOrigin='anonymous';
+bgSource=audioCtx.createMediaElementSource(bgAudio);
+bgGain=audioCtx.createGain();bgGain.gain.value=0.22;
+bgSource.connect(bgGain);bgGain.connect(audioCtx.destination);
+bgAudio.play().catch(function(){});
+}catch(e){}
+}
+function duckBGM(){
+if(!bgGain||!audioCtx)return;
+try{
+var now=audioCtx.currentTime;
+bgGain.gain.cancelScheduledValues(now);
+bgGain.gain.setValueAtTime(bgGain.gain.value,now);
+bgGain.gain.linearRampToValueAtTime(0.04,now+0.05);
+bgGain.gain.linearRampToValueAtTime(0.22,now+0.45);
+}catch(e){}
+}
+function playChipSound(){
+if(!soundEnabled)return;
+duckBGM();
+try{
+initAudioEngine();if(!audioCtx)return;
+var osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+osc.type='sine';osc.frequency.setValueAtTime(900,audioCtx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(250,audioCtx.currentTime+0.04);
+gain.gain.setValueAtTime(0.18,audioCtx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.04);
+osc.connect(gain);gain.connect(audioCtx.destination);
+osc.start();osc.stop(audioCtx.currentTime+0.04);
+}catch(e){}
+}
+function playCardSound(){
+if(!soundEnabled)return;
+duckBGM();
+try{
+initAudioEngine();if(!audioCtx)return;
+var bufferSize=audioCtx.sampleRate*0.07;
+var buffer=audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);
+var data=buffer.getChannelData(0);for(var i=0;i<bufferSize;i++)data[i]=Math.random()*2-1;
+var noise=audioCtx.createBufferSource();noise.buffer=buffer;
+var filter=audioCtx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=1400;
+var gain=audioCtx.createGain();gain.gain.setValueAtTime(0.12,audioCtx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.07);
+noise.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);
+noise.start();
+}catch(e){}
+}
+function playWinSound(){
+if(!soundEnabled)return;
+duckBGM();
+try{
+initAudioEngine();if(!audioCtx)return;
+var now=audioCtx.currentTime;
+[523.25,659.25,783.99,1046.50].forEach(function(freq,idx){
+var osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+osc.type='triangle';osc.frequency.setValueAtTime(freq,now+idx*0.08);
+gain.gain.setValueAtTime(0.1,now+idx*0.08);
+gain.gain.exponentialRampToValueAtTime(0.001,now+idx*0.08+0.35);
+osc.connect(gain);gain.connect(audioCtx.destination);
+osc.start(now+idx*0.08);osc.stop(now+idx*0.08+0.35);
+});
+}catch(e){}
+}
+w.toggleAudio=function(){
+initAudioEngine();
+if(bgAudio){
+if(bgAudio.paused){
+bgAudio.play().then(function(){soundEnabled=!0;w.showNotification('Casino Music & SFX Enabled');}).catch(function(){soundEnabled=!0;w.showNotification('Tap again to enable audio');});
+}else{
+bgAudio.pause();soundEnabled=!1;w.showNotification('Audio Disabled');
+}
+}
+};
+
 w.showNotification=function(txt,isErr){
 var old=document.getElementById('game-toast-badge');if(old)old.remove();
 var el=document.createElement('div');el.id='game-toast-badge';
@@ -1051,7 +1133,7 @@ _0xppr=!0;
 }
 
 var _0xcanId=null,_0xcpt=[],_0xcto=null;
-function _0xtbc(_0xa){
+function _0xtbc(_0xa){playWinSound();
 var _0xe=document.getElementById('celebration-overlay');
 document.getElementById('celebration-payout').textContent='Won $'+_0xa+' (3:2 Payout)';
 _0xe.classList.add(_0x1f(3));_0xscf();
@@ -1221,7 +1303,7 @@ var _0xsi=document.getElementById('table-seats-input');if(_0xsi)_0xsi.value='';
 _0xechs();_0xuab();_0xrndb();
 }
 
-w.addBet=function(_0xa){
+w.addBet=function(_0xa){playChipSound();
 if(!_0xgov){
 _0xdh=[];_0xph=[];_0xsh=[];
 _0xdcEl.innerHTML='';_0xhcEl.innerHTML='';_0xdsEl.textContent='0';
@@ -1237,7 +1319,7 @@ else{if(_0xmEl.textContent.includes('bet'))_0xmEl.textContent='';}
 else if(_0xbnk<=0&&_0xibt===0){w.openStoreModal();}
 };
 
-w.clearBet=function(){if(!_0xgov)return;_0xbnk+=_0xibt;_0xibt=0;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;_0xmEl.textContent='';};
+w.clearBet=function(){playChipSound();if(!_0xgov)return;_0xbnk+=_0xibt;_0xibt=0;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;_0xmEl.textContent='';};
 
 function _0xuab(){
 if(_0xgov){
@@ -1283,7 +1365,7 @@ else break;
 });
 }
 
-w.startGame=async function(){
+w.startGame=async function(){playCardSound();
 if(_0xibt===0){if(_0xbnk<=0)w.openStoreModal();else _0xmEl.textContent='Please place a bet first!';return;}
 if(_0xccr||_0xdeck.length<=_0xccp){_0xechs();_0xmEl.textContent='Cut card reached! Shoe reshuffled & card burned.';}
 else{_0xmEl.textContent='';}
@@ -1320,7 +1402,7 @@ if(_0xdbj){_0xmEl.textContent='Dealer has Blackjack!';_0xfnr();return;}
 if(_0xph[0].cards.length===2&&_0xcls(_0xph[0].cards)===21){_0xfnr();}
 };
 
-w.playerHit=function(){
+w.playerHit=function(){playCardSound();
 var _0xh=_0xph[_0xahi];_0xh.cards.push(_0xdc());
 var _0xsc=_0xcls(_0xh.cards);
 if(_0xsc>=21){_0xh.status=(_0xsc>21)?_0x1f(31):_0x1f(32);_0xrndb(!0);_0xnxh();}

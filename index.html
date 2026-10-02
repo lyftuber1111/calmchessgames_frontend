@@ -491,7 +491,8 @@
     @keyframes popIn { to { transform: scale(1); } }
 
 
-    /* Mobile Font Size Boost (+2pt readability) */
+
+    /* Mobile Adjustments: Smaller Soft 17 text & non-overlapping Max Bet badge */
     @media (max-width: 600px) {
       .title { font-size: 1.12rem !important; }
       .title span { font-size: 0.9rem !important; }
@@ -502,13 +503,23 @@
       .top-row-stats { font-size: 0.92rem !important; }
       .hand-label { font-size: 0.92rem !important; }
       .felt-rule-main { font-size: 0.98rem !important; }
-      .felt-rule-sub { font-size: 0.84rem !important; }
+      .felt-rule-sub { font-size: 0.70rem !important; /* 2pt smaller than before */ }
       #message-banner { font-size: 1.15rem !important; }
       button.game-btn { font-size: 0.92rem !important; }
       .chip { font-size: 0.88rem !important; }
       .table-footer { font-size: 0.75rem !important; }
-      .felt-max-bet-badge { font-size: 0.78rem !important; }
+      
+      .felt-max-bet-badge {
+        position: relative !important;
+        top: auto !important;
+        right: auto !important;
+        margin: 3px auto 2px auto !important;
+        display: block !important;
+        width: fit-content !important;
+        font-size: 0.72rem !important;
+      }
     }
+
 
 </style>
 </head>

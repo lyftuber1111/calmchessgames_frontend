@@ -546,6 +546,7 @@
     let titleTapCount = 0;
     let titleTapTimer = null;
     let currentUserId = null;
+    let currentUserEmail = '';
 
     w.checkPasswordRules = function(val){
       const v = (val || '').toString();
@@ -558,7 +559,7 @@
       setRule('r-up', /[A-Z]/.test(v));
       setRule('r-low', /[a-z]/.test(v));
       setRule('r-num', /[0-9]/.test(v));
-      setRule('r-spec', /[!@#$%^&*()_+\-=\\[\\]{};':"\\\\|,.<>\\/?]/.test(v));
+      setRule('r-spec', /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v));
     };
 
     w.switchAuthTab = function(mode){
@@ -591,10 +592,9 @@
     }
 
     async function syncBankToServer(targetBank){
-      if(!currentUserId && currentUserId !== 0) return;
       const bVal = Math.max(0, parseFloat(targetBank) || 0);
       try {
-        localStorage.setItem(`calmchess_bank_${currentUserId}`, bVal.toFixed(2));
+        if(currentUserId) localStorage.setItem(`calmchess_bank_${currentUserId}`, bVal.toFixed(2));
       } catch(e){}
 
       try {
@@ -602,7 +602,8 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ user_id: currentUserId, bank: bVal })
+          keepalive: true,
+          body: JSON.stringify({ user_id: currentUserId, email: currentUserEmail, bank: bVal })
         });
       } catch(e){}
     }
@@ -630,7 +631,7 @@
 
         if (res.status === 409 || (data && (data.error_code === 'EMAIL_EXISTS' || (data.message && data.message.includes('already registered'))))) {
           showAlert(data.message);
-          alert(data.message + "\\n\\nSwitching to Sign In tab.");
+          alert(data.message + "\n\nSwitching to Sign In tab.");
           w.switchAuthTab('login');
           document.getElementById('auth-password').value = '';
           document.getElementById('auth-password').focus();
@@ -643,17 +644,8 @@
         }
 
         currentUserId = data.user.id;
+        currentUserEmail = data.user.email || id;
         let startingBank = parseFloat(data.user.bank);
-        try {
-          const cached = localStorage.getItem(`calmchess_bank_${currentUserId}`);
-          if (cached !== null && !isNaN(parseFloat(cached))) {
-            const cachedVal = parseFloat(cached);
-            if (cachedVal !== startingBank) {
-              startingBank = cachedVal;
-              syncBankToServer(startingBank);
-            }
-          }
-        } catch(e){}
 
         document.getElementById('lobby-screen').classList.remove('active');
         document.getElementById('game-screen').classList.add('active');
@@ -667,12 +659,13 @@
     w.executeLogout = async function(){
       await syncBankToServer(bank);
       try {
-        await fetch(`${_0x9b2a}/logout.php?_t=${Date.now()}`, { method: 'POST', credentials: 'include' });
+        await fetch(`${_0x9b2a}/logout.php?_t=${Date.now()}`, { method: 'POST', credentials: 'include', keepalive: true });
       } catch(e){}
       document.getElementById('game-screen').classList.remove('active');
       document.getElementById('lobby-screen').classList.add('active');
       document.getElementById('auth-password').value = '';
       currentUserId = null;
+      currentUserEmail = '';
       deck = []; dealerHand = []; playerHands = []; simulatedHands = [];
     };
 
@@ -734,7 +727,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ package: selectedCredits })
+          body: JSON.stringify({ package: selectedCredits, user_id: currentUserId, email: currentUserEmail })
         });
         const d = await res.json();
         if(!d.success){ alert(d.message); return; }
@@ -762,7 +755,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ package: selectedCredits })
+            body: JSON.stringify({ package: selectedCredits, user_id: currentUserId, email: currentUserEmail })
           });
           const d = await res.json();
           if(!d.success) throw new Error(d.message);
@@ -773,7 +766,7 @@
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ orderID: d.orderID, package: selectedCredits })
+            body: JSON.stringify({ orderID: d.orderID, package: selectedCredits, user_id: currentUserId, email: currentUserEmail })
           });
           const captured = await res.json();
           if(captured.success){

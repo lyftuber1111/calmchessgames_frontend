@@ -510,741 +510,436 @@
 
   <!-- OBFUSCATED ENGINE EXECUTION CORE -->
   <script>
-  (function(w){
-    const _0x9b2a = 'https://api.calmchessgames.com';
-    const _0x1a82 = function(idx){
-      const t = [
-        "cmVnaXN0ZXI=","bG9naW4=","YWN0aXZl","ZXJyb3I=","c3VjY2Vzcw==",
-        "ZGlzcGxheQ==","bm9uZQ==","ZmxleA==","YmxvY2s=","YXV0aC1pZGVudGlmaWVy",
-        "YXV0aC1wYXNzd29yZA==","L3JlZ2lzdGVyLnBocA==","L2xvZ2luLnBocA==","UE9TVA==","YXBwbGljYXRpb24vanNvbg==",
-        "RU1BSUxfRVhJU1RT","YWxyZWFkeSByZWdpc3RlcmVk","dXNlci1kaXNwbGF5","c3BsaXQ=","YmFuay1kaXNwbGF5",
-        "bG9iYnktc2NyZWVu","Z2FtZS1zY3JlZW4=","L2FkbWluX2FwaS5waHA/YWN0aW9uPWdldF9tb2RlJl90PQ==","c2ltdWxhdGlvbi1jb250YWluZXI=","cGF5cGFsLWxpdmUtY29udGFpbmVy",
-        "c2VsZWN0ZWQ=","c2ltLWJ1eS1idG4=","QWRkIENyZWRpdHMgKFNpbXVsYXRlZCAk","c3RvcmUtbW9kYWw=","YWRtaW4tbW9kYWw=",
-        "YWRtaW4ta2V5","YWRtaW4tc2ltLXRvZ2dsZQ==","L2FkbWluX2FwaS5waHA/YWN0aW9uPXNldF9tb2Rl","L2FkbWluX2FwaS5waHA/YWN0aW9uPWJ1eV9jcmVkaXRz","cGF5cGFsLWJ1dHRvbi1jb250YWluZXI=",
-        "Y3JlYXRlX29yZGVy","L3BheXBhbF9hcGkucGhwP2FjdGlvbj1jcmVhdGVfb3JkZXI=","L3BheXBhbF9hcGkucGhwP2FjdGlvbj1jYXB0dXJlX29yZGVy","Y2VsZWJyYXRpb24tb3ZlcmxheQ==","Y2VsZWJyYXRpb24tcGF5b3V0",
-        "Y29uZmV0dGktY2FudmFz","ZGVhbGVyLWNhcmRz","ZGVhbGVyLXNjb3Jl","cGxheWVyLWhhbmRzLWNvbnRhaW5lcg==","c2hvZS1kaXNwbGF5",
-        "Y3V0LWRpc3BsYXk=","bWVzc2FnZS1iYW5uZXI=","ZGVhbC1idG4=","aGl0LWJ0bg==","c3RhbmQtYnRu",
-        "ZG91YmxlLWJ0bg==","c3BsaXQtYnRu","Y2hpcC1jb250cm9scw==","Y2FyZHMtcm93","aGFuZC1ib3g=",
-        "aGFuZC1sYWJlbA==","Y2FyZA==","aGlkZGVu","cmVk","YmxhY2s=",
-        "c3VpdA==","Y29ybmVyLWJvdHRvbQ==","YnVzdGVk","c3Rvb2Q=","cGxheWluZw==",
-        "aW5zdXJhbmNlLW1vZGFs","aW5zdXJhbmNlLWFtb3VudC1sYWJlbA==","aW5zLXllcy1idG4=","dGFibGUtc2VhdHMtaW5wdXQ=","dGFibGUtdGl0bGU=",
-        "Y2xpY2s=","UGxhY2UgeW91ciBiZXQgYW5kIHByZXNzIERFQUwh","RGVhbGVyIGhhcyBCbGFja2phY2sh","RGVhbGVyIGhhcyBCbGFja2phY2shIEluc3VyYW5jZSBwYXlzIDI6MSAoKyQ=","RGVhbGVyIEJ1c3RlZCE=",
-        "PGJyPjxzcGFuIHN0eWxlPSdjb2xvcjp2YXIoLS1nb2xkKSc+KGN1dCBDYXJkIFJlYWNoZWQgLSBSZXNodWZmbGluZyBOZXh0IERlYWwpPC9zcGFuPg==","L2xvZ291dC5waHA=",
-        "L2FkbWluX2FwaS5waHA/YWN0aW9uPXN5bmNfYmFuaw=="
-      ];
-      return atob(t[idx]);
-    };
-
-    let currentAuthMode = _0x1a82(0);
-    let selectedCredits = 1000;
-    let selectedCost = 4.99;
-    let isSimulationMode = true;
-    let paypalRendered = false;
-    let insuranceBet = 0;
-    let pendingInsuranceResolve = null;
-    let simulatedHands = [];
-    let titleTapCount = 0;
-    let titleTapTimer = null;
-    let currentUserId = null;
-
-    w.checkPasswordRules = function(val){
-      const v = (val || '').toString();
-      const setRule = (id, valid) => {
-        const el = document.getElementById(id);
-        if(!el) return;
-        el.className = 'rule-item ' + (valid ? 'valid' : 'invalid');
-      };
-      setRule('r-len', v.length >= 8);
-      setRule('r-up', /[A-Z]/.test(v));
-      setRule('r-low', /[a-z]/.test(v));
-      setRule('r-num', /[0-9]/.test(v));
-      setRule('r-spec', /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(v));
-    };
-
-    w.switchAuthTab = function(mode){
-      currentAuthMode = mode;
-      document.getElementById('tab-reg').classList.toggle('active', mode === 'register');
-      document.getElementById('tab-login').classList.toggle('active', mode === 'login');
-      document.getElementById('password-rules').style.display = (mode === 'register') ? 'flex' : 'none';
-      document.getElementById('auth-submit-btn').textContent = (mode === 'register') ? 'Register & Play' : 'Sign In';
-
-      const idLabel = document.getElementById('auth-id-label');
-      const idInput = document.getElementById('auth-identifier');
-      if (mode === 'register') {
-        idLabel.textContent = 'Email Address';
-        idInput.placeholder = 'player@casino.com';
-      } else {
-        idLabel.textContent = 'Username or Email';
-        idInput.placeholder = 'username or player@casino.com';
-      }
-      hideAlert();
-    };
-
-    function showAlert(msg, isError = true){
-      const el = document.getElementById('auth-alert');
-      el.textContent = msg;
-      el.className = 'auth-alert ' + (isError ? 'error' : 'success');
-      el.style.display = 'block';
-    }
-    function hideAlert(){
-      document.getElementById('auth-alert').style.display = 'none';
-    }
-
-    async function syncBankToServer(targetBank){
-      if(!currentUserId && currentUserId !== 0) return;
-      const bVal = Math.max(0, parseFloat(targetBank) || 0);
-      try {
-        localStorage.setItem(`calmchess_bank_${currentUserId}`, bVal.toFixed(2));
-      } catch(e){}
-
-      try {
-        await fetch(`${_0x9b2a}${_0x1a82(77)}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ user_id: currentUserId, bank: bVal })
-        });
-      } catch(e){}
-    }
-
-    w.handleAuthSubmit = async function(e){
-      if(e && e.preventDefault) e.preventDefault();
-      hideAlert();
-      const id = document.getElementById('auth-identifier').value.trim();
-      const pwd = document.getElementById('auth-password').value;
-      const endpoint = _0x9b2a + (currentAuthMode === 'register' ? _0x1a82(11) : _0x1a82(12));
-
-      try {
-        const res = await fetch(`${endpoint}?_t=${Date.now()}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ identifier: id, email: id, password: pwd })
-        });
-        const text = await res.text();
-        let data;
-        try { data = JSON.parse(text); } catch(err){
-          showAlert(`Server Error (${res.status}): ${text.replace(/<[^>]*>?/gm, '').trim()}`);
-          return;
-        }
-
-        if (res.status === 409 || (data && (data.error_code === 'EMAIL_EXISTS' || (data.message && data.message.includes('already registered'))))) {
-          showAlert(data.message);
-          alert(data.message + "\n\nSwitching to Sign In tab.");
-          w.switchAuthTab('login');
-          document.getElementById('auth-password').value = '';
-          document.getElementById('auth-password').focus();
-          return;
-        }
-
-        if (!data.success) {
-          showAlert(data.message);
-          return;
-        }
-
-        currentUserId = data.user.id;
-        let startingBank = parseFloat(data.user.bank);
-        try {
-          const cached = localStorage.getItem(`calmchess_bank_${currentUserId}`);
-          if (cached !== null && !isNaN(parseFloat(cached))) {
-            const cachedVal = parseFloat(cached);
-            if (cachedVal !== startingBank) {
-              startingBank = cachedVal;
-              syncBankToServer(startingBank);
-            }
-          }
-        } catch(e){}
-
-        document.getElementById('lobby-screen').classList.remove('active');
-        document.getElementById('game-screen').classList.add('active');
-        refreshAdminMode();
-        initializeNewPlayerSession(startingBank);
-      } catch(err){
-        showAlert('Network Error: ' + err.message);
-      }
-    };
-
-    w.executeLogout = async function(){
-      if (isGameOver && initialBet > 0) {
-        bank += initialBet;
-        initialBet = 0;
-      }
-      await syncBankToServer(bank);
-      try {
-        await fetch(`${_0x9b2a}/logout.php?_t=${Date.now()}`, { method: 'POST', credentials: 'include' });
-      } catch(e){}
-      document.getElementById('game-screen').classList.remove('active');
-      document.getElementById('lobby-screen').classList.add('active');
-      document.getElementById('auth-password').value = '';
-      currentUserId = null;
-      deck = []; dealerHand = []; playerHands = []; simulatedHands = [];
-    };
-
-    async function refreshAdminMode(){
-      try {
-        const res = await fetch(`${_0x9b2a}/admin_api.php?action=get_mode&_t=${Date.now()}`, { credentials: 'include' });
-        const d = await res.json();
-        if(d.success){ isSimulationMode = d.simulation_mode; updateStoreUI(); }
-      } catch(e){}
-    }
-
-    function updateStoreUI(){
-      document.getElementById('simulation-container').style.display = isSimulationMode ? 'block' : 'none';
-      document.getElementById('paypal-live-container').style.display = isSimulationMode ? 'none' : 'flex';
-      if(!isSimulationMode) renderPayPalButtonsIfNeeded();
-    }
-
-    w.selectPackage = function(c, p, el){
-      selectedCredits = c; selectedCost = p;
-      document.querySelectorAll('.package-box').forEach(b => b.classList.remove('selected'));
-      el.classList.add('selected');
-      document.getElementById('sim-buy-btn').textContent = `Add Credits (Simulated $${p})`;
-    };
-
-    w.openStoreModal = function(){ refreshAdminMode(); document.getElementById('store-modal').classList.add('active'); };
-    w.closeStoreModal = function(){ document.getElementById('store-modal').classList.remove('active'); };
-    w.openAdminModal = function(){
-      document.getElementById('admin-sim-toggle').checked = isSimulationMode;
-      document.getElementById('admin-modal').classList.add('active');
-    };
-    w.closeAdminModal = function(){ document.getElementById('admin-modal').classList.remove('active'); };
-
-    w.saveAdminSettings = async function(){
-      const key = document.getElementById('admin-key').value;
-      const sim = document.getElementById('admin-sim-toggle').checked ? 1 : 0;
-      try {
-        const res = await fetch(`${_0x9b2a}/admin_api.php?action=set_mode`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ admin_key: key, enable_simulation: sim })
-        });
-        const d = await res.json();
-        if(!d.success){ alert("Admin Error: " + d.message); return; }
-        isSimulationMode = d.simulation_mode;
-        alert("Simulation mode updated to: " + (isSimulationMode ? "ENABLED (Simulated)" : "DISABLED (Live PayPal)"));
-        w.closeAdminModal();
-        updateStoreUI();
-      } catch(err){ alert("Connection error: " + err.message); }
-    };
-
-    w.executeSimulatedPurchase = async function(){
-      if(!document.getElementById('accept-terms-check').checked){
-        alert("Please review and check the Terms of Service acceptance box.");
-        return;
-      }
-      try {
-        const res = await fetch(`${_0x9b2a}/admin_api.php?action=buy_credits`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ package: selectedCredits })
-        });
-        const d = await res.json();
-        if(!d.success){ alert(d.message); return; }
-        bank = parseFloat(d.new_bank);
-        bankEl.textContent = bank;
-        syncBankToServer(bank);
-        alert(`[SIMULATION]: ${d.message}`);
-        w.closeStoreModal();
-      } catch(err){ alert("Simulation failed: " + err.message); }
-    };
-
-    function renderPayPalButtonsIfNeeded(){
-      if(paypalRendered || typeof paypal === 'undefined') return;
-      paypal.Buttons({
-        style: { layout: 'vertical', color: 'gold', shape: 'rect', label: 'pay' },
-        onClick: (d, a) => {
-          if(!document.getElementById('accept-terms-check').checked){
-            alert("Accept Terms of Service before continuing.");
-            return a.reject();
-          }
-          return a.resolve();
-        },
-        createOrder: async () => {
-          const res = await fetch(`${_0x9b2a}/paypal_api.php?action=create_order`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ package: selectedCredits })
-          });
-          const d = await res.json();
-          if(!d.success) throw new Error(d.message);
-          return d.orderID;
-        },
-        onApprove: async (d) => {
-          const res = await fetch(`${_0x9b2a}/paypal_api.php?action=capture_order`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ orderID: d.orderID, package: selectedCredits })
-          });
-          const captured = await res.json();
-          if(captured.success){
-            bank = parseFloat(captured.new_bank);
-            bankEl.textContent = bank;
-            syncBankToServer(bank);
-            alert(captured.message);
-            w.closeStoreModal();
-          } else {
-            alert("Capture Error: " + captured.message);
-          }
-        },
-        onError: e => alert("Payment error: " + e)
-      }).render('#paypal-button-container');
-      paypalRendered = true;
-    }
-
-    let confettiAnimationId = null, confettiParticles = [], celebrationTimeout = null;
-    function triggerBlackjackCelebration(amt){
-      const el = document.getElementById('celebration-overlay');
-      document.getElementById('celebration-payout').textContent = `Won $${amt} (3:2 Payout)`;
-      el.classList.add('active');
-      startConfetti();
-      clearTimeout(celebrationTimeout);
-      celebrationTimeout = setTimeout(w.closeBlackjackCelebration, 4000);
-    }
-    w.closeBlackjackCelebration = function(){
-      document.getElementById('celebration-overlay').classList.remove('active');
-      stopConfetti();
-      clearTimeout(celebrationTimeout);
-    };
-
-    function startConfetti(){
-      const c = document.getElementById('confetti-canvas');
-      const ctx = c.getContext('2d');
-      c.width = window.innerWidth; c.height = window.innerHeight;
-      confettiParticles = [];
-      const colors = ['#f1c40f','#e74c3c','#2ecc71','#3498db','#9b59b6','#ffffff'];
-      for(let i=0; i<100; i++){
-        confettiParticles.push({
-          x: Math.random()*c.width, y: Math.random()*c.height - c.height,
-          size: Math.random()*7+3, color: colors[Math.floor(Math.random()*colors.length)],
-          vx: Math.random()*4-2, vy: Math.random()*4+3, rot: Math.random()*360, rotSpeed: Math.random()*8-4
-        });
-      }
-      function frame(){
-        ctx.clearRect(0,0,c.width,c.height);
-        confettiParticles.forEach(p=>{
-          p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotSpeed;
-          if(p.y>c.height){ p.y=-10; p.x=Math.random()*c.width; }
-          ctx.save(); ctx.translate(p.x,p.y); ctx.rotate((p.rot*Math.PI)/180);
-          ctx.fillStyle=p.color; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*1.6);
-          ctx.restore();
-        });
-        confettiAnimationId = requestAnimationFrame(frame);
-      }
-      cancelAnimationFrame(confettiAnimationId); frame();
-    }
-    function stopConfetti(){
-      cancelAnimationFrame(confettiAnimationId);
-      const c = document.getElementById('confetti-canvas');
-      if(c) c.getContext('2d').clearRect(0,0,c.width,c.height);
-    }
-
-    const suits = ['♠','♥','♦','♣'];
-    const values = [
-      {name:'2',val:2},{name:'3',val:3},{name:'4',val:4},{name:'5',val:5},
-      {name:'6',val:6},{name:'7',val:7},{name:'8',val:8},{name:'9',val:9},
-      {name:'10',val:10},{name:'J',val:10},{name:'Q',val:10},{name:'K',val:10},{name:'A',val:11}
-    ];
-    const NUM_DECKS = 6, MAX_HANDS = 4;
-    let deck=[], dealerHand=[], playerHands=[], cutCardPosition=0, cutCardReached=false;
-    let activeHandIndex=0, bank=500, initialBet=0, isGameOver=true;
-
-    const bankEl = document.getElementById('bank-display'),
-          betEl = document.getElementById('bet-display'),
-          shoeEl = document.getElementById('shoe-display'),
-          cutEl = document.getElementById('cut-display'),
-          msgEl = document.getElementById('message-banner'),
-          dScoreEl = document.getElementById('dealer-score'),
-          dCardsEl = document.getElementById('dealer-cards'),
-          handsContainerEl = document.getElementById('player-hands-container'),
-          dealBtn = document.getElementById('deal-btn'),
-          hitBtn = document.getElementById('hit-btn'),
-          standBtn = document.getElementById('stand-btn'),
-          doubleBtn = document.getElementById('double-btn'),
-          splitBtn = document.getElementById('split-btn'),
-          chipControls = document.getElementById('chip-controls');
-
-    function getOccupiedSeats(){
-      const el = document.getElementById('table-seats-input');
-      const txt = el ? el.value.trim() : '';
-      if(txt === '') return 1;
-      let val = parseInt(txt, 10);
-      if(isNaN(val) || val < 1) return 1;
-      return val > 7 ? 7 : val;
-    }
-
-    function executeCasinoHandShuffle(){
-      let d = [];
-      for(let i=0; i<NUM_DECKS; i++){
-        for(const s of suits){ for(const v of values){ d.push({suit:s, name:v.name, value:v.val}); } }
-      }
-      for(let i=d.length-1; i>0; i--){
-        const j = Math.floor(Math.random()*(i+1));
-        [d[i], d[j]] = [d[j], d[i]];
-      }
-      const mid = Math.floor(d.length/2);
-      let l1 = d.slice(0,mid), l2 = d.slice(mid), rif = [];
-      while(l1.length || l2.length){
-        const c1 = Math.min(l1.length, Math.floor(Math.random()*8)+16);
-        const c2 = Math.min(l2.length, Math.floor(Math.random()*8)+16);
-        let s1 = l1.splice(0,c1), s2 = l2.splice(0,c2);
-        while(s1.length || s2.length){
-          if(s1.length && (!s2.length || Math.random() > 0.5)){ rif.push(s1.pop()); }
-          else if(s2.length){ rif.push(s2.pop()); }
-        }
-      }
-      const cut = Math.floor(Math.random()*80)+116;
-      deck = rif.slice(cut).concat(rif.slice(0,cut));
-      cutCardPosition = Math.floor(Math.random()*24)+55;
-      cutCardReached = false;
-      deck.pop();
-      shoeEl.textContent = deck.length;
-      cutEl.textContent = `${cutCardPosition} cards`;
-    }
-
-    function drawCard(){
-      if(deck.length <= cutCardPosition) cutCardReached = true;
-      if(deck.length === 0) executeCasinoHandShuffle();
-      const c = deck.pop();
-      shoeEl.textContent = deck.length;
-      return c;
-    }
-
-    function calculateScore(cards){
-      let score = 0, aces = 0;
-      for(const c of cards){ score += c.value; if(c.name === 'A') aces++; }
-      while(score > 21 && aces > 0){ score -= 10; aces--; }
-      return score;
-    }
-
-    function createCardElement(c, hidden = false){
-      const el = document.createElement('div');
-      el.className = `card ${hidden ? 'hidden' : ''}`;
-      if(!hidden){
-        el.classList.add((c.suit === '♥' || c.suit === '♦') ? 'red' : 'black');
-        el.innerHTML = `<div>${c.name}</div><div class="suit">${c.suit}</div><div class="corner-bottom">${c.name}</div>`;
-      }
-      return el;
-    }
-
-    function renderBoard(peek = true){
-      dCardsEl.innerHTML = '';
-      dealerHand.forEach((c, idx) => {
-        dCardsEl.appendChild(createCardElement(c, idx === 1 && peek && !isGameOver));
-      });
-      dScoreEl.textContent = (peek && !isGameOver) ? (dealerHand[0]?.value || 0) : calculateScore(dealerHand);
-      handsContainerEl.innerHTML = '';
-      playerHands.forEach((h, idx) => {
-        const sc = calculateScore(h.cards);
-        const box = document.createElement('div');
-        box.className = `hand-box ${(!isGameOver && idx === activeHandIndex) ? 'active' : ''}`;
-        box.innerHTML = `<div class="hand-label">${playerHands.length > 1 ? 'Hand ' + (idx + 1) : 'Your Bet'} ($${h.bet}) - Score: <span>${sc}</span></div><div class="cards-row" id="p-${idx}"></div>`;
-        const row = box.querySelector(`#p-${idx}`);
-        h.cards.forEach(c => row.appendChild(createCardElement(c)));
-        handsContainerEl.appendChild(box);
-      });
-      betEl.textContent = playerHands.reduce((a, b) => a + b.bet, 0) || initialBet;
-      bankEl.textContent = bank;
-    }
-
-    function initializeNewPlayerSession(userBank){
-      bank = parseFloat(userBank);
-      initialBet = 0; insuranceBet = 0; isGameOver = true;
-      dealerHand = []; playerHands = []; simulatedHands = [];
-      bankEl.textContent = bank; betEl.textContent = 0;
-      msgEl.textContent = 'Place your bet and press DEAL!';
-      dScoreEl.textContent = "0"; dCardsEl.innerHTML = ""; handsContainerEl.innerHTML = "";
-      const seatsInput = document.getElementById('table-seats-input');
-      if(seatsInput) seatsInput.value = "";
-      executeCasinoHandShuffle();
-      updateActionButtons();
-      renderBoard();
-    }
-
-    w.addBet = function(amt){
-      if(!isGameOver) return;
-      if(bank >= amt){
-        bank -= amt; initialBet += amt;
-        bankEl.textContent = bank; betEl.textContent = initialBet;
-      } else if(bank <= 0 && initialBet === 0){
-        w.openStoreModal();
-      }
-    };
-
-    w.clearBet = function(){
-      if(!isGameOver) return;
-      bank += initialBet; initialBet = 0;
-      bankEl.textContent = bank; betEl.textContent = 0;
-    };
-
-    function updateActionButtons(){
-      if(isGameOver){
-        dealBtn.disabled = false;
-        hitBtn.disabled = standBtn.disabled = doubleBtn.disabled = splitBtn.disabled = true;
-        chipControls.style.opacity = '1';
-        chipControls.querySelectorAll('.chip, button').forEach(b => b.style.pointerEvents = 'auto');
-        return;
-      }
-      dealBtn.disabled = true;
-      chipControls.style.opacity = '0.3';
-      chipControls.querySelectorAll('.chip, button').forEach(b => b.style.pointerEvents = 'none');
-      const h = playerHands[activeHandIndex];
-      if(!h) return;
-      if(h.isSplitAce){
-        hitBtn.disabled = doubleBtn.disabled = splitBtn.disabled = true;
-        standBtn.disabled = false;
-        return;
-      }
-      hitBtn.disabled = standBtn.disabled = false;
-      doubleBtn.disabled = !(h.cards.length === 2 && bank >= h.bet);
-      const isPair = (h.cards.length === 2 && h.cards[0].value === h.cards[1].value);
-      const isAce = (h.cards.length === 2 && h.cards[0].name === 'A');
-      splitBtn.disabled = !(playerHands.length < MAX_HANDS && isPair && bank >= h.bet && (!h.isSplitAce || !isAce));
-    }
-
-    function promptInsurance(){
-      return new Promise(resolve => {
-        pendingInsuranceResolve = resolve;
-        const cost = Math.floor(playerHands[0].bet / 2);
-        document.getElementById('insurance-amount-label').textContent = `Insurance Cost: $${cost}`;
-        const yesBtn = document.getElementById('ins-yes-btn');
-        if(bank < cost){ yesBtn.disabled = true; yesBtn.textContent = "Insufficient Funds"; }
-        else { yesBtn.disabled = false; yesBtn.textContent = "Take Insurance"; }
-        document.getElementById('insurance-modal').classList.add('active');
-      });
-    }
-
-    w.handleInsuranceChoice = function(choice){
-      document.getElementById('insurance-modal').classList.remove('active');
-      if(pendingInsuranceResolve){
-        const r = pendingInsuranceResolve;
-        pendingInsuranceResolve = null;
-        r(choice);
-      }
-    };
-
-    function simulateOtherSeatsAction(){
-      simulatedHands.forEach(sh => {
-        while(true){
-          const sc = calculateScore(sh);
-          let hasAce = sh.some(c => c.name === 'A');
-          if(sc < 17) sh.push(drawCard());
-          else if(sc === 17 && hasAce) sh.push(drawCard());
-          else break;
-        }
-      });
-    }
-
-    w.startGame = async function(){
-      if(initialBet === 0){
-        if(bank <= 0) w.openStoreModal();
-        else msgEl.textContent = "Please place a bet first!";
-        return;
-      }
-      if(cutCardReached || deck.length <= cutCardPosition){
-        executeCasinoHandShuffle();
-        msgEl.textContent = "Cut card reached! Shoe reshuffled & card burned.";
-      } else {
-        msgEl.textContent = "";
-      }
-
-      isGameOver = false; insuranceBet = 0;
-      playerHands = [{ cards: [], bet: initialBet, status: 'playing', isSplitAce: false }];
-      initialBet = 0; activeHandIndex = 0; dealerHand = []; simulatedHands = [];
-
-      const totalSeats = getOccupiedSeats();
-      const otherSeats = totalSeats - 1;
-
-      playerHands[0].cards.push(drawCard());
-      for(let s=0; s<otherSeats; s++) simulatedHands.push([drawCard()]);
-      dealerHand.push(drawCard());
-
-      playerHands[0].cards.push(drawCard());
-      for(let s=0; s<otherSeats; s++) simulatedHands[s].push(drawCard());
-      dealerHand.push(drawCard());
-
-      renderBoard(true);
-      updateActionButtons();
-
-      const upCard = dealerHand[0];
-      const dBj = (calculateScore(dealerHand) === 21);
-
-      if(upCard.name === 'A'){
-        const take = await promptInsurance();
-        if(take){
-          const cost = Math.floor(playerHands[0].bet / 2);
-          insuranceBet = cost; bank -= cost; bankEl.textContent = bank;
-        }
-        if(dBj){
-          if(insuranceBet > 0){
-            const win = insuranceBet * 3;
-            bank += win; bankEl.textContent = bank;
-            msgEl.textContent = `Dealer has Blackjack! Insurance pays 2:1 (+$${insuranceBet * 2}).`;
-          } else {
-            msgEl.textContent = "Dealer has Blackjack!";
-          }
-          finishRound();
-          return;
-        } else if(insuranceBet > 0){
-          msgEl.textContent = "Insurance collected.";
-        }
-      } else if(upCard.value === 10){
-        if(dBj){
-          msgEl.textContent = "Dealer has Blackjack!";
-          finishRound();
-          return;
-        }
-      }
-
-      if(playerHands[0].cards.length === 2 && calculateScore(playerHands[0].cards) === 21){
-        finishRound();
-      }
-    };
-
-    w.playerHit = function(){
-      const h = playerHands[activeHandIndex];
-      h.cards.push(drawCard());
-      const sc = calculateScore(h.cards);
-      if(sc >= 21){
-        h.status = (sc > 21) ? 'busted' : 'stood';
-        renderBoard(true);
-        nextHand();
-      } else {
-        renderBoard(true);
-        updateActionButtons();
-      }
-    };
-
-    w.playerDouble = function(){
-      const h = playerHands[activeHandIndex];
-      bank -= h.bet; h.bet *= 2;
-      h.cards.push(drawCard());
-      h.status = (calculateScore(h.cards) > 21) ? 'busted' : 'stood';
-      renderBoard(true);
-      nextHand();
-    };
-
-    w.playerSplit = function(){
-      const h = playerHands[activeHandIndex];
-      bank -= h.bet;
-      const c1 = h.cards[0], c2 = h.cards[1];
-      const isAce = (c1.name === 'A');
-      const h1 = { cards: [c1, drawCard()], bet: h.bet, status: isAce ? 'stood' : 'playing', isSplitAce: isAce };
-      const h2 = { cards: [c2, drawCard()], bet: h.bet, status: isAce ? 'stood' : 'playing', isSplitAce: isAce };
-      playerHands.splice(activeHandIndex, 1, h1, h2);
-      renderBoard(true);
-      if(isAce) nextHand();
-      else updateActionButtons();
-    };
-
-    w.playerStand = function(){
-      playerHands[activeHandIndex].status = 'stood';
-      nextHand();
-    };
-
-    function nextHand(){
-      const nextIdx = playerHands.findIndex((h, idx) => idx >= activeHandIndex && h.status === 'playing');
-      if(nextIdx !== -1){
-        activeHandIndex = nextIdx;
-        renderBoard(true);
-        updateActionButtons();
-      } else {
-        finishRound();
-      }
-    }
-
-    function dealerShouldHit(hand){
-      let sc = 0, aces = 0;
-      for(const c of hand){ sc += c.value; if(c.name === 'A') aces++; }
-      while(sc > 21 && aces > 0){ sc -= 10; aces--; }
-      if(sc < 17) return true;
-      if(sc === 17 && aces > 0) return true;
-      return false;
-    }
-
-    function finishRound(){
-      isGameOver = true;
-      simulateOtherSeatsAction();
-
-      const dBj = (dealerHand.length === 2 && calculateScore(dealerHand) === 21);
-      if(!dBj && !playerHands.every(h => calculateScore(h.cards) > 21)){
-        while(dealerShouldHit(dealerHand)){ dealerHand.push(drawCard()); }
-      }
-
-      const dScore = calculateScore(dealerHand);
-      let returnCredits = 0, wonNaturalBj = false, naturalWinAmount = 0;
-
-      playerHands.forEach(h => {
-        const pScore = calculateScore(h.cards);
-        const pBj = (h.cards.length === 2 && pScore === 21 && playerHands.length === 1);
-
-        if(pScore <= 21){
-          if(pBj){
-            if(dBj){
-              returnCredits += h.bet;
-            } else {
-              const win = Math.floor(h.bet * 2.5);
-              returnCredits += win;
-              wonNaturalBj = true;
-              naturalWinAmount = win;
-            }
-          } else if(!dBj){
-            if(dScore > 21 || pScore > dScore){
-              returnCredits += h.bet * 2;
-            } else if(pScore === dScore){
-              returnCredits += h.bet;
-            }
-          }
-        }
-      });
-
-      bank += returnCredits;
-
-      let msg = "";
-      if(dBj){
-        if(insuranceBet > 0) msg = `Dealer has Blackjack! Insurance pays 2:1 (+$${insuranceBet * 2}).`;
-        else msg = "Dealer has Blackjack!";
-      } else {
-        if(insuranceBet > 0) msg = "Insurance collected. ";
-        if(dScore > 21) msg += "Dealer Busted!";
-      }
-
-      if(cutCardReached){
-        msg += "<br><span style='color:var(--gold);'>(Cut Card Reached - Reshuffling Next Deal)</span>";
-      }
-      msgEl.innerHTML = msg;
-
-      renderBoard(false);
-      updateActionButtons();
-      syncBankToServer(bank);
-
-      if(wonNaturalBj) triggerBlackjackCelebration(naturalWinAmount);
-
-      if(bank <= 0 && initialBet === 0){
-        msgEl.innerHTML += "<br><span style='color:var(--gold);'>Out of credits! Click '+ Credits' to refill.</span>";
-        setTimeout(w.openStoreModal, 1200);
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-      const title = document.getElementById('table-title');
-      if(title){
-        title.addEventListener('click', () => {
-          titleTapCount++;
-          clearTimeout(titleTapTimer);
-          titleTapTimer = setTimeout(() => { titleTapCount = 0; }, 900);
-          if(titleTapCount >= 3){
-            titleTapCount = 0;
-            w.openAdminModal();
-          }
-        });
-      }
-    });
-
-  })(window);
-  </script>
+(function(w){
+var _0x5a1b=['https://api.calmchessgames.com','register','login','active','rule-item valid','rule-item invalid','block','none','flex','auth-alert error','auth-alert success','calmchess_bank_','/logout.php','/admin_api.php?action=get_mode','/admin_api.php?action=set_mode','/admin_api.php?action=buy_credits','/admin_api.php?action=sync_bank','/paypal_api.php?action=create_order','/paypal_api.php?action=capture_order','/register.php','/login.php','POST','application/json','include','selected','cards-row','hand-box','hand-box active','card hidden','card red','card black','busted','stood','playing'];
+function _0x1f(idx){return _0x5a1b[idx];}
+var _0xapi=_0x1f(0);
+var _0xcm=_0x1f(1),_0xsc=1000,_0xsp=4.99,_0xsim=!0,_0xppr=!1,_0xins=0,_0xinr=null,_0xsh=[];
+var _0xttc=0,_0xttt=null,_0xcuid=null,_0cuem='',_0xdeck=[],_0xdh=[],_0xph=[],_0xccp=0,_0xccr=!1;
+var _0xahi=0,_0xbnk=500,_0xibt=0,_0xgov=!0;
+
+var _0xbEl=document.getElementById('bank-display'),_0xwEl=document.getElementById('bet-display'),
+_0xsEl=document.getElementById('shoe-display'),_0xcEl=document.getElementById('cut-display'),
+_0xmEl=document.getElementById('message-banner'),_0xdsEl=document.getElementById('dealer-score'),
+_0xdcEl=document.getElementById('dealer-cards'),_0xhcEl=document.getElementById('player-hands-container'),
+_0xdb=document.getElementById('deal-btn'),_0xhb=document.getElementById('hit-btn'),
+_0xsb=document.getElementById('stand-btn'),_0xddb=document.getElementById('double-btn'),
+_0xspb=document.getElementById('split-btn'),_0xcc=document.getElementById('chip-controls');
+
+w.checkPasswordRules=function(_0xv){
+var _0xs=(_0xv||'').toString(),_0xst=function(_0xi,_0xvld){var _0xe=document.getElementById(_0xi);if(_0xe)_0xe.className=_0xvld?_0x1f(4):_0x1f(5);};
+_0xst('r-len',_0xs.length>=8);_0xst('r-up',/[A-Z]/.test(_0xs));_0xst('r-low',/[a-z]/.test(_0xs));_0xst('r-num',/[0-9]/.test(_0xs));_0xst('r-spec',/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(_0xs));
+};
+
+w.switchAuthTab=function(_0xm){
+_0xcm=_0xm;
+document.getElementById('tab-reg').classList.toggle(_0x1f(3),_0xm===_0x1f(1));
+document.getElementById('tab-login').classList.toggle(_0x1f(3),_0xm===_0x1f(2));
+document.getElementById('password-rules').style.display=(_0xm===_0x1f(1))?_0x1f(8):_0x1f(7);
+document.getElementById('auth-submit-btn').textContent=(_0xm===_0x1f(1))?'Register & Play':'Sign In';
+var _0xil=document.getElementById('auth-id-label'),_0xii=document.getElementById('auth-identifier');
+if(_0xm===_0x1f(1)){_0xil.textContent='Email Address';_0xii.placeholder='player@casino.com';}
+else{_0xil.textContent='Username or Email';_0xii.placeholder='username or player@casino.com';}
+_0xha();
+};
+
+function _0xsa(_0xtxt,_0xisErr){
+var _0xe=document.getElementById('auth-alert');
+_0xe.textContent=_0xtxt;_0xe.className=_0xisErr?_0x1f(9):_0x1f(10);_0xe.style.display=_0x1f(6);
+}
+function _0xha(){document.getElementById('auth-alert').style.display=_0x1f(7);}
+
+async function _0xsyb(_0xtb){
+var _0xbv=Math.max(0,parseFloat(_0xtb)||0);
+try{if(_0xcuid)localStorage.setItem(_0x1f(11)+_0xcuid,_0xbv.toFixed(2));}catch(_0xe){}
+try{
+await fetch(_0xapi+_0x1f(16),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),keepalive:!0,body:JSON.stringify({user_id:_0xcuid,email:_0cuem,bank:_0xbv})});
+}catch(_0xe){}
+}
+
+w.handleAuthSubmit=async function(_0xe){
+if(_0xe&&_0xe.preventDefault)_0xe.preventDefault();
+_0xha();
+var _0xid=document.getElementById('auth-identifier').value.trim();
+var _0xpwd=document.getElementById('auth-password').value;
+var _0xep=_0xapi+((_0xcm===_0x1f(1))?_0x1f(19):_0x1f(20));
+try{
+var _0xres=await fetch(_0xep+'?_t='+Date.now(),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({identifier:_0xid,email:_0xid,password:_0xpwd})});
+var _0xraw=await _0xres.text();
+var _0xdt;try{_0xdt=JSON.parse(_0xraw);}catch(_0xerr){_0xsa('Server Error ('+_0xres.status+'): '+_0xraw.replace(/<[^>]*>?/gm,'').trim(),!0);return;}
+if(_0xres.status===409||(_0xdt&&(_0xdt.error_code==='EMAIL_EXISTS'||(_0xdt.message&&_0xdt.message.includes('already registered'))))){
+_0xsa(_0xdt.message,!0);alert(_0xdt.message+'\n\nSwitching to Sign In tab.');w.switchAuthTab('login');
+document.getElementById('auth-password').value='';document.getElementById('auth-password').focus();return;
+}
+if(!_0xdt.success){_0xsa(_0xdt.message,!0);return;}
+_0xcuid=_0xdt.user.id;_0cuem=_0xdt.user.email||_0xid;
+var _0xstb=parseFloat(_0xdt.user.bank);
+document.getElementById('lobby-screen').classList.remove(_0x1f(3));
+document.getElementById('game-screen').classList.add(_0x1f(3));
+_0xram();_0xinps(_0xstb);
+}catch(_0xerr){_0xsa('Network Error: '+_0xerr.message,!0);}
+};
+
+w.executeLogout=async function(){
+if(_0xgov&&_0xibt>0){_0xbnk+=_0xibt;_0xibt=0;}
+await _0xsyb(_0xbnk);
+try{await fetch(_0xapi+_0x1f(12)+'?_t='+Date.now(),{method:_0x1f(21),credentials:_0x1f(23),keepalive:!0});}catch(_0xe){}
+document.getElementById('game-screen').classList.remove(_0x1f(3));
+document.getElementById('lobby-screen').classList.add(_0x1f(3));
+document.getElementById('auth-password').value='';
+_0xcuid=null;_0cuem='';_0xdeck=[];_0xdh=[];_0xph=[];_0xsh=[];
+};
+
+async function _0xram(){
+try{
+var _0xr=await fetch(_0xapi+_0x1f(13)+'&_t='+Date.now(),{credentials:_0x1f(23)});
+var _0xd=await _0xr.json();
+if(_0xd.success){_0xsim=_0xd.simulation_mode;_0xusui();}
+}catch(_0xe){}
+}
+
+function _0xusui(){
+document.getElementById('simulation-container').style.display=_0xsim?_0x1f(6):_0x1f(7);
+document.getElementById('paypal-live-container').style.display=_0xsim?_0x1f(7):_0x1f(8);
+if(!_0xsim)_0xrpp();
+}
+
+w.selectPackage=function(_0xc,_0xp,_0xel){
+_0xsc=_0xc;_0xsp=_0xp;
+document.querySelectorAll('.package-box').forEach(function(_0xb){_0xb.classList.remove(_0x1f(24));});
+_0xel.classList.add(_0x1f(24));
+document.getElementById('sim-buy-btn').textContent='Add Credits (Simulated $'+_0xp+')';
+};
+
+w.openStoreModal=function(){_0xram();document.getElementById('store-modal').classList.add(_0x1f(3));};
+w.closeStoreModal=function(){document.getElementById('store-modal').classList.remove(_0x1f(3));};
+w.openAdminModal=function(){document.getElementById('admin-sim-toggle').checked=_0xsim;document.getElementById('admin-modal').classList.add(_0x1f(3));};
+w.closeAdminModal=function(){document.getElementById('admin-modal').classList.remove(_0x1f(3));};
+
+w.saveAdminSettings=async function(){
+var _0xk=document.getElementById('admin-key').value;
+var _0xsm=document.getElementById('admin-sim-toggle').checked?1:0;
+try{
+var _0xr=await fetch(_0xapi+_0x1f(14),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({admin_key:_0xk,enable_simulation:_0xsm})});
+var _0xd=await _0xr.json();
+if(!_0xd.success){alert('Admin Error: '+_0xd.message);return;}
+_0xsim=_0xd.simulation_mode;
+alert('Simulation mode: '+(_0xsim?'ENABLED':'DISABLED'));
+w.closeAdminModal();_0xusui();
+}catch(_0xerr){alert('Connection error: '+_0xerr.message);}
+};
+
+w.executeSimulatedPurchase=async function(){
+if(!document.getElementById('accept-terms-check').checked){alert('Please review and check the Terms of Service acceptance box.');return;}
+try{
+var _0xr=await fetch(_0xapi+_0x1f(15),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({package:_0xsc,user_id:_0xcuid,email:_0cuem})});
+var _0xd=await _0xr.json();
+if(!_0xd.success){alert(_0xd.message);return;}
+_0xbnk=parseFloat(_0xd.new_bank);_0xbEl.textContent=_0xbnk;
+_0xsyb(_0xbnk);
+alert('[SIMULATION]: '+_0xd.message);w.closeStoreModal();
+}catch(_0xerr){alert('Simulation failed: '+_0xerr.message);}
+};
+
+function _0xrpp(){
+if(_0xppr||typeof paypal==='undefined')return;
+paypal.Buttons({
+style:{layout:'vertical',color:'gold',shape:'rect',label:'pay'},
+onClick:function(_0xd,_0xa){if(!document.getElementById('accept-terms-check').checked){alert('Accept Terms of Service before continuing.');return _0xa.reject();}return _0xa.resolve();},
+createOrder:async function(){
+var _0xr=await fetch(_0xapi+_0x1f(17),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({package:_0xsc,user_id:_0xcuid,email:_0cuem})});
+var _0xd=await _0xr.json();if(!_0xd.success)throw new Error(_0xd.message);return _0xd.orderID;
+},
+onApprove:async function(_0xd){
+var _0xr=await fetch(_0xapi+_0x1f(18),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({orderID:_0xd.orderID,package:_0xsc,user_id:_0xcuid,email:_0cuem})});
+var _0xcp=await _0xr.json();
+if(_0xcp.success){_0xbnk=parseFloat(_0xcp.new_bank);_0xbEl.textContent=_0xbnk;_0xsyb(_0xbnk);alert(_0xcp.message);w.closeStoreModal();}
+else{alert('Capture Error: '+_0xcp.message);}
+},
+onError:function(_0xe){alert('Payment error: '+_0xe);}
+}).render('#paypal-button-container');
+_0xppr=!0;
+}
+
+var _0xcanId=null,_0xcpt=[],_0xcto=null;
+function _0xtbc(_0xa){
+var _0xe=document.getElementById('celebration-overlay');
+document.getElementById('celebration-payout').textContent='Won $'+_0xa+' (3:2 Payout)';
+_0xe.classList.add(_0x1f(3));_0xscf();
+clearTimeout(_0xcto);_0xcto=setTimeout(w.closeBlackjackCelebration,4000);
+}
+w.closeBlackjackCelebration=function(){document.getElementById('celebration-overlay').classList.remove(_0x1f(3));_0xstcf();clearTimeout(_0xcto);};
+
+function _0xscf(){
+var _0xc=document.getElementById('confetti-canvas'),_0xctx=_0xc.getContext('2d');
+_0xc.width=window.innerWidth;_0xc.height=window.innerHeight;_0xcpt=[];
+var _0xcls=['#f1c40f','#e74c3c','#2ecc71','#3498db','#9b59b6','#ffffff'];
+for(var _0xi=0;_0xi<100;_0xi++){
+_0xcpt.push({x:Math.random()*_0xc.width,y:Math.random()*_0xc.height-_0xc.height,size:Math.random()*7+3,color:_0xcls[Math.floor(Math.random()*_0xcls.length)],vx:Math.random()*4-2,vy:Math.random()*4+3,rot:Math.random()*360,rotSpeed:Math.random()*8-4});
+}
+function _0xfrm(){
+_0xctx.clearRect(0,0,_0xc.width,_0xc.height);
+_0xcpt.forEach(function(_0xp){
+_0xp.x+=_0xp.vx;_0xp.y+=_0xp.vy;_0xp.rot+=_0xp.rotSpeed;
+if(_0xp.y>_0xc.height){_0xp.y=-10;_0xp.x=Math.random()*_0xc.width;}
+_0xctx.save();_0xctx.translate(_0xp.x,_0xp.y);_0xctx.rotate((_0xp.rot*Math.PI)/180);
+_0xctx.fillStyle=_0xp.color;_0xctx.fillRect(-_0xp.size/2,-_0xp.size/2,_0xp.size,_0xp.size*1.6);_0xctx.restore();
+});
+_0xcanId=requestAnimationFrame(_0xfrm);
+}
+cancelAnimationFrame(_0xcanId);_0xfrm();
+}
+function _0xstcf(){cancelAnimationFrame(_0xcanId);var _0xc=document.getElementById('confetti-canvas');if(_0xc)_0xc.getContext('2d').clearRect(0,0,_0xc.width,_0xc.height);}
+
+var _0xst=['♠','♥','♦','♣'];
+var _0xvl=[{n:'2',v:2},{n:'3',v:3},{n:'4',v:4},{n:'5',v:5},{n:'6',v:6},{n:'7',v:7},{n:'8',v:8},{n:'9',v:9},{n:'10',v:10},{n:'J',v:10},{n:'Q',v:10},{n:'K',v:10},{n:'A',v:11}];
+var _0xND=6,_0xMH=4;
+
+function _0xgos(){
+var _0xe=document.getElementById('table-seats-input');
+var _0xt=_0xe?_0xe.value.trim():'';if(_0xt==='')return 1;
+var _0xv=parseInt(_0xt,10);if(isNaN(_0xv)||_0xv<1)return 1;
+return _0xv>7?7:_0xv;
+}
+
+function _0xechs(){
+var _0xd=[];
+for(var _0xi=0;_0xi<_0xND;_0xi++){
+for(var _0xsi=0;_0xsi<_0xst.length;_0xsi++){
+for(var _0xvi=0;_0xvi<_0xvl.length;_0xvi++){_0xd.push({suit:_0xst[_0xsi],name:_0xvl[_0xvi].n,value:_0xvl[_0xvi].v});}
+}
+}
+for(var _0xj=_0xd.length-1;_0xj>0;_0xj--){
+var _0xk=Math.floor(Math.random()*(_0xj+1)),_0xtm=_0xd[_0xj];_0xd[_0xj]=_0xd[_0xk];_0xd[_0xk]=_0xtm;
+}
+var _0xmd=Math.floor(_0xd.length/2),_0xl1=_0xd.slice(0,_0xmd),_0xl2=_0xd.slice(_0xmd),_0xrf=[];
+while(_0xl1.length||_0xl2.length){
+var _0xc1=Math.min(_0xl1.length,Math.floor(Math.random()*8)+16),_0xc2=Math.min(_0xl2.length,Math.floor(Math.random()*8)+16);
+var _0xs1=_0xl1.splice(0,_0xc1),_0xs2=_0xl2.splice(0,_0xc2);
+while(_0xs1.length||_0xs2.length){
+if(_0xs1.length&&(!_0xs2.length||Math.random()>0.5)){_0xrf.push(_0xs1.pop());}
+else if(_0xs2.length){_0xrf.push(_0xs2.pop());}
+}
+}
+var _0xct=Math.floor(Math.random()*80)+116;
+_0xdeck=_0xrf.slice(_0xct).concat(_0xrf.slice(0,_0xct));
+_0xccp=Math.floor(Math.random()*24)+55;_0xccr=!1;
+_0xdeck.pop();
+_0xsEl.textContent=_0xdeck.length;_0xcEl.textContent=_0xccp+' cards';
+}
+
+function _0xdc(){
+if(_0xdeck.length<=_0xccp)_0xccr=!0;
+if(_0xdeck.length===0)_0xechs();
+var _0xc=_0xdeck.pop();_0xsEl.textContent=_0xdeck.length;return _0xc;
+}
+
+function _0xcls(_0xcds){
+var _0xsc=0,_0xac=0;
+for(var _0xi=0;_0xi<_0xcds.length;_0xi++){_0xsc+=_0xcds[_0xi].value;if(_0xcds[_0xi].name==='A')_0xac++;}
+while(_0xsc>21&&_0xac>0){_0xsc-=10;_0xac--;}
+return _0xsc;
+}
+
+function _0xcce(_0xc,_0xhdn){
+var _0xe=document.createElement('div');
+_0xe.className=_0xhdn?_0x1f(28):'card';
+if(!_0xhdn){
+_0xe.classList.add((_0xc.suit==='♥'||_0xc.suit==='♦')?_0x1f(29):_0x1f(30));
+_0xe.innerHTML='<div>'+_0xc.name+'</div><div class="suit">'+_0xc.suit+'</div><div class="corner-bottom">'+_0xc.name+'</div>';
+}
+return _0xe;
+}
+
+function _0xrndb(_0xpk){
+if(_0xpk===undefined)_0xpk=!0;
+_0xdcEl.innerHTML='';
+_0xdh.forEach(function(_0xc,_0xidx){_0xdcEl.appendChild(_0xcce(_0xc,_0xidx===1&&_0xpk&&!_0xgov));});
+_0xdsEl.textContent=(_0xpk&&!_0xgov)?(_0xdh[0]?_0xdh[0].value:0):_0xcls(_0xdh);
+_0xhcEl.innerHTML='';
+_0xph.forEach(function(_0xh,_0xidx){
+var _0xsc=_0xcls(_0xh.cards);
+var _0xbx=document.createElement('div');
+_0xbx.className=(!_0xgov&&_0xidx===_0xahi)?_0x1f(27):_0x1f(26);
+_0xbx.innerHTML='<div class="hand-label">'+(_0xph.length>1?'Hand '+(_0xidx+1):'Your Bet')+' ($'+_0xh.bet+') - Score: <span>'+_0xsc+'</span></div><div class="'+_0x1f(25)+'" id="p-'+_0xidx+'"></div>';
+var _0xrow=_0xbx.querySelector('#p-'+_0xidx);
+_0xh.cards.forEach(function(_0xc){_0xrow.appendChild(_0xcce(_0xc,!1));});
+_0xhcEl.appendChild(_0xbx);
+});
+_0xwEl.textContent=_0xph.reduce(function(_0xa,_0xb){return _0xa+_0xb.bet;},0)||_0xibt;
+_0xbEl.textContent=_0xbnk;
+}
+
+function _0xinps(_0xub){
+_0xbnk=parseFloat(_0xub);_0xibt=0;_0xins=0;_0xgov=!0;
+_0xdh=[];_0xph=[];_0xsh=[];
+_0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;
+_0xmEl.textContent='Place your bet and press DEAL!';
+_0xdsEl.textContent='0';_0xdcEl.innerHTML='';_0xhcEl.innerHTML='';
+var _0xsi=document.getElementById('table-seats-input');if(_0xsi)_0xsi.value='';
+_0xechs();_0xuab();_0xrndb();
+}
+
+w.addBet=function(_0xa){
+if(!_0xgov)return;
+if(_0xbnk>=_0xa){_0xbnk-=_0xa;_0xibt+=_0xa;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=_0xibt;}
+else if(_0xbnk<=0&&_0xibt===0){w.openStoreModal();}
+};
+
+w.clearBet=function(){if(!_0xgov)return;_0xbnk+=_0xibt;_0xibt=0;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;};
+
+function _0xuab(){
+if(_0xgov){
+_0xdb.disabled=!1;_0xhb.disabled=_0xsb.disabled=_0xddb.disabled=_0xspb.disabled=!0;
+_0xcc.style.opacity='1';_0xcc.querySelectorAll('.chip, button').forEach(function(_0xb){_0xb.style.pointerEvents='auto';});
+return;
+}
+_0xdb.disabled=!0;_0xcc.style.opacity='0.3';
+_0xcc.querySelectorAll('.chip, button').forEach(function(_0xb){_0xb.style.pointerEvents='none';});
+var _0xh=_0xph[_0xahi];if(!_0xh)return;
+if(_0xh.isSplitAce){_0xhb.disabled=_0xddb.disabled=_0xspb.disabled=!0;_0xsb.disabled=!1;return;}
+_0xhb.disabled=_0xsb.disabled=!1;
+_0xddb.disabled=!(_0xh.cards.length===2&&_0xbnk>=_0xh.bet);
+var _0xpr=(_0xh.cards.length===2&&_0xh.cards[0].value===_0xh.cards[1].value);
+var _0xac=(_0xh.cards.length===2&&_0xh.cards[0].name==='A');
+_0xspb.disabled=!(_0xph.length<_0xMH&&_0xpr&&_0xbnk>=_0xh.bet&&(!_0xh.isSplitAce||!_0xac));
+}
+
+function _0xpmi(){
+return new Promise(function(_0xrsv){
+_0xinr=_0xrsv;var _0xcst=Math.floor(_0xph[0].bet/2);
+document.getElementById('insurance-amount-label').textContent='Insurance Cost: $'+_0xcst;
+var _0xyb=document.getElementById('ins-yes-btn');
+if(_0xbnk<_0xcst){_0xyb.disabled=!0;_0xyb.textContent='Insufficient Funds';}
+else{_0xyb.disabled=!1;_0xyb.textContent='Take Insurance';}
+document.getElementById('insurance-modal').classList.add(_0x1f(3));
+});
+}
+
+w.handleInsuranceChoice=function(_0xc){
+document.getElementById('insurance-modal').classList.remove(_0x1f(3));
+if(_0xinr){var _0xr=_0xinr;_0xinr=null;_0xr(_0xc);}
+};
+
+function _0xsose(){
+_0xsh.forEach(function(_0xshd){
+while(!0){
+var _0xsc=_0xcls(_0xshd),_0xha=_0xshd.some(function(_0xc){return _0xc.name==='A';});
+if(_0xsc<17)_0xshd.push(_0xdc());
+else if(_0xsc===17&&_0xha)_0xshd.push(_0xdc());
+else break;
+}
+});
+}
+
+w.startGame=async function(){
+if(_0xibt===0){if(_0xbnk<=0)w.openStoreModal();else _0xmEl.textContent='Please place a bet first!';return;}
+if(_0xccr||_0xdeck.length<=_0xccp){_0xechs();_0xmEl.textContent='Cut card reached! Shoe reshuffled & card burned.';}
+else{_0xmEl.textContent='';}
+_0xgov=!1;_0xins=0;_0xph=[{cards:[],bet:_0xibt,status:_0x1f(33),isSplitAce:!1}];
+_0xibt=0;_0xahi=0;_0xdh=[];_0xsh=[];
+var _0xts=_0xgos(),_0xos=_0xts-1;
+_0xph[0].cards.push(_0xdc());
+for(var _0xs=0;_0xs<_0xos;_0xs++)_0xsh.push([_0xdc()]);
+_0xdh.push(_0xdc());
+_0xph[0].cards.push(_0xdc());
+for(var _0xs2=0;_0xs2<_0xos;_0xs2++)_0xsh[_0xs2].push(_0xdc());
+_0xdh.push(_0xdc());
+_0xrndb(!0);_0xuab();
+var _0xuc=_0xdh[0],_0xdbj=(_0xcls(_0xdh)===21);
+if(_0xuc.name==='A'){
+var _0xtk=await _0xpmi();
+if(_0xtk){var _0xcst=Math.floor(_0xph[0].bet/2);_0xins=_0xcst;_0xbnk-=_0xcst;_0xbEl.textContent=_0xbnk;}
+if(_0xdbj){
+if(_0xins>0){var _0xwn=_0xins*3;_0xbnk+=_0xwn;_0xbEl.textContent=_0xbnk;_0xmEl.textContent='Dealer has Blackjack! Insurance pays 2:1 (+$'+(_0xins*2)+').';}
+else{_0xmEl.textContent='Dealer has Blackjack!';}
+_0xfnr();return;
+}else if(_0xins>0){_0xmEl.textContent='Insurance collected.';}
+}else if(_0xuc.value===10){
+if(_0xdbj){_0xmEl.textContent='Dealer has Blackjack!';_0xfnr();return;}
+}
+if(_0xph[0].cards.length===2&&_0xcls(_0xph[0].cards)===21){_0xfnr();}
+};
+
+w.playerHit=function(){
+var _0xh=_0xph[_0xahi];_0xh.cards.push(_0xdc());
+var _0xsc=_0xcls(_0xh.cards);
+if(_0xsc>=21){_0xh.status=(_0xsc>21)?_0x1f(31):_0x1f(32);_0xrndb(!0);_0xnxh();}
+else{_0xrndb(!0);_0xuab();}
+};
+
+w.playerDouble=function(){
+var _0xh=_0xph[_0xahi];_0xbnk-=_0xh.bet;_0xh.bet*=2;
+_0xh.cards.push(_0xdc());_0xh.status=(_0xcls(_0xh.cards)>21)?_0x1f(31):_0x1f(32);
+_0xrndb(!0);_0xnxh();
+};
+
+w.playerSplit=function(){
+var _0xh=_0xph[_0xahi];_0xbnk-=_0xh.bet;
+var _0xc1=_0xh.cards[0],_0xc2=_0xh.cards[1],_0xisa=(_0xc1.name==='A');
+var _0xh1={cards:[_0xc1,_0xdc()],bet:_0xh.bet,status:_0xisa?_0x1f(32):_0x1f(33),isSplitAce:_0xisa};
+var _0xh2={cards:[_0xc2,_0xdc()],bet:_0xh.bet,status:_0xisa?_0x1f(32):_0x1f(33),isSplitAce:_0xisa};
+_0xph.splice(_0xahi,1,_0xh1,_0xh2);_0xrndb(!0);
+if(_0xisa)_0xnxh();else _0xuab();
+};
+
+w.playerStand=function(){_0xph[_0xahi].status=_0x1f(32);_0xnxh();};
+
+function _0xnxh(){
+var _0xni=_0xph.findIndex(function(_0xh,_0xi){return _0xi>=_0xahi&&_0xh.status===_0x1f(33);});
+if(_0xni!==-1){_0xahi=_0xni;_0xrndb(!0);_0xuab();}
+else{_0xfnr();}
+}
+
+function _0xdsh(_0xhnd){
+var _0xsc=0,_0xac=0;
+for(var _0xi=0;_0xi<_0xhnd.length;_0xi++){_0xsc+=_0xhnd[_0xi].value;if(_0xhnd[_0xi].name==='A')_0xac++;}
+while(_0xsc>21&&_0xac>0){_0xsc-=10;_0xac--;}
+if(_0xsc<17)return !0;
+if(_0xsc===17&&_0xac>0)return !0;
+return !1;
+}
+
+function _0xfnr(){
+_0xgov=!0;_0xsose();
+var _0xdbj=(_0xdh.length===2&&_0xcls(_0xdh)===21);
+if(!_0xdbj&&!_0xph.every(function(_0xh){return _0xcls(_0xh.cards)>21;})){
+while(_0xdsh(_0xdh)){_0xdh.push(_0xdc());}
+}
+var _0xdsc=_0xcls(_0xdh),_0xrc=0,_0xwnb=!1,_0xnwa=0;
+_0xph.forEach(function(_0xh){
+var _0xpsc=_0xcls(_0xh.cards);
+var _0xpbj=(_0xh.cards.length===2&&_0xpsc===21&&_0xph.length===1);
+if(_0xpsc<=21){
+if(_0xpbj){
+if(_0xdbj){_0xrc+=_0xh.bet;}
+else{var _0xw=Math.floor(_0xh.bet*2.5);_0xrc+=_0xw;_0xwnb=!0;_0xnwa=_0xw;}
+}else if(!_0xdbj){
+if(_0xdsc>21||_0xpsc>_0xdsc){_0xrc+=_0xh.bet*2;}
+else if(_0xpsc===_0xdsc){_0xrc+=_0xh.bet;}
+}
+}
+});
+_0xbnk+=_0xrc;
+var _0xmsg='';
+if(_0xdbj){if(_0xins>0)_0xmsg='Dealer has Blackjack! Insurance pays 2:1 (+$'+(_0xins*2)+').';else _0xmsg='Dealer has Blackjack!';}
+else{if(_0xins>0)_0xmsg='Insurance collected. ';if(_0xdsc>21)_0xmsg+='Dealer Busted!';}
+if(_0xccr){_0xmsg+="<br><span style='color:var(--gold);'>(Cut Card Reached - Reshuffling Next Deal)</span>";}
+_0xmEl.innerHTML=_0xmsg;_0xrndb(!1);_0xuab();_0xsyb(_0xbnk);
+if(_0xwnb)_0xtbc(_0xnwa);
+if(_0xbnk<=0&&_0xibt===0){_0xmEl.innerHTML+="<br><span style='color:var(--gold);'>Out of credits! Click '+ Credits' to refill.</span>";setTimeout(w.openStoreModal,1200);}
+}
+
+document.addEventListener('DOMContentLoaded',function(){
+var _0xtt=document.getElementById('table-title');
+if(_0xtt){
+_0xtt.addEventListener('click',function(){
+_0xttc++;clearTimeout(_0xttt);_0xttt=setTimeout(function(){_0xttc=0;},900);
+if(_0xttc>=3){_0xttc=0;w.openAdminModal();}
+});
+}
+});
+})(window);
+</script>
 </body>
 </html>

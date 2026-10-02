@@ -303,15 +303,15 @@
 
     /* PLAYER HANDS AREA */
     .player-hands-container { 
-      display: grid; 
-      grid-template-columns: repeat(auto-fit, minmax(clamp(140px, 18vw, 180px), 1fr)); 
+      display: flex; 
+      flex-wrap: wrap; 
       gap: clamp(4px, 1vw, 8px); 
       width: 100%; 
       min-height: unset;
       flex: 1;
       align-content: center;
       justify-content: center;
-      overflow-y: auto;
+      overflow: hidden;
     }
     .hand-box { 
       padding: clamp(4px, 0.8vh, 8px); 
@@ -550,32 +550,31 @@
     @media (min-width: 768px) {
       .player-hands-container {
         display: flex;
-        flex-direction: row;
+        flex-wrap: wrap;
         justify-content: center;
-        align-items: flex-end;
-        gap: clamp(8px, 1.5vw, 22px);
+        align-items: center;
+        gap: clamp(6px, 1vw, 14px);
         width: 100%;
-        padding: 4px 8px;
-        overflow-x: visible;
+        max-width: 1020px;
+        margin: 0 auto;
+        padding: 2px 6px;
+        overflow: hidden;
       }
       .hand-group {
-        flex: 1;
-        max-width: 160px;
-        transition: transform 0.2s ease;
-      }
-      /* Semi-circle arc elevation offsets */
-      .hand-group:nth-child(1), .hand-group:nth-last-child(1) {
-        transform: translateY(22px) scale(0.90);
-        opacity: 0.9;
-      }
-      .hand-group:nth-child(2), .hand-group:nth-last-child(2) {
-        transform: translateY(10px) scale(0.95);
-        opacity: 0.95;
+        flex: 0 1 auto;
+        min-width: 130px;
+        max-width: 155px;
       }
       .center-seat {
-        transform: translateY(0px) scale(1.02);
-        opacity: 1;
         z-index: 2;
+      }
+      .card {
+        width: clamp(32px, 4.6vh, 46px);
+        height: clamp(48px, 6.8vh, 68px);
+      }
+      .cards-row {
+        gap: clamp(2px, 0.4vw, 4px);
+        min-height: clamp(50px, 7vh, 70px);
       }
     }
 

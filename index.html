@@ -222,7 +222,26 @@
       outline: none;
     }
     .seats-input-row input:focus { border-color: var(--gold); }
-    .seats-hint { font-size: clamp(0.55rem, 0.9vh, 0.65rem); color: #94a3b8; text-transform: uppercase; letter-spacing: 0.4px; }
+    .seats-hint { 
+      display: flex; 
+      align-items: center; 
+      gap: 4px; 
+      font-size: clamp(0.55rem, 0.85vh, 0.65rem); 
+      color: #94a3b8; 
+      text-transform: uppercase; 
+      letter-spacing: 0.3px; 
+      line-height: 1.1; 
+      white-space: nowrap; 
+    }
+    @media (max-width: 600px) {
+      .seats-hint {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        width: 44px;
+        gap: 1px;
+      }
+    }
 
     .hdr-btn { padding: clamp(4px, 0.7vh, 6px) clamp(6px, 1vw, 10px); border-radius: 6px; font-size: clamp(0.68rem, 1.1vh, 0.75rem); font-weight: 700; cursor: pointer; text-transform: uppercase; border: 1px solid transparent; }
     .buy-chips-hdr-btn { background: var(--gold); color: #000; }
@@ -403,7 +422,7 @@
       }
       .felt-rule-sub { display: none; }
       .title span { display: none; }
-      .seats-hint { display: none; }
+
     }
 
     @media (max-height: 540px) {
@@ -609,7 +628,7 @@
                 <label for="table-seats-input">Seats:</label>
                 <input type="number" id="table-seats-input" min="1" max="7">
               </div>
-              <span class="seats-hint">Seats: 1 to 7 (Max 7)</span>
+              <span class="seats-hint"><span class="hint-range">(1-7)</span><span class="hint-max">Max 7</span></span>
             </div>
 
             <button class="hdr-btn buy-chips-hdr-btn" onclick="openStoreModal()">+ Credits</button>

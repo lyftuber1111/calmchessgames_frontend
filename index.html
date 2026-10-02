@@ -1117,6 +1117,13 @@ var _0xlbl=document.createElement('div');
 _0xlbl.className='hand-label';
 _0xlbl.innerHTML='Score: <span>'+_0xsc+'</span>';
 _0xbx.appendChild(_0xlbl);
+if(_0xgov&&_0xh.resTxt){
+var _0xrb=document.createElement('div');
+_0xrb.className='hand-result-badge '+(_0xh.resType||'win');
+_0xrb.textContent=_0xh.resTxt;
+_0xbx.style.position='relative';
+_0xbx.appendChild(_0xrb);
+}
 var _0xrow=document.createElement('div');
 _0xrow.className=_0x1f(25);
 _0xh.cards.forEach(function(_0xc){_0xrow.appendChild(_0xcce(_0xc,!1));});

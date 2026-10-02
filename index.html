@@ -627,6 +627,43 @@
       to { transform: translateX(-50%) scale(1); }
     }
 
+    .game-notification-toast {
+      position: fixed;
+      top: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(13, 19, 26, 0.95);
+      border: 2px solid var(--gold);
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--gold);
+      text-transform: uppercase;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+      cursor: pointer;
+      z-index: 20000;
+      opacity: 0;
+      animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      max-width: 90vw;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .game-notification-toast.error {
+      border-color: var(--error-red);
+      color: var(--error-red);
+    }
+    .game-notification-toast.success {
+      border-color: var(--success-green);
+      color: var(--success-green);
+    }
+    @keyframes toastIn {
+      to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+    @keyframes toastOut {
+      to { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+    }
+
 </style>
 </head>
 <body>
@@ -836,6 +873,17 @@
 
   <!-- OBFUSCATED ENGINE EXECUTION CORE -->
   <script>
+
+w.showNotification=function(txt,isErr){
+var old=document.getElementById('game-toast-badge');if(old)old.remove();
+var el=document.createElement('div');el.id='game-toast-badge';
+el.className='game-notification-toast '+(isErr?'error':'success');
+el.innerHTML=txt.replace(/\n/g,'<br>')+'<div style="font-size:0.65rem;color:#94a3b8;margin-top:3px;font-weight:normal;">(Tap to dismiss)</div>';
+el.onclick=function(){el.style.animation='toastOut 0.25s ease forwards';setTimeout(()=>el.remove(),250);};
+document.body.appendChild(el);
+setTimeout(function(){if(el.parentElement){el.style.animation='toastOut 0.25s ease forwards';setTimeout(()=>el.remove(),250);}},4500);
+};
+
 (function(w){
 var _0x5a1b=['https://api.calmchessgames.com','register','login','active','rule-item valid','rule-item invalid','block','none','flex','auth-alert error','auth-alert success','calmchess_bank_','/logout.php','/admin_api.php?action=get_mode','/admin_api.php?action=set_mode','/admin_api.php?action=buy_credits','/admin_api.php?action=sync_bank','/paypal_api.php?action=create_order','/paypal_api.php?action=capture_order','/register.php','/login.php','POST','application/json','include','selected','cards-row','hand-box','hand-box active','card hidden','card red','card black','busted','stood','playing'];
 function _0x1f(idx){return _0x5a1b[idx];}
@@ -894,7 +942,7 @@ var _0xres=await fetch(_0xep+'?_t='+Date.now(),{method:_0x1f(21),headers:{'Conte
 var _0xraw=await _0xres.text();
 var _0xdt;try{_0xdt=JSON.parse(_0xraw);}catch(_0xerr){_0xsa('Server Error ('+_0xres.status+'): '+_0xraw.replace(/<[^>]*>?/gm,'').trim(),!0);return;}
 if(_0xres.status===409||(_0xdt&&(_0xdt.error_code==='EMAIL_EXISTS'||(_0xdt.message&&_0xdt.message.includes('already registered'))))){
-_0xsa(_0xdt.message,!0);alert(_0xdt.message+'\n\nSwitching to Sign In tab.');w.switchAuthTab('login');
+_0xsa(_0xdt.message,!0);w.showNotification(_0xdt.message+'\n\nSwitching to Sign In tab.');w.switchAuthTab('login');
 document.getElementById('auth-password').value='';document.getElementById('auth-password').focus();return;
 }
 if(!_0xdt.success){_0xsa(_0xdt.message,!0);return;}
@@ -948,30 +996,30 @@ var _0xsm=document.getElementById('admin-sim-toggle').checked?1:0;
 try{
 var _0xr=await fetch(_0xapi+_0x1f(14),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({admin_key:_0xk,enable_simulation:_0xsm})});
 var _0xd=await _0xr.json();
-if(!_0xd.success){alert('Admin Error: '+_0xd.message);return;}
+if(!_0xd.success){w.showNotification('Admin Error: '+_0xd.message);return;}
 _0xsim=_0xd.simulation_mode;
-alert('Simulation mode: '+(_0xsim?'ENABLED':'DISABLED'));
+w.showNotification('Simulation mode: '+(_0xsim?'ENABLED':'DISABLED'));
 w.closeAdminModal();_0xusui();
-}catch(_0xerr){alert('Connection error: '+_0xerr.message);}
+}catch(_0xerr){w.showNotification('Connection error: '+_0xerr.message);}
 };
 
 w.executeSimulatedPurchase=async function(){
-if(!document.getElementById('accept-terms-check').checked){alert('Please review and check the Terms of Service acceptance box.');return;}
+if(!document.getElementById('accept-terms-check').checked){w.showNotification('Please review and check the Terms of Service acceptance box.');return;}
 try{
 var _0xr=await fetch(_0xapi+_0x1f(15),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({package:_0xsc,user_id:_0xcuid,email:_0cuem})});
 var _0xd=await _0xr.json();
-if(!_0xd.success){alert(_0xd.message);return;}
+if(!_0xd.success){w.showNotification(_0xd.message);return;}
 _0xbnk=parseFloat(_0xd.new_bank);_0xbEl.textContent=_0xbnk;
 _0xsyb(_0xbnk);
-alert('[SIMULATION]: '+_0xd.message);w.closeStoreModal();
-}catch(_0xerr){alert('Simulation failed: '+_0xerr.message);}
+w.showNotification('[SIMULATION]: '+_0xd.message);w.closeStoreModal();
+}catch(_0xerr){w.showNotification('Simulation failed: '+_0xerr.message);}
 };
 
 function _0xrpp(){
 if(_0xppr||typeof paypal==='undefined')return;
 paypal.Buttons({
 style:{layout:'vertical',color:'gold',shape:'rect',label:'pay'},
-onClick:function(_0xd,_0xa){if(!document.getElementById('accept-terms-check').checked){alert('Accept Terms of Service before continuing.');return _0xa.reject();}return _0xa.resolve();},
+onClick:function(_0xd,_0xa){if(!document.getElementById('accept-terms-check').checked){w.showNotification('Accept Terms of Service before continuing.');return _0xa.reject();}return _0xa.resolve();},
 createOrder:async function(){
 var _0xr=await fetch(_0xapi+_0x1f(17),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({package:_0xsc,user_id:_0xcuid,email:_0cuem})});
 var _0xd=await _0xr.json();if(!_0xd.success)throw new Error(_0xd.message);return _0xd.orderID;
@@ -979,10 +1027,10 @@ var _0xd=await _0xr.json();if(!_0xd.success)throw new Error(_0xd.message);return
 onApprove:async function(_0xd){
 var _0xr=await fetch(_0xapi+_0x1f(18),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({orderID:_0xd.orderID,package:_0xsc,user_id:_0xcuid,email:_0cuem})});
 var _0xcp=await _0xr.json();
-if(_0xcp.success){_0xbnk=parseFloat(_0xcp.new_bank);_0xbEl.textContent=_0xbnk;_0xsyb(_0xbnk);alert(_0xcp.message);w.closeStoreModal();}
-else{alert('Capture Error: '+_0xcp.message);}
+if(_0xcp.success){_0xbnk=parseFloat(_0xcp.new_bank);_0xbEl.textContent=_0xbnk;_0xsyb(_0xbnk);w.showNotification(_0xcp.message);w.closeStoreModal();}
+else{w.showNotification('Capture Error: '+_0xcp.message);}
 },
-onError:function(_0xe){alert('Payment error: '+_0xe);}
+onError:function(_0xe){w.showNotification('Payment error: '+_0xe);}
 }).render('#paypal-button-container');
 _0xppr=!0;
 }

@@ -522,34 +522,32 @@
 
 
 
-    /* Desktop Semi-Circle Arc Layout for Multi-Seats */
+    /* Desktop Straight Aligned Layout for Multi-Seats */
     @media (min-width: 768px) {
       .player-hands-container {
         display: flex;
         flex-direction: row;
         justify-content: center;
-        align-items: flex-end;
-        gap: clamp(6px, 1.2vw, 16px);
+        align-items: center;
+        gap: clamp(10px, 1.5vw, 20px);
         width: 100%;
-        padding: 4px 8px;
+        padding: 4px 12px;
       }
       .hand-box {
         flex: 1;
-        max-width: 175px;
-        transition: transform 0.2s ease;
-      }
-      .hand-box:nth-child(1), .hand-box:nth-last-child(1) {
-        transform: translateY(14px) scale(0.92);
-        opacity: 0.88;
-      }
-      .hand-box:nth-child(2), .hand-box:nth-last-child(2) {
-        transform: translateY(6px) scale(0.96);
-        opacity: 0.94;
+        min-width: 175px;
+        max-width: 215px;
+        padding: 6px 10px;
       }
       .center-seat {
-        transform: translateY(0px) scale(1.02);
-        opacity: 1;
         z-index: 2;
+      }
+      .card {
+        width: clamp(36px, 5.2vh, 50px);
+        height: clamp(54px, 7.8vh, 76px);
+      }
+      .cards-row {
+        gap: clamp(2px, 0.4vw, 5px);
       }
     }
 
@@ -1072,7 +1070,11 @@ _0xechs();_0xuab();_0xrndb();
 }
 
 w.addBet=function(_0xa){
-if(!_0xgov)return;
+if(!_0xgov){
+_0xdh=[];_0xph=[];_0xsh=[];
+_0xdcEl.innerHTML='';_0xhcEl.innerHTML='';_0xdsEl.textContent='0';
+_0xgov=!0;
+}
 if(_0xibt>=500){_0xmEl.textContent='Maximum bet is $500!';return;}
 var _0xad=Math.min(_0xa,500-_0xibt);
 if(_0xbnk>=_0xad){

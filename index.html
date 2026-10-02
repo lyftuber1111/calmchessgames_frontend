@@ -76,8 +76,11 @@
     }
 
     #game-screen.active {
-      height: calc(100dvh - clamp(8px, 2vh, 24px));
-      max-height: 860px;
+      height: 100%;
+      max-height: calc(100dvh - clamp(6px, 1.5vh, 18px));
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
 
     .lobby-card {
@@ -167,17 +170,18 @@
 
     #game-container {
       width: 100%;
-      height: 100%;
-      max-height: calc(100dvh - clamp(10px, 2vh, 24px));
+      max-width: 960px;
+      height: auto;
+      max-height: calc(100dvh - clamp(8px, 1.5vh, 20px));
       background: radial-gradient(ellipse at center, var(--felt-green) 0%, var(--felt-dark) 100%);
       border: clamp(6px, 1vh, 10px) solid #5a381e;
-      border-radius: clamp(20px, 3vh, 40px);
+      border-radius: clamp(20px, 3vh, 38px);
       box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.7);
-      padding: clamp(8px, 1.4vh, 16px) clamp(10px, 1.5vw, 16px) clamp(6px, 1vh, 10px) clamp(10px, 1.5vw, 16px);
+      padding: clamp(8px, 1.3vh, 14px) clamp(10px, 1.5vw, 18px) clamp(6px, 1vh, 10px) clamp(10px, 1.5vw, 18px);
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      gap: clamp(4px, 0.9vh, 10px);
+      justify-content: center;
+      gap: clamp(5px, 1.1vh, 11px);
       position: relative;
       box-sizing: border-box;
       overflow: hidden;
@@ -222,13 +226,16 @@
 
     .top-row-stats {
       display: flex;
-      justify-content: space-around;
+      justify-content: center;
       align-items: center;
-      background: rgba(0, 0, 0, 0.25);
-      border-radius: 8px;
-      padding: clamp(3px, 0.6vh, 6px) clamp(6px, 1vw, 12px);
-      font-size: clamp(0.72rem, 1.3vh, 0.85rem);
+      gap: clamp(12px, 2.5vw, 32px);
+      background: rgba(0, 0, 0, 0.32);
+      border-radius: 12px;
+      padding: clamp(3px, 0.6vh, 6px) clamp(14px, 2.2vw, 28px);
+      font-size: clamp(0.72rem, 1.3vh, 0.86rem);
       font-weight: 600;
+      width: fit-content;
+      margin: 0 auto;
       flex-shrink: 0;
     }
     .hud-val { color: var(--gold); font-weight: 800; }

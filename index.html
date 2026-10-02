@@ -561,31 +561,35 @@
     @media (min-width: 768px) {
       .player-hands-container {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: row;
         justify-content: center;
-        align-items: center;
-        gap: clamp(6px, 1vw, 14px);
+        align-items: flex-end;
+        gap: clamp(4px, 0.8vw, 10px);
         width: 100%;
-        max-width: 1020px;
+        max-width: 1040px;
         margin: 0 auto;
-        padding: 2px 6px;
+        padding: 2px 4px;
         overflow: hidden;
       }
-      .hand-group {
-        flex: 0 1 auto;
-        min-width: 130px;
-        max-width: 155px;
+      .hand-group, .hand-box {
+        flex: 1;
+        min-width: 110px;
+        max-width: 142px;
+        padding: 4px 6px;
       }
       .center-seat {
         z-index: 2;
       }
       .card {
-        width: clamp(32px, 4.6vh, 46px);
-        height: clamp(48px, 6.8vh, 68px);
+        width: clamp(28px, 4vh, 42px);
+        height: clamp(42px, 6vh, 62px);
       }
       .cards-row {
-        gap: clamp(2px, 0.4vw, 4px);
-        min-height: clamp(50px, 7vh, 70px);
+        gap: clamp(2px, 0.3vw, 4px);
+        min-height: clamp(48px, 6.5vh, 66px);
+      }
+      .hand-label {
+        font-size: clamp(0.6rem, 1.0vh, 0.75rem);
       }
     }
 
@@ -1095,7 +1099,7 @@ var _0xlbl=document.createElement('div');
 _0xlbl.className='hand-label';
 _0xlbl.innerHTML='Score: <span>'+_0xsc+'</span>';
 _0xbx.appendChild(_0xlbl);
-if(_0xgov&&_0xph[0].resTxt){
+if(_0xgov&&_0xph[0]&&_0xph[0].resTxt){
 var _0xrb=document.createElement('div');
 _0xrb.className='hand-result-badge '+(_0xph[0].resType||'win');
 _0xrb.textContent=_0xph[0].resTxt;

@@ -890,71 +890,50 @@
   <script>
 (function(w){
 
-var audioCtx=null,bgGain=null,soundEnabled=!1,padInterval=null;
+
+var bgAudio=null,soundEnabled=!1;
 function initAudioEngine(){
-if(audioCtx){if(audioCtx.state==='suspended')audioCtx.resume();return;}
-try{
-audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-bgGain=audioCtx.createGain();bgGain.gain.value=0.12;
-bgGain.connect(audioCtx.destination);
-startAmbientPad();
-}catch(e){}
+if(!bgAudio){
+bgAudio=new Audio('casnio_music.wav');
+bgAudio.loop=!0;
+bgAudio.volume=0.3;
+bgAudio.preload='auto';
 }
-function startAmbientPad(){
-if(padInterval)clearInterval(padInterval);
-padInterval=setInterval(function(){
-if(!soundEnabled||!audioCtx)return;
-var now=audioCtx.currentTime;
-var chords=[[261.63,329.63,392.00,493.88],[220.00,261.63,329.63,392.00],[174.61,220.00,261.63,329.63],[196.00,246.94,293.66,349.23]];
-var chord=chords[Math.floor(Math.random()*chords.length)];
-chord.forEach(function(freq){
-var osc=audioCtx.createOscillator(),g=audioCtx.createGain();
-osc.type='triangle';osc.frequency.value=freq;
-g.gain.setValueAtTime(0.001,now);
-g.gain.linearRampToValueAtTime(0.025,now+1.2);
-g.gain.linearRampToValueAtTime(0.001,now+3.8);
-osc.connect(g);g.connect(bgGain);
-osc.start(now);osc.stop(now+3.8);
-});
-},4200);
 }
 function duckBGM(){
-if(!bgGain||!audioCtx)return;
+if(!bgAudio||bgAudio.paused)return;
 try{
-var now=audioCtx.currentTime;
-bgGain.gain.cancelScheduledValues(now);
-bgGain.gain.setValueAtTime(bgGain.gain.value,now);
-bgGain.gain.linearRampToValueAtTime(0.02,now+0.05);
-bgGain.gain.linearRampToValueAtTime(0.12,now+0.45);
+bgAudio.volume=0.08;
+setTimeout(function(){if(!bgAudio.paused)bgAudio.volume=0.3;},500);
 }catch(e){}
 }
 function playChipSound(){
 if(!soundEnabled)return;
 duckBGM();
 try{
-initAudioEngine();if(!audioCtx)return;
-var osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
-osc.type='sine';osc.frequency.setValueAtTime(900,audioCtx.currentTime);
-osc.frequency.exponentialRampToValueAtTime(250,audioCtx.currentTime+0.04);
-gain.gain.setValueAtTime(0.18,audioCtx.currentTime);
-gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.04);
-osc.connect(gain);gain.connect(audioCtx.destination);
-osc.start();osc.stop(audioCtx.currentTime+0.04);
+var ctx=new(window.AudioContext||window.webkitAudioContext)();
+var osc=ctx.createOscillator(),gain=ctx.createGain();
+osc.type='sine';osc.frequency.setValueAtTime(900,ctx.currentTime);
+osc.frequency.exponentialRampToValueAtTime(250,ctx.currentTime+0.04);
+gain.gain.setValueAtTime(0.18,ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.04);
+osc.connect(gain);gain.connect(ctx.destination);
+osc.start();osc.stop(ctx.currentTime+0.04);
 }catch(e){}
 }
 function playCardSound(){
 if(!soundEnabled)return;
 duckBGM();
 try{
-initAudioEngine();if(!audioCtx)return;
-var bufferSize=audioCtx.sampleRate*0.07;
-var buffer=audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);
+var ctx=new(window.AudioContext||window.webkitAudioContext)();
+var bufferSize=ctx.sampleRate*0.07;
+var buffer=ctx.createBuffer(1,bufferSize,ctx.sampleRate);
 var data=buffer.getChannelData(0);for(var i=0;i<bufferSize;i++)data[i]=Math.random()*2-1;
-var noise=audioCtx.createBufferSource();noise.buffer=buffer;
-var filter=audioCtx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=1400;
-var gain=audioCtx.createGain();gain.gain.setValueAtTime(0.12,audioCtx.currentTime);
-gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.07);
-noise.connect(filter);filter.connect(gain);gain.connect(audioCtx.destination);
+var noise=ctx.createBufferSource();noise.buffer=buffer;
+var filter=ctx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=1400;
+var gain=ctx.createGain();gain.gain.setValueAtTime(0.12,ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.07);
+noise.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
 noise.start();
 }catch(e){}
 }
@@ -962,28 +941,34 @@ function playWinSound(){
 if(!soundEnabled)return;
 duckBGM();
 try{
-initAudioEngine();if(!audioCtx)return;
-var now=audioCtx.currentTime;
+var ctx=new(window.AudioContext||window.webkitAudioContext)();
+var now=ctx.currentTime;
 [523.25,659.25,783.99,1046.50].forEach(function(freq,idx){
-var osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+var osc=ctx.createOscillator(),gain=ctx.createGain();
 osc.type='triangle';osc.frequency.setValueAtTime(freq,now+idx*0.08);
 gain.gain.setValueAtTime(0.1,now+idx*0.08);
 gain.gain.exponentialRampToValueAtTime(0.001,now+idx*0.08+0.35);
-osc.connect(gain);gain.connect(audioCtx.destination);
+osc.connect(gain);gain.connect(ctx.destination);
 osc.start(now+idx*0.08);osc.stop(now+idx*0.08+0.35);
 });
 }catch(e){}
 }
 w.toggleAudio=function(){
-soundEnabled=!soundEnabled;
-if(soundEnabled){
 initAudioEngine();
+if(bgAudio.paused){
+bgAudio.play().then(function(){
+soundEnabled=!0;
 w.showNotification('Casino Music & SFX Enabled');
+}).catch(function(err){
+w.showNotification('Audio blocked. Tap again!');
+});
 }else{
-if(audioCtx&&audioCtx.state==='running')audioCtx.suspend();
+bgAudio.pause();
+soundEnabled=!1;
 w.showNotification('Audio Disabled');
 }
 };
+
 
 w.showNotification=function(txt,isErr){
 var old=document.getElementById('game-toast-badge');if(old)old.remove();

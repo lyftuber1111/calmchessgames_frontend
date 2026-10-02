@@ -415,13 +415,30 @@
       flex-shrink: 0;
     }
 
+    .felt-max-bet-badge {
+      position: absolute;
+      top: clamp(86px, 14vh, 102px);
+      right: clamp(14px, 2.2vw, 24px);
+      background: rgba(0, 0, 0, 0.45);
+      border: 1.5px solid rgba(241, 196, 15, 0.65);
+      border-radius: 6px;
+      padding: 2px 7px;
+      font-size: clamp(0.62rem, 1.1vh, 0.74rem);
+      font-weight: 800;
+      color: var(--gold);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      pointer-events: none;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+      z-index: 5;
+    }
+
     /* COMPACT VIEWPORT FALLBACKS */
     @media (max-height: 640px) {
       #game-container {
         --felt-cushion: clamp(8px, 1.6vh, 16px);
       }
       .felt-rule-sub { display: none; }
-      .title span { display: none; }
 
     }
 
@@ -643,6 +660,8 @@
           <div>Bet: $<span id="bet-display" class="hud-val">0</span></div>
         </div>
       </div>
+
+      <div class="felt-max-bet-badge">Max Bet $500</div>
 
       <div class="table-section">
         <div class="hand-label">Dealer (<span id="dealer-score">0</span>)</div>
@@ -960,11 +979,17 @@ _0xechs();_0xuab();_0xrndb();
 
 w.addBet=function(_0xa){
 if(!_0xgov)return;
-if(_0xbnk>=_0xa){_0xbnk-=_0xa;_0xibt+=_0xa;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=_0xibt;}
+if(_0xibt>=500){_0xmEl.textContent='Maximum bet is $500!';return;}
+var _0xad=Math.min(_0xa,500-_0xibt);
+if(_0xbnk>=_0xad){
+_0xbnk-=_0xad;_0xibt+=_0xad;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=_0xibt;
+if(_0xibt===500){_0xmEl.textContent='Max bet reached ($500)';}
+else{if(_0xmEl.textContent.includes('bet'))_0xmEl.textContent='';}
+}
 else if(_0xbnk<=0&&_0xibt===0){w.openStoreModal();}
 };
 
-w.clearBet=function(){if(!_0xgov)return;_0xbnk+=_0xibt;_0xibt=0;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;};
+w.clearBet=function(){if(!_0xgov)return;_0xbnk+=_0xibt;_0xibt=0;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;_0xmEl.textContent='';};
 
 function _0xuab(){
 if(_0xgov){

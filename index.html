@@ -522,32 +522,60 @@
 
 
 
-    /* Desktop Straight Aligned Layout for Multi-Seats */
+
+    /* Semi-Circle Arc Layout without background boxes */
+    .hand-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      padding: 4px;
+    }
+    .hand-group.active {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+    }
+    .hand-label {
+      font-size: clamp(0.68rem, 1.2vh, 0.82rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 2px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
     @media (min-width: 768px) {
       .player-hands-container {
         display: flex;
         flex-direction: row;
         justify-content: center;
-        align-items: center;
-        gap: clamp(10px, 1.5vw, 20px);
+        align-items: flex-end;
+        gap: clamp(8px, 1.5vw, 22px);
         width: 100%;
-        padding: 4px 12px;
+        padding: 4px 8px;
+        overflow-x: visible;
       }
-      .hand-box {
+      .hand-group {
         flex: 1;
-        min-width: 175px;
-        max-width: 215px;
-        padding: 6px 10px;
+        max-width: 160px;
+        transition: transform 0.2s ease;
+      }
+      /* Semi-circle arc elevation offsets */
+      .hand-group:nth-child(1), .hand-group:nth-last-child(1) {
+        transform: translateY(22px) scale(0.90);
+        opacity: 0.9;
+      }
+      .hand-group:nth-child(2), .hand-group:nth-last-child(2) {
+        transform: translateY(10px) scale(0.95);
+        opacity: 0.95;
       }
       .center-seat {
+        transform: translateY(0px) scale(1.02);
+        opacity: 1;
         z-index: 2;
-      }
-      .card {
-        width: clamp(36px, 5.2vh, 50px);
-        height: clamp(54px, 7.8vh, 76px);
-      }
-      .cards-row {
-        gap: clamp(2px, 0.4vw, 5px);
       }
     }
 
@@ -1018,19 +1046,19 @@ if(_0xIsPlayer){
 _0xcards=_0xph[0].cards;
 _0xsc=_0xcls(_0xcards);
 var _0xIsActive=(!_0xgov&&0===_0xahi);
-_0xbx.className=_0xIsActive?'hand-box active center-seat':'hand-box center-seat';
+_0xbx.className=_0xIsActive?'hand-group active center-seat':'hand-group center-seat';
 var _0xlbl=document.createElement('div');
 _0xlbl.className='hand-label';
-_0xlbl.innerHTML='Your Bet ($'+_0xph[0].bet+') - Score: <span>'+_0xsc+'</span>';
+_0xlbl.innerHTML='Score: <span>'+_0xsc+'</span>';
 _0xbx.appendChild(_0xlbl);
 }else{
 var _0xseatCards=_0xsh[_0xshIdx]||[];
 _0xcards=_0xseatCards;
 _0xsc=_0xcls(_0xcards);
-_0xbx.className='hand-box';
+_0xbx.className='hand-group';
 var _0xlbl=document.createElement('div');
 _0xlbl.className='hand-label';
-_0xlbl.innerHTML='Seat '+(_0xsi+1)+' - Score: <span>'+_0xsc+'</span>';
+_0xlbl.innerHTML='Score: <span>'+_0xsc+'</span>';
 _0xbx.appendChild(_0xlbl);
 _0xshIdx++;
 }
@@ -1044,10 +1072,10 @@ _0xhcEl.appendChild(_0xbx);
 _0xph.forEach(function(_0xh,_0xidx){
 var _0xsc=_0xcls(_0xh.cards);
 var _0xbx=document.createElement('div');
-_0xbx.className=(!_0xgov&&_0xidx===_0xahi)?_0x1f(27):_0x1f(26);
+_0xbx.className=(!_0xgov&&_0xidx===_0xahi)?'hand-group active':'hand-group';
 var _0xlbl=document.createElement('div');
 _0xlbl.className='hand-label';
-_0xlbl.innerHTML=(_0xph.length>1?'Hand '+(_0xidx+1):'Your Bet')+' ($'+_0xh.bet+') - Score: <span>'+_0xsc+'</span>';
+_0xlbl.innerHTML='Score: <span>'+_0xsc+'</span>';
 _0xbx.appendChild(_0xlbl);
 var _0xrow=document.createElement('div');
 _0xrow.className=_0x1f(25);
@@ -1058,8 +1086,7 @@ _0xhcEl.appendChild(_0xbx);
 }
 _0xwEl.textContent=_0xgov?_0xibt:(_0xph.reduce(function(_0xa,_0xb){return _0xa+_0xb.bet;},0)||_0xibt);
 _0xbEl.textContent=_0xbnk;
-}
-function _0xinps(_0xub){
+}function _0xinps(_0xub){
 _0xbnk=parseFloat(_0xub);_0xibt=0;_0xins=0;_0xgov=!0;
 _0xdh=[];_0xph=[];_0xsh=[];
 _0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;

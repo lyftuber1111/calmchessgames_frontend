@@ -521,6 +521,38 @@
     }
 
 
+
+    /* Desktop Semi-Circle Arc Layout for Multi-Seats */
+    @media (min-width: 768px) {
+      .player-hands-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        align-items: flex-end;
+        gap: clamp(6px, 1.2vw, 16px);
+        width: 100%;
+        padding: 4px 8px;
+      }
+      .hand-box {
+        flex: 1;
+        max-width: 175px;
+        transition: transform 0.2s ease;
+      }
+      .hand-box:nth-child(1), .hand-box:nth-last-child(1) {
+        transform: translateY(14px) scale(0.92);
+        opacity: 0.88;
+      }
+      .hand-box:nth-child(2), .hand-box:nth-last-child(2) {
+        transform: translateY(6px) scale(0.96);
+        opacity: 0.94;
+      }
+      .center-seat {
+        transform: translateY(0px) scale(1.02);
+        opacity: 1;
+        z-index: 2;
+      }
+    }
+
 </style>
 </head>
 <body>
@@ -975,7 +1007,42 @@ if(_0xpk===undefined)_0xpk=!0;
 _0xdcEl.innerHTML='';
 _0xdh.forEach(function(_0xc,_0xidx){_0xdcEl.appendChild(_0xcce(_0xc,_0xidx===1&&_0xpk&&!_0xgov));});
 _0xdsEl.textContent=(_0xpk&&!_0xgov)?(_0xdh[0]?_0xdh[0].value:0):_0xcls(_0xdh);
+var _0xts=_0xgos();
 _0xhcEl.innerHTML='';
+if(_0xts>1&&window.innerWidth>=768){
+var _0xcenterIdx=Math.floor(_0xts/2);
+var _0xshIdx=0;
+for(var _0xsi=0;_0xsi<_0xts;_0xsi++){
+var _0xbx=document.createElement('div');
+var _0xIsPlayer=(_0xsi===_0xcenterIdx);
+var _0xsc=0,_0xcards=[];
+if(_0xIsPlayer){
+_0xcards=_0xph[0].cards;
+_0xsc=_0xcls(_0xcards);
+var _0xIsActive=(!_0xgov&&0===_0xahi);
+_0xbx.className=_0xIsActive?'hand-box active center-seat':'hand-box center-seat';
+var _0xlbl=document.createElement('div');
+_0xlbl.className='hand-label';
+_0xlbl.innerHTML='Your Bet ($'+_0xph[0].bet+') - Score: <span>'+_0xsc+'</span>';
+_0xbx.appendChild(_0xlbl);
+}else{
+var _0xseatCards=_0xsh[_0xshIdx]||[];
+_0xcards=_0xseatCards;
+_0xsc=_0xcls(_0xcards);
+_0xbx.className='hand-box';
+var _0xlbl=document.createElement('div');
+_0xlbl.className='hand-label';
+_0xlbl.innerHTML='Seat '+(_0xsi+1)+' - Score: <span>'+_0xsc+'</span>';
+_0xbx.appendChild(_0xlbl);
+_0xshIdx++;
+}
+var _0xrow=document.createElement('div');
+_0xrow.className=_0x1f(25);
+_0xcards.forEach(function(_0xc){_0xrow.appendChild(_0xcce(_0xc,!1));});
+_0xbx.appendChild(_0xrow);
+_0xhcEl.appendChild(_0xbx);
+}
+}else{
 _0xph.forEach(function(_0xh,_0xidx){
 var _0xsc=_0xcls(_0xh.cards);
 var _0xbx=document.createElement('div');
@@ -990,10 +1057,10 @@ _0xh.cards.forEach(function(_0xc){_0xrow.appendChild(_0xcce(_0xc,!1));});
 _0xbx.appendChild(_0xrow);
 _0xhcEl.appendChild(_0xbx);
 });
+}
 _0xwEl.textContent=_0xgov?_0xibt:(_0xph.reduce(function(_0xa,_0xb){return _0xa+_0xb.bet;},0)||_0xibt);
 _0xbEl.textContent=_0xbnk;
 }
-
 function _0xinps(_0xub){
 _0xbnk=parseFloat(_0xub);_0xibt=0;_0xins=0;_0xgov=!0;
 _0xdh=[];_0xph=[];_0xsh=[];

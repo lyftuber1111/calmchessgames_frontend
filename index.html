@@ -578,6 +578,40 @@
       }
     }
 
+    .hand-result-badge {
+      position: absolute;
+      top: -34px;
+      left: 50%;
+      transform: translateX(-50%) scale(0.8);
+      background: rgba(13, 19, 26, 0.95);
+      border: 2px solid var(--gold);
+      border-radius: 8px;
+      padding: 3px 10px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--gold);
+      text-transform: uppercase;
+      white-space: nowrap;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+      z-index: 10;
+    }
+    .hand-result-badge.win {
+      border-color: var(--success-green);
+      color: var(--success-green);
+    }
+    .hand-result-badge.loss {
+      border-color: var(--error-red);
+      color: var(--error-red);
+    }
+    .hand-result-badge.push {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    @keyframes badgePop {
+      to { transform: translateX(-50%) scale(1); }
+    }
+
 </style>
 </head>
 <body>
@@ -1050,6 +1084,13 @@ var _0xlbl=document.createElement('div');
 _0xlbl.className='hand-label';
 _0xlbl.innerHTML='Score: <span>'+_0xsc+'</span>';
 _0xbx.appendChild(_0xlbl);
+if(_0xgov&&_0xph[0].resTxt){
+var _0xrb=document.createElement('div');
+_0xrb.className='hand-result-badge '+(_0xph[0].resType||'win');
+_0xrb.textContent=_0xph[0].resTxt;
+_0xbx.style.position='relative';
+_0xbx.appendChild(_0xrb);
+}
 }else{
 var _0xseatCards=_0xsh[_0xshIdx]||[];
 _0xcards=_0xseatCards;
@@ -1235,13 +1276,24 @@ var _0xdsc=_0xcls(_0xdh),_0xrc=0,_0xwnb=!1,_0xnwa=0;
 _0xph.forEach(function(_0xh){
 var _0xpsc=_0xcls(_0xh.cards);
 var _0xpbj=(_0xh.cards.length===2&&_0xpsc===21&&_0xph.length===1);
+if(_0xpsc>21){
+_0xh.resTxt='-$'+_0xh.bet;_0xh.resType='loss';
+}else if(_0xpbj){
+if(_0xdbj){_0xrc+=_0xh.bet;_0xh.resTxt='PUSH';_0xh.resType='push';}
+else{var _0xw=Math.floor(_0xh.bet*2.5);_0xrc+=_0xw;_0xwnb=!0;_0xnwa=_0xw;_0xh.resTxt='+$'+Math.floor(_0xh.bet*1.5);_0xh.resType='win';}
+}else if(_0xdbj){
+_0xh.resTxt='-$'+_0xh.bet;_0xh.resType='loss';
+}else if(_0xdsc>21||_0xpsc>_0xdsc){
+_0xrc+=_0xh.bet*2;_0xh.resTxt='+$'+_0xh.bet;_0xh.resType='win';
+}else if(_0xpsc===_0xdsc){
+_0xrc+=_0xh.bet;_0xh.resTxt='PUSH';_0xh.resType='push';
+}else{
+_0xh.resTxt='-$'+_0xh.bet;_0xh.resType='loss';
+}
 if(_0xpsc<=21){
-if(_0xpbj){
-if(_0xdbj){_0xrc+=_0xh.bet;}
-else{var _0xw=Math.floor(_0xh.bet*2.5);_0xrc+=_0xw;_0xwnb=!0;_0xnwa=_0xw;}
-}else if(!_0xdbj){
-if(_0xdsc>21||_0xpsc>_0xdsc){_0xrc+=_0xh.bet*2;}
-else if(_0xpsc===_0xdsc){_0xrc+=_0xh.bet;}
+if(!_0xpbj&&!_0xdbj){
+if(_0xdsc>21||_0xpsc>_0xdsc){}
+else if(_0xpsc===_0xdsc){}
 }
 }
 });

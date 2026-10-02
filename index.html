@@ -291,14 +291,25 @@
     .felt-rule-sub { font-size: clamp(0.58rem, 1.1vh, 0.74rem); font-weight: 800; color: rgba(255, 255, 255, 0.7); letter-spacing: 1px; text-transform: uppercase; }
 
     #message-banner { 
-      min-height: clamp(20px, 3vh, 30px); 
+      min-height: clamp(26px, 3.5vh, 36px); 
       text-align: center; 
-      font-size: clamp(0.8rem, 1.4vh, 0.98rem); 
-      font-weight: bold; 
+      font-size: clamp(0.85rem, 1.45vh, 1.02rem); 
+      font-weight: 800; 
       display: flex;
       align-items: center;
       justify-content: center;
       flex-shrink: 0;
+      background: rgba(13, 19, 26, 0.92);
+      border: 1.5px solid var(--gold);
+      border-radius: 10px;
+      padding: 4px 16px;
+      width: fit-content;
+      margin: 0 auto;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     /* PLAYER HANDS AREA */

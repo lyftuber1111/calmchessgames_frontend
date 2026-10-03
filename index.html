@@ -483,15 +483,11 @@
                     arcPath.setAttribute('id', textPathId);
                     arcPath.setAttribute('fill', 'none');
 
-                    // Horizontally flipped, inverted curve, and centered for outer-0 (i === 0) and outer-5 (i === 5)
+                    // Horizontally flipped, curve inverted, and centered for outer-0 and outer-5 (top only)
                     if (i === 0 || i === 5) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
-                    } else if (i === 2 || i === 3) {
                         let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
                     } else if (midAngle > 90 && midAngle < 270) {
                         let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);

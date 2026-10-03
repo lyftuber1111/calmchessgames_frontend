@@ -110,6 +110,7 @@
             filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
             z-index: 10;
             cursor: pointer;
+            user-select: none;
             transition: transform 0.2s;
         }
 
@@ -404,26 +405,23 @@
                     path.onclick = () => window.location.href = seg.url;
                     svg.appendChild(path);
 
-                    // Only render text if show_text is true
                     if (seg.show_text) {
                         const midAngle = startAngle + (angleStep / 2);
-                        const isLeftSide = midAngle > 90 && midAngle < 270;
                         const textRadius = 100;
-
                         let textPathId = `inner-text-path-${i}`;
                         let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                         arcPath.setAttribute('id', textPathId);
                         arcPath.setAttribute('fill', 'none');
 
-                        // Adjusted arc directions to guarantee clean left-to-right flow on top and bottom
-                        if (isLeftSide) {
-                            let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                            let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
-                        } else {
+                        // Corrected orientation mapping: Left/Bottom vs Right/Top so text always flows left-to-right upright
+                        if (midAngle > 90 && midAngle < 270) {
                             let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                             let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
+                        } else {
+                            let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                            let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
                         }
                         defs.appendChild(arcPath);
 
@@ -458,22 +456,20 @@
 
                     if (seg.show_text) {
                         const midAngle = startAngle + (angleStep / 2);
-                        const isLeftSide = midAngle > 90 && midAngle < 270;
                         const textRadius = 175;
-
                         let textPathId = `outer-text-path-${i}`;
                         let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                         arcPath.setAttribute('id', textPathId);
                         arcPath.setAttribute('fill', 'none');
 
-                        if (isLeftSide) {
-                            let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                            let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
-                        } else {
+                        if (midAngle > 90 && midAngle < 270) {
                             let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                             let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
+                        } else {
+                            let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                            let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
                         }
                         defs.appendChild(arcPath);
 
@@ -509,17 +505,18 @@
             });
         }
 
-        // Setup Triple-Click listener on center logo
+        // Setup Reliable Triple-Click listener on center logo
         const centerLogo = document.getElementById('centerLogo');
         let clickCount = 0;
         let clickTimer = null;
 
-        centerLogo.addEventListener('click', () => {
+        centerLogo.addEventListener('click', (e) => {
+            e.stopPropagation();
             clickCount++;
             if (clickCount === 1) {
                 clickTimer = setTimeout(() => {
                     clickCount = 0;
-                }, 400); // 400ms window for triple click
+                }, 600); // 600ms window for triple click
             } else if (clickCount === 3) {
                 clearTimeout(clickTimer);
                 clickCount = 0;

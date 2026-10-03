@@ -386,10 +386,10 @@
         }
 
         function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
-            const angleInRadians = (angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0);
+            const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
             return {
-                x: centerX + (radius * Math.cos((angleInDegrees - 90) * Math.PI / 180.0)),
-                y: centerY + (radius * Math.sin((angleInDegrees - 90) * Math.PI / 180.0))
+                x: centerX + (radius * Math.cos(angleInRadians)),
+                y: centerY + (radius * Math.sin(angleInRadians))
             };
         }
 
@@ -433,7 +433,7 @@
                     } else {
                         let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
                     }
                     defs.appendChild(arcPath);
 
@@ -490,7 +490,7 @@
                     } else {
                         let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
                     }
                     defs.appendChild(arcPath);
 

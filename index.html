@@ -180,13 +180,20 @@
             letter-spacing: 0.2px;
             pointer-events: none;
             user-select: none;
-            transition: font-size 0.2s ease;
+            transition: font-size 0.2s ease, fill 0.2s ease;
         }
 
-        /* Mobile enhancement: +4pt font size increase for inner and outer ring text */
+        /* Mobile enhancement: 14pt font size (+4pt) and bright white font on inner and outer rings */
         @media (max-width: 768px) {
             .ring-text {
                 font-size: 14pt; /* Increased by 4pt (10pt -> 14pt) for crisp mobile legibility */
+                fill: #ffffff;
+                color: #ffffff;
+                paint-order: stroke fill;
+                stroke: #0b0f19;
+                stroke-width: 2.5px;
+                stroke-linejoin: round;
+                filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95));
             }
         }
 

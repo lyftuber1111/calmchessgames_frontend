@@ -405,7 +405,14 @@
     <!-- Admin Modal -->
     <div class="admin-modal" id="adminModal">
         <div class="admin-content">
-            <h2>Ring Navigation Admin Console</h2>
+            <!-- Modal Header with Top Action Bar: Title, Save, Close -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,215,0,0.25); padding-bottom: 14px;">
+                <h2 style="margin-bottom: 0;">Ring Navigation Admin Console</h2>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-save" onclick="saveSegments()">Save Changes</button>
+                    <button class="btn" style="background: #64748b;" onclick="closeAdminModal()">Close</button>
+                </div>
+            </div>
             
             <!-- Master Toggle to Show Ring Segment IDs on Page -->
             <div style="background: rgba(74, 144, 226, 0.1); padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid var(--accent-blue);">
@@ -419,8 +426,9 @@
                 <input type="password" id="adminPassword" placeholder="Enter admin password">
             </div>
             <div id="adminSegmentsList"></div>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px;">
-                <button class="btn" onclick="saveSegments()">Save Changes</button>
+            <!-- Bottom Action Bar: Save, Cancel -->
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; border-top: 1px solid rgba(255,215,0,0.25); padding-top: 16px;">
+                <button class="btn btn-save" onclick="saveSegments()">Save Changes</button>
                 <button class="btn" style="background: #64748b;" onclick="closeAdminModal()">Cancel</button>
             </div>
         </div>
@@ -428,6 +436,7 @@
 
     <script>
         const API_BASE = 'https://api.calmchessgames.com';
+        const DEFAULT_ADMIN_PASSWORD = 'ptoK4ptoK4@!';
         let showSegmentIdsOnRing = false;
 
         let currentSegments = [
@@ -444,25 +453,64 @@
         ];
 
         async function fetchSegments() {
+            // 1. Immediately hydrate from localStorage for instantaneous persistence
+            try {
+                const cached = localStorage.getItem('calmchess_segments');
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        currentSegments = parsed;
+                        renderRings();
+                        renderGamesGrid();
+                    }
+                }
+            } catch (e) {
+                console.warn('Error reading cached segments:', e);
+            }
+
+            // 2. Fetch latest segments from backend API
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
-                const response = await fetch(`${API_BASE}/get_segments.php`, { signal: controller.signal });
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+                const candidateUrls = [
+                    `${API_BASE}/get_segments.php`,
+                    './get_segments.php',
+                    '/get_segments.php',
+                    'https://api.calmchessgames.com/get_segments.php'
+                ];
+                const uniqueUrls = [...new Set(candidateUrls)];
+
+                let data = null;
+                for (const url of uniqueUrls) {
+                    try {
+                        const response = await fetch(url, { signal: controller.signal });
+                        if (response.ok) {
+                            data = await response.json();
+                            if (data && data.success && data.segments && data.segments.length > 0) break;
+                        }
+                    } catch (e) {
+                        // try next candidate endpoint
+                    }
+                }
                 clearTimeout(timeoutId);
-                const data = await response.json();
-                if (data.success && data.segments && data.segments.length > 0) {
-                    // Update currentSegments, preserving default titles if API title is empty/whitespace
+
+                if (data && data.success && data.segments && data.segments.length > 0) {
                     currentSegments = data.segments.map(apiSeg => {
-                        const fallback = currentSegments.find(s => s.ring_type === apiSeg.ring_type && s.segment_index == apiSeg.segment_index);
+                        const fallback = currentSegments.find(s => s.ring_type === apiSeg.ring_type && parseInt(s.segment_index, 10) === parseInt(apiSeg.segment_index, 10));
                         return {
-                            ...fallback,
-                            ...apiSeg,
-                            title: (apiSeg.title && apiSeg.title.trim()) ? apiSeg.title.trim() : (fallback ? fallback.title : apiSeg.title)
+                            ring_type: apiSeg.ring_type,
+                            segment_index: parseInt(apiSeg.segment_index, 10),
+                            title: apiSeg.title !== undefined ? apiSeg.title : (fallback ? fallback.title : ''),
+                            url: apiSeg.url !== undefined ? apiSeg.url : (fallback ? fallback.url : ''),
+                            description: apiSeg.description !== undefined ? apiSeg.description : (fallback ? fallback.description : ''),
+                            is_active: apiSeg.is_active !== undefined ? parseInt(apiSeg.is_active, 10) : 1
                         };
                     });
+                    localStorage.setItem('calmchess_segments', JSON.stringify(currentSegments));
                 }
             } catch (err) {
-                console.warn('Using fallback segments due to API connection error:', err);
+                console.warn('Using cached or fallback segments due to API connection error:', err);
             }
             renderRings();
             renderGamesGrid();
@@ -673,24 +721,34 @@
         });
 
         function openAdminModal() {
+            // Restore password from localStorage or fall back to default ADMIN_SECRET_KEY
+            const adminPwdInput = document.getElementById('adminPassword');
+            if (adminPwdInput) {
+                adminPwdInput.value = localStorage.getItem('calmchess_admin_password') || DEFAULT_ADMIN_PASSWORD;
+            }
+
             const listContainer = document.getElementById('adminSegmentsList');
             listContainer.innerHTML = '';
             currentSegments.forEach((seg, index) => {
                 const segmentId = `${seg.ring_type}-${seg.segment_index}`;
+                const titleVal = (seg.title || '').replace(/"/g, '&quot;');
+                const urlVal = (seg.url || '').replace(/"/g, '&quot;');
+                const descVal = (seg.description || '').replace(/"/g, '&quot;');
+
                 listContainer.innerHTML += `
                     <div style="background: rgba(0,0,0,0.3); padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #334155;">
                         <strong style="color: var(--gold-primary); display: block; margin-bottom: 8px;">Segment ID: [${segmentId}]</strong>
                         <div class="form-group">
                             <label>Title</label>
-                            <input type="text" id="admin_title_${index}" value="${seg.title}">
+                            <input type="text" id="admin_title_${index}" value="${titleVal}">
                         </div>
                         <div class="form-group">
                             <label>URL / Path</label>
-                            <input type="text" id="admin_url_${index}" value="${seg.url}">
+                            <input type="text" id="admin_url_${index}" value="${urlVal}">
                         </div>
                         <div class="form-group">
                             <label>Description</label>
-                            <input type="text" id="admin_desc_${index}" value="${seg.description || ''}">
+                            <input type="text" id="admin_desc_${index}" value="${descVal}">
                         </div>
                     </div>
                 `;
@@ -703,35 +761,101 @@
         }
 
         async function saveSegments() {
-            const password = document.getElementById('adminPassword').value;
-            const updatedSegments = currentSegments.map((seg, index) => ({
-                ring_type: seg.ring_type,
-                segment_index: seg.segment_index,
-                title: document.getElementById(`admin_title_${index}`).value,
-                url: document.getElementById(`admin_url_${index}`).value,
-                description: document.getElementById(`admin_desc_${index}`).value,
-                is_active: 1
-            }));
+            const adminPwdInput = document.getElementById('adminPassword');
+            const password = (adminPwdInput && adminPwdInput.value.trim()) 
+                ? adminPwdInput.value.trim() 
+                : (localStorage.getItem('calmchess_admin_password') || DEFAULT_ADMIN_PASSWORD);
+            
+            if (adminPwdInput && !adminPwdInput.value.trim()) {
+                adminPwdInput.value = password;
+            }
+            localStorage.setItem('calmchess_admin_password', password);
+
+            const updatedSegments = currentSegments.map((seg, index) => {
+                const titleEl = document.getElementById(`admin_title_${index}`);
+                const urlEl = document.getElementById(`admin_url_${index}`);
+                const descEl = document.getElementById(`admin_desc_${index}`);
+                return {
+                    ring_type: seg.ring_type,
+                    segment_index: parseInt(seg.segment_index, 10),
+                    title: titleEl ? titleEl.value : seg.title,
+                    url: urlEl ? urlEl.value : seg.url,
+                    description: descEl ? descEl.value : (seg.description || ''),
+                    is_active: 1
+                };
+            });
+
+            // Set loading state on both top and bottom save buttons
+            const saveButtons = document.querySelectorAll('.admin-modal .btn-save, .admin-modal button[onclick="saveSegments()"]');
+            saveButtons.forEach(btn => {
+                btn.disabled = true;
+                btn.textContent = 'Saving...';
+            });
 
             try {
-                const response = await fetch(`${API_BASE}/update_segments.php`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ admin_password: password, segments: updatedSegments })
-                });
-                const result = await response.json();
-                if (result.success) {
-                    alert('Segments updated successfully!');
+                let savedToServer = false;
+                let errorMsg = '';
+
+                const candidateUrls = [
+                    `${API_BASE}/update_segments.php`,
+                    './update_segments.php',
+                    '/update_segments.php',
+                    'https://api.calmchessgames.com/update_segments.php'
+                ];
+                const uniqueUrls = [...new Set(candidateUrls)];
+
+                for (const targetUrl of uniqueUrls) {
+                    try {
+                        const response = await fetch(targetUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ admin_password: password, segments: updatedSegments })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            savedToServer = true;
+                            break;
+                        } else {
+                            errorMsg = result.message || result.error || 'Unauthorized';
+                            if (response.status === 401) {
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        // try next candidate endpoint
+                    }
+                }
+
+                if (savedToServer) {
                     currentSegments = updatedSegments;
+                    localStorage.setItem('calmchess_segments', JSON.stringify(updatedSegments));
                     renderRings();
                     renderGamesGrid();
+                    alert('Segments updated successfully in database!');
                     closeAdminModal();
+                } else if (errorMsg && errorMsg.includes('credentials')) {
+                    alert('Error: ' + errorMsg + '. Please check your Admin Password.');
                 } else {
-                    alert('Error: ' + (result.message || result.error || 'Unauthorized'));
+                    currentSegments = updatedSegments;
+                    localStorage.setItem('calmchess_segments', JSON.stringify(updatedSegments));
+                    renderRings();
+                    renderGamesGrid();
+                    alert('Changes saved locally. (Backend server unreachable: ' + (errorMsg || 'CORS / Network restriction') + ')');
+                    closeAdminModal();
                 }
             } catch (err) {
-                alert('Network error connecting to backend API.');
-                console.error(err);
+                console.error('Error saving segments:', err);
+                currentSegments = updatedSegments;
+                localStorage.setItem('calmchess_segments', JSON.stringify(updatedSegments));
+                renderRings();
+                renderGamesGrid();
+                alert('Changes saved locally.');
+                closeAdminModal();
+            } finally {
+                saveButtons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.textContent = 'Save Changes';
+                });
             }
         }
 

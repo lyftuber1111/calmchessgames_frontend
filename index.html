@@ -100,6 +100,7 @@
             align-items: center;
         }
 
+        /* Center Knight Logo (Facing Right) - Triple click opens admin */
         .center-logo {
             position: absolute;
             width: 120px;
@@ -287,7 +288,9 @@
                 Click any segment on the inner or outer rings to launch games or informational pages.
             </p>
             <div class="ring-wrapper">
+                <!-- Center Knight Logo: Triple-click to open Admin Console -->
                 <img src="knight_left0.jpg" alt="Calm Chess Knight" class="center-logo" id="centerLogo" title="Triple-click to open Admin Console">
+                
                 <svg class="navigation-rings" id="ringSvg" viewBox="0 0 500 500"></svg>
             </div>
         </section>
@@ -312,14 +315,18 @@
         <p>&copy; 2026 Calm Chess Computers. All rights reserved. Hosted on GitHub Pages & Ubuntu VPS.</p>
     </footer>
 
+    <!-- Admin Modal -->
     <div class="admin-modal" id="adminModal">
         <div class="admin-content">
             <h2>Ring Navigation Admin Console</h2>
+            
+            <!-- Master Toggle to Show Ring Segment IDs on Page -->
             <div style="background: rgba(74, 144, 226, 0.1); padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid var(--accent-blue);">
                 <label style="color: var(--gold-primary); font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer;">
                     <input type="checkbox" id="masterShowIds" onchange="toggleSegmentIds(this.checked)"> Show Segment IDs on Rings (e.g. inner-0, outer-1)
                 </label>
             </div>
+
             <div class="form-group">
                 <label>Admin Password / Secret Key</label>
                 <input type="password" id="adminPassword" placeholder="Enter admin password">
@@ -419,12 +426,7 @@
                     arcPath.setAttribute('id', textPathId);
                     arcPath.setAttribute('fill', 'none');
 
-                    // Corrected sweep flag (1) and point order for top inner segments (inner-0 and inner-3)
-                    if (i === 0 || i === 3) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
-                    } else if (midAngle > 90 && midAngle < 270) {
+                    if (midAngle > 90 && midAngle < 270) {
                         let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
                         arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
@@ -476,13 +478,17 @@
 
                     const midAngle = startAngle + (angleStep / 2);
                     let textRadius = 175;
-
                     let textPathId = `outer-text-path-${i}`;
                     let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     arcPath.setAttribute('id', textPathId);
                     arcPath.setAttribute('fill', 'none');
 
-                    if (midAngle > 90 && midAngle < 270) {
+                    // Calibrated specifically for outer-0 (About Us)
+                    if (i === 0) {
+                        let p1 = polarToCartesian(cx, cy, 144, endAngle - 4);
+                        let p2 = polarToCartesian(cx, cy, 144, startAngle + 4);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A 144 144 0 0 1 ${p2.x} ${p2.y}`);
+                    } else if (midAngle > 90 && midAngle < 270) {
                         let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
                         arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);

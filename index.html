@@ -415,14 +415,13 @@
                     path.onclick = () => window.location.href = seg.url;
                     svg.appendChild(path);
 
-                    // Rotational text positioning (Radius 100)
                     const midAngle = startAngle + (angleStep / 2);
                     const rad = (midAngle - 90) * Math.PI / 180.0;
                     const textRadius = 100;
                     const tx = cx + textRadius * Math.cos(rad);
                     const ty = cy + textRadius * Math.sin(rad);
 
-                    // If text is in the left hemisphere (90 to 270 deg), rotate +180 so it's never upside down
+                    // Corrected rotation alignment for inner ring
                     const isLeft = midAngle > 90 && midAngle < 270;
                     const rot = isLeft ? midAngle + 90 : midAngle - 90;
 
@@ -465,15 +464,15 @@
                     path.onclick = () => window.location.href = seg.url;
                     svg.appendChild(path);
 
-                    // Rotational text positioning (Radius 175)
                     const midAngle = startAngle + (angleStep / 2);
                     const rad = (midAngle - 90) * Math.PI / 180.0;
                     const textRadius = 175;
                     const tx = cx + textRadius * Math.cos(rad);
                     const ty = cy + textRadius * Math.sin(rad);
 
+                    // Corrected rotation alignment for outer ring
                     const isLeft = midAngle > 90 && midAngle < 270;
-                    const rot = isLeft ? midAngle + 90 : midAngle - 90;
+                    const rot = isLeft ? midAngle - 90 : midAngle + 90;
 
                     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     text.setAttribute('x', tx);

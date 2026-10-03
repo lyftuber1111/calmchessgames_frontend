@@ -426,11 +426,11 @@
                     arcPath.setAttribute('id', textPathId);
                     arcPath.setAttribute('fill', 'none');
 
-                    // Fixed top inner segments (inner-0 and inner-3) to read left-to-right correctly
-                    if (i === 0 || i === 3) {
+                    // ONLY testing inner-3 (Video Chat) flipped here to verify
+                    if (i === 3) {
                         let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
                     } else if (midAngle > 90 && midAngle < 270) {
                         let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
@@ -483,31 +483,13 @@
 
                     const midAngle = startAngle + (angleStep / 2);
                     let textRadius = 175;
-                    let useInsideCurve = false;
-                    let useOutsideCurve = false;
-
-                    if (i === 0 || i === 5) {
-                        textRadius = 144;
-                        useInsideCurve = true;
-                    } else if (i === 2 || i === 3) {
-                        textRadius = 206;
-                        useOutsideCurve = true;
-                    }
 
                     let textPathId = `outer-text-path-${i}`;
                     let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     arcPath.setAttribute('id', textPathId);
                     arcPath.setAttribute('fill', 'none');
 
-                    if (useInsideCurve) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
-                    } else if (useOutsideCurve) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
-                    } else if (midAngle > 90 && midAngle < 270) {
+                    if (midAngle > 90 && midAngle < 270) {
                         let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
                         arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);

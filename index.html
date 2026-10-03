@@ -172,6 +172,12 @@
             filter: drop-shadow(0 0 10px var(--gold-glow));
         }
 
+        .ring-segment:active {
+            fill: #ffffff !important;
+            filter: drop-shadow(0 0 18px #38bdf8) !important;
+            transition: none !important;
+        }
+
         .ring-text {
             font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             font-size: 10pt; /* Baseline desktop font size (~13.3px) */
@@ -566,6 +572,73 @@
             return `M ${pStart.x} ${pStart.y} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${pEnd.x} ${pEnd.y}`;
         }
 
+        // Code-based Sci-Fi Laser Audio Synthesizer (Web Audio API)
+        let laserAudioCtx = null;
+        function playSciFiLaser() {
+            try {
+                const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtxClass) return;
+                if (!laserAudioCtx) {
+                    laserAudioCtx = new AudioCtxClass();
+                }
+                if (laserAudioCtx.state === 'suspended') {
+                    laserAudioCtx.resume();
+                }
+
+                const now = laserAudioCtx.currentTime;
+
+                // Primary downward pitch sweep (Sawtooth wave for gritty laser bite)
+                const oscPrimary = laserAudioCtx.createOscillator();
+                oscPrimary.type = 'sawtooth';
+                oscPrimary.frequency.setValueAtTime(1550, now);
+                oscPrimary.frequency.exponentialRampToValueAtTime(70, now + 0.17);
+
+                // Secondary harmonic oscillator (Sine wave for laser body & thud)
+                const oscSecondary = laserAudioCtx.createOscillator();
+                oscSecondary.type = 'sine';
+                oscSecondary.frequency.setValueAtTime(900, now);
+                oscSecondary.frequency.exponentialRampToValueAtTime(110, now + 0.14);
+
+                // Resonant bandpass filter (producing the classic vocalic sci-fi "pew" sweep)
+                const biquadFilter = laserAudioCtx.createBiquadFilter();
+                biquadFilter.type = 'bandpass';
+                biquadFilter.Q.setValueAtTime(3.8, now);
+                biquadFilter.frequency.setValueAtTime(2400, now);
+                biquadFilter.frequency.exponentialRampToValueAtTime(240, now + 0.17);
+
+                // Sharp attack and smooth exponential decay envelope
+                const gainEnvelope = laserAudioCtx.createGain();
+                gainEnvelope.gain.setValueAtTime(0.35, now);
+                gainEnvelope.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+
+                // Route audio graph
+                oscPrimary.connect(biquadFilter);
+                oscSecondary.connect(biquadFilter);
+                biquadFilter.connect(gainEnvelope);
+                gainEnvelope.connect(laserAudioCtx.destination);
+
+                // Fire laser
+                oscPrimary.start(now);
+                oscSecondary.start(now);
+                oscPrimary.stop(now + 0.2);
+                oscSecondary.stop(now + 0.2);
+            } catch (err) {
+                console.warn('Laser sound synthesis error:', err);
+            }
+        }
+
+        function handleRingSegmentPress(url) {
+            playSciFiLaser();
+            if (!url) return;
+            if (url.startsWith('#')) {
+                window.location.href = url;
+            } else {
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 130);
+            }
+        }
+
         function renderRings() {
             const svg = document.getElementById('ringSvg');
             if (!svg) return;
@@ -594,8 +667,9 @@
                     path.setAttribute('role', 'button');
                     path.setAttribute('tabindex', '0');
                     path.setAttribute('aria-label', seg.title);
-                    path.onclick = () => window.location.href = seg.url;
-                    path.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') window.location.href = seg.url; };
+                    path.onpointerdown = () => playSciFiLaser();
+                    path.onclick = (e) => { e.preventDefault(); handleRingSegmentPress(seg.url); };
+                    path.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRingSegmentPress(seg.url); } };
                     svg.appendChild(path);
 
                     // Text Path: centered vertically inside inner ring at radius = 100
@@ -653,8 +727,9 @@
                     path.setAttribute('role', 'button');
                     path.setAttribute('tabindex', '0');
                     path.setAttribute('aria-label', seg.title);
-                    path.onclick = () => window.location.href = seg.url;
-                    path.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') window.location.href = seg.url; };
+                    path.onpointerdown = () => playSciFiLaser();
+                    path.onclick = (e) => { e.preventDefault(); handleRingSegmentPress(seg.url); };
+                    path.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleRingSegmentPress(seg.url); } };
                     svg.appendChild(path);
 
                     // Text Path: centered vertically inside outer ring at radius = 175

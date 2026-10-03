@@ -404,7 +404,28 @@
             const innerSegments = currentSegments.filter(s => s.ring_type === 'inner');
             const outerSegments = currentSegments.filter(s => s.ring_type === 'outer');
 
-            // Render Inner Ring
+            // --- Full Circle Path for Inner Ring (Radius 100) ---
+            // Using a full SVG circle element in defs so textPath maps seamlessly all the way around
+            let innerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            let innerCircleId = 'inner-full-circle';
+            innerCircle.setAttribute('id', innerCircleId);
+            innerCircle.setAttribute('cx', cx);
+            innerCircle.setAttribute('cy', cy);
+            innerCircle.setAttribute('r', 100);
+            innerCircle.setAttribute('fill', 'none');
+            defs.appendChild(innerCircle);
+
+            // --- Full Circle Path for Outer Ring (Radius 175) ---
+            let outerCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            let outerCircleId = 'outer-full-circle';
+            outerCircle.setAttribute('id', outerCircleId);
+            outerCircle.setAttribute('cx', cx);
+            outerCircle.setAttribute('cy', cy);
+            outerCircle.setAttribute('r', 175);
+            outerCircle.setAttribute('fill', 'none');
+            defs.appendChild(outerCircle);
+
+            // Render Inner Ring Segments & Text
             if (innerSegments.length > 0) {
                 const angleStep = 360 / innerSegments.length;
                 innerSegments.forEach((seg, i) => {
@@ -420,28 +441,14 @@
                     svg.appendChild(path);
 
                     const midAngle = startAngle + (angleStep / 2);
-                    const textRadius = 85;
-                    let textPathId = `inner-text-path-${i}`;
-                    let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    arcPath.setAttribute('id', textPathId);
-                    arcPath.setAttribute('fill', 'none');
-
-                    if (midAngle > 90 && midAngle < 270) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
-                    } else {
-                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
-                    }
-                    defs.appendChild(arcPath);
+                    // Calculate exact percentage offset along the full circle (0% to 100%)
+                    const percentageOffset = ((midAngle + 180) % 360) / 360 * 100;
 
                     let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     text.setAttribute('class', 'ring-text-path');
                     let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
-                    textPath.setAttribute('href', `#${textPathId}`);
-                    textPath.setAttribute('startOffset', '50%');
+                    textPath.setAttribute('href', `#${innerCircleId}`);
+                    textPath.setAttribute('startOffset', `${percentageOffset}%`);
                     textPath.setAttribute('text-anchor', 'middle');
                     textPath.textContent = seg.title;
                     text.appendChild(textPath);
@@ -461,7 +468,7 @@
                 });
             }
 
-            // Render Outer Ring
+            // Render Outer Ring Segments & Text
             if (outerSegments.length > 0) {
                 const angleStep = 360 / outerSegments.length;
                 outerSegments.forEach((seg, i) => {
@@ -477,33 +484,13 @@
                     svg.appendChild(path);
 
                     const midAngle = startAngle + (angleStep / 2);
-                    let textRadius = 175;
-                    let textPathId = `outer-text-path-${i}`;
-                    let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    arcPath.setAttribute('id', textPathId);
-                    arcPath.setAttribute('fill', 'none');
-
-                    // Calibrated specifically for outer-0 (About Us)
-                    if (i === 0) {
-                        let p1 = polarToCartesian(cx, cy, 144, endAngle - 4);
-                        let p2 = polarToCartesian(cx, cy, 144, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A 144 144 0 0 1 ${p2.x} ${p2.y}`);
-                    } else if (midAngle > 90 && midAngle < 270) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
-                    } else {
-                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
-                    }
-                    defs.appendChild(arcPath);
+                    const percentageOffset = ((midAngle + 180) % 360) / 360 * 100;
 
                     let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     text.setAttribute('class', 'ring-text-path');
                     let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
-                    textPath.setAttribute('href', `#${textPathId}`);
-                    textPath.setAttribute('startOffset', '50%');
+                    textPath.setAttribute('href', `#${outerCircleId}`);
+                    textPath.setAttribute('startOffset', `${percentageOffset}%`);
                     textPath.setAttribute('text-anchor', 'middle');
                     textPath.textContent = seg.title;
                     text.appendChild(textPath);

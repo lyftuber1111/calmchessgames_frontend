@@ -100,6 +100,7 @@
             align-items: center;
         }
 
+        /* Center Knight Logo (Facing Right) - Triple click opens admin */
         .center-logo {
             position: absolute;
             width: 120px;
@@ -108,6 +109,12 @@
             transform: scaleX(-1);
             filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
             z-index: 10;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .center-logo:active {
+            transform: scaleX(-1) scale(0.95);
         }
 
         svg.navigation-rings {
@@ -197,21 +204,6 @@
             opacity: 0.9;
         }
 
-        .admin-trigger {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--divider-red);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            z-index: 100;
-        }
-
         .admin-modal {
             display: none;
             position: fixed;
@@ -227,7 +219,7 @@
             padding: 30px;
             border-radius: 12px;
             width: 90%;
-            max-width: 600px;
+            max-width: 650px;
             max-height: 90vh;
             overflow-y: auto;
             border: 2px solid var(--gold-primary);
@@ -287,7 +279,9 @@
                 Click any segment on the inner or outer rings to launch games or informational pages.
             </p>
             <div class="ring-wrapper">
-                <img src="knight_left0.jpg" alt="Calm Chess Knight" class="center-logo">
+                <!-- Center Knight Logo: Triple-click to open Admin Console -->
+                <img src="knight_left0.jpg" alt="Calm Chess Knight" class="center-logo" id="centerLogo" title="Triple-click to open Admin Console">
+                
                 <svg class="navigation-rings" id="ringSvg" viewBox="0 0 500 500"></svg>
             </div>
         </section>
@@ -312,8 +306,7 @@
         <p>&copy; 2026 Calm Chess Computers. All rights reserved. Hosted on GitHub Pages & Ubuntu VPS.</p>
     </footer>
 
-    <button class="admin-trigger" onclick="openAdminModal()">Admin Console</button>
-
+    <!-- Admin Modal -->
     <div class="admin-modal" id="adminModal">
         <div class="admin-content">
             <h2>Ring Navigation Admin Console</h2>
@@ -333,16 +326,16 @@
         const API_BASE = 'https://api.calmchessgames.com';
 
         let currentSegments = [
-            { ring_type: 'inner', segment_index: 0, title: 'Chess Game', url: 'chess.html', description: 'Offline Stockfish chess engine' },
-            { ring_type: 'inner', segment_index: 1, title: 'Blackjack', url: 'blackjack.html', description: 'Casino style blackjack simulation' },
-            { ring_type: 'inner', segment_index: 2, title: 'Mobility App', url: 'mobility.html', description: 'Exercise and mobility routines' },
-            { ring_type: 'inner', segment_index: 3, title: 'Video Chat', url: 'video-chat.html', description: 'Live peer-to-peer video chat' },
-            { ring_type: 'outer', segment_index: 0, title: 'About Us', url: '#about', description: 'Company history and mission' },
-            { ring_type: 'outer', segment_index: 1, title: 'Engine Specs', url: 'specs.html', description: 'Hardware & architecture specs' },
-            { ring_type: 'outer', segment_index: 2, title: 'Leaderboard', url: 'leaderboard.html', description: 'Global player scores' },
-            { ring_type: 'outer', segment_index: 3, title: 'Contact', url: '#contact', description: 'Get in touch with support' },
-            { ring_type: 'outer', segment_index: 4, title: 'Community', url: 'community.html', description: 'Player forums and updates' },
-            { ring_type: 'outer', segment_index: 5, title: 'Documentation', url: 'docs.html', description: 'API and game rules' }
+            { ring_type: 'inner', segment_index: 0, title: 'Chess Game', url: 'chess.html', description: 'Offline Stockfish chess engine', show_text: true },
+            { ring_type: 'inner', segment_index: 1, title: 'Blackjack', url: 'blackjack.html', description: 'Casino style blackjack simulation', show_text: true },
+            { ring_type: 'inner', segment_index: 2, title: 'Mobility App', url: 'mobility.html', description: 'Exercise and mobility routines', show_text: true },
+            { ring_type: 'inner', segment_index: 3, title: 'Video Chat', url: 'video-chat.html', description: 'Live peer-to-peer video chat', show_text: true },
+            { ring_type: 'outer', segment_index: 0, title: 'About Us', url: '#about', description: 'Company history and mission', show_text: true },
+            { ring_type: 'outer', segment_index: 1, title: 'Engine Specs', url: 'specs.html', description: 'Hardware & architecture specs', show_text: true },
+            { ring_type: 'outer', segment_index: 2, title: 'Leaderboard', url: 'leaderboard.html', description: 'Global player scores', show_text: true },
+            { ring_type: 'outer', segment_index: 3, title: 'Contact', url: '#contact', description: 'Get in touch with support', show_text: true },
+            { ring_type: 'outer', segment_index: 4, title: 'Community', url: 'community.html', description: 'Player forums and updates', show_text: true },
+            { ring_type: 'outer', segment_index: 5, title: 'Documentation', url: 'docs.html', description: 'API and game rules', show_text: true }
         ];
 
         async function fetchSegments() {
@@ -350,7 +343,10 @@
                 const response = await fetch(`${API_BASE}/get_segments.php`);
                 const data = await response.json();
                 if (data.success && data.segments && data.segments.length > 0) {
-                    currentSegments = data.segments;
+                    currentSegments = data.segments.map(s => ({
+                        ...s,
+                        show_text: s.show_text !== undefined ? Boolean(Number(s.show_text)) : true
+                    }));
                 }
             } catch (err) {
                 console.warn('Using fallback segments due to API connection error:', err);
@@ -408,37 +404,40 @@
                     path.onclick = () => window.location.href = seg.url;
                     svg.appendChild(path);
 
-                    // Curved Text Path
-                    const midAngle = startAngle + (angleStep / 2);
-                    const isLeftSide = midAngle > 90 && midAngle < 270;
-                    const textRadius = 100;
+                    // Only render text if show_text is true
+                    if (seg.show_text) {
+                        const midAngle = startAngle + (angleStep / 2);
+                        const isLeftSide = midAngle > 90 && midAngle < 270;
+                        const textRadius = 100;
 
-                    let textPathId = `inner-text-path-${i}`;
-                    let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    arcPath.setAttribute('id', textPathId);
-                    arcPath.setAttribute('fill', 'none');
+                        let textPathId = `inner-text-path-${i}`;
+                        let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        arcPath.setAttribute('id', textPathId);
+                        arcPath.setAttribute('fill', 'none');
 
-                    if (isLeftSide) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 3);
-                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 3);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
-                    } else {
-                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 3);
-                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 3);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                        // Adjusted arc directions to guarantee clean left-to-right flow on top and bottom
+                        if (isLeftSide) {
+                            let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                            let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                        } else {
+                            let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                            let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                        }
+                        defs.appendChild(arcPath);
+
+                        let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        text.setAttribute('class', 'ring-text-path');
+                        let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
+                        textPath.setAttribute('href', `#${textPathId}`);
+                        textPath.setAttribute('startOffset', '50%');
+                        textPath.setAttribute('text-anchor', 'middle');
+                        textPath.textContent = seg.title;
+
+                        text.appendChild(textPath);
+                        svg.appendChild(text);
                     }
-                    defs.appendChild(arcPath);
-
-                    let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('class', 'ring-text-path');
-                    let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
-                    textPath.setAttribute('href', `#${textPathId}`);
-                    textPath.setAttribute('startOffset', '50%');
-                    textPath.setAttribute('text-anchor', 'middle');
-                    textPath.textContent = seg.title;
-
-                    text.appendChild(textPath);
-                    svg.appendChild(text);
                 });
             }
 
@@ -457,37 +456,38 @@
                     path.onclick = () => window.location.href = seg.url;
                     svg.appendChild(path);
 
-                    // Curved Text Path
-                    const midAngle = startAngle + (angleStep / 2);
-                    const isLeftSide = midAngle > 90 && midAngle < 270;
-                    const textRadius = 175;
+                    if (seg.show_text) {
+                        const midAngle = startAngle + (angleStep / 2);
+                        const isLeftSide = midAngle > 90 && midAngle < 270;
+                        const textRadius = 175;
 
-                    let textPathId = `outer-text-path-${i}`;
-                    let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    arcPath.setAttribute('id', textPathId);
-                    arcPath.setAttribute('fill', 'none');
+                        let textPathId = `outer-text-path-${i}`;
+                        let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        arcPath.setAttribute('id', textPathId);
+                        arcPath.setAttribute('fill', 'none');
 
-                    if (isLeftSide) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 3);
-                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 3);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
-                    } else {
-                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 3);
-                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 3);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                        if (isLeftSide) {
+                            let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                            let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                        } else {
+                            let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                            let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                            arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                        }
+                        defs.appendChild(arcPath);
+
+                        let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                        text.setAttribute('class', 'ring-text-path');
+                        let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
+                        textPath.setAttribute('href', `#${textPathId}`);
+                        textPath.setAttribute('startOffset', '50%');
+                        textPath.setAttribute('text-anchor', 'middle');
+                        textPath.textContent = seg.title;
+
+                        text.appendChild(textPath);
+                        svg.appendChild(text);
                     }
-                    defs.appendChild(arcPath);
-
-                    let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('class', 'ring-text-path');
-                    let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
-                    textPath.setAttribute('href', `#${textPathId}`);
-                    textPath.setAttribute('startOffset', '50%');
-                    textPath.setAttribute('text-anchor', 'middle');
-                    textPath.textContent = seg.title;
-
-                    text.appendChild(textPath);
-                    svg.appendChild(text);
                 });
             }
         }
@@ -509,14 +509,38 @@
             });
         }
 
+        // Setup Triple-Click listener on center logo
+        const centerLogo = document.getElementById('centerLogo');
+        let clickCount = 0;
+        let clickTimer = null;
+
+        centerLogo.addEventListener('click', () => {
+            clickCount++;
+            if (clickCount === 1) {
+                clickTimer = setTimeout(() => {
+                    clickCount = 0;
+                }, 400); // 400ms window for triple click
+            } else if (clickCount === 3) {
+                clearTimeout(clickTimer);
+                clickCount = 0;
+                openAdminModal();
+            }
+        });
+
         function openAdminModal() {
             const listContainer = document.getElementById('adminSegmentsList');
             listContainer.innerHTML = '';
             currentSegments.forEach((seg, index) => {
+                const segmentId = `${seg.ring_type}-${seg.segment_index}`;
                 listContainer.innerHTML += `
                     <div style="background: rgba(0,0,0,0.3); padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #334155;">
-                        <strong style="color: var(--gold-primary);">[${seg.ring_type.toUpperCase()}] Segment ${seg.segment_index}</strong>
-                        <div class="form-group" style="margin-top: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <strong style="color: var(--gold-primary);">Segment ID: [${segmentId}]</strong>
+                            <label style="color: var(--text-muted); font-size: 0.9rem; display: flex; align-items: center; gap: 5px; cursor: pointer;">
+                                <input type="checkbox" id="admin_show_${index}" ${seg.show_text ? 'checked' : ''}> Show Text on Ring
+                            </label>
+                        </div>
+                        <div class="form-group">
                             <label>Title</label>
                             <input type="text" id="admin_title_${index}" value="${seg.title}">
                         </div>
@@ -546,6 +570,7 @@
                 title: document.getElementById(`admin_title_${index}`).value,
                 url: document.getElementById(`admin_url_${index}`).value,
                 description: document.getElementById(`admin_desc_${index}`).value,
+                show_text: document.getElementById(`admin_show_${index}`).checked ? 1 : 0,
                 is_active: 1
             }));
 

@@ -404,7 +404,7 @@
             const innerSegments = currentSegments.filter(s => s.ring_type === 'inner');
             const outerSegments = currentSegments.filter(s => s.ring_type === 'outer');
 
-            // Render Inner Ring
+            // Render Inner Ring (All 4 segments using inner curve radius ~82, reading left-to-right)
             if (innerSegments.length > 0) {
                 const angleStep = 360 / innerSegments.length;
                 innerSegments.forEach((seg, i) => {
@@ -420,18 +420,14 @@
                     svg.appendChild(path);
 
                     const midAngle = startAngle + (angleStep / 2);
-                    const textRadius = 100;
+                    const textRadius = 85; // Inner curve radius for inner ring
                     let textPathId = `inner-text-path-${i}`;
                     let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     arcPath.setAttribute('id', textPathId);
                     arcPath.setAttribute('fill', 'none');
 
-                    // Horizontally flipped, inverted curve, and centered for inner-0 (i === 0) and inner-3 (i === 3)
-                    if (i === 0 || i === 3) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
-                    } else if (midAngle > 90 && midAngle < 270) {
+                    // All inner segments map cleanly along the inner curve reading left-to-right
+                    if (midAngle > 90 && midAngle < 270) {
                         let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
                         arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
@@ -482,15 +478,35 @@
                     svg.appendChild(path);
 
                     const midAngle = startAngle + (angleStep / 2);
-                    const textRadius = 175;
+                    let textRadius = 175;
+                    let useInsideCurve = false;
+                    let useOutsideCurve = false;
+
+                    // Top outer two segments (outer-0 and outer-5): use inside curve (~142)
+                    if (i === 0 || i === 5) {
+                        textRadius = 144;
+                        useInsideCurve = true;
+                    }
+                    // Outer bottom two segments (outer-2 and outer-3): use outside curve (~208)
+                    else if (i === 2 || i === 3) {
+                        textRadius = 206;
+                        useOutsideCurve = true;
+                    }
+
                     let textPathId = `outer-text-path-${i}`;
                     let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     arcPath.setAttribute('id', textPathId);
                     arcPath.setAttribute('fill', 'none');
 
-                    if (i === 0 || i === 5) {
+                    if (useInsideCurve) {
+                        // Top segments on inside curve reading left-to-right
                         let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
+                    } else if (useOutsideCurve) {
+                        // Bottom segments on outside curve reading left-to-right
+                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                         arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
                     } else if (midAngle > 90 && midAngle < 270) {
                         let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
@@ -556,8 +572,6 @@
 
         centerLogo.addEventListener('click', (e) => {
             e.stopPropagation();
-        
-            // Check if user is clicking or dragging slightly
             clickCount++;
             if (clickCount === 1) {
                 clickTimer = setTimeout(() => {

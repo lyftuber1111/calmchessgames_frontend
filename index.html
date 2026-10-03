@@ -436,7 +436,6 @@
 
     <script>
         const API_BASE = 'https://api.calmchessgames.com';
-        const DEFAULT_ADMIN_PASSWORD = 'ptoK4ptoK4@!';
         let showSegmentIdsOnRing = false;
 
         let currentSegments = [
@@ -721,10 +720,15 @@
         });
 
         function openAdminModal() {
-            // Restore password from localStorage or fall back to default ADMIN_SECRET_KEY
+            // Prompt for admin password each time the console is opened
+            const enteredPassword = prompt("Please enter the Admin Console password:");
+            if (enteredPassword === null) {
+                return; // User cancelled
+            }
+
             const adminPwdInput = document.getElementById('adminPassword');
             if (adminPwdInput) {
-                adminPwdInput.value = localStorage.getItem('calmchess_admin_password') || DEFAULT_ADMIN_PASSWORD;
+                adminPwdInput.value = enteredPassword.trim();
             }
 
             const listContainer = document.getElementById('adminSegmentsList');
@@ -757,19 +761,27 @@
         }
 
         function closeAdminModal() {
+            const adminPwdInput = document.getElementById('adminPassword');
+            if (adminPwdInput) {
+                adminPwdInput.value = '';
+            }
             document.getElementById('adminModal').style.display = 'none';
         }
 
         async function saveSegments() {
             const adminPwdInput = document.getElementById('adminPassword');
-            const password = (adminPwdInput && adminPwdInput.value.trim()) 
-                ? adminPwdInput.value.trim() 
-                : (localStorage.getItem('calmchess_admin_password') || DEFAULT_ADMIN_PASSWORD);
-            
-            if (adminPwdInput && !adminPwdInput.value.trim()) {
-                adminPwdInput.value = password;
+            let password = adminPwdInput ? adminPwdInput.value.trim() : '';
+
+            if (!password) {
+                const prompted = prompt("Please enter the Admin Console password to save changes:");
+                if (prompted === null || !prompted.trim()) {
+                    alert('Admin password is required to save changes.');
+                    if (adminPwdInput) adminPwdInput.focus();
+                    return;
+                }
+                password = prompted.trim();
+                if (adminPwdInput) adminPwdInput.value = password;
             }
-            localStorage.setItem('calmchess_admin_password', password);
 
             const updatedSegments = currentSegments.map((seg, index) => {
                 const titleEl = document.getElementById(`admin_title_${index}`);
@@ -835,6 +847,7 @@
                     closeAdminModal();
                 } else if (errorMsg && errorMsg.includes('credentials')) {
                     alert('Error: ' + errorMsg + '. Please check your Admin Password.');
+                    if (adminPwdInput) adminPwdInput.focus();
                 } else {
                     currentSegments = updatedSegments;
                     localStorage.setItem('calmchess_segments', JSON.stringify(updatedSegments));

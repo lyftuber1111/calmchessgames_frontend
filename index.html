@@ -78,7 +78,6 @@
             gap: 60px;
         }
 
-        /* Ring Navigation Section */
         .ring-container-section {
             display: flex;
             flex-direction: column;
@@ -101,22 +100,19 @@
             align-items: center;
         }
 
-        /* Center Knight Logo (Facing Right) */
         .center-logo {
             position: absolute;
             width: 120px;
             height: 120px;
             object-fit: contain;
-            transform: scaleX(-1); /* Flips knight_left0.jpg to face right */
+            transform: scaleX(-1);
             filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
             z-index: 10;
         }
 
-        /* SVG Rings Styling */
         svg.navigation-rings {
             width: 100%;
             height: 100%;
-            transform: rotate(-90deg);
         }
 
         .ring-segment {
@@ -131,15 +127,15 @@
             filter: drop-shadow(0 0 10px var(--gold-glow));
         }
 
-        .ring-label {
+        .ring-text-path {
             font-size: 11px;
             fill: #0b0f19;
             font-weight: bold;
+            letter-spacing: 0.5px;
             pointer-events: none;
             user-select: none;
         }
 
-        /* Industry Standard Sections */
         .section-title {
             font-size: 2rem;
             color: var(--gold-primary);
@@ -201,7 +197,6 @@
             opacity: 0.9;
         }
 
-        /* Admin Console Trigger & Modal */
         .admin-trigger {
             position: fixed;
             bottom: 20px;
@@ -286,32 +281,22 @@
     </header>
 
     <main>
-        <!-- Ring Navigation Section -->
         <section class="ring-container-section">
             <h2 class="section-title">Interactive Ring Navigation</h2>
             <p style="color: var(--text-muted); margin-bottom: 20px; text-align: center;">
                 Click any segment on the inner or outer rings to launch games or informational pages.
             </p>
             <div class="ring-wrapper">
-                <!-- Center Knight Logo facing right -->
                 <img src="knight_left0.jpg" alt="Calm Chess Knight" class="center-logo">
-                
-                <!-- SVG Rings Rendered Dynamically -->
-                <svg class="navigation-rings" id="ringSvg" viewBox="0 0 500 500">
-                    <!-- Segments injected via script -->
-                </svg>
+                <svg class="navigation-rings" id="ringSvg" viewBox="0 0 500 500"></svg>
             </div>
         </section>
 
-        <!-- Featured Games & Pages Section -->
         <section id="games" style="width: 100%;">
             <h2 class="section-title">Featured Chess & Strategy Games</h2>
-            <div class="games-grid" id="gamesGrid">
-                <!-- Populated via script -->
-            </div>
+            <div class="games-grid" id="gamesGrid"></div>
         </section>
 
-        <!-- About Section -->
         <section id="about" style="width: 100%; background: var(--panel-bg); padding: 40px; border-radius: 12px; border: 1px solid rgba(255,215,0,0.1);">
             <h2 class="section-title">About Calm Chess Computers</h2>
             <p style="line-height: 1.6; color: var(--text-muted); margin-bottom: 15px;">
@@ -327,10 +312,8 @@
         <p>&copy; 2026 Calm Chess Computers. All rights reserved. Hosted on GitHub Pages & Ubuntu VPS.</p>
     </footer>
 
-    <!-- Admin Console Trigger -->
     <button class="admin-trigger" onclick="openAdminModal()">Admin Console</button>
 
-    <!-- Admin Modal -->
     <div class="admin-modal" id="adminModal">
         <div class="admin-content">
             <h2>Ring Navigation Admin Console</h2>
@@ -349,7 +332,6 @@
     <script>
         const API_BASE = 'https://api.calmchessgames.com';
 
-        // Initial default segments fallback
         let currentSegments = [
             { ring_type: 'inner', segment_index: 0, title: 'Chess Game', url: 'chess.html', description: 'Offline Stockfish chess engine' },
             { ring_type: 'inner', segment_index: 1, title: 'Blackjack', url: 'blackjack.html', description: 'Casino style blackjack simulation' },
@@ -377,15 +359,12 @@
             renderGamesGrid();
         }
 
-        // Helper to generate SVG path arcs for segments
         function describeArc(x, y, innerRadius, outerRadius, startAngle, endAngle) {
             const startOuter = polarToCartesian(x, y, outerRadius, endAngle);
             const endOuter = polarToCartesian(x, y, outerRadius, startAngle);
             const startInner = polarToCartesian(x, y, innerRadius, endAngle);
             const endInner = polarToCartesian(x, y, innerRadius, startAngle);
-
             const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
-
             return [
                 "M", startOuter.x, startOuter.y,
                 "A", outerRadius, outerRadius, 0, largeArcFlag, 0, endOuter.x, endOuter.y,
@@ -408,10 +387,13 @@
             svg.innerHTML = '';
             const cx = 250, cy = 250;
 
+            let defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            svg.appendChild(defs);
+
             const innerSegments = currentSegments.filter(s => s.ring_type === 'inner');
             const outerSegments = currentSegments.filter(s => s.ring_type === 'outer');
 
-            // Render Inner Ring Segments
+            // Render Inner Ring
             if (innerSegments.length > 0) {
                 const angleStep = 360 / innerSegments.length;
                 innerSegments.forEach((seg, i) => {
@@ -424,23 +406,43 @@
                     path.setAttribute('fill', '#ffd700');
                     path.setAttribute('class', 'ring-segment');
                     path.onclick = () => window.location.href = seg.url;
-
-                    const midAngle = startAngle + (angleStep / 2);
-                    const labelPos = polarToCartesian(cx, cy, 100, midAngle);
-                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('x', labelPos.x);
-                    text.setAttribute('y', labelPos.y);
-                    text.setAttribute('class', 'ring-label');
-                    text.setAttribute('text-anchor', 'middle');
-                    text.setAttribute('dominant-baseline', 'middle');
-                    text.textContent = seg.title;
-
                     svg.appendChild(path);
+
+                    // Curved Text Path
+                    const midAngle = startAngle + (angleStep / 2);
+                    const isLeftSide = midAngle > 90 && midAngle < 270;
+                    const textRadius = 100;
+
+                    let textPathId = `inner-text-path-${i}`;
+                    let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    arcPath.setAttribute('id', textPathId);
+                    arcPath.setAttribute('fill', 'none');
+
+                    if (isLeftSide) {
+                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 3);
+                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 3);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    } else {
+                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 3);
+                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 3);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    }
+                    defs.appendChild(arcPath);
+
+                    let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('class', 'ring-text-path');
+                    let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
+                    textPath.setAttribute('href', `#${textPathId}`);
+                    textPath.setAttribute('startOffset', '50%');
+                    textPath.setAttribute('text-anchor', 'middle');
+                    textPath.textContent = seg.title;
+
+                    text.appendChild(textPath);
                     svg.appendChild(text);
                 });
             }
 
-            // Render Outer Ring Segments
+            // Render Outer Ring
             if (outerSegments.length > 0) {
                 const angleStep = 360 / outerSegments.length;
                 outerSegments.forEach((seg, i) => {
@@ -453,18 +455,38 @@
                     path.setAttribute('fill', '#ffe066');
                     path.setAttribute('class', 'ring-segment');
                     path.onclick = () => window.location.href = seg.url;
-
-                    const midAngle = startAngle + (angleStep / 2);
-                    const labelPos = polarToCartesian(cx, cy, 175, midAngle);
-                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('x', labelPos.x);
-                    text.setAttribute('y', labelPos.y);
-                    text.setAttribute('class', 'ring-label');
-                    text.setAttribute('text-anchor', 'middle');
-                    text.setAttribute('dominant-baseline', 'middle');
-                    text.textContent = seg.title;
-
                     svg.appendChild(path);
+
+                    // Curved Text Path
+                    const midAngle = startAngle + (angleStep / 2);
+                    const isLeftSide = midAngle > 90 && midAngle < 270;
+                    const textRadius = 175;
+
+                    let textPathId = `outer-text-path-${i}`;
+                    let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                    arcPath.setAttribute('id', textPathId);
+                    arcPath.setAttribute('fill', 'none');
+
+                    if (isLeftSide) {
+                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 3);
+                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 3);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    } else {
+                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 3);
+                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 3);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    }
+                    defs.appendChild(arcPath);
+
+                    let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('class', 'ring-text-path');
+                    let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
+                    textPath.setAttribute('href', `#${textPathId}`);
+                    textPath.setAttribute('startOffset', '50%');
+                    textPath.setAttribute('text-anchor', 'middle');
+                    textPath.textContent = seg.title;
+
+                    text.appendChild(textPath);
                     svg.appendChild(text);
                 });
             }
@@ -549,7 +571,6 @@
             }
         }
 
-        // Initialize on page load
         window.onload = fetchSegments;
     </script>
 </body>

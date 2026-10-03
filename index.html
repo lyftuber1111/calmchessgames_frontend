@@ -174,12 +174,20 @@
 
         .ring-text {
             font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-            font-size: 13px;
+            font-size: 10pt; /* Baseline desktop font size (~13.3px) */
             fill: #0b0f19;
             font-weight: bold;
             letter-spacing: 0.2px;
             pointer-events: none;
             user-select: none;
+            transition: font-size 0.2s ease;
+        }
+
+        /* Mobile enhancement: +4pt font size increase for inner and outer ring text */
+        @media (max-width: 768px) {
+            .ring-text {
+                font-size: 14pt; /* Increased by 4pt (10pt -> 14pt) for crisp mobile legibility */
+            }
         }
 
         .ring-id-label {

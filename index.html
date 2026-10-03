@@ -78,6 +78,7 @@
             gap: 60px;
         }
 
+        /* Ring Navigation Section */
         .ring-container-section {
             display: flex;
             flex-direction: column;
@@ -100,16 +101,18 @@
             align-items: center;
         }
 
+        /* Center Knight Logo (Facing Right) */
         .center-logo {
             position: absolute;
             width: 120px;
             height: 120px;
             object-fit: contain;
-            transform: scaleX(-1);
+            transform: scaleX(-1); /* Flips knight_left0.jpg to face right */
             filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
             z-index: 10;
         }
 
+        /* SVG Rings Styling */
         svg.navigation-rings {
             width: 100%;
             height: 100%;
@@ -119,11 +122,13 @@
         .ring-segment {
             cursor: pointer;
             transition: fill 0.3s, filter 0.3s;
+            stroke: var(--divider-red);
+            stroke-width: 3px;
         }
 
         .ring-segment:hover {
             fill: #fff3b0;
-            filter: drop-shadow(0 0 8px var(--gold-glow));
+            filter: drop-shadow(0 0 10px var(--gold-glow));
         }
 
         .ring-label {
@@ -131,8 +136,10 @@
             fill: #0b0f19;
             font-weight: bold;
             pointer-events: none;
+            user-select: none;
         }
 
+        /* Industry Standard Sections */
         .section-title {
             font-size: 2rem;
             color: var(--gold-primary);
@@ -186,12 +193,15 @@
             text-align: center;
             font-weight: 600;
             transition: opacity 0.2s;
+            border: none;
+            cursor: pointer;
         }
 
         .btn:hover {
             opacity: 0.9;
         }
 
+        /* Admin Console Trigger & Modal */
         .admin-trigger {
             position: fixed;
             bottom: 20px;
@@ -276,22 +286,32 @@
     </header>
 
     <main>
+        <!-- Ring Navigation Section -->
         <section class="ring-container-section">
             <h2 class="section-title">Interactive Ring Navigation</h2>
             <p style="color: var(--text-muted); margin-bottom: 20px; text-align: center;">
                 Click any segment on the inner or outer rings to launch games or informational pages.
             </p>
             <div class="ring-wrapper">
+                <!-- Center Knight Logo facing right -->
                 <img src="knight_left0.jpg" alt="Calm Chess Knight" class="center-logo">
-                <svg class="navigation-rings" id="ringSvg" viewBox="0 0 500 500"></svg>
+                
+                <!-- SVG Rings Rendered Dynamically -->
+                <svg class="navigation-rings" id="ringSvg" viewBox="0 0 500 500">
+                    <!-- Segments injected via script -->
+                </svg>
             </div>
         </section>
 
+        <!-- Featured Games & Pages Section -->
         <section id="games" style="width: 100%;">
             <h2 class="section-title">Featured Chess & Strategy Games</h2>
-            <div class="games-grid" id="gamesGrid"></div>
+            <div class="games-grid" id="gamesGrid">
+                <!-- Populated via script -->
+            </div>
         </section>
 
+        <!-- About Section -->
         <section id="about" style="width: 100%; background: var(--panel-bg); padding: 40px; border-radius: 12px; border: 1px solid rgba(255,215,0,0.1);">
             <h2 class="section-title">About Calm Chess Computers</h2>
             <p style="line-height: 1.6; color: var(--text-muted); margin-bottom: 15px;">
@@ -307,13 +327,15 @@
         <p>&copy; 2026 Calm Chess Computers. All rights reserved. Hosted on GitHub Pages & Ubuntu VPS.</p>
     </footer>
 
+    <!-- Admin Console Trigger -->
     <button class="admin-trigger" onclick="openAdminModal()">Admin Console</button>
 
+    <!-- Admin Modal -->
     <div class="admin-modal" id="adminModal">
         <div class="admin-content">
             <h2>Ring Navigation Admin Console</h2>
             <div class="form-group">
-                <label>Admin Password</label>
+                <label>Admin Password / Secret Key</label>
                 <input type="password" id="adminPassword" placeholder="Enter admin password">
             </div>
             <div id="adminSegmentsList"></div>
@@ -324,10 +346,10 @@
         </div>
     </div>
 
-    <!-- Obfuscated Client Script -->
     <script>
-        (function(_0x3e1d2c,_0x2b8f41){var _0x4c278a=function(_0x3e76fa){while(--_0x3e76fa){_0x3e1d2c['push'](_0x3e1d2c['shift']());}};_0x4c278a(++_0x2b8f41);}(_0x2a9a,0x1b4));var _0x2a9a=['104300WvStiZ','ring_type','segment_index','title','url','description','is_active','success','segments','https://api.calmchessgames.com','/get_segments.php','/update_segments.php','POST','application/json','useKey','stringify','error','warn','innerHTML','appendChild','createElement','setAttribute','onclick','href','textContent','filter','forEach','getElementById','style','display','value','querySelector','push','shift'];
         const API_BASE = 'https://api.calmchessgames.com';
+
+        // Initial default segments fallback
         let currentSegments = [
             { ring_type: 'inner', segment_index: 0, title: 'Chess Game', url: 'chess.html', description: 'Offline Stockfish chess engine' },
             { ring_type: 'inner', segment_index: 1, title: 'Blackjack', url: 'blackjack.html', description: 'Casino style blackjack simulation' },
@@ -345,7 +367,7 @@
             try {
                 const response = await fetch(`${API_BASE}/get_segments.php`);
                 const data = await response.json();
-                if (data.success && data.segments.length > 0) {
+                if (data.success && data.segments && data.segments.length > 0) {
                     currentSegments = data.segments;
                 }
             } catch (err) {
@@ -355,12 +377,15 @@
             renderGamesGrid();
         }
 
+        // Helper to generate SVG path arcs for segments
         function describeArc(x, y, innerRadius, outerRadius, startAngle, endAngle) {
             const startOuter = polarToCartesian(x, y, outerRadius, endAngle);
             const endOuter = polarToCartesian(x, y, outerRadius, startAngle);
             const startInner = polarToCartesian(x, y, innerRadius, endAngle);
             const endInner = polarToCartesian(x, y, innerRadius, startAngle);
+
             const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
             return [
                 "M", startOuter.x, startOuter.y,
                 "A", outerRadius, outerRadius, 0, largeArcFlag, 0, endOuter.x, endOuter.y,
@@ -382,15 +407,18 @@
             const svg = document.getElementById('ringSvg');
             svg.innerHTML = '';
             const cx = 250, cy = 250;
+
             const innerSegments = currentSegments.filter(s => s.ring_type === 'inner');
             const outerSegments = currentSegments.filter(s => s.ring_type === 'outer');
 
+            // Render Inner Ring Segments
             if (innerSegments.length > 0) {
                 const angleStep = 360 / innerSegments.length;
                 innerSegments.forEach((seg, i) => {
                     const startAngle = i * angleStep;
                     const endAngle = (i + 1) * angleStep;
-                    const pathData = describeArc(cx, cy, 70, 120, startAngle + 2, endAngle - 2);
+                    const pathData = describeArc(cx, cy, 75, 125, startAngle + 1.5, endAngle - 1.5);
+
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     path.setAttribute('d', pathData);
                     path.setAttribute('fill', '#ffd700');
@@ -398,7 +426,7 @@
                     path.onclick = () => window.location.href = seg.url;
 
                     const midAngle = startAngle + (angleStep / 2);
-                    const labelPos = polarToCartesian(cx, cy, 95, midAngle);
+                    const labelPos = polarToCartesian(cx, cy, 100, midAngle);
                     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     text.setAttribute('x', labelPos.x);
                     text.setAttribute('y', labelPos.y);
@@ -412,12 +440,14 @@
                 });
             }
 
+            // Render Outer Ring Segments
             if (outerSegments.length > 0) {
                 const angleStep = 360 / outerSegments.length;
                 outerSegments.forEach((seg, i) => {
                     const startAngle = i * angleStep;
                     const endAngle = (i + 1) * angleStep;
-                    const pathData = describeArc(cx, cy, 135, 210, startAngle + 2, endAngle - 2);
+                    const pathData = describeArc(cx, cy, 135, 215, startAngle + 1.5, endAngle - 1.5);
+
                     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     path.setAttribute('d', pathData);
                     path.setAttribute('fill', '#ffe066');
@@ -425,7 +455,7 @@
                     path.onclick = () => window.location.href = seg.url;
 
                     const midAngle = startAngle + (angleStep / 2);
-                    const labelPos = polarToCartesian(cx, cy, 172, midAngle);
+                    const labelPos = polarToCartesian(cx, cy, 175, midAngle);
                     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     text.setAttribute('x', labelPos.x);
                     text.setAttribute('y', labelPos.y);
@@ -451,7 +481,7 @@
                         <h3>${seg.title}</h3>
                         <p>${seg.description || 'Explore interactive features and games.'}</p>
                     </div>
-                    <a href="${seg.url}" class="btn">Launch Page</a>
+                    <a href="${seg.url}" class="btn" style="display:inline-block; margin-top:15px; text-align:center;">Launch Page</a>
                 `;
                 grid.appendChild(card);
             });
@@ -462,9 +492,9 @@
             listContainer.innerHTML = '';
             currentSegments.forEach((seg, index) => {
                 listContainer.innerHTML += `
-                    <div style="background: rgba(0,0,0,0.3); padding: 10px; margin-bottom: 10px; border-radius: 6px;">
-                        <strong>[${seg.ring_type.toUpperCase()}] Segment ${seg.segment_index}</strong>
-                        <div class="form-group" style="margin-top: 5px;">
+                    <div style="background: rgba(0,0,0,0.3); padding: 12px; margin-bottom: 12px; border-radius: 6px; border: 1px solid #334155;">
+                        <strong style="color: var(--gold-primary);">[${seg.ring_type.toUpperCase()}] Segment ${seg.segment_index}</strong>
+                        <div class="form-group" style="margin-top: 8px;">
                             <label>Title</label>
                             <input type="text" id="admin_title_${index}" value="${seg.title}">
                         </div>
@@ -511,7 +541,7 @@
                     renderGamesGrid();
                     closeAdminModal();
                 } else {
-                    alert('Error: ' + result.error);
+                    alert('Error: ' + (result.message || result.error || 'Unauthorized'));
                 }
             } catch (err) {
                 alert('Network error connecting to backend API.');
@@ -519,6 +549,7 @@
             }
         }
 
+        // Initialize on page load
         window.onload = fetchSegments;
     </script>
 </body>

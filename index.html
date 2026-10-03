@@ -175,11 +175,17 @@
         .ring-text {
             font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
             font-size: 10pt; /* Baseline desktop font size (~13.3px) */
-            fill: #0b0f19;
+            fill: #ffffff; /* Bright white font across desktop and mobile on inner and outer rings */
+            color: #ffffff;
             font-weight: bold;
             letter-spacing: 0.2px;
             pointer-events: none;
             user-select: none;
+            paint-order: stroke fill;
+            stroke: #0b0f19;
+            stroke-width: 2.5px;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95));
             transition: font-size 0.2s ease, fill 0.2s ease;
         }
 

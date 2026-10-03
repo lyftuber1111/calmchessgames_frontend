@@ -204,7 +204,7 @@
     .top-row-main { display: flex; justify-content: space-between; align-items: center; width: 100%; }
     .title { font-size: clamp(0.9rem, 1.6vh, 1.05rem); font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.15; cursor: pointer; }
     .title span { display: block; font-size: clamp(0.7rem, 1.2vh, 0.82rem); letter-spacing: 0.8px; color: #cbd5e1; }
-    .top-user-group { display: flex; align-items: center; gap: clamp(4px, 1vw, 8px); font-size: clamp(0.75rem, 1.3vh, 0.85rem); font-weight: 600; margin-right: 10px; }
+    .top-user-group { display: flex; align-items: center; gap: clamp(4px, 1vw, 8px); font-size: clamp(0.75rem, 1.3vh, 0.85rem); font-weight: 600; margin-right: 48px; }
 
     .seats-control-box { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-top: 5px; }
     .seats-input-row { display: flex; align-items: center; gap: 4px; }
@@ -893,87 +893,84 @@
 
 
 
-var bgAudio=null,soundEnabled=!1;
-function initAudioEngine(){
-if(!bgAudio){
-bgAudio=new Audio('casino_music.wav');
-bgAudio.loop=!0;
-bgAudio.volume=0.3;
-bgAudio.preload='auto';
+
+var _0xbga=null,_0xsne=!1;
+function _0xiae(){
+if(!_0xbga){
+_0xbga=new Audio('casino_music.wav');
+_0xbga.loop=!0;
+_0xbga.volume=0.3;
+_0xbga.preload='auto';
 }
 }
-function duckBGM(){
-if(!bgAudio||bgAudio.paused)return;
+function _0xdbgm(){
+if(!_0xbga||_0xbga.paused)return;
 try{
-bgAudio.volume=0.08;
-setTimeout(function(){if(!bgAudio.paused)bgAudio.volume=0.3;},500);
-}catch(e){}
+_0xbga.volume=0.08;
+setTimeout(function(){if(!_0xbga.paused)_0xbga.volume=0.3;},500);
+}catch(_0xe){}
 }
-function playChipSound(){
-if(!soundEnabled)return;
-duckBGM();
+function _0xpcs(){
+if(!_0xsne)return;
+_0xdbgm();
 try{
-var ctx=new(window.AudioContext||window.webkitAudioContext)();
-var osc=ctx.createOscillator(),gain=ctx.createGain();
-osc.type='sine';osc.frequency.setValueAtTime(900,ctx.currentTime);
-osc.frequency.exponentialRampToValueAtTime(250,ctx.currentTime+0.04);
-gain.gain.setValueAtTime(0.18,ctx.currentTime);
-gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.04);
-osc.connect(gain);gain.connect(ctx.destination);
-osc.start();osc.stop(ctx.currentTime+0.04);
-}catch(e){}
+var _0xctx=new(window.AudioContext||window.webkitAudioContext)();
+var _0xosc=_0xctx.createOscillator(),_0xgn=_0xctx.createGain();
+_0xosc.type='sine';_0xosc.frequency.setValueAtTime(900,_0xctx.currentTime);
+_0xosc.frequency.exponentialRampToValueAtTime(250,_0xctx.currentTime+0.04);
+_0xgn.gain.setValueAtTime(0.18,_0xctx.currentTime);
+_0xgn.gain.exponentialRampToValueAtTime(0.001,_0xctx.currentTime+0.04);
+_0xosc.connect(_0xgn);_0xgn.connect(_0xctx.destination);
+_0xosc.start();_0xosc.stop(_0xctx.currentTime+0.04);
+}catch(_0xe){}
 }
-function playCardSound(){
-if(!soundEnabled)return;
-duckBGM();
+function _0xpcards(){
+if(!_0xsne)return;
+_0xdbgm();
 try{
-var ctx=new(window.AudioContext||window.webkitAudioContext)();
-var bufferSize=ctx.sampleRate*0.07;
-var buffer=ctx.createBuffer(1,bufferSize,ctx.sampleRate);
-var data=buffer.getChannelData(0);for(var i=0;i<bufferSize;i++)data[i]=Math.random()*2-1;
-var noise=ctx.createBufferSource();noise.buffer=buffer;
-var filter=ctx.createBiquadFilter();filter.type='bandpass';filter.frequency.value=1400;
-var gain=ctx.createGain();gain.gain.setValueAtTime(0.12,ctx.currentTime);
-gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.07);
-noise.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
-noise.start();
-}catch(e){}
+var _0xctx=new(window.AudioContext||window.webkitAudioContext)();
+var _0xbs=_0xctx.sampleRate*0.07;
+var _0xbuf=_0xctx.createBuffer(1,_0xbs,_0xctx.sampleRate);
+var _0xdata=_0xbuf.getChannelData(0);for(var _0xi=0;_0xi<_0xbs;_0xi++)_0xdata[_0xi]=Math.random()*2-1;
+var _0xns=_0xctx.createBufferSource();_0xns.buffer=_0xbuf;
+var _0xflt=_0xctx.createBiquadFilter();_0xflt.type='bandpass';_0xflt.frequency.value=1400;
+var _0xgn=_0xctx.createGain();_0xgn.gain.setValueAtTime(0.12,_0xctx.currentTime);
+_0xgn.gain.exponentialRampToValueAtTime(0.001,_0xctx.currentTime+0.07);
+_0xns.connect(_0xflt);_0xflt.connect(_0xgn);_0xgn.connect(_0xctx.destination);
+_0xns.start();
+}catch(_0xe){}
 }
-function playWinSound(){
-if(!soundEnabled)return;
-duckBGM();
+function _0xpws(){
+if(!_0xsne)return;
+_0xdbgm();
 try{
-var ctx=new(window.AudioContext||window.webkitAudioContext)();
-var now=ctx.currentTime;
-[523.25,659.25,783.99,1046.50].forEach(function(freq,idx){
-var osc=ctx.createOscillator(),gain=ctx.createGain();
-osc.type='triangle';osc.frequency.setValueAtTime(freq,now+idx*0.08);
-gain.gain.setValueAtTime(0.1,now+idx*0.08);
-gain.gain.exponentialRampToValueAtTime(0.001,now+idx*0.08+0.35);
-osc.connect(gain);gain.connect(ctx.destination);
-osc.start(now+idx*0.08);osc.stop(now+idx*0.08+0.35);
+var _0xctx=new(window.AudioContext||window.webkitAudioContext)();
+var _0xnow=_0xctx.currentTime;
+[523.25,659.25,783.99,1046.50].forEach(function(_0xf,_0xidx){
+var _0xosc=_0xctx.createOscillator(),_0xgn=_0xctx.createGain();
+_0xosc.type='triangle';_0xosc.frequency.setValueAtTime(_0xf,_0xnow+_0xidx*0.08);
+_0xgn.gain.setValueAtTime(0.1,_0xnow+_0xidx*0.08);
+_0xgn.gain.exponentialRampToValueAtTime(0.001,_0xnow+_0xidx*0.08+0.35);
+_0xosc.connect(_0xgn);_0xgn.connect(_0xctx.destination);
+_0xosc.start(_0xnow+_0xidx*0.08);_0xosc.stop(_0xnow+_0xidx*0.08+0.35);
 });
-}catch(e){}
+}catch(_0xe){}
 }
 w.toggleAudio=function(){
-initAudioEngine();
-if(bgAudio.paused){
-bgAudio.play().then(function(){
-soundEnabled=!0;
+_0xiae();
+if(_0xbga.paused){
+_0xbga.play().then(function(){
+_0xsne=!0;
 w.showNotification('Casino Music (.wav) & SFX Enabled');
-}).catch(function(err){
+}).catch(function(_0xerr){
 w.showNotification('Audio blocked. Tap again!');
 });
 }else{
-bgAudio.pause();
-soundEnabled=!1;
+_0xbga.pause();
+_0xsne=!1;
 w.showNotification('Audio Disabled');
 }
 };
-
-
-
-
 w.showNotification=function(txt,isErr){
 var old=document.getElementById('game-toast-badge');if(old)old.remove();
 var el=document.createElement('div');el.id='game-toast-badge';
@@ -1137,7 +1134,7 @@ _0xppr=!0;
 }
 
 var _0xcanId=null,_0xcpt=[],_0xcto=null;
-function _0xtbc(_0xa){playWinSound();
+function _0xtbc(_0xa){_0xpws();
 var _0xe=document.getElementById('celebration-overlay');
 document.getElementById('celebration-payout').textContent='Won $'+_0xa+' (3:2 Payout)';
 _0xe.classList.add(_0x1f(3));_0xscf();
@@ -1307,7 +1304,7 @@ var _0xsi=document.getElementById('table-seats-input');if(_0xsi)_0xsi.value='';
 _0xechs();_0xuab();_0xrndb();
 }
 
-w.addBet=function(_0xa){playChipSound();
+w.addBet=function(_0xa){_0xpcs();
 if(!_0xgov){
 _0xdh=[];_0xph=[];_0xsh=[];
 _0xdcEl.innerHTML='';_0xhcEl.innerHTML='';_0xdsEl.textContent='0';
@@ -1323,7 +1320,7 @@ else{if(_0xmEl.textContent.includes('bet'))_0xmEl.textContent='';}
 else if(_0xbnk<=0&&_0xibt===0){w.openStoreModal();}
 };
 
-w.clearBet=function(){playChipSound();if(!_0xgov)return;_0xbnk+=_0xibt;_0xibt=0;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;_0xmEl.textContent='';};
+w.clearBet=function(){_0xpcs();if(!_0xgov)return;_0xbnk+=_0xibt;_0xibt=0;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;_0xmEl.textContent='';};
 
 function _0xuab(){
 if(_0xgov){
@@ -1369,7 +1366,7 @@ else break;
 });
 }
 
-w.startGame=async function(){playCardSound();
+w.startGame=async function(){_0xpcards();
 if(_0xibt===0){if(_0xbnk<=0)w.openStoreModal();else _0xmEl.textContent='Please place a bet first!';return;}
 if(_0xccr||_0xdeck.length<=_0xccp){_0xechs();_0xmEl.textContent='Cut card reached! Shoe reshuffled & card burned.';}
 else{_0xmEl.textContent='';}
@@ -1406,7 +1403,7 @@ if(_0xdbj){_0xmEl.textContent='Dealer has Blackjack!';_0xfnr();return;}
 if(_0xph[0].cards.length===2&&_0xcls(_0xph[0].cards)===21){_0xfnr();}
 };
 
-w.playerHit=function(){playCardSound();
+w.playerHit=function(){_0xpcards();
 var _0xh=_0xph[_0xahi];_0xh.cards.push(_0xdc());
 var _0xsc=_0xcls(_0xh.cards);
 if(_0xsc>=21){_0xh.status=(_0xsc>21)?_0x1f(31):_0x1f(32);_0xrndb(!0);_0xnxh();}

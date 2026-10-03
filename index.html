@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Calm Chess Computers & Games</title>
     <style>
         :root {
@@ -20,22 +20,35 @@
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+            width: 100%;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--text-main);
             min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
             align-items: center;
+            overflow-x: hidden;
+            width: 100%;
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
         }
 
         header {
             width: 100%;
             background: linear-gradient(135deg, #10172a, #1e293b);
-            padding: 20px;
+            padding: clamp(14px, 3vw, 24px) clamp(16px, 4vw, 32px);
+            padding-top: calc(clamp(14px, 3vw, 24px) + env(safe-area-inset-top, 0px));
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -44,38 +57,49 @@
         }
 
         .header-banner {
-            max-width: 800px;
+            max-width: min(100%, 850px);
             width: 100%;
             height: auto;
             border-radius: 8px;
+            display: block;
         }
 
         nav.top-nav {
             margin-top: 15px;
             display: flex;
-            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: clamp(10px, 3vw, 24px);
         }
 
         nav.top-nav a {
             color: var(--gold-primary);
             text-decoration: none;
             font-weight: 600;
-            transition: color 0.2s;
+            font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: color 0.2s, background-color 0.2s;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
         }
 
-        nav.top-nav a:hover {
+        nav.top-nav a:hover, nav.top-nav a:active {
             color: #ffffff;
             text-shadow: 0 0 8px var(--gold-glow);
+            background: rgba(255, 215, 0, 0.1);
         }
 
         main {
             max-width: 1200px;
             width: 100%;
-            padding: 40px 20px;
+            padding: clamp(24px, 4vw, 44px) clamp(12px, 3vw, 24px);
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 60px;
+            gap: clamp(32px, 6vw, 60px);
+            box-sizing: border-box;
         }
 
         .ring-container-section {
@@ -84,43 +108,55 @@
             align-items: center;
             background: var(--panel-bg);
             border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 16px;
-            padding: 40px;
+            border-radius: clamp(12px, 3vw, 18px);
+            padding: clamp(16px, 4vw, 36px) clamp(10px, 3vw, 24px);
             width: 100%;
             box-shadow: 0 8px 32px rgba(0,0,0,0.6);
             position: relative;
+            box-sizing: border-box;
         }
 
+        /* Fully responsive ring wrapper */
         .ring-wrapper {
             position: relative;
-            width: 500px;
-            height: 500px;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
             display: flex;
             justify-content: center;
             align-items: center;
+            touch-action: manipulation;
+            box-sizing: border-box;
         }
 
-        /* Center Knight Logo (Facing Right) - Triple click opens admin */
+        /* Center Knight Logo (Facing Right) - Scales with ring, triple click opens admin */
         .center-logo {
             position: absolute;
-            width: 120px;
-            height: 120px;
+            top: 50%;
+            left: 50%;
+            width: 24%;
+            height: 24%;
+            max-width: 120px;
+            max-height: 120px;
             object-fit: contain;
-            transform: scaleX(-1);
+            transform: translate(-50%, -50%) scaleX(-1);
             filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
             z-index: 10;
             cursor: pointer;
             user-select: none;
             transition: transform 0.2s;
+            pointer-events: auto;
         }
 
         .center-logo:active {
-            transform: scaleX(-1) scale(0.95);
+            transform: translate(-50%, -50%) scaleX(-1) scale(0.95);
         }
 
         svg.navigation-rings {
             width: 100%;
             height: 100%;
+            display: block;
         }
 
         .ring-segment {
@@ -128,18 +164,20 @@
             transition: fill 0.3s, filter 0.3s;
             stroke: var(--divider-red);
             stroke-width: 3px;
+            outline: none;
         }
 
-        .ring-segment:hover {
+        .ring-segment:hover, .ring-segment:focus-visible {
             fill: #fff3b0;
             filter: drop-shadow(0 0 10px var(--gold-glow));
         }
 
         .ring-text {
-            font-size: 12.5px;
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            font-size: 13px;
             fill: #0b0f19;
             font-weight: bold;
-            letter-spacing: 0.3px;
+            letter-spacing: 0.2px;
             pointer-events: none;
             user-select: none;
         }
@@ -153,25 +191,28 @@
         }
 
         .section-title {
-            font-size: 2rem;
+            font-size: clamp(1.35rem, 4vw, 2rem);
             color: var(--gold-primary);
             margin-bottom: 20px;
             text-align: center;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: clamp(1px, 0.3vw, 2px);
+            line-height: 1.25;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .games-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+            gap: clamp(16px, 3vw, 25px);
             width: 100%;
         }
 
         .game-card {
             background: var(--panel-bg);
             border-radius: 12px;
-            padding: 25px;
+            padding: clamp(18px, 3vw, 25px);
             border: 1px solid rgba(74, 144, 226, 0.3);
             transition: transform 0.2s, box-shadow 0.2s;
             display: flex;
@@ -180,7 +221,7 @@
         }
 
         .game-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-4px);
             box-shadow: 0 10px 25px rgba(74, 144, 226, 0.2);
             border-color: var(--gold-primary);
         }
@@ -188,55 +229,73 @@
         .game-card h3 {
             color: var(--gold-primary);
             margin-bottom: 10px;
+            font-size: clamp(1.15rem, 3vw, 1.35rem);
         }
 
         .game-card p {
             color: var(--text-muted);
             font-size: 0.95rem;
             margin-bottom: 20px;
+            line-height: 1.5;
         }
 
         .btn {
             background: linear-gradient(135deg, var(--accent-blue), #2b6cb0);
             color: white;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border-radius: 6px;
             text-decoration: none;
             text-align: center;
             font-weight: 600;
-            transition: opacity 0.2s;
+            font-size: 1rem;
+            transition: opacity 0.2s, transform 0.1s;
             border: none;
             cursor: pointer;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn:hover {
-            opacity: 0.9;
+            opacity: 0.92;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
         }
 
         .admin-modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            padding: clamp(10px, 3vw, 20px);
+            box-sizing: border-box;
         }
 
         .admin-content {
             background: var(--panel-bg);
-            padding: 30px;
+            padding: clamp(16px, 4vw, 30px);
             border-radius: 12px;
-            width: 90%;
+            width: 100%;
             max-width: 650px;
             max-height: 90vh;
+            max-height: 90dvh;
             overflow-y: auto;
             border: 2px solid var(--gold-primary);
+            box-sizing: border-box;
         }
 
         .admin-content h2 {
             color: var(--gold-primary);
             margin-bottom: 20px;
+            font-size: clamp(1.2rem, 3.5vw, 1.5rem);
         }
 
         .form-group {
@@ -247,25 +306,40 @@
             display: block;
             margin-bottom: 5px;
             color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
         .form-group input, .form-group textarea {
             width: 100%;
-            padding: 10px;
+            padding: 10px 12px;
             background: var(--bg-color);
             border: 1px solid #334155;
             color: white;
             border-radius: 6px;
+            font-size: 1rem;
         }
 
         footer {
             width: 100%;
             background: #080c14;
-            padding: 30px;
+            padding: clamp(20px, 4vw, 30px);
+            padding-bottom: calc(clamp(20px, 4vw, 30px) + env(safe-area-inset-bottom, 0px));
             text-align: center;
             color: var(--text-muted);
             border-top: 1px solid #1e293b;
             margin-top: auto;
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+        }
+
+        /* Landscape Mobile Optimization */
+        @media (max-height: 600px) and (orientation: landscape) {
+            .ring-wrapper {
+                max-width: min(75vh, 420px);
+            }
+            main {
+                gap: 25px;
+                padding: 16px 12px;
+            }
         }
     </style>
 </head>
@@ -276,19 +350,12 @@
         <nav class="top-nav">
             <a href="#games">Games</a>
             <a href="#about">About</a>
-            <!--<a href="video-chat.html">Video Chat</a>-->
             <a href="#contact">Contact</a>
         </nav>
     </header>
 
     <main>
         <section class="ring-container-section">
-            <!-- This text is right above the ring
-			<h2 class="section-title">Interactive Ring Navigation</h2>
-            <p style="color: var(--text-muted); margin-bottom: 20px; text-align: center;">
-                Click any segment on the inner or outer rings to launch games or informational pages.
-            </p>
-			-->
             <div class="ring-wrapper">
                 <!-- Center Knight Logo: Triple-click to open Admin Console -->
                 <img src="knight_left0.png" alt="Calm Chess Knight" class="center-logo" id="centerLogo" title="Triple-click to open Admin Console">
@@ -302,17 +369,11 @@
             <div class="games-grid" id="gamesGrid"></div>
         </section>
 
-        <section id="about" style="width: 100%; background: var(--panel-bg); padding: 40px; border-radius: 12px; border: 1px solid rgba(255,215,0,0.1);">
+        <section id="about" style="width: 100%; background: var(--panel-bg); padding: clamp(20px, 4vw, 40px); border-radius: 12px; border: 1px solid rgba(255,215,0,0.1);">
             <h2 class="section-title">About Calm Chess Computers</h2>
-            <p style="line-height: 1.6; color: var(--text-muted); margin-bottom: 15px;">
+            <p style="line-height: 1.6; color: var(--text-muted); margin-bottom: 15px; font-size: clamp(0.95rem, 2vw, 1.05rem);">
                 Calm Chess Computers is dedicated to crafting immersive, polished browser-based chess engines, tactical game simulations, and streamlined multi-seat gaming experiences. Built with precision and a passion for classical strategy.
             </p>
-			
-            <!--
-			<p style="line-height: 1.6; color: var(--text-muted);">
-                Our hybrid architecture ensures lightning-fast frontend delivery via GitHub Pages paired with secure, robust backend API services on our Ubuntu VPS.
-            </p>
-			-->
         </section>
     </main>
 
@@ -337,7 +398,7 @@
                 <input type="password" id="adminPassword" placeholder="Enter admin password">
             </div>
             <div id="adminSegmentsList"></div>
-            <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px;">
                 <button class="btn" onclick="saveSegments()">Save Changes</button>
                 <button class="btn" style="background: #64748b;" onclick="closeAdminModal()">Cancel</button>
             </div>
@@ -352,7 +413,7 @@
             { ring_type: 'inner', segment_index: 0, title: 'Chess Game', url: 'chess.html', description: 'Offline Stockfish chess engine' },
             { ring_type: 'inner', segment_index: 1, title: 'Blackjack', url: 'blackjack.html', description: 'Casino style blackjack simulation' },
             { ring_type: 'inner', segment_index: 2, title: 'Mobility App', url: 'mobility.html', description: 'Exercise and mobility routines' },
-            <!--{ ring_type: 'inner', segment_index: 3, title: 'Video Chat', url: 'video-chat.html', description: 'Live peer-to-peer video chat' },-->
+            { ring_type: 'inner', segment_index: 3, title: 'Video Chat', url: 'video-chat.html', description: 'Live peer-to-peer video chat' },
             { ring_type: 'outer', segment_index: 0, title: 'About Us', url: '#about', description: 'Company history and mission' },
             { ring_type: 'outer', segment_index: 1, title: 'Engine Specs', url: 'specs.html', description: 'Hardware & architecture specs' },
             { ring_type: 'outer', segment_index: 2, title: 'Leaderboard', url: 'leaderboard.html', description: 'Global player scores' },
@@ -363,10 +424,21 @@
 
         async function fetchSegments() {
             try {
-                const response = await fetch(`${API_BASE}/get_segments.php`);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const response = await fetch(`${API_BASE}/get_segments.php`, { signal: controller.signal });
+                clearTimeout(timeoutId);
                 const data = await response.json();
                 if (data.success && data.segments && data.segments.length > 0) {
-                    currentSegments = data.segments;
+                    // Update currentSegments, preserving default titles if API title is empty/whitespace
+                    currentSegments = data.segments.map(apiSeg => {
+                        const fallback = currentSegments.find(s => s.ring_type === apiSeg.ring_type && s.segment_index == apiSeg.segment_index);
+                        return {
+                            ...fallback,
+                            ...apiSeg,
+                            title: (apiSeg.title && apiSeg.title.trim()) ? apiSeg.title.trim() : (fallback ? fallback.title : apiSeg.title)
+                        };
+                    });
                 }
             } catch (err) {
                 console.warn('Using fallback segments due to API connection error:', err);
@@ -398,10 +470,10 @@
             };
         }
 
-        // Generate circular arc for curved textPath
+        // Generate circular arc for curved textPath with proper left-to-right reading direction
         function describeTextPath(cx, cy, radius, startAngle, endAngle, sweepClockwise) {
             const pStart = polarToCartesian(cx, cy, radius, sweepClockwise ? startAngle : endAngle);
-            const pEnd = polarToCartesian(cx, cy, radius, endAngle ? (sweepClockwise ? endAngle : startAngle) : startAngle);
+            const pEnd = polarToCartesian(cx, cy, radius, sweepClockwise ? endAngle : startAngle);
             const largeArcFlag = Math.abs(endAngle - startAngle) <= 180 ? "0" : "1";
             const sweepFlag = sweepClockwise ? "1" : "0";
             return `M ${pStart.x} ${pStart.y} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${pEnd.x} ${pEnd.y}`;
@@ -409,6 +481,7 @@
 
         function renderRings() {
             const svg = document.getElementById('ringSvg');
+            if (!svg) return;
             svg.innerHTML = '';
             const cx = 250, cy = 250;
 
@@ -431,12 +504,16 @@
                     path.setAttribute('d', pathData);
                     path.setAttribute('fill', '#ffd700');
                     path.setAttribute('class', 'ring-segment');
+                    path.setAttribute('role', 'button');
+                    path.setAttribute('tabindex', '0');
+                    path.setAttribute('aria-label', seg.title);
                     path.onclick = () => window.location.href = seg.url;
+                    path.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') window.location.href = seg.url; };
                     svg.appendChild(path);
 
                     // Text Path: centered vertically inside inner ring at radius = 100
                     const textRadius = 100;
-                    // For bottom half (90 to 270 deg), text reads left-to-right counter-clockwise so letters stay upright
+                    // For bottom half (90 to 270 deg), sweep counter-clockwise so letters stay upright
                     const sweepClockwise = !(midAngle > 90 && midAngle < 270);
                     const textPathId = `inner-textpath-${i}`;
 
@@ -486,7 +563,11 @@
                     path.setAttribute('d', pathData);
                     path.setAttribute('fill', '#ffe066');
                     path.setAttribute('class', 'ring-segment');
+                    path.setAttribute('role', 'button');
+                    path.setAttribute('tabindex', '0');
+                    path.setAttribute('aria-label', seg.title);
                     path.onclick = () => window.location.href = seg.url;
+                    path.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') window.location.href = seg.url; };
                     svg.appendChild(path);
 
                     // Text Path: centered vertically inside outer ring at radius = 175
@@ -531,6 +612,7 @@
 
         function renderGamesGrid() {
             const grid = document.getElementById('gamesGrid');
+            if (!grid) return;
             grid.innerHTML = '';
             currentSegments.forEach(seg => {
                 const card = document.createElement('div');
@@ -632,7 +714,11 @@
             }
         }
 
-        window.onload = fetchSegments;
+        // Immediate initial render for instant FCP and offline readiness
+        renderRings();
+        renderGamesGrid();
+        // Fetch latest segments from API
+        window.addEventListener('DOMContentLoaded', fetchSegments);
     </script>
 </body>
 </html>

@@ -135,11 +135,10 @@
             filter: drop-shadow(0 0 10px var(--gold-glow));
         }
 
-        .ring-text-path {
+        .ring-text {
             font-size: 11px;
             fill: #0b0f19;
             font-weight: bold;
-            letter-spacing: 0.5px;
             pointer-events: none;
             user-select: none;
         }
@@ -398,9 +397,6 @@
             svg.innerHTML = '';
             const cx = 250, cy = 250;
 
-            let defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-            svg.appendChild(defs);
-
             const innerSegments = currentSegments.filter(s => s.ring_type === 'inner');
             const outerSegments = currentSegments.filter(s => s.ring_type === 'outer');
 
@@ -419,32 +415,25 @@
                     path.onclick = () => window.location.href = seg.url;
                     svg.appendChild(path);
 
+                    // Rotational text positioning (Radius 100)
                     const midAngle = startAngle + (angleStep / 2);
+                    const rad = (midAngle - 90) * Math.PI / 180.0;
                     const textRadius = 100;
-                    let textPathId = `inner-text-path-${i}`;
-                    let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    arcPath.setAttribute('id', textPathId);
-                    arcPath.setAttribute('fill', 'none');
+                    const tx = cx + textRadius * Math.cos(rad);
+                    const ty = cy + textRadius * Math.sin(rad);
 
-                    if (midAngle > 180 && midAngle <= 360) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
-                    } else {
-                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
-                    }
-                    defs.appendChild(arcPath);
+                    // If text is in the left hemisphere (90 to 270 deg), rotate +180 so it's never upside down
+                    const isLeft = midAngle > 90 && midAngle < 270;
+                    const rot = isLeft ? midAngle + 90 : midAngle - 90;
 
-                    let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('class', 'ring-text-path');
-                    let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
-                    textPath.setAttribute('href', `#${textPathId}`);
-                    textPath.setAttribute('startOffset', '50%');
-                    textPath.setAttribute('text-anchor', 'middle');
-                    textPath.textContent = seg.title;
-                    text.appendChild(textPath);
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', tx);
+                    text.setAttribute('y', ty);
+                    text.setAttribute('class', 'ring-text');
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('dominant-baseline', 'middle');
+                    text.setAttribute('transform', `rotate(${rot}, ${tx}, ${ty})`);
+                    text.textContent = seg.title;
                     svg.appendChild(text);
 
                     if (showSegmentIdsOnRing) {
@@ -476,32 +465,24 @@
                     path.onclick = () => window.location.href = seg.url;
                     svg.appendChild(path);
 
+                    // Rotational text positioning (Radius 175)
                     const midAngle = startAngle + (angleStep / 2);
+                    const rad = (midAngle - 90) * Math.PI / 180.0;
                     const textRadius = 175;
-                    let textPathId = `outer-text-path-${i}`;
-                    let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                    arcPath.setAttribute('id', textPathId);
-                    arcPath.setAttribute('fill', 'none');
+                    const tx = cx + textRadius * Math.cos(rad);
+                    const ty = cy + textRadius * Math.sin(rad);
 
-                    if (midAngle > 180 && midAngle <= 360) {
-                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
-                    } else {
-                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
-                    }
-                    defs.appendChild(arcPath);
+                    const isLeft = midAngle > 90 && midAngle < 270;
+                    const rot = isLeft ? midAngle + 90 : midAngle - 90;
 
-                    let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('class', 'ring-text-path');
-                    let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
-                    textPath.setAttribute('href', `#${textPathId}`);
-                    textPath.setAttribute('startOffset', '50%');
-                    textPath.setAttribute('text-anchor', 'middle');
-                    textPath.textContent = seg.title;
-                    text.appendChild(textPath);
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', tx);
+                    text.setAttribute('y', ty);
+                    text.setAttribute('class', 'ring-text');
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('dominant-baseline', 'middle');
+                    text.setAttribute('transform', `rotate(${rot}, ${tx}, ${ty})`);
+                    text.textContent = seg.title;
                     svg.appendChild(text);
 
                     if (showSegmentIdsOnRing) {

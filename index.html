@@ -420,15 +420,22 @@
                     svg.appendChild(path);
 
                     const midAngle = startAngle + (angleStep / 2);
-                    const textRadius = 115; // Outer arc radius of inner ring
+                    const textRadius = 100; // Middle radius of inner ring
                     let textPathId = `inner-text-path-${i}`;
                     let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     arcPath.setAttribute('id', textPathId);
                     arcPath.setAttribute('fill', 'none');
 
-                    let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                    let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                    arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    // Match exact orientation shown in reference image for inner ring
+                    if (midAngle >= 180 && midAngle < 360) {
+                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    } else {
+                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    }
                     defs.appendChild(arcPath);
 
                     let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -442,7 +449,7 @@
                     svg.appendChild(text);
 
                     if (showSegmentIdsOnRing) {
-                        const idPos = polarToCartesian(cx, cy, 100, midAngle);
+                        const idPos = polarToCartesian(cx, cy, 112, midAngle);
                         let idText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                         idText.setAttribute('x', idPos.x);
                         idText.setAttribute('y', idPos.y);
@@ -471,15 +478,22 @@
                     svg.appendChild(path);
 
                     const midAngle = startAngle + (angleStep / 2);
-                    const textRadius = 205; // Outer arc radius of outer ring
+                    const textRadius = 175; // Middle radius of outer ring
                     let textPathId = `outer-text-path-${i}`;
                     let arcPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
                     arcPath.setAttribute('id', textPathId);
                     arcPath.setAttribute('fill', 'none');
 
-                    let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
-                    let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
-                    arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    // Match exact orientation shown in reference image for outer ring
+                    if (midAngle >= 180 && midAngle < 360) {
+                        let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                        let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    } else {
+                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    }
                     defs.appendChild(arcPath);
 
                     let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -493,7 +507,7 @@
                     svg.appendChild(text);
 
                     if (showSegmentIdsOnRing) {
-                        const idPos = polarToCartesian(cx, cy, 150, midAngle);
+                        const idPos = polarToCartesian(cx, cy, 195, midAngle);
                         let idText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                         idText.setAttribute('x', idPos.x);
                         idText.setAttribute('y', idPos.y);

@@ -421,17 +421,12 @@
                     const tx = cx + textRadius * Math.cos(rad);
                     const ty = cy + textRadius * Math.sin(rad);
 
-                    // Corrected rotation alignment for inner ring
-                    const isLeft = midAngle > 90 && midAngle < 270;
-                    const rot = isLeft ? midAngle + 90 : midAngle - 90;
-
                     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     text.setAttribute('x', tx);
                     text.setAttribute('y', ty);
                     text.setAttribute('class', 'ring-text');
                     text.setAttribute('text-anchor', 'middle');
                     text.setAttribute('dominant-baseline', 'middle');
-                    text.setAttribute('transform', `rotate(${rot}, ${tx}, ${ty})`);
                     text.textContent = seg.title;
                     svg.appendChild(text);
 
@@ -470,17 +465,12 @@
                     const tx = cx + textRadius * Math.cos(rad);
                     const ty = cy + textRadius * Math.sin(rad);
 
-                    // Corrected rotation alignment for outer ring
-                    const isLeft = midAngle > 90 && midAngle < 270;
-                    const rot = isLeft ? midAngle - 90 : midAngle + 90;
-
                     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     text.setAttribute('x', tx);
                     text.setAttribute('y', ty);
                     text.setAttribute('class', 'ring-text');
                     text.setAttribute('text-anchor', 'middle');
                     text.setAttribute('dominant-baseline', 'middle');
-                    text.setAttribute('transform', `rotate(${rot}, ${tx}, ${ty})`);
                     text.textContent = seg.title;
                     svg.appendChild(text);
 

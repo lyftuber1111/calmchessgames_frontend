@@ -437,7 +437,6 @@
                     }
                     defs.appendChild(arcPath);
 
-                    // Title Text
                     let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     text.setAttribute('class', 'ring-text-path');
                     let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
@@ -448,7 +447,6 @@
                     text.appendChild(textPath);
                     svg.appendChild(text);
 
-                    // Optional ID Overlay Label
                     if (showSegmentIdsOnRing) {
                         const idPos = polarToCartesian(cx, cy, 112, midAngle);
                         let idText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -485,7 +483,12 @@
                     arcPath.setAttribute('id', textPathId);
                     arcPath.setAttribute('fill', 'none');
 
-                    if (midAngle > 90 && midAngle < 270) {
+                    // Specifically flip top-right (outer-0) and top-left (outer-5) so text reads left-to-right correctly along the top arc
+                    if (i === 0 || i === 5) {
+                        let p1 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
+                        let p2 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
+                        arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 1 ${p2.x} ${p2.y}`);
+                    } else if (midAngle > 90 && midAngle < 270) {
                         let p1 = polarToCartesian(cx, cy, textRadius, startAngle + 4);
                         let p2 = polarToCartesian(cx, cy, textRadius, endAngle - 4);
                         arcPath.setAttribute('d', `M ${p1.x} ${p1.y} A ${textRadius} ${textRadius} 0 0 0 ${p2.x} ${p2.y}`);
@@ -496,7 +499,6 @@
                     }
                     defs.appendChild(arcPath);
 
-                    // Title Text
                     let text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
                     text.setAttribute('class', 'ring-text-path');
                     let textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
@@ -507,7 +509,6 @@
                     text.appendChild(textPath);
                     svg.appendChild(text);
 
-                    // Optional ID Overlay Label
                     if (showSegmentIdsOnRing) {
                         const idPos = polarToCartesian(cx, cy, 195, midAngle);
                         let idText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -545,7 +546,6 @@
             renderRings();
         }
 
-        // Setup Reliable Triple-Click listener on center logo
         const centerLogo = document.getElementById('centerLogo');
         let clickCount = 0;
         let clickTimer = null;
@@ -556,7 +556,7 @@
             if (clickCount === 1) {
                 clickTimer = setTimeout(() => {
                     clickCount = 0;
-                }, 600); // 600ms window for triple click
+                }, 600);
             } else if (clickCount === 3) {
                 clearTimeout(clickTimer);
                 clickCount = 0;

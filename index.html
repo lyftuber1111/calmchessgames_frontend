@@ -402,6 +402,25 @@
         <p>&copy; 2026 Calm Chess Computers. All rights reserved.</p>
     </footer>
 
+    <!-- Admin Password Prompt Modal -->
+    <div class="admin-modal" id="adminPasswordModal" style="display: none; z-index: 1050;">
+        <div class="admin-content" style="max-width: 420px; text-align: center; padding: clamp(20px, 4vw, 30px); border: 2px solid var(--gold-primary);">
+            <h3 style="color: var(--gold-primary); margin-bottom: 12px; font-size: clamp(1.2rem, 3.5vw, 1.4rem);">Admin Authentication</h3>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px; line-height: 1.5;">
+                Enter the Admin Console password to continue:
+            </p>
+            <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                <label for="adminAuthInput" style="display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 0.9rem;">Admin Password</label>
+                <input type="password" id="adminAuthInput" placeholder="Enter password" autocomplete="current-password" style="width: 100%; padding: 12px; font-size: 1.1rem; letter-spacing: 2px;">
+            </div>
+            <div id="adminAuthError" style="color: #ef4444; font-size: 0.9rem; margin-bottom: 15px; display: none;"></div>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn" id="adminAuthSubmitBtn" onclick="submitAdminPassword()">Unlock Console</button>
+                <button class="btn" style="background: #64748b;" onclick="closeAdminPasswordModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Admin Modal -->
     <div class="admin-modal" id="adminModal">
         <div class="admin-content">
@@ -715,20 +734,69 @@
             } else if (clickCount === 3) {
                 clearTimeout(clickTimer);
                 clickCount = 0;
-                openAdminModal();
+                promptAdminPassword();
             }
         });
 
-        function openAdminModal() {
-            // Prompt for admin password each time the console is opened
-            const enteredPassword = prompt("Please enter the Admin Console password:");
-            if (enteredPassword === null) {
-                return; // User cancelled
+        function promptAdminPassword() {
+            const authModal = document.getElementById('adminPasswordModal');
+            const authInput = document.getElementById('adminAuthInput');
+            const authError = document.getElementById('adminAuthError');
+            if (authInput) authInput.value = '';
+            if (authError) {
+                authError.innerText = '';
+                authError.style.display = 'none';
+            }
+            if (authModal) authModal.style.display = 'flex';
+            if (authInput) {
+                setTimeout(() => authInput.focus(), 50);
+            }
+        }
+
+        function closeAdminPasswordModal() {
+            const authModal = document.getElementById('adminPasswordModal');
+            const authInput = document.getElementById('adminAuthInput');
+            if (authInput) authInput.value = '';
+            if (authModal) authModal.style.display = 'none';
+        }
+
+        function submitAdminPassword() {
+            const authInput = document.getElementById('adminAuthInput');
+            const authError = document.getElementById('adminAuthError');
+            const password = authInput ? authInput.value.trim() : '';
+
+            if (!password) {
+                if (authError) {
+                    authError.innerText = 'Password cannot be empty.';
+                    authError.style.display = 'block';
+                }
+                if (authInput) authInput.focus();
+                return;
             }
 
+            closeAdminPasswordModal();
+            openAdminModal(password);
+        }
+
+        // Allow pressing Enter key in adminAuthInput to submit
+        window.addEventListener('DOMContentLoaded', () => {
+            const authInput = document.getElementById('adminAuthInput');
+            if (authInput) {
+                authInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        submitAdminPassword();
+                    } else if (e.key === 'Escape') {
+                        closeAdminPasswordModal();
+                    }
+                });
+            }
+        });
+
+        function openAdminModal(providedPassword = '') {
             const adminPwdInput = document.getElementById('adminPassword');
             if (adminPwdInput) {
-                adminPwdInput.value = enteredPassword.trim();
+                adminPwdInput.value = providedPassword;
             }
 
             const listContainer = document.getElementById('adminSegmentsList');
@@ -765,6 +833,10 @@
             if (adminPwdInput) {
                 adminPwdInput.value = '';
             }
+            const authInput = document.getElementById('adminAuthInput');
+            if (authInput) {
+                authInput.value = '';
+            }
             document.getElementById('adminModal').style.display = 'none';
         }
 
@@ -773,14 +845,9 @@
             let password = adminPwdInput ? adminPwdInput.value.trim() : '';
 
             if (!password) {
-                const prompted = prompt("Please enter the Admin Console password to save changes:");
-                if (prompted === null || !prompted.trim()) {
-                    alert('Admin password is required to save changes.');
-                    if (adminPwdInput) adminPwdInput.focus();
-                    return;
-                }
-                password = prompted.trim();
-                if (adminPwdInput) adminPwdInput.value = password;
+                alert('Admin password is required to save changes.');
+                if (adminPwdInput) adminPwdInput.focus();
+                return;
             }
 
             const updatedSegments = currentSegments.map((seg, index) => {

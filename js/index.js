@@ -342,7 +342,7 @@ const API_BASE = 'https://api.calmchessgames.com';
             clickCount++;
 			
 			 if (clickCount === 1) {
-					clickTimer1 = setTimeout(() => {
+					clickTimer = setTimeout(() => {
                     clickCount = 0;
 					 const centerLogo1 = document.getElementById('centerLogo');
                    centerLogo1.innerHTML= '
@@ -350,13 +350,10 @@ const API_BASE = 'https://api.calmchessgames.com';
 					';
                 }, 600);
             } else if (clickCount === 3) {
-				
-				clearTimeout(clickTimer1);
+				clearTimeout(clickTimer);
                 clickCount = 0;
                 promptAdminPassword();
-            }else if(clickCount===2){               
-				clearTimeout(clickTimer0);
-				}
+            }
         });
 
         function promptAdminPassword() {

@@ -340,15 +340,24 @@ const API_BASE = 'https://api.calmchessgames.com';
         centerLogo.addEventListener('click', (e) => {
             e.stopPropagation();
             clickCount++;
-            if (clickCount === 1) {
-                clickTimer = setTimeout(() => {
+			
+			 if (clickCount === 1) {
+				 clickTimer0 = setTimeout(() => {
+                   <a href="https://calmchessgames.com/" class="btn" style="display:inline-block; margin-top:15px; text-align:center;">Go Home</a>
+					clickCount = 0;
+				 
+				}, 700);
+					clickTimer1 = setTimeout(() => {
                     clickCount = 0;
                 }, 600);
             } else if (clickCount === 3) {
-                clearTimeout(clickTimer);
+				
+				clearTimeout(clickTimer1);
                 clickCount = 0;
                 promptAdminPassword();
-            }
+            }else if(clickCount===2){               
+				clearTimeout(clickTimer0);
+				}
         });
 
         function promptAdminPassword() {

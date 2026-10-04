@@ -342,16 +342,12 @@ const API_BASE = 'https://api.calmchessgames.com';
             clickCount++;
 			
 			 if (clickCount === 1) {
-				 clickTimer0 = setTimeout(() => {
+					clickTimer1 = setTimeout(() => {
+                    clickCount = 0;
 					 const centerLogo1 = document.getElementById('centerLogo');
                    centerLogo1.innerHTML= '
 					<a href="https://google.com/" class="btn" style="display:inline-block; margin-top:15px; text-align:center;"></a>
 					';
-					clickCount = 0;
-				 
-				}, 700);
-					clickTimer1 = setTimeout(() => {
-                    clickCount = 0;
                 }, 600);
             } else if (clickCount === 3) {
 				

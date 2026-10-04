@@ -204,7 +204,7 @@
   const elSplitBtn = document.getElementById("split-btn");
   const elChipControls = document.getElementById("chip-controls");
 
-  // Dynamic Card Scaler across mobile, desktop, and VR
+  // Multi-Device & Mobile Safari/Chrome Card Scaler
   function updateResponsiveCardScale() {
     const seats = getSeatsCount();
     const container = document.getElementById("game-container");
@@ -213,16 +213,41 @@
     const availableWidth = container.clientWidth;
     const availableHeight = container.clientHeight;
 
+    // Calculate maximum card height that can fit both dealer and player rows comfortably
+    // Standard table has: top bar (60px) + dealer label (20px) + felt text (20px) + controls (70px)
+    const availableCardAreaHeight = Math.max(120, availableHeight - 200);
+    const maxCardHeight = Math.floor(availableCardAreaHeight / 2.3);
+
+    let targetHeight;
     let targetWidth;
-    if (availableWidth < 500) {
-      targetWidth = Math.max(30, Math.floor((availableWidth - 40) / Math.max(2, seats * 1.4)));
-    } else if (availableHeight < 550) {
-      targetWidth = Math.min(46, Math.max(26, Math.floor(availableHeight * 0.08)));
+
+    if (availableWidth < 640) {
+      // Mobile iPhone / Android phones
+      // Cap card height so 2 rows easily fit without vertical push
+      targetHeight = Math.min(84, Math.max(50, maxCardHeight));
+      targetWidth = Math.round(targetHeight / 1.42);
+
+      // Check horizontal crowding if multiple seats or cards
+      const maxHorizontalWidth = Math.floor((availableWidth - 32) / Math.max(3, seats * 1.8));
+      if (targetWidth > maxHorizontalWidth) {
+        targetWidth = Math.max(34, maxHorizontalWidth);
+        targetHeight = Math.round(targetWidth * 1.42);
+      }
+    } else if (availableHeight < 560) {
+      // Landscape Phones / Compact VR
+      targetHeight = Math.min(60, Math.max(38, maxCardHeight));
+      targetWidth = Math.round(targetHeight / 1.42);
     } else {
-      targetWidth = Math.min(54, Math.max(34, Math.floor(availableWidth / (seats * 2.2))));
+      // Desktop / Mac / Full VR Screen
+      targetHeight = Math.min(96, Math.max(68, maxCardHeight));
+      targetWidth = Math.round(targetHeight / 1.42);
+      const maxHorizontalWidth = Math.floor((availableWidth - 60) / (seats * 2.2));
+      if (targetWidth > maxHorizontalWidth) {
+        targetWidth = Math.max(42, maxHorizontalWidth);
+        targetHeight = Math.round(targetWidth * 1.42);
+      }
     }
 
-    const targetHeight = Math.round(targetWidth * 1.45);
     document.documentElement.style.setProperty("--card-w", targetWidth + "px");
     document.documentElement.style.setProperty("--card-h", targetHeight + "px");
   }
@@ -310,7 +335,6 @@
       if (idInput) idInput.placeholder = "player@casino.com";
       global.checkPasswordRules(document.getElementById("auth-password") ? document.getElementById("auth-password").value : "");
     } else {
-      // SIGN IN TAB: Strictly hide and disable confirm password and rules
       if (rulesEl) {
         rulesEl.classList.add("hidden");
         rulesEl.style.setProperty("display", "none", "important");
@@ -370,7 +394,6 @@
     const confirmInput = document.getElementById("auth-password-confirm");
     const confirmPassword = confirmInput ? confirmInput.value : "";
 
-    // Verification only applies to Register tab
     if (currentAuthTab === "register") {
       if (password !== confirmPassword) {
         showAuthAlert("Passwords do not match. Please verify your password.", true);
@@ -629,7 +652,7 @@
     paypalButtonsRendered = true;
   }
 
-  // Confetti celebration animation (DPI / Retina / VR calibrated)
+  // Confetti celebration animation
   let confettiAnimId = null;
   let confettiParticles = [];
   let celebrationDismissTimer = null;

@@ -30,11 +30,11 @@
       --sab: env(safe-area-inset-bottom, 0px);
       --sal: env(safe-area-inset-left, 0px);
 
-      /* Responsive Card Scaling Variables */
-      --card-w: clamp(34px, 4.2vw, 54px);
-      --card-h: clamp(50px, 6.2vw, 80px);
-      --card-font: clamp(0.65rem, 1.1vh, 0.85rem);
-      --suit-font: clamp(0.85rem, 1.6vh, 1.25rem);
+      /* Proportionate Card Bounds */
+      --card-w: clamp(42px, 11vw, 68px);
+      --card-h: clamp(60px, 15.5vh, 98px);
+      --card-font: clamp(0.7rem, 1.2vh, 0.88rem);
+      --suit-font: clamp(0.9rem, 1.8vh, 1.35rem);
     }
 
     * {
@@ -75,7 +75,7 @@
       flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: max(6px, var(--sat)) max(6px, var(--sar)) max(6px, var(--sab)) max(6px, var(--sal));
+      padding: max(4px, var(--sat)) max(4px, var(--sar)) max(4px, var(--sab)) max(4px, var(--sal));
     }
 
     .view-screen { 
@@ -96,7 +96,7 @@
       width: 100%;
       max-width: 1180px;
       height: 100%;
-      max-height: calc(100dvh - max(12px, calc(var(--sat) + var(--sab))));
+      max-height: calc(100dvh - max(8px, calc(var(--sat) + var(--sab))));
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -195,15 +195,15 @@
 
     /* --- FELT TABLE CONTAINER --- */
     #game-container {
-      --felt-cushion: clamp(6px, 1.5vh, 18px);
+      --felt-cushion: clamp(4px, 1.2vh, 12px);
       width: 100%;
       height: 100%;
       max-height: 100%;
       background: radial-gradient(ellipse at center, var(--felt-green) 0%, var(--felt-dark) 100%);
-      border: clamp(6px, 1vh, 12px) solid #5a381e;
-      border-radius: clamp(16px, 3vh, 36px);
+      border: clamp(4px, 1vh, 10px) solid #5a381e;
+      border-radius: clamp(14px, 2.5vh, 32px);
       box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.7);
-      padding: clamp(6px, 1.2vh, 14px) clamp(8px, 1.5vw, 18px);
+      padding: clamp(6px, 1vh, 12px) clamp(8px, 1.5vw, 16px);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -216,9 +216,9 @@
     .top-bar-wrapper {
       display: flex;
       flex-direction: column;
-      gap: clamp(2px, 0.5vh, 6px);
+      gap: clamp(2px, 0.4vh, 4px);
       border-bottom: 2px dashed rgba(255, 255, 255, 0.25);
-      padding-bottom: clamp(3px, 0.6vh, 6px);
+      padding-bottom: clamp(3px, 0.5vh, 6px);
       margin-bottom: var(--felt-cushion);
       width: 100%;
       flex-shrink: 0;
@@ -230,10 +230,10 @@
       align-items: center; 
       width: 100%; 
       flex-wrap: nowrap;
-      gap: 8px;
+      gap: 6px;
     }
     .title { 
-      font-size: clamp(0.78rem, 1.6vw, 1.05rem); 
+      font-size: clamp(0.75rem, 1.4vw, 1rem); 
       font-weight: 800; 
       color: var(--gold); 
       text-transform: uppercase; 
@@ -244,32 +244,32 @@
     }
     .title span { 
       display: block; 
-      font-size: clamp(0.6rem, 1.1vw, 0.8rem); 
-      letter-spacing: 0.6px; 
+      font-size: clamp(0.58rem, 1vw, 0.75rem); 
+      letter-spacing: 0.5px; 
       color: #cbd5e1; 
     }
 
     .top-user-group { 
       display: flex; 
       align-items: center; 
-      gap: clamp(4px, 0.8vw, 8px); 
-      font-size: clamp(0.72rem, 1.2vh, 0.85rem); 
+      gap: clamp(3px, 0.8vw, 6px); 
+      font-size: clamp(0.7rem, 1.1vh, 0.82rem); 
       font-weight: 600; 
       flex-shrink: 0;
     }
 
-    .seats-control-box { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-    .seats-input-row { display: flex; align-items: center; gap: 4px; }
-    .seats-input-row label { font-size: clamp(0.65rem, 1vw, 0.78rem); font-weight: 800; color: var(--gold); text-transform: uppercase; }
+    .seats-control-box { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+    .seats-input-row { display: flex; align-items: center; gap: 3px; }
+    .seats-input-row label { font-size: clamp(0.62rem, 0.9vw, 0.75rem); font-weight: 800; color: var(--gold); text-transform: uppercase; }
     .seats-input-row input {
-      width: clamp(32px, 3.5vw, 44px);
-      height: clamp(20px, 2.8vh, 26px);
+      width: clamp(30px, 3.2vw, 40px);
+      height: clamp(18px, 2.5vh, 24px);
       background: var(--input-bg);
       border: 1.5px solid rgba(241, 196, 15, 0.5);
-      border-radius: 6px;
+      border-radius: 5px;
       color: #fff;
       text-align: center;
-      font-size: clamp(0.72rem, 1.1vh, 0.85rem);
+      font-size: clamp(0.68rem, 1vh, 0.82rem);
       font-weight: 800;
       outline: none;
     }
@@ -277,18 +277,18 @@
     .seats-hint { 
       display: flex; 
       align-items: center; 
-      gap: 3px; 
-      font-size: clamp(0.5rem, 0.8vh, 0.62rem); 
+      gap: 2px; 
+      font-size: clamp(0.48rem, 0.75vh, 0.6rem); 
       color: #94a3b8; 
       text-transform: uppercase; 
-      letter-spacing: 0.3px; 
+      letter-spacing: 0.2px; 
       white-space: nowrap; 
     }
 
     .hdr-btn { 
-      padding: clamp(3px, 0.6vh, 6px) clamp(5px, 0.8vw, 10px); 
+      padding: clamp(3px, 0.5vh, 5px) clamp(5px, 0.8vw, 9px); 
       border-radius: 6px; 
-      font-size: clamp(0.65rem, 1vh, 0.75rem); 
+      font-size: clamp(0.62rem, 0.95vh, 0.72rem); 
       font-weight: 700; 
       cursor: pointer; 
       text-transform: uppercase; 
@@ -302,11 +302,11 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: clamp(8px, 2vw, 32px);
+      gap: clamp(8px, 2vw, 24px);
       background: rgba(0, 0, 0, 0.35);
-      border-radius: 12px;
-      padding: clamp(2px, 0.5vh, 5px) clamp(10px, 2vw, 24px);
-      font-size: clamp(0.65rem, 1.1vh, 0.82rem);
+      border-radius: 10px;
+      padding: clamp(2px, 0.4vh, 4px) clamp(8px, 1.8vw, 20px);
+      font-size: clamp(0.62rem, 1vh, 0.78rem);
       font-weight: 600;
       width: fit-content;
       margin: 0 auto;
@@ -332,20 +332,20 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin: clamp(1px, 0.4vh, 4px) 0;
+      margin: clamp(1px, 0.3vh, 3px) 0;
       gap: 1px;
       pointer-events: none;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
       flex-shrink: 0;
       text-align: center;
     }
-    .felt-rule-main { font-size: clamp(0.62rem, 1.1vh, 0.82rem); font-weight: 900; color: rgba(241, 196, 15, 0.85); letter-spacing: 1px; text-transform: uppercase; }
-    .felt-rule-sub { font-size: clamp(0.52rem, 0.9vh, 0.7rem); font-weight: 800; color: rgba(255, 255, 255, 0.7); letter-spacing: 0.6px; text-transform: uppercase; }
+    .felt-rule-main { font-size: clamp(0.58rem, 1vh, 0.78rem); font-weight: 900; color: rgba(241, 196, 15, 0.85); letter-spacing: 0.8px; text-transform: uppercase; }
+    .felt-rule-sub { font-size: clamp(0.48rem, 0.8vh, 0.65rem); font-weight: 800; color: rgba(255, 255, 255, 0.7); letter-spacing: 0.5px; text-transform: uppercase; }
 
     #message-banner { 
-      min-height: clamp(22px, 3vh, 32px); 
+      min-height: clamp(20px, 2.8vh, 28px); 
       text-align: center; 
-      font-size: clamp(0.72rem, 1.2vh, 0.95rem); 
+      font-size: clamp(0.68rem, 1.1vh, 0.88rem); 
       font-weight: 800; 
       display: flex;
       align-items: center;
@@ -353,8 +353,8 @@
       flex-shrink: 0;
       background: rgba(13, 19, 26, 0.92);
       border: 1.5px solid var(--gold);
-      border-radius: 8px;
-      padding: 2px clamp(8px, 1.5vw, 16px);
+      border-radius: 7px;
+      padding: 2px clamp(8px, 1.5vw, 14px);
       width: fit-content;
       max-width: 90%;
       margin: 0 auto;
@@ -362,7 +362,7 @@
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
       color: var(--gold);
       text-transform: uppercase;
-      letter-spacing: 0.4px;
+      letter-spacing: 0.3px;
     }
 
     /* PLAYER HANDS CONTAINER */
@@ -382,7 +382,7 @@
     }
 
     .hand-box, .hand-group { 
-      padding: clamp(2px, 0.5vh, 6px); 
+      padding: clamp(2px, 0.4vh, 5px); 
       border-radius: 8px; 
       background: rgba(0, 0, 0, 0.18); 
       border: 2px solid rgba(255, 255, 255, 0.1); 
@@ -392,27 +392,28 @@
       justify-content: center;
       position: relative;
       flex: 0 1 auto;
-      min-width: calc(var(--card-w) * 1.8);
-      max-width: 170px;
+      min-width: calc(var(--card-w) * 1.5);
+      max-width: 160px;
     }
     .hand-box.active { border-color: var(--gold); background: rgba(241, 196, 15, 0.1); box-shadow: 0 0 12px rgba(241, 196, 15, 0.35); }
-    .hand-label { font-size: clamp(0.6rem, 1vh, 0.78rem); font-weight: 700; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+    .hand-label { font-size: clamp(0.58rem, 0.95vh, 0.74rem); font-weight: 700; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
     
     .cards-row { 
       display: flex; 
       flex-wrap: nowrap; 
       justify-content: center; 
       gap: clamp(2px, 0.4vw, 4px); 
-      min-height: var(--card-h); 
+      height: var(--card-h); 
       align-items: center;
     }
 
-    /* PLAYING CARDS */
+    /* PLAYING CARDS - Enforced ratio bounds */
     .card { 
       width: var(--card-w); 
       height: var(--card-h); 
+      max-height: clamp(54px, 14.5vh, 98px);
       background: var(--card-bg); 
-      border-radius: clamp(3px, 0.5vw, 6px); 
+      border-radius: clamp(3px, 0.5vw, 5px); 
       box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35); 
       position: relative; 
       padding: 2px 3px; 
@@ -435,24 +436,24 @@
     .controls { 
       display: flex; 
       flex-direction: column; 
-      gap: clamp(4px, 0.8vh, 8px); 
+      gap: clamp(3px, 0.6vh, 6px); 
       align-items: center; 
       margin-bottom: var(--felt-cushion);
       flex-shrink: 0;
     }
-    .btn-row { display: flex; gap: clamp(3px, 0.8vw, 8px); flex-wrap: wrap; justify-content: center; }
+    .btn-row { display: flex; gap: clamp(3px, 0.7vw, 6px); flex-wrap: wrap; justify-content: center; }
 
     button.game-btn { 
       background: #2c3e50; 
       color: #fff; 
       border: 2px solid rgba(255, 255, 255, 0.2); 
-      border-radius: 16px; 
-      padding: clamp(5px, 0.8vh, 8px) clamp(8px, 1.2vw, 14px); 
-      font-size: clamp(0.7rem, 1.1vh, 0.82rem); 
+      border-radius: 14px; 
+      padding: clamp(4px, 0.7vh, 7px) clamp(8px, 1.1vw, 13px); 
+      font-size: clamp(0.66rem, 1vh, 0.8rem); 
       font-weight: bold; 
       cursor: pointer; 
-      min-height: 34px;
-      min-width: 44px;
+      min-height: 32px;
+      min-width: 42px;
       touch-action: manipulation;
     }
     button.game-btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -464,15 +465,15 @@
 
     .chip-row { display: flex; gap: clamp(4px, 0.8vw, 8px); align-items: center; }
     .chip { 
-      width: clamp(30px, 4.4vh, 38px); 
-      height: clamp(30px, 4.4vh, 38px); 
+      width: clamp(28px, 4vh, 36px); 
+      height: clamp(28px, 4vh, 36px); 
       border-radius: 50%; 
       border: 2px dashed #fff; 
       display: flex; 
       justify-content: center; 
       align-items: center; 
       font-weight: 800; 
-      font-size: clamp(0.65rem, 1vh, 0.75rem); 
+      font-size: clamp(0.62rem, 0.95vh, 0.74rem); 
       cursor: pointer; 
       flex-shrink: 0;
       touch-action: manipulation;
@@ -486,24 +487,24 @@
       width: 100%; 
       text-align: center; 
       padding-top: 1px; 
-      font-size: clamp(0.5rem, 0.8vh, 0.65rem); 
+      font-size: clamp(0.48rem, 0.75vh, 0.62rem); 
       color: rgba(255, 255, 255, 0.45); 
-      letter-spacing: 0.4px; 
+      letter-spacing: 0.3px; 
       flex-shrink: 0;
     }
 
     .felt-max-bet-badge {
       position: absolute;
-      top: clamp(60px, 10vh, 90px);
-      right: clamp(10px, 2vw, 24px);
+      top: clamp(52px, 8.5vh, 76px);
+      right: clamp(8px, 1.8vw, 20px);
       background: rgba(0, 0, 0, 0.45);
       border: 1.5px solid rgba(241, 196, 15, 0.65);
-      border-radius: 6px;
-      padding: 2px 6px;
-      font-size: clamp(0.58rem, 0.95vh, 0.7rem);
+      border-radius: 5px;
+      padding: 1px 5px;
+      font-size: clamp(0.54rem, 0.85vh, 0.66rem);
       font-weight: 800;
       color: var(--gold);
-      letter-spacing: 0.6px;
+      letter-spacing: 0.5px;
       text-transform: uppercase;
       pointer-events: none;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
@@ -561,14 +562,14 @@
 
     .hand-result-badge {
       position: absolute;
-      top: -28px;
+      top: -24px;
       left: 50%;
       transform: translateX(-50%) scale(0.85);
       background: rgba(13, 19, 26, 0.95);
       border: 1.5px solid var(--gold);
-      border-radius: 6px;
-      padding: 2px 8px;
-      font-size: 0.75rem;
+      border-radius: 5px;
+      padding: 1px 7px;
+      font-size: 0.72rem;
       font-weight: 800;
       color: var(--gold);
       text-transform: uppercase;
@@ -609,58 +610,39 @@
     @keyframes toastIn { to { transform: translateX(-50%) translateY(0); opacity: 1; } }
     @keyframes toastOut { to { transform: translateX(-50%) translateY(-20px); opacity: 0; } }
 
-    /* Landscape phones / compact displays (< 540px height) */
-    @media (max-height: 540px) {
-      #game-container {
-        border-width: 4px;
-        padding: 4px 8px;
-        --felt-cushion: 4px;
-      }
-      .top-bar-wrapper { padding-bottom: 2px; margin-bottom: 3px; }
+    /* Compact Screen Adaptations */
+    @media (max-height: 600px) {
       .felt-rules-banner { display: none; }
       .felt-max-bet-badge { display: none; }
       .table-footer { display: none; }
       :root {
-        --card-w: clamp(26px, 5.5vh, 38px);
-        --card-h: clamp(38px, 8vh, 56px);
+        --card-w: clamp(28px, 6vh, 40px);
+        --card-h: clamp(40px, 8.5vh, 58px);
       }
       .hand-box, .hand-group { padding: 1px 3px; }
-      .controls { gap: 3px; margin-bottom: 2px; }
+      .controls { gap: 2px; margin-bottom: 1px; }
       button.game-btn { min-height: 28px; padding: 3px 8px; }
     }
 
     /* Mobile Portrait (< 640px width) */
     @media (max-width: 640px) {
       .top-row-main { flex-wrap: wrap; }
-      .title { font-size: 0.95rem; }
-      .title span { display: inline-block; margin-left: 4px; font-size: 0.72rem; }
+      .title { font-size: 0.9rem; }
+      .title span { display: inline-block; margin-left: 4px; font-size: 0.68rem; }
       .top-user-group { margin-left: auto; }
       .felt-max-bet-badge {
         position: static !important;
-        margin: 2px auto !important;
-        font-size: 0.65rem !important;
+        margin: 1px auto !important;
+        font-size: 0.62rem !important;
       }
       .hand-result-badge {
         position: relative !important;
         top: auto !important;
         left: auto !important;
         transform: none !important;
-        margin: 2px auto !important;
-        font-size: 0.7rem !important;
+        margin: 1px auto !important;
+        font-size: 0.68rem !important;
       }
-      :root {
-        --card-w: clamp(30px, 9vw, 44px);
-        --card-h: clamp(44px, 13vw, 64px);
-      }
-    }
-
-    /* Meta Quest VR Browsers & Large Desktop Displays (>= 1200px) */
-    @media (min-width: 1200px) {
-      :root {
-        --card-w: 52px;
-        --card-h: 76px;
-      }
-      .hand-box, .hand-group { min-width: 130px; }
     }
   </style>
 </head>

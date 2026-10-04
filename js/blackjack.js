@@ -245,6 +245,8 @@
 
   // Auth & Password validation
   global.checkPasswordRules = function (password) {
+    if (currentAuthTab !== "register") return;
+
     const pwd = (password || "").toString();
 
     const setRuleState = (id, isValid) => {
@@ -264,6 +266,8 @@
   };
 
   global.checkPasswordMatch = function () {
+    if (currentAuthTab !== "register") return true;
+
     const pwd = document.getElementById("auth-password") ? document.getElementById("auth-password").value : "";
     const confirmEl = document.getElementById("auth-password-confirm");
     const confirmPwd = confirmEl ? confirmEl.value : "";
@@ -283,19 +287,43 @@
 
     const rulesEl = document.getElementById("password-rules");
     const confirmGroup = document.getElementById("confirm-password-group");
+    const confirmInput = document.getElementById("auth-password-confirm");
     const submitBtn = document.getElementById("auth-submit-btn");
     const idLabel = document.getElementById("auth-id-label");
     const idInput = document.getElementById("auth-identifier");
 
     if (tab === "register") {
-      if (rulesEl) rulesEl.style.display = "flex";
-      if (confirmGroup) confirmGroup.style.display = "flex";
+      if (rulesEl) {
+        rulesEl.classList.remove("hidden");
+        rulesEl.style.setProperty("display", "flex", "important");
+      }
+      if (confirmGroup) {
+        confirmGroup.classList.remove("hidden");
+        confirmGroup.style.setProperty("display", "flex", "important");
+      }
+      if (confirmInput) {
+        confirmInput.disabled = false;
+        confirmInput.required = true;
+      }
       if (submitBtn) submitBtn.textContent = "Register & Play";
       if (idLabel) idLabel.textContent = "Email Address";
       if (idInput) idInput.placeholder = "player@casino.com";
+      global.checkPasswordRules(document.getElementById("auth-password") ? document.getElementById("auth-password").value : "");
     } else {
-      if (rulesEl) rulesEl.style.display = "none";
-      if (confirmGroup) confirmGroup.style.display = "none";
+      // SIGN IN TAB: Strictly hide and disable confirm password and rules
+      if (rulesEl) {
+        rulesEl.classList.add("hidden");
+        rulesEl.style.setProperty("display", "none", "important");
+      }
+      if (confirmGroup) {
+        confirmGroup.classList.add("hidden");
+        confirmGroup.style.setProperty("display", "none", "important");
+      }
+      if (confirmInput) {
+        confirmInput.disabled = true;
+        confirmInput.required = false;
+        confirmInput.value = "";
+      }
       if (submitBtn) submitBtn.textContent = "Sign In";
       if (idLabel) idLabel.textContent = "Username or Email";
       if (idInput) idInput.placeholder = "username or email";
@@ -342,6 +370,7 @@
     const confirmInput = document.getElementById("auth-password-confirm");
     const confirmPassword = confirmInput ? confirmInput.value : "";
 
+    // Verification only applies to Register tab
     if (currentAuthTab === "register") {
       if (password !== confirmPassword) {
         showAuthAlert("Passwords do not match. Please verify your password.", true);

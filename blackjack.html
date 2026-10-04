@@ -139,6 +139,7 @@
     .auth-toggle button.active { background: var(--gold); color: #000; }
 
     .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group.register-only.hidden { display: none !important; }
     .form-group label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #cbd5e1; }
     .form-group input {
       background: var(--input-bg);
@@ -160,6 +161,9 @@
       border-radius: 8px;
       padding: 12px;
       font-size: 0.8rem;
+    }
+    .validation-rules.hidden {
+      display: none !important;
     }
 
     .rule-item {
@@ -774,7 +778,7 @@
           <input type="password" id="auth-password" required autocomplete="current-password" oninput="checkPasswordRules(this.value)" onkeyup="checkPasswordRules(this.value)" onpaste="setTimeout(()=>checkPasswordRules(this.value),10)">
         </div>
 
-        <div class="form-group" id="confirm-password-group" style="margin-top: 10px;">
+        <div class="form-group register-only" id="confirm-password-group" style="margin-top: 10px;">
           <label>Confirm Password</label>
           <input type="password" id="auth-password-confirm" autocomplete="new-password" placeholder="Confirm your password" oninput="checkPasswordMatch()" onkeyup="checkPasswordMatch()" onpaste="setTimeout(()=>checkPasswordMatch(),10)">
         </div>
@@ -872,7 +876,6 @@
     </div>
   </div>
 
-  <!-- SCRIPT LOADED FROM js/ SUBFOLDER -->
-  <script src="js/blackjack.js"></script>
+  <script src="/js/blackjack.js"></script>
 </body>
 </html>

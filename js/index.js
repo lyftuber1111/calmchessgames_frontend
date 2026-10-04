@@ -343,7 +343,10 @@ const API_BASE = 'https://api.calmchessgames.com';
 			
 			 if (clickCount === 1) {
 				 clickTimer0 = setTimeout(() => {
+                   centerLogo.innerHTML='
                    <a href="https://calmchessgames.com/" class="btn" style="display:inline-block; margin-top:15px; text-align:center;">Go Home</a>
+					'
+					;
 					clickCount = 0;
 				 
 				}, 700);

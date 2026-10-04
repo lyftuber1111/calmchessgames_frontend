@@ -1,5 +1,6 @@
 const API_BASE = 'https://api.calmchessgames.com';
         let showSegmentIdsOnRing = false;
+        let centerLogoUrl = 'chess.html';
 
         let currentSegments = [
             { ring_type: 'inner', segment_index: 0, title: 'Chess Game', url: 'chess.html', description: 'Offline Stockfish chess engine' },
@@ -17,11 +18,11 @@ const API_BASE = 'https://api.calmchessgames.com';
         async function fetchSegments() {
             // 1. Immediately hydrate from localStorage for instantaneous persistence
             try {
-                const cached = localStorage.getItem('calmchess_segments');
-                if (cached) {
-                    const parsed = JSON.parse(cached);
+                const cachedSegments = localStorage.getItem('calmchess_segments');
+                if (cachedSegments) {
+                    const parsed = JSON.parse(cachedSegments);
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        currentSegments = parsed;
+                        currentSegments = parsed.filter(s => s.ring_type !== 'center');
                         renderRings();
                         renderGamesGrid();
                     }
@@ -30,7 +31,16 @@ const API_BASE = 'https://api.calmchessgames.com';
                 console.warn('Error reading cached segments:', e);
             }
 
-            // 2. Fetch latest segments from backend API
+            try {
+                const cachedLogoUrl = localStorage.getItem('calmchess_center_logo_url');
+                if (cachedLogoUrl !== null && cachedLogoUrl !== '') {
+                    centerLogoUrl = cachedLogoUrl;
+                }
+            } catch (e) {
+                console.warn('Error reading cached center logo URL:', e);
+            }
+
+            // 2. Fetch latest segments and center logo URL from backend API
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), 8000);
@@ -49,7 +59,7 @@ const API_BASE = 'https://api.calmchessgames.com';
                         const response = await fetch(url, { signal: controller.signal });
                         if (response.ok) {
                             data = await response.json();
-                            if (data && data.success && data.segments && data.segments.length > 0) break;
+                            if (data && data.success) break;
                         }
                     } catch (e) {
                         // try next candidate endpoint
@@ -57,19 +67,42 @@ const API_BASE = 'https://api.calmchessgames.com';
                 }
                 clearTimeout(timeoutId);
 
-                if (data && data.success && data.segments && data.segments.length > 0) {
-                    currentSegments = data.segments.map(apiSeg => {
-                        const fallback = currentSegments.find(s => s.ring_type === apiSeg.ring_type && parseInt(s.segment_index, 10) === parseInt(apiSeg.segment_index, 10));
-                        return {
-                            ring_type: apiSeg.ring_type,
-                            segment_index: parseInt(apiSeg.segment_index, 10),
-                            title: apiSeg.title !== undefined ? apiSeg.title : (fallback ? fallback.title : ''),
-                            url: apiSeg.url !== undefined ? apiSeg.url : (fallback ? fallback.url : ''),
-                            description: apiSeg.description !== undefined ? apiSeg.description : (fallback ? fallback.description : ''),
-                            is_active: apiSeg.is_active !== undefined ? parseInt(apiSeg.is_active, 10) : 1
-                        };
-                    });
-                    localStorage.setItem('calmchess_segments', JSON.stringify(currentSegments));
+                if (data && data.success) {
+                    // Extract center_logo_url from API response if present
+                    if (data.center_logo_url !== undefined && data.center_logo_url !== null && data.center_logo_url !== '') {
+                        centerLogoUrl = data.center_logo_url;
+                        localStorage.setItem('calmchess_center_logo_url', centerLogoUrl);
+                    } else if (data.data && data.data.center_logo_url !== undefined && data.data.center_logo_url !== '') {
+                        centerLogoUrl = data.data.center_logo_url;
+                        localStorage.setItem('calmchess_center_logo_url', centerLogoUrl);
+                    }
+
+                    const apiSegments = data.segments || (data.data && data.data.segments);
+                    if (Array.isArray(apiSegments) && apiSegments.length > 0) {
+                        // Check if center segment is present in segments array
+                        const centerSeg = apiSegments.find(s => s.ring_type === 'center');
+                        if (centerSeg && centerSeg.url) {
+                            centerLogoUrl = centerSeg.url;
+                            localStorage.setItem('calmchess_center_logo_url', centerLogoUrl);
+                        }
+
+                        // Filter to ring navigation items (inner and outer)
+                        const ringItems = apiSegments.filter(s => s.ring_type === 'inner' || s.ring_type === 'outer');
+                        if (ringItems.length > 0) {
+                            currentSegments = ringItems.map(apiSeg => {
+                                const fallback = currentSegments.find(s => s.ring_type === apiSeg.ring_type && parseInt(s.segment_index, 10) === parseInt(apiSeg.segment_index, 10));
+                                return {
+                                    ring_type: apiSeg.ring_type,
+                                    segment_index: parseInt(apiSeg.segment_index, 10),
+                                    title: apiSeg.title !== undefined ? apiSeg.title : (fallback ? fallback.title : ''),
+                                    url: apiSeg.url !== undefined ? apiSeg.url : (fallback ? fallback.url : ''),
+                                    description: apiSeg.description !== undefined ? apiSeg.description : (fallback ? fallback.description : ''),
+                                    is_active: apiSeg.is_active !== undefined ? parseInt(apiSeg.is_active, 10) : 1
+                                };
+                            });
+                            localStorage.setItem('calmchess_segments', JSON.stringify(currentSegments));
+                        }
+                    }
                 }
             } catch (err) {
                 console.warn('Using cached or fallback segments due to API connection error:', err);
@@ -173,6 +206,22 @@ const API_BASE = 'https://api.calmchessgames.com';
             } else {
                 setTimeout(() => {
                     window.location.href = url;
+                }, 130);
+            }
+        }
+
+        // Center logo redirect helper with sci-fi audio feedback and safe navigation
+        function handleCenterLogoRedirect(url) {
+            if (!url || typeof url !== 'string') return;
+            const targetUrl = url.trim();
+            if (!targetUrl) return;
+
+            playSciFiLaser();
+            if (targetUrl.startsWith('#')) {
+                window.location.href = targetUrl;
+            } else {
+                setTimeout(() => {
+                    window.location.href = targetUrl;
                 }, 130);
             }
         }
@@ -314,7 +363,7 @@ const API_BASE = 'https://api.calmchessgames.com';
             const grid = document.getElementById('gamesGrid');
             if (!grid) return;
             grid.innerHTML = '';
-            currentSegments.forEach(seg => {
+            currentSegments.filter(s => s.ring_type !== 'center').forEach(seg => {
                 const card = document.createElement('div');
                 card.className = 'game-card';
                 card.innerHTML = `
@@ -337,20 +386,38 @@ const API_BASE = 'https://api.calmchessgames.com';
         let clickCount = 0;
         let clickTimer = null;
 
-        centerLogo.addEventListener('click', (e) => {
-            e.stopPropagation();
-            clickCount++;
-			
-			 if (clickCount === 1) {
-					clickTimer = setTimeout(() => {
+        if (centerLogo) {
+            centerLogo.addEventListener('click', (e) => {
+                e.stopPropagation();
+                clickCount++;
+
+                if (clickCount === 1) {
+                    // Start timer for single click timeout redirect
+                    clickTimer = setTimeout(() => {
+                        const wasSingleClick = (clickCount === 1);
+                        clickCount = 0;
+                        if (wasSingleClick && centerLogoUrl && centerLogoUrl.trim() !== '') {
+                            handleCenterLogoRedirect(centerLogoUrl);
+                        }
+                    }, 600);
+                } else if (clickCount === 3) {
+                    // Triple click detected within timeout window: clear timer and unlock admin modal
+                    clearTimeout(clickTimer);
                     clickCount = 0;
-                }, 600);
-            } else if (clickCount === 3) {
-				clearTimeout(clickTimer);
-                clickCount = 0;
-                promptAdminPassword();
-            }
-        });
+                    promptAdminPassword();
+                }
+            });
+
+            // Keyboard accessibility: Enter or Space activates redirection
+            centerLogo.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    if (centerLogoUrl && centerLogoUrl.trim() !== '') {
+                        handleCenterLogoRedirect(centerLogoUrl);
+                    }
+                }
+            });
+        }
 
         function promptAdminPassword() {
             const authModal = document.getElementById('adminPasswordModal');
@@ -413,9 +480,16 @@ const API_BASE = 'https://api.calmchessgames.com';
                 adminPwdInput.value = providedPassword;
             }
 
+            // Populate Center Logo URL input field
+            const centerLogoInput = document.getElementById('adminCenterLogoUrl');
+            if (centerLogoInput) {
+                centerLogoInput.value = centerLogoUrl || '';
+            }
+
             const listContainer = document.getElementById('adminSegmentsList');
             listContainer.innerHTML = '';
-            currentSegments.forEach((seg, index) => {
+            const segmentsToEdit = currentSegments.filter(s => s.ring_type !== 'center');
+            segmentsToEdit.forEach((seg, index) => {
                 const segmentId = `${seg.ring_type}-${seg.segment_index}`;
                 const titleVal = (seg.title || '').replace(/"/g, '&quot;');
                 const urlVal = (seg.url || '').replace(/"/g, '&quot;');
@@ -464,7 +538,11 @@ const API_BASE = 'https://api.calmchessgames.com';
                 return;
             }
 
-            const updatedSegments = currentSegments.map((seg, index) => {
+            const centerLogoInput = document.getElementById('adminCenterLogoUrl');
+            const updatedCenterLogoUrl = centerLogoInput ? centerLogoInput.value.trim() : centerLogoUrl;
+
+            const nonCenterSegments = currentSegments.filter(s => s.ring_type !== 'center');
+            const updatedSegments = nonCenterSegments.map((seg, index) => {
                 const titleEl = document.getElementById(`admin_title_${index}`);
                 const urlEl = document.getElementById(`admin_url_${index}`);
                 const descEl = document.getElementById(`admin_desc_${index}`);
@@ -497,12 +575,28 @@ const API_BASE = 'https://api.calmchessgames.com';
                 ];
                 const uniqueUrls = [...new Set(candidateUrls)];
 
+                const payload = {
+                    admin_password: password,
+                    segments: [
+                        ...updatedSegments,
+                        {
+                            ring_type: 'center',
+                            segment_index: 0,
+                            title: 'Center Logo',
+                            url: updatedCenterLogoUrl,
+                            description: 'Center knight logo single-click redirect URL',
+                            is_active: 1
+                        }
+                    ],
+                    center_logo_url: updatedCenterLogoUrl
+                };
+
                 for (const targetUrl of uniqueUrls) {
                     try {
                         const response = await fetch(targetUrl, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ admin_password: password, segments: updatedSegments })
+                            body: JSON.stringify(payload)
                         });
                         const result = await response.json();
                         if (result.success) {
@@ -521,26 +615,32 @@ const API_BASE = 'https://api.calmchessgames.com';
 
                 if (savedToServer) {
                     currentSegments = updatedSegments;
+                    centerLogoUrl = updatedCenterLogoUrl;
                     localStorage.setItem('calmchess_segments', JSON.stringify(updatedSegments));
+                    localStorage.setItem('calmchess_center_logo_url', centerLogoUrl);
                     renderRings();
                     renderGamesGrid();
-                    alert('Segments updated successfully in database!');
+                    alert('Settings updated successfully in database!');
                     closeAdminModal();
                 } else if (errorMsg && errorMsg.includes('credentials')) {
                     alert('Error: ' + errorMsg + '. Please check your Admin Password.');
                     if (adminPwdInput) adminPwdInput.focus();
                 } else {
                     currentSegments = updatedSegments;
+                    centerLogoUrl = updatedCenterLogoUrl;
                     localStorage.setItem('calmchess_segments', JSON.stringify(updatedSegments));
+                    localStorage.setItem('calmchess_center_logo_url', centerLogoUrl);
                     renderRings();
                     renderGamesGrid();
                     alert('Changes saved locally. (Backend server unreachable: ' + (errorMsg || 'CORS / Network restriction') + ')');
                     closeAdminModal();
                 }
             } catch (err) {
-                console.error('Error saving segments:', err);
+                console.error('Error saving settings:', err);
                 currentSegments = updatedSegments;
+                centerLogoUrl = updatedCenterLogoUrl;
                 localStorage.setItem('calmchess_segments', JSON.stringify(updatedSegments));
+                localStorage.setItem('calmchess_center_logo_url', centerLogoUrl);
                 renderRings();
                 renderGamesGrid();
                 alert('Changes saved locally.');

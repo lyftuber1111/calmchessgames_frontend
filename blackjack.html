@@ -2,13 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>Blackjack 6-Deck Table - Calm Chess Computers</title>
 
-  
   <script src="https://www.paypal.com/sdk/js?client-id=BAAuKf0Nq7Efp5iRVohnfhwwFHNoFKbRevrp6Np3I2aiizyou8EuXZ3rKTeAxdi0JtAUvW4iY8eHP4U-XM&currency=USD&components=buttons"></script>
   <style>
     :root {
@@ -24,22 +23,35 @@
       --card-black: #2d3436;
       --error-red: #e74c3c;
       --success-green: #2ecc71;
+
+      /* Device Safe Areas */
+      --sat: env(safe-area-inset-top, 0px);
+      --sar: env(safe-area-inset-right, 0px);
+      --sab: env(safe-area-inset-bottom, 0px);
+      --sal: env(safe-area-inset-left, 0px);
+
+      /* Card Size Variables (dynamically updated by JS or media queries) */
+      --card-w: clamp(34px, 4.2vw, 54px);
+      --card-h: clamp(50px, 6.2vw, 80px);
+      --card-font: clamp(0.65rem, 1.1vh, 0.85rem);
+      --suit-font: clamp(0.85rem, 1.6vh, 1.25rem);
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
     }
 
     input, textarea, select {
       user-select: text !important;
       -webkit-user-select: text !important;
-      -moz-user-select: text !important;
-      -ms-user-select: text !important;
+      touch-action: auto !important;
     }
 
     .lobby-card, .terms-box, .notice-legal, .auth-alert, .rule-item {
@@ -47,24 +59,29 @@
       -webkit-user-select: text;
     }
 
-        body {
+    html, body {
+      width: 100%;
+      height: 100%;
       min-height: 100vh;
       min-height: 100dvh;
       background: radial-gradient(circle at center, #1b2838 0%, var(--bg-dark) 100%);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      padding: clamp(6px, 1.2vh, 16px);
       color: #fff;
       overflow-x: hidden;
       overflow-y: auto;
     }
 
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: max(6px, var(--sat)) max(6px, var(--sar)) max(6px, var(--sab)) max(6px, var(--sal));
+    }
+
     .view-screen { 
       display: none; 
       width: 100%; 
-      max-width: 1080px; 
+      max-width: 1180px; 
       height: 100%;
       justify-content: center;
       align-items: center;
@@ -77,14 +94,15 @@
 
     #game-screen.active {
       width: 100%;
-      max-width: 1080px;
-      height: calc(100dvh - clamp(12px, 2.5vh, 32px));
-      max-height: 860px;
+      max-width: 1180px;
+      height: 100%;
+      max-height: calc(100dvh - max(12px, calc(var(--sat) + var(--sab))));
       display: flex;
       flex-direction: column;
       justify-content: center;
     }
 
+    /* --- LOBBY STYLES --- */
     .lobby-card {
       width: 100%;
       max-width: 440px;
@@ -92,15 +110,16 @@
       border: 2px solid rgba(241, 196, 15, 0.3);
       border-radius: 20px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
-      padding: 28px 24px;
+      padding: clamp(16px, 4vh, 28px) clamp(16px, 4vw, 24px);
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: clamp(10px, 2vh, 16px);
+      margin: auto;
     }
 
     .lobby-header { text-align: center; }
-    .lobby-header h1 { font-size: 1.7rem; color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
-    .lobby-header p { font-size: 0.85rem; color: #94a3b8; }
+    .lobby-header h1 { font-size: clamp(1.3rem, 3.5vw, 1.7rem); color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
+    .lobby-header p { font-size: clamp(0.75rem, 2vw, 0.85rem); color: #94a3b8; }
 
     .lobby-footer {
       text-align: center;
@@ -116,7 +135,7 @@
     .copyright-text { font-size: 0.72rem; color: #64748b; letter-spacing: 0.4px; }
 
     .auth-toggle { display: flex; background: var(--input-bg); border-radius: 10px; padding: 4px; gap: 4px; }
-    .auth-toggle button { flex: 1; padding: 8px; border: none; background: transparent; color: #94a3b8; font-weight: 700; border-radius: 6px; cursor: pointer; }
+    .auth-toggle button { flex: 1; padding: 10px 8px; border: none; background: transparent; color: #94a3b8; font-weight: 700; border-radius: 6px; cursor: pointer; font-size: 0.88rem; }
     .auth-toggle button.active { background: var(--gold); color: #000; }
 
     .form-group { display: flex; flex-direction: column; gap: 5px; }
@@ -125,9 +144,9 @@
       background: var(--input-bg);
       border: 1.5px solid rgba(255, 255, 255, 0.1);
       border-radius: 8px;
-      padding: 10px 12px;
+      padding: 12px 14px;
       color: #fff;
-      font-size: 0.9rem;
+      font-size: 1rem; /* >=16px prevents iOS automatic zoom on focus */
       outline: none;
     }
     .form-group input:focus { border-color: var(--gold); }
@@ -172,15 +191,15 @@
 
     /* --- THE CASINO FELT TABLE CONTAINER --- */
     #game-container {
-      --felt-cushion: clamp(14px, 2.6vh, 32px);
+      --felt-cushion: clamp(6px, 1.5vh, 18px);
       width: 100%;
       height: 100%;
       max-height: 100%;
       background: radial-gradient(ellipse at center, var(--felt-green) 0%, var(--felt-dark) 100%);
-      border: clamp(8px, 1.2vh, 12px) solid #5a381e;
-      border-radius: clamp(24px, 3.5vh, 42px);
+      border: clamp(6px, 1vh, 12px) solid #5a381e;
+      border-radius: clamp(16px, 3vh, 36px);
       box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.7);
-      padding: clamp(10px, 1.6vh, 18px) clamp(12px, 1.8vw, 22px) clamp(6px, 1vh, 12px) clamp(12px, 1.8vw, 22px);
+      padding: clamp(6px, 1.2vh, 14px) clamp(8px, 1.5vw, 18px);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -193,31 +212,60 @@
     .top-bar-wrapper {
       display: flex;
       flex-direction: column;
-      gap: clamp(3px, 0.6vh, 6px);
+      gap: clamp(2px, 0.5vh, 6px);
       border-bottom: 2px dashed rgba(255, 255, 255, 0.25);
-      padding-bottom: clamp(4px, 0.8vh, 8px);
-      margin-bottom: var(--felt-cushion); /* Equal green cushion below top bar */
+      padding-bottom: clamp(3px, 0.6vh, 6px);
+      margin-bottom: var(--felt-cushion);
       width: 100%;
       flex-shrink: 0;
     }
 
-    .top-row-main { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-    .title { font-size: clamp(0.9rem, 1.6vh, 1.05rem); font-weight: 800; color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.15; cursor: pointer; }
-    .title span { display: block; font-size: clamp(0.7rem, 1.2vh, 0.82rem); letter-spacing: 0.8px; color: #cbd5e1; }
-    .top-user-group { display: flex; align-items: center; gap: clamp(4px, 1vw, 8px); font-size: clamp(0.75rem, 1.3vh, 0.85rem); font-weight: 600; margin-right: 60px; }
+    .top-row-main { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      width: 100%; 
+      flex-wrap: nowrap;
+      gap: 8px;
+    }
+    .title { 
+      font-size: clamp(0.78rem, 1.6vw, 1.05rem); 
+      font-weight: 800; 
+      color: var(--gold); 
+      text-transform: uppercase; 
+      letter-spacing: 0.5px; 
+      line-height: 1.15; 
+      cursor: pointer; 
+      white-space: nowrap;
+    }
+    .title span { 
+      display: block; 
+      font-size: clamp(0.6rem, 1.1vw, 0.8rem); 
+      letter-spacing: 0.6px; 
+      color: #cbd5e1; 
+    }
 
-    .seats-control-box { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; margin-top: 5px; }
+    .top-user-group { 
+      display: flex; 
+      align-items: center; 
+      gap: clamp(4px, 0.8vw, 8px); 
+      font-size: clamp(0.72rem, 1.2vh, 0.85rem); 
+      font-weight: 600; 
+      flex-shrink: 0;
+    }
+
+    .seats-control-box { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
     .seats-input-row { display: flex; align-items: center; gap: 4px; }
-    .seats-input-row label { font-size: clamp(0.68rem, 1.1vh, 0.78rem); font-weight: 800; color: var(--gold); text-transform: uppercase; }
+    .seats-input-row label { font-size: clamp(0.65rem, 1vw, 0.78rem); font-weight: 800; color: var(--gold); text-transform: uppercase; }
     .seats-input-row input {
-      width: clamp(38px, 4.5vw, 46px);
-      height: clamp(22px, 3vh, 26px);
+      width: clamp(32px, 3.5vw, 44px);
+      height: clamp(20px, 2.8vh, 26px);
       background: var(--input-bg);
       border: 1.5px solid rgba(241, 196, 15, 0.5);
       border-radius: 6px;
       color: #fff;
       text-align: center;
-      font-size: clamp(0.75rem, 1.2vh, 0.85rem);
+      font-size: clamp(0.72rem, 1.1vh, 0.85rem);
       font-weight: 800;
       outline: none;
     }
@@ -225,53 +273,52 @@
     .seats-hint { 
       display: flex; 
       align-items: center; 
-      gap: 4px; 
-      font-size: clamp(0.55rem, 0.85vh, 0.65rem); 
+      gap: 3px; 
+      font-size: clamp(0.5rem, 0.8vh, 0.62rem); 
       color: #94a3b8; 
       text-transform: uppercase; 
       letter-spacing: 0.3px; 
-      line-height: 1.1; 
       white-space: nowrap; 
     }
-    @media (max-width: 600px) {
-      .seats-hint {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        width: 44px;
-        gap: 1px;
-      }
-    }
 
-    .hdr-btn { padding: clamp(4px, 0.7vh, 6px) clamp(6px, 1vw, 10px); border-radius: 6px; font-size: clamp(0.68rem, 1.1vh, 0.75rem); font-weight: 700; cursor: pointer; text-transform: uppercase; border: 1px solid transparent; }
+    .hdr-btn { 
+      padding: clamp(3px, 0.6vh, 6px) clamp(5px, 0.8vw, 10px); 
+      border-radius: 6px; 
+      font-size: clamp(0.65rem, 1vh, 0.75rem); 
+      font-weight: 700; 
+      cursor: pointer; 
+      text-transform: uppercase; 
+      border: 1px solid transparent; 
+      white-space: nowrap;
+    }
     .buy-chips-hdr-btn { background: var(--gold); color: #000; }
     .logout-btn { background: rgba(231, 76, 60, 0.25); border-color: var(--error-red); color: #fff; }
 
-    /* Centered, cohesive stats info pill */
     .top-row-stats {
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: clamp(14px, 2.8vw, 36px);
+      gap: clamp(8px, 2vw, 32px);
       background: rgba(0, 0, 0, 0.35);
-      border-radius: 14px;
-      padding: clamp(3px, 0.6vh, 6px) clamp(16px, 2.5vw, 32px);
-      font-size: clamp(0.72rem, 1.3vh, 0.86rem);
+      border-radius: 12px;
+      padding: clamp(2px, 0.5vh, 5px) clamp(10px, 2vw, 24px);
+      font-size: clamp(0.65rem, 1.1vh, 0.82rem);
       font-weight: 600;
       width: fit-content;
       margin: 0 auto;
       flex-shrink: 0;
+      white-space: nowrap;
     }
     .hud-val { color: var(--gold); font-weight: 800; }
 
     /* DEALER SECTION */
     .table-section { 
-      min-height: unset; 
+      min-height: 0;
       display: flex; 
       flex-direction: column; 
       align-items: center; 
       justify-content: center;
-      gap: 4px;
+      gap: 2px;
       flex-shrink: 0;
     }
 
@@ -281,19 +328,20 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin: clamp(2px, 0.6vh, 6px) 0;
-      gap: 2px;
+      margin: clamp(1px, 0.4vh, 4px) 0;
+      gap: 1px;
       pointer-events: none;
       text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
       flex-shrink: 0;
+      text-align: center;
     }
-    .felt-rule-main { font-size: clamp(0.68rem, 1.25vh, 0.85rem); font-weight: 900; color: rgba(241, 196, 15, 0.85); letter-spacing: 1.2px; text-transform: uppercase; }
-    .felt-rule-sub { font-size: clamp(0.58rem, 1.1vh, 0.74rem); font-weight: 800; color: rgba(255, 255, 255, 0.7); letter-spacing: 1px; text-transform: uppercase; }
+    .felt-rule-main { font-size: clamp(0.62rem, 1.1vh, 0.82rem); font-weight: 900; color: rgba(241, 196, 15, 0.85); letter-spacing: 1px; text-transform: uppercase; }
+    .felt-rule-sub { font-size: clamp(0.52rem, 0.9vh, 0.7rem); font-weight: 800; color: rgba(255, 255, 255, 0.7); letter-spacing: 0.6px; text-transform: uppercase; }
 
     #message-banner { 
-      min-height: clamp(26px, 3.5vh, 36px); 
+      min-height: clamp(22px, 3vh, 32px); 
       text-align: center; 
-      font-size: clamp(0.85rem, 1.45vh, 1.02rem); 
+      font-size: clamp(0.72rem, 1.2vh, 0.95rem); 
       font-weight: 800; 
       display: flex;
       align-items: center;
@@ -301,93 +349,107 @@
       flex-shrink: 0;
       background: rgba(13, 19, 26, 0.92);
       border: 1.5px solid var(--gold);
-      border-radius: 10px;
-      padding: 4px 16px;
+      border-radius: 8px;
+      padding: 2px clamp(8px, 1.5vw, 16px);
       width: fit-content;
+      max-width: 90%;
       margin: 0 auto;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
       color: var(--gold);
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.4px;
     }
 
-    /* PLAYER HANDS AREA */
+    /* PLAYER HANDS CONTAINER - Responsive multi-seat grid/flex */
     .player-hands-container { 
       display: flex; 
       flex-wrap: wrap; 
-      gap: clamp(4px, 1vw, 8px); 
+      gap: clamp(3px, 0.8vw, 8px); 
       width: 100%; 
-      min-height: unset;
-      flex: 1;
+      min-height: 0;
+      flex: 1 1 auto;
       align-content: center;
       justify-content: center;
-      overflow: hidden;
+      align-items: flex-end;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 2px;
     }
-    .hand-box { 
-      padding: clamp(4px, 0.8vh, 8px); 
-      border-radius: 10px; 
+
+    .hand-box, .hand-group { 
+      padding: clamp(2px, 0.5vh, 6px); 
+      border-radius: 8px; 
       background: rgba(0, 0, 0, 0.18); 
       border: 2px solid rgba(255, 255, 255, 0.1); 
       display: flex; 
       flex-direction: column; 
       align-items: center; 
       justify-content: center;
+      position: relative;
+      flex: 0 1 auto;
+      min-width: calc(var(--card-w) * 1.8);
+      max-width: 170px;
     }
     .hand-box.active { border-color: var(--gold); background: rgba(241, 196, 15, 0.1); box-shadow: 0 0 12px rgba(241, 196, 15, 0.35); }
-    .hand-label { font-size: clamp(0.68rem, 1.2vh, 0.82rem); font-weight: 600; text-transform: uppercase; color: rgba(255, 255, 255, 0.9); margin-bottom: 2px; }
+    .hand-label { font-size: clamp(0.6rem, 1vh, 0.78rem); font-weight: 700; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+    
     .cards-row { 
       display: flex; 
-      flex-wrap: wrap; 
+      flex-wrap: nowrap; 
       justify-content: center; 
-      gap: clamp(3px, 0.6vw, 6px); 
-      min-height: clamp(58px, 8.5vh, 86px); 
+      gap: clamp(2px, 0.4vw, 4px); 
+      min-height: var(--card-h); 
       align-items: center;
     }
 
     /* PLAYING CARDS */
     .card { 
-      width: clamp(40px, 5.8vh, 58px); 
-      height: clamp(60px, 8.8vh, 86px); 
+      width: var(--card-w); 
+      height: var(--card-h); 
       background: var(--card-bg); 
-      border-radius: 6px; 
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.35); 
+      border-radius: clamp(3px, 0.5vw, 6px); 
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35); 
       position: relative; 
-      padding: clamp(2px, 0.4vh, 4px); 
+      padding: 2px 3px; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
-      font-weight: 700; 
-      font-size: clamp(0.7rem, 1.2vh, 0.85rem); 
+      font-weight: 800; 
+      font-size: var(--card-font); 
       flex-shrink: 0;
+      line-height: 1;
     }
     .card.red { color: var(--card-red); }
     .card.black { color: var(--card-black); }
-    .card .suit { font-size: clamp(0.95rem, 1.8vh, 1.2rem); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .card .suit { font-size: var(--suit-font); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; }
     .card .corner-bottom { transform: rotate(180deg); text-align: right; }
-    .card.hidden { background: repeating-linear-gradient(45deg, #b33939, #b33939 8px, #852020 8px, #852020 16px); border: 2.5px solid #fff; }
+    .card.hidden { background: repeating-linear-gradient(45deg, #b33939, #b33939 6px, #852020 6px, #852020 12px); border: 2px solid #fff; }
     .card.hidden * { display: none; }
 
     /* CONTROLS (CHIPS + ACTION BUTTONS) */
     .controls { 
       display: flex; 
       flex-direction: column; 
-      gap: clamp(5px, 1vh, 9px); 
+      gap: clamp(4px, 0.8vh, 8px); 
       align-items: center; 
-      margin-bottom: var(--felt-cushion); /* Equal green cushion below buttons */
+      margin-bottom: var(--felt-cushion);
       flex-shrink: 0;
     }
-    .btn-row { display: flex; gap: clamp(4px, 0.8vw, 8px); flex-wrap: wrap; justify-content: center; }
+    .btn-row { display: flex; gap: clamp(3px, 0.8vw, 8px); flex-wrap: wrap; justify-content: center; }
 
     button.game-btn { 
       background: #2c3e50; 
       color: #fff; 
       border: 2px solid rgba(255, 255, 255, 0.2); 
-      border-radius: 18px; 
-      padding: clamp(5px, 0.9vh, 8px) clamp(10px, 1.3vw, 16px); 
-      font-size: clamp(0.72rem, 1.2vh, 0.85rem); 
+      border-radius: 16px; 
+      padding: clamp(5px, 0.8vh, 8px) clamp(8px, 1.2vw, 14px); 
+      font-size: clamp(0.7rem, 1.1vh, 0.82rem); 
       font-weight: bold; 
       cursor: pointer; 
+      min-height: 34px;
+      min-width: 44px; /* Accessible tap target */
+      touch-action: manipulation;
     }
     button.game-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .btn-hit { background: #27ae60; }
@@ -398,75 +460,67 @@
 
     .chip-row { display: flex; gap: clamp(4px, 0.8vw, 8px); align-items: center; }
     .chip { 
-      width: clamp(32px, 4.8vh, 40px); 
-      height: clamp(32px, 4.8vh, 40px); 
+      width: clamp(30px, 4.4vh, 38px); 
+      height: clamp(30px, 4.4vh, 38px); 
       border-radius: 50%; 
-      border: 2.5px dashed #fff; 
+      border: 2px dashed #fff; 
       display: flex; 
       justify-content: center; 
       align-items: center; 
       font-weight: 800; 
-      font-size: clamp(0.68rem, 1.1vh, 0.78rem); 
+      font-size: clamp(0.65rem, 1vh, 0.75rem); 
       cursor: pointer; 
       flex-shrink: 0;
+      touch-action: manipulation;
     }
     .chip-10 { background: #3498db; }
     .chip-25 { background: #2ecc71; }
     .chip-50 { background: #e74c3c; }
     .chip-100 { background: #34495e; }
 
-    /* FOOTER */
     .table-footer { 
       width: 100%; 
       text-align: center; 
-      padding-top: 2px; 
-      font-size: clamp(0.55rem, 0.9vh, 0.68rem); 
+      padding-top: 1px; 
+      font-size: clamp(0.5rem, 0.8vh, 0.65rem); 
       color: rgba(255, 255, 255, 0.45); 
-      letter-spacing: 0.5px; 
+      letter-spacing: 0.4px; 
       flex-shrink: 0;
     }
 
     .felt-max-bet-badge {
       position: absolute;
-      top: clamp(86px, 14vh, 102px);
-      right: clamp(14px, 2.2vw, 24px);
+      top: clamp(60px, 10vh, 90px);
+      right: clamp(10px, 2vw, 24px);
       background: rgba(0, 0, 0, 0.45);
       border: 1.5px solid rgba(241, 196, 15, 0.65);
       border-radius: 6px;
-      padding: 2px 7px;
-      font-size: clamp(0.62rem, 1.1vh, 0.74rem);
+      padding: 2px 6px;
+      font-size: clamp(0.58rem, 0.95vh, 0.7rem);
       font-weight: 800;
       color: var(--gold);
-      letter-spacing: 0.8px;
+      letter-spacing: 0.6px;
       text-transform: uppercase;
       pointer-events: none;
       box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
       z-index: 5;
     }
 
-    /* COMPACT VIEWPORT FALLBACKS */
-    @media (max-height: 640px) {
-      #game-container {
-        --felt-cushion: clamp(8px, 1.6vh, 16px);
-      }
-
-    }
-
-    /* Rules banner remains always visible across all viewports */
-
+    /* MODAL OVERLAYS */
     .modal-overlay {
       position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0, 0, 0, 0.85); z-index: 10000;
-      display: none; justify-content: center; align-items: center; padding: 16px;
+      display: none; justify-content: center; align-items: center; 
+      padding: max(16px, var(--sat)) max(16px, var(--sar)) max(16px, var(--sab)) max(16px, var(--sal));
     }
     .modal-overlay.active { display: flex; }
     .modal-card {
       background: var(--bg-card); border: 2px solid var(--gold);
-      border-radius: 18px; padding: 22px; width: 100%; max-width: 440px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 12px;
-      max-height: 90vh; overflow-y: auto;
+      border-radius: 18px; padding: clamp(14px, 3vh, 22px); width: 100%; max-width: 440px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.8); display: flex; flex-direction: column; gap: 10px;
+      max-height: 90vh; max-height: 90dvh; overflow-y: auto;
     }
-    .modal-card h2 { color: var(--gold); font-size: 1.35rem; text-align: center; }
+    .modal-card h2 { color: var(--gold); font-size: clamp(1.1rem, 2.5vw, 1.35rem); text-align: center; }
     .notice-legal { font-size: 0.74rem; color: #94a3b8; text-align: center; line-height: 1.35; }
 
     .package-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 4px 0; }
@@ -475,8 +529,8 @@
       padding: 10px 4px; text-align: center; cursor: pointer; background: var(--input-bg);
     }
     .package-box.selected { border-color: var(--gold); background: rgba(241, 196, 15, 0.15); }
-    .pkg-credits { font-size: 1rem; font-weight: 800; color: var(--gold); }
-    .pkg-price { font-size: 0.82rem; color: #fff; margin-top: 3px; }
+    .pkg-credits { font-size: 0.95rem; font-weight: 800; color: var(--gold); }
+    .pkg-price { font-size: 0.8rem; color: #fff; margin-top: 3px; }
 
     .terms-box {
       display: flex; align-items: flex-start; gap: 8px;
@@ -495,114 +549,22 @@
     #confetti-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
     .celebration-box {
       position: relative; z-index: 2; text-align: center; background: rgba(13, 19, 26, 0.95);
-      border: 4px solid var(--gold); border-radius: 28px; padding: 30px 40px;
+      border: 4px solid var(--gold); border-radius: 24px; padding: 24px 32px;
       box-shadow: 0 0 45px rgba(241, 196, 15, 0.6); transform: scale(0.7);
       animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
     }
     @keyframes popIn { to { transform: scale(1); } }
 
-
-
-    /* Mobile Adjustments: Smaller Soft 17 text & non-overlapping Max Bet badge */
-    @media (max-width: 600px) {
-      .title { font-size: 1.12rem !important; }
-      .title span { font-size: 0.9rem !important; }
-      .top-user-group { font-size: 0.9rem !important; margin-right: 60px !important; }
-      .seats-input-row label { font-size: 0.85rem !important; }
-      .seats-hint { font-size: 0.75rem !important; }
-      .hdr-btn { font-size: 0.85rem !important; }
-      .top-row-stats { font-size: 0.92rem !important; }
-      .hand-label { font-size: 0.92rem !important; }
-      .felt-rule-main { font-size: 0.98rem !important; }
-      .felt-rule-sub { font-size: 0.70rem !important; /* 2pt smaller than before */ }
-      #message-banner { font-size: 1.15rem !important; }
-      button.game-btn { font-size: 0.92rem !important; }
-      .chip { font-size: 0.88rem !important; }
-      .table-footer { font-size: 0.75rem !important; }
-      
-      .felt-max-bet-badge {
-        position: relative !important;
-        top: auto !important;
-        right: auto !important;
-        margin: 3px auto 2px auto !important;
-        display: block !important;
-        width: fit-content !important;
-        font-size: 0.72rem !important;
-      }
-    }
-
-
-
-
-    /* Semi-Circle Arc Layout without background boxes */
-    .hand-group {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-      padding: 4px;
-    }
-    .hand-group.active {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-    }
-    .hand-label {
-      font-size: clamp(0.68rem, 1.2vh, 0.82rem);
-      font-weight: 700;
-      text-transform: uppercase;
-      color: var(--gold);
-      margin-bottom: 2px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
-    }
-    @media (min-width: 768px) {
-      .player-hands-container {
-        display: flex;
-        flex-direction: row;
-        justify-content: center;
-        align-items: flex-end;
-        gap: clamp(4px, 0.8vw, 10px);
-        width: 100%;
-        max-width: 1040px;
-        margin: 0 auto;
-        padding: 2px 4px;
-        overflow: hidden;
-      }
-      .hand-group, .hand-box {
-        flex: 1;
-        min-width: 110px;
-        max-width: 142px;
-        padding: 4px 6px;
-      }
-      .center-seat {
-        z-index: 2;
-      }
-      .card {
-        width: clamp(28px, 4vh, 42px);
-        height: clamp(42px, 6vh, 62px);
-      }
-      .cards-row {
-        gap: clamp(2px, 0.3vw, 4px);
-        min-height: clamp(48px, 6.5vh, 66px);
-      }
-      .hand-label {
-        font-size: clamp(0.6rem, 1.0vh, 0.75rem);
-      }
-    }
-
     .hand-result-badge {
       position: absolute;
-      top: -34px;
+      top: -28px;
       left: 50%;
-      transform: translateX(-50%) scale(0.8);
+      transform: translateX(-50%) scale(0.85);
       background: rgba(13, 19, 26, 0.95);
-      border: 2px solid var(--gold);
-      border-radius: 8px;
-      padding: 3px 10px;
-      font-size: 0.8rem;
+      border: 1.5px solid var(--gold);
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 0.75rem;
       font-weight: 800;
       color: var(--gold);
       text-transform: uppercase;
@@ -611,32 +573,21 @@
       animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
       z-index: 10;
     }
-    .hand-result-badge.win {
-      border-color: var(--success-green);
-      color: var(--success-green);
-    }
-    .hand-result-badge.loss {
-      border-color: var(--error-red);
-      color: var(--error-red);
-    }
-    .hand-result-badge.push {
-      border-color: var(--gold);
-      color: var(--gold);
-    }
-    @keyframes badgePop {
-      to { transform: translateX(-50%) scale(1); }
-    }
+    .hand-result-badge.win { border-color: var(--success-green); color: var(--success-green); }
+    .hand-result-badge.loss { border-color: var(--error-red); color: var(--error-red); }
+    .hand-result-badge.push { border-color: var(--gold); color: var(--gold); }
+    @keyframes badgePop { to { transform: translateX(-50%) scale(1); } }
 
     .game-notification-toast {
       position: fixed;
-      top: 24px;
+      top: max(16px, var(--sat));
       left: 50%;
       transform: translateX(-50%) translateY(-20px);
       background: rgba(13, 19, 26, 0.95);
       border: 2px solid var(--gold);
       border-radius: 12px;
       padding: 10px 20px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 800;
       color: var(--gold);
       text-transform: uppercase;
@@ -649,36 +600,69 @@
       text-align: center;
       line-height: 1.4;
     }
-    .game-notification-toast.error {
-      border-color: var(--error-red);
-      color: var(--error-red);
-    }
-    .game-notification-toast.success {
-      border-color: var(--success-green);
-      color: var(--success-green);
-    }
-    @keyframes toastIn {
-      to { transform: translateX(-50%) translateY(0); opacity: 1; }
-    }
-    @keyframes toastOut {
-      to { transform: translateX(-50%) translateY(-20px); opacity: 0; }
+    .game-notification-toast.error { border-color: var(--error-red); color: var(--error-red); }
+    .game-notification-toast.success { border-color: var(--success-green); color: var(--success-green); }
+    @keyframes toastIn { to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+    @keyframes toastOut { to { transform: translateX(-50%) translateY(-20px); opacity: 0; } }
+
+    /* ========================================================= */
+    /* RESPONSIVE MEDIA QUERIES: Mobile / VR / Desktop Viewports */
+    /* ========================================================= */
+
+    /* Ultra-compact vertical displays & landscape phones (< 540px height) */
+    @media (max-height: 540px) {
+      #game-container {
+        border-width: 4px;
+        padding: 4px 8px;
+        --felt-cushion: 4px;
+      }
+      .top-bar-wrapper { padding-bottom: 2px; margin-bottom: 3px; }
+      .felt-rules-banner { display: none; } /* Hide center rules text on shallow screens */
+      .felt-max-bet-badge { display: none; }
+      .table-footer { display: none; }
+      :root {
+        --card-w: clamp(26px, 5.5vh, 38px);
+        --card-h: clamp(38px, 8vh, 56px);
+      }
+      .hand-box, .hand-group { padding: 1px 3px; }
+      .controls { gap: 3px; margin-bottom: 2px; }
+      button.game-btn { min-height: 28px; padding: 3px 8px; }
     }
 
-    @media (max-width: 600px) {
+    /* Mobile Portrait (< 640px width) */
+    @media (max-width: 640px) {
+      .top-row-main { flex-wrap: wrap; }
+      .title { font-size: 0.95rem; }
+      .title span { display: inline-block; margin-left: 4px; font-size: 0.72rem; }
+      .top-user-group { margin-left: auto; }
+      .felt-max-bet-badge {
+        position: static !important;
+        margin: 2px auto !important;
+        font-size: 0.65rem !important;
+      }
       .hand-result-badge {
         position: relative !important;
         top: auto !important;
         left: auto !important;
         transform: none !important;
-        margin: 4px auto 2px auto !important;
-        display: block !important;
-        width: fit-content !important;
-        font-size: 0.75rem !important;
-        padding: 2px 8px !important;
+        margin: 2px auto !important;
+        font-size: 0.7rem !important;
+      }
+      :root {
+        --card-w: clamp(30px, 9vw, 44px);
+        --card-h: clamp(44px, 13vw, 64px);
       }
     }
 
-</style>
+    /* Meta Quest VR Browsers & Large Desktop Displays (>= 1200px) */
+    @media (min-width: 1200px) {
+      :root {
+        --card-w: 52px;
+        --card-h: 76px;
+      }
+      .hand-box, .hand-group { min-width: 130px; }
+    }
+  </style>
 </head>
 <body>
 
@@ -761,8 +745,8 @@
   <div id="celebration-overlay" onclick="closeBlackjackCelebration()">
     <canvas id="confetti-canvas"></canvas>
     <div class="celebration-box">
-      <div style="font-size: 2.4rem; font-weight: 900; color: var(--gold);">★ BLACKJACK! ★</div>
-      <div style="font-size: 1.2rem; color: #fff; font-weight: 700; margin-top: 4px;">Natural 21 (3:2 Payout)</div>
+      <div style="font-size: clamp(1.8rem, 5vw, 2.4rem); font-weight: 900; color: var(--gold);">★ BLACKJACK! ★</div>
+      <div style="font-size: clamp(0.95rem, 2.5vw, 1.2rem); color: #fff; font-weight: 700; margin-top: 4px;">Natural 21 (3:2 Payout)</div>
       <div id="celebration-payout" style="margin-top: 10px; font-size: 1.1rem; color: var(--success-green); font-weight: 800;">+ $0</div>
       <div style="margin-top: 10px; font-size: 0.75rem; color: #94a3b8;">Tap anywhere to dismiss</div>
     </div>
@@ -794,12 +778,18 @@
           <input type="password" id="auth-password" required autocomplete="current-password" oninput="checkPasswordRules(this.value)" onkeyup="checkPasswordRules(this.value)" onpaste="setTimeout(()=>checkPasswordRules(this.value),10)">
         </div>
 
+        <div class="form-group" id="confirm-password-group" style="margin-top: 10px;">
+          <label>Confirm Password</label>
+          <input type="password" id="auth-password-confirm" autocomplete="new-password" placeholder="Confirm your password" oninput="checkPasswordMatch()" onkeyup="checkPasswordMatch()" onpaste="setTimeout(()=>checkPasswordMatch(),10)">
+        </div>
+
         <div id="password-rules" class="validation-rules" style="margin-top: 10px;">
           <div id="r-len" class="rule-item invalid">At least 8 characters</div>
           <div id="r-up" class="rule-item invalid">One uppercase letter (A-Z)</div>
           <div id="r-low" class="rule-item invalid">One lowercase letter (a-z)</div>
           <div id="r-num" class="rule-item invalid">One number (0-9)</div>
           <div id="r-spec" class="rule-item invalid">One special symbol (!@#$%^&*)</div>
+          <div id="r-match" class="rule-item invalid">Passwords match</div>
         </div>
 
         <button type="submit" id="auth-submit-btn" class="auth-btn">Register & Play</button>
@@ -827,7 +817,7 @@
             <div class="seats-control-box">
               <div class="seats-input-row">
                 <label for="table-seats-input">Players:</label>
-                <input type="number" id="table-seats-input" min="1" max="7">
+                <input type="number" id="table-seats-input" min="1" max="7" onchange="handleSeatCountChange()">
               </div>
               <span class="seats-hint"><span class="hint-range">(1-7)</span><span class="hint-max">Max 7</span></span>
             </div>
@@ -837,7 +827,6 @@
             <button class="hdr-btn logout-btn" onclick="executeLogout()">Exit</button>
           </div>
         </div>
-	
 
         <div class="top-row-stats">
           <div>Shoe: <span id="shoe-display" class="hud-val">312</span></div>
@@ -887,7 +876,6 @@
     </div>
   </div>
 
-  <!-- OBFUSCATED ENGINE EXECUTION CORE -->
-  <script src="js/blackjack.js"></script>
+  <script src="blackjack.js"></script>
 </body>
 </html>

@@ -215,13 +215,10 @@
 
     let targetWidth;
     if (availableWidth < 500) {
-      // Small portrait screens
       targetWidth = Math.max(30, Math.floor((availableWidth - 40) / Math.max(2, seats * 1.4)));
     } else if (availableHeight < 550) {
-      // Landscape mobile or VR compact window
       targetWidth = Math.min(46, Math.max(26, Math.floor(availableHeight * 0.08)));
     } else {
-      // PC / Mac / Large VR canvas
       targetWidth = Math.min(54, Math.max(34, Math.floor(availableWidth / (seats * 2.2))));
     }
 
@@ -711,7 +708,6 @@
       }
     }
 
-    // Fisher-Yates
     for (let i = cards.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       const temp = cards[i];
@@ -719,7 +715,6 @@
       cards[j] = temp;
     }
 
-    // Riffle Cut
     const half = Math.floor(cards.length / 2);
     const left = cards.slice(0, half);
     const right = cards.slice(half);
@@ -745,7 +740,7 @@
 
     cutCardCount = Math.floor(Math.random() * 24) + 55;
     cutCardReached = false;
-    shoe.pop(); // Burn card
+    shoe.pop();
 
     elShoeDisplay.textContent = shoe.length;
     elCutDisplay.textContent = cutCardCount + " cards";

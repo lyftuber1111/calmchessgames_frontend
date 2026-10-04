@@ -30,7 +30,7 @@
       --sab: env(safe-area-inset-bottom, 0px);
       --sal: env(safe-area-inset-left, 0px);
 
-      /* Card Size Variables (dynamically updated by JS or media queries) */
+      /* Responsive Card Scaling Variables */
       --card-w: clamp(34px, 4.2vw, 54px);
       --card-h: clamp(50px, 6.2vw, 80px);
       --card-font: clamp(0.65rem, 1.1vh, 0.85rem);
@@ -146,7 +146,7 @@
       border-radius: 8px;
       padding: 12px 14px;
       color: #fff;
-      font-size: 1rem; /* >=16px prevents iOS automatic zoom on focus */
+      font-size: 1rem;
       outline: none;
     }
     .form-group input:focus { border-color: var(--gold); }
@@ -189,7 +189,7 @@
     .auth-alert.error { background: rgba(231, 76, 60, 0.25); border: 1px solid var(--error-red); color: #ff7675; display: block; }
     .auth-alert.success { background: rgba(46, 204, 113, 0.25); border: 1px solid var(--success-green); color: #55efc4; display: block; }
 
-    /* --- THE CASINO FELT TABLE CONTAINER --- */
+    /* --- FELT TABLE CONTAINER --- */
     #game-container {
       --felt-cushion: clamp(6px, 1.5vh, 18px);
       width: 100%;
@@ -361,7 +361,7 @@
       letter-spacing: 0.4px;
     }
 
-    /* PLAYER HANDS CONTAINER - Responsive multi-seat grid/flex */
+    /* PLAYER HANDS CONTAINER */
     .player-hands-container { 
       display: flex; 
       flex-wrap: wrap; 
@@ -448,7 +448,7 @@
       font-weight: bold; 
       cursor: pointer; 
       min-height: 34px;
-      min-width: 44px; /* Accessible tap target */
+      min-width: 44px;
       touch-action: manipulation;
     }
     button.game-btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -605,11 +605,7 @@
     @keyframes toastIn { to { transform: translateX(-50%) translateY(0); opacity: 1; } }
     @keyframes toastOut { to { transform: translateX(-50%) translateY(-20px); opacity: 0; } }
 
-    /* ========================================================= */
-    /* RESPONSIVE MEDIA QUERIES: Mobile / VR / Desktop Viewports */
-    /* ========================================================= */
-
-    /* Ultra-compact vertical displays & landscape phones (< 540px height) */
+    /* Landscape phones / compact displays (< 540px height) */
     @media (max-height: 540px) {
       #game-container {
         border-width: 4px;
@@ -617,7 +613,7 @@
         --felt-cushion: 4px;
       }
       .top-bar-wrapper { padding-bottom: 2px; margin-bottom: 3px; }
-      .felt-rules-banner { display: none; } /* Hide center rules text on shallow screens */
+      .felt-rules-banner { display: none; }
       .felt-max-bet-badge { display: none; }
       .table-footer { display: none; }
       :root {
@@ -876,6 +872,7 @@
     </div>
   </div>
 
-  <script src="blackjack.js"></script>
+  <!-- SCRIPT LOADED FROM js/ SUBFOLDER -->
+  <script src="js/blackjack.js"></script>
 </body>
 </html>

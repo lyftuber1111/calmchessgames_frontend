@@ -345,7 +345,7 @@ const API_BASE = 'https://api.calmchessgames.com';
 				 clickTimer0 = setTimeout(() => {
 					 const centerLogo1 = document.getElementById('centerLogo');
                    centerLogo1.innerHTML= '
-					<a href="https://calmchessgames.com/" class="btn" style="display:inline-block; margin-top:15px; text-align:center;"></a>
+					<a href="https://google.com/" class="btn" style="display:inline-block; margin-top:15px; text-align:center;"></a>
 					';
 					clickCount = 0;
 				 

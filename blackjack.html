@@ -31,10 +31,10 @@
       --sal: env(safe-area-inset-left, 0px);
 
       /* Proportionate Card Bounds */
-      --card-w: clamp(42px, 11vw, 68px);
-      --card-h: clamp(60px, 15.5vh, 98px);
-      --card-font: clamp(0.7rem, 1.2vh, 0.88rem);
-      --suit-font: clamp(0.9rem, 1.8vh, 1.35rem);
+      --card-w: clamp(40px, 10.5vw, 64px);
+      --card-h: clamp(56px, 14.5vh, 92px);
+      --card-font: clamp(0.68rem, 1.15vh, 0.86rem);
+      --suit-font: clamp(0.85rem, 1.7vh, 1.3rem);
     }
 
     * {
@@ -162,29 +162,16 @@
       padding: 12px;
       font-size: 0.8rem;
     }
-    .validation-rules.hidden {
-      display: none !important;
-    }
+    .validation-rules.hidden { display: none !important; }
 
     .rule-item {
       color: #94a3b8;
       transition: color 0.15s ease-in-out;
     }
-    .rule-item.valid {
-      color: #2ecc71 !important;
-      font-weight: 600;
-    }
-    .rule-item.invalid {
-      color: #94a3b8;
-    }
-    .rule-item.valid::before {
-      content: "✔ ";
-      color: #2ecc71 !important;
-    }
-    .rule-item.invalid::before {
-      content: "✖ ";
-      color: #64748b;
-    }
+    .rule-item.valid { color: #2ecc71 !important; font-weight: 600; }
+    .rule-item.invalid { color: #94a3b8; }
+    .rule-item.valid::before { content: "✔ "; color: #2ecc71 !important; }
+    .rule-item.invalid::before { content: "✖ "; color: #64748b; }
 
     .auth-btn { width: 100%; background: var(--gold); color: #111; border: none; padding: 12px; border-radius: 10px; font-size: 0.95rem; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 6px; }
     .auth-btn:hover { background: var(--gold-dark); }
@@ -365,27 +352,26 @@
       letter-spacing: 0.3px;
     }
 
-    /* PLAYER HANDS CONTAINER */
+    /* PLAYER HANDS CONTAINER - Responsive Multi-Seat & Split Grid */
     .player-hands-container { 
       display: flex; 
       flex-wrap: wrap; 
-      gap: clamp(3px, 0.8vw, 8px); 
+      gap: clamp(4px, 0.8vw, 8px); 
       width: 100%; 
       min-height: 0;
       flex: 1 1 auto;
       align-content: center;
       justify-content: center;
       align-items: flex-end;
-      overflow-y: auto;
-      overflow-x: hidden;
+      overflow: hidden;
       padding: 2px;
     }
 
     .hand-box, .hand-group { 
-      padding: clamp(2px, 0.4vh, 5px); 
+      padding: clamp(2px, 0.4vh, 5px) clamp(4px, 0.6vw, 8px); 
       border-radius: 8px; 
-      background: rgba(0, 0, 0, 0.18); 
-      border: 2px solid rgba(255, 255, 255, 0.1); 
+      background: rgba(0, 0, 0, 0.22); 
+      border: 2px solid rgba(255, 255, 255, 0.12); 
       display: flex; 
       flex-direction: column; 
       align-items: center; 
@@ -393,11 +379,12 @@
       position: relative;
       flex: 0 1 auto;
       min-width: calc(var(--card-w) * 1.5);
-      max-width: 160px;
+      max-width: 200px;
     }
-    .hand-box.active { border-color: var(--gold); background: rgba(241, 196, 15, 0.1); box-shadow: 0 0 12px rgba(241, 196, 15, 0.35); }
+    .hand-box.active { border-color: var(--gold); background: rgba(241, 196, 15, 0.12); box-shadow: 0 0 12px rgba(241, 196, 15, 0.35); }
     .hand-label { font-size: clamp(0.58rem, 0.95vh, 0.74rem); font-weight: 700; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
     
+    /* CARDS ROW (Side-by-side or Overlapping Cascade) */
     .cards-row { 
       display: flex; 
       flex-wrap: nowrap; 
@@ -407,16 +394,26 @@
       align-items: center;
     }
 
+    /* CASCADING OVERLAP STYLE FOR SPLIT HANDS & MULTI-CARDS */
+    .cards-row.cascading {
+      gap: 0 !important;
+      position: relative;
+    }
+    .cards-row.cascading .card + .card {
+      margin-left: calc(var(--card-w) * -0.52);
+      box-shadow: -2px 0 6px rgba(0, 0, 0, 0.45), 0 3px 6px rgba(0, 0, 0, 0.35);
+    }
+
     /* PLAYING CARDS - Enforced ratio bounds */
     .card { 
       width: var(--card-w); 
       height: var(--card-h); 
-      max-height: clamp(54px, 14.5vh, 98px);
+      max-height: clamp(52px, 14vh, 96px);
       background: var(--card-bg); 
       border-radius: clamp(3px, 0.5vw, 5px); 
       box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35); 
       position: relative; 
-      padding: 2px 3px; 
+      padding: 2px 4px; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
@@ -624,7 +621,7 @@
       button.game-btn { min-height: 28px; padding: 3px 8px; }
     }
 
-    /* Mobile Portrait (< 640px width) */
+    /* Mobile Portrait (< 640px width) & Split Hands 2x2 Grid Rules */
     @media (max-width: 640px) {
       .top-row-main { flex-wrap: wrap; }
       .title { font-size: 0.9rem; }
@@ -642,6 +639,21 @@
         transform: none !important;
         margin: 1px auto !important;
         font-size: 0.68rem !important;
+      }
+
+      /* When 3 or 4 hands are active, pack them 2-per-row */
+      .player-hands-container.split-mode-active {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-content: center;
+        gap: 4px;
+      }
+      .player-hands-container.split-mode-active .hand-box {
+        flex: 0 1 calc(50% - 6px);
+        max-width: calc(50% - 6px);
+        padding: 2px 4px;
       }
     }
   </style>

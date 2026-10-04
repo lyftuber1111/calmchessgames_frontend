@@ -204,7 +204,7 @@
   const elSplitBtn = document.getElementById("split-btn");
   const elChipControls = document.getElementById("chip-controls");
 
-  // Multi-Device & Mobile Safari/Chrome Card Scaler
+  // Multi-Device & Responsive Card Scaler with Split-Aware Clamping
   function updateResponsiveCardScale() {
     const seats = getSeatsCount();
     const container = document.getElementById("game-container");
@@ -213,37 +213,40 @@
     const availableWidth = container.clientWidth;
     const availableHeight = container.clientHeight;
 
-    // Calculate maximum card height that can fit both dealer and player rows comfortably
-    // Standard table has: top bar (60px) + dealer label (20px) + felt text (20px) + controls (70px)
-    const availableCardAreaHeight = Math.max(120, availableHeight - 200);
-    const maxCardHeight = Math.floor(availableCardAreaHeight / 2.3);
+    const numPlayerHands = (playerHands && playerHands.length) || 1;
+    const isMultiHandSplit = numPlayerHands >= 2;
+
+    // Available card height between headers and action controls
+    const availableCardAreaHeight = Math.max(110, availableHeight - (isMultiHandSplit ? 230 : 200));
+    const maxCardHeight = Math.floor(availableCardAreaHeight / (isMultiHandSplit ? 2.6 : 2.2));
 
     let targetHeight;
     let targetWidth;
 
     if (availableWidth < 640) {
-      // Mobile iPhone / Android phones
-      // Cap card height so 2 rows easily fit without vertical push
-      targetHeight = Math.min(84, Math.max(50, maxCardHeight));
+      // Mobile iPhone / Android Portrait
+      const baseHeight = isMultiHandSplit ? 62 : 76;
+      targetHeight = Math.min(baseHeight, Math.max(46, maxCardHeight));
       targetWidth = Math.round(targetHeight / 1.42);
 
-      // Check horizontal crowding if multiple seats or cards
-      const maxHorizontalWidth = Math.floor((availableWidth - 32) / Math.max(3, seats * 1.8));
+      const maxHorizontalWidth = Math.floor((availableWidth - 36) / Math.max(3, seats * 1.8));
       if (targetWidth > maxHorizontalWidth) {
-        targetWidth = Math.max(34, maxHorizontalWidth);
+        targetWidth = Math.max(32, maxHorizontalWidth);
         targetHeight = Math.round(targetWidth * 1.42);
       }
     } else if (availableHeight < 560) {
       // Landscape Phones / Compact VR
-      targetHeight = Math.min(60, Math.max(38, maxCardHeight));
+      targetHeight = Math.min(54, Math.max(36, maxCardHeight));
       targetWidth = Math.round(targetHeight / 1.42);
     } else {
       // Desktop / Mac / Full VR Screen
-      targetHeight = Math.min(96, Math.max(68, maxCardHeight));
+      const baseHeight = isMultiHandSplit ? 82 : 92;
+      targetHeight = Math.min(baseHeight, Math.max(58, maxCardHeight));
       targetWidth = Math.round(targetHeight / 1.42);
-      const maxHorizontalWidth = Math.floor((availableWidth - 60) / (seats * 2.2));
+
+      const maxHorizontalWidth = Math.floor((availableWidth - 60) / Math.max(4, seats * 2.2));
       if (targetWidth > maxHorizontalWidth) {
-        targetWidth = Math.max(42, maxHorizontalWidth);
+        targetWidth = Math.max(38, maxHorizontalWidth);
         targetHeight = Math.round(targetWidth * 1.42);
       }
     }
@@ -824,14 +827,16 @@
     return score;
   }
 
-  function createCardElement(card, isHidden) {
+  function createCardElement(card, isHidden, cardIndex = 0) {
     const el = document.createElement("div");
     if (isHidden) {
       el.className = "card hidden";
+      el.style.zIndex = cardIndex + 1;
       return el;
     }
     const isRed = card.suit === "♥" || card.suit === "♦";
     el.className = "card " + (isRed ? "red" : "black");
+    el.style.zIndex = cardIndex + 1;
     el.innerHTML = "<div>" + card.name + '</div><div class="suit">' + card.suit + '</div><div class="corner-bottom">' + card.name + "</div>";
     return el;
   }
@@ -839,7 +844,7 @@
   function renderTable(hideDealerHoleCard = true) {
     elDealerCards.innerHTML = "";
     dealerCards.forEach((c, idx) => {
-      elDealerCards.appendChild(createCardElement(c, idx === 1 && hideDealerHoleCard && !isRoundOver));
+      elDealerCards.appendChild(createCardElement(c, idx === 1 && hideDealerHoleCard && !isRoundOver, idx));
     });
 
     elDealerScore.textContent = hideDealerHoleCard && !isRoundOver
@@ -847,9 +852,17 @@
       : calcHandScore(dealerCards);
 
     const seatCount = getSeatsCount();
+    const isSplit = playerHands.length > 1;
     elPlayerHandsContainer.innerHTML = "";
 
-    if (seatCount > 1 && window.innerWidth >= 640) {
+    // Toggle split grid class for mobile 2x2 wrapping
+    if (isSplit && playerHands.length >= 3) {
+      elPlayerHandsContainer.classList.add("split-mode-active");
+    } else {
+      elPlayerHandsContainer.classList.remove("split-mode-active");
+    }
+
+    if (seatCount > 1 && window.innerWidth >= 640 && !isSplit) {
       const centerIndex = Math.floor(seatCount / 2);
       let botIdx = 0;
 
@@ -889,8 +902,9 @@
         }
 
         const cardsRow = document.createElement("div");
-        cardsRow.className = "cards-row";
-        cardsArr.forEach(c => cardsRow.appendChild(createCardElement(c, false)));
+        // Apply cascading overlap if hand has more than 2 cards
+        cardsRow.className = "cards-row" + (cardsArr.length > 2 ? " cascading" : "");
+        cardsArr.forEach((c, idx) => cardsRow.appendChild(createCardElement(c, false, idx)));
         box.appendChild(cardsRow);
         elPlayerHandsContainer.appendChild(box);
       }
@@ -902,7 +916,8 @@
 
         const label = document.createElement("div");
         label.className = "hand-label";
-        label.innerHTML = "Score: <span>" + score + "</span>";
+        const handTitle = isSplit ? `Hand ${idx + 1}: ` : "Score: ";
+        label.innerHTML = `${handTitle}<span>${score}</span>`;
         box.appendChild(label);
 
         if (isRoundOver && hand.resTxt) {
@@ -913,8 +928,10 @@
         }
 
         const cardsRow = document.createElement("div");
-        cardsRow.className = "cards-row";
-        hand.cards.forEach(c => cardsRow.appendChild(createCardElement(c, false)));
+        // Always cascade overlap if hand was split OR has 3+ cards
+        const shouldCascade = isSplit || hand.cards.length > 2;
+        cardsRow.className = "cards-row" + (shouldCascade ? " cascading" : "");
+        hand.cards.forEach((c, cIdx) => cardsRow.appendChild(createCardElement(c, false, cIdx)));
         box.appendChild(cardsRow);
         elPlayerHandsContainer.appendChild(box);
       });

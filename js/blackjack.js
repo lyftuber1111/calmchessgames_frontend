@@ -184,7 +184,7 @@
 
   let userId = null;
   let userEmail = "";
-  // Bot hands are stored as an array of sub-hands: [ [ {cards:[], status:''}, ... ], ... ]
+  // Simulated bots: array of arrays of hands: [ [ {cards:[], status:''}, ... ], ... ]
   let simulatedBotHands = [];
   let dealerCards = [];
   let playerHands = [];
@@ -198,6 +198,8 @@
   const elDealerScore = document.getElementById("dealer-score");
   const elDealerCards = document.getElementById("dealer-cards");
   const elPlayerHandsContainer = document.getElementById("player-hands-container");
+  const elPlayerSplitStage = document.getElementById("player-split-stage");
+  const elFeltRulesBanner = document.getElementById("felt-rules-banner");
   const elDealBtn = document.getElementById("deal-btn");
   const elHitBtn = document.getElementById("hit-btn");
   const elStandBtn = document.getElementById("stand-btn");
@@ -205,7 +207,7 @@
   const elSplitBtn = document.getElementById("split-btn");
   const elChipControls = document.getElementById("chip-controls");
 
-  // Multi-Device Responsive Card Scaler: shrinks and fits up to 7 players in a single desktop row
+  // Multi-Device Responsive Card Scaler: shrinks and fits up to 7 players in a single row
   function updateResponsiveCardScale() {
     const seats = getSeatsCount();
     const container = document.getElementById("game-container");
@@ -217,15 +219,15 @@
     const numPlayerHands = (playerHands && playerHands.length) || 1;
     const isMultiHandSplit = numPlayerHands >= 2;
 
-    const availableCardAreaHeight = Math.max(105, availableHeight - (isMultiHandSplit ? 230 : 200));
-    const maxCardHeight = Math.floor(availableCardAreaHeight / (isMultiHandSplit ? 2.6 : 2.2));
+    const availableCardAreaHeight = Math.max(105, availableHeight - (isMultiHandSplit ? 240 : 210));
+    const maxCardHeight = Math.floor(availableCardAreaHeight / (isMultiHandSplit ? 2.7 : 2.2));
 
     let targetHeight;
     let targetWidth;
 
     if (availableWidth < 640) {
       // Mobile Portrait
-      const baseHeight = isMultiHandSplit ? 58 : 72;
+      const baseHeight = isMultiHandSplit ? 56 : 70;
       targetHeight = Math.min(baseHeight, Math.max(44, maxCardHeight));
       targetWidth = Math.round(targetHeight / 1.42);
 
@@ -240,19 +242,17 @@
       targetWidth = Math.round(targetHeight / 1.42);
     } else {
       // Desktop / PC / Mac / Full VR Screen
-      // When 3 to 7 seats are active, scale down so all seats fit in one row
-      let baseHeight = 88;
+      let baseHeight = 86;
       if (seats >= 5) {
-        baseHeight = 62;
+        baseHeight = 60;
       } else if (seats >= 3) {
-        baseHeight = 72;
+        baseHeight = 70;
       }
-      if (isMultiHandSplit) baseHeight = Math.min(baseHeight, 68);
+      if (isMultiHandSplit) baseHeight = Math.min(baseHeight, 64);
 
       targetHeight = Math.min(baseHeight, Math.max(48, maxCardHeight));
       targetWidth = Math.round(targetHeight / 1.42);
 
-      // Max card width ensuring up to 7 hands with overlapping 5 cards fit in container width
       const maxColWidth = Math.floor((availableWidth - (seats * 10) - 40) / seats);
       const allowedCardWidth = Math.floor(maxColWidth * 0.58);
       if (targetWidth > allowedCardWidth && allowedCardWidth >= 28) {
@@ -281,7 +281,7 @@
     renderTable();
   };
 
-  // Basic Strategy Split Decision Engine for any hand of 2 cards vs dealer upcard
+  // Basic Strategy Split Decisions
   function shouldSplitBasicStrategy(c1, c2, dealerUpCard) {
     if (!c1 || !c2 || !dealerUpCard) return false;
     if (c1.value !== c2.value) return false;
@@ -289,25 +289,12 @@
     const rank = c1.name;
     const dVal = dealerUpCard.value;
 
-    // Always Split Aces and 8s
     if (rank === "A" || rank === "8") return true;
-
-    // Never Split 10s, Face Cards, or 5s
     if (c1.value === 10 || rank === "5") return false;
-
-    // 9, 9: Split vs dealer 2 through 9 except 7 (stand vs 7, 10, A)
     if (rank === "9") return (dVal >= 2 && dVal <= 9 && dVal !== 7);
-
-    // 7, 7: Split vs dealer 2 through 7
     if (rank === "7") return (dVal >= 2 && dVal <= 7);
-
-    // 6, 6: Split vs dealer 2 through 6
     if (rank === "6") return (dVal >= 2 && dVal <= 6);
-
-    // 4, 4: Split vs dealer 5 and 6
     if (rank === "4") return (dVal === 5 || dVal === 6);
-
-    // 2, 2 & 3, 3: Split vs dealer 2 through 7
     if (rank === "2" || rank === "3") return (dVal >= 2 && dVal <= 7);
 
     return false;
@@ -895,57 +882,97 @@
 
     const seatCount = getSeatsCount();
     const isUserSplit = playerHands.length > 1;
+
     elPlayerHandsContainer.innerHTML = "";
+    elPlayerSplitStage.innerHTML = "";
 
-    // Toggle split grid class for mobile 2x2 wrapping
-    if (isUserSplit && playerHands.length >= 3) {
-      elPlayerHandsContainer.classList.add("split-mode-active");
-    } else {
-      elPlayerHandsContainer.classList.remove("split-mode-active");
-    }
-
-    // Toggle compact desktop row fit for 3+ total seats
-    if (seatCount >= 3 && window.innerWidth >= 640 && !isUserSplit) {
+    // Toggle multi-player desktop row
+    if (seatCount >= 3 && window.innerWidth >= 640) {
       elPlayerHandsContainer.classList.add("multi-player-row");
     } else {
       elPlayerHandsContainer.classList.remove("multi-player-row");
     }
 
-    if (seatCount > 1 && !isUserSplit) {
+    // MULTI-SEAT MODE: Leave all players in their bottom-row seats
+    if (seatCount > 1) {
       const centerIndex = Math.floor(seatCount / 2);
       let botIdx = 0;
 
+      // Handle split staging in center if user has split
+      if (isUserSplit) {
+        elPlayerSplitStage.classList.add("active");
+        playerHands.forEach((hand, idx) => {
+          const score = calcHandScore(hand.cards);
+          const splitBox = document.createElement("div");
+          splitBox.className = !isRoundOver && idx === activeHandIndex ? "hand-box active" : "hand-box";
+
+          const label = document.createElement("div");
+          label.className = "hand-label";
+          label.innerHTML = `Split Hand ${idx + 1}: <span>${score}</span>`;
+          splitBox.appendChild(label);
+
+          if (isRoundOver && hand.resTxt) {
+            const badge = document.createElement("div");
+            badge.className = "hand-result-badge " + (hand.resType || "win");
+            badge.textContent = hand.resTxt;
+            splitBox.appendChild(badge);
+          }
+
+          const cardsRow = document.createElement("div");
+          cardsRow.className = "cards-row cascading";
+          hand.cards.forEach((c, cIdx) => cardsRow.appendChild(createCardElement(c, false, cIdx)));
+          splitBox.appendChild(cardsRow);
+          elPlayerSplitStage.appendChild(splitBox);
+        });
+      } else {
+        elPlayerSplitStage.classList.remove("active");
+      }
+
+      // Render the bottom table row with ALL players (P1 through P7)
       for (let s = 0; s < seatCount; s++) {
         const isCenter = s === centerIndex;
 
         if (isCenter) {
-          // Render Main Player's Hand
+          // Main player's home box
           const box = document.createElement("div");
-          const cardsArr = (playerHands[0] && playerHands[0].cards) || [];
-          const score = calcHandScore(cardsArr);
-          const isActive = !isRoundOver && activeHandIndex === 0;
-          box.className = isActive ? "hand-box active center-seat" : "hand-box center-seat";
+          box.className = "hand-box center-seat" + (!isRoundOver && !isUserSplit ? " active" : "");
 
           const label = document.createElement("div");
           label.className = "hand-label";
-          label.innerHTML = "You: <span>" + score + "</span>";
-          box.appendChild(label);
 
-          if (isRoundOver && playerHands[0] && playerHands[0].resTxt) {
-            const badge = document.createElement("div");
-            badge.className = "hand-result-badge " + (playerHands[0].resType || "win");
-            badge.textContent = playerHands[0].resTxt;
-            box.appendChild(badge);
+          if (isUserSplit) {
+            const splitScores = playerHands.map(h => calcHandScore(h.cards)).join(" / ");
+            label.innerHTML = `YOU (SPLIT): <span>${splitScores}</span>`;
+            box.appendChild(label);
+
+            const activeCardRow = document.createElement("div");
+            activeCardRow.className = "cards-row cascading";
+            // Show the active split hand in the seat
+            const curHand = playerHands[activeHandIndex] || playerHands[0];
+            curHand.cards.forEach((c, idx) => activeCardRow.appendChild(createCardElement(c, false, idx)));
+            box.appendChild(activeCardRow);
+          } else {
+            const cardsArr = (playerHands[0] && playerHands[0].cards) || [];
+            const score = calcHandScore(cardsArr);
+            label.innerHTML = `YOU: <span>${score}</span>`;
+            box.appendChild(label);
+
+            if (isRoundOver && playerHands[0] && playerHands[0].resTxt) {
+              const badge = document.createElement("div");
+              badge.className = "hand-result-badge " + (playerHands[0].resType || "win");
+              badge.textContent = playerHands[0].resTxt;
+              box.appendChild(badge);
+            }
+
+            const cardsRow = document.createElement("div");
+            cardsRow.className = "cards-row" + (cardsArr.length >= 2 ? " cascading" : "");
+            cardsArr.forEach((c, idx) => cardsRow.appendChild(createCardElement(c, false, idx)));
+            box.appendChild(cardsRow);
           }
 
-          const cardsRow = document.createElement("div");
-          // Overlap whenever 2+ cards exist in multi-seat setups to fit comfortably
-          cardsRow.className = "cards-row" + (cardsArr.length >= 2 ? " cascading" : "");
-          cardsArr.forEach((c, idx) => cardsRow.appendChild(createCardElement(c, false, idx)));
-          box.appendChild(cardsRow);
           elPlayerHandsContainer.appendChild(box);
         } else {
-          // Render Bot Player Hands (which might have split into 1 or 2 hands)
+          // Bot seats (P1..P7)
           const botSubHands = simulatedBotHands[botIdx] || [];
           const box = document.createElement("div");
           box.className = "hand-group";
@@ -964,9 +991,8 @@
             bCards.forEach((c, idx) => cardsRow.appendChild(createCardElement(c, false, idx)));
             box.appendChild(cardsRow);
           } else {
-            // Bot has split hands: display scores side by side
             const scores = botSubHands.map(sh => calcHandScore(sh.cards)).join(" / ");
-            label.innerHTML = `P${s + 1} (Split): <span>${scores}</span>`;
+            label.innerHTML = `P${s + 1} (SPLIT): <span>${scores}</span>`;
             box.appendChild(label);
 
             const splitWrapper = document.createElement("div");
@@ -987,7 +1013,8 @@
         }
       }
     } else {
-      // Single player, or user in active split mode
+      // Single-player mode (Seat 1)
+      elPlayerSplitStage.classList.remove("active");
       playerHands.forEach((hand, idx) => {
         const score = calcHandScore(hand.cards);
         const box = document.createElement("div");
@@ -1007,8 +1034,7 @@
         }
 
         const cardsRow = document.createElement("div");
-        const shouldCascade = isUserSplit || hand.cards.length >= 2;
-        cardsRow.className = "cards-row" + (shouldCascade ? " cascading" : "");
+        cardsRow.className = "cards-row" + (isUserSplit || hand.cards.length >= 2 ? " cascading" : "");
         hand.cards.forEach((c, cIdx) => cardsRow.appendChild(createCardElement(c, false, cIdx)));
         box.appendChild(cardsRow);
         elPlayerHandsContainer.appendChild(box);
@@ -1037,6 +1063,8 @@
     elDealerScore.textContent = "0";
     elDealerCards.innerHTML = "";
     elPlayerHandsContainer.innerHTML = "";
+    elPlayerSplitStage.innerHTML = "";
+    elPlayerSplitStage.classList.remove("active");
 
     const seatInput = document.getElementById("table-seats-input");
     if (seatInput) seatInput.value = "";
@@ -1055,6 +1083,8 @@
       simulatedBotHands = [];
       elDealerCards.innerHTML = "";
       elPlayerHandsContainer.innerHTML = "";
+      elPlayerSplitStage.innerHTML = "";
+      elPlayerSplitStage.classList.remove("active");
       elDealerScore.textContent = "0";
       isRoundOver = true;
     }
@@ -1160,7 +1190,7 @@
     const dealerUpCard = dealerCards[0];
 
     simulatedBotHands.forEach(botSeat => {
-      // Check if the bot can and should split its starting 2 cards
+      // Check if bot should split its initial 2 cards
       if (botSeat.length === 1) {
         const initialHand = botSeat[0];
         if (initialHand.cards.length === 2 && shouldSplitBasicStrategy(initialHand.cards[0], initialHand.cards[1], dealerUpCard)) {
@@ -1227,7 +1257,6 @@
     const seats = getSeatsCount();
     const botCount = seats - 1;
 
-    // Structure each bot seat with a single initial hand container
     for (let i = 0; i < botCount; i++) {
       simulatedBotHands.push([{ cards: [], status: "playing", isSplitAce: false }]);
     }

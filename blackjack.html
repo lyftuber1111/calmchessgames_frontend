@@ -448,7 +448,7 @@
     }
     .hand-box.active { border-color: var(--gold); background: rgba(241, 196, 15, 0.16); box-shadow: 0 0 12px rgba(241, 196, 15, 0.35); }
     .hand-box.split-home { border-color: rgba(241, 196, 15, 0.7); background: rgba(241, 196, 15, 0.08); }
-    .hand-label { font-size: clamp(0.55rem, 0.9vh, 0.72rem); font-weight: 700; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); white-space: nowrap; }
+    .hand-label { font-size: clamp(0.6rem, 1vh, 0.8rem); font-weight: 800; color: var(--gold); margin-bottom: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); white-space: nowrap; }
     
     /* CARDS ROW (Cascading overlap) */
     .cards-row { 
@@ -895,9 +895,9 @@
 
       <div class="felt-max-bet-badge">Max Bet $500</div>
 
-      <!-- DEALER SECTION -->
+      <!-- DEALER SECTION (ONLY SCORE SHOWN) -->
       <div class="table-section">
-        <div class="hand-label">Dealer (<span id="dealer-score">0</span>)</div>
+        <div class="hand-label"><span id="dealer-score">0</span></div>
         <div class="cards-row" id="dealer-cards"></div>
       </div>
 

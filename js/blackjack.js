@@ -905,7 +905,7 @@
     renderTable(false);
   }
 
-  // RENDER TABLE: Keeps seats aligned, renders split hands to stage & hides home row hand
+  // RENDER TABLE: Displays solely cards values above the cards
   function renderTable(hideDealerHoleCard = true) {
     const dealerCardsEl = getEl("dealer-cards");
     const dealerScoreEl = getEl("dealer-score");
@@ -942,7 +942,7 @@
       }
     }
 
-    // IF USER HAS SPLIT: Elevate your split hands into the center split stage
+    // SPLIT STAGE: Display only the hand score above each split box
     if (isUserSplit && splitStageEl) {
       splitStageEl.classList.add("active");
       if (rulesBannerEl) rulesBannerEl.classList.add("faded");
@@ -954,7 +954,7 @@
 
         const label = document.createElement("div");
         label.className = "hand-label";
-        label.innerHTML = `Split Hand ${idx + 1}: <span>${score}</span>`;
+        label.textContent = score;
         splitBox.appendChild(label);
 
         if (isRoundOver && hand.resTxt) {
@@ -975,7 +975,7 @@
       if (rulesBannerEl) rulesBannerEl.classList.remove("faded");
     }
 
-    // BOTTOM ROW RENDERING
+    // BOTTOM ROW: Display only card values
     if (seatCount > 1 && handsContainerEl) {
       const centerIndex = Math.floor(seatCount / 2);
       let botIdx = 0;
@@ -987,7 +987,6 @@
           const box = document.createElement("div");
           box.className = "hand-box center-seat" + (!isRoundOver && !isUserSplit ? " active" : "");
 
-          // HIDE IN THE ROW WHEN SPLIT (preserves spacing while staying invisible)
           if (isUserSplit) {
             box.style.visibility = "hidden";
             box.style.pointerEvents = "none";
@@ -996,7 +995,7 @@
             const score = calcHandScore(cardsArr);
             const label = document.createElement("div");
             label.className = "hand-label";
-            label.innerHTML = `YOU: <span>${score}</span>`;
+            label.textContent = score;
             box.appendChild(label);
 
             if (isRoundOver && playerHands[0] && playerHands[0].resTxt) {
@@ -1024,7 +1023,7 @@
           if (botSubHands.length <= 1) {
             const bCards = (botSubHands[0] && botSubHands[0].cards) || [];
             const score = calcHandScore(bCards);
-            label.innerHTML = `P${s + 1}: <span>${score}</span>`;
+            label.textContent = score;
             box.appendChild(label);
 
             const cardsRow = document.createElement("div");
@@ -1033,7 +1032,7 @@
             box.appendChild(cardsRow);
           } else {
             const scores = botSubHands.map(sh => calcHandScore(sh.cards)).join(" / ");
-            label.innerHTML = `P${s + 1} (SPLIT): <span>${scores}</span>`;
+            label.textContent = scores;
             box.appendChild(label);
 
             const splitWrapper = document.createElement("div");
@@ -1063,7 +1062,7 @@
 
           const label = document.createElement("div");
           label.className = "hand-label";
-          label.innerHTML = `Score: <span>${score}</span>`;
+          label.textContent = score;
           box.appendChild(label);
 
           if (isRoundOver && hand.resTxt) {
@@ -1128,7 +1127,6 @@
     }
     if (rulesBanner) rulesBanner.classList.remove("faded");
 
-    // Initialize to 1 player seat
     const seatInput = getEl("table-seats-input");
     if (seatInput) seatInput.value = "1";
     activeTableSeats = 1;
@@ -1623,7 +1621,7 @@
       setTimeout(global.openStoreModal, 1200);
     }
 
-    // DISAPPEAR ALL CARDS 4 SECONDS AFTER ROUND COMPLETES
+    // 4-second cleanup: removes all cards and resets score labels
     if (roundCleanupTimer) clearTimeout(roundCleanupTimer);
     roundCleanupTimer = setTimeout(() => {
       clearCardsAfterRound();

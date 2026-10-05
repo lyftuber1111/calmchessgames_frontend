@@ -181,19 +181,19 @@
   let userBank = 500;
   let currentBet = 0;
   let isRoundOver = true;
+  let roundCleanupTimer = null;
 
   let userId = null;
   let userEmail = "";
 
-  // Persistent Table Seats tracker
-  let activeTableSeats = 7;
+  // Table Seats tracker - Default to 1 seat at startup
+  let activeTableSeats = 1;
 
   // Bot hands structure: [ [ { cards:[], status:'' }, ... ], ... ]
   let simulatedBotHands = [];
   let dealerCards = [];
   let playerHands = [];
 
-  // Safe DOM Elements Helper
   function getEl(id) {
     return document.getElementById(id);
   }
@@ -207,7 +207,6 @@
     return count > 7 ? 7 : count;
   }
 
-  // Multi-Device Responsive Card Scaler
   function updateResponsiveCardScale() {
     const seats = getSeatsCount();
     const container = getEl("game-container");
@@ -217,8 +216,6 @@
     const availableHeight = container.clientHeight;
 
     const isUserSplit = playerHands && playerHands.length > 1;
-
-    // Available height between header and buttons
     const availableCardAreaHeight = Math.max(105, availableHeight - (isUserSplit ? 240 : 210));
     const maxCardHeight = Math.floor(availableCardAreaHeight / (isUserSplit ? 2.7 : 2.2));
 
@@ -226,7 +223,6 @@
     let targetWidth;
 
     if (availableWidth < 640) {
-      // Mobile Portrait
       const baseHeight = isUserSplit ? 54 : 70;
       targetHeight = Math.min(baseHeight, Math.max(42, maxCardHeight));
       targetWidth = Math.round(targetHeight / 1.42);
@@ -237,11 +233,9 @@
         targetHeight = Math.round(targetWidth * 1.42);
       }
     } else if (availableHeight < 560) {
-      // Landscape Phones / Compact VR
       targetHeight = Math.min(48, Math.max(34, maxCardHeight));
       targetWidth = Math.round(targetHeight / 1.42);
     } else {
-      // Desktop / PC / Mac / Full VR Screen
       let baseHeight = 84;
       if (seats >= 5) {
         baseHeight = 60;
@@ -282,7 +276,6 @@
     renderTable();
   };
 
-  // Basic Strategy Split Decisions
   function shouldSplitBasicStrategy(c1, c2, dealerUpCard) {
     if (!c1 || !c2 || !dealerUpCard) return false;
     if (c1.value !== c2.value) return false;
@@ -301,17 +294,13 @@
     return false;
   }
 
-  // Auth & Password validation
   global.checkPasswordRules = function (password) {
     if (currentAuthTab !== "register") return;
-
     const pwd = (password || "").toString();
 
     const setRuleState = (id, isValid) => {
       const el = getEl(id);
-      if (el) {
-        el.className = isValid ? "rule-item valid" : "rule-item invalid";
-      }
+      if (el) el.className = isValid ? "rule-item valid" : "rule-item invalid";
     };
 
     setRuleState("r-len", pwd.length >= 8);
@@ -319,13 +308,11 @@
     setRuleState("r-low", /[a-z]/.test(pwd));
     setRuleState("r-num", /[0-9]/.test(pwd));
     setRuleState("r-spec", /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd));
-
     checkPasswordMatch();
   };
 
   global.checkPasswordMatch = function () {
     if (currentAuthTab !== "register") return true;
-
     const pwdEl = getEl("auth-password");
     const pwd = pwdEl ? pwdEl.value : "";
     const confirmEl = getEl("auth-password-confirm");
@@ -505,6 +492,10 @@
   };
 
   global.executeLogout = async function () {
+    if (roundCleanupTimer) {
+      clearTimeout(roundCleanupTimer);
+      roundCleanupTimer = null;
+    }
     if (isRoundOver && currentBet > 0) {
       userBank += currentBet;
       currentBet = 0;
@@ -889,7 +880,32 @@
     return el;
   }
 
-  // RENDER TABLE: Keeps all seats visible, elevates player split to table center
+  function clearCardsAfterRound() {
+    dealerCards = [];
+    playerHands = [];
+    simulatedBotHands = [];
+
+    const dealerCardsEl = getEl("dealer-cards");
+    const dealerScoreEl = getEl("dealer-score");
+    const splitStageEl = getEl("player-split-stage");
+    const rulesBannerEl = getEl("felt-rules-banner");
+    const messageBanner = getEl("message-banner");
+
+    if (dealerCardsEl) dealerCardsEl.innerHTML = "";
+    if (dealerScoreEl) dealerScoreEl.textContent = "0";
+    if (splitStageEl) {
+      splitStageEl.innerHTML = "";
+      splitStageEl.classList.remove("active");
+    }
+    if (rulesBannerEl) rulesBannerEl.classList.remove("faded");
+    if (messageBanner && isRoundOver) {
+      messageBanner.textContent = "Place your bet and press DEAL!";
+    }
+
+    renderTable(false);
+  }
+
+  // RENDER TABLE: Keeps seats aligned, renders split hands to stage & hides home row hand
   function renderTable(hideDealerHoleCard = true) {
     const dealerCardsEl = getEl("dealer-cards");
     const dealerScoreEl = getEl("dealer-score");
@@ -918,7 +934,6 @@
     if (handsContainerEl) handsContainerEl.innerHTML = "";
     if (splitStageEl) splitStageEl.innerHTML = "";
 
-    // Toggle multi-player desktop row
     if (handsContainerEl) {
       if (seatCount >= 3 && window.innerWidth >= 640) {
         handsContainerEl.classList.add("multi-player-row");
@@ -927,7 +942,7 @@
       }
     }
 
-    // IF USER HAS SPLIT: Elevate your split hands into the center of the table
+    // IF USER HAS SPLIT: Elevate your split hands into the center split stage
     if (isUserSplit && splitStageEl) {
       splitStageEl.classList.add("active");
       if (rulesBannerEl) rulesBannerEl.classList.add("faded");
@@ -960,7 +975,7 @@
       if (rulesBannerEl) rulesBannerEl.classList.remove("faded");
     }
 
-    // RENDER THE BOTTOM ROW WITH EVERY SEAT (P1 THROUGH P7) PRESERVED
+    // BOTTOM ROW RENDERING
     if (seatCount > 1 && handsContainerEl) {
       const centerIndex = Math.floor(seatCount / 2);
       let botIdx = 0;
@@ -969,26 +984,18 @@
         const isCenter = s === centerIndex;
 
         if (isCenter) {
-          // Main Player's Seat in Bottom Row
           const box = document.createElement("div");
-          box.className = "hand-box center-seat" + (isUserSplit ? " split-home" : (!isRoundOver ? " active" : ""));
+          box.className = "hand-box center-seat" + (!isRoundOver && !isUserSplit ? " active" : "");
 
-          const label = document.createElement("div");
-          label.className = "hand-label";
-
+          // HIDE IN THE ROW WHEN SPLIT (preserves spacing while staying invisible)
           if (isUserSplit) {
-            const splitScores = playerHands.map(h => calcHandScore(h.cards)).join(" / ");
-            label.innerHTML = `YOU (SPLIT): <span>${splitScores}</span>`;
-            box.appendChild(label);
-
-            const activeCardRow = document.createElement("div");
-            activeCardRow.className = "cards-row cascading";
-            const activeHand = playerHands[activeHandIndex] || playerHands[0];
-            activeHand.cards.forEach((c, idx) => activeCardRow.appendChild(createCardElement(c, false, idx)));
-            box.appendChild(activeCardRow);
+            box.style.visibility = "hidden";
+            box.style.pointerEvents = "none";
           } else {
             const cardsArr = (playerHands[0] && playerHands[0].cards) || [];
             const score = calcHandScore(cardsArr);
+            const label = document.createElement("div");
+            label.className = "hand-label";
             label.innerHTML = `YOU: <span>${score}</span>`;
             box.appendChild(label);
 
@@ -1007,7 +1014,6 @@
 
           handsContainerEl.appendChild(box);
         } else {
-          // Bot Seat (P1..P7)
           const botSubHands = simulatedBotHands[botIdx] || [];
           const box = document.createElement("div");
           box.className = "hand-group";
@@ -1048,7 +1054,7 @@
         }
       }
     } else if (handsContainerEl) {
-      // 1 Seat solo table
+      // 1 Seat Solo Table
       if (!isUserSplit) {
         playerHands.forEach((hand, idx) => {
           const score = calcHandScore(hand.cards);
@@ -1088,6 +1094,11 @@
   }
 
   function initGameState(bankAmount) {
+    if (roundCleanupTimer) {
+      clearTimeout(roundCleanupTimer);
+      roundCleanupTimer = null;
+    }
+
     userBank = parseFloat(bankAmount);
     currentBet = 0;
     currentInsuranceBet = 0;
@@ -1117,9 +1128,10 @@
     }
     if (rulesBanner) rulesBanner.classList.remove("faded");
 
+    // Initialize to 1 player seat
     const seatInput = getEl("table-seats-input");
-    if (seatInput) seatInput.value = "7";
-    activeTableSeats = 7;
+    if (seatInput) seatInput.value = "1";
+    activeTableSeats = 1;
 
     initAndShuffleShoe();
     updateButtonStates();
@@ -1129,6 +1141,12 @@
 
   global.addBet = function (amount) {
     playChipSfx();
+
+    if (roundCleanupTimer) {
+      clearTimeout(roundCleanupTimer);
+      roundCleanupTimer = null;
+    }
+
     if (!isRoundOver) {
       dealerCards = [];
       playerHands = [];
@@ -1278,12 +1296,10 @@
     }
   };
 
-  // Bot play logic applying Basic Strategy splits and hits
   function playBotsTurn() {
     const dealerUpCard = dealerCards[0];
 
     simulatedBotHands.forEach(botSeat => {
-      // Check if bot should split its initial 2 cards
       if (botSeat.length === 1) {
         const initialHand = botSeat[0];
         if (initialHand.cards.length === 2 && shouldSplitBasicStrategy(initialHand.cards[0], initialHand.cards[1], dealerUpCard)) {
@@ -1302,7 +1318,6 @@
         }
       }
 
-      // Play each sub-hand for this bot
       botSeat.forEach(subHand => {
         if (subHand.status === "stood") return;
 
@@ -1322,6 +1337,11 @@
   }
 
   global.startGame = async function () {
+    if (roundCleanupTimer) {
+      clearTimeout(roundCleanupTimer);
+      roundCleanupTimer = null;
+    }
+
     playCardDealSfx();
     const messageBanner = getEl("message-banner");
     if (currentBet === 0) {
@@ -1357,12 +1377,12 @@
       simulatedBotHands.push([{ cards: [], status: "playing", isSplitAce: false }]);
     }
 
-    // First card deal
+    // Deal Round 1
     playerHands[0].cards.push(drawCard());
     for (let i = 0; i < botCount; i++) simulatedBotHands[i][0].cards.push(drawCard());
     dealerCards.push(drawCard());
 
-    // Second card deal
+    // Deal Round 2
     playerHands[0].cards.push(drawCard());
     for (let i = 0; i < botCount; i++) simulatedBotHands[i][0].cards.push(drawCard());
     dealerCards.push(drawCard());
@@ -1602,9 +1622,15 @@
       }
       setTimeout(global.openStoreModal, 1200);
     }
+
+    // DISAPPEAR ALL CARDS 4 SECONDS AFTER ROUND COMPLETES
+    if (roundCleanupTimer) clearTimeout(roundCleanupTimer);
+    roundCleanupTimer = setTimeout(() => {
+      clearCardsAfterRound();
+    }, 4000);
   }
 
-  // Easter egg: Triple click table title to open Admin Modal
+  // Triple click table title to open Admin Modal
   document.addEventListener("DOMContentLoaded", function () {
     const titleEl = getEl("table-title");
     let clickCount = 0;

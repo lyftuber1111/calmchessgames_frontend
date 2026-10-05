@@ -314,6 +314,31 @@
       z-index: 2;
     }
 
+    /* INFO BANNER DIRECTLY BELOW DEALER */
+    #message-banner { 
+      min-height: clamp(20px, 2.8vh, 28px); 
+      text-align: center; 
+      font-size: clamp(0.68rem, 1.1vh, 0.88rem); 
+      font-weight: 800; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: rgba(13, 19, 26, 0.92);
+      border: 1.5px solid var(--gold);
+      border-radius: 7px;
+      padding: 2px clamp(8px, 1.5vw, 14px);
+      width: fit-content;
+      max-width: 90%;
+      margin: 2px auto 4px auto;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      z-index: 4;
+    }
+
     /* CENTER FELT AREA: TEXT & ELEVATED SPLIT STAGE */
     .felt-center-area {
       display: flex;
@@ -371,30 +396,6 @@
     }
     #player-split-stage.active {
       display: flex !important;
-    }
-
-    #message-banner { 
-      min-height: clamp(20px, 2.8vh, 28px); 
-      text-align: center; 
-      font-size: clamp(0.68rem, 1.1vh, 0.88rem); 
-      font-weight: 800; 
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      background: rgba(13, 19, 26, 0.92);
-      border: 1.5px solid var(--gold);
-      border-radius: 7px;
-      padding: 2px clamp(8px, 1.5vw, 14px);
-      width: fit-content;
-      max-width: 90%;
-      margin: 2px auto 4px auto;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
-      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
-      color: var(--gold);
-      text-transform: uppercase;
-      letter-spacing: 0.3px;
-      z-index: 4;
     }
 
     /* PLAYER HANDS CONTAINER - Bottom table arc */
@@ -894,10 +895,14 @@
 
       <div class="felt-max-bet-badge">Max Bet $500</div>
 
+      <!-- DEALER SECTION -->
       <div class="table-section">
         <div class="hand-label">Dealer (<span id="dealer-score">0</span>)</div>
         <div class="cards-row" id="dealer-cards"></div>
       </div>
+
+      <!-- INFO BANNER DIRECTLY BELOW DEALER'S CARDS -->
+      <div id="message-banner">Place your bet and press DEAL!</div>
 
       <!-- CENTER FELT AREA: TEXT & ELEVATED SPLIT STAGE -->
       <div class="felt-center-area">
@@ -908,10 +913,8 @@
         </div>
         <div id="player-split-stage"></div>
       </div>
-
-      <div id="message-banner">Place your bet and press DEAL!</div>
       
-      <!-- ALL 7 PLAYER SEATS IN BOTTOM ROW -->
+      <!-- ALL PLAYER SEATS IN BOTTOM ROW -->
       <div class="player-hands-container" id="player-hands-container"></div>
 
       <div class="controls">
@@ -938,6 +941,6 @@
     </div>
   </div>
 
-  <script src="/js/blackjack.js"></script>
+  <script src="js/blackjack.js"></script>
 </body>
 </html>

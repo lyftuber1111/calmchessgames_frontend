@@ -1,615 +1,1628 @@
+(function (global) {
+  "use strict";
 
-(function(w){
+  const API_BASE = "https://api.calmchessgames.com";
 
+  // Audio system with mobile/VR user-gesture unlocking
+  let backgroundAudio = null;
+  let sfxAudioEnabled = false;
+  let audioContextInstance = null;
 
+  function getAudioContext() {
+    if (!audioContextInstance) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx) {
+        audioContextInstance = new AudioCtx();
+      }
+    }
+    if (audioContextInstance && audioContextInstance.state === "suspended") {
+      audioContextInstance.resume();
+    }
+    return audioContextInstance;
+  }
 
+  function initBackgroundAudio() {
+    if (!backgroundAudio) {
+      backgroundAudio = new Audio("casino_music.wav");
+      backgroundAudio.loop = true;
+      backgroundAudio.volume = 0.3;
+      backgroundAudio.preload = "auto";
+    }
+  }
 
+  function duckBackgroundMusic() {
+    if (!backgroundAudio || backgroundAudio.paused) return;
+    try {
+      backgroundAudio.volume = 0.08;
+      setTimeout(() => {
+        if (!backgroundAudio.paused) backgroundAudio.volume = 0.3;
+      }, 500);
+    } catch (e) {}
+  }
 
-var _0xbga=null,_0xsne=!1;
-function _0xiae(){
-if(!_0xbga){
-_0xbga=new Audio('casino_music.wav');
-_0xbga.loop=!0;
-_0xbga.volume=0.3;
-_0xbga.preload='auto';
-}
-}
-function _0xdbgm(){
-if(!_0xbga||_0xbga.paused)return;
-try{
-_0xbga.volume=0.08;
-setTimeout(function(){if(!_0xbga.paused)_0xbga.volume=0.3;},500);
-}catch(_0xe){}
-}
-function _0xpcs(){
-if(!_0xsne)return;
-_0xdbgm();
-try{
-var _0xctx=new(window.AudioContext||window.webkitAudioContext)();
-var _0xosc=_0xctx.createOscillator(),_0xgn=_0xctx.createGain();
-_0xosc.type='sine';_0xosc.frequency.setValueAtTime(900,_0xctx.currentTime);
-_0xosc.frequency.exponentialRampToValueAtTime(250,_0xctx.currentTime+0.04);
-_0xgn.gain.setValueAtTime(0.18,_0xctx.currentTime);
-_0xgn.gain.exponentialRampToValueAtTime(0.001,_0xctx.currentTime+0.04);
-_0xosc.connect(_0xgn);_0xgn.connect(_0xctx.destination);
-_0xosc.start();_0xosc.stop(_0xctx.currentTime+0.04);
-}catch(_0xe){}
-}
-function _0xpcards(){
-if(!_0xsne)return;
-_0xdbgm();
-try{
-var _0xctx=new(window.AudioContext||window.webkitAudioContext)();
-var _0xbs=_0xctx.sampleRate*0.07;
-var _0xbuf=_0xctx.createBuffer(1,_0xbs,_0xctx.sampleRate);
-var _0xdata=_0xbuf.getChannelData(0);for(var _0xi=0;_0xi<_0xbs;_0xi++)_0xdata[_0xi]=Math.random()*2-1;
-var _0xns=_0xctx.createBufferSource();_0xns.buffer=_0xbuf;
-var _0xflt=_0xctx.createBiquadFilter();_0xflt.type='bandpass';_0xflt.frequency.value=1400;
-var _0xgn=_0xctx.createGain();_0xgn.gain.setValueAtTime(0.12,_0xctx.currentTime);
-_0xgn.gain.exponentialRampToValueAtTime(0.001,_0xctx.currentTime+0.07);
-_0xns.connect(_0xflt);_0xflt.connect(_0xgn);_0xgn.connect(_0xctx.destination);
-_0xns.start();
-}catch(_0xe){}
-}
-function _0xpws(){
-if(!_0xsne)return;
-_0xdbgm();
-try{
-var _0xctx=new(window.AudioContext||window.webkitAudioContext)();
-var _0xnow=_0xctx.currentTime;
-[523.25,659.25,783.99,1046.50].forEach(function(_0xf,_0xidx){
-var _0xosc=_0xctx.createOscillator(),_0xgn=_0xctx.createGain();
-_0xosc.type='triangle';_0xosc.frequency.setValueAtTime(_0xf,_0xnow+_0xidx*0.08);
-_0xgn.gain.setValueAtTime(0.1,_0xnow+_0xidx*0.08);
-_0xgn.gain.exponentialRampToValueAtTime(0.001,_0xnow+_0xidx*0.08+0.35);
-_0xosc.connect(_0xgn);_0xgn.connect(_0xctx.destination);
-_0xosc.start(_0xnow+_0xidx*0.08);_0xosc.stop(_0xnow+_0xidx*0.08+0.35);
-});
-}catch(_0xe){}
-}
-w.toggleAudio=function(){
-_0xiae();
-if(_0xbga.paused){
-_0xbga.play().then(function(){
-_0xsne=!0;
-w.showNotification('Casino Music (.wav) & SFX Enabled');
-}).catch(function(_0xerr){
-w.showNotification('Audio blocked. Tap again!');
-});
-}else{
-_0xbga.pause();
-_0xsne=!1;
-w.showNotification('Audio Disabled');
-}
-};
-w.showNotification=function(txt,isErr){
-var old=document.getElementById('game-toast-badge');if(old)old.remove();
-var el=document.createElement('div');el.id='game-toast-badge';
-el.className='game-notification-toast '+(isErr?'error':'success');
-var cleanTxt=String(txt||'').split('\n').join('<br>');
-el.innerHTML=cleanTxt+'<div style="font-size:0.65rem;color:#94a3b8;margin-top:3px;font-weight:normal;">(Tap to dismiss)</div>';
-el.onclick=function(){el.style.animation='toastOut 0.25s ease forwards';setTimeout(()=>el.remove(),250);};
-document.body.appendChild(el);
-setTimeout(function(){if(el.parentElement){el.style.animation='toastOut 0.25s ease forwards';setTimeout(()=>el.remove(),250);}},4500);
-};
+  function playChipSfx() {
+    if (!sfxAudioEnabled) return;
+    duckBackgroundMusic();
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-var _0x5a1b=['https://api.calmchessgames.com','register','login','active','rule-item valid','rule-item invalid','block','none','flex','auth-alert error','auth-alert success','calmchess_bank_','/logout.php','/admin_api.php?action=get_mode','/admin_api.php?action=set_mode','/admin_api.php?action=buy_credits','/admin_api.php?action=sync_bank','/paypal_api.php?action=create_order','/paypal_api.php?action=capture_order','/register.php','/login.php','POST','application/json','include','selected','cards-row','hand-box','hand-box active','card hidden','card red','card black','busted','stood','playing'];
-var _0x5a1b=['https://api.calmchessgames.com','register','login','active','rule-item valid','rule-item invalid','block','none','flex','auth-alert error','auth-alert success','calmchess_bank_','/logout.php','/admin_api.php?action=get_mode','/admin_api.php?action=set_mode','/admin_api.php?action=buy_credits','/admin_api.php?action=sync_bank','/paypal_api.php?action=create_order','/paypal_api.php?action=capture_order','/register.php','/login.php','POST','application/json','include','selected','cards-row','hand-box','hand-box active','card hidden','card red','card black','busted','stood','playing'];
-function _0x1f(idx){return _0x5a1b[idx];}
-var _0xapi=_0x1f(0);
-var _0xcm=_0x1f(1),_0xsc=1000,_0xsp=4.99,_0xsim=!0,_0xppr=!1,_0xins=0,_0xinr=null,_0xsh=[];
-var _0xttc=0,_0xttt=null,_0xcuid=null,_0cuem='',_0xdeck=[],_0xdh=[],_0xph=[],_0xccp=0,_0xccr=!1;
-var _0xahi=0,_0xbnk=500,_0xibt=0,_0xgov=!0;
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(900, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(250, ctx.currentTime + 0.04);
 
-var _0xbEl=document.getElementById('bank-display'),_0xwEl=document.getElementById('bet-display'),
-_0xsEl=document.getElementById('shoe-display'),_0xcEl=document.getElementById('cut-display'),
-_0xmEl=document.getElementById('message-banner'),_0xdsEl=document.getElementById('dealer-score'),
-_0xdcEl=document.getElementById('dealer-cards'),_0xhcEl=document.getElementById('player-hands-container'),
-_0xdb=document.getElementById('deal-btn'),_0xhb=document.getElementById('hit-btn'),
-_0xsb=document.getElementById('stand-btn'),_0xddb=document.getElementById('double-btn'),
-_0xspb=document.getElementById('split-btn'),_0xcc=document.getElementById('chip-controls');
+      gain.gain.setValueAtTime(0.18, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
 
-w.checkPasswordRules=function(_0xv){
-var _0xs=(_0xv||'').toString(),_0xst=function(_0xi,_0xvld){var _0xe=document.getElementById(_0xi);if(_0xe)_0xe.className=_0xvld?_0x1f(4):_0x1f(5);};
-_0xst('r-len',_0xs.length>=8);_0xst('r-up',/[A-Z]/.test(_0xs));_0xst('r-low',/[a-z]/.test(_0xs));_0xst('r-num',/[0-9]/.test(_0xs));_0xst('r-spec',/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(_0xs));
-};
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.04);
+    } catch (e) {}
+  }
 
-w.switchAuthTab=function(_0xm){
-_0xcm=_0xm;
-document.getElementById('tab-reg').classList.toggle(_0x1f(3),_0xm===_0x1f(1));
-document.getElementById('tab-login').classList.toggle(_0x1f(3),_0xm===_0x1f(2));
-document.getElementById('password-rules').style.display=(_0xm===_0x1f(1))?_0x1f(8):_0x1f(7);
-document.getElementById('auth-submit-btn').textContent=(_0xm===_0x1f(1))?'Register & Play':'Sign In';
-var _0xil=document.getElementById('auth-id-label'),_0xii=document.getElementById('auth-identifier');
-if(_0xm===_0x1f(1)){_0xil.textContent='Email Address';_0xii.placeholder='email';}
-else{_0xil.textContent='Username or Email';_0xii.placeholder='username or email';}
-_0xha();
-};
+  function playCardDealSfx() {
+    if (!sfxAudioEnabled) return;
+    duckBackgroundMusic();
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const frameCount = ctx.sampleRate * 0.07;
+      const buffer = ctx.createBuffer(1, frameCount, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
 
-function _0xsa(_0xtxt,_0xisErr){
-var _0xe=document.getElementById('auth-alert');
-_0xe.textContent=_0xtxt;_0xe.className=_0xisErr?_0x1f(9):_0x1f(10);_0xe.style.display=_0x1f(6);
-}
-function _0xha(){document.getElementById('auth-alert').style.display=_0x1f(7);}
+      for (let i = 0; i < frameCount; i++) {
+        data[i] = Math.random() * 2 - 1;
+      }
 
-async function _0xsyb(_0xtb){
-var _0xbv=Math.max(0,parseFloat(_0xtb)||0);
-try{if(_0xcuid)localStorage.setItem(_0x1f(11)+_0xcuid,_0xbv.toFixed(2));}catch(_0xe){}
-try{
-await fetch(_0xapi+_0x1f(16),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),keepalive:!0,body:JSON.stringify({user_id:_0xcuid,email:_0cuem,bank:_0xbv})});
-}catch(_0xe){}
-}
+      const whiteNoise = ctx.createBufferSource();
+      whiteNoise.buffer = buffer;
 
-w.handleAuthSubmit=async function(_0xe){
-if(_0xe&&_0xe.preventDefault)_0xe.preventDefault();
-_0xha();
-var _0xid=document.getElementById('auth-identifier').value.trim();
-var _0xpwd=document.getElementById('auth-password').value;
-var _0xep=_0xapi+((_0xcm===_0x1f(1))?_0x1f(19):_0x1f(20));
-try{
-var _0xres=await fetch(_0xep+'?_t='+Date.now(),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({identifier:_0xid,email:_0xid,password:_0xpwd})});
-var _0xraw=await _0xres.text();
-var _0xdt;try{_0xdt=JSON.parse(_0xraw);}catch(_0xerr){_0xsa('Server Error ('+_0xres.status+'): '+_0xraw.replace(/<[^>]*>?/gm,'').trim(),!0);return;}
-if(_0xres.status===409||(_0xdt&&(_0xdt.error_code==='EMAIL_EXISTS'||(_0xdt.message&&_0xdt.message.includes('already registered'))))){
-_0xsa(_0xdt.message,!0);w.showNotification(_0xdt.message+'\n\nSwitching to Sign In tab.');w.switchAuthTab('login');
-document.getElementById('auth-password').value='';document.getElementById('auth-password').focus();return;
-}
-if(!_0xdt.success){_0xsa(_0xdt.message,!0);return;}
-_0xcuid=_0xdt.user.id;_0cuem=_0xdt.user.email||_0xid;
-var _0xstb=parseFloat(_0xdt.user.bank);
-document.getElementById('lobby-screen').classList.remove(_0x1f(3));
-document.getElementById('game-screen').classList.add(_0x1f(3));
-_0xram();_0xinps(_0xstb);
-}catch(_0xerr){_0xsa('Network Error: '+_0xerr.message,!0);}
-};
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 1400;
 
-w.executeLogout=async function(){
-if(_0xgov&&_0xibt>0){_0xbnk+=_0xibt;_0xibt=0;}
-await _0xsyb(_0xbnk);
-try{await fetch(_0xapi+_0x1f(12)+'?_t='+Date.now(),{method:_0x1f(21),credentials:_0x1f(23),keepalive:!0});}catch(_0xe){}
-document.getElementById('game-screen').classList.remove(_0x1f(3));
-document.getElementById('lobby-screen').classList.add(_0x1f(3));
-document.getElementById('auth-password').value='';
-_0xcuid=null;_0cuem='';_0xdeck=[];_0xdh=[];_0xph=[];_0xsh=[];
-};
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
 
-async function _0xram(){
-try{
-var _0xr=await fetch(_0xapi+_0x1f(13)+'&_t='+Date.now(),{credentials:_0x1f(23)});
-var _0xd=await _0xr.json();
-if(_0xd.success){_0xsim=_0xd.simulation_mode;_0xusui();}
-}catch(_0xe){}
-}
+      whiteNoise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      whiteNoise.start();
+    } catch (e) {}
+  }
 
-function _0xusui(){
-document.getElementById('simulation-container').style.display=_0xsim?_0x1f(6):_0x1f(7);
-document.getElementById('paypal-live-container').style.display=_0xsim?_0x1f(7):_0x1f(8);
-if(!_0xsim)_0xrpp();
-}
+  function playWinFanfareSfx() {
+    if (!sfxAudioEnabled) return;
+    duckBackgroundMusic();
+    try {
+      const ctx = getAudioContext();
+      if (!ctx) return;
+      const startTime = ctx.currentTime;
+      const notes = [523.25, 659.25, 783.99, 1046.5];
 
-w.selectPackage=function(_0xc,_0xp,_0xel){
-_0xsc=_0xc;_0xsp=_0xp;
-document.querySelectorAll('.package-box').forEach(function(_0xb){_0xb.classList.remove(_0x1f(24));});
-_0xel.classList.add(_0x1f(24));
-document.getElementById('sim-buy-btn').textContent='Add Credits (Simulated $'+_0xp+')';
-};
+      notes.forEach((freq, idx) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime(freq, startTime + idx * 0.08);
 
-w.openStoreModal=function(){_0xram();document.getElementById('store-modal').classList.add(_0x1f(3));};
-w.closeStoreModal=function(){document.getElementById('store-modal').classList.remove(_0x1f(3));};
-w.openAdminModal=function(){document.getElementById('admin-sim-toggle').checked=_0xsim;document.getElementById('admin-modal').classList.add(_0x1f(3));};
-w.closeAdminModal=function(){document.getElementById('admin-modal').classList.remove(_0x1f(3));};
+        gain.gain.setValueAtTime(0.1, startTime + idx * 0.08);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + idx * 0.08 + 0.35);
 
-w.saveAdminSettings=async function(){
-var _0xk=document.getElementById('admin-key').value;
-var _0xsm=document.getElementById('admin-sim-toggle').checked?1:0;
-try{
-var _0xr=await fetch(_0xapi+_0x1f(14),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({admin_key:_0xk,enable_simulation:_0xsm})});
-var _0xd=await _0xr.json();
-if(!_0xd.success){w.showNotification('Admin Error: '+_0xd.message);return;}
-_0xsim=_0xd.simulation_mode;
-w.showNotification('Simulation mode: '+(_0xsim?'ENABLED':'DISABLED'));
-w.closeAdminModal();_0xusui();
-}catch(_0xerr){w.showNotification('Connection error: '+_0xerr.message);}
-};
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(startTime + idx * 0.08);
+        osc.stop(startTime + idx * 0.08 + 0.35);
+      });
+    } catch (e) {}
+  }
 
-w.executeSimulatedPurchase=async function(){
-if(!document.getElementById('accept-terms-check').checked){w.showNotification('Please review and check the Terms of Service acceptance box.');return;}
-try{
-var _0xr=await fetch(_0xapi+_0x1f(15),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({package:_0xsc,user_id:_0xcuid,email:_0cuem})});
-var _0xd=await _0xr.json();
-if(!_0xd.success){w.showNotification(_0xd.message);return;}
-_0xbnk=parseFloat(_0xd.new_bank);_0xbEl.textContent=_0xbnk;
-_0xsyb(_0xbnk);
-w.showNotification('[SIMULATION]: '+_0xd.message);w.closeStoreModal();
-}catch(_0xerr){w.showNotification('Simulation failed: '+_0xerr.message);}
-};
+  global.toggleAudio = function () {
+    initBackgroundAudio();
+    getAudioContext();
+    if (backgroundAudio.paused) {
+      backgroundAudio
+        .play()
+        .then(() => {
+          sfxAudioEnabled = true;
+          global.showNotification("Casino Music & SFX Enabled", true);
+        })
+        .catch(() => {
+          global.showNotification("Audio blocked. Tap again!");
+        });
+    } else {
+      backgroundAudio.pause();
+      sfxAudioEnabled = false;
+      global.showNotification("Audio Disabled", false);
+    }
+  };
 
-function _0xrpp(){
-if(_0xppr||typeof paypal==='undefined')return;
-paypal.Buttons({
-style:{layout:'vertical',color:'gold',shape:'rect',label:'pay'},
-onClick:function(_0xd,_0xa){if(!document.getElementById('accept-terms-check').checked){w.showNotification('Accept Terms of Service before continuing.');return _0xa.reject();}return _0xa.resolve();},
-createOrder:async function(){
-var _0xr=await fetch(_0xapi+_0x1f(17),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({package:_0xsc,user_id:_0xcuid,email:_0cuem})});
-var _0xd=await _0xr.json();if(!_0xd.success)throw new Error(_0xd.message);return _0xd.orderID;
-},
-onApprove:async function(_0xd){
-var _0xr=await fetch(_0xapi+_0x1f(18),{method:_0x1f(21),headers:{'Content-Type':_0x1f(22)},credentials:_0x1f(23),body:JSON.stringify({orderID:_0xd.orderID,package:_0xsc,user_id:_0xcuid,email:_0cuem})});
-var _0xcp=await _0xr.json();
-if(_0xcp.success){_0xbnk=parseFloat(_0xcp.new_bank);_0xbEl.textContent=_0xbnk;_0xsyb(_0xbnk);w.showNotification(_0xcp.message);w.closeStoreModal();}
-else{w.showNotification('Capture Error: '+_0xcp.message);}
-},
-onError:function(_0xe){w.showNotification('Payment error: '+_0xe);}
-}).render('#paypal-button-container');
-_0xppr=!0;
-}
+  global.showNotification = function (message, isSuccess) {
+    const existing = document.getElementById("game-toast-badge");
+    if (existing) existing.remove();
 
-var _0xcanId=null,_0xcpt=[],_0xcto=null;
-function _0xtbc(_0xa){_0xpws();
-var _0xe=document.getElementById('celebration-overlay');
-document.getElementById('celebration-payout').textContent='Won $'+_0xa+' (3:2 Payout)';
-_0xe.classList.add(_0x1f(3));_0xscf();
-clearTimeout(_0xcto);_0xcto=setTimeout(w.closeBlackjackCelebration,4000);
-}
-w.closeBlackjackCelebration=function(){document.getElementById('celebration-overlay').classList.remove(_0x1f(3));_0xstcf();clearTimeout(_0xcto);};
+    const toast = document.createElement("div");
+    toast.id = "game-toast-badge";
+    toast.className = "game-notification-toast " + (isSuccess ? "success" : "error");
+    toast.innerHTML = String(message || "").split("\n").join("<br>") +
+      '<div style="font-size:0.65rem;color:#94a3b8;margin-top:3px;font-weight:normal;">(Tap to dismiss)</div>';
 
-function _0xscf(){
-var _0xc=document.getElementById('confetti-canvas'),_0xctx=_0xc.getContext('2d');
-_0xc.width=window.innerWidth;_0xc.height=window.innerHeight;_0xcpt=[];
-var _0xcls=['#f1c40f','#e74c3c','#2ecc71','#3498db','#9b59b6','#ffffff'];
-for(var _0xi=0;_0xi<100;_0xi++){
-_0xcpt.push({x:Math.random()*_0xc.width,y:Math.random()*_0xc.height-_0xc.height,size:Math.random()*7+3,color:_0xcls[Math.floor(Math.random()*_0xcls.length)],vx:Math.random()*4-2,vy:Math.random()*4+3,rot:Math.random()*360,rotSpeed:Math.random()*8-4});
-}
-function _0xfrm(){
-_0xctx.clearRect(0,0,_0xc.width,_0xc.height);
-_0xcpt.forEach(function(_0xp){
-_0xp.x+=_0xp.vx;_0xp.y+=_0xp.vy;_0xp.rot+=_0xp.rotSpeed;
-if(_0xp.y>_0xc.height){_0xp.y=-10;_0xp.x=Math.random()*_0xc.width;}
-_0xctx.save();_0xctx.translate(_0xp.x,_0xp.y);_0xctx.rotate((_0xp.rot*Math.PI)/180);
-_0xctx.fillStyle=_0xp.color;_0xctx.fillRect(-_0xp.size/2,-_0xp.size/2,_0xp.size,_0xp.size*1.6);_0xctx.restore();
-});
-_0xcanId=requestAnimationFrame(_0xfrm);
-}
-cancelAnimationFrame(_0xcanId);_0xfrm();
-}
-function _0xstcf(){cancelAnimationFrame(_0xcanId);var _0xc=document.getElementById('confetti-canvas');if(_0xc)_0xc.getContext('2d').clearRect(0,0,_0xc.width,_0xc.height);}
+    toast.onclick = function () {
+      toast.style.animation = "toastOut 0.25s ease forwards";
+      setTimeout(() => toast.remove(), 250);
+    };
 
-var _0xst=['♠','♥','♦','♣'];
-var _0xvl=[{n:'2',v:2},{n:'3',v:3},{n:'4',v:4},{n:'5',v:5},{n:'6',v:6},{n:'7',v:7},{n:'8',v:8},{n:'9',v:9},{n:'10',v:10},{n:'J',v:10},{n:'Q',v:10},{n:'K',v:10},{n:'A',v:11}];
-var _0xND=6,_0xMH=4;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.style.animation = "toastOut 0.25s ease forwards";
+        setTimeout(() => toast.remove(), 250);
+      }
+    }, 4500);
+  };
 
-function _0xgos(){
-var _0xe=document.getElementById('table-seats-input');
-var _0xt=_0xe?_0xe.value.trim():'';if(_0xt==='')return 1;
-var _0xv=parseInt(_0xt,10);if(isNaN(_0xv)||_0xv<1)return 1;
-return _0xv>7?7:_0xv;
-}
+  // State Variables
+  let currentAuthTab = "register";
+  let selectedPackageCredits = 1000;
+  let selectedPackagePrice = 4.99;
+  let simulationMode = true;
+  let paypalButtonsRendered = false;
 
-function _0xechs(){
-var _0xd=[];
-for(var _0xi=0;_0xi<_0xND;_0xi++){
-for(var _0xsi=0;_0xsi<_0xst.length;_0xsi++){
-for(var _0xvi=0;_0xvi<_0xvl.length;_0xvi++){_0xd.push({suit:_0xst[_0xsi],name:_0xvl[_0xvi].n,value:_0xvl[_0xvi].v});}
-}
-}
-for(var _0xj=_0xd.length-1;_0xj>0;_0xj--){
-var _0xk=Math.floor(Math.random()*(_0xj+1)),_0xtm=_0xd[_0xj];_0xd[_0xj]=_0xd[_0xk];_0xd[_0xk]=_0xtm;
-}
-var _0xmd=Math.floor(_0xd.length/2),_0xl1=_0xd.slice(0,_0xmd),_0xl2=_0xd.slice(_0xmd),_0xrf=[];
-while(_0xl1.length||_0xl2.length){
-var _0xc1=Math.min(_0xl1.length,Math.floor(Math.random()*8)+16),_0xc2=Math.min(_0xl2.length,Math.floor(Math.random()*8)+16);
-var _0xs1=_0xl1.splice(0,_0xc1),_0xs2=_0xl2.splice(0,_0xc2);
-while(_0xs1.length||_0xs2.length){
-if(_0xs1.length&&(!_0xs2.length||Math.random()>0.5)){_0xrf.push(_0xs1.pop());}
-else if(_0xs2.length){_0xrf.push(_0xs2.pop());}
-}
-}
-var _0xct=Math.floor(Math.random()*80)+116;
-_0xdeck=_0xrf.slice(_0xct).concat(_0xrf.slice(0,_0xct));
-_0xccp=Math.floor(Math.random()*24)+55;_0xccr=!1;
-_0xdeck.pop();
-_0xsEl.textContent=_0xdeck.length;_0xcEl.textContent=_0xccp+' cards';
-}
+  let currentInsuranceBet = 0;
+  let insuranceResolvePromise = null;
+  let shoe = [];
+  let cutCardCount = 0;
+  let cutCardReached = false;
+  let activeHandIndex = 0;
+  let userBank = 500;
+  let currentBet = 0;
+  let isRoundOver = true;
 
-function _0xdc(){
-if(_0xdeck.length<=_0xccp)_0xccr=!0;
-if(_0xdeck.length===0)_0xechs();
-var _0xc=_0xdeck.pop();_0xsEl.textContent=_0xdeck.length;return _0xc;
-}
+  let userId = null;
+  let userEmail = "";
 
-function _0xcls(_0xcds){
-var _0xsc=0,_0xac=0;
-for(var _0xi=0;_0xi<_0xcds.length;_0xi++){_0xsc+=_0xcds[_0xi].value;if(_0xcds[_0xi].name==='A')_0xac++;}
-while(_0xsc>21&&_0xac>0){_0xsc-=10;_0xac--;}
-return _0xsc;
-}
+  // Persistent Table Seats tracker
+  let activeTableSeats = 7;
 
-function _0xcce(_0xc,_0xhdn){
-var _0xe=document.createElement('div');
-if(_0xhdn){_0xe.className='card hidden';return _0xe;}
-var _0xclr=(_0xc.suit==='♥'||_0xc.suit==='♦')?'red':'black';
-_0xe.className='card '+_0xclr;
-_0xe.innerHTML='<div>'+_0xc.name+'</div><div class="suit">'+_0xc.suit+'</div><div class="corner-bottom">'+_0xc.name+'</div>';
-return _0xe;
-}
+  // Bot hands structure: [ [ { cards:[], status:'' }, ... ], ... ]
+  let simulatedBotHands = [];
+  let dealerCards = [];
+  let playerHands = [];
 
-function _0xrndb(_0xpk){
-if(_0xpk===undefined)_0xpk=!0;
-_0xdcEl.innerHTML='';
-_0xdh.forEach(function(_0xc,_0xidx){_0xdcEl.appendChild(_0xcce(_0xc,_0xidx===1&&_0xpk&&!_0xgov));});
-_0xdsEl.textContent=(_0xpk&&!_0xgov)?(_0xdh[0]?_0xdh[0].value:0):_0xcls(_0xdh);
-var _0xts=_0xgos();
-_0xhcEl.innerHTML='';
-if(_0xts>1&&window.innerWidth>=768){
-var _0xcenterIdx=Math.floor(_0xts/2);
-var _0xshIdx=0;
-for(var _0xsi=0;_0xsi<_0xts;_0xsi++){
-var _0xbx=document.createElement('div');
-var _0xIsPlayer=(_0xsi===_0xcenterIdx);
-var _0xsc=0,_0xcards=[];
-if(_0xIsPlayer){
-_0xcards=_0xph[0].cards;
-_0xsc=_0xcls(_0xcards);
-var _0xIsActive=(!_0xgov&&0===_0xahi);
-_0xbx.className=_0xIsActive?'hand-box active center-seat':'hand-box center-seat';
-var _0xlbl=document.createElement('div');
-_0xlbl.className='hand-label';
-_0xlbl.innerHTML='Score: <span>'+_0xsc+'</span>';
-_0xbx.appendChild(_0xlbl);
-if(_0xgov&&_0xph[0]&&_0xph[0].resTxt){
-var _0xrb=document.createElement('div');
-_0xrb.className='hand-result-badge '+(_0xph[0].resType||'win');
-_0xrb.textContent=_0xph[0].resTxt;
-_0xbx.style.position='relative';
-_0xbx.appendChild(_0xrb);
-}
-}else{
-var _0xseatCards=_0xsh[_0xshIdx]||[];
-_0xcards=_0xseatCards;
-_0xsc=_0xcls(_0xcards);
-_0xbx.className='hand-group';
-var _0xlbl=document.createElement('div');
-_0xlbl.className='hand-label';
-_0xlbl.innerHTML='Score: <span>'+_0xsc+'</span>';
-_0xbx.appendChild(_0xlbl);
-_0xshIdx++;
-}
-var _0xrow=document.createElement('div');
-_0xrow.className=_0x1f(25);
-_0xcards.forEach(function(_0xc){_0xrow.appendChild(_0xcce(_0xc,!1));});
-_0xbx.appendChild(_0xrow);
-_0xhcEl.appendChild(_0xbx);
-}
-}else{
-_0xph.forEach(function(_0xh,_0xidx){
-var _0xsc=_0xcls(_0xh.cards);
-var _0xbx=document.createElement('div');
-_0xbx.className=(!_0xgov&&_0xidx===_0xahi)?'hand-box active':'hand-box';
-var _0xlbl=document.createElement('div');
-_0xlbl.className='hand-label';
-_0xlbl.innerHTML='Score: <span>'+_0xsc+'</span>';
-_0xbx.appendChild(_0xlbl);
-if(_0xgov&&_0xh.resTxt){
-var _0xrb=document.createElement('div');
-_0xrb.className='hand-result-badge '+(_0xh.resType||'win');
-_0xrb.textContent=_0xh.resTxt;
-_0xbx.style.position='relative';
-_0xbx.appendChild(_0xrb);
-}
-var _0xrow=document.createElement('div');
-_0xrow.className=_0x1f(25);
-_0xh.cards.forEach(function(_0xc){_0xrow.appendChild(_0xcce(_0xc,!1));});
-_0xbx.appendChild(_0xrow);
-_0xhcEl.appendChild(_0xbx);
-});
-}
-_0xwEl.textContent=_0xgov?_0xibt:(_0xph.reduce(function(_0xa,_0xb){return _0xa+_0xb.bet;},0)||_0xibt);
-_0xbEl.textContent=_0xbnk;
-}function _0xinps(_0xub){
-_0xbnk=parseFloat(_0xub);_0xibt=0;_0xins=0;_0xgov=!0;
-_0xdh=[];_0xph=[];_0xsh=[];
-_0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;
-_0xmEl.textContent='Place your bet and press DEAL!';
-_0xdsEl.textContent='0';_0xdcEl.innerHTML='';_0xhcEl.innerHTML='';
-var _0xsi=document.getElementById('table-seats-input');if(_0xsi)_0xsi.value='';
-_0xechs();_0xuab();_0xrndb();
-}
+  // Safe DOM Elements Helper
+  function getEl(id) {
+    return document.getElementById(id);
+  }
 
-w.addBet=function(_0xa){_0xpcs();
-if(!_0xgov){
-_0xdh=[];_0xph=[];_0xsh=[];
-_0xdcEl.innerHTML='';_0xhcEl.innerHTML='';_0xdsEl.textContent='0';
-_0xgov=!0;
-}
-if(_0xibt>=500){_0xmEl.textContent='Maximum bet is $500!';return;}
-var _0xad=Math.min(_0xa,500-_0xibt);
-if(_0xbnk>=_0xad){
-_0xbnk-=_0xad;_0xibt+=_0xad;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=_0xibt;
-if(_0xibt===500){_0xmEl.textContent='Max bet reached ($500)';}
-else{if(_0xmEl.textContent.includes('bet'))_0xmEl.textContent='';}
-}
-else if(_0xbnk<=0&&_0xibt===0){w.openStoreModal();}
-};
+  function getSeatsCount() {
+    const input = getEl("table-seats-input");
+    const val = input ? input.value.trim() : "";
+    if (val === "") return activeTableSeats || 1;
+    const count = parseInt(val, 10);
+    if (isNaN(count) || count < 1) return 1;
+    return count > 7 ? 7 : count;
+  }
 
-w.clearBet=function(){_0xpcs();if(!_0xgov)return;_0xbnk+=_0xibt;_0xibt=0;_0xbEl.textContent=_0xbnk;_0xwEl.textContent=0;_0xmEl.textContent='';};
+  // Multi-Device Responsive Card Scaler
+  function updateResponsiveCardScale() {
+    const seats = getSeatsCount();
+    const container = getEl("game-container");
+    if (!container) return;
 
-function _0xuab(){
-if(_0xgov){
-_0xdb.disabled=!1;_0xhb.disabled=_0xsb.disabled=_0xddb.disabled=_0xspb.disabled=!0;
-_0xcc.style.opacity='1';_0xcc.querySelectorAll('.chip, button').forEach(function(_0xb){_0xb.style.pointerEvents='auto';});
-return;
-}
-_0xdb.disabled=!0;_0xcc.style.opacity='0.3';
-_0xcc.querySelectorAll('.chip, button').forEach(function(_0xb){_0xb.style.pointerEvents='none';});
-var _0xh=_0xph[_0xahi];if(!_0xh)return;
-if(_0xh.isSplitAce){_0xhb.disabled=_0xddb.disabled=_0xspb.disabled=!0;_0xsb.disabled=!1;return;}
-_0xhb.disabled=_0xsb.disabled=!1;
-_0xddb.disabled=!(_0xh.cards.length===2&&_0xbnk>=_0xh.bet);
-var _0xpr=(_0xh.cards.length===2&&_0xh.cards[0].value===_0xh.cards[1].value);
-var _0xac=(_0xh.cards.length===2&&_0xh.cards[0].name==='A');
-_0xspb.disabled=!(_0xph.length<_0xMH&&_0xpr&&_0xbnk>=_0xh.bet&&(!_0xh.isSplitAce||!_0xac));
-}
+    const availableWidth = container.clientWidth;
+    const availableHeight = container.clientHeight;
 
-function _0xpmi(){
-return new Promise(function(_0xrsv){
-_0xinr=_0xrsv;var _0xcst=Math.floor(_0xph[0].bet/2);
-document.getElementById('insurance-amount-label').textContent='Insurance Cost: $'+_0xcst;
-var _0xyb=document.getElementById('ins-yes-btn');
-if(_0xbnk<_0xcst){_0xyb.disabled=!0;_0xyb.textContent='Insufficient Funds';}
-else{_0xyb.disabled=!1;_0xyb.textContent='Take Insurance';}
-document.getElementById('insurance-modal').classList.add(_0x1f(3));
-});
-}
+    const isUserSplit = playerHands && playerHands.length > 1;
 
-w.handleInsuranceChoice=function(_0xc){
-document.getElementById('insurance-modal').classList.remove(_0x1f(3));
-if(_0xinr){var _0xr=_0xinr;_0xinr=null;_0xr(_0xc);}
-};
+    // Available height between header and buttons
+    const availableCardAreaHeight = Math.max(105, availableHeight - (isUserSplit ? 240 : 210));
+    const maxCardHeight = Math.floor(availableCardAreaHeight / (isUserSplit ? 2.7 : 2.2));
 
-function _0xsose(){
-_0xsh.forEach(function(_0xshd){
-while(!0){
-var _0xsc=_0xcls(_0xshd),_0xha=_0xshd.some(function(_0xc){return _0xc.name==='A';});
-if(_0xsc<17)_0xshd.push(_0xdc());
-else if(_0xsc===17&&_0xha)_0xshd.push(_0xdc());
-else break;
-}
-});
-}
+    let targetHeight;
+    let targetWidth;
 
-w.startGame=async function(){_0xpcards();
-if(_0xibt===0){if(_0xbnk<=0)w.openStoreModal();else _0xmEl.textContent='Please place a bet first!';return;}
-if(_0xccr||_0xdeck.length<=_0xccp){_0xechs();_0xmEl.textContent='Cut card reached! Shoe reshuffled & card burned.';}
-else{_0xmEl.textContent='';}
-_0xgov=!1;_0xins=0;_0xph=[{cards:[],bet:_0xibt,status:_0x1f(33),isSplitAce:!1}];
-_0xibt=0;_0xahi=0;_0xdh=[];_0xsh=[];
-var _0xts=_0xgos(),_0xos=_0xts-1;
-_0xph[0].cards.push(_0xdc());
-for(var _0xs=0;_0xs<_0xos;_0xs++)_0xsh.push([_0xdc()]);
-_0xdh.push(_0xdc());
-_0xph[0].cards.push(_0xdc());
-for(var _0xs2=0;_0xs2<_0xos;_0xs2++)_0xsh[_0xs2].push(_0xdc());
-_0xdh.push(_0xdc());
-_0xrndb(!0);_0xuab();
-var _0xuc=_0xdh[0],_0xdbj=(_0xcls(_0xdh)===21);
-if(_0xuc.name==='A'){
-var _0xtk=await _0xpmi();
-if(_0xtk){var _0xcst=Math.floor(_0xph[0].bet/2);_0xins=_0xcst;_0xbnk-=_0xcst;_0xbEl.textContent=_0xbnk;}
-if(_0xdbj){
-if(_0xins>0){
-var _0xwn=_0xins*3;
-_0xbnk+=_0xwn;
-_0xbEl.textContent=_0xbnk;
-_0xmEl.textContent='Dealer has Blackjack! Insurance pays 2:1 (+$'+(_0xins*2)+').';
-if(_0xph[0]){_0xph[0].resTxt='PUSH';_0xph[0].resType='push';}
-}else{
-_0xmEl.textContent='Dealer has Blackjack!';
-if(_0xph[0]){_0xph[0].resTxt='-$'+_0xph[0].bet;_0xph[0].resType='loss';}
-}
-_0xfnr();return;
-}else if(_0xins>0){_0xmEl.textContent='Insurance collected.';}
-}else if(_0xuc.value===10){
-if(_0xdbj){_0xmEl.textContent='Dealer has Blackjack!';_0xfnr();return;}
-}
-if(_0xph[0].cards.length===2&&_0xcls(_0xph[0].cards)===21){_0xfnr();}
-};
+    if (availableWidth < 640) {
+      // Mobile Portrait
+      const baseHeight = isUserSplit ? 54 : 70;
+      targetHeight = Math.min(baseHeight, Math.max(42, maxCardHeight));
+      targetWidth = Math.round(targetHeight / 1.42);
 
-w.playerHit=function(){_0xpcards();
-var _0xh=_0xph[_0xahi];_0xh.cards.push(_0xdc());
-var _0xsc=_0xcls(_0xh.cards);
-if(_0xsc>=21){_0xh.status=(_0xsc>21)?_0x1f(31):_0x1f(32);_0xrndb(!0);_0xnxh();}
-else{_0xrndb(!0);_0xuab();}
-};
+      const maxHorizontalWidth = Math.floor((availableWidth - 36) / Math.max(3, seats * 1.8));
+      if (targetWidth > maxHorizontalWidth) {
+        targetWidth = Math.max(28, maxHorizontalWidth);
+        targetHeight = Math.round(targetWidth * 1.42);
+      }
+    } else if (availableHeight < 560) {
+      // Landscape Phones / Compact VR
+      targetHeight = Math.min(48, Math.max(34, maxCardHeight));
+      targetWidth = Math.round(targetHeight / 1.42);
+    } else {
+      // Desktop / PC / Mac / Full VR Screen
+      let baseHeight = 84;
+      if (seats >= 5) {
+        baseHeight = 60;
+      } else if (seats >= 3) {
+        baseHeight = 68;
+      }
+      if (isUserSplit) baseHeight = Math.min(baseHeight, 62);
 
-w.playerDouble=function(){
-var _0xh=_0xph[_0xahi];_0xbnk-=_0xh.bet;_0xh.bet*=2;
-_0xh.cards.push(_0xdc());_0xh.status=(_0xcls(_0xh.cards)>21)?_0x1f(31):_0x1f(32);
-_0xrndb(!0);_0xnxh();
-};
+      targetHeight = Math.min(baseHeight, Math.max(46, maxCardHeight));
+      targetWidth = Math.round(targetHeight / 1.42);
 
-w.playerSplit=function(){
-var _0xh=_0xph[_0xahi];_0xbnk-=_0xh.bet;
-var _0xc1=_0xh.cards[0],_0xc2=_0xh.cards[1],_0xisa=(_0xc1.name==='A');
-var _0xh1={cards:[_0xc1,_0xdc()],bet:_0xh.bet,status:_0xisa?_0x1f(32):_0x1f(33),isSplitAce:_0xisa};
-var _0xh2={cards:[_0xc2,_0xdc()],bet:_0xh.bet,status:_0xisa?_0x1f(32):_0x1f(33),isSplitAce:_0xisa};
-_0xph.splice(_0xahi,1,_0xh1,_0xh2);_0xrndb(!0);
-if(_0xisa)_0xnxh();else _0xuab();
-};
+      const maxColWidth = Math.floor((availableWidth - (seats * 10) - 40) / seats);
+      const allowedCardWidth = Math.floor(maxColWidth * 0.58);
+      if (targetWidth > allowedCardWidth && allowedCardWidth >= 28) {
+        targetWidth = allowedCardWidth;
+        targetHeight = Math.round(targetWidth * 1.42);
+      }
+    }
 
-w.playerStand=function(){_0xph[_0xahi].status=_0x1f(32);_0xnxh();};
+    document.documentElement.style.setProperty("--card-w", targetWidth + "px");
+    document.documentElement.style.setProperty("--card-h", targetHeight + "px");
+  }
 
-function _0xnxh(){
-var _0xni=_0xph.findIndex(function(_0xh,_0xi){return _0xi>=_0xahi&&_0xh.status===_0x1f(33);});
-if(_0xni!==-1){_0xahi=_0xni;_0xrndb(!0);_0xuab();}
-else{_0xfnr();}
-}
+  window.addEventListener("resize", () => {
+    updateResponsiveCardScale();
+    renderTable();
+  });
+  window.addEventListener("orientationchange", () => {
+    setTimeout(() => {
+      updateResponsiveCardScale();
+      renderTable();
+    }, 150);
+  });
 
-function _0xdsh(_0xhnd){
-var _0xsc=0,_0xac=0;
-for(var _0xi=0;_0xi<_0xhnd.length;_0xi++){_0xsc+=_0xhnd[_0xi].value;if(_0xhnd[_0xi].name==='A')_0xac++;}
-while(_0xsc>21&&_0xac>0){_0xsc-=10;_0xac--;}
-if(_0xsc<17)return !0;
-if(_0xsc===17&&_0xac>0)return !0;
-return !1;
-}
+  global.handleSeatCountChange = function () {
+    activeTableSeats = getSeatsCount();
+    updateResponsiveCardScale();
+    renderTable();
+  };
 
-function _0xfnr(){
-_0xgov=!0;_0xsose();
-var _0xdbj=(_0xdh.length===2&&_0xcls(_0xdh)===21);
-if(!_0xdbj&&!_0xph.every(function(_0xh){return _0xcls(_0xh.cards)>21;})){
-while(_0xdsh(_0xdh)){_0xdh.push(_0xdc());}
-}
-var _0xdsc=_0xcls(_0xdh),_0xrc=0,_0xwnb=!1,_0xnwa=0;
-_0xph.forEach(function(_0xh){
-var _0xpsc=_0xcls(_0xh.cards);
-var _0xpbj=(_0xh.cards.length===2&&_0xpsc===21&&_0xph.length===1);
-if(_0xpsc>21){
-_0xh.resTxt='-$'+_0xh.bet;_0xh.resType='loss';
-}else if(_0xpbj){
-if(_0xdbj){_0xrc+=_0xh.bet;_0xh.resTxt='PUSH';_0xh.resType='push';}
-else{var _0xw=Math.floor(_0xh.bet*2.5);_0xrc+=_0xw;_0xwnb=!0;_0xnwa=_0xw;_0xh.resTxt='+$'+Math.floor(_0xh.bet*1.5);_0xh.resType='win';}
-}else if(_0xdbj){
-_0xh.resTxt='-$'+_0xh.bet;_0xh.resType='loss';
-}else if(_0xdsc>21||_0xpsc>_0xdsc){
-_0xrc+=_0xh.bet*2;_0xh.resTxt='+$'+_0xh.bet;_0xh.resType='win';
-}else if(_0xpsc===_0xdsc){
-_0xrc+=_0xh.bet;_0xh.resTxt='PUSH';_0xh.resType='push';
-}else{
-_0xh.resTxt='-$'+_0xh.bet;_0xh.resType='loss';
-}
-if(_0xpsc<=21){
-if(!_0xpbj&&!_0xdbj){
-if(_0xdsc>21||_0xpsc>_0xdsc){}
-else if(_0xpsc===_0xdsc){}
-}
-}
-});
-_0xbnk+=_0xrc;
-var _0xmsg='';
-if(_0xdbj){if(_0xins>0)_0xmsg='Dealer has Blackjack! Insurance pays 2:1 (+$'+(_0xins*2)+').';else _0xmsg='Dealer has Blackjack!';}
-else{if(_0xins>0)_0xmsg='Insurance collected. ';if(_0xdsc>21)_0xmsg+='Dealer Busted!';}
-if(_0xccr){_0xmsg+="<br><span style='color:var(--gold);'>(Cut Card Reached - Reshuffling Next Deal)</span>";}
-_0xmEl.innerHTML=_0xmsg;_0xrndb(!1);_0xwEl.textContent=0;_0xuab();_0xsyb(_0xbnk);
-if(_0xwnb)_0xtbc(_0xnwa);
-if(_0xbnk<=0&&_0xibt===0){_0xmEl.innerHTML+="<br><span style='color:var(--gold);'>Out of credits! Click '+ Credits' to refill.</span>";setTimeout(w.openStoreModal,1200);}
-var _0xtotHands=1+_0xsh.length+Math.max(0,_0xph.length-1);
-var _0xdynDelay=Math.min(8000,3000+(_0xtotHands*800));
-setTimeout(function(){
-if(_0xgov){
-_0xdh=[];_0xph=[];_0xsh=[];
-_0xdcEl.innerHTML='';_0xhcEl.innerHTML='';_0xdsEl.textContent='0';
-_0xmEl.textContent='Place your bet and press DEAL!';
-}
-},_0xdynDelay);
-}
+  // Basic Strategy Split Decisions
+  function shouldSplitBasicStrategy(c1, c2, dealerUpCard) {
+    if (!c1 || !c2 || !dealerUpCard) return false;
+    if (c1.value !== c2.value) return false;
 
-document.addEventListener('DOMContentLoaded',function(){
-var _0xtt=document.getElementById('table-title');
-if(_0xtt){
-_0xtt.addEventListener('click',function(){
-_0xttc++;clearTimeout(_0xttt);_0xttt=setTimeout(function(){_0xttc=0;},900);
-if(_0xttc>=3){_0xttc=0;w.openAdminModal();}
-});
-}
-});
+    const rank = c1.name;
+    const dVal = dealerUpCard.value;
+
+    if (rank === "A" || rank === "8") return true;
+    if (c1.value === 10 || rank === "5") return false;
+    if (rank === "9") return (dVal >= 2 && dVal <= 9 && dVal !== 7);
+    if (rank === "7") return (dVal >= 2 && dVal <= 7);
+    if (rank === "6") return (dVal >= 2 && dVal <= 6);
+    if (rank === "4") return (dVal === 5 || dVal === 6);
+    if (rank === "2" || rank === "3") return (dVal >= 2 && dVal <= 7);
+
+    return false;
+  }
+
+  // Auth & Password validation
+  global.checkPasswordRules = function (password) {
+    if (currentAuthTab !== "register") return;
+
+    const pwd = (password || "").toString();
+
+    const setRuleState = (id, isValid) => {
+      const el = getEl(id);
+      if (el) {
+        el.className = isValid ? "rule-item valid" : "rule-item invalid";
+      }
+    };
+
+    setRuleState("r-len", pwd.length >= 8);
+    setRuleState("r-up", /[A-Z]/.test(pwd));
+    setRuleState("r-low", /[a-z]/.test(pwd));
+    setRuleState("r-num", /[0-9]/.test(pwd));
+    setRuleState("r-spec", /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd));
+
+    checkPasswordMatch();
+  };
+
+  global.checkPasswordMatch = function () {
+    if (currentAuthTab !== "register") return true;
+
+    const pwdEl = getEl("auth-password");
+    const pwd = pwdEl ? pwdEl.value : "";
+    const confirmEl = getEl("auth-password-confirm");
+    const confirmPwd = confirmEl ? confirmEl.value : "";
+    const matchRule = getEl("r-match");
+
+    const isMatch = pwd.length > 0 && pwd === confirmPwd;
+    if (matchRule) {
+      matchRule.className = isMatch ? "rule-item valid" : "rule-item invalid";
+    }
+    return isMatch;
+  };
+
+  global.switchAuthTab = function (tab) {
+    currentAuthTab = tab;
+    const tabReg = getEl("tab-reg");
+    const tabLogin = getEl("tab-login");
+    if (tabReg) tabReg.classList.toggle("active", tab === "register");
+    if (tabLogin) tabLogin.classList.toggle("active", tab === "login");
+
+    const rulesEl = getEl("password-rules");
+    const confirmGroup = getEl("confirm-password-group");
+    const confirmInput = getEl("auth-password-confirm");
+    const submitBtn = getEl("auth-submit-btn");
+    const idLabel = getEl("auth-id-label");
+    const idInput = getEl("auth-identifier");
+
+    if (tab === "register") {
+      if (rulesEl) {
+        rulesEl.classList.remove("hidden");
+        rulesEl.style.setProperty("display", "flex", "important");
+      }
+      if (confirmGroup) {
+        confirmGroup.classList.remove("hidden");
+        confirmGroup.style.setProperty("display", "flex", "important");
+      }
+      if (confirmInput) {
+        confirmInput.disabled = false;
+        confirmInput.required = true;
+      }
+      if (submitBtn) submitBtn.textContent = "Register & Play";
+      if (idLabel) idLabel.textContent = "Email Address";
+      if (idInput) idInput.placeholder = "player@casino.com";
+      const pwdVal = getEl("auth-password") ? getEl("auth-password").value : "";
+      global.checkPasswordRules(pwdVal);
+    } else {
+      if (rulesEl) {
+        rulesEl.classList.add("hidden");
+        rulesEl.style.setProperty("display", "none", "important");
+      }
+      if (confirmGroup) {
+        confirmGroup.classList.add("hidden");
+        confirmGroup.style.setProperty("display", "none", "important");
+      }
+      if (confirmInput) {
+        confirmInput.disabled = true;
+        confirmInput.required = false;
+        confirmInput.value = "";
+      }
+      if (submitBtn) submitBtn.textContent = "Sign In";
+      if (idLabel) idLabel.textContent = "Username or Email";
+      if (idInput) idInput.placeholder = "username or email";
+    }
+    clearAuthAlert();
+  };
+
+  function showAuthAlert(msg, isError) {
+    const alertEl = getEl("auth-alert");
+    if (!alertEl) return;
+    alertEl.innerHTML = msg;
+    alertEl.className = isError ? "auth-alert error" : "auth-alert success";
+    alertEl.style.display = "block";
+  }
+
+  function clearAuthAlert() {
+    const alertEl = getEl("auth-alert");
+    if (alertEl) alertEl.style.display = "none";
+  }
+
+  async function syncBankToServer(bankValue) {
+    const bank = Math.max(0, parseFloat(bankValue) || 0);
+    try {
+      if (userId) localStorage.setItem("calmchess_bank_" + userId, bank.toFixed(2));
+    } catch (e) {}
+
+    try {
+      await fetch(API_BASE + "/admin_api.php?action=sync_bank", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        keepalive: true,
+        body: JSON.stringify({ user_id: userId, email: userEmail, bank: bank })
+      });
+    } catch (e) {}
+  }
+
+  global.handleAuthSubmit = async function (e) {
+    if (e && e.preventDefault) e.preventDefault();
+    clearAuthAlert();
+
+    const idInput = getEl("auth-identifier");
+    const pwdInput = getEl("auth-password");
+    const identifier = idInput ? idInput.value.trim() : "";
+    const password = pwdInput ? pwdInput.value : "";
+    const confirmInput = getEl("auth-password-confirm");
+    const confirmPassword = confirmInput ? confirmInput.value : "";
+
+    if (currentAuthTab === "register") {
+      if (password !== confirmPassword) {
+        showAuthAlert("Passwords do not match. Please verify your password.", true);
+        if (confirmInput) confirmInput.focus();
+        return;
+      }
+
+      const hasLen = password.length >= 8;
+      const hasUpper = /[A-Z]/.test(password);
+      const hasLower = /[a-z]/.test(password);
+      const hasNum = /[0-9]/.test(password);
+      const hasSpec = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+      if (!hasLen || !hasUpper || !hasLower || !hasNum || !hasSpec) {
+        showAuthAlert("Please satisfy all password complexity requirements.", true);
+        return;
+      }
+    }
+
+    const endpoint = API_BASE + (currentAuthTab === "register" ? "/register.php" : "/login.php");
+
+    try {
+      const res = await fetch(endpoint + "?_t=" + Date.now(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ identifier: identifier, email: identifier, password: password })
+      });
+
+      const rawText = await res.text();
+      let data;
+      try {
+        data = JSON.parse(rawText);
+      } catch (jsonErr) {
+        showAuthAlert("Server Error (" + res.status + "): " + rawText.replace(/<[^>]*>?/gm, "").trim(), true);
+        return;
+      }
+
+      if (res.status === 409 || (data && (data.error_code === "EMAIL_EXISTS" || (data.message && data.message.includes("already registered"))))) {
+        showAuthAlert(data.message, true);
+        global.showNotification(data.message + "\n\nSwitching to Sign In tab.", false);
+        global.switchAuthTab("login");
+        if (getEl("auth-password")) {
+          getEl("auth-password").value = "";
+          getEl("auth-password").focus();
+        }
+        return;
+      }
+
+      if (!data.success) {
+        showAuthAlert(data.message, true);
+        return;
+      }
+
+      userId = data.user.id;
+      userEmail = data.user.email || identifier;
+      const loadedBank = parseFloat(data.user.bank);
+
+      const lobbyScreen = getEl("lobby-screen");
+      const gameScreen = getEl("game-screen");
+      if (lobbyScreen) lobbyScreen.classList.remove("active");
+      if (gameScreen) gameScreen.classList.add("active");
+
+      loadAdminMode();
+      initGameState(loadedBank);
+      updateResponsiveCardScale();
+    } catch (err) {
+      showAuthAlert("Network Error: " + err.message, true);
+    }
+  };
+
+  global.executeLogout = async function () {
+    if (isRoundOver && currentBet > 0) {
+      userBank += currentBet;
+      currentBet = 0;
+    }
+    await syncBankToServer(userBank);
+
+    try {
+      await fetch(API_BASE + "/logout.php?_t=" + Date.now(), {
+        method: "POST",
+        credentials: "include",
+        keepalive: true
+      });
+    } catch (e) {}
+
+    const gameScreen = getEl("game-screen");
+    const lobbyScreen = getEl("lobby-screen");
+    if (gameScreen) gameScreen.classList.remove("active");
+    if (lobbyScreen) lobbyScreen.classList.add("active");
+
+    const pwdEl = getEl("auth-password");
+    if (pwdEl) pwdEl.value = "";
+    const confirmEl = getEl("auth-password-confirm");
+    if (confirmEl) confirmEl.value = "";
+
+    userId = null;
+    userEmail = "";
+    shoe = [];
+    dealerCards = [];
+    playerHands = [];
+    simulatedBotHands = [];
+  };
+
+  async function loadAdminMode() {
+    try {
+      const res = await fetch(API_BASE + "/admin_api.php?action=get_mode&_t=" + Date.now(), {
+        credentials: "include"
+      });
+      const data = await res.json();
+      if (data.success) {
+        simulationMode = data.simulation_mode;
+        applyStoreModeUI();
+      }
+    } catch (e) {}
+  }
+
+  function applyStoreModeUI() {
+    const simBox = getEl("simulation-container");
+    const liveBox = getEl("paypal-live-container");
+
+    if (simBox) simBox.style.display = simulationMode ? "block" : "none";
+    if (liveBox) liveBox.style.display = simulationMode ? "none" : "flex";
+
+    if (!simulationMode) {
+      renderPayPalButtons();
+    }
+  }
+
+  global.selectPackage = function (credits, price, cardEl) {
+    selectedPackageCredits = credits;
+    selectedPackagePrice = price;
+
+    document.querySelectorAll(".package-box").forEach(el => el.classList.remove("selected"));
+    if (cardEl) cardEl.classList.add("selected");
+
+    const simBtn = getEl("sim-buy-btn");
+    if (simBtn) simBtn.textContent = "Add Credits (Simulated $" + price + ")";
+  };
+
+  global.openStoreModal = function () {
+    loadAdminMode();
+    const modal = getEl("store-modal");
+    if (modal) modal.classList.add("active");
+  };
+
+  global.closeStoreModal = function () {
+    const modal = getEl("store-modal");
+    if (modal) modal.classList.remove("active");
+  };
+
+  global.openAdminModal = function () {
+    const simToggle = getEl("admin-sim-toggle");
+    if (simToggle) simToggle.checked = simulationMode;
+    const modal = getEl("admin-modal");
+    if (modal) modal.classList.add("active");
+  };
+
+  global.closeAdminModal = function () {
+    const modal = getEl("admin-modal");
+    if (modal) modal.classList.remove("active");
+  };
+
+  global.saveAdminSettings = async function () {
+    const adminKeyInput = getEl("admin-key");
+    const adminKey = adminKeyInput ? adminKeyInput.value : "";
+    const simToggle = getEl("admin-sim-toggle");
+    const simEnabled = simToggle && simToggle.checked ? 1 : 0;
+
+    try {
+      const res = await fetch(API_BASE + "/admin_api.php?action=set_mode", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ admin_key: adminKey, enable_simulation: simEnabled })
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        global.showNotification("Admin Error: " + data.message, false);
+        return;
+      }
+
+      simulationMode = data.simulation_mode;
+      global.showNotification("Simulation mode: " + (simulationMode ? "ENABLED" : "DISABLED"), true);
+      global.closeAdminModal();
+      applyStoreModeUI();
+    } catch (err) {
+      global.showNotification("Connection error: " + err.message, false);
+    }
+  };
+
+  global.executeSimulatedPurchase = async function () {
+    const check = getEl("accept-terms-check");
+    if (check && !check.checked) {
+      global.showNotification("Please review and check the Terms of Service acceptance box.", false);
+      return;
+    }
+
+    try {
+      const res = await fetch(API_BASE + "/admin_api.php?action=buy_credits", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ package: selectedPackageCredits, user_id: userId, email: userEmail })
+      });
+      const data = await res.json();
+
+      if (!data.success) {
+        global.showNotification(data.message, false);
+        return;
+      }
+
+      userBank = parseFloat(data.new_bank);
+      const bankDisplay = getEl("bank-display");
+      if (bankDisplay) bankDisplay.textContent = userBank;
+      syncBankToServer(userBank);
+      global.showNotification("[SIMULATION]: " + data.message, true);
+      global.closeStoreModal();
+    } catch (err) {
+      global.showNotification("Simulation failed: " + err.message, false);
+    }
+  };
+
+  function renderPayPalButtons() {
+    if (paypalButtonsRendered || typeof paypal === "undefined") return;
+
+    paypal.Buttons({
+      style: { layout: "vertical", color: "gold", shape: "rect", label: "pay" },
+      onClick: function (data, actions) {
+        const terms = getEl("accept-terms-check");
+        if (terms && !terms.checked) {
+          global.showNotification("Accept Terms of Service before continuing.", false);
+          return actions.reject();
+        }
+        return actions.resolve();
+      },
+      createOrder: async function () {
+        const res = await fetch(API_BASE + "/paypal_api.php?action=create_order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ package: selectedPackageCredits, user_id: userId, email: userEmail })
+        });
+        const orderData = await res.json();
+        if (!orderData.success) throw new Error(orderData.message);
+        return orderData.orderID;
+      },
+      onApprove: async function (data) {
+        const res = await fetch(API_BASE + "/paypal_api.php?action=capture_order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ orderID: data.orderID, package: selectedPackageCredits, user_id: userId, email: userEmail })
+        });
+        const captureData = await res.json();
+        if (captureData.success) {
+          userBank = parseFloat(captureData.new_bank);
+          const bankDisplay = getEl("bank-display");
+          if (bankDisplay) bankDisplay.textContent = userBank;
+          syncBankToServer(userBank);
+          global.showNotification(captureData.message, true);
+          global.closeStoreModal();
+        } else {
+          global.showNotification("Capture Error: " + captureData.message, false);
+        }
+      },
+      onError: function (err) {
+        global.showNotification("Payment error: " + err, false);
+      }
+    }).render("#paypal-button-container");
+
+    paypalButtonsRendered = true;
+  }
+
+  // Confetti celebration animation
+  let confettiAnimId = null;
+  let confettiParticles = [];
+  let celebrationDismissTimer = null;
+
+  function triggerCelebration(wonAmount) {
+    playWinFanfareSfx();
+    const overlay = getEl("celebration-overlay");
+    const payoutEl = getEl("celebration-payout");
+    if (payoutEl) payoutEl.textContent = "Won $" + wonAmount + " (3:2 Payout)";
+    if (overlay) overlay.classList.add("active");
+    startConfetti();
+    clearTimeout(celebrationDismissTimer);
+    celebrationDismissTimer = setTimeout(global.closeBlackjackCelebration, 4000);
+  }
+
+  global.closeBlackjackCelebration = function () {
+    const overlay = getEl("celebration-overlay");
+    if (overlay) overlay.classList.remove("active");
+    stopConfetti();
+    clearTimeout(celebrationDismissTimer);
+  };
+
+  function startConfetti() {
+    const canvas = getEl("confetti-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+    ctx.scale(dpr, dpr);
+
+    confettiParticles = [];
+    const colors = ["#f1c40f", "#e74c3c", "#2ecc71", "#3498db", "#9b59b6", "#ffffff"];
+    for (let i = 0; i < 90; i++) {
+      confettiParticles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight - window.innerHeight,
+        size: Math.random() * 7 + 3,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        vx: Math.random() * 4 - 2,
+        vy: Math.random() * 4 + 3,
+        rot: Math.random() * 360,
+        rotSpeed: Math.random() * 8 - 4
+      });
+    }
+
+    function step() {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      confettiParticles.forEach(p => {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.rot += p.rotSpeed;
+        if (p.y > window.innerHeight) {
+          p.y = -10;
+          p.x = Math.random() * window.innerWidth;
+        }
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rot * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.6);
+        ctx.restore();
+      });
+      confettiAnimId = requestAnimationFrame(step);
+    }
+    cancelAnimationFrame(confettiAnimId);
+    step();
+  }
+
+  function stopConfetti() {
+    cancelAnimationFrame(confettiAnimId);
+    const canvas = getEl("confetti-canvas");
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  // 6-Deck Shoe Mechanics
+  const SUITS = ["♠", "♥", "♦", "♣"];
+  const CARD_RANKS = [
+    { n: "2", v: 2 }, { n: "3", v: 3 }, { n: "4", v: 4 }, { n: "5", v: 5 },
+    { n: "6", v: 6 }, { n: "7", v: 7 }, { n: "8", v: 8 }, { n: "9", v: 9 },
+    { n: "10", v: 10 }, { n: "J", v: 10 }, { n: "Q", v: 10 }, { n: "K", v: 10 },
+    { n: "A", v: 11 }
+  ];
+  const DECKS_COUNT = 6;
+  const MAX_SPLIT_HANDS = 4;
+
+  function initAndShuffleShoe() {
+    const cards = [];
+    for (let d = 0; d < DECKS_COUNT; d++) {
+      for (let s = 0; s < SUITS.length; s++) {
+        for (let r = 0; r < CARD_RANKS.length; r++) {
+          cards.push({ suit: SUITS[s], name: CARD_RANKS[r].n, value: CARD_RANKS[r].v });
+        }
+      }
+    }
+
+    for (let i = cards.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = cards[i];
+      cards[i] = cards[j];
+      cards[j] = temp;
+    }
+
+    const half = Math.floor(cards.length / 2);
+    const left = cards.slice(0, half);
+    const right = cards.slice(half);
+    const riffled = [];
+
+    while (left.length || right.length) {
+      const takeLeft = Math.min(left.length, Math.floor(Math.random() * 8) + 16);
+      const takeRight = Math.min(right.length, Math.floor(Math.random() * 8) + 16);
+      const leftBatch = left.splice(0, takeLeft);
+      const rightBatch = right.splice(0, takeRight);
+
+      while (leftBatch.length || rightBatch.length) {
+        if (leftBatch.length && (!rightBatch.length || Math.random() > 0.5)) {
+          riffled.push(leftBatch.pop());
+        } else if (rightBatch.length) {
+          riffled.push(rightBatch.pop());
+        }
+      }
+    }
+
+    const cutPos = Math.floor(Math.random() * 80) + 116;
+    shoe = riffled.slice(cutPos).concat(riffled.slice(0, cutPos));
+
+    cutCardCount = Math.floor(Math.random() * 24) + 55;
+    cutCardReached = false;
+    shoe.pop();
+
+    const shoeDisplay = getEl("shoe-display");
+    const cutDisplay = getEl("cut-display");
+    if (shoeDisplay) shoeDisplay.textContent = shoe.length;
+    if (cutDisplay) cutDisplay.textContent = cutCardCount + " cards";
+  }
+
+  function drawCard() {
+    if (shoe.length <= cutCardCount) {
+      cutCardReached = true;
+    }
+    if (shoe.length === 0) {
+      initAndShuffleShoe();
+    }
+    const card = shoe.pop();
+    const shoeDisplay = getEl("shoe-display");
+    if (shoeDisplay) shoeDisplay.textContent = shoe.length;
+    return card;
+  }
+
+  function calcHandScore(cards) {
+    let score = 0;
+    let aces = 0;
+    for (let i = 0; i < cards.length; i++) {
+      score += cards[i].value;
+      if (cards[i].name === "A") aces++;
+    }
+    while (score > 21 && aces > 0) {
+      score -= 10;
+      aces--;
+    }
+    return score;
+  }
+
+  function createCardElement(card, isHidden, cardIndex = 0) {
+    const el = document.createElement("div");
+    if (isHidden) {
+      el.className = "card hidden";
+      el.style.zIndex = cardIndex + 1;
+      return el;
+    }
+    const isRed = card.suit === "♥" || card.suit === "♦";
+    el.className = "card " + (isRed ? "red" : "black");
+    el.style.zIndex = cardIndex + 1;
+    el.innerHTML = "<div>" + card.name + '</div><div class="suit">' + card.suit + '</div><div class="corner-bottom">' + card.name + "</div>";
+    return el;
+  }
+
+  // RENDER TABLE: Keeps all seats visible, elevates player split to table center
+  function renderTable(hideDealerHoleCard = true) {
+    const dealerCardsEl = getEl("dealer-cards");
+    const dealerScoreEl = getEl("dealer-score");
+    const handsContainerEl = getEl("player-hands-container");
+    const splitStageEl = getEl("player-split-stage");
+    const rulesBannerEl = getEl("felt-rules-banner");
+    const betDisplayEl = getEl("bet-display");
+    const bankDisplayEl = getEl("bank-display");
+
+    if (dealerCardsEl) {
+      dealerCardsEl.innerHTML = "";
+      dealerCards.forEach((c, idx) => {
+        dealerCardsEl.appendChild(createCardElement(c, idx === 1 && hideDealerHoleCard && !isRoundOver, idx));
+      });
+    }
+
+    if (dealerScoreEl) {
+      dealerScoreEl.textContent = hideDealerHoleCard && !isRoundOver
+        ? (dealerCards[0] ? dealerCards[0].value : 0)
+        : calcHandScore(dealerCards);
+    }
+
+    const seatCount = activeTableSeats || getSeatsCount();
+    const isUserSplit = playerHands && playerHands.length > 1;
+
+    if (handsContainerEl) handsContainerEl.innerHTML = "";
+    if (splitStageEl) splitStageEl.innerHTML = "";
+
+    // Toggle multi-player desktop row
+    if (handsContainerEl) {
+      if (seatCount >= 3 && window.innerWidth >= 640) {
+        handsContainerEl.classList.add("multi-player-row");
+      } else {
+        handsContainerEl.classList.remove("multi-player-row");
+      }
+    }
+
+    // IF USER HAS SPLIT: Elevate your split hands into the center of the table
+    if (isUserSplit && splitStageEl) {
+      splitStageEl.classList.add("active");
+      if (rulesBannerEl) rulesBannerEl.classList.add("faded");
+
+      playerHands.forEach((hand, idx) => {
+        const score = calcHandScore(hand.cards);
+        const splitBox = document.createElement("div");
+        splitBox.className = !isRoundOver && idx === activeHandIndex ? "hand-box active" : "hand-box";
+
+        const label = document.createElement("div");
+        label.className = "hand-label";
+        label.innerHTML = `Split Hand ${idx + 1}: <span>${score}</span>`;
+        splitBox.appendChild(label);
+
+        if (isRoundOver && hand.resTxt) {
+          const badge = document.createElement("div");
+          badge.className = "hand-result-badge " + (hand.resType || "win");
+          badge.textContent = hand.resTxt;
+          splitBox.appendChild(badge);
+        }
+
+        const cardsRow = document.createElement("div");
+        cardsRow.className = "cards-row cascading";
+        hand.cards.forEach((c, cIdx) => cardsRow.appendChild(createCardElement(c, false, cIdx)));
+        splitBox.appendChild(cardsRow);
+        splitStageEl.appendChild(splitBox);
+      });
+    } else {
+      if (splitStageEl) splitStageEl.classList.remove("active");
+      if (rulesBannerEl) rulesBannerEl.classList.remove("faded");
+    }
+
+    // RENDER THE BOTTOM ROW WITH EVERY SEAT (P1 THROUGH P7) PRESERVED
+    if (seatCount > 1 && handsContainerEl) {
+      const centerIndex = Math.floor(seatCount / 2);
+      let botIdx = 0;
+
+      for (let s = 0; s < seatCount; s++) {
+        const isCenter = s === centerIndex;
+
+        if (isCenter) {
+          // Main Player's Seat in Bottom Row
+          const box = document.createElement("div");
+          box.className = "hand-box center-seat" + (isUserSplit ? " split-home" : (!isRoundOver ? " active" : ""));
+
+          const label = document.createElement("div");
+          label.className = "hand-label";
+
+          if (isUserSplit) {
+            const splitScores = playerHands.map(h => calcHandScore(h.cards)).join(" / ");
+            label.innerHTML = `YOU (SPLIT): <span>${splitScores}</span>`;
+            box.appendChild(label);
+
+            const activeCardRow = document.createElement("div");
+            activeCardRow.className = "cards-row cascading";
+            const activeHand = playerHands[activeHandIndex] || playerHands[0];
+            activeHand.cards.forEach((c, idx) => activeCardRow.appendChild(createCardElement(c, false, idx)));
+            box.appendChild(activeCardRow);
+          } else {
+            const cardsArr = (playerHands[0] && playerHands[0].cards) || [];
+            const score = calcHandScore(cardsArr);
+            label.innerHTML = `YOU: <span>${score}</span>`;
+            box.appendChild(label);
+
+            if (isRoundOver && playerHands[0] && playerHands[0].resTxt) {
+              const badge = document.createElement("div");
+              badge.className = "hand-result-badge " + (playerHands[0].resType || "win");
+              badge.textContent = playerHands[0].resTxt;
+              box.appendChild(badge);
+            }
+
+            const cardsRow = document.createElement("div");
+            cardsRow.className = "cards-row" + (cardsArr.length >= 2 ? " cascading" : "");
+            cardsArr.forEach((c, idx) => cardsRow.appendChild(createCardElement(c, false, idx)));
+            box.appendChild(cardsRow);
+          }
+
+          handsContainerEl.appendChild(box);
+        } else {
+          // Bot Seat (P1..P7)
+          const botSubHands = simulatedBotHands[botIdx] || [];
+          const box = document.createElement("div");
+          box.className = "hand-group";
+
+          const label = document.createElement("div");
+          label.className = "hand-label";
+
+          if (botSubHands.length <= 1) {
+            const bCards = (botSubHands[0] && botSubHands[0].cards) || [];
+            const score = calcHandScore(bCards);
+            label.innerHTML = `P${s + 1}: <span>${score}</span>`;
+            box.appendChild(label);
+
+            const cardsRow = document.createElement("div");
+            cardsRow.className = "cards-row" + (bCards.length >= 2 ? " cascading" : "");
+            bCards.forEach((c, idx) => cardsRow.appendChild(createCardElement(c, false, idx)));
+            box.appendChild(cardsRow);
+          } else {
+            const scores = botSubHands.map(sh => calcHandScore(sh.cards)).join(" / ");
+            label.innerHTML = `P${s + 1} (SPLIT): <span>${scores}</span>`;
+            box.appendChild(label);
+
+            const splitWrapper = document.createElement("div");
+            splitWrapper.style.display = "flex";
+            splitWrapper.style.gap = "4px";
+
+            botSubHands.forEach(sh => {
+              const subRow = document.createElement("div");
+              subRow.className = "cards-row cascading";
+              sh.cards.forEach((c, idx) => subRow.appendChild(createCardElement(c, false, idx)));
+              splitWrapper.appendChild(subRow);
+            });
+            box.appendChild(splitWrapper);
+          }
+
+          handsContainerEl.appendChild(box);
+          botIdx++;
+        }
+      }
+    } else if (handsContainerEl) {
+      // 1 Seat solo table
+      if (!isUserSplit) {
+        playerHands.forEach((hand, idx) => {
+          const score = calcHandScore(hand.cards);
+          const box = document.createElement("div");
+          box.className = !isRoundOver && idx === activeHandIndex ? "hand-box active" : "hand-box";
+
+          const label = document.createElement("div");
+          label.className = "hand-label";
+          label.innerHTML = `Score: <span>${score}</span>`;
+          box.appendChild(label);
+
+          if (isRoundOver && hand.resTxt) {
+            const badge = document.createElement("div");
+            badge.className = "hand-result-badge " + (hand.resType || "win");
+            badge.textContent = hand.resTxt;
+            box.appendChild(badge);
+          }
+
+          const cardsRow = document.createElement("div");
+          cardsRow.className = "cards-row" + (hand.cards.length >= 2 ? " cascading" : "");
+          hand.cards.forEach((c, cIdx) => cardsRow.appendChild(createCardElement(c, false, cIdx)));
+          box.appendChild(cardsRow);
+          handsContainerEl.appendChild(box);
+        });
+      }
+    }
+
+    if (betDisplayEl) {
+      betDisplayEl.textContent = isRoundOver
+        ? currentBet
+        : playerHands.reduce((acc, h) => acc + h.bet, 0) || currentBet;
+    }
+
+    if (bankDisplayEl) {
+      bankDisplayEl.textContent = userBank;
+    }
+  }
+
+  function initGameState(bankAmount) {
+    userBank = parseFloat(bankAmount);
+    currentBet = 0;
+    currentInsuranceBet = 0;
+    isRoundOver = true;
+    dealerCards = [];
+    playerHands = [];
+    simulatedBotHands = [];
+
+    const bankDisplay = getEl("bank-display");
+    const betDisplay = getEl("bet-display");
+    const messageBanner = getEl("message-banner");
+    const dealerScore = getEl("dealer-score");
+    const dealerCardsEl = getEl("dealer-cards");
+    const playerHandsContainer = getEl("player-hands-container");
+    const splitStage = getEl("player-split-stage");
+    const rulesBanner = getEl("felt-rules-banner");
+
+    if (bankDisplay) bankDisplay.textContent = userBank;
+    if (betDisplay) betDisplay.textContent = 0;
+    if (messageBanner) messageBanner.textContent = "Place your bet and press DEAL!";
+    if (dealerScore) dealerScore.textContent = "0";
+    if (dealerCardsEl) dealerCardsEl.innerHTML = "";
+    if (playerHandsContainer) playerHandsContainer.innerHTML = "";
+    if (splitStage) {
+      splitStage.innerHTML = "";
+      splitStage.classList.remove("active");
+    }
+    if (rulesBanner) rulesBanner.classList.remove("faded");
+
+    const seatInput = getEl("table-seats-input");
+    if (seatInput) seatInput.value = "7";
+    activeTableSeats = 7;
+
+    initAndShuffleShoe();
+    updateButtonStates();
+    updateResponsiveCardScale();
+    renderTable();
+  }
+
+  global.addBet = function (amount) {
+    playChipSfx();
+    if (!isRoundOver) {
+      dealerCards = [];
+      playerHands = [];
+      simulatedBotHands = [];
+      const dealerCardsEl = getEl("dealer-cards");
+      const playerHandsContainer = getEl("player-hands-container");
+      const splitStage = getEl("player-split-stage");
+      const rulesBanner = getEl("felt-rules-banner");
+      const dealerScore = getEl("dealer-score");
+
+      if (dealerCardsEl) dealerCardsEl.innerHTML = "";
+      if (playerHandsContainer) playerHandsContainer.innerHTML = "";
+      if (splitStage) {
+        splitStage.innerHTML = "";
+        splitStage.classList.remove("active");
+      }
+      if (rulesBanner) rulesBanner.classList.remove("faded");
+      if (dealerScore) dealerScore.textContent = "0";
+      isRoundOver = true;
+    }
+
+    const messageBanner = getEl("message-banner");
+    if (currentBet >= 500) {
+      if (messageBanner) messageBanner.textContent = "Maximum bet is $500!";
+      return;
+    }
+
+    const betToAdd = Math.min(amount, 500 - currentBet);
+    if (userBank >= betToAdd) {
+      userBank -= betToAdd;
+      currentBet += betToAdd;
+      const bankDisplay = getEl("bank-display");
+      const betDisplay = getEl("bet-display");
+      if (bankDisplay) bankDisplay.textContent = userBank;
+      if (betDisplay) betDisplay.textContent = currentBet;
+
+      if (currentBet === 500) {
+        if (messageBanner) messageBanner.textContent = "Max bet reached ($500)";
+      } else if (messageBanner && messageBanner.textContent.includes("bet")) {
+        messageBanner.textContent = "";
+      }
+    } else if (userBank <= 0 && currentBet === 0) {
+      global.openStoreModal();
+    }
+  };
+
+  global.clearBet = function () {
+    playChipSfx();
+    if (!isRoundOver) return;
+    userBank += currentBet;
+    currentBet = 0;
+    const bankDisplay = getEl("bank-display");
+    const betDisplay = getEl("bet-display");
+    const messageBanner = getEl("message-banner");
+    if (bankDisplay) bankDisplay.textContent = userBank;
+    if (betDisplay) betDisplay.textContent = 0;
+    if (messageBanner) messageBanner.textContent = "";
+  };
+
+  function updateButtonStates() {
+    const dealBtn = getEl("deal-btn");
+    const hitBtn = getEl("hit-btn");
+    const standBtn = getEl("stand-btn");
+    const doubleBtn = getEl("double-btn");
+    const splitBtn = getEl("split-btn");
+    const chipControls = getEl("chip-controls");
+
+    if (isRoundOver) {
+      if (dealBtn) dealBtn.disabled = false;
+      if (hitBtn) hitBtn.disabled = true;
+      if (standBtn) standBtn.disabled = true;
+      if (doubleBtn) doubleBtn.disabled = true;
+      if (splitBtn) splitBtn.disabled = true;
+      if (chipControls) {
+        chipControls.style.opacity = "1";
+        chipControls.querySelectorAll(".chip, button").forEach(c => (c.style.pointerEvents = "auto"));
+      }
+      return;
+    }
+
+    if (dealBtn) dealBtn.disabled = true;
+    if (chipControls) {
+      chipControls.style.opacity = "0.3";
+      chipControls.querySelectorAll(".chip, button").forEach(c => (c.style.pointerEvents = "none"));
+    }
+
+    const curHand = playerHands[activeHandIndex];
+    if (!curHand) return;
+
+    if (curHand.isSplitAce) {
+      if (hitBtn) hitBtn.disabled = true;
+      if (doubleBtn) doubleBtn.disabled = true;
+      if (splitBtn) splitBtn.disabled = true;
+      if (standBtn) standBtn.disabled = false;
+      return;
+    }
+
+    if (hitBtn) hitBtn.disabled = false;
+    if (standBtn) standBtn.disabled = false;
+    if (doubleBtn) doubleBtn.disabled = !(curHand.cards.length === 2 && userBank >= curHand.bet);
+
+    const isPair = curHand.cards.length === 2 && curHand.cards[0].value === curHand.cards[1].value;
+    const isPairAces = curHand.cards.length === 2 && curHand.cards[0].name === "A";
+
+    if (splitBtn) {
+      splitBtn.disabled = !(
+        playerHands.length < MAX_SPLIT_HANDS &&
+        isPair &&
+        userBank >= curHand.bet &&
+        (!curHand.isSplitAce || !isPairAces)
+      );
+    }
+  }
+
+  function promptInsuranceModal() {
+    return new Promise(resolve => {
+      insuranceResolvePromise = resolve;
+      const cost = Math.floor(playerHands[0].bet / 2);
+      const label = getEl("insurance-amount-label");
+      if (label) label.textContent = "Insurance Cost: $" + cost;
+      const yesBtn = getEl("ins-yes-btn");
+
+      if (userBank < cost) {
+        if (yesBtn) {
+          yesBtn.disabled = true;
+          yesBtn.textContent = "Insufficient Funds";
+        }
+      } else {
+        if (yesBtn) {
+          yesBtn.disabled = false;
+          yesBtn.textContent = "Take Insurance";
+        }
+      }
+
+      const modal = getEl("insurance-modal");
+      if (modal) modal.classList.add("active");
+    });
+  }
+
+  global.handleInsuranceChoice = function (accepted) {
+    const modal = getEl("insurance-modal");
+    if (modal) modal.classList.remove("active");
+    if (insuranceResolvePromise) {
+      const cb = insuranceResolvePromise;
+      insuranceResolvePromise = null;
+      cb(accepted);
+    }
+  };
+
+  // Bot play logic applying Basic Strategy splits and hits
+  function playBotsTurn() {
+    const dealerUpCard = dealerCards[0];
+
+    simulatedBotHands.forEach(botSeat => {
+      // Check if bot should split its initial 2 cards
+      if (botSeat.length === 1) {
+        const initialHand = botSeat[0];
+        if (initialHand.cards.length === 2 && shouldSplitBasicStrategy(initialHand.cards[0], initialHand.cards[1], dealerUpCard)) {
+          const isAceSplit = initialHand.cards[0].name === "A";
+          const handA = {
+            cards: [initialHand.cards[0], drawCard()],
+            status: isAceSplit ? "stood" : "playing",
+            isSplitAce: isAceSplit
+          };
+          const handB = {
+            cards: [initialHand.cards[1], drawCard()],
+            status: isAceSplit ? "stood" : "playing",
+            isSplitAce: isAceSplit
+          };
+          botSeat.splice(0, 1, handA, handB);
+        }
+      }
+
+      // Play each sub-hand for this bot
+      botSeat.forEach(subHand => {
+        if (subHand.status === "stood") return;
+
+        while (true) {
+          const score = calcHandScore(subHand.cards);
+          const hasAce = subHand.cards.some(c => c.name === "A");
+          if (score < 17) {
+            subHand.cards.push(drawCard());
+          } else if (score === 17 && hasAce) {
+            subHand.cards.push(drawCard());
+          } else {
+            break;
+          }
+        }
+      });
+    });
+  }
+
+  global.startGame = async function () {
+    playCardDealSfx();
+    const messageBanner = getEl("message-banner");
+    if (currentBet === 0) {
+      if (userBank <= 0) {
+        global.openStoreModal();
+      } else {
+        if (messageBanner) messageBanner.textContent = "Please place a bet first!";
+      }
+      return;
+    }
+
+    if (cutCardReached || shoe.length <= cutCardCount) {
+      initAndShuffleShoe();
+      if (messageBanner) messageBanner.textContent = "Cut card reached! Shoe reshuffled & card burned.";
+    } else {
+      if (messageBanner) messageBanner.textContent = "";
+    }
+
+    activeTableSeats = getSeatsCount();
+
+    isRoundOver = false;
+    currentInsuranceBet = 0;
+    playerHands = [{ cards: [], bet: currentBet, status: "playing", isSplitAce: false }];
+    currentBet = 0;
+    activeHandIndex = 0;
+    dealerCards = [];
+    simulatedBotHands = [];
+
+    const seats = activeTableSeats;
+    const botCount = seats - 1;
+
+    for (let i = 0; i < botCount; i++) {
+      simulatedBotHands.push([{ cards: [], status: "playing", isSplitAce: false }]);
+    }
+
+    // First card deal
+    playerHands[0].cards.push(drawCard());
+    for (let i = 0; i < botCount; i++) simulatedBotHands[i][0].cards.push(drawCard());
+    dealerCards.push(drawCard());
+
+    // Second card deal
+    playerHands[0].cards.push(drawCard());
+    for (let i = 0; i < botCount; i++) simulatedBotHands[i][0].cards.push(drawCard());
+    dealerCards.push(drawCard());
+
+    updateResponsiveCardScale();
+    renderTable(true);
+    updateButtonStates();
+
+    const upCard = dealerCards[0];
+    const dealerHasBlackjack = calcHandScore(dealerCards) === 21;
+
+    if (upCard.name === "A") {
+      const wantsInsurance = await promptInsuranceModal();
+      if (wantsInsurance) {
+        const cost = Math.floor(playerHands[0].bet / 2);
+        currentInsuranceBet = cost;
+        userBank -= cost;
+        const bankDisplay = getEl("bank-display");
+        if (bankDisplay) bankDisplay.textContent = userBank;
+      }
+
+      if (dealerHasBlackjack) {
+        if (currentInsuranceBet > 0) {
+          const payout = currentInsuranceBet * 3;
+          userBank += payout;
+          const bankDisplay = getEl("bank-display");
+          if (bankDisplay) bankDisplay.textContent = userBank;
+          if (messageBanner) messageBanner.textContent = "Dealer has Blackjack! Insurance pays 2:1 (+$" + (currentInsuranceBet * 2) + ").";
+          if (playerHands[0]) {
+            playerHands[0].resTxt = "PUSH";
+            playerHands[0].resType = "push";
+          }
+        } else {
+          if (messageBanner) messageBanner.textContent = "Dealer has Blackjack!";
+          if (playerHands[0]) {
+            playerHands[0].resTxt = "-$" + playerHands[0].bet;
+            playerHands[0].resType = "loss";
+          }
+        }
+        resolveDealerHandAndPayouts();
+        return;
+      } else if (currentInsuranceBet > 0) {
+        if (messageBanner) messageBanner.textContent = "Insurance collected.";
+      }
+    } else if (upCard.value === 10 && dealerHasBlackjack) {
+      if (messageBanner) messageBanner.textContent = "Dealer has Blackjack!";
+      resolveDealerHandAndPayouts();
+      return;
+    }
+
+    if (playerHands[0].cards.length === 2 && calcHandScore(playerHands[0].cards) === 21) {
+      resolveDealerHandAndPayouts();
+    }
+  };
+
+  global.playerHit = function () {
+    playCardDealSfx();
+    const hand = playerHands[activeHandIndex];
+    hand.cards.push(drawCard());
+
+    const score = calcHandScore(hand.cards);
+    if (score >= 21) {
+      hand.status = score > 21 ? "busted" : "stood";
+      renderTable(true);
+      advanceToNextHand();
+    } else {
+      renderTable(true);
+      updateButtonStates();
+    }
+  };
+
+  global.playerDouble = function () {
+    const hand = playerHands[activeHandIndex];
+    userBank -= hand.bet;
+    hand.bet *= 2;
+    hand.cards.push(drawCard());
+
+    const score = calcHandScore(hand.cards);
+    hand.status = score > 21 ? "busted" : "stood";
+    renderTable(true);
+    advanceToNextHand();
+  };
+
+  global.playerSplit = function () {
+    const hand = playerHands[activeHandIndex];
+    userBank -= hand.bet;
+
+    const firstCard = hand.cards[0];
+    const secondCard = hand.cards[1];
+    const isAceSplit = firstCard.name === "A";
+
+    const handA = {
+      cards: [firstCard, drawCard()],
+      bet: hand.bet,
+      status: isAceSplit ? "stood" : "playing",
+      isSplitAce: isAceSplit
+    };
+
+    const handB = {
+      cards: [secondCard, drawCard()],
+      bet: hand.bet,
+      status: isAceSplit ? "stood" : "playing",
+      isSplitAce: isAceSplit
+    };
+
+    playerHands.splice(activeHandIndex, 1, handA, handB);
+    updateResponsiveCardScale();
+    renderTable(true);
+
+    if (isAceSplit) {
+      advanceToNextHand();
+    } else {
+      updateButtonStates();
+    }
+  };
+
+  global.playerStand = function () {
+    playerHands[activeHandIndex].status = "stood";
+    advanceToNextHand();
+  };
+
+  function advanceToNextHand() {
+    const nextIdx = playerHands.findIndex((h, idx) => idx >= activeHandIndex && h.status === "playing");
+    if (nextIdx !== -1) {
+      activeHandIndex = nextIdx;
+      renderTable(true);
+      updateButtonStates();
+    } else {
+      resolveDealerHandAndPayouts();
+    }
+  }
+
+  function dealerMustHit(cards) {
+    let score = 0;
+    let aces = 0;
+    for (let i = 0; i < cards.length; i++) {
+      score += cards[i].value;
+      if (cards[i].name === "A") aces++;
+    }
+    while (score > 21 && aces > 0) {
+      score -= 10;
+      aces--;
+    }
+    if (score < 17) return true;
+    if (score === 17 && aces > 0) return true;
+    return false;
+  }
+
+  function resolveDealerHandAndPayouts() {
+    isRoundOver = true;
+    playBotsTurn();
+
+    const dealerHasNatural = dealerCards.length === 2 && calcHandScore(dealerCards) === 21;
+    const allPlayerHandsBusted = playerHands.every(h => calcHandScore(h.cards) > 21);
+
+    if (!dealerHasNatural && !allPlayerHandsBusted) {
+      while (dealerMustHit(dealerCards)) {
+        dealerCards.push(drawCard());
+      }
+    }
+
+    const dealerScore = calcHandScore(dealerCards);
+    let totalWon = 0;
+    let hasNaturalBlackjack = false;
+    let celebrationWinAmount = 0;
+
+    playerHands.forEach(hand => {
+      const playerScore = calcHandScore(hand.cards);
+      const isNatural = hand.cards.length === 2 && playerScore === 21 && playerHands.length === 1;
+
+      if (playerScore > 21) {
+        hand.resTxt = "-$" + hand.bet;
+        hand.resType = "loss";
+      } else if (isNatural) {
+        if (dealerHasNatural) {
+          totalWon += hand.bet;
+          hand.resTxt = "PUSH";
+          hand.resType = "push";
+        } else {
+          const payout = Math.floor(hand.bet * 2.5);
+          totalWon += payout;
+          hasNaturalBlackjack = true;
+          celebrationWinAmount = payout;
+          hand.resTxt = "+$" + Math.floor(hand.bet * 1.5);
+          hand.resType = "win";
+        }
+      } else if (dealerHasNatural) {
+        hand.resTxt = "-$" + hand.bet;
+        hand.resType = "loss";
+      } else if (dealerScore > 21 || playerScore > dealerScore) {
+        totalWon += hand.bet * 2;
+        hand.resTxt = "+$" + hand.bet;
+        hand.resType = "win";
+      } else if (playerScore === dealerScore) {
+        totalWon += hand.bet;
+        hand.resTxt = "PUSH";
+        hand.resType = "push";
+      } else {
+        hand.resTxt = "-$" + hand.bet;
+        hand.resType = "loss";
+      }
+    });
+
+    userBank += totalWon;
+
+    let banner = "";
+    if (dealerHasNatural) {
+      if (currentInsuranceBet > 0) {
+        banner = "Dealer has Blackjack! Insurance pays 2:1 (+$" + (currentInsuranceBet * 2) + ").";
+      } else {
+        banner = "Dealer has Blackjack!";
+      }
+    } else {
+      if (currentInsuranceBet > 0) banner = "Insurance collected. ";
+      if (dealerScore > 21) banner += "Dealer Busted!";
+    }
+
+    if (cutCardReached) {
+      banner += "<br><span style='color:var(--gold);'>(Cut Card Reached - Reshuffling Next Deal)</span>";
+    }
+
+    const messageBanner = getEl("message-banner");
+    if (messageBanner) messageBanner.innerHTML = banner;
+    renderTable(false);
+    const betDisplay = getEl("bet-display");
+    if (betDisplay) betDisplay.textContent = 0;
+    updateButtonStates();
+    syncBankToServer(userBank);
+
+    if (hasNaturalBlackjack) {
+      triggerCelebration(celebrationWinAmount);
+    }
+
+    if (userBank <= 0 && currentBet === 0) {
+      if (messageBanner) {
+        messageBanner.innerHTML += "<br><span style='color:var(--gold);'>Out of credits! Click '+ Credits' to refill.</span>";
+      }
+      setTimeout(global.openStoreModal, 1200);
+    }
+  }
+
+  // Easter egg: Triple click table title to open Admin Modal
+  document.addEventListener("DOMContentLoaded", function () {
+    const titleEl = getEl("table-title");
+    let clickCount = 0;
+    let clickTimer = null;
+
+    if (titleEl) {
+      titleEl.addEventListener("click", function () {
+        clickCount++;
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => { clickCount = 0; }, 900);
+        if (clickCount >= 3) {
+          clickCount = 0;
+          global.openAdminModal();
+        }
+      });
+    }
+
+    updateResponsiveCardScale();
+  });
+
 })(window);

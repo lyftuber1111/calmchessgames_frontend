@@ -14,6 +14,8 @@
             --accent-blue: #4a90e2;
             --text-main: #e2e8f0;
             --text-muted: #94a3b8;
+            --error-red: #ef4444;
+            --success-green: #2ecc71;
         }
 
         * {
@@ -116,7 +118,6 @@
             box-sizing: border-box;
         }
 
-        /* Fully responsive ring wrapper */
         .ring-wrapper {
             position: relative;
             width: 100%;
@@ -130,7 +131,6 @@
             box-sizing: border-box;
         }
 
-        /* Center Knight Logo (Facing Right) - Scales with ring, triple click opens admin */
         .center-logo {
             position: absolute;
             top: 50%;
@@ -180,8 +180,8 @@
 
         .ring-text {
             font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-            font-size: 10pt; /* Baseline desktop font size (~13.3px) */
-            fill: #ffffff; /* Bright white font across desktop and mobile on inner and outer rings */
+            font-size: 10pt;
+            fill: #ffffff;
             color: #ffffff;
             font-weight: bold;
             letter-spacing: 0.2px;
@@ -195,10 +195,9 @@
             transition: font-size 0.2s ease, fill 0.2s ease;
         }
 
-        /* Mobile enhancement: 14pt font size (+4pt) and bright white font on inner and outer rings */
         @media (max-width: 768px) {
             .ring-text {
-                font-size: 14pt; /* Increased by 4pt (10pt -> 14pt) for crisp mobile legibility */
+                font-size: 14pt;
                 fill: #ffffff;
                 color: #ffffff;
                 paint-order: stroke fill;
@@ -269,28 +268,28 @@
         .btn {
             background: linear-gradient(135deg, var(--accent-blue), #2b6cb0);
             color: white;
-            padding: 12px 20px;
+            padding: 10px 16px;
             border-radius: 6px;
             text-decoration: none;
             text-align: center;
             font-weight: 600;
-            font-size: 1rem;
+            font-size: 0.92rem;
             transition: opacity 0.2s, transform 0.1s;
             border: none;
             cursor: pointer;
-            min-height: 44px;
+            min-height: 38px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
         }
 
-        .btn:hover {
-            opacity: 0.92;
-        }
-
-        .btn:active {
-            transform: scale(0.98);
-        }
+        .btn:hover { opacity: 0.92; }
+        .btn:active { transform: scale(0.98); }
+        .btn-gold { background: linear-gradient(135deg, var(--gold-primary), #d4af37); color: #111; font-weight: 700; }
+        .btn-danger { background: linear-gradient(135deg, var(--error-red), #991b1b); color: white; }
+        .btn-warn { background: linear-gradient(135deg, #e67e22, #b95d00); color: white; }
+        .btn-success { background: linear-gradient(135deg, var(--success-green), #1b8a4b); color: white; }
+        .btn-sm { padding: 6px 10px; font-size: 0.8rem; min-height: 30px; }
 
         .admin-modal {
             display: none;
@@ -308,12 +307,12 @@
 
         .admin-content {
             background: var(--panel-bg);
-            padding: clamp(16px, 4vw, 30px);
+            padding: clamp(16px, 3vw, 26px);
             border-radius: 12px;
             width: 100%;
-            max-width: 650px;
-            max-height: 90vh;
-            max-height: 90dvh;
+            max-width: 800px;
+            max-height: 92vh;
+            max-height: 92dvh;
             overflow-y: auto;
             border: 2px solid var(--gold-primary);
             box-sizing: border-box;
@@ -321,29 +320,148 @@
 
         .admin-content h2 {
             color: var(--gold-primary);
-            margin-bottom: 20px;
-            font-size: clamp(1.2rem, 3.5vw, 1.5rem);
+            font-size: clamp(1.15rem, 3vw, 1.45rem);
+        }
+
+        /* Admin Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            padding-bottom: 8px;
+        }
+
+        .admin-tab-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-tab-btn.active {
+            background: var(--gold-primary);
+            color: #0b0f19;
+            border-color: var(--gold-primary);
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 12px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             color: var(--text-muted);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
 
-        .form-group input, .form-group textarea {
+        .form-group input, .form-group textarea, .form-group select {
             width: 100%;
-            padding: 10px 12px;
+            padding: 8px 12px;
             background: var(--bg-color);
             border: 1px solid #334155;
             color: white;
             border-radius: 6px;
-            font-size: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--gold-primary);
+            outline: none;
+        }
+
+        /* User Grid & Cards */
+        .user-mgmt-header {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .user-mgmt-header input {
+            flex: 1;
+            min-width: 200px;
+            padding: 9px 14px;
+            background: var(--bg-color);
+            border: 1.5px solid rgba(255, 215, 0, 0.4);
+            color: #fff;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .user-card {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .user-card.banned {
+            border-color: var(--error-red);
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .user-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 6px;
+        }
+
+        .badge-status {
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .badge-active { background: rgba(46, 204, 113, 0.2); color: var(--success-green); border: 1px solid var(--success-green); }
+        .badge-banned { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid var(--error-red); }
+
+        .user-card-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 8px;
+        }
+
+        .user-card-inputs label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .user-card-inputs input {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--bg-color);
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.88rem;
+        }
+
+        .user-card-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-top: 4px;
         }
 
         footer {
@@ -358,7 +476,6 @@
             font-size: clamp(0.85rem, 2vw, 0.95rem);
         }
 
-        /* Landscape Mobile Optimization */
         @media (max-height: 600px) and (orientation: landscape) {
             .ring-wrapper {
                 max-width: min(75vh, 420px);
@@ -384,9 +501,7 @@
     <main>
         <section class="ring-container-section">
             <div class="ring-wrapper">
-                
                <img src="knight_left0.png" alt="Calm Chess Knight" class="center-logo" id="centerLogo" title="Calm Chess Knight Logo (Single click: navigate | Triple click: admin)" role="button" tabindex="0" aria-label="Calm Chess Logo">
-                
                 <svg class="navigation-rings" id="ringSvg" viewBox="0 0 500 500"></svg>
             </div>
         </section>
@@ -421,53 +536,110 @@
             </div>
             <div id="adminAuthError" style="color: #ef4444; font-size: 0.9rem; margin-bottom: 15px; display: none;"></div>
             <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                <button class="btn" id="adminAuthSubmitBtn" onclick="submitAdminPassword()">Unlock Console</button>
+                <button class="btn btn-gold" id="adminAuthSubmitBtn" onclick="submitAdminPassword()">Unlock Console</button>
                 <button class="btn" style="background: #64748b;" onclick="closeAdminPasswordModal()">Cancel</button>
             </div>
         </div>
     </div>
 
-    <!-- Admin Modal -->
+    <!-- Admin Console Modal -->
     <div class="admin-modal" id="adminModal">
         <div class="admin-content">
-            <!-- Modal Header with Top Action Bar: Title, Save, Close -->
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,215,0,0.25); padding-bottom: 14px;">
-                <h2 style="margin-bottom: 0;">Ring Navigation Admin Console</h2>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-save" onclick="saveSegments()">Save Changes</button>
-                    <button class="btn" style="background: #64748b;" onclick="closeAdminModal()">Close</button>
+            <!-- Modal Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,215,0,0.25); padding-bottom: 12px;">
+                <h2 style="margin-bottom: 0;">Admin Console</h2>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-sm" style="background: #64748b;" onclick="closeAdminModal()">Close</button>
                 </div>
             </div>
-            
-            <!-- Master Toggle to Show Ring Segment IDs on Page -->
-            <div style="background: rgba(74, 144, 226, 0.1); padding: 12px; border-radius: 6px; margin-bottom: 20px; border: 1px solid var(--accent-blue);">
-                <label style="color: var(--gold-primary); font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                    <input type="checkbox" id="masterShowIds" onchange="toggleSegmentIds(this.checked)"> Show Segment IDs on Rings (e.g. inner-0, outer-1)
-                </label>
+
+            <!-- Tab Switcher -->
+            <div class="admin-tabs">
+                <button class="admin-tab-btn active" id="tabBtnSegments" onclick="switchAdminTab('segments')">Ring Navigation</button>
+                <button class="admin-tab-btn" id="tabBtnUsers" onclick="switchAdminTab('users')">Blackjack Users</button>
             </div>
 
-            <div class="form-group">
-                <label>Admin Password / Secret Key</label>
+            <!-- Shared Admin Passcode Input -->
+            <div class="form-group" style="background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(255,215,0,0.2);">
+                <label style="color: var(--gold-primary);">Admin Password / Secret Key (Active Session)</label>
                 <input type="password" id="adminPassword" placeholder="Enter admin password">
             </div>
 
-            <!-- Center Logo Redirect URL Setting -->
-            <div class="form-group" style="background: rgba(255, 215, 0, 0.08); padding: 14px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.35); margin-bottom: 20px;">
-                <label for="adminCenterLogoUrl" style="color: var(--gold-primary); font-weight: bold; font-size: 1rem; margin-bottom: 6px; display: block;">
-                    Center Logo Single-Click Redirect URL
-                </label>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 10px; line-height: 1.4;">
-                    Destination URL or page to redirect to when the center logo is clicked once and times out (triple-click opens this admin console):
-                </p>
-                <input type="text" id="adminCenterLogoUrl" placeholder="e.g. chess.html or https://example.com" style="width: 100%;">
+            <!-- TAB 1: RING NAVIGATION -->
+            <div id="tabContentSegments">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0;">
+                    <span style="font-size: 0.9rem; color: var(--text-muted);">Configure rings and center knight redirection</span>
+                    <button class="btn btn-gold btn-sm btn-save" onclick="saveSegments()">Save Ring Changes</button>
+                </div>
+
+                <div style="background: rgba(74, 144, 226, 0.1); padding: 10px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid var(--accent-blue);">
+                    <label style="color: var(--gold-primary); font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                        <input type="checkbox" id="masterShowIds" onchange="toggleSegmentIds(this.checked)"> Show Segment IDs on Rings (e.g. inner-0, outer-1)
+                    </label>
+                </div>
+
+                <div class="form-group" style="background: rgba(255, 215, 0, 0.08); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.35); margin-bottom: 16px;">
+                    <label for="adminCenterLogoUrl" style="color: var(--gold-primary); font-weight: bold; font-size: 0.95rem; margin-bottom: 4px; display: block;">
+                        Center Logo Single-Click Redirect URL
+                    </label>
+                    <input type="text" id="adminCenterLogoUrl" placeholder="e.g. chess.html or https://example.com" style="width: 100%;">
+                </div>
+
+                <div id="adminSegmentsList"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 16px; border-top: 1px solid rgba(255,215,0,0.25); padding-top: 14px;">
+                    <button class="btn btn-gold btn-save" onclick="saveSegments()">Save Ring Changes</button>
+                    <button class="btn" style="background: #64748b;" onclick="closeAdminModal()">Close</button>
+                </div>
             </div>
 
-            <div id="adminSegmentsList"></div>
-            <!-- Bottom Action Bar: Save, Cancel -->
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; border-top: 1px solid rgba(255,215,0,0.25); padding-top: 16px;">
-                <button class="btn btn-save" onclick="saveSegments()">Save Changes</button>
-                <button class="btn" style="background: #64748b;" onclick="closeAdminModal()">Cancel</button>
+            <!-- TAB 2: BLACKJACK USER MANAGEMENT -->
+            <div id="tabContentUsers" style="display: none;">
+                <!-- User Search & Refresh -->
+                <div class="user-mgmt-header">
+                    <input type="text" id="adminUserSearchInput" placeholder="Search by username or email..." oninput="handleUserSearchInput(this.value)">
+                    <button class="btn btn-sm btn-gold" onclick="fetchBlackjackUsers()">Refresh</button>
+                    <button class="btn btn-sm btn-success" onclick="toggleCreateUserPanel()">+ Create User</button>
+                </div>
+
+                <!-- Create User Sub-Panel -->
+                <div id="createUserPanel" style="display: none; background: rgba(46, 204, 113, 0.08); border: 1px solid var(--success-green); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <h4 style="color: var(--success-green); margin-bottom: 10px; font-size: 1rem;">Create New Blackjack Account</h4>
+                    <div class="user-card-inputs" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                        <div>
+                            <label>Email / Username</label>
+                            <input type="text" id="new_user_email" placeholder="player@casino.com">
+                        </div>
+                        <div>
+                            <label>Password</label>
+                            <input type="password" id="new_user_pwd" placeholder="Min 8 characters">
+                        </div>
+                        <div>
+                            <label>Initial Bankroll ($)</label>
+                            <input type="number" id="new_user_bank" value="500" min="0" step="10">
+                        </div>
+                        <div>
+                            <label>Account Status</label>
+                            <select id="new_user_status" style="width: 100%; padding: 6px 8px; background: var(--bg-color); border: 1px solid #334155; color: white; border-radius: 4px; font-size: 0.88rem;">
+                                <option value="1">Active</option>
+                                <option value="0">Banned</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px;">
+                        <button class="btn btn-sm btn-success" onclick="executeCreateUser()">Save User to Database</button>
+                        <button class="btn btn-sm" style="background: #64748b;" onclick="toggleCreateUserPanel(false)">Cancel</button>
+                    </div>
+                </div>
+
+                <div id="userAdminAlert" style="display:none; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 12px;"></div>
+
+                <!-- User Cards List Container -->
+                <div id="adminUsersList">
+                    <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 20px;">Loading users...</p>
+                </div>
             </div>
+
         </div>
     </div>
 

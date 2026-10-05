@@ -20,6 +20,7 @@
 
   let allBlackjackUsers = [];
   let activeAdminTab = 'segments';
+  let sessionAdminPassword = '';
 
   async function fetchSegments() {
       try {
@@ -395,7 +396,7 @@
       const authModal = document.getElementById('adminPasswordModal');
       const authInput = document.getElementById('adminAuthInput');
       const authError = document.getElementById('adminAuthError');
-      if (authInput) authInput.value = '';
+      if (authInput) authInput.value = sessionAdminPassword || '';
       if (authError) {
           authError.innerText = '';
           authError.style.display = 'none';
@@ -406,8 +407,6 @@
 
   function closeAdminPasswordModal() {
       const authModal = document.getElementById('adminPasswordModal');
-      const authInput = document.getElementById('adminAuthInput');
-      if (authInput) authInput.value = '';
       if (authModal) authModal.style.display = 'none';
   }
 
@@ -425,6 +424,7 @@
           return;
       }
 
+      sessionAdminPassword = password;
       closeAdminPasswordModal();
       openAdminModal(password);
   }
@@ -465,10 +465,31 @@
       }
   }
 
+  function getAdminKey() {
+      const pwdInput = document.getElementById('adminPassword');
+      let key = pwdInput ? pwdInput.value.trim() : '';
+      if (!key) {
+          const authInput = document.getElementById('adminAuthInput');
+          if (authInput && authInput.value.trim()) {
+              key = authInput.value.trim();
+          }
+      }
+      if (!key && sessionAdminPassword) {
+          key = sessionAdminPassword;
+      }
+      if (key && pwdInput && !pwdInput.value) {
+          pwdInput.value = key;
+      }
+      return key;
+  }
+
   function openAdminModal(providedPassword = '') {
+      if (providedPassword) {
+          sessionAdminPassword = providedPassword;
+      }
       const adminPwdInput = document.getElementById('adminPassword');
       if (adminPwdInput) {
-          adminPwdInput.value = providedPassword;
+          adminPwdInput.value = sessionAdminPassword || providedPassword || '';
       }
 
       const centerLogoInput = document.getElementById('adminCenterLogoUrl');
@@ -506,27 +527,22 @@
           });
       }
 
-      switchAdminTab('segments');
+      switchAdminTab(activeAdminTab || 'segments');
       const modal = document.getElementById('adminModal');
       if (modal) modal.style.display = 'flex';
   }
 
   function closeAdminModal() {
-      const adminPwdInput = document.getElementById('adminPassword');
-      if (adminPwdInput) adminPwdInput.value = '';
-      const authInput = document.getElementById('adminAuthInput');
-      if (authInput) authInput.value = '';
       const modal = document.getElementById('adminModal');
       if (modal) modal.style.display = 'none';
   }
 
   async function saveSegments() {
-      const adminPwdInput = document.getElementById('adminPassword');
-      let password = adminPwdInput ? adminPwdInput.value.trim() : '';
+      const password = getAdminKey();
 
       if (!password) {
           alert('Admin password is required to save changes.');
-          if (adminPwdInput) adminPwdInput.focus();
+          promptAdminPassword();
           return;
       }
 
@@ -568,6 +584,7 @@
 
           const payload = {
               admin_password: password,
+              admin_key: password,
               segments: [
                   ...updatedSegments,
                   {
@@ -587,6 +604,7 @@
                   const response = await fetch(targetUrl, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
+                      credentials: 'include',
                       body: JSON.stringify(payload)
                   });
                   const result = await response.json();
@@ -610,8 +628,8 @@
               alert('Settings updated successfully in database!');
               closeAdminModal();
           } else if (errorMsg && errorMsg.includes('credentials')) {
-              alert('Error: ' + errorMsg + '. Please check your Admin Password.');
-              if (adminPwdInput) adminPwdInput.focus();
+              alert('Error: ' + errorMsg + '. Please verify your Admin Password.');
+              promptAdminPassword();
           } else {
               currentSegments = updatedSegments;
               centerLogoUrl = updatedCenterLogoUrl;
@@ -653,11 +671,6 @@
       setTimeout(() => { alertBox.style.display = 'none'; }, 4500);
   }
 
-  function getAdminKey() {
-      const pwdInput = document.getElementById('adminPassword');
-      return pwdInput ? pwdInput.value.trim() : '';
-  }
-
   function toggleCreateUserPanel(forceOpen) {
       const panel = document.getElementById('createUserPanel');
       if (!panel) return;
@@ -670,14 +683,33 @@
 
   async function fetchBlackjackUsers() {
       const container = document.getElementById('adminUsersList');
-      if (container) container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 20px;">Fetching users from database...</p>';
-
       const adminKey = getAdminKey();
+
+      if (!adminKey) {
+          if (container) {
+              container.innerHTML = `
+                  <div style="text-align: center; padding: 24px;">
+                      <p style="color: var(--error-red); margin-bottom: 12px; font-weight: 600;">Admin password is missing or session expired.</p>
+                      <button class="btn btn-sm btn-gold" onclick="promptAdminPassword()">Re-enter Password</button>
+                  </div>
+              `;
+          }
+          return;
+      }
+
+      if (container) {
+          container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 20px;">Fetching users from database...</p>';
+      }
+
       try {
           const res = await fetch(`${API_BASE}/admin_api.php?action=get_users&_t=${Date.now()}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ admin_key: adminKey })
+              credentials: 'include',
+              body: JSON.stringify({ 
+                  admin_key: adminKey,
+                  admin_password: adminKey 
+              })
           });
           const data = await res.json();
           if (data.success && Array.isArray(data.users)) {
@@ -685,10 +717,19 @@
               const searchVal = document.getElementById('adminUserSearchInput') ? document.getElementById('adminUserSearchInput').value : '';
               renderBlackjackUsers(searchVal);
           } else {
-              if (container) container.innerHTML = `<p style="color: var(--error-red); text-align: center; padding: 20px;">Error: ${data.message || 'Could not fetch users'}</p>`;
+              if (container) {
+                  container.innerHTML = `
+                      <div style="text-align: center; padding: 24px;">
+                          <p style="color: var(--error-red); margin-bottom: 12px;">${data.message || 'Unauthorized access'}</p>
+                          <button class="btn btn-sm btn-gold" onclick="promptAdminPassword()">Re-authenticate</button>
+                      </div>
+                  `;
+              }
           }
       } catch (err) {
-          if (container) container.innerHTML = `<p style="color: var(--error-red); text-align: center; padding: 20px;">Connection failed: ${err.message}</p>`;
+          if (container) {
+              container.innerHTML = `<p style="color: var(--error-red); text-align: center; padding: 20px;">Connection failed: ${err.message}</p>`;
+          }
       }
   }
 
@@ -773,8 +814,10 @@
           const res = await fetch(`${API_BASE}/admin_api.php?action=create_user`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
+                  admin_password: adminKey,
                   email: email,
                   password: password,
                   bank: bank,
@@ -811,8 +854,10 @@
           const res = await fetch(`${API_BASE}/admin_api.php?action=update_user`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
+                  admin_password: adminKey,
                   user_id: userId,
                   email: email,
                   bank: bank,
@@ -841,8 +886,10 @@
           const res = await fetch(`${API_BASE}/admin_api.php?action=toggle_ban_user`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
+                  admin_password: adminKey,
                   user_id: userId,
                   is_active: newActiveStatus
               })
@@ -867,8 +914,10 @@
           const res = await fetch(`${API_BASE}/admin_api.php?action=delete_user`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
+                  admin_password: adminKey,
                   user_id: userId
               })
           });
@@ -884,7 +933,7 @@
       }
   }
 
-  // Bind all functions explicitly to global scope
+  // Explicit Global Scope Binding
   global.switchAdminTab = switchAdminTab;
   global.openAdminModal = openAdminModal;
   global.closeAdminModal = closeAdminModal;

@@ -30,11 +30,11 @@
       --sab: env(safe-area-inset-bottom, 0px);
       --sal: env(safe-area-inset-left, 0px);
 
-      /* Proportionate Card Bounds */
-      --card-w: clamp(40px, 10.5vw, 64px);
-      --card-h: clamp(56px, 14.5vh, 92px);
-      --card-font: clamp(0.68rem, 1.15vh, 0.86rem);
-      --suit-font: clamp(0.85rem, 1.7vh, 1.3rem);
+      /* Dynamic Card Geometry Variables */
+      --card-w: clamp(34px, 4.2vw, 54px);
+      --card-h: clamp(50px, 6.2vw, 78px);
+      --card-font: clamp(0.64rem, 1.1vh, 0.84rem);
+      --suit-font: clamp(0.8rem, 1.6vh, 1.2rem);
     }
 
     * {
@@ -81,7 +81,7 @@
     .view-screen { 
       display: none; 
       width: 100%; 
-      max-width: 1180px; 
+      max-width: 1240px; 
       height: 100%;
       justify-content: center;
       align-items: center;
@@ -94,7 +94,7 @@
 
     #game-screen.active {
       width: 100%;
-      max-width: 1180px;
+      max-width: 1240px;
       height: 100%;
       max-height: calc(100dvh - max(8px, calc(var(--sat) + var(--sab))));
       display: flex;
@@ -367,8 +367,27 @@
       padding: 2px;
     }
 
+    /* DESKTOP 3-7 PLAYERS ROW FIT */
+    .player-hands-container.multi-player-row {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      justify-content: center !important;
+      align-items: flex-end !important;
+      gap: clamp(2px, 0.4vw, 6px) !important;
+      width: 100% !important;
+    }
+
+    .player-hands-container.multi-player-row .hand-box,
+    .player-hands-container.multi-player-row .hand-group {
+      flex: 1 1 0 !important;
+      min-width: 0 !important;
+      max-width: 160px !important;
+      padding: 2px clamp(2px, 0.4vw, 4px) !important;
+    }
+
     .hand-box, .hand-group { 
-      padding: clamp(2px, 0.4vh, 5px) clamp(4px, 0.6vw, 8px); 
+      padding: clamp(2px, 0.4vh, 5px) clamp(3px, 0.5vw, 6px); 
       border-radius: 8px; 
       background: rgba(0, 0, 0, 0.22); 
       border: 2px solid rgba(255, 255, 255, 0.12); 
@@ -378,11 +397,11 @@
       justify-content: center;
       position: relative;
       flex: 0 1 auto;
-      min-width: calc(var(--card-w) * 1.5);
-      max-width: 200px;
+      min-width: calc(var(--card-w) * 1.4);
+      max-width: 180px;
     }
     .hand-box.active { border-color: var(--gold); background: rgba(241, 196, 15, 0.12); box-shadow: 0 0 12px rgba(241, 196, 15, 0.35); }
-    .hand-label { font-size: clamp(0.58rem, 0.95vh, 0.74rem); font-weight: 700; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+    .hand-label { font-size: clamp(0.55rem, 0.9vh, 0.72rem); font-weight: 700; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); white-space: nowrap; }
     
     /* CARDS ROW (Side-by-side or Overlapping Cascade) */
     .cards-row { 
@@ -394,26 +413,26 @@
       align-items: center;
     }
 
-    /* CASCADING OVERLAP STYLE FOR SPLIT HANDS & MULTI-CARDS */
+    /* CASCADING OVERLAP STYLE FOR SPLIT HANDS & 3+ CARDS */
     .cards-row.cascading {
       gap: 0 !important;
       position: relative;
     }
     .cards-row.cascading .card + .card {
-      margin-left: calc(var(--card-w) * -0.52);
-      box-shadow: -2px 0 6px rgba(0, 0, 0, 0.45), 0 3px 6px rgba(0, 0, 0, 0.35);
+      margin-left: calc(var(--card-w) * -0.62) !important;
+      box-shadow: -2px 0 6px rgba(0, 0, 0, 0.5), 0 3px 6px rgba(0, 0, 0, 0.35);
     }
 
     /* PLAYING CARDS - Enforced ratio bounds */
     .card { 
       width: var(--card-w); 
       height: var(--card-h); 
-      max-height: clamp(52px, 14vh, 96px);
+      max-height: clamp(48px, 13.5vh, 92px);
       background: var(--card-bg); 
       border-radius: clamp(3px, 0.5vw, 5px); 
       box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35); 
       position: relative; 
-      padding: 2px 4px; 
+      padding: 2px 3px; 
       display: flex; 
       flex-direction: column; 
       justify-content: space-between; 
@@ -613,10 +632,10 @@
       .felt-max-bet-badge { display: none; }
       .table-footer { display: none; }
       :root {
-        --card-w: clamp(28px, 6vh, 40px);
-        --card-h: clamp(40px, 8.5vh, 58px);
+        --card-w: clamp(26px, 5.5vh, 36px);
+        --card-h: clamp(38px, 8vh, 52px);
       }
-      .hand-box, .hand-group { padding: 1px 3px; }
+      .hand-box, .hand-group { padding: 1px 2px; }
       .controls { gap: 2px; margin-bottom: 1px; }
       button.game-btn { min-height: 28px; padding: 3px 8px; }
     }
@@ -641,19 +660,19 @@
         font-size: 0.68rem !important;
       }
 
-      /* When 3 or 4 hands are active, pack them 2-per-row */
-      .player-hands-container.split-mode-active {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-content: center;
-        gap: 4px;
+      /* On narrow phones, multi-player splits wrap cleanly into rows */
+      .player-hands-container.split-mode-active,
+      .player-hands-container.multi-player-row {
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 4px !important;
       }
-      .player-hands-container.split-mode-active .hand-box {
-        flex: 0 1 calc(50% - 6px);
-        max-width: calc(50% - 6px);
-        padding: 2px 4px;
+      .player-hands-container.split-mode-active .hand-box,
+      .player-hands-container.multi-player-row .hand-box,
+      .player-hands-container.multi-player-row .hand-group {
+        flex: 0 1 calc(50% - 6px) !important;
+        max-width: calc(50% - 6px) !important;
+        padding: 2px 4px !important;
       }
     }
   </style>

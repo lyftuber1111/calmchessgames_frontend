@@ -189,7 +189,7 @@
   // Table Seats tracker - Default to 1 seat at startup
   let activeTableSeats = 1;
 
-  // Bot hands structure: [ [ { cards:[], status:'' }, ... ], ... ]
+  // Bot hands structure: [ [ { cards:[], status:'', isSplitAce:false }, ... ], ... ]
   let simulatedBotHands = [];
   let dealerCards = [];
   let playerHands = [];
@@ -276,6 +276,7 @@
     renderTable();
   };
 
+  // Basic Strategy Pair Splitting Decisions
   function shouldSplitBasicStrategy(c1, c2, dealerUpCard) {
     if (!c1 || !c2 || !dealerUpCard) return false;
     if (c1.value !== c2.value) return false;
@@ -292,6 +293,64 @@
     if (rank === "2" || rank === "3") return (dVal >= 2 && dVal <= 7);
 
     return false;
+  }
+
+  // Returns { total, isSoft } for accurate Basic Strategy evaluation
+  function getHandDetails(cards) {
+    let rawTotal = 0;
+    let aceCount = 0;
+
+    for (let i = 0; i < cards.length; i++) {
+      rawTotal += cards[i].value;
+      if (cards[i].name === "A") aceCount++;
+    }
+
+    let isSoft = false;
+    while (rawTotal > 21 && aceCount > 0) {
+      rawTotal -= 10;
+      aceCount--;
+    }
+
+    if (aceCount > 0 && rawTotal <= 21) {
+      isSoft = true;
+    }
+
+    return { total: rawTotal, isSoft: isSoft };
+  }
+
+  // Basic Strategy Hit/Stand decision for bots playing each hand/sub-hand
+  function botShouldHitBasicStrategy(cards, dealerUpCard) {
+    if (!cards || cards.length === 0 || !dealerUpCard) return false;
+
+    const { total, isSoft } = getHandDetails(cards);
+    const dVal = dealerUpCard.value;
+
+    if (total >= 21) return false;
+
+    if (isSoft) {
+      // Soft 19+ (A,8 or higher): Always Stand
+      if (total >= 19) return false;
+      // Soft 18 (A,7): Stand vs 2, 7, 8; Hit vs 9, 10, A
+      if (total === 18) {
+        return (dVal >= 9 || dVal === 11);
+      }
+      // Soft 17 or lower (A,2 through A,6): Always Hit
+      return true;
+    }
+
+    // Hard totals
+    if (total >= 17) return false;
+    if (total >= 13 && total <= 16) {
+      // Stand vs 2-6; Hit vs 7-A
+      return !(dVal >= 2 && dVal <= 6);
+    }
+    if (total === 12) {
+      // Stand vs 4, 5, 6; Hit vs 2, 3, and 7-A
+      return !(dVal >= 4 && dVal <= 6);
+    }
+
+    // 11 or lower: Always Hit
+    return true;
   }
 
   global.checkPasswordRules = function (password) {
@@ -1294,39 +1353,60 @@
     }
   };
 
+  // Bot play logic applying Basic Strategy splits, re-splits, and hitting/standing
   function playBotsTurn() {
     const dealerUpCard = dealerCards[0];
 
     simulatedBotHands.forEach(botSeat => {
-      if (botSeat.length === 1) {
-        const initialHand = botSeat[0];
-        if (initialHand.cards.length === 2 && shouldSplitBasicStrategy(initialHand.cards[0], initialHand.cards[1], dealerUpCard)) {
-          const isAceSplit = initialHand.cards[0].name === "A";
-          const handA = {
-            cards: [initialHand.cards[0], drawCard()],
-            status: isAceSplit ? "stood" : "playing",
-            isSplitAce: isAceSplit
-          };
-          const handB = {
-            cards: [initialHand.cards[1], drawCard()],
-            status: isAceSplit ? "stood" : "playing",
-            isSplitAce: isAceSplit
-          };
-          botSeat.splice(0, 1, handA, handB);
+      // Step 1: Evaluate splits (and re-splits) for each hand using Basic Strategy
+      let splitOccurred = true;
+      while (splitOccurred && botSeat.length < MAX_SPLIT_HANDS) {
+        splitOccurred = false;
+        for (let i = 0; i < botSeat.length; i++) {
+          const subHand = botSeat[i];
+          if (
+            subHand.cards.length === 2 &&
+            !subHand.isSplitAce &&
+            shouldSplitBasicStrategy(subHand.cards[0], subHand.cards[1], dealerUpCard) &&
+            botSeat.length < MAX_SPLIT_HANDS
+          ) {
+            const isAceSplit = subHand.cards[0].name === "A";
+            const handA = {
+              cards: [subHand.cards[0], drawCard()],
+              status: isAceSplit ? "stood" : "playing",
+              isSplitAce: isAceSplit
+            };
+            const handB = {
+              cards: [subHand.cards[1], drawCard()],
+              status: isAceSplit ? "stood" : "playing",
+              isSplitAce: isAceSplit
+            };
+            botSeat.splice(i, 1, handA, handB);
+            splitOccurred = true;
+            break;
+          }
         }
       }
 
+      // Step 2: Play each sub-hand according to full Basic Strategy
       botSeat.forEach(subHand => {
-        if (subHand.status === "stood") return;
+        // Split aces receive only 1 card and automatically stand
+        if (subHand.isSplitAce || subHand.status === "stood") {
+          subHand.status = "stood";
+          return;
+        }
 
         while (true) {
           const score = calcHandScore(subHand.cards);
-          const hasAce = subHand.cards.some(c => c.name === "A");
-          if (score < 17) {
-            subHand.cards.push(drawCard());
-          } else if (score === 17 && hasAce) {
+          if (score >= 21) {
+            subHand.status = score > 21 ? "busted" : "stood";
+            break;
+          }
+
+          if (botShouldHitBasicStrategy(subHand.cards, dealerUpCard)) {
             subHand.cards.push(drawCard());
           } else {
+            subHand.status = "stood";
             break;
           }
         }

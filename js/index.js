@@ -711,7 +711,18 @@
                   admin_password: adminKey 
               })
           });
-          const data = await res.json();
+
+          const rawText = await res.text();
+          let data;
+          try {
+              data = JSON.parse(rawText);
+          } catch (jsonErr) {
+              if (container) {
+                  container.innerHTML = `<p style="color: var(--error-red); text-align: center; padding: 20px;">Server Error (${res.status}): ${rawText.replace(/<[^>]*>?/gm, '').trim() || 'Internal Error'}</p>`;
+              }
+              return;
+          }
+
           if (data.success && Array.isArray(data.users)) {
               allBlackjackUsers = data.users;
               const searchVal = document.getElementById('adminUserSearchInput') ? document.getElementById('adminUserSearchInput').value : '';

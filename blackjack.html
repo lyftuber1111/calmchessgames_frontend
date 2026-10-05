@@ -81,7 +81,7 @@
     .view-screen { 
       display: none; 
       width: 100%; 
-      max-width: 1260px; 
+      max-width: 1280px; 
       height: 100%;
       justify-content: center;
       align-items: center;
@@ -94,7 +94,7 @@
 
     #game-screen.active {
       width: 100%;
-      max-width: 1260px;
+      max-width: 1280px;
       height: 100%;
       max-height: calc(100dvh - max(8px, calc(var(--sat) + var(--sab))));
       display: flex;
@@ -182,7 +182,7 @@
 
     /* --- FELT TABLE CONTAINER --- */
     #game-container {
-      --felt-cushion: clamp(4px, 1.2vh, 12px);
+      --felt-cushion: clamp(4px, 1.2vh, 10px);
       width: 100%;
       height: 100%;
       max-height: 100%;
@@ -314,16 +314,18 @@
       z-index: 2;
     }
 
-    /* CENTER FELT RULES TEXT (ALWAYS VISIBLE CASINO PRINT) */
+    /* CENTER FELT RULES & CENTER ELEVATED SPLIT STAGE */
     .felt-center-area {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin: clamp(4px, 1.2vh, 12px) 0 clamp(2px, 0.8vh, 8px) 0;
-      pointer-events: none;
-      z-index: 1;
+      margin: clamp(2px, 0.8vh, 8px) 0;
       width: 100%;
+      min-height: clamp(60px, 14vh, 120px);
+      position: relative;
+      flex: 1 1 auto;
+      z-index: 2;
     }
 
     .felt-rules-banner {
@@ -335,23 +337,28 @@
       text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
       text-align: center;
       user-select: none;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .felt-rules-banner.faded {
+      opacity: 0.15;
     }
     .felt-rule-main { 
-      font-size: clamp(0.72rem, 1.35vh, 0.96rem); 
+      font-size: clamp(0.75rem, 1.4vh, 0.98rem); 
       font-weight: 900; 
-      color: rgba(241, 196, 15, 0.9); 
+      color: rgba(241, 196, 15, 0.92); 
       letter-spacing: 1.6px; 
       text-transform: uppercase; 
     }
     .felt-rule-sub { 
-      font-size: clamp(0.52rem, 0.95vh, 0.72rem); 
+      font-size: clamp(0.55rem, 1vh, 0.75rem); 
       font-weight: 800; 
-      color: rgba(255, 255, 255, 0.75); 
+      color: rgba(255, 255, 255, 0.8); 
       letter-spacing: 0.8px; 
       text-transform: uppercase; 
     }
 
-    /* CENTER PLAYER SPLIT STAGE (Elevates your split hands) */
+    /* ELEVATED PLAYER SPLIT STAGE (Centers your hands without hiding any bots) */
     #player-split-stage {
       display: none;
       flex-direction: row;
@@ -359,8 +366,8 @@
       align-items: center;
       gap: clamp(6px, 1.2vw, 14px);
       width: 100%;
-      margin: 4px 0;
-      z-index: 5;
+      margin: 4px auto;
+      z-index: 10;
     }
     #player-split-stage.active {
       display: flex !important;
@@ -381,7 +388,7 @@
       padding: 2px clamp(8px, 1.5vw, 14px);
       width: fit-content;
       max-width: 90%;
-      margin: 2px auto 6px auto;
+      margin: 2px auto 4px auto;
       box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
       text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
       color: var(--gold);
@@ -397,16 +404,15 @@
       gap: clamp(3px, 0.6vw, 8px); 
       width: 100%; 
       min-height: 0;
-      flex: 1 1 auto;
+      flex-shrink: 0;
       align-content: flex-end;
       justify-content: center;
       align-items: flex-end;
-      overflow: hidden;
       padding: 2px;
       z-index: 3;
     }
 
-    /* DESKTOP ROW FIT FOR 3-7 PLAYERS */
+    /* DESKTOP ROW FIT FOR ALL 7 PLAYERS */
     .player-hands-container.multi-player-row {
       display: flex !important;
       flex-direction: row !important;
@@ -428,7 +434,7 @@
     .hand-box, .hand-group { 
       padding: clamp(2px, 0.4vh, 5px) clamp(3px, 0.5vw, 6px); 
       border-radius: 8px; 
-      background: rgba(0, 0, 0, 0.25); 
+      background: rgba(0, 0, 0, 0.28); 
       border: 2px solid rgba(255, 255, 255, 0.12); 
       display: flex; 
       flex-direction: column; 
@@ -439,7 +445,8 @@
       min-width: calc(var(--card-w) * 1.4);
       max-width: 180px;
     }
-    .hand-box.active { border-color: var(--gold); background: rgba(241, 196, 15, 0.14); box-shadow: 0 0 12px rgba(241, 196, 15, 0.35); }
+    .hand-box.active { border-color: var(--gold); background: rgba(241, 196, 15, 0.16); box-shadow: 0 0 12px rgba(241, 196, 15, 0.35); }
+    .hand-box.split-home { border-color: rgba(241, 196, 15, 0.7); background: rgba(241, 196, 15, 0.08); }
     .hand-label { font-size: clamp(0.55rem, 0.9vh, 0.72rem); font-weight: 700; text-transform: uppercase; color: var(--gold); margin-bottom: 2px; text-shadow: 0 1px 2px rgba(0,0,0,0.8); white-space: nowrap; }
     
     /* CARDS ROW (Cascading overlap) */
@@ -892,7 +899,7 @@
         <div class="cards-row" id="dealer-cards"></div>
       </div>
 
-      <!-- CENTER FELT RULES & SPLIT ELEVATION STAGE -->
+      <!-- CENTER FELT AREA: TEXT & ELEVATED SPLIT STAGE -->
       <div class="felt-center-area">
         <div class="felt-rules-banner" id="felt-rules-banner">
           <div class="felt-rule-main">Blackjack Pays 3 to 2</div>
@@ -904,7 +911,7 @@
 
       <div id="message-banner">Place your bet and press DEAL!</div>
       
-      <!-- BOTTOM ROW PLAYERS (SEATS 1 TO 7) -->
+      <!-- ALL 7 PLAYER SEATS IN BOTTOM ROW -->
       <div class="player-hands-container" id="player-hands-container"></div>
 
       <div class="controls">

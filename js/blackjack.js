@@ -1362,7 +1362,7 @@
 
     isRoundOver = false;
     currentInsuranceBet = 0;
-    playerHands = [{ cards: [], bet: currentBet, status: "playing", isSplitAce: false }];
+    playerHands = [{ cards: [], bet: currentBet, status: "playing", isSplitAce: false, insuranceResolved: false }];
     currentBet = 0;
     activeHandIndex = 0;
     dealerCards = [];
@@ -1404,20 +1404,25 @@
 
       if (dealerHasBlackjack) {
         if (currentInsuranceBet > 0) {
+          const winProfit = currentInsuranceBet * 2;
           const payout = currentInsuranceBet * 3;
           userBank += payout;
           const bankDisplay = getEl("bank-display");
           if (bankDisplay) bankDisplay.textContent = userBank;
-          if (messageBanner) messageBanner.textContent = "Dealer has Blackjack! Insurance pays 2:1 (+$" + (currentInsuranceBet * 2) + ").";
+          if (messageBanner) {
+            messageBanner.textContent = "Dealer has Blackjack! Insurance pays 2:1 (+$" + winProfit + ").";
+          }
           if (playerHands[0]) {
-            playerHands[0].resTxt = "PUSH";
-            playerHands[0].resType = "push";
+            playerHands[0].resTxt = "+$" + winProfit;
+            playerHands[0].resType = "win";
+            playerHands[0].insuranceResolved = true;
           }
         } else {
           if (messageBanner) messageBanner.textContent = "Dealer has Blackjack!";
           if (playerHands[0]) {
             playerHands[0].resTxt = "-$" + playerHands[0].bet;
             playerHands[0].resType = "loss";
+            playerHands[0].insuranceResolved = true;
           }
         }
         resolveDealerHandAndPayouts();
@@ -1476,14 +1481,16 @@
       cards: [firstCard, drawCard()],
       bet: hand.bet,
       status: isAceSplit ? "stood" : "playing",
-      isSplitAce: isAceSplit
+      isSplitAce: isAceSplit,
+      insuranceResolved: false
     };
 
     const handB = {
       cards: [secondCard, drawCard()],
       bet: hand.bet,
       status: isAceSplit ? "stood" : "playing",
-      isSplitAce: isAceSplit
+      isSplitAce: isAceSplit,
+      insuranceResolved: false
     };
 
     playerHands.splice(activeHandIndex, 1, handA, handB);
@@ -1548,6 +1555,14 @@
     let celebrationWinAmount = 0;
 
     playerHands.forEach(hand => {
+      // Respect already-settled insurance payout badge
+      if (hand.insuranceResolved) {
+        if (dealerHasNatural && hand.cards.length === 2 && calcHandScore(hand.cards) === 21) {
+          totalWon += hand.bet;
+        }
+        return;
+      }
+
       const playerScore = calcHandScore(hand.cards);
       const isNatural = hand.cards.length === 2 && playerScore === 21 && playerHands.length === 1;
 

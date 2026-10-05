@@ -396,6 +396,11 @@
       const authModal = document.getElementById('adminPasswordModal');
       const authInput = document.getElementById('adminAuthInput');
       const authError = document.getElementById('adminAuthError');
+      const submitBtn = document.getElementById('adminAuthSubmitBtn');
+      if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Unlock Console';
+      }
       if (authInput) authInput.value = sessionAdminPassword || '';
       if (authError) {
           authError.innerText = '';
@@ -410,9 +415,11 @@
       if (authModal) authModal.style.display = 'none';
   }
 
-  function submitAdminPassword() {
+  // CRITICAL FIX: Verifies password with server BEFORE granting entry!
+  async function submitAdminPassword() {
       const authInput = document.getElementById('adminAuthInput');
       const authError = document.getElementById('adminAuthError');
+      const submitBtn = document.getElementById('adminAuthSubmitBtn');
       const password = authInput ? authInput.value.trim() : '';
 
       if (!password) {
@@ -424,9 +431,49 @@
           return;
       }
 
-      sessionAdminPassword = password;
-      closeAdminPasswordModal();
-      openAdminModal(password);
+      if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.textContent = 'Verifying...';
+      }
+      if (authError) {
+          authError.style.display = 'none';
+      }
+
+      try {
+          const res = await fetch(`${API_BASE}/admin_api.php?action=verify_auth&_t=${Date.now()}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ admin_key: password, admin_password: password })
+          });
+
+          const raw = await res.text();
+          let data = null;
+          try {
+              data = JSON.parse(raw);
+          } catch(e) {}
+
+          if (res.ok && data && data.success) {
+              sessionAdminPassword = password;
+              closeAdminPasswordModal();
+              openAdminModal(password);
+          } else {
+              if (authError) {
+                  authError.innerText = (data && data.message) ? data.message : 'Invalid Admin Password. Access Denied.';
+                  authError.style.display = 'block';
+              }
+              if (authInput) authInput.focus();
+          }
+      } catch (err) {
+          if (authError) {
+              authError.innerText = 'Authentication error: Could not reach API server.';
+              authError.style.display = 'block';
+          }
+      } finally {
+          if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'Unlock Console';
+          }
+      }
   }
 
   window.addEventListener('DOMContentLoaded', () => {
@@ -604,7 +651,6 @@
                   const response = await fetch(targetUrl, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      credentials: 'include',
                       body: JSON.stringify(payload)
                   });
                   const result = await response.json();
@@ -705,7 +751,6 @@
           const res = await fetch(`${API_BASE}/admin_api.php?action=get_users&_t=${Date.now()}`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
               body: JSON.stringify({ 
                   admin_key: adminKey,
                   admin_password: adminKey 
@@ -825,7 +870,6 @@
           const res = await fetch(`${API_BASE}/admin_api.php?action=create_user`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
                   admin_password: adminKey,
@@ -865,7 +909,6 @@
           const res = await fetch(`${API_BASE}/admin_api.php?action=update_user`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
                   admin_password: adminKey,
@@ -897,7 +940,6 @@
           const res = await fetch(`${API_BASE}/admin_api.php?action=toggle_ban_user`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
                   admin_password: adminKey,
@@ -925,7 +967,6 @@
           const res = await fetch(`${API_BASE}/admin_api.php?action=delete_user`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
                   admin_password: adminKey,

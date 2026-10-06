@@ -789,9 +789,21 @@
         <label>Admin Passcode</label>
         <input type="password" id="admin-key" placeholder="Enter ADMIN_SECRET_KEY">
       </div>
-      <div style="display: flex; align-items: center; justify-content: space-between; background: var(--input-bg); padding: 12px; border-radius: 8px;">
-        <span style="font-size: 0.85rem; font-weight: 600;">Simulation Mode (Bypass PayPal):</span>
-        <input type="checkbox" id="admin-sim-toggle" style="width: 22px; height: 22px; cursor: pointer;">
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; background: var(--input-bg); padding: 10px 12px; border-radius: 8px;">
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 700;">💻 Desktop App (Bypass PayPal)</div>
+            <div style="font-size: 0.72rem; color: #94a3b8;">Simulated checkout on blackjack.html</div>
+          </div>
+          <input type="checkbox" id="admin-sim-toggle" style="width: 22px; height: 22px; cursor: pointer;">
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; background: var(--input-bg); padding: 10px 12px; border-radius: 8px;">
+          <div>
+            <div style="font-size: 0.85rem; font-weight: 700;">📱 Android App (Bypass Google Play)</div>
+            <div style="font-size: 0.72rem; color: #94a3b8;">Simulated in-app purchases on Android</div>
+          </div>
+          <input type="checkbox" id="admin-android-sim-toggle" style="width: 22px; height: 22px; cursor: pointer;">
+        </div>
       </div>
       <button class="auth-btn" onclick="saveAdminSettings()">Save Mode</button>
       <button class="game-btn" onclick="closeAdminModal()">Close</button>

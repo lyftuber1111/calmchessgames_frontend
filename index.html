@@ -709,16 +709,18 @@
             <!-- Modal Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,215,0,0.25); padding-bottom: 12px;">
                 <h2 style="margin-bottom: 0;">Admin Console</h2>
-                <div style="display: flex; gap: 8px;">
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <a href="admin.html" target="_blank" class="btn btn-sm btn-gold" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Open standalone Casino Operations Admin page in a new tab">↗ Open Standalone Admin Page</a>
                     <button class="btn btn-sm" style="background: #64748b;" onclick="closeAdminModal()">Close</button>
                 </div>
             </div>
 
             <!-- Tab Switcher -->
-            <div class="admin-tabs">
+            <div class="admin-tabs" style="flex-wrap: wrap;">
                 <button class="admin-tab-btn active" id="tabBtnSegments" onclick="switchAdminTab('segments')">Ring Navigation</button>
                 <button class="admin-tab-btn" id="tabBtnUsers" onclick="switchAdminTab('users')">Blackjack Users</button>
                 <button class="admin-tab-btn" id="tabBtnStore" onclick="switchAdminTab('store')">Blackjack Billing & Store</button>
+                <a href="admin.html" class="admin-tab-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Open standalone Casino Operations Admin page in a new tab" target="_blank">↗ Standalone Page (admin.html)</a>
             </div>
 
             <!-- Shared Admin Passcode Input -->

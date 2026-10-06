@@ -587,6 +587,8 @@
     simulatedBotHands = [];
   };
 
+  let androidSimulationMode = false;
+
   async function loadAdminMode() {
     try {
       const res = await fetch(API_BASE + "/admin_api.php?action=get_mode&_t=" + Date.now(), {
@@ -594,7 +596,8 @@
       });
       const data = await res.json();
       if (data.success) {
-        simulationMode = data.simulation_mode;
+        simulationMode = Boolean(data.desktop_simulation_mode !== undefined ? data.desktop_simulation_mode : data.simulation_mode);
+        androidSimulationMode = Boolean(data.android_simulation_mode);
         applyStoreModeUI();
       }
     } catch (e) {}
@@ -637,6 +640,8 @@
   global.openAdminModal = function () {
     const simToggle = getEl("admin-sim-toggle");
     if (simToggle) simToggle.checked = simulationMode;
+    const androidToggle = getEl("admin-android-sim-toggle");
+    if (androidToggle) androidToggle.checked = androidSimulationMode;
     const modal = getEl("admin-modal");
     if (modal) modal.classList.add("active");
   };
@@ -650,14 +655,21 @@
     const adminKeyInput = getEl("admin-key");
     const adminKey = adminKeyInput ? adminKeyInput.value : "";
     const simToggle = getEl("admin-sim-toggle");
-    const simEnabled = simToggle && simToggle.checked ? 1 : 0;
+    const desktopSim = simToggle && simToggle.checked ? 1 : 0;
+    const androidToggle = getEl("admin-android-sim-toggle");
+    const androidSim = androidToggle && androidToggle.checked ? 1 : 0;
 
     try {
       const res = await fetch(API_BASE + "/admin_api.php?action=set_mode", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ admin_key: adminKey, enable_simulation: simEnabled })
+        body: JSON.stringify({
+          admin_key: adminKey,
+          desktop_simulation_mode: desktopSim,
+          simulation_mode: desktopSim,
+          android_simulation_mode: androidSim
+        })
       });
       const data = await res.json();
 
@@ -666,8 +678,9 @@
         return;
       }
 
-      simulationMode = data.simulation_mode;
-      global.showNotification("Simulation mode: " + (simulationMode ? "ENABLED" : "DISABLED"), true);
+      simulationMode = Boolean(data.desktop_simulation_mode !== undefined ? data.desktop_simulation_mode : data.simulation_mode);
+      androidSimulationMode = Boolean(data.android_simulation_mode);
+      global.showNotification("Modes updated:\nDesktop: " + (simulationMode ? "SIMULATED" : "LIVE PAYPAL") + "\nAndroid: " + (androidSimulationMode ? "SIMULATED" : "LIVE GOOGLE PLAY"), true);
       global.closeAdminModal();
       applyStoreModeUI();
     } catch (err) {
@@ -687,7 +700,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ package: selectedPackageCredits, user_id: userId, email: userEmail })
+        body: JSON.stringify({ package: selectedPackageCredits, user_id: userId, email: userEmail, platform: 'desktop' })
       });
       const data = await res.json();
 

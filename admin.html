@@ -182,9 +182,12 @@
 
     <div id="dash-section" class="admin-container">
       <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <h1>Server Environment Configuration</h1>
-          <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem;" onclick="logoutAdmin()">Sign Out</button>
+          <div style="display: flex; gap: 8px;">
+            <a href="index.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem; text-decoration: none;">← Main Rings (index.html)</a>
+            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem;" onclick="logoutAdmin()">Sign Out</button>
+          </div>
         </div>
         
         <!-- Checkbox 1: Android Blackjack App Simulation Mode -->

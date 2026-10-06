@@ -1,1 +1,20 @@
-function _0x214a(_0x4b1746,_0x471a2a){_0x4b1746=_0x4b1746-0x182;const _0x4b70e1=_0x4b70();let _0x214a6b=_0x4b70e1[_0x4b1746];return _0x214a6b;}(function(_0x2cc623,_0x2dff57){const _0x232672=_0x214a,_0x259f8f=_0x2cc623();while(!![]){try{const _0x29a9e0=-parseInt(_0x232672(0x18c))/0x1+parseInt(_0x232672(0x18f))/0x2*(-parseInt(_0x232672(0x18a))/0x3)+-parseInt(_0x232672(0x186))/0x4*(parseInt(_0x232672(0x194))/0x5)+-parseInt(_0x232672(0x191))/0x6*(-parseInt(_0x232672(0x18b))/0x7)+-parseInt(_0x232672(0x185))/0x8+-parseInt(_0x232672(0x196))/0x9+-parseInt(_0x232672(0x18e))/0xa*(-parseInt(_0x232672(0x190))/0xb);if(_0x29a9e0===_0x2dff57)break;else _0x259f8f['push'](_0x259f8f['shift']());}catch(_0x2f89e8){_0x259f8f['push'](_0x259f8f['shift']());}}}(_0x4b70,0x50d9a),(function(){const _0x274823=_0x214a,_0x3cd1f4=document[_0x274823(0x193)]('_cc_tos');if(_0x3cd1f4){const _0x4f9acd=_0x3cd1f4[_0x274823(0x195)](_0x274823(0x18d));_0x4f9acd[_0x274823(0x182)](function(_0x16d161){const _0xb8c7b2=_0x274823;_0x16d161[_0xb8c7b2(0x192)](_0xb8c7b2(0x184),function(_0xc7b2c9){const _0x482951=_0xb8c7b2;!_0x16d161[_0x482951(0x183)]('href')&&(_0xc7b2c9[_0x482951(0x188)](),window[_0x482951(0x189)]['href']=_0x482951(0x187));});});}}()));function _0x4b70(){const _0x458000=['index.html','preventDefault','location','9FMBBrc','18011sBnWZT','658105IuipNh','a.back-btn','2470iTByMK','269030eHEKWK','109153kymESE','84ZRlowe','addEventListener','getElementById','1051790tHehpC','querySelectorAll','3013209KgMhdK','forEach','getAttribute','click','2709392BkHZdZ','8zFIumk'];_0x4b70=function(){return _0x458000;};return _0x4b70();}
+/**
+ * Calm Chess Computers (c) 2026. All Rights Reserved.
+ * Terms of Service UI Interaction Script
+ * Completely unobfuscated, clean JavaScript
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    const tosContainer = document.getElementById('_cc_tos');
+    if (!tosContainer) return;
+
+    const backButtons = tosContainer.querySelectorAll('a.back-btn');
+    backButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (!btn.getAttribute('href')) {
+                e.preventDefault();
+                window.location.href = 'index.html';
+            }
+        });
+    });
+});

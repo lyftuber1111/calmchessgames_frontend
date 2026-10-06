@@ -21,6 +21,42 @@
   let allBlackjackUsers = [];
   let activeAdminTab = 'segments';
   let sessionAdminPassword = '';
+  let androidSimulationMode = false;
+  let desktopSimulationMode = false;
+  let allowGuestAccess = true;
+
+  async function callAdminApi(action, payload = null, method = 'POST') {
+      const endpoints = [
+          `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `./admin_api.php?action=${action}&_t=${Date.now()}`,
+          `/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `https://calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`
+      ];
+      const uniqueEndpoints = [...new Set(endpoints)];
+
+      let lastError = null;
+      for (const url of uniqueEndpoints) {
+          try {
+              const fetchOptions = {
+                  method: method,
+                  headers: { 'Content-Type': 'application/json' },
+                  credentials: 'include'
+              };
+              if (payload !== null && method !== 'GET') {
+                  fetchOptions.body = JSON.stringify(payload);
+              }
+              const res = await fetch(url, fetchOptions);
+              const text = await res.text();
+              try {
+                  const data = JSON.parse(text);
+                  return data;
+              } catch (parseErr) {}
+          } catch (e) {
+              lastError = e;
+          }
+      }
+      throw lastError || new Error('Network error calling admin API');
+  }
 
   async function fetchSegments() {
       try {
@@ -440,19 +476,9 @@
       }
 
       try {
-          const res = await fetch(`${API_BASE}/admin_api.php?action=verify_auth&_t=${Date.now()}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ admin_key: password, admin_password: password })
-          });
+          const data = await callAdminApi('verify_auth', { admin_key: password, admin_password: password });
 
-          const raw = await res.text();
-          let data = null;
-          try {
-              data = JSON.parse(raw);
-          } catch(e) {}
-
-          if (res.ok && data && data.success) {
+          if (data && data.success) {
               sessionAdminPassword = password;
               closeAdminPasswordModal();
               openAdminModal(password);
@@ -492,23 +518,43 @@
 
   /* --- ADMIN TAB SWITCHER --- */
   function switchAdminTab(tabName) {
-      activeAdminTab = tabName;
+      // Map potential aliases
+      const normalized = (tabName || 'segments').toLowerCase().trim();
+      let targetTab = 'segments';
+      if (normalized === 'store' || normalized === 'billing' || normalized === 'shop' || normalized === 'credit' || normalized === 'purchases') {
+          targetTab = 'store';
+      } else if (normalized === 'users' || normalized === 'user' || normalized === 'players' || normalized === 'accounts') {
+          targetTab = 'users';
+      } else {
+          targetTab = 'segments';
+      }
+
+      activeAdminTab = targetTab;
       const tabBtnSegments = document.getElementById('tabBtnSegments');
       const tabBtnUsers = document.getElementById('tabBtnUsers');
+      const tabBtnStore = document.getElementById('tabBtnStore');
       const contentSegments = document.getElementById('tabContentSegments');
       const contentUsers = document.getElementById('tabContentUsers');
+      const contentStore = document.getElementById('tabContentStore');
 
-      if (tabName === 'segments') {
-          if (tabBtnSegments) tabBtnSegments.classList.add('active');
-          if (tabBtnUsers) tabBtnUsers.classList.remove('active');
-          if (contentSegments) contentSegments.style.display = 'block';
-          if (contentUsers) contentUsers.style.display = 'none';
-      } else {
-          if (tabBtnUsers) tabBtnUsers.classList.add('active');
-          if (tabBtnSegments) tabBtnSegments.classList.remove('active');
-          if (contentSegments) contentSegments.style.display = 'none';
-          if (contentUsers) contentUsers.style.display = 'block';
+      if (tabBtnSegments) tabBtnSegments.classList.toggle('active', targetTab === 'segments');
+      if (tabBtnUsers) tabBtnUsers.classList.toggle('active', targetTab === 'users');
+      if (tabBtnStore) tabBtnStore.classList.toggle('active', targetTab === 'store');
+
+      if (contentSegments) contentSegments.style.display = (targetTab === 'segments') ? 'block' : 'none';
+      if (contentUsers) contentUsers.style.display = (targetTab === 'users') ? 'block' : 'none';
+      if (contentStore) contentStore.style.display = (targetTab === 'store') ? 'block' : 'none';
+
+      // Reset scroll position to top of modal container so users see the selected tab header immediately
+      const adminContent = document.querySelector('.admin-content');
+      if (adminContent) {
+          adminContent.scrollTop = 0;
+      }
+
+      if (targetTab === 'users') {
           fetchBlackjackUsers();
+      } else if (targetTab === 'store') {
+          fetchStoreSettings();
       }
   }
 
@@ -575,6 +621,7 @@
       }
 
       switchAdminTab(activeAdminTab || 'segments');
+      fetchStoreSettings();
       const modal = document.getElementById('adminModal');
       if (modal) modal.style.display = 'flex';
   }
@@ -985,6 +1032,450 @@
       }
   }
 
+  /* --- BLACKJACK BILLING & STORE CONFIG LOGIC --- */
+
+  let allStorePurchases = [];
+  let activePurchaseFilter = 'ALL';
+  let activePurchaseSearchTerm = '';
+
+  async function fetchStoreSettings() {
+      const adminKey = getAdminKey();
+      const alertBox = document.getElementById('storeSettingsAlert');
+      if (alertBox) alertBox.style.display = 'none';
+
+      try {
+          const data = await callAdminApi('get_dashboard_data', { admin_key: adminKey, admin_password: adminKey });
+          if (data && data.success) {
+              if (data.android_simulation_mode !== undefined) {
+                  androidSimulationMode = Boolean(data.android_simulation_mode);
+              }
+              if (data.desktop_simulation_mode !== undefined) {
+                  desktopSimulationMode = Boolean(data.desktop_simulation_mode);
+              } else if (data.simulation_mode !== undefined) {
+                  desktopSimulationMode = Boolean(data.simulation_mode);
+              }
+              if (data.allow_guest !== undefined) {
+                  allowGuestAccess = Boolean(data.allow_guest);
+              }
+
+              const androidToggle = document.getElementById('adminAndroidSimToggle');
+              const desktopToggle = document.getElementById('adminDesktopSimToggle');
+              const guestToggle = document.getElementById('adminGuestToggle');
+
+              if (androidToggle) androidToggle.checked = androidSimulationMode;
+              if (desktopToggle) desktopToggle.checked = desktopSimulationMode;
+              if (guestToggle) guestToggle.checked = allowGuestAccess;
+
+              updateStoreBadges(androidSimulationMode, desktopSimulationMode, allowGuestAccess);
+
+              // Save purchases in memory and render
+              if (Array.isArray(data.purchases)) {
+                  allStorePurchases = data.purchases;
+                  renderStoreLedger();
+              }
+          } else {
+              showStoreAlert((data && data.message) ? data.message : 'Failed to load store settings from database.', false);
+          }
+      } catch (err) {
+          console.warn('Could not load dashboard data, trying get_mode:', err);
+          try {
+              const data = await callAdminApi('get_mode', null, 'GET');
+              if (data && data.success) {
+                  if (data.android_simulation_mode !== undefined) {
+                      androidSimulationMode = Boolean(data.android_simulation_mode);
+                  }
+                  if (data.desktop_simulation_mode !== undefined) {
+                      desktopSimulationMode = Boolean(data.desktop_simulation_mode);
+                  } else if (data.simulation_mode !== undefined) {
+                      desktopSimulationMode = Boolean(data.simulation_mode);
+                  }
+                  if (data.allow_guest !== undefined) {
+                      allowGuestAccess = Boolean(data.allow_guest);
+                  }
+
+                  const androidToggle = document.getElementById('adminAndroidSimToggle');
+                  const desktopToggle = document.getElementById('adminDesktopSimToggle');
+                  const guestToggle = document.getElementById('adminGuestToggle');
+
+                  if (androidToggle) androidToggle.checked = androidSimulationMode;
+                  if (desktopToggle) desktopToggle.checked = desktopSimulationMode;
+                  if (guestToggle) guestToggle.checked = allowGuestAccess;
+
+                  updateStoreBadges(androidSimulationMode, desktopSimulationMode, allowGuestAccess);
+              }
+          } catch (e2) {
+              showStoreAlert('Connection error loading settings from database: ' + e2.message, false);
+          }
+      }
+  }
+
+  function handleStoreToggleChange() {
+      const androidToggle = document.getElementById('adminAndroidSimToggle');
+      const desktopToggle = document.getElementById('adminDesktopSimToggle');
+      const guestToggle = document.getElementById('adminGuestToggle');
+
+      const isAndroidSim = androidToggle ? androidToggle.checked : false;
+      const isDesktopSim = desktopToggle ? desktopToggle.checked : false;
+      const isGuest = guestToggle ? guestToggle.checked : true;
+
+      updateStoreBadges(isAndroidSim, isDesktopSim, isGuest);
+  }
+
+  function updateStoreBadges(isAndroidSim, isDesktopSim, isGuest) {
+      const androidBadge = document.getElementById('androidSimBadge');
+      const androidExplanation = document.getElementById('androidModeExplanation');
+      const androidCheckLabel = document.getElementById('androidCheckMarkLabel');
+      if (androidBadge) {
+          androidBadge.className = `badge-status ${isAndroidSim ? 'badge-sim' : 'badge-live'}`;
+          androidBadge.textContent = isAndroidSim ? 'Simulated Credit Purchases' : 'Live: Google Play Billing';
+      }
+      if (androidCheckLabel) {
+          androidCheckLabel.textContent = isAndroidSim ? '[✔] Simulated Active' : '[  ] Live Google Play';
+          androidCheckLabel.style.color = isAndroidSim ? 'var(--success-green)' : 'var(--gold-primary)';
+      }
+      if (androidExplanation) {
+          androidExplanation.innerHTML = isAndroidSim
+              ? '<span style="color:var(--success-green); font-weight:bold;">Simulation Active:</span> In-app credit purchases bypass Google Play and refill chips instantly (database: <code>android_simulation_mode = 1</code>).'
+              : '<span style="color:var(--gold-primary); font-weight:bold;">Live Billing Active:</span> Android in-app purchases use official <strong>Google Play In-App Billing</strong> (database: <code>android_simulation_mode = 0</code>).';
+      }
+
+      const desktopBadge = document.getElementById('desktopSimBadge');
+      const desktopExplanation = document.getElementById('desktopModeExplanation');
+      const desktopCheckLabel = document.getElementById('desktopCheckMarkLabel');
+      if (desktopBadge) {
+          desktopBadge.className = `badge-status ${isDesktopSim ? 'badge-sim' : 'badge-live'}`;
+          desktopBadge.textContent = isDesktopSim ? 'Simulated Checkout' : 'Live: PayPal Gateway';
+      }
+      if (desktopCheckLabel) {
+          desktopCheckLabel.textContent = isDesktopSim ? '[✔] Simulated Active' : '[  ] Live PayPal';
+          desktopCheckLabel.style.color = isDesktopSim ? 'var(--success-green)' : 'var(--gold-primary)';
+      }
+      if (desktopExplanation) {
+          desktopExplanation.innerHTML = isDesktopSim
+              ? '<span style="color:var(--success-green); font-weight:bold;">Simulation Active:</span> Chip purchases on <code>blackjack.html</code> bypass PayPal and refill instantly in simulated mode (database: <code>desktop_simulation_mode = 1</code>).'
+              : '<span style="color:var(--gold-primary); font-weight:bold;">Live Gateway Active:</span> Desktop players purchase chips through <strong>PayPal Orders v2</strong> (database: <code>desktop_simulation_mode = 0</code>).';
+      }
+
+      const guestBadge = document.getElementById('guestAccessBadge');
+      const guestExplanation = document.getElementById('guestModeExplanation');
+      const guestCheckLabel = document.getElementById('guestCheckMarkLabel');
+      if (guestBadge) {
+          guestBadge.className = `badge-status ${isGuest ? 'badge-active' : 'badge-banned'}`;
+          guestBadge.textContent = isGuest ? 'Guest Allowed' : 'Registration Required';
+      }
+      if (guestCheckLabel) {
+          guestCheckLabel.textContent = isGuest ? '[✔] Allowed' : '[  ] Disabled';
+          guestCheckLabel.style.color = isGuest ? 'var(--success-green)' : 'var(--error-red)';
+      }
+      if (guestExplanation) {
+          guestExplanation.innerHTML = isGuest
+              ? 'Guest play is enabled. Players can enter tables immediately without logging in.'
+              : 'Guest play is disabled. Players must sign in with a registered account.';
+      }
+  }
+
+  function showStoreAlert(message, isSuccess = true) {
+      const alertBox = document.getElementById('storeSettingsAlert');
+      if (!alertBox) return;
+      alertBox.style.display = 'block';
+      alertBox.style.background = isSuccess ? 'rgba(46, 204, 113, 0.15)' : 'rgba(239, 68, 68, 0.15)';
+      alertBox.style.color = isSuccess ? 'var(--success-green)' : 'var(--error-red)';
+      alertBox.style.border = `1px solid ${isSuccess ? 'var(--success-green)' : 'var(--error-red)'}`;
+      alertBox.textContent = message;
+      setTimeout(() => { if (alertBox) alertBox.style.display = 'none'; }, 6000);
+  }
+
+  async function saveStoreSettings() {
+      const adminKey = getAdminKey();
+      if (!adminKey) {
+          alert('Admin password required. Please re-authenticate.');
+          promptAdminPassword();
+          return;
+      }
+
+      const androidToggle = document.getElementById('adminAndroidSimToggle');
+      const desktopToggle = document.getElementById('adminDesktopSimToggle');
+      const guestToggle = document.getElementById('adminGuestToggle');
+
+      const isAndroidSim = androidToggle ? (androidToggle.checked ? 1 : 0) : 0;
+      const isDesktopSim = desktopToggle ? (desktopToggle.checked ? 1 : 0) : 0;
+      const isGuest = guestToggle ? (guestToggle.checked ? 1 : 0) : 1;
+
+      showStoreAlert('Saving settings to MySQL database...', true);
+
+      try {
+          const payload = {
+              admin_key: adminKey,
+              admin_password: adminKey,
+              android_simulation_mode: isAndroidSim,
+              desktop_simulation_mode: isDesktopSim,
+              simulation_mode: isDesktopSim,
+              allow_guest: isGuest
+          };
+
+          const data = await callAdminApi('set_mode', payload, 'POST');
+          if (data && data.success) {
+              androidSimulationMode = Boolean(data.android_simulation_mode);
+              desktopSimulationMode = Boolean(data.desktop_simulation_mode);
+              allowGuestAccess = Boolean(data.allow_guest);
+
+              updateStoreBadges(androidSimulationMode, desktopSimulationMode, allowGuestAccess);
+
+              const androidLabel = androidSimulationMode ? 'Simulated Purchases' : 'Live Google Play Billing';
+              const desktopLabel = desktopSimulationMode ? 'Simulated Checkout' : 'Live PayPal Gateway';
+              showStoreAlert(`✔ Database updated successfully!\nAndroid App: [${androidLabel}] | Desktop: [${desktopLabel}]`, true);
+          } else {
+              showStoreAlert((data && data.message) ? data.message : 'Error updating database settings.', false);
+          }
+      } catch (err) {
+          showStoreAlert('Failed to save settings: ' + err.message, false);
+      }
+  }
+
+  /* --- PURCHASES LEDGER FILTER, SEARCH & DETAILS --- */
+
+  function setPurchaseFilter(filter) {
+      activePurchaseFilter = filter;
+      const filterPills = document.querySelectorAll('#purchaseFilterButtons .filter-pill');
+      filterPills.forEach(pill => {
+          const fnAttr = pill.getAttribute('onclick') || '';
+          pill.classList.toggle('active', fnAttr.includes(`'${filter}'`));
+      });
+      renderStoreLedger();
+  }
+
+  function handlePurchaseSearchInput(term) {
+      activePurchaseSearchTerm = (term || '').trim().toLowerCase();
+      renderStoreLedger();
+  }
+
+  function renderStoreLedger() {
+      const tbody = document.getElementById('adminStoreLedgerBody');
+      const countBadge = document.getElementById('ledgerCountBadge');
+      if (!tbody) return;
+
+      if (!allStorePurchases || allStorePurchases.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" style="padding: 14px; text-align: center; color: var(--text-muted);">No purchases in database ledger yet.</td></tr>';
+          if (countBadge) countBadge.textContent = '0 transactions';
+          return;
+      }
+
+      // Filter by gateway / method
+      let filtered = allStorePurchases.filter(p => {
+          const method = (p.payment_method || 'PAYPAL').toUpperCase();
+          if (activePurchaseFilter === 'ALL') return true;
+          if (activePurchaseFilter === 'GOOGLE_PLAY') return method === 'GOOGLE_PLAY';
+          if (activePurchaseFilter === 'GOOGLE_PLAY_SIMULATED') return method === 'GOOGLE_PLAY_SIMULATED';
+          if (activePurchaseFilter === 'PAYPAL') return method === 'PAYPAL';
+          if (activePurchaseFilter === 'PAYPAL_SIMULATED') return method === 'PAYPAL_SIMULATED';
+          return true;
+      });
+
+      // Filter by search query
+      if (activePurchaseSearchTerm) {
+          filtered = filtered.filter(p => {
+              const email = (p.email || ('user #' + p.user_id)).toLowerCase();
+              const orderId = (p.order_id || p.paypal_order_id || '').toLowerCase();
+              const productId = (p.product_id || '').toLowerCase();
+              const token = (p.purchase_token || '').toLowerCase();
+              const id = String(p.id || '');
+              return email.includes(activePurchaseSearchTerm) ||
+                     orderId.includes(activePurchaseSearchTerm) ||
+                     productId.includes(activePurchaseSearchTerm) ||
+                     token.includes(activePurchaseSearchTerm) ||
+                     id.includes(activePurchaseSearchTerm);
+          });
+      }
+
+      if (countBadge) {
+          countBadge.textContent = `${filtered.length} of ${allStorePurchases.length} transaction${allStorePurchases.length === 1 ? '' : 's'}`;
+      }
+
+      if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" style="padding: 14px; text-align: center; color: var(--text-muted);">No transactions match your search or filter criteria.</td></tr>';
+          return;
+      }
+
+      tbody.innerHTML = '';
+      filtered.forEach(p => {
+          const tr = document.createElement('tr');
+          tr.style.borderBottom = '1px solid rgba(255,255,255,0.06)';
+
+          const method = (p.payment_method || 'PAYPAL').toUpperCase();
+          let methodBadgeClass = 'badge-live';
+          let methodLabel = method;
+
+          if (method === 'GOOGLE_PLAY') {
+              methodBadgeClass = 'badge-gplay';
+              methodLabel = 'Google Play (Live)';
+          } else if (method === 'GOOGLE_PLAY_SIMULATED') {
+              methodBadgeClass = 'badge-sim';
+              methodLabel = 'Google Play (Sim)';
+          } else if (method === 'PAYPAL') {
+              methodBadgeClass = 'badge-paypal';
+              methodLabel = 'PayPal (Live)';
+          } else if (method === 'PAYPAL_SIMULATED') {
+              methodBadgeClass = 'badge-sim';
+              methodLabel = 'PayPal (Sim)';
+          }
+
+          const orderIdDisplay = p.order_id || p.paypal_order_id || 'N/A';
+          const productIdDisplay = p.product_id || ('credits_' + p.credits_added);
+          const dateDisplay = p.created_at ? p.created_at.split(' ')[0] : '';
+
+          tr.innerHTML = `
+              <td style="padding: 8px 10px;">#${p.id}</td>
+              <td style="padding: 8px 10px; max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${p.email || ('User #' + p.user_id)}">${p.email || ('User #' + p.user_id)}</td>
+              <td style="padding: 8px 10px;"><span class="badge-status ${methodBadgeClass}">${methodLabel}</span></td>
+              <td style="padding: 8px 10px; font-family: monospace; font-size: 0.75rem;">
+                  <span title="${orderIdDisplay}">${orderIdDisplay.length > 16 ? orderIdDisplay.substring(0, 16) + '...' : orderIdDisplay}</span>
+              </td>
+              <td style="padding: 8px 10px; font-family: monospace; font-size: 0.75rem; color: #94a3b8;">${productIdDisplay}</td>
+              <td style="padding: 8px 10px; color: var(--gold-primary); font-weight: bold;">+${parseInt(p.credits_added, 10).toLocaleString()}</td>
+              <td style="padding: 8px 10px;">$${parseFloat(p.amount_paid || 0).toFixed(2)}</td>
+              <td style="padding: 8px 10px;"><span class="badge-status ${p.status === 'COMPLETED' ? 'badge-active' : 'badge-banned'}">${p.status || 'DONE'}</span></td>
+              <td style="padding: 8px 10px; color: var(--text-muted); font-size: 0.75rem;">${dateDisplay}</td>
+              <td style="padding: 8px 10px; text-align: center;">
+                  <button class="btn btn-sm btn-gold" style="padding: 3px 8px; font-size: 0.72rem;" onclick="viewPurchaseDetails(${p.id})">Details</button>
+              </td>
+          `;
+          tbody.appendChild(tr);
+      });
+  }
+
+  function viewPurchaseDetails(purchaseId) {
+      const p = allStorePurchases.find(item => parseInt(item.id, 10) === parseInt(purchaseId, 10));
+      if (!p) {
+          alert('Purchase record not found.');
+          return;
+      }
+
+      const modal = document.getElementById('purchaseDetailsModal');
+      const content = document.getElementById('purchaseDetailsContent');
+      if (!modal || !content) return;
+
+      const method = (p.payment_method || 'PAYPAL').toUpperCase();
+      let gatewayTitle = 'PayPal';
+      let isSim = false;
+
+      if (method.includes('GOOGLE')) {
+          gatewayTitle = 'Google Play In-App Billing';
+          isSim = method.includes('SIM');
+      } else {
+          gatewayTitle = 'PayPal Orders v2';
+          isSim = method.includes('SIM');
+      }
+
+      const orderId = p.order_id || p.paypal_order_id || 'N/A';
+      const productId = p.product_id || ('credits_' + p.credits_added);
+      const purchaseToken = p.purchase_token || '';
+
+      content.innerHTML = `
+          <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Transaction Record ID</span>
+              <span class="purchase-detail-val">#${p.id}</span>
+          </div>
+
+          <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Payment Gateway & Simulation Status</span>
+              <div style="display: flex; gap: 8px; align-items: center; margin-top: 2px;">
+                  <span class="badge-status ${method.includes('GOOGLE') ? 'badge-gplay' : 'badge-paypal'}">${gatewayTitle}</span>
+                  <span class="badge-status ${isSim ? 'badge-sim' : 'badge-live'}">${isSim ? 'Simulated Purchase' : 'Live Gateway'}</span>
+                  <span class="badge-status ${p.status === 'COMPLETED' ? 'badge-active' : 'badge-banned'}">${p.status || 'COMPLETED'}</span>
+              </div>
+          </div>
+
+          <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Player Account Information</span>
+              <span class="purchase-detail-val">${p.email || ('User #' + p.user_id)} (User ID: #${p.user_id})</span>
+          </div>
+
+          <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Gateway Order ID / GPA Transaction ID</span>
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 2px;">
+                  <span class="purchase-detail-val" style="font-family: monospace; font-weight: bold; color: var(--gold-primary);">${orderId}</span>
+                  <button class="copy-chip-btn" onclick="copyPurchaseField('${orderId}', this)">Copy Order ID</button>
+              </div>
+          </div>
+
+          <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Product SKU / Package Identifier</span>
+              <span class="purchase-detail-val" style="font-family: monospace;">${productId}</span>
+          </div>
+
+          <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Credits & Payment Amount</span>
+              <div style="display: flex; gap: 16px; margin-top: 2px;">
+                  <div><strong>Credits Added:</strong> <span style="color: var(--gold-primary); font-weight: bold;">+${parseInt(p.credits_added, 10).toLocaleString()} chips</span></div>
+                  <div><strong>Amount Paid:</strong> <span style="color: #fff; font-weight: bold;">$${parseFloat(p.amount_paid || 0).toFixed(2)} USD</span></div>
+              </div>
+          </div>
+
+          ${p.payer_email || p.payer_id || p.package_name ? `
+          <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Gateway Payer & Application Metadata</span>
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 0.82rem; margin-top: 2px;">
+                  ${p.payer_email ? `<div><strong>Payer Email:</strong> <span>${p.payer_email}</span></div>` : ''}
+                  ${p.payer_id ? `<div><strong>Payer / Account ID:</strong> <span style="font-family: monospace;">${p.payer_id}</span></div>` : ''}
+                  ${p.package_name ? `<div><strong>App Package:</strong> <span style="font-family: monospace;">${p.package_name}</span></div>` : ''}
+              </div>
+          </div>` : ''}
+
+          <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Purchase Token / Gateway Authorization Token</span>
+              <div style="margin-top: 4px;">
+                  <div style="background: rgba(0,0,0,0.5); border: 1px solid #334155; border-radius: 4px; padding: 8px 10px; font-family: monospace; font-size: 0.76rem; color: #cbd5e1; max-height: 90px; overflow-y: auto; word-break: break-all;">
+                      ${purchaseToken || '<em style="color:#64748b;">No verification token recorded for this purchase.</em>'}
+                  </div>
+                  ${purchaseToken ? `
+                  <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                      <button class="copy-chip-btn" onclick="copyPurchaseField('${purchaseToken.replace(/'/g, "\\'")}', this)">Copy Token String</button>
+                  </div>` : ''}
+              </div>
+          </div>
+
+          ${p.raw_response ? `
+          <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Raw Gateway Verification Data (JSON)</span>
+              <div style="margin-top: 4px;">
+                  <pre style="background: rgba(0,0,0,0.6); border: 1px solid #334155; border-radius: 4px; padding: 8px 10px; font-family: monospace; font-size: 0.72rem; color: #38bdf8; max-height: 120px; overflow-y: auto; margin: 0; white-space: pre-wrap; word-break: break-all;">${(p.raw_response || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+                  <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                      <button class="copy-chip-btn" onclick="copyPurchaseField('${p.raw_response.replace(/'/g, "\\'").replace(/\n/g, '\\n')}', this)">Copy Raw JSON</button>
+                  </div>
+              </div>
+          </div>` : ''}
+
+          <div class="purchase-detail-row">
+              <span class="purchase-detail-label">Date & Time Recorded</span>
+              <span class="purchase-detail-val" style="color: var(--text-muted);">${p.created_at || 'N/A'}</span>
+          </div>
+      `;
+
+      modal.style.display = 'flex';
+  }
+
+  function closePurchaseDetailsModal() {
+      const modal = document.getElementById('purchaseDetailsModal');
+      if (modal) modal.style.display = 'none';
+  }
+
+  function copyPurchaseField(text, btnElement) {
+      if (!text || text === 'N/A') return;
+      navigator.clipboard.writeText(text).then(() => {
+          const orig = btnElement.textContent;
+          btnElement.textContent = '✔ Copied!';
+          btnElement.style.background = 'var(--success-green)';
+          btnElement.style.color = '#000';
+          setTimeout(() => {
+              btnElement.textContent = orig;
+              btnElement.style.background = '';
+              btnElement.style.color = '';
+          }, 2000);
+      }).catch(() => {
+          alert('Could not copy to clipboard.');
+      });
+  }
+
   // Explicit Global Scope Binding
   global.switchAdminTab = switchAdminTab;
   global.openAdminModal = openAdminModal;
@@ -1001,6 +1492,16 @@
   global.executeUpdateUser = executeUpdateUser;
   global.executeToggleBanUser = executeToggleBanUser;
   global.executeDeleteUser = executeDeleteUser;
+  global.fetchStoreSettings = fetchStoreSettings;
+  global.handleStoreToggleChange = handleStoreToggleChange;
+  global.saveStoreSettings = saveStoreSettings;
+  global.updateStoreBadges = updateStoreBadges;
+  global.setPurchaseFilter = setPurchaseFilter;
+  global.handlePurchaseSearchInput = handlePurchaseSearchInput;
+  global.renderStoreLedger = renderStoreLedger;
+  global.viewPurchaseDetails = viewPurchaseDetails;
+  global.closePurchaseDetailsModal = closePurchaseDetailsModal;
+  global.copyPurchaseField = copyPurchaseField;
 
   renderRings();
   renderGamesGrid();

@@ -1,1 +1,930 @@
-function _0x585e(_0x38879d,_0x412ae7){_0x38879d=_0x38879d-0x101;const _0x4e589b=_0x4e58();let _0x585e4d=_0x4e589b[_0x38879d];return _0x585e4d;}(function(_0x115a28,_0x1d2641){const _0x2b7285=_0x585e,_0x1b82e5=_0x115a28();while(!![]){try{const _0x1fa711=parseInt(_0x2b7285(0x18f))/0x1+-parseInt(_0x2b7285(0x15e))/0x2*(-parseInt(_0x2b7285(0x171))/0x3)+parseInt(_0x2b7285(0x10b))/0x4+-parseInt(_0x2b7285(0x15c))/0x5+parseInt(_0x2b7285(0x193))/0x6*(parseInt(_0x2b7285(0x123))/0x7)+-parseInt(_0x2b7285(0x1b9))/0x8*(parseInt(_0x2b7285(0x1c9))/0x9)+-parseInt(_0x2b7285(0x125))/0xa*(parseInt(_0x2b7285(0x150))/0xb);if(_0x1fa711===_0x1d2641)break;else _0x1b82e5['push'](_0x1b82e5['shift']());}catch(_0x50299b){_0x1b82e5['push'](_0x1b82e5['shift']());}}}(_0x4e58,0x8e714),(function(){const _0x427cd3=_0x585e,_0x2e8c2e=function(_0x3ba193){return decodeURIComponent(escape(atob(_0x3ba193)));},_0x319664={'p':0x64,'n':0x140,'b':0x14a,'r':0x1f4,'q':0x384,'k':0x4e20},_0x58fa79={'p':[[0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0],[0x32,0x32,0x32,0x32,0x32,0x32,0x32,0x32],[0xa,0xa,0x14,0x1e,0x1e,0x14,0xa,0xa],[0x5,0x5,0xa,0x19,0x19,0xa,0x5,0x5],[0x0,0x0,0x0,0x14,0x14,0x0,0x0,0x0],[0x5,-0x5,-0xa,0x0,0x0,-0xa,-0x5,0x5],[0x5,0xa,0xa,-0x14,-0x14,0xa,0xa,0x5],[0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0]],'n':[[-0x32,-0x28,-0x1e,-0x1e,-0x1e,-0x1e,-0x28,-0x32],[-0x28,-0x14,0x0,0x0,0x0,0x0,-0x14,-0x28],[-0x1e,0x0,0xa,0xf,0xf,0xa,0x0,-0x1e],[-0x1e,0x5,0xf,0x14,0x14,0xf,0x5,-0x1e],[-0x1e,0x0,0xf,0x14,0x14,0xf,0x0,-0x1e],[-0x1e,0x5,0xa,0xf,0xf,0xa,0x5,-0x1e],[-0x28,-0x14,0x0,0x5,0x5,0x0,-0x14,-0x28],[-0x32,-0x28,-0x1e,-0x1e,-0x1e,-0x1e,-0x28,-0x32]],'b':[[-0x14,-0xa,-0xa,-0xa,-0xa,-0xa,-0xa,-0x14],[-0xa,0x0,0x0,0x0,0x0,0x0,0x0,-0xa],[-0xa,0x0,0x5,0xa,0xa,0x5,0x0,-0xa],[-0xa,0x5,0x5,0xa,0xa,0x5,0x5,-0xa],[-0xa,0x0,0xa,0xa,0xa,0xa,0x0,-0xa],[-0xa,0xa,0xa,0xa,0xa,0xa,0xa,-0xa],[-0xa,0x5,0x0,0x0,0x0,0x0,0x5,-0xa],[-0x14,-0xa,-0xa,-0xa,-0xa,-0xa,-0xa,-0x14]],'r':[[0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0],[0x5,0xa,0xa,0xa,0xa,0xa,0xa,0x5],[-0x5,0x0,0x0,0x0,0x0,0x0,0x0,-0x5],[-0x5,0x0,0x0,0x0,0x0,0x0,0x0,-0x5],[-0x5,0x0,0x0,0x0,0x0,0x0,0x0,-0x5],[-0x5,0x0,0x0,0x0,0x0,0x0,0x0,-0x5],[-0x5,0x0,0x0,0x0,0x0,0x0,0x0,-0x5],[0x0,0x0,0x0,0x5,0x5,0x0,0x0,0x0]],'q':[[-0x14,-0xa,-0xa,-0x5,-0x5,-0xa,-0xa,-0x14],[-0xa,0x0,0x0,0x0,0x0,0x0,0x0,-0xa],[-0xa,0x0,0x5,0x5,0x5,0x5,0x0,-0xa],[-0x5,0x0,0x5,0x5,0x5,0x5,0x0,-0x5],[0x0,0x0,0x5,0x5,0x5,0x5,0x0,-0x5],[-0xa,0x5,0x5,0x5,0x5,0x5,0x0,-0xa],[-0xa,0x0,0x5,0x0,0x0,0x0,0x0,-0xa],[-0x14,-0xa,-0xa,-0x5,-0x5,-0xa,-0xa,-0x14]],'k':[[-0x1e,-0x28,-0x28,-0x32,-0x32,-0x28,-0x28,-0x1e],[-0x1e,-0x28,-0x28,-0x32,-0x32,-0x28,-0x28,-0x1e],[-0x1e,-0x28,-0x28,-0x32,-0x32,-0x28,-0x28,-0x1e],[-0x1e,-0x28,-0x28,-0x32,-0x32,-0x28,-0x28,-0x1e],[-0x14,-0x1e,-0x1e,-0x28,-0x28,-0x1e,-0x14,-0x14],[-0xa,-0x14,-0x14,-0x14,-0x14,-0x14,-0x14,-0xa],[0x14,0x14,0x0,0x0,0x0,0x0,0x14,0x14],[0x14,0x1e,0xa,0x0,0x0,0xa,0x1e,0x14]]};function _0x3e6230(_0x3a3c0d){const _0x9141be=_0x585e;let _0x45e22b=0x0;const _0x2643d4=_0x3a3c0d[_0x9141be(0x12a)]();for(let _0x41c41e=0x0;_0x41c41e<0x8;_0x41c41e++){for(let _0xfc3157=0x0;_0xfc3157<0x8;_0xfc3157++){const _0x35b09f=_0x2643d4[_0x41c41e][_0xfc3157];if(_0x35b09f){const _0x43eac2=_0x319664[_0x35b09f[_0x9141be(0x189)]]+(_0x58fa79[_0x35b09f[_0x9141be(0x189)]]?_0x35b09f['color']==='w'?_0x58fa79[_0x35b09f[_0x9141be(0x189)]][_0x41c41e][_0xfc3157]:_0x58fa79[_0x35b09f[_0x9141be(0x189)]][0x7-_0x41c41e][_0xfc3157]:0x0);_0x45e22b+=_0x35b09f[_0x9141be(0x14b)]==='w'?_0x43eac2:-_0x43eac2;}}}return _0x45e22b;}function _0x5b9302(_0x4191e7,_0x4b65d1,_0x21aa57,_0x8b3320,_0x54e1fc){const _0x10cb65=_0x585e;if(_0x4b65d1===0x0||_0x4191e7[_0x10cb65(0x156)]())return _0x3e6230(_0x4191e7);const _0x10d9f9=_0x4191e7[_0x10cb65(0x1ac)]({'verbose':!![]});if(_0x54e1fc){let _0x2f3e2f=-Infinity;for(const _0x12f211 of _0x10d9f9){_0x4191e7['move'](_0x12f211),_0x2f3e2f=Math[_0x10cb65(0x179)](_0x2f3e2f,_0x5b9302(_0x4191e7,_0x4b65d1-0x1,_0x21aa57,_0x8b3320,![])),_0x4191e7[_0x10cb65(0x13f)](),_0x21aa57=Math['max'](_0x21aa57,_0x2f3e2f);if(_0x8b3320<=_0x21aa57)break;}return _0x2f3e2f;}else{let _0xafe6fe=Infinity;for(const _0xf64854 of _0x10d9f9){_0x4191e7[_0x10cb65(0x115)](_0xf64854),_0xafe6fe=Math[_0x10cb65(0x10c)](_0xafe6fe,_0x5b9302(_0x4191e7,_0x4b65d1-0x1,_0x21aa57,_0x8b3320,!![])),_0x4191e7['undo'](),_0x8b3320=Math[_0x10cb65(0x10c)](_0x8b3320,_0xafe6fe);if(_0x8b3320<=_0x21aa57)break;}return _0xafe6fe;}}function _0x5b89c6(_0x27f441,_0x3ca611){const _0x3391ce=_0x585e,_0x3c4cfd=_0x27f441['moves']({'verbose':!![]});if(_0x3c4cfd[_0x3391ce(0x1ae)]===0x0)return null;let _0x291926=null;const _0x22b123=_0x27f441[_0x3391ce(0x15d)]()==='w';let _0x508ede=_0x22b123?-Infinity:Infinity;for(const _0x4df918 of _0x3c4cfd){_0x27f441['move'](_0x4df918);const _0x3b2a27=_0x5b9302(_0x27f441,_0x3ca611-0x1,-Infinity,Infinity,!_0x22b123);_0x27f441['undo'](),_0x22b123?_0x3b2a27>_0x508ede&&(_0x508ede=_0x3b2a27,_0x291926=_0x4df918):_0x3b2a27<_0x508ede&&(_0x508ede=_0x3b2a27,_0x291926=_0x4df918);}return _0x291926||_0x3c4cfd[0x0];}window['log']=function(_0x2e2f85){const _0x16cde2=_0x585e;document[_0x16cde2(0x1bf)](_0x16cde2(0x152))[_0x16cde2(0x1b0)]='<span>['+new Date()[_0x16cde2(0x13d)]()+']\x20'+_0x2e2f85+_0x16cde2(0x109);};const _0x1bedcf={'p':'\u265F','n':'\u265E','b':'\u265D','r':'\u265C','q':'\u265B','k':'\u265A','P':'\u2659','N':'\u2658','B':'\u2657','R':'\u2656','Q':'\u2655','K':'\u2654'},_0x31b570=[{'san':'e4','from':'e2','to':'e4','name':_0x427cd3(0x1a0)},{'san':'d4','from':'d2','to':'d4','name':_0x427cd3(0x140)},{'san':'c4','from':'c2','to':'c4','name':'English\x20Opening\x20(1.\x20c4)'},{'san':'Nf3','from':'g1','to':'f3','name':_0x427cd3(0x101)}],_0xd93c63={'e4':['c5','e5','e6','c6',_0x427cd3(0x184)],'d4':[_0x427cd3(0x184),'d5','e6','g6','c5'],'c4':['e5','c5',_0x427cd3(0x184),'e6'],'Nf3':['d5',_0x427cd3(0x184),'c5','g6']},_0x258786={'e4':'B00:\x20King\x27s\x20Pawn\x20Opening','e4\x20c5':_0x427cd3(0x11b),'e4\x20c5\x20Nf3\x20d6':_0x427cd3(0x1ba),'e4\x20e5':_0x427cd3(0x16e),'e4\x20e5\x20Nf3\x20Nc6\x20Bc4':_0x427cd3(0x121),'e4\x20e5\x20Nf3\x20Nc6\x20Bb5':'C60:\x20Ruy\x20Lopez\x20(Spanish\x20Opening)','e4\x20e6':_0x427cd3(0x19f),'e4\x20c6':_0x427cd3(0x15b),'d4':'A40:\x20Queen\x27s\x20Pawn\x20Opening','d4\x20d5':_0x427cd3(0x12e),'d4\x20d5\x20c4':_0x427cd3(0x1b5),'d4\x20d5\x20c4\x20c6':_0x427cd3(0x12b),'d4\x20Nf6':_0x427cd3(0x17c),'d4\x20Nf6\x20c4\x20g6':_0x427cd3(0x155),'d4\x20Nf6\x20c4\x20e6':_0x427cd3(0x1c2),'c4':_0x427cd3(0x1a6),'Nf3':_0x427cd3(0x198)},_0x44ba6c=new Chess();let _0x4c013e=null,_0x39f6a0=[],_0xd67296=![],_0x2311dc=_0x427cd3(0x16a),_0xa302a2=!![],_0x130a57=null,_0x15fc79=![],_0x21e293=null,_0x1765ce=null,_0x107dad=![];const _0x19b926=document[_0x427cd3(0x1bf)](_0x427cd3(0x12a)),_0x4c190a=document[_0x427cd3(0x1bf)](_0x427cd3(0x1c0)),_0x2aeb6b=document[_0x427cd3(0x1bf)](_0x427cd3(0x1a3)),_0x24efdd=document[_0x427cd3(0x1bf)](_0x427cd3(0x182)),_0x10888e=document[_0x427cd3(0x1bf)](_0x427cd3(0x186)),_0x59ab64=document[_0x427cd3(0x1bf)]('game-over-banner'),_0x5ad647=document[_0x427cd3(0x1bf)](_0x427cd3(0x183));function _0x2188df(){const _0xf7da40=_0x427cd3,_0xb743ed=_0x44ba6c[_0xf7da40(0x17a)]()[_0xf7da40(0x16f)]('\x20');if(!_0xb743ed){_0x5ad647[_0xf7da40(0x175)]=_0xf7da40(0x18d);return;}navigator[_0xf7da40(0x105)]&&fetch(_0xf7da40(0x10a)+encodeURIComponent(_0x44ba6c[_0xf7da40(0x11c)]()))[_0xf7da40(0x14f)](_0x43bc85=>_0x43bc85[_0xf7da40(0x170)]())[_0xf7da40(0x14f)](_0x328e36=>{const _0x227a78=_0xf7da40;_0x328e36[_0x227a78(0x1b1)]&&_0x328e36[_0x227a78(0x1b1)][_0x227a78(0x1a7)]&&(_0x5ad647[_0x227a78(0x175)]='Opening:\x20'+(_0x328e36[_0x227a78(0x1b1)]['eco']?_0x328e36['opening'][_0x227a78(0x137)]+'\x20':'')+_0x328e36[_0x227a78(0x1b1)][_0x227a78(0x1a7)]);})[_0xf7da40(0x139)](()=>{});let _0x25761e=null;for(const [_0x3a731d,_0x211047]of Object[_0xf7da40(0x1b7)](_0x258786)){if(_0xb743ed['startsWith'](_0x3a731d)){_0x25761e=_0x211047;break;}}_0x5ad647['innerText']=_0xf7da40(0x1bb)+(_0x25761e||(_0x44ba6c[_0xf7da40(0x17a)]()[_0xf7da40(0x1ae)]>0x6?_0xf7da40(0x15a):_0xf7da40(0x136)));}function _0x24f780(){const _0x4a2428=_0x427cd3;if(!navigator[_0x4a2428(0x105)]){_0x2aeb6b['className']=_0x4a2428(0x181),_0x24efdd['innerText']=_0x4a2428(0x178),log(_0x4a2428(0x14e)),_0x3675d2();return;}_0x2aeb6b['className']=_0x4a2428(0x133),_0x24efdd[_0x4a2428(0x175)]='Connecting\x20WebSocket...';try{_0x1765ce=new WebSocket(_0x4a2428(0x14d)),_0x1765ce['onopen']=()=>{const _0x1542b7=_0x4a2428;_0x107dad=!![],_0x2aeb6b[_0x1542b7(0x144)]='dot\x20connected',_0x24efdd[_0x1542b7(0x175)]=_0x1542b7(0x10e),log('Engine\x20online.'),_0x3675d2();},_0x1765ce[_0x4a2428(0x15f)]=_0x3d41e3=>{const _0x416087=_0x4a2428;try{const _0x5c4055=JSON[_0x416087(0x119)](_0x3d41e3[_0x416087(0x16c)]);if(_0x5c4055[_0x416087(0x145)]){_0x1b8de9(_0x44ba6c[_0x416087(0x11c)](),parseInt(document[_0x416087(0x1bf)](_0x416087(0x118))[_0x416087(0x167)],0xa));return;}_0x3c66d1(_0x5c4055);}catch(_0x1c6997){}},_0x1765ce[_0x4a2428(0x1a8)]=()=>{_0x107dad=![];},_0x1765ce[_0x4a2428(0x149)]=()=>{const _0x2f6117=_0x4a2428;_0x107dad=![],navigator[_0x2f6117(0x105)]?setTimeout(_0x24f780,0x1388):(_0x2aeb6b[_0x2f6117(0x144)]=_0x2f6117(0x181),_0x24efdd['innerText']='Offline\x20Mode\x20(Local)',log(_0x2f6117(0x13c)));};}catch(_0xe4f77){_0x107dad=![];}}function _0x3675d2(){const _0x249cf4=_0x427cd3;if(_0x44ba6c[_0x249cf4(0x156)]()||_0x44ba6c['in_threefold_repetition']())return;_0x10888e[_0x249cf4(0x1c8)][_0x249cf4(0x1c1)]=_0x249cf4(0x17b);const _0x1a66ae=_0x44ba6c['history']();if(_0x1a66ae[_0x249cf4(0x1ae)]===0x0){const _0x15f61f=_0x31b570[Math[_0x249cf4(0x129)](Math[_0x249cf4(0x19b)]()*_0x31b570[_0x249cf4(0x1ae)])];_0x130a57=_0x15f61f,document[_0x249cf4(0x1bf)]('depth-label')[_0x249cf4(0x175)]=_0x249cf4(0x13a),document[_0x249cf4(0x1bf)]('best-move-display')[_0x249cf4(0x175)]=_0x249cf4(0x163)+_0x15f61f[_0x249cf4(0x1ca)][_0x249cf4(0x195)]()+_0x249cf4(0x1b2)+_0x15f61f['to'][_0x249cf4(0x195)](),document[_0x249cf4(0x1bf)](_0x249cf4(0x111))[_0x249cf4(0x175)]=_0x249cf4(0x18e)+_0x15f61f[_0x249cf4(0x1a7)];if(_0xa302a2)_0x51534a(_0x15f61f['from'],_0x15f61f['to']);_0x2311dc==='play'&&_0x15fc79&&_0x44ba6c[_0x249cf4(0x15d)]()==='w'&&setTimeout(()=>{const _0x1423c5=_0x249cf4;log(_0x1423c5(0x177)+_0x15f61f['san']),_0x4531db(_0x15f61f[_0x1423c5(0x11d)]);},0x15e);return;}if(_0x2311dc===_0x249cf4(0x16a)&&_0x15fc79&&_0x44ba6c[_0x249cf4(0x15d)]()==='b'&&_0x1a66ae[_0x249cf4(0x1ae)]===0x1){const _0x1128e5=_0x1a66ae[0x0],_0x487f16=_0xd93c63[_0x1128e5];if(_0x487f16&&_0x487f16[_0x249cf4(0x1ae)]>0x0){const _0x2ec354=_0x487f16[Math[_0x249cf4(0x129)](Math[_0x249cf4(0x19b)]()*_0x487f16[_0x249cf4(0x1ae)])];setTimeout(()=>{log('Opening\x20response:\x20'+_0x2ec354),_0x4531db(_0x2ec354);},0x15e);return;}}if(!navigator[_0x249cf4(0x105)]){_0x5a40c2();return;}document[_0x249cf4(0x1bf)]('best-move-display')[_0x249cf4(0x175)]=_0x15fc79?_0x249cf4(0x112):_0x249cf4(0x130);const _0x1fa6fe=parseInt(document[_0x249cf4(0x1bf)](_0x249cf4(0x118))[_0x249cf4(0x167)],0xa),_0x1ec56e=_0x44ba6c['fen']();_0x15fc79&&(clearTimeout(_0x21e293),_0x21e293=setTimeout(()=>{_0x15fc79&&_0x1b8de9(_0x1ec56e,_0x1fa6fe);},0xfa0)),_0x107dad&&_0x1765ce&&_0x1765ce['readyState']===WebSocket['OPEN']?_0x1765ce[_0x249cf4(0x141)](JSON['stringify']({'fen':_0x1ec56e,'depth':_0x1fa6fe})):_0x440e3d(_0x1ec56e,_0x1fa6fe);}function _0x5a40c2(){const _0x5d2bb6=_0x427cd3;_0x2aeb6b[_0x5d2bb6(0x144)]=_0x5d2bb6(0x181),_0x24efdd[_0x5d2bb6(0x175)]='Offline\x20Mode\x20(Local)',document[_0x5d2bb6(0x1bf)](_0x5d2bb6(0x1a2))['innerText']=_0x15fc79?_0x5d2bb6(0x1a4):_0x5d2bb6(0x174),document[_0x5d2bb6(0x1bf)](_0x5d2bb6(0x113))['innerText']=_0x5d2bb6(0x117),setTimeout(()=>{const _0x29f289=_0x5d2bb6,_0x3a4106=_0x5b89c6(_0x44ba6c,0x3);if(_0x3a4106){_0x130a57={'from':_0x3a4106['from'],'to':_0x3a4106['to']},document['getElementById']('best-move-display')['innerText']='Analysed\x20Move:\x20'+_0x3a4106[_0x29f289(0x1ca)][_0x29f289(0x195)]()+'\x20➔\x20'+_0x3a4106['to'][_0x29f289(0x195)](),document[_0x29f289(0x1bf)](_0x29f289(0x111))[_0x29f289(0x175)]=_0x29f289(0x17d)+_0x3a4106[_0x29f289(0x11d)];if(_0xa302a2)_0x51534a(_0x3a4106[_0x29f289(0x1ca)],_0x3a4106['to']);_0x2311dc===_0x29f289(0x16a)&&_0x15fc79&&_0x44ba6c['turn']()==='b'&&(_0x15fc79=![],log(_0x29f289(0x18b)+_0x3a4106['from']+'->'+_0x3a4106['to']),_0x4531db(_0x3a4106));}},0x96);}function _0x440e3d(_0xbe784,_0x40e2c9){const _0xaab88e=_0x427cd3;fetch(_0xaab88e(0x1c7),{'method':'POST','headers':{'Content-Type':_0xaab88e(0x1a9)},'body':JSON['stringify']({'fen':_0xbe784,'depth':_0x40e2c9})})['then'](_0x1c365c=>_0x1c365c[_0xaab88e(0x170)]())[_0xaab88e(0x14f)](_0x4ce3f9=>{const _0x14c73d=_0xaab88e;if(_0x4ce3f9[_0x14c73d(0x145)])throw new Error(_0x4ce3f9[_0x14c73d(0x145)]);_0x3c66d1(_0x4ce3f9);})[_0xaab88e(0x139)](()=>{_0x1b8de9(_0xbe784,_0x40e2c9);});}function _0x1b8de9(_0x2ad140,_0x5aa8e2){const _0x57ef72=_0x427cd3;fetch(_0x57ef72(0x143)+encodeURIComponent(_0x2ad140)+'&depth='+_0x5aa8e2)[_0x57ef72(0x14f)](_0x38f0d3=>_0x38f0d3['json']())[_0x57ef72(0x14f)](_0x2d791a=>{const _0x2f6095=_0x57ef72;if(_0x2d791a[_0x2f6095(0x120)]&&_0x2d791a[_0x2f6095(0x19e)]){const _0x446611=_0x2d791a[_0x2f6095(0x19e)][_0x2f6095(0x161)]('\x20'),_0x22fed4=_0x446611[0x1];_0x3c66d1({'type':'bestmove','move':_0x22fed4,'eval':_0x2d791a[_0x2f6095(0x131)],'mate':_0x2d791a[_0x2f6095(0x10d)],'pv':_0x2d791a[_0x2f6095(0x1bd)]});}})[_0x57ef72(0x139)](()=>{clearTimeout(_0x21e293),_0x5a40c2();});}function _0x3c66d1(_0x26bf46){const _0x175378=_0x427cd3;if(!_0x26bf46||_0x26bf46['type']===_0x175378(0x1c4))return;if(_0x26bf46['depth'])document[_0x175378(0x1bf)](_0x175378(0x113))[_0x175378(0x175)]=_0x175378(0x11f)+_0x26bf46[_0x175378(0x107)];if(_0x26bf46['pv'])document[_0x175378(0x1bf)](_0x175378(0x111))[_0x175378(0x175)]=_0x175378(0x17d)+_0x26bf46['pv'][_0x175378(0x161)]('\x20')[_0x175378(0x134)](0x0,0x5)[_0x175378(0x16f)]('\x20');let _0x1dc47f=null,_0x34ff73=null,_0x4964ac=undefined;if(_0x26bf46['from']&&_0x26bf46['to'])_0x1dc47f=String(_0x26bf46[_0x175378(0x1ca)])[_0x175378(0x158)](),_0x34ff73=String(_0x26bf46['to'])[_0x175378(0x158)]();else{if(typeof _0x26bf46[_0x175378(0x115)]===_0x175378(0x165)&&_0x26bf46[_0x175378(0x115)][_0x175378(0x1ae)]>=0x4){_0x1dc47f=_0x26bf46[_0x175378(0x115)][_0x175378(0x134)](0x0,0x2)[_0x175378(0x158)](),_0x34ff73=_0x26bf46[_0x175378(0x115)][_0x175378(0x134)](0x2,0x4)[_0x175378(0x158)]();if(_0x26bf46[_0x175378(0x115)][_0x175378(0x1ae)]>=0x5)_0x4964ac=_0x26bf46[_0x175378(0x115)][0x4][_0x175378(0x158)]();}else{if(typeof _0x26bf46['text']===_0x175378(0x165)){const _0x2b18a3=_0x26bf46[_0x175378(0x12c)][_0x175378(0x162)](/([a-h][1-8])\s*(?:→|->|to)\s*([a-h][1-8])/i);_0x2b18a3&&(_0x1dc47f=_0x2b18a3[0x1][_0x175378(0x158)](),_0x34ff73=_0x2b18a3[0x2]['toLowerCase']());}}}if(_0x1dc47f&&_0x34ff73){const _0x35e34e=_0x44ba6c[_0x175378(0x157)](_0x1dc47f);_0x35e34e&&_0x35e34e[_0x175378(0x189)]==='p'&&(_0x34ff73[0x1]==='8'||_0x34ff73[0x1]==='1')?_0x4964ac=typeof _0x4964ac===_0x175378(0x165)&&_0x4964ac[_0x175378(0x1ae)]===0x1?_0x4964ac:'q':_0x4964ac=undefined;const _0x460db3={'from':_0x1dc47f,'to':_0x34ff73};if(_0x4964ac)_0x460db3['promotion']=_0x4964ac;_0x130a57=_0x460db3,document['getElementById'](_0x175378(0x1a2))[_0x175378(0x175)]=_0x175378(0x163)+_0x1dc47f['toUpperCase']()+_0x175378(0x1b2)+_0x34ff73['toUpperCase']();if(_0xa302a2)_0x51534a(_0x1dc47f,_0x34ff73);_0x2311dc===_0x175378(0x16a)&&_0x15fc79&&_0x44ba6c[_0x175378(0x15d)]()==='b'&&((_0x26bf46['type']===_0x175378(0x19e)||!_0x107dad)&&(clearTimeout(_0x21e293),_0x15fc79=![],log(_0x175378(0x1a5)+_0x1dc47f+'->'+_0x34ff73),setTimeout(()=>_0x4531db(_0x460db3),0x64)));}else _0x26bf46[_0x175378(0x11d)]&&(document[_0x175378(0x1bf)](_0x175378(0x1a2))['innerText']=_0x175378(0x163)+_0x26bf46[_0x175378(0x11d)],_0x2311dc===_0x175378(0x16a)&&_0x15fc79&&_0x44ba6c[_0x175378(0x15d)]()==='b'&&_0x26bf46[_0x175378(0x189)]===_0x175378(0x19e)&&(clearTimeout(_0x21e293),_0x15fc79=![],setTimeout(()=>_0x4531db(_0x26bf46['san']),0x64)));}function _0x4531db(_0x3a3394){const _0x1ddc7e=_0x427cd3,_0x3aef63=_0x44ba6c['move'](_0x3a3394);if(!_0x3aef63)return![];_0x4c013e=null,_0x39f6a0=[],_0x3dfcb2(),_0x246681(),_0x2188df();if(_0x44ba6c['in_threefold_repetition']()||_0x44ba6c[_0x1ddc7e(0x156)]())return _0x570fb0(),_0x3919ea(),!![];return _0x570fb0(),_0x2311dc===_0x1ddc7e(0x16a)&&_0x44ba6c[_0x1ddc7e(0x15d)]()==='b'?_0x15fc79=!![]:_0x15fc79=![],_0x3675d2(),!![];}function _0x3919ea(){const _0x5c1272=_0x427cd3;_0x3dfcb2();const _0x1383d3=document[_0x5c1272(0x1bf)](_0x5c1272(0x17f)),_0x2583e9=document[_0x5c1272(0x1bf)](_0x5c1272(0x13b));_0x1383d3[_0x5c1272(0x144)]='';if(_0x44ba6c[_0x5c1272(0x1ab)]()){const _0x48fb1f=_0x44ba6c[_0x5c1272(0x15d)]()==='w'?_0x5c1272(0x124):'White';_0x1383d3[_0x5c1272(0x175)]=_0x5c1272(0x11a),_0x1383d3['classList'][_0x5c1272(0x103)](_0x48fb1f===_0x5c1272(0x13e)?_0x5c1272(0x176):'winner-black'),_0x2583e9[_0x5c1272(0x175)]=_0x48fb1f+_0x5c1272(0x18a);}else{if(_0x44ba6c[_0x5c1272(0x191)]())_0x1383d3[_0x5c1272(0x175)]=_0x5c1272(0x168),_0x1383d3[_0x5c1272(0x1bc)][_0x5c1272(0x103)](_0x5c1272(0x12d)),_0x2583e9['innerText']=_0x5c1272(0x116);else{if(_0x44ba6c[_0x5c1272(0x1a1)]())_0x1383d3[_0x5c1272(0x175)]=_0x5c1272(0x185),_0x1383d3[_0x5c1272(0x1bc)][_0x5c1272(0x103)](_0x5c1272(0x12d)),_0x2583e9[_0x5c1272(0x175)]='Draw\x20by\x20stalemate\x20(no\x20legal\x20moves\x20left)';else _0x44ba6c[_0x5c1272(0x147)]()?(_0x1383d3[_0x5c1272(0x175)]=_0x5c1272(0x168),_0x1383d3[_0x5c1272(0x1bc)]['add'](_0x5c1272(0x12d)),_0x2583e9[_0x5c1272(0x175)]=_0x5c1272(0x159)):(_0x1383d3[_0x5c1272(0x175)]='GAME\x20OVER',_0x1383d3[_0x5c1272(0x1bc)][_0x5c1272(0x103)](_0x5c1272(0x12d)),_0x2583e9[_0x5c1272(0x175)]=_0x5c1272(0x19d));}}_0x59ab64[_0x5c1272(0x1c8)][_0x5c1272(0x1c1)]=_0x5c1272(0x19a);}function _0x570fb0(){const _0x76b42=_0x427cd3;let _0x27ef11='';if(_0x44ba6c[_0x76b42(0x1ab)]())_0x27ef11='Checkmate!\x20'+(_0x44ba6c['turn']()==='w'?_0x76b42(0x124):_0x76b42(0x13e))+_0x76b42(0x1aa);else{if(_0x44ba6c[_0x76b42(0x191)]())_0x27ef11=_0x76b42(0x138);else _0x44ba6c[_0x76b42(0x16b)]()?_0x27ef11=_0x76b42(0x122):_0x27ef11=(_0x44ba6c['turn']()==='w'?_0x76b42(0x13e):_0x76b42(0x124))+_0x76b42(0x192)+(_0x44ba6c['in_check']()?_0x76b42(0x199):'');}document['getElementById']('turn-status')[_0x76b42(0x175)]=_0x27ef11;}function _0x51534a(_0x15d3c4,_0x2b3eb1){const _0x234546=_0x427cd3;_0x3dfcb2();if(!_0x15d3c4||!_0x2b3eb1)return;const _0x45a250={'a':0x0,'b':0x1,'c':0x2,'d':0x3,'e':0x4,'f':0x5,'g':0x6,'h':0x7},_0x456cf3=_0x45a250[_0x15d3c4[0x0]],_0x50c1d5=0x8-parseInt(_0x15d3c4[0x1],0xa),_0x17a89c=_0x45a250[_0x2b3eb1[0x0]],_0x48f440=0x8-parseInt(_0x2b3eb1[0x1],0xa),_0x43fecf=_0x19b926['getBoundingClientRect'](),_0x221528=_0x43fecf[_0x234546(0x135)]/0x8,_0x3b1ffe=_0xd67296?0x7-_0x456cf3:_0x456cf3,_0x205b71=_0xd67296?0x7-_0x50c1d5:_0x50c1d5,_0x5828ac=_0xd67296?0x7-_0x17a89c:_0x17a89c,_0x1fd342=_0xd67296?0x7-_0x48f440:_0x48f440,_0x207078=_0x3b1ffe*_0x221528+_0x221528/0x2,_0x45a422=_0x205b71*_0x221528+_0x221528/0x2,_0x42ff46=_0x5828ac*_0x221528+_0x221528/0x2,_0x5dedd3=_0x1fd342*_0x221528+_0x221528/0x2,_0x2be685=Math[_0x234546(0x1c6)](_0x5dedd3-_0x45a422,_0x42ff46-_0x207078),_0x4bc22a=_0x221528*0.42,_0x5ee681=_0x221528*0.48,_0x1561a2=_0x221528*0.18,_0x147482=document[_0x234546(0x1bf)](_0x234546(0x18c));_0x147482['innerHTML']=_0x234546(0x146)+_0x4bc22a+_0x234546(0x166)+_0x5ee681+'\x22\x20refX=\x22'+_0x4bc22a*0.82+_0x234546(0x164)+_0x5ee681/0x2+'\x22\x20orient=\x22auto\x22><polygon\x20points=\x220\x200,\x20'+_0x4bc22a+'\x20'+_0x5ee681/0x2+',\x200\x20'+_0x5ee681+',\x20'+_0x4bc22a*0.25+'\x20'+_0x5ee681/0x2+_0x234546(0x132);const _0x2e8d72=_0x4bc22a*0.65,_0xb6db46=_0x42ff46-_0x2e8d72*Math[_0x234546(0x102)](_0x2be685),_0x4ca5ec=_0x5dedd3-_0x2e8d72*Math[_0x234546(0x126)](_0x2be685),_0x2fef5e=document['createElementNS'](_0x234546(0x142),'line');_0x2fef5e[_0x234546(0x196)]('x1',_0x207078),_0x2fef5e[_0x234546(0x196)]('y1',_0x45a422),_0x2fef5e['setAttribute']('x2',_0xb6db46),_0x2fef5e[_0x234546(0x196)]('y2',_0x4ca5ec),_0x2fef5e['setAttribute'](_0x234546(0x169),_0x234546(0x14c)),_0x2fef5e['setAttribute'](_0x234546(0x10f),_0x1561a2),_0x2fef5e['setAttribute']('stroke-linecap',_0x234546(0x110)),_0x2fef5e[_0x234546(0x196)](_0x234546(0x1c5),'0.9'),_0x2fef5e['setAttribute']('marker-end',_0x234546(0x11e)),_0x2fef5e['setAttribute']('id',_0x234546(0x14a)),_0x4c190a[_0x234546(0x1b8)](_0x2fef5e);}function _0x3dfcb2(){const _0x22788f=_0x427cd3,_0x58d30f=document[_0x22788f(0x1bf)]('drawn-arrow');if(_0x58d30f)_0x58d30f[_0x22788f(0x1be)]();}function _0x246681(){const _0x241f24=_0x427cd3;_0x19b926[_0x241f24(0x1b0)]='';const _0x4306de=['a','b','c','d','e','f','g','h'];for(let _0x2daf20=0x0;_0x2daf20<0x8;_0x2daf20++){for(let _0x1cb3a8=0x0;_0x1cb3a8<0x8;_0x1cb3a8++){const _0x23ed7e=_0xd67296?_0x2daf20+0x1:0x8-_0x2daf20,_0x3088c4=_0xd67296?0x7-_0x1cb3a8:_0x1cb3a8,_0x56510a=''+_0x4306de[_0x3088c4]+_0x23ed7e,_0x57c39e=document['createElement'](_0x241f24(0x1b6)),_0x55ebd9=(_0x2daf20+_0x1cb3a8)%0x2===0x0;_0x57c39e[_0x241f24(0x144)]=_0x241f24(0x12f)+(_0x55ebd9?_0x241f24(0x160):'dark'),_0x57c39e[_0x241f24(0x1af)][_0x241f24(0x17e)]=_0x56510a;if(_0x4c013e===_0x56510a)_0x57c39e[_0x241f24(0x1bc)]['add'](_0x241f24(0x1ad));const _0x1c9849=_0x39f6a0['find'](_0x5bea6d=>_0x5bea6d['to']===_0x56510a);if(_0x1c9849){if(_0x1c9849['captured'])_0x57c39e['classList'][_0x241f24(0x103)](_0x241f24(0x16d));else _0x57c39e['classList']['add'](_0x241f24(0x180));}const _0x3a08ec=_0x44ba6c[_0x241f24(0x157)](_0x56510a);if(_0x3a08ec){const _0x4b921f=_0x3a08ec['color']==='w'?_0x1bedcf[_0x3a08ec[_0x241f24(0x189)][_0x241f24(0x195)]()]:_0x1bedcf[_0x3a08ec[_0x241f24(0x189)]],_0x4467ad=document[_0x241f24(0x197)](_0x241f24(0x194));_0x4467ad[_0x241f24(0x144)]=_0x241f24(0x104),_0x4467ad[_0x241f24(0x175)]=_0x4b921f,_0x4467ad[_0x241f24(0x1c8)][_0x241f24(0x14b)]=_0x3a08ec[_0x241f24(0x14b)]==='w'?_0x241f24(0x19c):_0x241f24(0x127),_0x4467ad[_0x241f24(0x1c8)][_0x241f24(0x114)]=_0x3a08ec[_0x241f24(0x14b)]==='w'?_0x241f24(0x190):_0x241f24(0x1b3),_0x57c39e[_0x241f24(0x1b8)](_0x4467ad);}_0x57c39e[_0x241f24(0x188)]=()=>_0x59671e(_0x56510a),_0x19b926[_0x241f24(0x1b8)](_0x57c39e);}}}function _0x59671e(_0x281e70){const _0xc26a3d=_0x427cd3;if(_0x44ba6c[_0xc26a3d(0x156)]()||_0x44ba6c[_0xc26a3d(0x191)]())return;if(_0x2311dc==='play'&&(_0x44ba6c[_0xc26a3d(0x15d)]()==='b'||_0x15fc79))return;const _0x525556=_0x44ba6c[_0xc26a3d(0x157)](_0x281e70);if(_0x4c013e){const _0x1533a6=_0x39f6a0[_0xc26a3d(0x173)](_0x466a70=>_0x466a70['to']===_0x281e70);if(_0x1533a6){_0x4531db({'from':_0x4c013e,'to':_0x281e70,'promotion':'q'});return;}if(_0x525556&&_0x525556[_0xc26a3d(0x14b)]===_0x44ba6c[_0xc26a3d(0x15d)]()){_0x4c013e=_0x281e70,_0x39f6a0=_0x44ba6c[_0xc26a3d(0x1ac)]({'square':_0x281e70,'verbose':!![]}),_0x246681();return;}_0x4c013e=null,_0x39f6a0=[],_0x246681();return;}_0x525556&&_0x525556[_0xc26a3d(0x14b)]===_0x44ba6c[_0xc26a3d(0x15d)]()?(_0x4c013e=_0x281e70,_0x39f6a0=_0x44ba6c['moves']({'square':_0x281e70,'verbose':!![]})):(_0x4c013e=null,_0x39f6a0=[]),_0x246681();}function _0x372f14(){const _0x1a524a=_0x427cd3;clearTimeout(_0x21e293),_0x15fc79=![],_0x10888e[_0x1a524a(0x1c8)][_0x1a524a(0x1c1)]=_0x1a524a(0x17b),_0x59ab64[_0x1a524a(0x1c8)]['display']='none',_0x44ba6c[_0x1a524a(0x106)](),_0x4c013e=null,_0x39f6a0=[],_0x3dfcb2(),_0x246681(),_0x570fb0(),_0x2188df(),_0x3675d2();}window[_0x427cd3(0x1b4)](_0x427cd3(0x108),_0x24f780),window['addEventListener'](_0x427cd3(0x172),()=>{const _0x3c621c=_0x427cd3;_0x2aeb6b['className']=_0x3c621c(0x181),_0x24efdd[_0x3c621c(0x175)]=_0x3c621c(0x178),log('Offline:\x20Local\x20engine\x20engaged.');}),document[_0x427cd3(0x1bf)](_0x427cd3(0x187))[_0x427cd3(0x188)]=_0x372f14,document[_0x427cd3(0x1bf)](_0x427cd3(0x154))[_0x427cd3(0x188)]=_0x372f14,document['getElementById']('flipBtn')[_0x427cd3(0x188)]=()=>{const _0x48fc5e=_0x427cd3;_0xd67296=!_0xd67296,_0x246681(),_0xa302a2&&_0x130a57&&_0x130a57[_0x48fc5e(0x1ca)]&&_0x130a57['to']&&_0x51534a(_0x130a57[_0x48fc5e(0x1ca)],_0x130a57['to']);},document[_0x427cd3(0x1bf)](_0x427cd3(0x153))[_0x427cd3(0x188)]=function(){const _0x1e1234=_0x427cd3;_0x2311dc==='play'?(_0x2311dc=_0x1e1234(0x1c3),this['innerText']=_0x1e1234(0x148),this[_0x1e1234(0x1bc)][_0x1e1234(0x103)](_0x1e1234(0x128)),_0x15fc79=![],_0x10888e[_0x1e1234(0x1c8)][_0x1e1234(0x1c1)]=_0x1e1234(0x17b)):(_0x2311dc='play',this[_0x1e1234(0x175)]='Mode:\x20vs\x20AI',this[_0x1e1234(0x1bc)][_0x1e1234(0x1be)](_0x1e1234(0x128)),_0x44ba6c[_0x1e1234(0x15d)]()==='b'&&(_0x15fc79=!![],_0x3675d2()));},document[_0x427cd3(0x1bf)]('arrowToggleBtn')[_0x427cd3(0x188)]=function(){const _0xdc1a3a=_0x427cd3;_0xa302a2=!_0xa302a2;if(_0xa302a2){this[_0xdc1a3a(0x175)]=_0xdc1a3a(0x151),this[_0xdc1a3a(0x1bc)][_0xdc1a3a(0x103)](_0xdc1a3a(0x128));if(_0x130a57&&_0x130a57[_0xdc1a3a(0x1ca)]&&_0x130a57['to'])_0x51534a(_0x130a57[_0xdc1a3a(0x1ca)],_0x130a57['to']);}else this[_0xdc1a3a(0x175)]='Arrow:\x20OFF',this['classList']['remove']('active'),_0x3dfcb2();},document[_0x427cd3(0x1bf)](_0x427cd3(0x186))[_0x427cd3(0x188)]=()=>{if(_0x44ba6c['turn']()==='b')_0x15fc79=!![];_0x3675d2();},document['getElementById']('depthSelect')['onchange']=()=>{_0x3675d2();},_0x246681(),_0x24f780(),_0x2188df();}()));function _0x4e58(){const _0x62fb1=['A10:\x20English\x20Opening','name','onerror','application/json','\x20wins!','in_checkmate','moves','selected','length','dataset','innerHTML','opening','\x20➔\x20','0\x200\x202px\x20#fff','addEventListener','D06:\x20Queen\x27s\x20Gambit','div','entries','appendChild','8QSUCYJ','B50:\x20Sicilian\x20Defense,\x20Modern','Opening:\x20','classList','continuation','remove','getElementById','arrow-overlay','display','E00:\x20East\x20Indian\x20Defense','analysis','info','opacity','atan2','https://chess-api.com/v1','style','2832516Ctumtb','from','Zukertort\x20/\x20Réti\x20(1.\x20Nf3)','cos','add','piece-icon','onLine','reset','depth','online','</span>','https://explorer.lichess.ovh/masters?fen=','3273336SItZcv','min','mate','Stockfish\x20Connected\x20(Fast)','stroke-width','round','pv-text','Stockfish\x20thinking...','depth-label','textShadow','move','Draw\x20by\x20threefold\x20repetition\x20of\x20position','Local:\x203\x20Ply','depthSelect','parse','CHECKMATE!','B20:\x20Sicilian\x20Defense','fen','san','url(#clean-arrowhead)','Depth:\x20','success','C50:\x20Italian\x20Game','Game\x20over:\x20Draw!','28lAkYPj','Black','10ElQqbE','sin','#000','active','floor','board','D10:\x20Slav\x20Defense','text','winner-draw','D00:\x20Queen\x27s\x20Pawn\x20Game','square\x20','Analysing\x20position...','evaluation','\x22\x20fill=\x22#1abc9c\x22\x20opacity=\x220.9\x22\x20/></marker>','dot','slice','width','Unclassified\x20Opening','eco','Game\x20over:\x20Draw\x20by\x20threefold\x20repetition!','catch','Book:\x20Varied','game-over-subtitle','WiFi\x20disconnected.\x20Offline\x20engine\x20ready.','toLocaleTimeString','White','undo','Queen\x27s\x20Pawn\x20(1.\x20d4)','send','http://www.w3.org/2000/svg','https://stockfish.online/api/s/v2.php?fen=','className','error','<marker\x20id=\x22clean-arrowhead\x22\x20markerUnits=\x22userSpaceOnUse\x22\x20markerWidth=\x22','insufficient_material','Mode:\x20Analysis','onclose','drawn-arrow','color','#1abc9c','wss://chess-api.com/v1','Offline:\x20Local\x20engine\x20ready.','then','16364392tgkjJl','Arrow:\x20ON','debug-log','modeBtn','bannerNewGameBtn','E60:\x20King\x27s\x20Indian\x20Defense','game_over','get','toLowerCase','Draw\x20by\x20insufficient\x20material','Out\x20of\x20Book','B10:\x20Caro-Kann\x20Defense','2081965RNCLBG','turn','267118LTwrCT','onmessage','light','split','match','Analysed\x20Move:\x20','\x22\x20refY=\x22','string','\x22\x20markerHeight=\x22','value','DRAW!','stroke','play','in_draw','data','valid-capture','C20:\x20King\x27s\x20Pawn\x20Game\x20(Open\x20Game)','join','json','15uiyPmt','offline','some','Analysing\x20locally...','innerText','winner-white','AI\x20opened\x20with:\x20','Offline\x20Mode\x20(Local)','max','history','none','A45:\x20Indian\x20Defense','Line:\x20','square','game-over-title','valid-dest','dot\x20offline','status-label','opening-display','Nf6','STALEMATE!','retryBtn','newBtn','onclick','type','\x20wins\x20by\x20checkmate!','Local\x20AI\x20played:\x20','marker-defs','Opening:\x20Starting\x20Position','Suggestion:\x20','1108188WBXtiS','0\x200\x202px\x20#000','in_threefold_repetition','\x20to\x20move\x20','311874WoQYEs','span','toUpperCase','setAttribute','createElement','A04:\x20Réti\x20/\x20Zukertort\x20Opening','(Check)','flex','random','#fff','Game\x20ended\x20in\x20a\x20draw','bestmove','C00:\x20French\x20Defense','King\x27s\x20Pawn\x20(1.\x20e4)','in_stalemate','best-move-display','status-dot','Local\x20engine\x20thinking...','Stockfish\x20executed:\x20'];_0x4e58=function(){return _0x62fb1;};return _0x4e58();}
+/**
+ * Calm Chess Computers (c) 2026. All Rights Reserved.
+ * HTML5 Chess + Stockfish Engine Integration & Local Minimax Fallback
+ * Completely unobfuscated, clean, maintainable JavaScript
+ */
+
+(function () {
+  'use strict';
+
+  // --- Material & Piece-Square Evaluation Tables ---
+  const PIECE_VALUES = {
+    p: 100,
+    n: 320,
+    b: 330,
+    r: 500,
+    q: 900,
+    k: 20000
+  };
+
+  const PIECE_SQUARE_TABLES = {
+    p: [
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [50, 50, 50, 50, 50, 50, 50, 50],
+      [10, 10, 20, 30, 30, 20, 10, 10],
+      [5, 5, 10, 25, 25, 10, 5, 5],
+      [0, 0, 0, 20, 20, 0, 0, 0],
+      [5, -5, -10, 0, 0, -10, -5, 5],
+      [5, 10, 10, -20, -20, 10, 10, 5],
+      [0, 0, 0, 0, 0, 0, 0, 0]
+    ],
+    n: [
+      [-50, -40, -30, -30, -30, -30, -40, -50],
+      [-40, -20, 0, 0, 0, 0, -20, -40],
+      [-30, 0, 10, 15, 15, 10, 0, -30],
+      [-30, 5, 15, 20, 20, 15, 5, -30],
+      [-30, 0, 15, 20, 20, 15, 0, -30],
+      [-30, 5, 10, 15, 15, 10, 5, -30],
+      [-40, -20, 0, 5, 5, 0, -20, -40],
+      [-50, -40, -30, -30, -30, -30, -40, -50]
+    ],
+    b: [
+      [-20, -10, -10, -10, -10, -10, -10, -20],
+      [-10, 0, 0, 0, 0, 0, 0, -10],
+      [-10, 0, 5, 10, 10, 5, 0, -10],
+      [-10, 5, 5, 10, 10, 5, 5, -10],
+      [-10, 0, 10, 10, 10, 10, 0, -10],
+      [-10, 10, 10, 10, 10, 10, 10, -10],
+      [-10, 5, 0, 0, 0, 0, 5, -10],
+      [-20, -10, -10, -10, -10, -10, -10, -20]
+    ],
+    r: [
+      [0, 0, 0, 0, 0, 0, 0, 0],
+      [5, 10, 10, 10, 10, 10, 10, 5],
+      [-5, 0, 0, 0, 0, 0, 0, -5],
+      [-5, 0, 0, 0, 0, 0, 0, -5],
+      [-5, 0, 0, 0, 0, 0, 0, -5],
+      [-5, 0, 0, 0, 0, 0, 0, -5],
+      [-5, 0, 0, 0, 0, 0, 0, -5],
+      [0, 0, 0, 5, 5, 0, 0, 0]
+    ],
+    q: [
+      [-20, -10, -10, -5, -5, -10, -10, -20],
+      [-10, 0, 0, 0, 0, 0, 0, -10],
+      [-10, 0, 5, 5, 5, 5, 0, -10],
+      [-5, 0, 5, 5, 5, 5, 0, -5],
+      [0, 0, 5, 5, 5, 5, 0, -5],
+      [-10, 5, 5, 5, 5, 5, 0, -10],
+      [-10, 0, 5, 0, 0, 0, 0, -10],
+      [-20, -10, -10, -5, -5, -10, -10, -20]
+    ],
+    k: [
+      [-30, -40, -40, -50, -50, -40, -40, -30],
+      [-30, -40, -40, -50, -50, -40, -40, -30],
+      [-30, -40, -40, -50, -50, -40, -40, -30],
+      [-30, -40, -40, -50, -50, -40, -40, -30],
+      [-20, -30, -30, -40, -40, -30, -20, -20],
+      [-10, -20, -20, -20, -20, -20, -20, -10],
+      [20, 20, 0, 0, 0, 0, 20, 20],
+      [20, 30, 10, 0, 0, 10, 30, 20]
+    ]
+  };
+
+  /**
+   * Evaluate board position for current game
+   */
+  function evaluateBoard(game) {
+    let totalScore = 0;
+    const board = game.board();
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const piece = board[r][c];
+        if (piece) {
+          const val = PIECE_VALUES[piece.type];
+          const pstTable = PIECE_SQUARE_TABLES[piece.type];
+          let positionalBonus = 0;
+          if (pstTable) {
+            positionalBonus = (piece.color === 'w') ? pstTable[r][c] : pstTable[7 - r][c];
+          }
+          const pieceScore = val + positionalBonus;
+          totalScore += (piece.color === 'w') ? pieceScore : -pieceScore;
+        }
+      }
+    }
+    return totalScore;
+  }
+
+  /**
+   * Minimax with Alpha-Beta Pruning
+   */
+  function minimax(game, depth, alpha, beta, isMaximizing) {
+    if (depth === 0 || game.game_over()) {
+      return evaluateBoard(game);
+    }
+
+    const legalMoves = game.moves({ verbose: true });
+    if (isMaximizing) {
+      let maxEval = -Infinity;
+      for (const m of legalMoves) {
+        game.move(m);
+        const evalScore = minimax(game, depth - 1, alpha, beta, false);
+        game.undo();
+        maxEval = Math.max(maxEval, evalScore);
+        alpha = Math.max(alpha, evalScore);
+        if (beta <= alpha) break;
+      }
+      return maxEval;
+    } else {
+      let minEval = Infinity;
+      for (const m of legalMoves) {
+        game.move(m);
+        const evalScore = minimax(game, depth - 1, alpha, beta, true);
+        game.undo();
+        minEval = Math.min(minEval, evalScore);
+        beta = Math.min(beta, evalScore);
+        if (beta <= alpha) break;
+      }
+      return minEval;
+    }
+  }
+
+  /**
+   * Find Best Move using Local Minimax Engine
+   */
+  function getBestMoveMinimax(game, depth) {
+    const legalMoves = game.moves({ verbose: true });
+    if (legalMoves.length === 0) return null;
+
+    let bestMove = null;
+    const isWhite = (game.turn() === 'w');
+    let bestScore = isWhite ? -Infinity : Infinity;
+
+    for (const m of legalMoves) {
+      game.move(m);
+      const score = minimax(game, depth - 1, -Infinity, Infinity, !isWhite);
+      game.undo();
+
+      if (isWhite) {
+        if (score > bestScore) {
+          bestScore = score;
+          bestMove = m;
+        }
+      } else {
+        if (score < bestScore) {
+          bestScore = score;
+          bestMove = m;
+        }
+      }
+    }
+
+    return bestMove || legalMoves[0];
+  }
+
+  // Debug log helper
+  window.log = function (msg) {
+    const logEl = document.getElementById('debug-log');
+    if (logEl) {
+      logEl.innerHTML = '<span>[' + new Date().toLocaleTimeString() + '] ' + msg + '</span>';
+    }
+  };
+
+  // Unicode Chess Symbols
+  const UNICODE_PIECES = {
+    p: '♟', n: '♞', b: '♝', r: '♜', q: '♛', k: '♚',
+    P: '♙', N: '♘', B: '♗', R: '♖', Q: '♕', K: '♔'
+  };
+
+  // Opening Book
+  const OPENING_BOOK = [
+    { san: 'e4', from: 'e2', to: 'e4', name: "King's Pawn (1. e4)" },
+    { san: 'd4', from: 'd2', to: 'd4', name: "Queen's Pawn (1. d4)" },
+    { san: 'c4', from: 'c2', to: 'c4', name: 'English Opening (1. c4)' },
+    { san: 'Nf3', from: 'g1', to: 'f3', name: 'Zukertort / Réti (1. Nf3)' }
+  ];
+
+  const OPENING_RESPONSES = {
+    'e4': ['c5', 'e5', 'e6', 'c6', 'Nf6'],
+    'd4': ['Nf6', 'd5', 'e6', 'g6', 'c5'],
+    'c4': ['e5', 'c5', 'Nf6', 'e6'],
+    'Nf3': ['d5', 'Nf6', 'c5', 'g6']
+  };
+
+  const ECO_OPENINGS = {
+    'e4': "B00: King's Pawn Opening",
+    'e4 c5': "B20: Sicilian Defense",
+    'e4 c5 Nf3 d6': "B50: Sicilian Defense, Modern",
+    'e4 e5': "C20: King's Pawn Game (Open Game)",
+    'e4 e5 Nf3 Nc6 Bc4': "C50: Italian Game",
+    'e4 e5 Nf3 Nc6 Bb5': "C60: Ruy Lopez (Spanish Opening)",
+    'e4 e6': "C00: French Defense",
+    'e4 c6': "B10: Caro-Kann Defense",
+    'd4': "A40: Queen's Pawn Opening",
+    'd4 d5': "D00: Queen's Pawn Game",
+    'd4 d5 c4': "D06: Queen's Gambit",
+    'd4 d5 c4 c6': "D10: Slav Defense",
+    'd4 Nf6': "A45: Indian Defense",
+    'd4 Nf6 c4 g6': "E60: King's Indian Defense",
+    'd4 Nf6 c4 e6': "E00: East Indian Defense",
+    'c4': "A10: English Opening",
+    'Nf3': "A04: Réti / Zukertort Opening"
+  };
+
+  // State Management
+  const chess = new Chess();
+  let selectedSquare = null;
+  let possibleMoves = [];
+  let isBoardFlipped = false;
+  let gameMode = 'play'; // 'play' or 'analysis'
+  let isArrowEnabled = true;
+  let lastSuggestedMove = null;
+  let isAiThinking = false;
+  let engineFallbackTimer = null;
+  let stockfishSocket = null;
+  let isSocketConnected = false;
+
+  // DOM Elements
+  const boardEl = document.getElementById('board');
+  const arrowOverlayEl = document.getElementById('arrow-overlay');
+  const statusDotEl = document.getElementById('status-dot');
+  const statusLabelEl = document.getElementById('status-label');
+  const retryBtn = document.getElementById('retryBtn');
+  const gameOverBannerEl = document.getElementById('game-over-banner');
+  const openingDisplayEl = document.getElementById('opening-display');
+
+  /**
+   * Update Opening Badge with Lichess Masters Lookup or Local ECO Dictionary
+   */
+  function updateOpeningDisplay() {
+    const moveHistoryStr = chess.history().join(' ');
+    if (!moveHistoryStr) {
+      if (openingDisplayEl) openingDisplayEl.innerText = "Opening: Starting Position";
+      return;
+    }
+
+    if (navigator.onLine) {
+      fetch('https://explorer.lichess.ovh/masters?fen=' + encodeURIComponent(chess.fen()))
+        .then(res => res.json())
+        .then(data => {
+          if (data.opening && data.opening.name && openingDisplayEl) {
+            openingDisplayEl.innerText = 'Opening: ' + (data.opening.eco ? data.opening.eco + ' ' : '') + data.opening.name;
+          }
+        })
+        .catch(() => {});
+    }
+
+    let detectedName = null;
+    for (const [seq, title] of Object.entries(ECO_OPENINGS)) {
+      if (moveHistoryStr.startsWith(seq)) {
+        detectedName = title;
+        break;
+      }
+    }
+
+    if (openingDisplayEl) {
+      openingDisplayEl.innerText = 'Opening: ' + (detectedName || (chess.history().length > 6 ? 'Out of Book' : 'Unclassified Opening'));
+    }
+  }
+
+  /**
+   * Connect to Stockfish WebSocket API
+   */
+  function connectStockfishWebSocket() {
+    if (!navigator.onLine) {
+      if (statusDotEl) statusDotEl.className = 'dot offline';
+      if (statusLabelEl) statusLabelEl.innerText = 'Offline Mode (Local)';
+      log('Offline: Local engine ready.');
+      requestEngineMove();
+      return;
+    }
+
+    if (statusDotEl) statusDotEl.className = 'dot';
+    if (statusLabelEl) statusLabelEl.innerText = 'Connecting WebSocket...';
+
+    try {
+      stockfishSocket = new WebSocket('wss://chess-api.com/v1');
+
+      stockfishSocket.onopen = () => {
+        isSocketConnected = true;
+        if (statusDotEl) statusDotEl.className = 'dot connected';
+        if (statusLabelEl) statusLabelEl.innerText = 'Stockfish Connected (Fast)';
+        log('Engine online.');
+        requestEngineMove();
+      };
+
+      stockfishSocket.onmessage = (event) => {
+        try {
+          const payload = JSON.parse(event.data);
+          if (payload.error) {
+            fetchHttpStockfish(chess.fen(), parseInt(document.getElementById('depthSelect').value, 10));
+            return;
+          }
+          handleEngineResponse(payload);
+        } catch (e) {}
+      };
+
+      stockfishSocket.onerror = () => {
+        isSocketConnected = false;
+      };
+
+      stockfishSocket.onclose = () => {
+        isSocketConnected = false;
+        if (navigator.onLine) {
+          setTimeout(connectStockfishWebSocket, 5000);
+        } else {
+          if (statusDotEl) statusDotEl.className = 'dot offline';
+          if (statusLabelEl) statusLabelEl.innerText = 'Offline Mode (Local)';
+          log('WiFi disconnected. Offline engine ready.');
+        }
+      };
+    } catch (err) {
+      isSocketConnected = false;
+    }
+  }
+
+  /**
+   * Request Next Engine Move or Book Opening Move
+   */
+  function requestEngineMove() {
+    if (chess.game_over() || chess.in_threefold_repetition()) return;
+    if (retryBtn) retryBtn.style.display = 'none';
+
+    const historyMoves = chess.history();
+
+    // 1. Initial Opening Move
+    if (historyMoves.length === 0) {
+      const bookMove = OPENING_BOOK[Math.floor(Math.random() * OPENING_BOOK.length)];
+      lastSuggestedMove = bookMove;
+
+      const depthLabel = document.getElementById('depth-label');
+      if (depthLabel) depthLabel.innerText = 'Book: Varied';
+
+      const bestMoveDisp = document.getElementById('best-move-display');
+      if (bestMoveDisp) bestMoveDisp.innerText = 'Analysed Move: ' + bookMove.from.toUpperCase() + ' ➔ ' + bookMove.to.toUpperCase();
+
+      const pvText = document.getElementById('pv-text');
+      if (pvText) pvText.innerText = 'Suggestion: ' + bookMove.name;
+
+      if (isArrowEnabled) {
+        drawArrow(bookMove.from, bookMove.to);
+      }
+
+      if (gameMode === 'play' && isAiThinking && chess.turn() === 'w') {
+        setTimeout(() => {
+          log('AI opened with: ' + bookMove.san);
+          makeMove(bookMove.san);
+        }, 350);
+      }
+      return;
+    }
+
+    // 2. Opening Response for Black
+    if (gameMode === 'play' && isAiThinking && chess.turn() === 'b' && historyMoves.length === 1) {
+      const firstMove = historyMoves[0];
+      const responses = OPENING_RESPONSES[firstMove];
+      if (responses && responses.length > 0) {
+        const reply = responses[Math.floor(Math.random() * responses.length)];
+        setTimeout(() => {
+          log('Opening response: ' + reply);
+          makeMove(reply);
+        }, 350);
+        return;
+      }
+    }
+
+    // 3. Offline Mode
+    if (!navigator.onLine) {
+      runLocalMinimax();
+      return;
+    }
+
+    // 4. Online Engine Query
+    const bestMoveDisp = document.getElementById('best-move-display');
+    if (bestMoveDisp) {
+      bestMoveDisp.innerText = isAiThinking ? 'Stockfish thinking...' : 'Analysing position...';
+    }
+
+    const depthVal = parseInt(document.getElementById('depthSelect').value, 10);
+    const currentFen = chess.fen();
+
+    if (isAiThinking) {
+      clearTimeout(engineFallbackTimer);
+      engineFallbackTimer = setTimeout(() => {
+        if (isAiThinking) {
+          fetchHttpStockfish(currentFen, depthVal);
+        }
+      }, 4000);
+    }
+
+    if (isSocketConnected && stockfishSocket && stockfishSocket.readyState === WebSocket.OPEN) {
+      stockfishSocket.send(JSON.stringify({ fen: currentFen, depth: depthVal }));
+    } else {
+      fetchHttpChessApi(currentFen, depthVal);
+    }
+  }
+
+  /**
+   * Run Local Minimax (Offline Engine)
+   */
+  function runLocalMinimax() {
+    if (statusDotEl) statusDotEl.className = 'dot offline';
+    if (statusLabelEl) statusLabelEl.innerText = 'Offline Mode (Local)';
+
+    const bestMoveDisp = document.getElementById('best-move-display');
+    if (bestMoveDisp) bestMoveDisp.innerText = isAiThinking ? 'Local engine thinking...' : 'Analysing locally...';
+
+    const depthLabel = document.getElementById('depth-label');
+    if (depthLabel) depthLabel.innerText = 'Local: 3 Ply';
+
+    setTimeout(() => {
+      const move = getBestMoveMinimax(chess, 3);
+      if (move) {
+        lastSuggestedMove = { from: move.from, to: move.to };
+        if (bestMoveDisp) {
+          bestMoveDisp.innerText = 'Analysed Move: ' + move.from.toUpperCase() + ' ➔ ' + move.to.toUpperCase();
+        }
+        const pvText = document.getElementById('pv-text');
+        if (pvText) pvText.innerText = 'Line: ' + move.san;
+
+        if (isArrowEnabled) {
+          drawArrow(move.from, move.to);
+        }
+
+        if (gameMode === 'play' && isAiThinking && chess.turn() === 'b') {
+          isAiThinking = false;
+          log('Local AI played: ' + move.from + '->' + move.to);
+          makeMove(move);
+        }
+      }
+    }, 150);
+  }
+
+  /**
+   * Fallback: HTTP POST to chess-api.com
+   */
+  function fetchHttpChessApi(fen, depth) {
+    fetch('https://chess-api.com/v1', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fen: fen, depth: depth })
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) throw new Error(data.error);
+        handleEngineResponse(data);
+      })
+      .catch(() => {
+        fetchHttpStockfish(fen, depth);
+      });
+  }
+
+  /**
+   * Fallback: HTTP GET to stockfish.online
+   */
+  function fetchHttpStockfish(fen, depth) {
+    fetch('https://stockfish.online/api/s/v2.php?fen=' + encodeURIComponent(fen) + '&depth=' + depth)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.bestmove) {
+          const parts = data.bestmove.split(' ');
+          const moveUci = parts[1];
+          handleEngineResponse({
+            type: 'bestmove',
+            move: moveUci,
+            eval: data.evaluation,
+            mate: data.mate,
+            pv: data.continuation
+          });
+        }
+      })
+      .catch(() => {
+        clearTimeout(engineFallbackTimer);
+        runLocalMinimax();
+      });
+  }
+
+  /**
+   * Process Stockfish / Engine Analysis Response
+   */
+  function handleEngineResponse(data) {
+    if (!data || data.type === 'info') return;
+
+    if (data.depth) {
+      const depthLabel = document.getElementById('depth-label');
+      if (depthLabel) depthLabel.innerText = 'Depth: ' + data.depth;
+    }
+
+    if (data.pv) {
+      const pvText = document.getElementById('pv-text');
+      if (pvText) {
+        pvText.innerText = 'Line: ' + data.pv.split(' ').slice(0, 5).join(' ');
+      }
+    }
+
+    let fromSq = null;
+    let toSq = null;
+    let promotion = undefined;
+
+    if (data.from && data.to) {
+      fromSq = String(data.from).toLowerCase();
+      toSq = String(data.to).toLowerCase();
+    } else if (typeof data.move === 'string' && data.move.length >= 4) {
+      fromSq = data.move.slice(0, 2).toLowerCase();
+      toSq = data.move.slice(2, 4).toLowerCase();
+      if (data.move.length >= 5) {
+        promotion = data.move[4].toLowerCase();
+      }
+    } else if (typeof data.text === 'string') {
+      const match = data.text.match(/([a-h][1-8])\s*(?:→|->|to)\s*([a-h][1-8])/i);
+      if (match) {
+        fromSq = match[1].toLowerCase();
+        toSq = match[2].toLowerCase();
+      }
+    }
+
+    if (fromSq && toSq) {
+      const piece = chess.get(fromSq);
+      if (piece && piece.type === 'p' && (toSq[1] === '8' || toSq[1] === '1')) {
+        promotion = (typeof promotion === 'string' && promotion.length === 1) ? promotion : 'q';
+      } else {
+        promotion = undefined;
+      }
+
+      const moveObj = { from: fromSq, to: toSq };
+      if (promotion) moveObj.promotion = promotion;
+
+      lastSuggestedMove = moveObj;
+
+      const bestMoveDisp = document.getElementById('best-move-display');
+      if (bestMoveDisp) {
+        bestMoveDisp.innerText = 'Analysed Move: ' + fromSq.toUpperCase() + ' ➔ ' + toSq.toUpperCase();
+      }
+
+      if (isArrowEnabled) {
+        drawArrow(fromSq, toSq);
+      }
+
+      if (gameMode === 'play' && isAiThinking && chess.turn() === 'b') {
+        if (data.type === 'bestmove' || !isSocketConnected) {
+          clearTimeout(engineFallbackTimer);
+          isAiThinking = false;
+          log('Stockfish executed: ' + fromSq + '->' + toSq);
+          setTimeout(() => makeMove(moveObj), 100);
+        }
+      }
+    } else if (data.san) {
+      const bestMoveDisp = document.getElementById('best-move-display');
+      if (bestMoveDisp) {
+        bestMoveDisp.innerText = 'Analysed Move: ' + data.san;
+      }
+
+      if (gameMode === 'play' && isAiThinking && chess.turn() === 'b' && data.type === 'bestmove') {
+        clearTimeout(engineFallbackTimer);
+        isAiThinking = false;
+        setTimeout(() => makeMove(data.san), 100);
+      }
+    }
+  }
+
+  /**
+   * Execute Move in Game State
+   */
+  function makeMove(moveData) {
+    const executed = chess.move(moveData);
+    if (!executed) return false;
+
+    selectedSquare = null;
+    possibleMoves = [];
+    clearArrow();
+    renderBoard();
+    updateOpeningDisplay();
+
+    if (chess.in_threefold_repetition() || chess.game_over()) {
+      updateTurnStatus();
+      showGameOverModal();
+      return true;
+    }
+
+    updateTurnStatus();
+
+    if (gameMode === 'play' && chess.turn() === 'b') {
+      isAiThinking = true;
+    } else {
+      isAiThinking = false;
+    }
+
+    requestEngineMove();
+    return true;
+  }
+
+  /**
+   * Show Game Over Modal
+   */
+  function showGameOverModal() {
+    clearArrow();
+    const titleEl = document.getElementById('game-over-title');
+    const subEl = document.getElementById('game-over-subtitle');
+
+    if (!titleEl || !subEl) return;
+    titleEl.className = '';
+
+    if (chess.in_checkmate()) {
+      const winner = (chess.turn() === 'w') ? 'Black' : 'White';
+      titleEl.innerText = 'CHECKMATE!';
+      titleEl.classList.add(winner === 'White' ? 'winner-white' : 'winner-black');
+      subEl.innerText = winner + ' wins by checkmate!';
+    } else if (chess.in_threefold_repetition()) {
+      titleEl.innerText = 'DRAW!';
+      titleEl.classList.add('winner-draw');
+      subEl.innerText = 'Draw by threefold repetition of position';
+    } else if (chess.in_stalemate()) {
+      titleEl.innerText = 'STALEMATE!';
+      titleEl.classList.add('winner-draw');
+      subEl.innerText = 'Draw by stalemate (no legal moves left)';
+    } else if (chess.insufficient_material()) {
+      titleEl.innerText = 'DRAW!';
+      titleEl.classList.add('winner-draw');
+      subEl.innerText = 'Draw by insufficient material';
+    } else {
+      titleEl.innerText = 'GAME OVER';
+      titleEl.classList.add('winner-draw');
+      subEl.innerText = 'Game ended in a draw';
+    }
+
+    if (gameOverBannerEl) gameOverBannerEl.style.display = 'flex';
+  }
+
+  /**
+   * Update Turn and Check/Checkmate Status Line
+   */
+  function updateTurnStatus() {
+    let msg = '';
+    if (chess.in_checkmate()) {
+      msg = 'Checkmate! ' + (chess.turn() === 'w' ? 'Black' : 'White') + ' wins!';
+    } else if (chess.in_threefold_repetition()) {
+      msg = 'Game over: Draw by threefold repetition!';
+    } else if (chess.in_draw()) {
+      msg = 'Game over: Draw!';
+    } else {
+      const side = (chess.turn() === 'w') ? 'White' : 'Black';
+      msg = side + ' to move ' + (chess.in_check() ? '(Check)' : '');
+    }
+
+    const turnEl = document.getElementById('turn-status');
+    if (turnEl) turnEl.innerText = msg;
+  }
+
+  /**
+   * Draw Directional SVG Arrow on Board Overlay
+   */
+  function drawArrow(fromSquare, toSquare) {
+    clearArrow();
+    if (!fromSquare || !toSquare || !boardEl || !arrowOverlayEl) return;
+
+    const colIndex = { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6, h: 7 };
+    const fromCol = colIndex[fromSquare[0]];
+    const fromRow = 8 - parseInt(fromSquare[1], 10);
+    const toCol = colIndex[toSquare[0]];
+    const toRow = 8 - parseInt(toSquare[1], 10);
+
+    const boardRect = boardEl.getBoundingClientRect();
+    const squareSize = boardRect.width / 8;
+
+    const renderFromCol = isBoardFlipped ? (7 - fromCol) : fromCol;
+    const renderFromRow = isBoardFlipped ? (7 - fromRow) : fromRow;
+    const renderToCol = isBoardFlipped ? (7 - toCol) : toCol;
+    const renderToRow = isBoardFlipped ? (7 - toRow) : toRow;
+
+    const x1 = renderFromCol * squareSize + squareSize / 2;
+    const y1 = renderFromRow * squareSize + squareSize / 2;
+    const x2 = renderToCol * squareSize + squareSize / 2;
+    const y2 = renderToRow * squareSize + squareSize / 2;
+
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    const markerWidth = squareSize * 0.42;
+    const markerHeight = squareSize * 0.48;
+    const strokeWidth = squareSize * 0.18;
+
+    const markerDefs = document.getElementById('marker-defs');
+    if (markerDefs) {
+      markerDefs.innerHTML =
+        '<marker id="clean-arrowhead" markerUnits="userSpaceOnUse" markerWidth="' + markerWidth +
+        '" markerHeight="' + markerHeight + '" refX="' + (markerWidth * 0.82) +
+        '" refY="' + (markerHeight / 2) + '" orient="auto"><polygon points="0 0, ' +
+        markerWidth + ' ' + (markerHeight / 2) + ', 0 ' + markerHeight + ', ' +
+        (markerWidth * 0.25) + ' ' + (markerHeight / 2) + '" fill="#1abc9c" opacity="0.9" /></marker>';
+    }
+
+    const offset = markerWidth * 0.65;
+    const targetX = x2 - offset * Math.cos(angle);
+    const targetY = y2 - offset * Math.sin(angle);
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1);
+    line.setAttribute('y1', y1);
+    line.setAttribute('x2', targetX);
+    line.setAttribute('y2', targetY);
+    line.setAttribute('stroke', '#1abc9c');
+    line.setAttribute('stroke-width', strokeWidth);
+    line.setAttribute('stroke-linecap', 'round');
+    line.setAttribute('opacity', '0.9');
+    line.setAttribute('marker-end', 'url(#clean-arrowhead)');
+    line.setAttribute('id', 'drawn-arrow');
+
+    arrowOverlayEl.appendChild(line);
+  }
+
+  /**
+   * Clear SVG Arrow
+   */
+  function clearArrow() {
+    const arrow = document.getElementById('drawn-arrow');
+    if (arrow) arrow.remove();
+  }
+
+  /**
+   * Render 8x8 Chessboard DOM
+   */
+  function renderBoard() {
+    if (!boardEl) return;
+    boardEl.innerHTML = '';
+
+    const cols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const row = isBoardFlipped ? (r + 1) : (8 - r);
+        const colIdx = isBoardFlipped ? (7 - c) : c;
+        const squareName = '' + cols[colIdx] + row;
+
+        const sqDiv = document.createElement('div');
+        const isLight = (r + c) % 2 === 0;
+        sqDiv.className = 'square ' + (isLight ? 'light' : 'dark');
+        sqDiv.dataset.square = squareName;
+
+        if (selectedSquare === squareName) {
+          sqDiv.classList.add('selected');
+        }
+
+        const validMove = possibleMoves.find(m => m.to === squareName);
+        if (validMove) {
+          if (validMove.captured) {
+            sqDiv.classList.add('valid-capture');
+          } else {
+            sqDiv.classList.add('valid-dest');
+          }
+        }
+
+        const piece = chess.get(squareName);
+        if (piece) {
+          const symbol = (piece.color === 'w')
+            ? UNICODE_PIECES[piece.type.toUpperCase()]
+            : UNICODE_PIECES[piece.type];
+
+          const pieceSpan = document.createElement('span');
+          pieceSpan.className = 'piece-icon';
+          pieceSpan.innerText = symbol;
+          pieceSpan.style.color = (piece.color === 'w') ? '#fff' : '#000';
+          pieceSpan.style.textShadow = (piece.color === 'w') ? '0 0 2px #000' : '0 0 2px #fff';
+          sqDiv.appendChild(pieceSpan);
+        }
+
+        sqDiv.onclick = () => handleSquareClick(squareName);
+        boardEl.appendChild(sqDiv);
+      }
+    }
+  }
+
+  /**
+   * Handle Square Click / Piece Selection
+   */
+  function handleSquareClick(sqName) {
+    if (chess.game_over() || chess.in_threefold_repetition()) return;
+    if (gameMode === 'play' && (chess.turn() === 'b' || isAiThinking)) return;
+
+    const pieceOnSquare = chess.get(sqName);
+
+    if (selectedSquare) {
+      const matchingMove = possibleMoves.some(m => m.to === sqName);
+      if (matchingMove) {
+        makeMove({ from: selectedSquare, to: sqName, promotion: 'q' });
+        return;
+      }
+
+      if (pieceOnSquare && pieceOnSquare.color === chess.turn()) {
+        selectedSquare = sqName;
+        possibleMoves = chess.moves({ square: sqName, verbose: true });
+        renderBoard();
+        return;
+      }
+
+      selectedSquare = null;
+      possibleMoves = [];
+      renderBoard();
+      return;
+    }
+
+    if (pieceOnSquare && pieceOnSquare.color === chess.turn()) {
+      selectedSquare = sqName;
+      possibleMoves = chess.moves({ square: sqName, verbose: true });
+    } else {
+      selectedSquare = null;
+      possibleMoves = [];
+    }
+
+    renderBoard();
+  }
+
+  /**
+   * Reset / Start New Game
+   */
+  function startNewGame() {
+    clearTimeout(engineFallbackTimer);
+    isAiThinking = false;
+    if (retryBtn) retryBtn.style.display = 'none';
+    if (gameOverBannerEl) gameOverBannerEl.style.display = 'none';
+
+    chess.reset();
+    selectedSquare = null;
+    possibleMoves = [];
+    clearArrow();
+    renderBoard();
+    updateTurnStatus();
+    updateOpeningDisplay();
+    requestEngineMove();
+  }
+
+  // --- Attach Event Listeners ---
+  window.addEventListener('online', connectStockfishWebSocket);
+  window.addEventListener('offline', () => {
+    if (statusDotEl) statusDotEl.className = 'dot offline';
+    if (statusLabelEl) statusLabelEl.innerText = 'Offline Mode (Local)';
+    log('Offline: Local engine engaged.');
+  });
+
+  const newBtn = document.getElementById('newBtn');
+  if (newBtn) newBtn.onclick = startNewGame;
+
+  const bannerNewGameBtn = document.getElementById('bannerNewGameBtn');
+  if (bannerNewGameBtn) bannerNewGameBtn.onclick = startNewGame;
+
+  const flipBtn = document.getElementById('flipBtn');
+  if (flipBtn) {
+    flipBtn.onclick = () => {
+      isBoardFlipped = !isBoardFlipped;
+      renderBoard();
+      if (isArrowEnabled && lastSuggestedMove && lastSuggestedMove.from && lastSuggestedMove.to) {
+        drawArrow(lastSuggestedMove.from, lastSuggestedMove.to);
+      }
+    };
+  }
+
+  const modeBtn = document.getElementById('modeBtn');
+  if (modeBtn) {
+    modeBtn.onclick = function () {
+      if (gameMode === 'play') {
+        gameMode = 'analysis';
+        this.innerText = 'Mode: Analysis';
+        this.classList.add('active');
+        isAiThinking = false;
+        if (retryBtn) retryBtn.style.display = 'none';
+      } else {
+        gameMode = 'play';
+        this.innerText = 'Mode: vs AI';
+        this.classList.remove('active');
+        if (chess.turn() === 'b') {
+          isAiThinking = true;
+          requestEngineMove();
+        }
+      }
+    };
+  }
+
+  const arrowToggleBtn = document.getElementById('arrowToggleBtn');
+  if (arrowToggleBtn) {
+    arrowToggleBtn.onclick = function () {
+      isArrowEnabled = !isArrowEnabled;
+      if (isArrowEnabled) {
+        this.innerText = 'Arrow: ON';
+        this.classList.add('active');
+        if (lastSuggestedMove && lastSuggestedMove.from && lastSuggestedMove.to) {
+          drawArrow(lastSuggestedMove.from, lastSuggestedMove.to);
+        }
+      } else {
+        this.innerText = 'Arrow: OFF';
+        this.classList.remove('active');
+        clearArrow();
+      }
+    };
+  }
+
+  if (retryBtn) {
+    retryBtn.onclick = () => {
+      if (chess.turn() === 'b') isAiThinking = true;
+      requestEngineMove();
+    };
+  }
+
+  const depthSelect = document.getElementById('depthSelect');
+  if (depthSelect) {
+    depthSelect.onchange = () => {
+      requestEngineMove();
+    };
+  }
+
+  // Initial Boot
+  renderBoard();
+  connectStockfishWebSocket();
+  updateOpeningDisplay();
+
+})();

@@ -1,321 +1,734 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Casino Operations Admin - Calm Chess Computers</title>
-  <style>
-    :root {
-      --gold: #f1c40f;
-      --gold-dark: #c0980b;
-      --bg-dark: #0d131a;
-      --bg-card: #151e28;
-      --input-bg: #1e2936;
-      --error-red: #e74c3c;
-      --success-green: #2ecc71;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body {
-      background: radial-gradient(circle at center, #1b2838 0%, var(--bg-dark) 100%);
-      color: #cbd5e1;
-      padding: 24px 16px;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .admin-container { width: 100%; max-width: 920px; display: flex; flex-direction: column; gap: 20px; }
-    .card {
-      background: var(--bg-card);
-      border: 1.5px solid rgba(241, 196, 15, 0.3);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-    h1, h2 { color: var(--gold); text-transform: uppercase; margin-bottom: 12px; }
-    h1 { font-size: 1.5rem; }
-    h2 { font-size: 1.15rem; margin-top: 10px; }
-    .form-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-    label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
-    input[type="password"], input[type="number"], input[type="text"] {
-      background: var(--input-bg);
-      border: 1.5px solid rgba(255,255,255,0.1);
-      border-radius: 8px;
-      padding: 10px 12px;
-      color: #fff;
-      font-size: 0.9rem;
-      outline: none;
-    }
-    input:focus { border-color: var(--gold); }
-    .btn {
-      background: var(--gold);
-      color: #111;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 8px;
-      font-weight: 800;
-      text-transform: uppercase;
-      cursor: pointer;
-      font-size: 0.85rem;
-      transition: background 0.2s;
-    }
-    .btn:hover { background: var(--gold-dark); }
-    .btn-secondary { background: #2c3e50; color: #fff; }
-    .btn-secondary:hover { background: #34495e; }
-    .setting-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      background: var(--input-bg);
-      padding: 14px 18px;
-      border-radius: 10px;
-      margin-top: 10px;
-      border: 1px solid rgba(255,255,255,0.06);
-    }
-    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
-    th, td { padding: 10px 8px; text-align: left; border-bottom: 1px solid #1e2936; }
-    th { color: var(--gold); text-transform: uppercase; font-size: 0.75rem; }
-    .badge { padding: 3px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-    .badge-sim { background: rgba(46, 204, 113, 0.2); color: #55efc4; border: 1px solid var(--success-green); }
-    .badge-live { background: rgba(241, 196, 15, 0.2); color: var(--gold); border: 1px solid var(--gold); }
-    .badge-disabled { background: rgba(231, 76, 60, 0.2); color: #ff7675; border: 1px solid var(--error-red); }
-    .badge-gplay { background: rgba(45, 212, 191, 0.2); color: #2dd4bf; border: 1px solid #2dd4bf; }
-    .badge-paypal { background: rgba(56, 189, 248, 0.2); color: #38bdf8; border: 1px solid #38bdf8; }
-    .filter-pill {
-      padding: 4px 10px;
-      border-radius: 20px;
-      border: 1px solid #334155;
-      background: rgba(0, 0, 0, 0.35);
-      color: #94a3b8;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .filter-pill.active {
-      background: rgba(241, 196, 15, 0.2);
-      color: var(--gold);
-      border-color: var(--gold);
-    }
-    .modal-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.75);
-      backdrop-filter: blur(4px);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 10000;
-      padding: 16px;
-    }
-    .modal-box {
-      background: var(--bg-card);
-      border: 1.5px solid var(--gold);
-      border-radius: 12px;
-      width: 100%;
-      max-width: 620px;
-      padding: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    .purchase-detail-row {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      background: var(--input-bg);
-      border: 1px solid #334155;
-      padding: 8px 12px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-    }
-    .purchase-detail-label {
-      font-size: 0.72rem;
-      color: #94a3b8;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 700;
-    }
-    .purchase-detail-val {
-      font-size: 0.9rem;
-      color: #f1f5f9;
-      word-break: break-all;
-    }
-    .copy-chip-btn {
-      background: rgba(241, 196, 15, 0.15);
-      color: var(--gold);
-      border: 1px solid var(--gold);
-      padding: 2px 7px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.72rem;
-      font-weight: 700;
-      margin-left: 6px;
-    }
-    .copy-chip-btn:hover {
-      background: var(--gold);
-      color: #000;
-    }
-    .footer { text-align: center; font-size: 0.72rem; color: #64748b; margin-top: 20px; }
-    #dash-section { display: none; }
-    .switch-toggle {
-      width: 22px;
-      height: 22px;
-      cursor: pointer;
-      accent-color: var(--gold);
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Casino Operations Admin - Calm Chess Computers</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #131b2e;
+            --gold-primary: #ffd700;
+            --gold-glow: #ffae00;
+            --divider-red: #8b0000;
+            --accent-blue: #4a90e2;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --error-red: #ef4444;
+            --success-green: #2ecc71;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            width: 100%;
+            padding: clamp(16px, 3vw, 28px) clamp(12px, 3vw, 24px);
+        }
+
+        .admin-page-container {
+            width: 100%;
+            max-width: 980px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Card container */
+        .admin-card {
+            background: var(--panel-bg);
+            border: 2px solid var(--gold-primary);
+            border-radius: 14px;
+            padding: clamp(18px, 3vw, 28px);
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* Buttons */
+        .btn {
+            background: linear-gradient(135deg, var(--accent-blue), #2b6cb0);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.92rem;
+            transition: opacity 0.2s, transform 0.1s;
+            border: none;
+            cursor: pointer;
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn:hover { opacity: 0.92; }
+        .btn:active { transform: scale(0.98); }
+        .btn-gold { background: linear-gradient(135deg, var(--gold-primary), #d4af37); color: #111; font-weight: 700; }
+        .btn-danger { background: linear-gradient(135deg, var(--error-red), #991b1b); color: white; }
+        .btn-warn { background: linear-gradient(135deg, #e67e22, #b95d00); color: white; }
+        .btn-success { background: linear-gradient(135deg, var(--success-green), #1b8a4b); color: white; }
+        .btn-sm { padding: 6px 10px; font-size: 0.8rem; min-height: 30px; }
+
+        /* Admin Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            padding-bottom: 8px;
+            flex-wrap: wrap;
+        }
+
+        .admin-tab-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-tab-btn.active {
+            background: var(--gold-primary);
+            color: #0b0f19;
+            border-color: var(--gold-primary);
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-color);
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--gold-primary);
+            outline: none;
+        }
+
+        /* User Grid & Cards */
+        .user-mgmt-header {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .user-mgmt-header input {
+            flex: 1;
+            min-width: 200px;
+            padding: 9px 14px;
+            background: var(--bg-color);
+            border: 1.5px solid rgba(255, 215, 0, 0.4);
+            color: #fff;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .user-card {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .user-card.banned {
+            border-color: var(--error-red);
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .user-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 6px;
+        }
+
+        /* Symmetrical Badge Styling */
+        .badge-status, .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .badge-gateway {
+            min-width: 140px;
+        }
+        .badge-active { background: rgba(46, 204, 113, 0.2); color: var(--success-green); border: 1px solid var(--success-green); min-width: 90px; }
+        .badge-banned { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid var(--error-red); min-width: 90px; }
+
+        .user-card-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 8px;
+        }
+
+        .user-card-inputs label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .user-card-inputs input {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--bg-color);
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.88rem;
+        }
+
+        .user-card-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        /* Store & Billing Settings Cards */
+        .store-setting-card {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .store-setting-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .store-setting-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 0.98rem;
+            margin-bottom: 4px;
+            flex-wrap: wrap;
+        }
+        .store-setting-desc {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+        .store-setting-details {
+            background: rgba(0, 0, 0, 0.25);
+            border-left: 3px solid var(--gold-primary);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.82rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .mode-state-desc {
+            color: #e2e8f0;
+        }
+        .mode-state-note {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            line-height: 1.4;
+        }
+        .toggle-switch-label {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .toggle-switch-label input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-switch-slider {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            border-radius: 26px;
+            transition: 0.25s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .toggle-switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.25s;
+        }
+        .toggle-switch-label input:checked + .toggle-switch-slider {
+            background-color: var(--success-green);
+        }
+        .toggle-switch-label input:checked + .toggle-switch-slider:before {
+            transform: translateX(22px);
+        }
+        .badge-live {
+            background: rgba(241, 196, 15, 0.18);
+            color: var(--gold-primary);
+            border: 1px solid var(--gold-primary);
+        }
+        .badge-sim {
+            background: rgba(46, 204, 113, 0.18);
+            color: var(--success-green);
+            border: 1px solid var(--success-green);
+        }
+        .badge-gplay {
+            background: rgba(45, 212, 191, 0.18);
+            color: #2dd4bf;
+            border: 1px solid #2dd4bf;
+        }
+        .badge-paypal {
+            background: rgba(56, 189, 248, 0.18);
+            color: #38bdf8;
+            border: 1px solid #38bdf8;
+        }
+        .filter-pill {
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+            background: rgba(0, 0, 0, 0.35);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-pill.active {
+            background: rgba(255, 215, 0, 0.2);
+            color: var(--gold-primary);
+            border-color: var(--gold-primary);
+        }
+        .purchase-detail-row {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .purchase-detail-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+        .purchase-detail-val {
+            font-size: 0.9rem;
+            color: #f1f5f9;
+            word-break: break-all;
+        }
+        .copy-chip-btn {
+            background: rgba(255, 215, 0, 0.15);
+            color: var(--gold-primary);
+            border: 1px solid var(--gold-primary);
+            padding: 2px 7px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+        .copy-chip-btn:hover {
+            background: var(--gold-primary);
+            color: #000;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+        .modal-box {
+            background: var(--panel-bg);
+            border: 2px solid var(--gold-primary);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 640px;
+            padding: 20px;
+            box-shadow: 0 10px 35px rgba(0,0,0,0.8);
+            max-height: 90vh;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        .footer {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 24px;
+        }
+    </style>
 </head>
 <body>
-  <div class="admin-container">
-    <div class="card" id="auth-card">
-      <h1>Admin Authentication</h1>
-      <p style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 14px;">Enter the system master key to open the operations panel.</p>
-      <div class="form-group">
-        <label>Passcode</label>
-        <input type="password" id="adm-pass" placeholder="Enter ADMIN_SECRET_KEY">
-      </div>
-      <button class="btn" onclick="authenticateAdmin()">Sign Into Console</button>
-      <div id="auth-msg" style="margin-top: 10px; font-size: 0.85rem; color: var(--error-red);"></div>
-    </div>
-
-    <div id="dash-section" class="admin-container">
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-          <h1>Server Environment Configuration</h1>
-          <div style="display: flex; gap: 8px;">
-            <a href="index.html" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem; text-decoration: none;">← Main Rings (index.html)</a>
-            <button class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.75rem;" onclick="logoutAdmin()">Sign Out</button>
-          </div>
-        </div>
-        
-        <!-- Checkbox 1: Android Blackjack App Simulation Mode -->
-        <div class="setting-row">
-          <div>
-            <div style="font-weight: 700; font-size: 0.95rem;">📱 Android Blackjack App (Credit Purchases)</div>
-            <div style="font-size: 0.8rem; color: #94a3b8;">
-              When checked, toggles database field <code>android_simulation_mode = 1</code> for instant simulated credit refills. When unchecked, uses live <strong>Google Play In-App Billing</strong>.
+    <div class="admin-page-container">
+        <!-- AUTHENTICATION CARD (Displayed when not signed in) -->
+        <div class="admin-card" id="auth-card" style="max-width: 440px; margin: 40px auto; text-align: center;">
+            <h2 style="color: var(--gold-primary); margin-bottom: 12px; font-size: 1.4rem;">Admin Authentication</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px; line-height: 1.5;">
+                Enter the Admin Console password to continue:
+            </p>
+            <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                <label for="adm-pass" style="display: block; margin-bottom: 6px; color: var(--text-muted); font-size: 0.9rem;">Admin Password</label>
+                <input type="password" id="adm-pass" placeholder="Enter password" autocomplete="current-password" style="width: 100%; padding: 12px; font-size: 1.1rem; letter-spacing: 2px;">
             </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <input type="checkbox" id="android-sim-toggle" class="switch-toggle">
-            <label for="android-sim-toggle" id="android-sim-status-label" class="badge badge-live">Live: Google Play Billing</label>
-          </div>
-        </div>
-
-        <!-- Checkbox 2: Desktop HTML Blackjack App Simulation Mode -->
-        <div class="setting-row">
-          <div>
-            <div style="font-weight: 700; font-size: 0.95rem;">💻 Desktop HTML Blackjack App (blackjack.html Checkout)</div>
-            <div style="font-size: 0.8rem; color: #94a3b8;">
-              When checked, toggles database field <code>desktop_simulation_mode = 1</code> for simulated checkout without charging PayPal. When unchecked, uses live <strong>PayPal Orders v2 Gateway</strong>.
+            <div id="auth-msg" style="color: var(--error-red); font-size: 0.9rem; margin-bottom: 15px; display: none;"></div>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button class="btn btn-gold" id="auth-submit-btn" onclick="authenticateAdmin()">Unlock Console</button>
+                <a href="index.html" class="btn" style="background: #64748b; text-decoration: none;">Return to Website</a>
             </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <input type="checkbox" id="desktop-sim-toggle" class="switch-toggle">
-            <label for="desktop-sim-toggle" id="desktop-sim-status-label" class="badge badge-live">Live: PayPal Gateway</label>
-          </div>
         </div>
 
-        <!-- Checkbox 3: Allow Guest Login -->
-        <div class="setting-row">
-          <div>
-            <div style="font-weight: 700; font-size: 0.95rem;">👥 Guest Login Access (Play as Guest)</div>
-            <div style="font-size: 0.8rem; color: #94a3b8;">
-              When checked, the "Play as Guest" button is enabled in app lobby and web. When unchecked, players must register/log in.
+        <!-- MAIN DASHBOARD CONSOLE (Displayed after authentication) -->
+        <div id="dash-section" style="display: none;" class="admin-card">
+            <!-- Console Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,215,0,0.25); padding-bottom: 12px;">
+                <h2 style="color: var(--gold-primary); margin-bottom: 0;">Admin Console</h2>
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    <a href="index.html" class="btn btn-sm btn-gold" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">← Main Rings (index.html)</a>
+                    <button class="btn btn-sm" style="background: #64748b;" onclick="logoutAdmin()">Sign Out</button>
+                </div>
             </div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <input type="checkbox" id="guest-toggle" class="switch-toggle">
-            <label for="guest-toggle" id="guest-status-label" class="badge badge-sim">Allowed</label>
-          </div>
+
+            <!-- Tab Switcher -->
+            <div class="admin-tabs">
+                <button class="admin-tab-btn active" id="tabBtnSegments" onclick="switchAdminTab('segments')">Ring Navigation</button>
+                <button class="admin-tab-btn" id="tabBtnUsers" onclick="switchAdminTab('users')">Blackjack Users</button>
+                <button class="admin-tab-btn" id="tabBtnStore" onclick="switchAdminTab('store')">Blackjack Billing & Store</button>
+                <a href="index.html" class="admin-tab-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Back to Main Website">← Main Rings</a>
+            </div>
+
+            <!-- Shared Admin Passcode Input -->
+            <div class="form-group" style="background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(255,215,0,0.2);">
+                <label style="color: var(--gold-primary);">Admin Password / Secret Key (Active Session)</label>
+                <input type="password" id="adminPassword" placeholder="Enter admin password">
+            </div>
+
+            <!-- TAB 1: RING NAVIGATION -->
+            <div id="tabContentSegments">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0; flex-wrap: wrap; gap: 8px;">
+                    <span style="font-size: 0.9rem; color: var(--text-muted);">Configure rings and center knight redirection</span>
+                    <button class="btn btn-gold btn-sm btn-save" onclick="saveSegments()">Save Ring Changes</button>
+                </div>
+
+                <div style="background: rgba(74, 144, 226, 0.1); padding: 10px 12px; border-radius: 6px; margin-bottom: 14px; border: 1px solid var(--accent-blue);">
+                    <label style="color: var(--gold-primary); font-weight: bold; display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem;">
+                        <input type="checkbox" id="masterShowIds" onchange="toggleSegmentIds(this.checked)"> Show Segment IDs on Rings (e.g. inner-0, outer-1)
+                    </label>
+                </div>
+
+                <div class="form-group" style="background: rgba(255, 215, 0, 0.08); padding: 12px; border-radius: 8px; border: 1px solid rgba(255, 215, 0, 0.35); margin-bottom: 16px;">
+                    <label for="adminCenterLogoUrl" style="color: var(--gold-primary); font-weight: bold; font-size: 0.95rem; margin-bottom: 4px; display: block;">
+                        Center Logo Single-Click Redirect URL
+                    </label>
+                    <input type="text" id="adminCenterLogoUrl" placeholder="e.g. chess.html or https://example.com" style="width: 100%;">
+                </div>
+
+                <div id="adminSegmentsList"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 16px; border-top: 1px solid rgba(255,215,0,0.25); padding-top: 14px;">
+                    <button class="btn btn-gold btn-save" onclick="saveSegments()">Save Ring Changes</button>
+                </div>
+            </div>
+
+            <!-- TAB 2: BLACKJACK USER MANAGEMENT -->
+            <div id="tabContentUsers" style="display: none;">
+                <!-- User Search & Refresh -->
+                <div class="user-mgmt-header">
+                    <input type="text" id="adminUserSearchInput" placeholder="Search by username or email..." oninput="handleUserSearchInput(this.value)">
+                    <button class="btn btn-sm btn-gold" onclick="fetchBlackjackUsers()">Refresh</button>
+                    <button class="btn btn-sm btn-success" onclick="toggleCreateUserPanel()">+ Create User</button>
+                </div>
+
+                <!-- Create User Sub-Panel -->
+                <div id="createUserPanel" style="display: none; background: rgba(46, 204, 113, 0.08); border: 1px solid var(--success-green); border-radius: 8px; padding: 14px; margin-bottom: 16px;">
+                    <h4 style="color: var(--success-green); margin-bottom: 10px; font-size: 1rem;">Create New Blackjack Account</h4>
+                    <div class="user-card-inputs" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+                        <div>
+                            <label>Email / Username</label>
+                            <input type="text" id="new_user_email" placeholder="player@casino.com">
+                        </div>
+                        <div>
+                            <label>Password</label>
+                            <input type="password" id="new_user_pwd" placeholder="Min 8 characters">
+                        </div>
+                        <div>
+                            <label>Initial Bankroll ($)</label>
+                            <input type="number" id="new_user_bank" value="500" min="0" step="10">
+                        </div>
+                        <div>
+                            <label>Account Status</label>
+                            <select id="new_user_status" style="width: 100%; padding: 6px 8px; background: var(--bg-color); border: 1px solid #334155; color: white; border-radius: 4px; font-size: 0.88rem;">
+                                <option value="1">Active</option>
+                                <option value="0">Banned</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 10px;">
+                        <button class="btn btn-sm btn-success" onclick="executeCreateUser()">Save User to Database</button>
+                        <button class="btn btn-sm" style="background: #64748b;" onclick="toggleCreateUserPanel(false)">Cancel</button>
+                    </div>
+                </div>
+
+                <div id="userAdminAlert" style="display:none; padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 12px;"></div>
+
+                <!-- User Cards List Container -->
+                <div id="adminUsersList">
+                    <p style="color: var(--text-muted); font-size: 0.9rem; text-align: center; padding: 20px;">Loading users...</p>
+                </div>
+            </div>
+
+            <!-- TAB 3: BLACKJACK STORE & BILLING MODES -->
+            <div id="tabContentStore" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <h4 style="color: var(--gold-primary); font-size: 1.05rem; margin-bottom: 2px;">Blackjack Credit Purchase & Billing Modes</h4>
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">Configure simulated or live payment gateways for Android and Desktop applications</span>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn btn-gold btn-sm" onclick="saveStoreSettings()">Save Settings</button>
+                        <button class="btn btn-sm" style="background: #334155; color: #fff;" onclick="fetchStoreSettings()">Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Alert box for store settings -->
+                <div id="storeSettingsAlert" style="display: none; padding: 10px 14px; border-radius: 6px; font-size: 0.88rem; margin-bottom: 14px;"></div>
+
+                <!-- Setting Card 1: Android Blackjack App -->
+                <div class="store-setting-card">
+                    <div class="store-setting-head">
+                        <div>
+                            <div class="store-setting-title">
+                                <span>📱 Android Blackjack Mobile App</span>
+                                <span id="androidSimBadge" class="badge-status badge-live">Live: Google Play Billing</span>
+                            </div>
+                            <div class="store-setting-desc">
+                                Controls in-app credit purchases for Android devices.
+                            </div>
+                        </div>
+                        <div class="store-setting-toggle" style="display: flex; align-items: center; gap: 10px;">
+                            <label class="toggle-switch-label" title="Toggle Android Simulation Mode">
+                                <input type="checkbox" id="adminAndroidSimToggle" onchange="handleStoreToggleChange()">
+                                <span class="toggle-switch-slider"></span>
+                            </label>
+                            <span id="androidCheckMarkLabel" style="font-size: 0.82rem; font-weight: 700; color: var(--gold-primary);">[  ] Live Mode</span>
+                        </div>
+                    </div>
+                    <div class="store-setting-details">
+                        <div class="mode-state-desc">
+                            <strong>Database Field:</strong> <code>android_simulation_mode</code>
+                            <div id="androidModeExplanation" style="margin-top: 4px;">Live Billing Active — Android in-app purchases use official <strong>Google Play In-App Billing</strong> (<code>android_simulation_mode = 0</code>).</div>
+                        </div>
+                        <div class="mode-state-note">
+                            • <strong>Check mark [✔] ON:</strong> Toggles <code>android_simulation_mode = 1</code> in database to enable simulated purchases (bypasses Google Play for instant chip refills).<br>
+                            • <strong>Check mark [ ] OFF:</strong> Toggles <code>android_simulation_mode = 0</code> in database to enforce live Google Play In-App Billing.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Setting Card 2: Desktop HTML Blackjack App (blackjack.html) -->
+                <div class="store-setting-card">
+                    <div class="store-setting-head">
+                        <div>
+                            <div class="store-setting-title">
+                                <span>💻 Desktop HTML Blackjack App (blackjack.html)</span>
+                                <span id="desktopSimBadge" class="badge-status badge-live">Live: PayPal Gateway</span>
+                            </div>
+                            <div class="store-setting-desc">
+                                Controls credit purchases on desktop browser tables.
+                            </div>
+                        </div>
+                        <div class="store-setting-toggle" style="display: flex; align-items: center; gap: 10px;">
+                            <label class="toggle-switch-label" title="Toggle Desktop Simulation Mode">
+                                <input type="checkbox" id="adminDesktopSimToggle" onchange="handleStoreToggleChange()">
+                                <span class="toggle-switch-slider"></span>
+                            </label>
+                            <span id="desktopCheckMarkLabel" style="font-size: 0.82rem; font-weight: 700; color: var(--gold-primary);">[  ] Live Mode</span>
+                        </div>
+                    </div>
+                    <div class="store-setting-details">
+                        <div class="mode-state-desc">
+                            <strong>Database Field:</strong> <code>desktop_simulation_mode</code>
+                            <div id="desktopModeExplanation" style="margin-top: 4px;">Live Billing Active — Desktop players purchase chips through <strong>PayPal Orders v2</strong> (<code>desktop_simulation_mode = 0</code>).</div>
+                        </div>
+                        <div class="mode-state-note">
+                            • <strong>Check mark [✔] ON:</strong> Toggles <code>desktop_simulation_mode = 1</code> in database to test chip packages with instant simulated credits.<br>
+                            • <strong>Check mark [ ] OFF:</strong> Toggles <code>desktop_simulation_mode = 0</code> in database to require live PayPal checkout buttons.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Setting Card 3: Guest Login Access -->
+                <div class="store-setting-card">
+                    <div class="store-setting-head">
+                        <div>
+                            <div class="store-setting-title">
+                                <span>👥 Guest Login Access (Play as Guest)</span>
+                                <span id="guestAccessBadge" class="badge-status badge-active">Guest Allowed</span>
+                            </div>
+                            <div class="store-setting-desc">
+                                Allow players to play blackjack without registration.
+                            </div>
+                        </div>
+                        <div class="store-setting-toggle" style="display: flex; align-items: center; gap: 10px;">
+                            <label class="toggle-switch-label" title="Toggle Guest Access">
+                                <input type="checkbox" id="adminGuestToggle" onchange="handleStoreToggleChange()">
+                                <span class="toggle-switch-slider"></span>
+                            </label>
+                            <span id="guestCheckMarkLabel" style="font-size: 0.82rem; font-weight: 700; color: var(--success-green);">[✔] Allowed</span>
+                        </div>
+                    </div>
+                    <div class="store-setting-details">
+                        <div class="mode-state-desc">
+                            <strong>Status:</strong>
+                            <span id="guestModeExplanation">Guest play is enabled. Players can enter tables immediately.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bottom Save Bar -->
+                <div style="display: flex; gap: 10px; margin-top: 18px; border-top: 1px solid rgba(255,215,0,0.25); padding-top: 14px; flex-wrap: wrap;">
+                    <button class="btn btn-gold" id="btnSaveStoreSettingsBottom" onclick="saveStoreSettings()">Save Database Configuration</button>
+                    <button class="btn btn-sm" style="background: #334155; color: #fff;" onclick="fetchStoreSettings()">Reload from Database</button>
+                </div>
+
+                <!-- Recent Purchase Ledger in Tab with Symmetrical Badges -->
+                <div style="margin-top: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                        <h4 style="color: var(--gold-primary); font-size: 0.95rem;">Recent In-App & Web Purchases (PayPal & Google Play Ledger)</h4>
+                        <span id="ledgerCountBadge" style="font-size: 0.75rem; color: var(--text-muted);">0 transactions</span>
+                    </div>
+
+                    <!-- Ledger Filter and Search Bar -->
+                    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">
+                        <input type="text" id="adminPurchaseSearchInput" placeholder="Search order ID, email, token, product..." oninput="handlePurchaseSearchInput(this.value)" style="flex: 1; min-width: 180px; padding: 6px 10px; background: var(--bg-color); border: 1px solid #334155; color: #fff; border-radius: 4px; font-size: 0.82rem;">
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="purchaseFilterButtons">
+                            <button class="filter-pill active" onclick="setPurchaseFilter('ALL')">All</button>
+                            <button class="filter-pill" onclick="setPurchaseFilter('GOOGLE_PLAY')">Google Play (Live)</button>
+                            <button class="filter-pill" onclick="setPurchaseFilter('GOOGLE_PLAY_SIMULATED')">Google Play (Sim)</button>
+                            <button class="filter-pill" onclick="setPurchaseFilter('PAYPAL')">PayPal (Live)</button>
+                            <button class="filter-pill" onclick="setPurchaseFilter('PAYPAL_SIMULATED')">PayPal (Sim)</button>
+                        </div>
+                    </div>
+
+                    <div style="overflow-x: auto; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid #334155;">
+                        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                            <thead>
+                                <tr style="border-bottom: 1px solid #334155; background: rgba(255,215,0,0.06); color: var(--gold-primary); text-align: left;">
+                                    <th style="padding: 8px 10px;">ID</th>
+                                    <th style="padding: 8px 10px;">User</th>
+                                    <th style="padding: 8px 10px; text-align: center; white-space: nowrap;">Gateway & Mode</th>
+                                    <th style="padding: 8px 10px;">Order / GPA ID</th>
+                                    <th style="padding: 8px 10px;">Product SKU</th>
+                                    <th style="padding: 8px 10px;">Credits</th>
+                                    <th style="padding: 8px 10px;">Amount</th>
+                                    <th style="padding: 8px 10px; text-align: center; white-space: nowrap;">Status</th>
+                                    <th style="padding: 8px 10px;">Date</th>
+                                    <th style="padding: 8px 10px; text-align: center;">Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminStoreLedgerBody">
+                                <tr><td colspan="10" style="padding: 14px; text-align: center; color: var(--text-muted);">Loading purchases from database...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div style="margin-top: 16px; display: flex; gap: 10px;">
-          <button class="btn" onclick="applyModeUpdate()">Save System Settings</button>
-          <button class="btn btn-secondary" onclick="loadDashboard()">Refresh Data</button>
-        </div>
-        <div id="settings-status-msg" style="margin-top: 10px; font-size: 0.85rem; font-weight: bold;"></div>
-      </div>
-
-      <div class="card">
-        <h2>Registered Player Balances</h2>
-        <div style="overflow-x: auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Email / User</th>
-                <th>Bank Balance</th>
-                <th>Registered</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="users-tbody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
-          <h2>Credit Purchases & Transaction Ledger</h2>
-          <span id="admin-ledger-count" style="font-size: 0.75rem; color: #94a3b8;">0 transactions</span>
+        <!-- PURCHASE DETAILS INSPECTION MODAL -->
+        <div id="purchaseDetailsModal" class="modal-overlay" style="display: none; z-index: 10001;">
+            <div class="modal-box">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,215,0,0.3); padding-bottom: 10px; margin-bottom: 14px;">
+                    <h3 style="color: var(--gold-primary); font-size: 1.1rem; margin: 0;">💳 Purchase & Gateway Verification Details</h3>
+                    <button style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;" onclick="closePurchaseDetailsModal()">&times;</button>
+                </div>
+                <div id="purchaseDetailsContent" style="display: flex; flex-direction: column; gap: 10px; font-size: 0.86rem;">
+                    <!-- Populated dynamically via JS -->
+                </div>
+                <div style="margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; display: flex; justify-content: flex-end;">
+                    <button class="btn btn-sm" style="background: #64748b; color: #fff;" onclick="closePurchaseDetailsModal()">Close</button>
+                </div>
+            </div>
         </div>
 
-        <!-- Filter & Search Bar -->
-        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap;">
-          <input type="text" id="admin-ledger-search" placeholder="Search order ID, email, token, product..." oninput="handleAdminPurchaseSearch(this.value)" style="flex: 1; min-width: 180px; padding: 6px 10px; background: var(--input-bg); border: 1px solid #334155; color: #fff; border-radius: 6px; font-size: 0.82rem;">
-          <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="admin-purchase-filter-buttons">
-            <button class="filter-pill active" onclick="setAdminPurchaseFilter('ALL')">All</button>
-            <button class="filter-pill" onclick="setAdminPurchaseFilter('GOOGLE_PLAY')">Google Play (Live)</button>
-            <button class="filter-pill" onclick="setAdminPurchaseFilter('GOOGLE_PLAY_SIMULATED')">Google Play (Sim)</button>
-            <button class="filter-pill" onclick="setAdminPurchaseFilter('PAYPAL')">PayPal (Live)</button>
-            <button class="filter-pill" onclick="setAdminPurchaseFilter('PAYPAL_SIMULATED')">PayPal (Sim)</button>
-          </div>
+        <div class="footer">
+            &copy; 2026 Calm Chess Computers. All Rights Reserved.
         </div>
-
-        <div style="overflow-x: auto;">
-          <table>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>User</th>
-                <th>Gateway & Mode</th>
-                <th>Order / GPA ID</th>
-                <th>Product SKU</th>
-                <th>Credits</th>
-                <th>Amount</th>
-                <th>Status</th>
-                <th>Timestamp</th>
-                <th style="text-align: center;">Details</th>
-              </tr>
-            </thead>
-            <tbody id="ledger-tbody"></tbody>
-          </table>
-        </div>
-      </div>
     </div>
 
-    <!-- TRANSACTION DETAILS MODAL -->
-    <div id="adminPurchaseModal" class="modal-overlay" style="display: none;">
-      <div class="modal-box">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(241, 196, 15, 0.3); padding-bottom: 8px; margin-bottom: 12px;">
-          <h3 style="color: var(--gold); font-size: 1.1rem; text-transform: uppercase;">💳 Purchase Verification Details</h3>
-          <button style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;" onclick="closeAdminPurchaseModal()">&times;</button>
-        </div>
-        <div id="adminPurchaseModalContent"></div>
-        <div style="margin-top: 14px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 10px; display: flex; justify-content: flex-end;">
-          <button class="btn btn-secondary" onclick="closeAdminPurchaseModal()">Close</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer">
-      &copy; 2026 Calm Chess Computers. All Rights Reserved.
-    </div>
-  </div>
-
-  <script src="js/admin.js"></script>
+    <script src="js/admin.js"></script>
 </body>
 </html>

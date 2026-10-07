@@ -106,15 +106,18 @@
     .lobby-card {
       width: 100%;
       max-width: 440px;
+      max-height: calc(100dvh - 16px);
+      overflow-y: auto;
       background: var(--bg-card);
       border: 2px solid rgba(241, 196, 15, 0.3);
       border-radius: 20px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
-      padding: clamp(16px, 4vh, 28px) clamp(16px, 4vw, 24px);
+      padding: clamp(12px, 3vh, 24px) clamp(14px, 3.5vw, 22px);
       display: flex;
       flex-direction: column;
-      gap: clamp(10px, 2vh, 16px);
+      gap: clamp(8px, 1.8vh, 14px);
       margin: auto;
+      box-sizing: border-box;
     }
 
     .lobby-header { text-align: center; }
@@ -182,21 +185,22 @@
 
     /* --- FELT TABLE CONTAINER --- */
     #game-container {
-      --felt-cushion: clamp(4px, 1.2vh, 10px);
+      --felt-cushion: clamp(2px, 0.8vh, 8px);
       width: 100%;
       height: 100%;
       max-height: 100%;
       background: radial-gradient(ellipse at center, var(--felt-green) 0%, var(--felt-dark) 100%);
-      border: clamp(4px, 1vh, 10px) solid #5a381e;
-      border-radius: clamp(14px, 2.5vh, 32px);
+      border: clamp(3px, 0.8vh, 8px) solid #5a381e;
+      border-radius: clamp(10px, 2vh, 24px);
       box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.6), 0 20px 40px rgba(0, 0, 0, 0.7);
-      padding: clamp(6px, 1vh, 12px) clamp(8px, 1.5vw, 16px);
+      padding: clamp(4px, 0.8vh, 10px) clamp(6px, 1.2vw, 14px);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       position: relative;
       box-sizing: border-box;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     /* TOP BAR & STATS */
@@ -361,11 +365,11 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin: clamp(2px, 0.8vh, 8px) 0;
+      margin: 1px 0;
       width: 100%;
-      min-height: clamp(60px, 14vh, 120px);
+      min-height: 0;
+      flex: 0 1 auto;
       position: relative;
-      flex: 1 1 auto;
       z-index: 2;
     }
 
@@ -514,10 +518,10 @@
     .controls { 
       display: flex; 
       flex-direction: column; 
-      gap: clamp(3px, 0.6vh, 6px); 
+      gap: clamp(2px, 0.5vh, 6px); 
       align-items: center; 
-      margin-top: 4px;
-      margin-bottom: var(--felt-cushion);
+      margin-top: auto;
+      margin-bottom: 2px;
       flex-shrink: 0;
       z-index: 5;
     }
@@ -527,13 +531,13 @@
       background: #2c3e50; 
       color: #fff; 
       border: 2px solid rgba(255, 255, 255, 0.2); 
-      border-radius: 14px; 
-      padding: clamp(4px, 0.7vh, 7px) clamp(8px, 1.1vw, 13px); 
-      font-size: clamp(0.66rem, 1vh, 0.8rem); 
+      border-radius: 12px; 
+      padding: clamp(3px, 0.6vh, 6px) clamp(7px, 1vw, 12px); 
+      font-size: clamp(0.64rem, 0.95vh, 0.78rem); 
       font-weight: bold; 
       cursor: pointer; 
-      min-height: 32px;
-      min-width: 42px;
+      min-height: clamp(28px, 3.6vh, 34px);
+      min-width: 40px;
       touch-action: manipulation;
     }
     button.game-btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -545,15 +549,15 @@
 
     .chip-row { display: flex; gap: clamp(4px, 0.8vw, 8px); align-items: center; }
     .chip { 
-      width: clamp(28px, 4vh, 36px); 
-      height: clamp(28px, 4vh, 36px); 
+      width: clamp(26px, 3.8vh, 36px); 
+      height: clamp(26px, 3.8vh, 36px); 
       border-radius: 50%; 
       border: 2px dashed #fff; 
       display: flex; 
       justify-content: center; 
       align-items: center; 
       font-weight: 800; 
-      font-size: clamp(0.62rem, 0.95vh, 0.74rem); 
+      font-size: clamp(0.6rem, 0.9vh, 0.72rem); 
       cursor: pointer; 
       flex-shrink: 0;
       touch-action: manipulation;
@@ -1040,7 +1044,7 @@
               <span class="seats-hint"><span class="hint-range">(1-7)</span><span class="hint-max">Max 7</span></span>
             </div>
 
-            <button id="geminiAdvisorBtn" class="hdr-btn gemini-btn active" onclick="toggleGeminiAdvisor()" title="Toggle Gemini 3.8 Flash AI Dealer & Strategy Advisor">✨ Gemini AI</button>
+            <button id="geminiAdvisorBtn" class="hdr-btn gemini-btn muted" onclick="toggleGeminiAdvisor()" title="Toggle Gemini 3.8 Flash AI Dealer & Strategy Advisor">✨ AI OFF</button>
             <button id="audioToggleBtn" class="hdr-btn muted" onclick="toggleAudio()">🔇 Audio OFF</button>
             <button class="hdr-btn buy-chips-hdr-btn" onclick="openStoreModal()">+ Credits</button>
             <button class="hdr-btn logout-btn" onclick="executeLogout()">Exit</button>
@@ -1067,7 +1071,7 @@
       <div id="message-banner">Place your bet and press DEAL!</div>
 
       <!-- GEMINI 3.8 FLASH DEALER COMMENTARY & STRATEGY BOX -->
-      <div id="gemini-dealer-box" class="gemini-dealer-box">
+      <div id="gemini-dealer-box" class="gemini-dealer-box hidden" style="display: none;">
         <div class="gemini-header-row">
           <div class="gemini-avatar-badge">
             <span class="gemini-sparkle">✨</span> Gemini 3.8 Flash <span class="gemini-tag">Dealer & Advisor</span>

@@ -233,6 +233,11 @@
   let stockfishSocket = null;
   let isSocketConnected = false;
 
+  // Gemini 3.8 Flash Grandmaster AI State
+  let isGeminiAdvisorEnabled = (localStorage.getItem('cc_gemini_chess_advisor_enabled') !== 'false');
+  let currentEvaluation = '0.00';
+  let geminiCommentaryAbortId = 0;
+
   // DOM Elements
   const boardEl = document.getElementById('board');
   const arrowOverlayEl = document.getElementById('arrow-overlay');
@@ -241,6 +246,11 @@
   const retryBtn = document.getElementById('retryBtn');
   const gameOverBannerEl = document.getElementById('game-over-banner');
   const openingDisplayEl = document.getElementById('opening-display');
+  const geminiBoxEl = document.getElementById('gemini-chess-box');
+  const geminiCommentaryEl = document.getElementById('gemini-chess-commentary');
+  const geminiHintEl = document.getElementById('gemini-chess-hint');
+  const geminiHintBtn = document.getElementById('gemini-chess-hint-btn');
+  const geminiAdvisorBtn = document.getElementById('geminiChessAdvisorBtn');
 
   // Web Audio SFX Engine for Chess Moves
   let isSoundEnabled = true;
@@ -579,6 +589,12 @@
   function handleEngineResponse(data) {
     if (!data || data.type === 'info') return;
 
+    if (data.eval !== undefined && data.eval !== null) {
+      currentEvaluation = String(data.eval);
+    } else if (data.mate !== undefined && data.mate !== null) {
+      currentEvaluation = '#' + data.mate;
+    }
+
     if (data.depth) {
       const depthLabel = document.getElementById('depth-label');
       if (depthLabel) depthLabel.innerText = 'Depth: ' + data.depth;
@@ -685,6 +701,8 @@
       isAiThinking = false;
     }
 
+    triggerGeminiChessCommentary(executed);
+
     requestEngineMove();
     return true;
   }
@@ -749,70 +767,235 @@
   /**
    * Draw Directional SVG Arrow on Board Overlay
    */
+  /**
+   * Draw Directional SVG Arrow on Board Overlay
+   * Measures rendered DOM square elements directly for 100% pixel-perfect alignment
+   * completely immune to board flipping, borders, padding, and layout scaling.
+   */
   function drawArrow(fromSquare, toSquare) {
     clearArrow();
     if (!fromSquare || !toSquare || !boardEl || !arrowOverlayEl) return;
 
-    const colIndex = { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6, h: 7 };
-    const fromCol = colIndex[fromSquare[0]];
-    const fromRow = 8 - parseInt(fromSquare[1], 10);
-    const toCol = colIndex[toSquare[0]];
-    const toRow = 8 - parseInt(toSquare[1], 10);
+    const fromEl = boardEl.querySelector('[data-square="' + fromSquare.toLowerCase() + '"]');
+    const toEl = boardEl.querySelector('[data-square="' + toSquare.toLowerCase() + '"]');
+    if (!fromEl || !toEl) return;
 
-    const boardRect = boardEl.getBoundingClientRect();
-    const squareSize = boardRect.width / 8;
+    const overlayRect = arrowOverlayEl.getBoundingClientRect();
+    if (!overlayRect.width || !overlayRect.height) return;
 
-    const renderFromCol = isBoardFlipped ? (7 - fromCol) : fromCol;
-    const renderFromRow = isBoardFlipped ? (7 - fromRow) : fromRow;
-    const renderToCol = isBoardFlipped ? (7 - toCol) : toCol;
-    const renderToRow = isBoardFlipped ? (7 - toRow) : toRow;
+    arrowOverlayEl.setAttribute('viewBox', '0 0 ' + overlayRect.width + ' ' + overlayRect.height);
 
-    const x1 = renderFromCol * squareSize + squareSize / 2;
-    const y1 = renderFromRow * squareSize + squareSize / 2;
-    const x2 = renderToCol * squareSize + squareSize / 2;
-    const y2 = renderToRow * squareSize + squareSize / 2;
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
 
-    const angle = Math.atan2(y2 - y1, x2 - x1);
-    const markerWidth = squareSize * 0.42;
-    const markerHeight = squareSize * 0.48;
-    const strokeWidth = squareSize * 0.18;
+    const x1 = (fromRect.left + fromRect.width / 2) - overlayRect.left;
+    const y1 = (fromRect.top + fromRect.height / 2) - overlayRect.top;
+    const x2 = (toRect.left + toRect.width / 2) - overlayRect.left;
+    const y2 = (toRect.top + toRect.height / 2) - overlayRect.top;
 
-    const markerDefs = document.getElementById('marker-defs');
-    if (markerDefs) {
-      markerDefs.innerHTML =
-        '<marker id="clean-arrowhead" markerUnits="userSpaceOnUse" markerWidth="' + markerWidth +
-        '" markerHeight="' + markerHeight + '" refX="' + (markerWidth * 0.82) +
-        '" refY="' + (markerHeight / 2) + '" orient="auto"><polygon points="0 0, ' +
-        markerWidth + ' ' + (markerHeight / 2) + ', 0 ' + markerHeight + ', ' +
-        (markerWidth * 0.25) + ' ' + (markerHeight / 2) + '" fill="#1abc9c" opacity="0.9" /></marker>';
-    }
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 6) return;
 
-    const offset = markerWidth * 0.65;
-    const targetX = x2 - offset * Math.cos(angle);
-    const targetY = y2 - offset * Math.sin(angle);
+    const ux = dx / len;
+    const uy = dy / len;
+    const vx = -uy;
+    const vy = ux;
 
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', x1);
-    line.setAttribute('y1', y1);
-    line.setAttribute('x2', targetX);
-    line.setAttribute('y2', targetY);
-    line.setAttribute('stroke', '#1abc9c');
-    line.setAttribute('stroke-width', strokeWidth);
-    line.setAttribute('stroke-linecap', 'round');
-    line.setAttribute('opacity', '0.9');
-    line.setAttribute('marker-end', 'url(#clean-arrowhead)');
-    line.setAttribute('id', 'drawn-arrow');
+    const sqSize = fromRect.width;
+    const shaftWidth = Math.max(7, sqSize * 0.16);
+    const halfShaft = shaftWidth / 2;
+    const headWidth = Math.max(18, sqSize * 0.44);
+    const halfHead = headWidth / 2;
+    const headLength = Math.max(16, sqSize * 0.38);
 
-    arrowOverlayEl.appendChild(line);
+    const startOffset = sqSize * 0.18;
+    const startX = x1 + ux * startOffset;
+    const startY = y1 + uy * startOffset;
+
+    const tipOffset = Math.min(5, sqSize * 0.08);
+    const tipX = x2 - ux * tipOffset;
+    const tipY = y2 - uy * tipOffset;
+
+    const baseHeadX = tipX - ux * headLength;
+    const baseHeadY = tipY - uy * headLength;
+
+    const p1 = (startX - vx * halfShaft).toFixed(2) + ',' + (startY - vy * halfShaft).toFixed(2);
+    const p2 = (baseHeadX - vx * halfShaft).toFixed(2) + ',' + (baseHeadY - vy * halfShaft).toFixed(2);
+    const p3 = (baseHeadX - vx * halfHead).toFixed(2) + ',' + (baseHeadY - vy * halfHead).toFixed(2);
+    const p4 = tipX.toFixed(2) + ',' + tipY.toFixed(2);
+    const p5 = (baseHeadX + vx * halfHead).toFixed(2) + ',' + (baseHeadY + vy * halfHead).toFixed(2);
+    const p6 = (baseHeadX + vx * halfShaft).toFixed(2) + ',' + (baseHeadY + vy * halfShaft).toFixed(2);
+    const p7 = (startX + vx * halfShaft).toFixed(2) + ',' + (startY + vy * halfShaft).toFixed(2);
+
+    const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    poly.setAttribute('id', 'drawn-arrow');
+    poly.setAttribute('points', p1 + ' ' + p2 + ' ' + p3 + ' ' + p4 + ' ' + p5 + ' ' + p6 + ' ' + p7);
+    poly.setAttribute('fill', '#2ecc71');
+    poly.setAttribute('stroke', '#196f3d');
+    poly.setAttribute('stroke-width', '2');
+    poly.setAttribute('stroke-linejoin', 'round');
+    poly.setAttribute('opacity', '0.88');
+    poly.style.filter = 'drop-shadow(0 2px 5px rgba(0,0,0,0.6))';
+
+    arrowOverlayEl.appendChild(poly);
   }
 
   /**
    * Clear SVG Arrow
    */
   function clearArrow() {
-    const arrow = document.getElementById('drawn-arrow');
-    if (arrow) arrow.remove();
+    if (!arrowOverlayEl) return;
+    const arrows = arrowOverlayEl.querySelectorAll('#drawn-arrow');
+    arrows.forEach(a => a.remove());
   }
+
+  // =========================================================================
+  // GEMINI 3.8 FLASH CHESS GRANDMASTER COMMENTARY & STRATEGY ENGINE
+  // =========================================================================
+  function updateGeminiChessUI() {
+    const btn = document.getElementById('geminiChessAdvisorBtn');
+    const box = document.getElementById('gemini-chess-box');
+    if (btn) {
+      if (isGeminiAdvisorEnabled) {
+        btn.classList.add('active');
+        btn.classList.remove('muted');
+        btn.textContent = '✨ Gemini AI';
+      } else {
+        btn.classList.remove('active');
+        btn.classList.add('muted');
+        btn.textContent = '✨ AI OFF';
+      }
+    }
+    if (box) {
+      if (isGeminiAdvisorEnabled) {
+        box.classList.remove('hidden');
+        box.style.display = 'flex';
+      } else {
+        box.classList.add('hidden');
+        box.style.display = 'none';
+      }
+    }
+  }
+
+  function toggleGeminiChessAdvisor() {
+    isGeminiAdvisorEnabled = !isGeminiAdvisorEnabled;
+    try {
+      localStorage.setItem('cc_gemini_chess_advisor_enabled', isGeminiAdvisorEnabled ? 'true' : 'false');
+    } catch (e) {}
+    updateGeminiChessUI();
+  }
+  window.toggleGeminiChessAdvisor = toggleGeminiChessAdvisor;
+
+  async function callGeminiChessApi(action, payload) {
+    const candidateUrls = [
+      './gemini_api.php?action=' + action,
+      '/gemini_api.php?action=' + action,
+      'https://api.calmchessgames.com/gemini_api.php?action=' + action
+    ];
+    for (const url of candidateUrls) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  async function triggerGeminiChessCommentary(executedMove = null) {
+    if (!isGeminiAdvisorEnabled) return;
+    const currentId = ++geminiCommentaryAbortId;
+    const commentaryEl = document.getElementById('gemini-chess-commentary');
+    const openingEl = document.getElementById('opening-display');
+
+    const openingText = openingEl ? openingEl.innerText.replace('Opening: ', '') : 'Standard Position';
+    const lastSan = executedMove ? (executedMove.san || (executedMove.from + executedMove.to)) : '';
+    const bestMoveStr = lastSuggestedMove ? (lastSuggestedMove.from + lastSuggestedMove.to) : '';
+
+    const payload = {
+      fen: chess.fen(),
+      best_move: bestMoveStr,
+      last_move: lastSan,
+      eval: currentEvaluation,
+      turn: chess.turn(),
+      opening: openingText
+    };
+
+    try {
+      const data = await callGeminiChessApi('chess_commentary', payload);
+      if (currentId !== geminiCommentaryAbortId) return;
+      if (data && data.success && data.advice) {
+        if (commentaryEl) {
+          commentaryEl.style.opacity = '0.3';
+          setTimeout(() => {
+            if (currentId === geminiCommentaryAbortId) {
+              commentaryEl.textContent = '"' + data.advice + '"';
+              commentaryEl.style.opacity = '1';
+            }
+          }, 150);
+        }
+      }
+    } catch (e) {}
+  }
+
+  async function requestGeminiChessAdvice() {
+    if (!isGeminiAdvisorEnabled) {
+      isGeminiAdvisorEnabled = true;
+      try {
+        localStorage.setItem('cc_gemini_chess_advisor_enabled', 'true');
+      } catch (e) {}
+      updateGeminiChessUI();
+    }
+
+    const hintEl = document.getElementById('gemini-chess-hint');
+    const hintBtn = document.getElementById('gemini-chess-hint-btn');
+    const openingEl = document.getElementById('opening-display');
+
+    if (hintBtn) hintBtn.textContent = 'Analyzing...';
+    if (hintEl) {
+      hintEl.style.display = 'block';
+      hintEl.innerHTML = '<em>Consulting Gemini 3.8 Flash Grandmaster Engine...</em>';
+    }
+
+    const openingText = openingEl ? openingEl.innerText.replace('Opening: ', '') : 'Standard Position';
+    const bestMoveStr = lastSuggestedMove ? (lastSuggestedMove.from + lastSuggestedMove.to) : '';
+
+    const payload = {
+      fen: chess.fen(),
+      best_move: bestMoveStr,
+      eval: currentEvaluation,
+      turn: chess.turn(),
+      opening: openingText
+    };
+
+    try {
+      const data = await callGeminiChessApi('chess_analysis', payload);
+      if (hintEl) {
+        if (data && data.success && data.advice) {
+          hintEl.style.display = 'block';
+          hintEl.innerHTML = '<strong>Gemini 3.8 Flash Grandmaster:</strong> ' + data.advice;
+        } else {
+          hintEl.innerHTML = '<em>Tactical equilibrium detected. Continue development and king safety.</em>';
+        }
+      }
+      if (isArrowEnabled && lastSuggestedMove && lastSuggestedMove.from && lastSuggestedMove.to) {
+        drawArrow(lastSuggestedMove.from, lastSuggestedMove.to);
+      }
+    } catch (e) {
+      if (hintEl) hintEl.innerHTML = '<em>Grandmaster engine temporarily offline.</em>';
+    } finally {
+      if (hintBtn) hintBtn.textContent = '💡 GM Advice';
+    }
+  }
+  window.requestGeminiChessAdvice = requestGeminiChessAdvice;
 
   /**
    * Render 8x8 Chessboard DOM
@@ -919,10 +1102,19 @@
     chess.reset();
     selectedSquare = null;
     possibleMoves = [];
+    currentEvaluation = '0.00';
     clearArrow();
     renderBoard();
     updateTurnStatus();
     updateOpeningDisplay();
+
+    const hintEl = document.getElementById('gemini-chess-hint');
+    if (hintEl) hintEl.style.display = 'none';
+    const commentaryEl = document.getElementById('gemini-chess-commentary');
+    if (commentaryEl) {
+      commentaryEl.textContent = '"Welcome! Every move tells a story. Play your opening and let\'s explore deep Grandmaster strategy together."';
+    }
+
     requestEngineMove();
   }
 
@@ -946,7 +1138,7 @@
       isBoardFlipped = !isBoardFlipped;
       renderBoard();
       if (isArrowEnabled && lastSuggestedMove && lastSuggestedMove.from && lastSuggestedMove.to) {
-        drawArrow(lastSuggestedMove.from, lastSuggestedMove.to);
+        setTimeout(() => drawArrow(lastSuggestedMove.from, lastSuggestedMove.to), 20);
       }
     };
   }
@@ -1015,5 +1207,6 @@
   renderBoard();
   connectStockfishWebSocket();
   updateOpeningDisplay();
+  updateGeminiChessUI();
 
 })();

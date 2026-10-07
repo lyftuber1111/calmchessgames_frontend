@@ -1346,7 +1346,7 @@
   // =========================================================================
   // GEMINI 3.8 FLASH DEALER COMMENTARY & BASIC STRATEGY ADVISOR
   // =========================================================================
-  let geminiAdvisorEnabled = (localStorage.getItem("cc_gemini_advisor_enabled") !== "false");
+  let geminiAdvisorEnabled = (localStorage.getItem("cc_gemini_advisor_enabled") === "true");
   let geminiCommentaryAbortId = 0;
 
   function updateGeminiAdvisorUI() {
@@ -1455,6 +1455,15 @@
 
     const curHand = playerHands[activeHandIndex];
     if (!curHand || curHand.cards.length < 2) return;
+
+    // Automatically enable AI Assistant if it was off when hint requested
+    if (!geminiAdvisorEnabled) {
+      geminiAdvisorEnabled = true;
+      try {
+        localStorage.setItem("cc_gemini_advisor_enabled", "true");
+      } catch (e) {}
+      updateGeminiAdvisorUI();
+    }
 
     const hintBox = getEl("gemini-strategy-hint");
     const hintPillBtn = getEl("ai-hint-btn");

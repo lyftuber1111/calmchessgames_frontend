@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>HTML5 Chess + Stockfish &amp; Gemini 3.8 Flash</title>
   <style>
     :root {
@@ -481,6 +482,10 @@
   <div id="debug-log">Ready.</div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+
+  <!-- In-Transit Transport Security & Payload Encryption -->
+  <script src="js/crypto_transport.js"></script>
+  <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
 
   <!-- Complete Clean Engine Pipeline with Gemini 3.8 Flash Integration -->
   <script src="js/chess.js"></script>

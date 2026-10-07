@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>Casino Operations Admin - Calm Chess Computers</title>
     <style>
         :root {
@@ -819,6 +820,8 @@
         </div>
     </div>
 
+    <script src="js/crypto_transport.js"></script>
+    <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
     <script src="js/admin.js"></script>
 </body>
 </html>

@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <title>Desk Ergonomics & Back Mobility Trainer</title>
   <style>
     :root {
@@ -335,6 +336,8 @@
     </section>
   </main>
 
+  <script src="js/crypto_transport.js"></script>
+  <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
   <script src="js/stretches.js"></script>
 </body>
 </html>

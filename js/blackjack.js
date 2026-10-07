@@ -1,7 +1,21 @@
 (function (global) {
   "use strict";
 
-  const API_BASE = "https://api.calmchessgames.com";
+  // Dynamic origin detection for universal LAMP server hosting & local development
+  const CURRENT_ORIGIN = (typeof window !== "undefined" && window.location && window.location.origin) ? window.location.origin : "https://api.calmchessgames.com";
+  const API_BASE = CURRENT_ORIGIN;
+
+  // Immediately ensure HTTPS transport encryption
+  if (typeof CryptoTransport !== "undefined" && CryptoTransport.ensureHttps) {
+    CryptoTransport.ensureHttps();
+  }
+
+  function secureFetchApi(url, options = {}) {
+    const fetchFn = (typeof CryptoTransport !== "undefined" && CryptoTransport.secureFetch)
+      ? CryptoTransport.secureFetch
+      : fetch;
+    return fetchFn(url, options);
+  }
 
   // Audio system with mobile/VR user-gesture unlocking
   let backgroundAudio = null;
@@ -520,12 +534,12 @@
     } catch (e) {}
 
     try {
-      await fetch(API_BASE + "/admin_api.php?action=sync_bank", {
+      await secureFetchApi(API_BASE + "/admin_api.php?action=sync_bank", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         keepalive: true,
-        body: JSON.stringify({ user_id: userId, email: userEmail, bank: bank })
+        body: { user_id: userId, email: userEmail, bank: bank }
       });
     } catch (e) {}
   }
@@ -563,11 +577,12 @@
     const endpoint = API_BASE + (currentAuthTab === "register" ? "/register.php" : "/login.php");
 
     try {
-      const res = await fetch(endpoint + "?_t=" + Date.now(), {
+      const res = await secureFetchApi(endpoint + "?_t=" + Date.now(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ identifier: identifier, email: identifier, password: password })
+        encrypt: true,
+        body: { identifier: identifier, email: identifier, password: password }
       });
 
       const rawText = await res.text();
@@ -624,7 +639,7 @@
     await syncBankToServer(userBank);
 
     try {
-      await fetch(API_BASE + "/logout.php?_t=" + Date.now(), {
+      await secureFetchApi(API_BASE + "/logout.php?_t=" + Date.now(), {
         method: "POST",
         credentials: "include",
         keepalive: true
@@ -653,7 +668,7 @@
 
   async function loadAdminMode() {
     try {
-      const res = await fetch(API_BASE + "/admin_api.php?action=get_mode&_t=" + Date.now(), {
+      const res = await secureFetchApi(API_BASE + "/admin_api.php?action=get_mode&_t=" + Date.now(), {
         credentials: "include"
       });
       const data = await res.json();
@@ -728,17 +743,18 @@
         headers["Authorization"] = "Bearer " + jwtToken;
       }
 
-      const res = await fetch(API_BASE + "/admin_api.php?action=set_mode", {
+      const res = await secureFetchApi(API_BASE + "/admin_api.php?action=set_mode", {
         method: "POST",
         headers: headers,
         credentials: "include",
-        body: JSON.stringify({
+        encrypt: true,
+        body: {
           admin_key: adminKey,
           token: adminKey,
           desktop_simulation_mode: desktopSim,
           simulation_mode: desktopSim,
           android_simulation_mode: androidSim
-        })
+        }
       });
       const data = await res.json();
 
@@ -765,11 +781,11 @@
     }
 
     try {
-      const res = await fetch(API_BASE + "/admin_api.php?action=buy_credits", {
+      const res = await secureFetchApi(API_BASE + "/admin_api.php?action=buy_credits", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ package: selectedPackageCredits, user_id: userId, email: userEmail, platform: 'desktop' })
+        body: { package: selectedPackageCredits, user_id: userId, email: userEmail, platform: 'desktop' }
       });
       const data = await res.json();
 
@@ -803,22 +819,22 @@
         return actions.resolve();
       },
       createOrder: async function () {
-        const res = await fetch(API_BASE + "/paypal_api.php?action=create_order", {
+        const res = await secureFetchApi(API_BASE + "/paypal_api.php?action=create_order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ package: selectedPackageCredits, user_id: userId, email: userEmail })
+          body: { package: selectedPackageCredits, user_id: userId, email: userEmail }
         });
         const orderData = await res.json();
         if (!orderData.success) throw new Error(orderData.message);
         return orderData.orderID;
       },
       onApprove: async function (data) {
-        const res = await fetch(API_BASE + "/paypal_api.php?action=capture_order", {
+        const res = await secureFetchApi(API_BASE + "/paypal_api.php?action=capture_order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ orderID: data.orderID, package: selectedPackageCredits, user_id: userId, email: userEmail })
+          body: { orderID: data.orderID, package: selectedPackageCredits, user_id: userId, email: userEmail }
         });
         const captureData = await res.json();
         if (captureData.success) {
@@ -1466,11 +1482,11 @@
     ];
     for (const url of candidateUrls) {
       try {
-        const res = await fetch(url, {
+        const res = await secureFetchApi(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify(payload)
+          body: payload
         });
         if (res.ok) {
           return await res.json();

@@ -7,6 +7,11 @@
 (function () {
   'use strict';
 
+  // Ensure HTTPS in-transit encryption
+  if (typeof CryptoTransport !== 'undefined' && CryptoTransport.ensureHttps) {
+    CryptoTransport.ensureHttps();
+  }
+
   // --- Material & Piece-Square Evaluation Tables ---
   const PIECE_VALUES = {
     p: 100,
@@ -889,18 +894,25 @@
   window.toggleGeminiChessAdvisor = toggleGeminiChessAdvisor;
 
   async function callGeminiChessApi(action, payload) {
+    const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
     const candidateUrls = [
       './gemini_api.php?action=' + action,
       '/gemini_api.php?action=' + action,
+      (origin ? origin + '/gemini_api.php?action=' + action : ''),
       'https://api.calmchessgames.com/gemini_api.php?action=' + action
-    ];
-    for (const url of candidateUrls) {
+    ].filter(Boolean);
+    const uniqueUrls = [...new Set(candidateUrls)];
+
+    for (const url of uniqueUrls) {
       try {
-        const res = await fetch(url, {
+        const fetchFn = (typeof CryptoTransport !== 'undefined' && CryptoTransport.secureFetch)
+          ? CryptoTransport.secureFetch
+          : fetch;
+        const res = await fetchFn(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify(payload)
+          body: payload
         });
         if (res.ok) {
           return await res.json();

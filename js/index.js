@@ -1,9 +1,16 @@
 (function (global) {
   "use strict";
 
-  const API_BASE = 'https://api.calmchessgames.com';
+  // Dynamic origin detection for universal LAMP server hosting & local development
+  const CURRENT_ORIGIN = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://api.calmchessgames.com';
+  const API_BASE = CURRENT_ORIGIN;
   let showSegmentIdsOnRing = false;
   let centerLogoUrl = 'chess.html';
+
+  // Ensure HTTPS transport encryption immediately
+  if (typeof CryptoTransport !== 'undefined' && CryptoTransport.ensureHttps) {
+      CryptoTransport.ensureHttps();
+  }
 
   let currentSegments = [
       { ring_type: 'inner', segment_index: 0, title: 'Chess Game', url: 'chess.html', description: 'Offline Stockfish chess engine' },
@@ -29,8 +36,8 @@
 
   async function callAdminApi(action, payload = null, method = 'POST') {
       const endpoints = [
-          `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
           `./admin_api.php?action=${action}&_t=${Date.now()}`,
+          `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
           `/admin_api.php?action=${action}&_t=${Date.now()}`,
           `https://calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`
       ];
@@ -73,9 +80,13 @@
                   credentials: 'include'
               };
               if (requestBody !== null && method !== 'GET') {
-                  fetchOptions.body = JSON.stringify(requestBody);
+                  fetchOptions.body = requestBody;
+                  fetchOptions.encrypt = true;
               }
-              const res = await fetch(url, fetchOptions);
+              const fetchFn = (typeof CryptoTransport !== 'undefined' && CryptoTransport.secureFetch)
+                  ? CryptoTransport.secureFetch
+                  : fetch;
+              const res = await fetchFn(url, fetchOptions);
               const text = await res.text();
               try {
                   const data = JSON.parse(text);
@@ -738,7 +749,10 @@
 
           for (const targetUrl of uniqueUrls) {
               try {
-                  const response = await fetch(targetUrl, {
+                  const fetchFn = (typeof CryptoTransport !== 'undefined' && CryptoTransport.secureFetch)
+                      ? CryptoTransport.secureFetch
+                      : fetch;
+                  const response = await fetchFn(targetUrl, {
                       method: 'POST',
                       headers: { 
                           'Content-Type': 'application/json',
@@ -747,7 +761,8 @@
                           'X-API-Key': password
                       },
                       credentials: 'include',
-                      body: JSON.stringify(payload)
+                      body: payload,
+                      encrypt: true
                   });
                   const result = await response.json();
                   if (result.success) {
@@ -844,34 +859,13 @@
       }
 
       try {
-          const res = await fetch(`${API_BASE}/admin_api.php?action=get_users&_t=${Date.now()}`, {
-              method: 'POST',
-              headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${adminKey}`,
-                  'X-Admin-Token': adminKey,
-                  'X-API-Key': adminKey
-              },
-              credentials: 'include',
-              body: JSON.stringify({ 
-                  admin_key: adminKey,
-                  admin_password: adminKey,
-                  api_token: adminKey
-              })
+          const data = await callAdminApi('get_users', {
+              admin_key: adminKey,
+              admin_password: adminKey,
+              api_token: adminKey
           });
 
-          const rawText = await res.text();
-          let data;
-          try {
-              data = JSON.parse(rawText);
-          } catch (jsonErr) {
-              if (container) {
-                  container.innerHTML = `<p style="color: var(--error-red); text-align: center; padding: 20px;">Server Error (${res.status}): ${rawText.replace(/<[^>]*>?/gm, '').trim() || 'Internal Error'}</p>`;
-              }
-              return;
-          }
-
-          if (data.success && Array.isArray(data.users)) {
+          if (data && data.success && Array.isArray(data.users)) {
               allBlackjackUsers = data.users;
               const searchVal = document.getElementById('adminUserSearchInput') ? document.getElementById('adminUserSearchInput').value : '';
               renderBlackjackUsers(searchVal);
@@ -879,7 +873,7 @@
               if (container) {
                   container.innerHTML = `
                       <div style="text-align: center; padding: 24px;">
-                          <p style="color: var(--error-red); margin-bottom: 12px;">${data.message || 'Unauthorized access'}</p>
+                          <p style="color: var(--error-red); margin-bottom: 12px;">${(data && data.message) || 'Unauthorized access'}</p>
                           <button class="btn btn-sm btn-gold" onclick="promptAdminPassword()">Re-authenticate</button>
                       </div>
                   `;
@@ -983,34 +977,23 @@
       }
 
       try {
-          const res = await fetch(`${API_BASE}/admin_api.php?action=create_user`, {
-              method: 'POST',
-              headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${adminKey}`,
-                  'X-Admin-Token': adminKey,
-                  'X-API-Key': adminKey
-              },
-              credentials: 'include',
-              body: JSON.stringify({
-                  admin_key: adminKey,
-                  admin_password: adminKey,
-                  api_token: adminKey,
-                  email: email,
-                  password: password,
-                  bank: bank,
-                  is_active: isActive
-              })
+          const data = await callAdminApi('create_user', {
+              admin_key: adminKey,
+              admin_password: adminKey,
+              api_token: adminKey,
+              email: email,
+              password: password,
+              bank: bank,
+              is_active: isActive
           });
-          const data = await res.json();
-          if (data.success) {
+          if (data && data.success) {
               showUserAdminAlert(data.message || 'User created successfully!', true);
               document.getElementById('new_user_email').value = '';
               document.getElementById('new_user_pwd').value = '';
               toggleCreateUserPanel(false);
               fetchBlackjackUsers();
           } else {
-              showUserAdminAlert(data.message || 'Failed to create user.', false);
+              showUserAdminAlert((data && data.message) || 'Failed to create user.', false);
           }
       } catch (err) {
           showUserAdminAlert('Error: ' + err.message, false);
@@ -1029,32 +1012,21 @@
       }
 
       try {
-          const res = await fetch(`${API_BASE}/admin_api.php?action=update_user`, {
-              method: 'POST',
-              headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${adminKey}`,
-                  'X-Admin-Token': adminKey,
-                  'X-API-Key': adminKey
-              },
-              credentials: 'include',
-              body: JSON.stringify({
-                  admin_key: adminKey,
-                  admin_password: adminKey,
-                  api_token: adminKey,
-                  user_id: userId,
-                  email: email,
-                  bank: bank,
-                  password: newPwd || undefined
-              })
+          const data = await callAdminApi('update_user', {
+              admin_key: adminKey,
+              admin_password: adminKey,
+              api_token: adminKey,
+              user_id: userId,
+              email: email,
+              bank: bank,
+              password: newPwd || undefined
           });
-          const data = await res.json();
-          if (data.success) {
+          if (data && data.success) {
               showUserAdminAlert(`User #${userId} updated successfully!`, true);
               document.getElementById(`usr_pwd_${userId}`).value = '';
               fetchBlackjackUsers();
           } else {
-              showUserAdminAlert(data.message || 'Update failed.', false);
+              showUserAdminAlert((data && data.message) || 'Update failed.', false);
           }
       } catch (err) {
           showUserAdminAlert('Error: ' + err.message, false);
@@ -1067,29 +1039,18 @@
       if (!confirm(`Are you sure you want to ${actionLabel} user #${userId}?`)) return;
 
       try {
-          const res = await fetch(`${API_BASE}/admin_api.php?action=toggle_ban_user`, {
-              method: 'POST',
-              headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${adminKey}`,
-                  'X-Admin-Token': adminKey,
-                  'X-API-Key': adminKey
-              },
-              credentials: 'include',
-              body: JSON.stringify({
-                  admin_key: adminKey,
-                  admin_password: adminKey,
-                  api_token: adminKey,
-                  user_id: userId,
-                  is_active: newActiveStatus
-              })
+          const data = await callAdminApi('toggle_ban_user', {
+              admin_key: adminKey,
+              admin_password: adminKey,
+              api_token: adminKey,
+              user_id: userId,
+              is_active: newActiveStatus
           });
-          const data = await res.json();
-          if (data.success) {
+          if (data && data.success) {
               showUserAdminAlert(data.message || `User #${userId} status updated!`, true);
               fetchBlackjackUsers();
           } else {
-              showUserAdminAlert(data.message || 'Status change failed.', false);
+              showUserAdminAlert((data && data.message) || 'Status change failed.', false);
           }
       } catch (err) {
           showUserAdminAlert('Error: ' + err.message, false);
@@ -1101,28 +1062,17 @@
       if (!confirm(`PERMANENT ACTION: Delete user #${userId} (${userEmail}) from the database?`)) return;
 
       try {
-          const res = await fetch(`${API_BASE}/admin_api.php?action=delete_user`, {
-              method: 'POST',
-              headers: { 
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${adminKey}`,
-                  'X-Admin-Token': adminKey,
-                  'X-API-Key': adminKey
-              },
-              credentials: 'include',
-              body: JSON.stringify({
-                  admin_key: adminKey,
-                  admin_password: adminKey,
-                  api_token: adminKey,
-                  user_id: userId
-              })
+          const data = await callAdminApi('delete_user', {
+              admin_key: adminKey,
+              admin_password: adminKey,
+              api_token: adminKey,
+              user_id: userId
           });
-          const data = await res.json();
-          if (data.success) {
+          if (data && data.success) {
               showUserAdminAlert(`User #${userId} permanently deleted.`, true);
               fetchBlackjackUsers();
           } else {
-              showUserAdminAlert(data.message || 'Delete failed.', false);
+              showUserAdminAlert((data && data.message) || 'Delete failed.', false);
           }
       } catch (err) {
           showUserAdminAlert('Error: ' + err.message, false);

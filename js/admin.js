@@ -1,8 +1,15 @@
 (function (global) {
   "use strict";
 
-  const API_BASE = 'https://api.calmchessgames.com';
+  // Dynamic origin detection for universal LAMP server hosting & local development
+  const CURRENT_ORIGIN = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://api.calmchessgames.com';
+  const API_BASE = CURRENT_ORIGIN;
   let centerLogoUrl = 'chess.html';
+
+  // Ensure HTTPS transport encryption immediately
+  if (typeof CryptoTransport !== 'undefined' && CryptoTransport.ensureHttps) {
+      CryptoTransport.ensureHttps();
+  }
 
   let currentSegments = [
       { ring_type: 'inner', segment_index: 0, title: 'Chess Game', url: 'chess.html', description: 'Offline Stockfish chess engine' },
@@ -58,11 +65,11 @@
       return key;
   }
 
-  /* --- API CALL HELPER (AUTHENTICATION API TOKEN ENABLED) --- */
+  /* --- API CALL HELPER (AUTHENTICATION API TOKEN ENABLED WITH IN-TRANSIT ENCRYPTION) --- */
   async function callAdminApi(action, payload = null, method = 'POST') {
       const endpoints = [
-          `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
           `./admin_api.php?action=${action}&_t=${Date.now()}`,
+          `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
           `/admin_api.php?action=${action}&_t=${Date.now()}`,
           `https://calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`
       ];
@@ -95,9 +102,13 @@
                   credentials: 'include'
               };
               if (requestBody !== null && method !== 'GET') {
-                  fetchOptions.body = JSON.stringify(requestBody);
+                  fetchOptions.body = requestBody;
+                  fetchOptions.encrypt = true;
               }
-              const res = await fetch(url, fetchOptions);
+              const fetchFn = (typeof CryptoTransport !== 'undefined' && CryptoTransport.secureFetch) 
+                  ? CryptoTransport.secureFetch 
+                  : fetch;
+              const res = await fetchFn(url, fetchOptions);
               if (res.ok) {
                   const text = await res.text();
                   try {
@@ -394,7 +405,10 @@
 
           for (const saveUrl of uniqueSaveUrls) {
               try {
-                  const res = await fetch(saveUrl, {
+                  const fetchFn = (typeof CryptoTransport !== 'undefined' && CryptoTransport.secureFetch)
+                      ? CryptoTransport.secureFetch
+                      : fetch;
+                  const res = await fetchFn(saveUrl, {
                       method: 'POST',
                       headers: { 
                           'Content-Type': 'application/json',
@@ -403,7 +417,8 @@
                           'X-API-Key': password
                       },
                       credentials: 'include',
-                      body: JSON.stringify(savePayload)
+                      body: savePayload,
+                      encrypt: true
                   });
                   const data = await res.json();
                   if (data && data.success) {

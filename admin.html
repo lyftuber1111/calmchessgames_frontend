@@ -41,7 +41,7 @@
 
         .admin-page-container {
             width: 100%;
-            max-width: 980px;
+            max-width: min(96vw, 1200px);
             display: flex;
             flex-direction: column;
             gap: 20px;
@@ -56,6 +56,63 @@
             box-shadow: 0 10px 35px rgba(0, 0, 0, 0.6);
             width: 100%;
             box-sizing: border-box;
+        }
+
+        .table-scroll-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-top: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: #ffd700 #1e293b;
+        }
+        .table-scroll-container::-webkit-scrollbar {
+            height: 9px;
+        }
+        .table-scroll-container::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .table-scroll-container::-webkit-scrollbar-thumb {
+            background: #ffd700;
+            border-radius: 4px;
+        }
+        .table-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #ffae00;
+        }
+
+        .store-ledger-table {
+            width: 100%;
+            min-width: 1200px;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        .field-scroll-cell {
+            max-width: 250px;
+            min-width: 180px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: thin;
+            scrollbar-color: #64748b rgba(255, 255, 255, 0.05);
+            padding: 2px 0;
+        }
+        .field-scroll-cell::-webkit-scrollbar {
+            height: 4px;
+        }
+        .field-scroll-cell::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+        .field-scroll-cell::-webkit-scrollbar-thumb {
+            background: #64748b;
+            border-radius: 2px;
+        }
+        .field-scroll-cell::-webkit-scrollbar-thumb:hover {
+            background: #ffd700;
         }
 
         /* Buttons */
@@ -658,6 +715,39 @@
                     </div>
                 </div>
 
+                <!-- Setting Card 4: Gemini 3.8 Flash AI Dealer & Strategy Advisor -->
+                <div class="store-setting-card">
+                    <div class="store-setting-head">
+                        <div>
+                            <div class="store-setting-title">
+                                <span>✨ Gemini 3.8 Flash AI Dealer & Strategy Advisor</span>
+                                <span id="geminiModelBadge" class="badge-status badge-active" style="background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; color: #93c5fd;">gemini-3.8-flash</span>
+                            </div>
+                            <div class="store-setting-desc">
+                                Live casino dealer commentary and mathematical basic strategy recommendations powered by Google GenAI.
+                            </div>
+                        </div>
+                        <div class="store-setting-toggle" style="display: flex; align-items: center; gap: 10px;">
+                            <label class="toggle-switch-label" title="Toggle Gemini Dealer Commentary">
+                                <input type="checkbox" id="adminGeminiToggle" onchange="handleStoreToggleChange()">
+                                <span class="toggle-switch-slider"></span>
+                            </label>
+                            <span id="geminiCheckMarkLabel" style="font-size: 0.82rem; font-weight: 700; color: #93c5fd;">[✔] Active</span>
+                        </div>
+                    </div>
+                    <div class="store-setting-details">
+                        <div class="mode-state-desc">
+                            <strong>API Model:</strong> <code>gemini-3.8-flash</code> &bull; <strong>Interface:</strong> <code>Google GenAI Interactions API (v1beta/interactions)</code>
+                            <div id="geminiModeExplanation" style="margin-top: 4px;">Gemini 3.8 Flash is active with automatic fallback to built-in basic strategy engine.</div>
+                        </div>
+                        <div style="margin-top: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <label style="font-size: 0.78rem; font-weight: 700; color: var(--gold-primary);">GEMINI_API_KEY:</label>
+                            <input type="password" id="adminGeminiApiKeyInput" placeholder="AIzaSy... (leave blank to keep existing key)" style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 5px 10px; color: #fff; font-size: 0.8rem; width: 300px; max-width: 100%;">
+                            <span id="geminiKeyStatusBadge" class="badge-status" style="font-size: 0.72rem;">Checking...</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Bottom Save Bar -->
                 <div style="display: flex; gap: 10px; margin-top: 18px; border-top: 1px solid rgba(255,215,0,0.25); padding-top: 14px; flex-wrap: wrap;">
                     <button class="btn btn-gold" id="btnSaveStoreSettingsBottom" onclick="saveStoreSettings()">Save Database Configuration</button>
@@ -683,20 +773,20 @@
                         </div>
                     </div>
 
-                    <div style="overflow-x: auto; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid #334155;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                    <div class="table-scroll-container">
+                        <table class="store-ledger-table">
                             <thead>
                                 <tr style="border-bottom: 1px solid #334155; background: rgba(255,215,0,0.06); color: var(--gold-primary); text-align: left;">
-                                    <th style="padding: 8px 10px;">ID</th>
-                                    <th style="padding: 8px 10px;">User</th>
-                                    <th style="padding: 8px 10px; text-align: center; white-space: nowrap;">Gateway & Mode</th>
-                                    <th style="padding: 8px 10px;">Order / GPA ID</th>
-                                    <th style="padding: 8px 10px;">Product SKU</th>
-                                    <th style="padding: 8px 10px;">Credits</th>
-                                    <th style="padding: 8px 10px;">Amount</th>
-                                    <th style="padding: 8px 10px; text-align: center; white-space: nowrap;">Status</th>
-                                    <th style="padding: 8px 10px;">Date</th>
-                                    <th style="padding: 8px 10px; text-align: center;">Details</th>
+                                    <th style="padding: 10px 12px; width: 60px;">ID</th>
+                                    <th style="padding: 10px 12px; min-width: 220px;">User Email</th>
+                                    <th style="padding: 10px 12px; text-align: center; white-space: nowrap; min-width: 160px;">Gateway & Mode</th>
+                                    <th style="padding: 10px 12px; min-width: 200px;">Order / GPA ID</th>
+                                    <th style="padding: 10px 12px; min-width: 150px;">Product SKU</th>
+                                    <th style="padding: 10px 12px; min-width: 90px;">Credits</th>
+                                    <th style="padding: 10px 12px; min-width: 80px;">Amount</th>
+                                    <th style="padding: 10px 12px; text-align: center; white-space: nowrap; min-width: 110px;">Status</th>
+                                    <th style="padding: 10px 12px; min-width: 100px;">Date</th>
+                                    <th style="padding: 10px 12px; text-align: center; min-width: 90px;">Details</th>
                                 </tr>
                             </thead>
                             <tbody id="adminStoreLedgerBody">

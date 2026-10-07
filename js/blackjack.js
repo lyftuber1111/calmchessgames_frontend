@@ -121,6 +121,26 @@
     } catch (e) {}
   }
 
+  function updateAudioButtonUI() {
+    const btn = document.getElementById("audioToggleBtn");
+    if (!btn) return;
+    if (sfxAudioEnabled) {
+      btn.innerHTML = "🔊 Audio ON";
+      btn.className = "hdr-btn active";
+      btn.style.background = "rgba(46, 204, 113, 0.35)";
+      btn.style.borderColor = "#2ecc71";
+      btn.style.color = "#2ecc71";
+      btn.style.boxShadow = "0 0 10px rgba(46, 204, 113, 0.45)";
+    } else {
+      btn.innerHTML = "🔇 Audio OFF";
+      btn.className = "hdr-btn muted";
+      btn.style.background = "rgba(100, 116, 139, 0.25)";
+      btn.style.borderColor = "#64748b";
+      btn.style.color = "#94a3b8";
+      btn.style.boxShadow = "none";
+    }
+  }
+
   global.toggleAudio = function () {
     initBackgroundAudio();
     getAudioContext();
@@ -129,14 +149,18 @@
         .play()
         .then(() => {
           sfxAudioEnabled = true;
+          updateAudioButtonUI();
           global.showNotification("Casino Music & SFX Enabled", true);
         })
         .catch(() => {
-          global.showNotification("Audio blocked. Tap again!");
+          sfxAudioEnabled = true;
+          updateAudioButtonUI();
+          global.showNotification("Audio Enabled! Tap screen to start music.", true);
         });
     } else {
       backgroundAudio.pause();
       sfxAudioEnabled = false;
+      updateAudioButtonUI();
       global.showNotification("Audio Disabled", false);
     }
   };
@@ -216,14 +240,38 @@
     const availableHeight = container.clientHeight;
 
     const isUserSplit = playerHands && playerHands.length > 1;
-    const availableCardAreaHeight = Math.max(105, availableHeight - (isUserSplit ? 240 : 210));
-    const maxCardHeight = Math.floor(availableCardAreaHeight / (isUserSplit ? 2.7 : 2.2));
+    const anyBotSplit = simulatedBotHands && simulatedBotHands.some(b => b && b.length > 1);
+    const hasAnySplit = isUserSplit || anyBotSplit;
+    const availableCardAreaHeight = Math.max(120, availableHeight - (hasAnySplit ? 230 : 200));
+    const maxCardHeight = Math.floor(availableCardAreaHeight / (hasAnySplit ? 2.5 : 2.0));
 
     let targetHeight;
     let targetWidth;
 
-    if (availableWidth < 640) {
-      const baseHeight = isUserSplit ? 54 : 70;
+    if (availableWidth >= 2400 || availableHeight >= 1300) {
+      // 4K / Ultra High Resolution (3840x2160, 4K monitors/TVs)
+      let baseHeight = 135;
+      if (seats >= 6) {
+        baseHeight = 98;
+      } else if (seats >= 4) {
+        baseHeight = 110;
+      } else if (seats >= 2) {
+        baseHeight = 122;
+      }
+      if (hasAnySplit) baseHeight = Math.min(baseHeight, 92);
+
+      targetHeight = Math.min(baseHeight, Math.max(60, maxCardHeight));
+      targetWidth = Math.round(targetHeight / 1.42);
+
+      const maxColWidth = Math.floor((availableWidth - (seats * 16) - 50) / seats);
+      const allowedCardWidth = Math.floor(maxColWidth * 0.65);
+      if (targetWidth > allowedCardWidth && allowedCardWidth >= 36) {
+        targetWidth = allowedCardWidth;
+        targetHeight = Math.round(targetWidth * 1.42);
+      }
+    } else if (availableWidth < 640) {
+      // Mobile portrait
+      const baseHeight = hasAnySplit ? 54 : 70;
       targetHeight = Math.min(baseHeight, Math.max(42, maxCardHeight));
       targetWidth = Math.round(targetHeight / 1.42);
 
@@ -233,23 +281,27 @@
         targetHeight = Math.round(targetWidth * 1.42);
       }
     } else if (availableHeight < 560) {
-      targetHeight = Math.min(48, Math.max(34, maxCardHeight));
+      // Short screen landscape
+      targetHeight = Math.min(52, Math.max(36, maxCardHeight));
       targetWidth = Math.round(targetHeight / 1.42);
     } else {
-      let baseHeight = 84;
-      if (seats >= 5) {
-        baseHeight = 60;
-      } else if (seats >= 3) {
-        baseHeight = 68;
+      // Desktop PC, Mac, 25-inch monitors, Quest VR
+      let baseHeight = 118;
+      if (seats >= 6) {
+        baseHeight = 84;
+      } else if (seats >= 4) {
+        baseHeight = 96;
+      } else if (seats >= 2) {
+        baseHeight = 108;
       }
-      if (isUserSplit) baseHeight = Math.min(baseHeight, 62);
+      if (hasAnySplit) baseHeight = Math.min(baseHeight, 82);
 
-      targetHeight = Math.min(baseHeight, Math.max(46, maxCardHeight));
+      targetHeight = Math.min(baseHeight, Math.max(50, maxCardHeight));
       targetWidth = Math.round(targetHeight / 1.42);
 
-      const maxColWidth = Math.floor((availableWidth - (seats * 10) - 40) / seats);
-      const allowedCardWidth = Math.floor(maxColWidth * 0.58);
-      if (targetWidth > allowedCardWidth && allowedCardWidth >= 28) {
+      const maxColWidth = Math.floor((availableWidth - (seats * 12) - 40) / seats);
+      const allowedCardWidth = Math.floor(maxColWidth * 0.65);
+      if (targetWidth > allowedCardWidth && allowedCardWidth >= 30) {
         targetWidth = allowedCardWidth;
         targetHeight = Math.round(targetWidth * 1.42);
       }
@@ -257,6 +309,16 @@
 
     document.documentElement.style.setProperty("--card-w", targetWidth + "px");
     document.documentElement.style.setProperty("--card-h", targetHeight + "px");
+
+    let maxSlotW = "clamp(240px, 28vw, 420px)";
+    if (seats >= 6) {
+      maxSlotW = "clamp(140px, 13vw, 215px)";
+    } else if (seats >= 4) {
+      maxSlotW = "clamp(180px, 18vw, 280px)";
+    } else if (seats === 3) {
+      maxSlotW = "clamp(220px, 25vw, 380px)";
+    }
+    document.documentElement.style.setProperty("--seat-slot-max-w", maxSlotW);
   }
 
   window.addEventListener("resize", () => {
@@ -938,6 +1000,21 @@
     return score;
   }
 
+  function isHandSoft(cards) {
+    if (!Array.isArray(cards)) return false;
+    let score = 0;
+    let aces = 0;
+    for (let i = 0; i < cards.length; i++) {
+      score += cards[i].value;
+      if (cards[i].name === "A") aces++;
+    }
+    while (score > 21 && aces > 0) {
+      score -= 10;
+      aces--;
+    }
+    return aces > 0;
+  }
+
   function createCardElement(card, isHidden, cardIndex = 0) {
     const el = document.createElement("div");
     if (isHidden) {
@@ -1002,55 +1079,108 @@
 
     const seatCount = activeTableSeats || getSeatsCount();
     const isUserSplit = playerHands && playerHands.length > 1;
+    const anyBotSplit = simulatedBotHands && simulatedBotHands.some(b => b && b.length > 1);
+    const hasAnySplit = isUserSplit || anyBotSplit;
 
     if (handsContainerEl) handsContainerEl.innerHTML = "";
     if (splitStageEl) splitStageEl.innerHTML = "";
 
+    const isMultiRow = (seatCount >= 3 && window.innerWidth >= 640);
     if (handsContainerEl) {
-      if (seatCount >= 3 && window.innerWidth >= 640) {
+      if (isMultiRow) {
         handsContainerEl.classList.add("multi-player-row");
       } else {
         handsContainerEl.classList.remove("multi-player-row");
       }
     }
+    if (splitStageEl) {
+      if (isMultiRow) {
+        splitStageEl.classList.add("multi-player-row");
+      } else {
+        splitStageEl.classList.remove("multi-player-row");
+      }
+    }
 
-    // SPLIT STAGE: Display only the hand score above each split box
-    if (isUserSplit && splitStageEl) {
+    // 1. ELEVATED SPLIT STAGE: Render split hands in a column directly above the seat where its cards came from
+    if (hasAnySplit && splitStageEl) {
       splitStageEl.classList.add("active");
       if (rulesBannerEl) rulesBannerEl.classList.add("faded");
 
-      playerHands.forEach((hand, idx) => {
-        const score = calcHandScore(hand.cards);
-        const splitBox = document.createElement("div");
-        splitBox.className = !isRoundOver && idx === activeHandIndex ? "hand-box active" : "hand-box";
+      const centerIndex = (seatCount > 1) ? Math.floor(seatCount / 2) : 0;
 
-        const label = document.createElement("div");
-        label.className = "hand-label";
-        label.textContent = score;
-        splitBox.appendChild(label);
+      for (let s = 0; s < seatCount; s++) {
+        const isCenter = (s === centerIndex);
+        let seatHands = [];
+        let isUser = false;
 
-        if (isRoundOver && hand.resTxt) {
-          const badge = document.createElement("div");
-          badge.className = "hand-result-badge " + (hand.resType || "win");
-          badge.textContent = hand.resTxt;
-          splitBox.appendChild(badge);
+        if (isCenter) {
+          if (isUserSplit) {
+            seatHands = playerHands;
+            isUser = true;
+          }
+        } else {
+          const botIdx = s < centerIndex ? s : s - 1;
+          const bHands = simulatedBotHands[botIdx] || [];
+          if (bHands.length > 1) {
+            seatHands = bHands;
+            isUser = false;
+          }
         }
 
-        const cardsRow = document.createElement("div");
-        cardsRow.className = "cards-row cascading";
-        hand.cards.forEach((c, cIdx) => cardsRow.appendChild(createCardElement(c, false, cIdx)));
-        splitBox.appendChild(cardsRow);
-        splitStageEl.appendChild(splitBox);
-      });
+        const slot = document.createElement("div");
+        slot.className = "split-seat-slot";
+
+        if (seatHands.length > 1) {
+          const handsCount = Math.min(seatHands.length, 4);
+          const seatGroup = document.createElement("div");
+          seatGroup.className = "split-seat-group " + (isUser ? "user-split-group" : "bot-split-group") + " split-hands-" + handsCount;
+
+          const splitRow = document.createElement("div");
+          splitRow.className = "split-hands-row";
+
+          seatHands.forEach((hand, hIdx) => {
+            const score = calcHandScore(hand.cards);
+            const splitBox = document.createElement("div");
+            splitBox.className = (isUser && !isRoundOver && hIdx === activeHandIndex) ? "hand-box active" : "hand-box";
+
+            const label = document.createElement("div");
+            label.className = "hand-label";
+            label.textContent = score;
+            splitBox.appendChild(label);
+
+            if (isRoundOver && hand.resTxt) {
+              const badge = document.createElement("div");
+              badge.className = "hand-result-badge " + (hand.resType || "win");
+              badge.textContent = hand.resTxt;
+              splitBox.appendChild(badge);
+            }
+
+            const cardsRow = document.createElement("div");
+            cardsRow.className = "cards-row cascading";
+            hand.cards.forEach((c, cIdx) => cardsRow.appendChild(createCardElement(c, false, cIdx)));
+            splitBox.appendChild(cardsRow);
+            splitRow.appendChild(splitBox);
+          });
+
+          seatGroup.appendChild(splitRow);
+          slot.appendChild(seatGroup);
+        } else {
+          slot.className = "split-seat-slot empty";
+          slot.style.visibility = "hidden";
+          slot.style.pointerEvents = "none";
+          slot.innerHTML = '<div style="height: 1px;"></div>';
+        }
+
+        splitStageEl.appendChild(slot);
+      }
     } else {
       if (splitStageEl) splitStageEl.classList.remove("active");
       if (rulesBannerEl) rulesBannerEl.classList.remove("faded");
     }
 
-    // BOTTOM ROW: Display only card values
+    // 2. BOTTOM ROW: Non-split seats render normally; split seats show clean pulsating placeholder
     if (seatCount > 1 && handsContainerEl) {
       const centerIndex = Math.floor(seatCount / 2);
-      let botIdx = 0;
 
       for (let s = 0; s < seatCount; s++) {
         const isCenter = s === centerIndex;
@@ -1060,8 +1190,10 @@
           box.className = "hand-box center-seat" + (!isRoundOver && !isUserSplit ? " active" : "");
 
           if (isUserSplit) {
+            box.className = "hand-box center-seat";
             box.style.visibility = "hidden";
             box.style.pointerEvents = "none";
+            box.innerHTML = '<div style="height: calc(var(--card-h) + 24px);"></div>';
           } else {
             const cardsArr = (playerHands[0] && playerHands[0].cards) || [];
             const score = calcHandScore(cardsArr);
@@ -1085,48 +1217,50 @@
 
           handsContainerEl.appendChild(box);
         } else {
+          const botIdx = s < centerIndex ? s : s - 1;
           const botSubHands = simulatedBotHands[botIdx] || [];
           const box = document.createElement("div");
           box.className = "hand-group";
 
-          const label = document.createElement("div");
-          label.className = "hand-label";
-
-          if (botSubHands.length <= 1) {
+          if (botSubHands.length > 1) {
+            box.className = "hand-group";
+            box.style.visibility = "hidden";
+            box.style.pointerEvents = "none";
+            box.innerHTML = '<div style="height: calc(var(--card-h) + 24px);"></div>';
+          } else {
+            const label = document.createElement("div");
+            label.className = "hand-label";
             const bCards = (botSubHands[0] && botSubHands[0].cards) || [];
             const score = calcHandScore(bCards);
             label.textContent = score;
             box.appendChild(label);
 
+            if (isRoundOver && botSubHands[0] && botSubHands[0].resTxt) {
+              const badge = document.createElement("div");
+              badge.className = "hand-result-badge " + (botSubHands[0].resType || "win");
+              badge.textContent = botSubHands[0].resTxt;
+              box.appendChild(badge);
+            }
+
             const cardsRow = document.createElement("div");
             cardsRow.className = "cards-row" + (bCards.length >= 2 ? " cascading" : "");
             bCards.forEach((c, idx) => cardsRow.appendChild(createCardElement(c, false, idx)));
             box.appendChild(cardsRow);
-          } else {
-            const scores = botSubHands.map(sh => calcHandScore(sh.cards)).join(" / ");
-            label.textContent = scores;
-            box.appendChild(label);
-
-            const splitWrapper = document.createElement("div");
-            splitWrapper.style.display = "flex";
-            splitWrapper.style.gap = "4px";
-
-            botSubHands.forEach(sh => {
-              const subRow = document.createElement("div");
-              subRow.className = "cards-row cascading";
-              sh.cards.forEach((c, idx) => subRow.appendChild(createCardElement(c, false, idx)));
-              splitWrapper.appendChild(subRow);
-            });
-            box.appendChild(splitWrapper);
           }
 
           handsContainerEl.appendChild(box);
-          botIdx++;
         }
       }
     } else if (handsContainerEl) {
       // 1 Seat Solo Table
-      if (!isUserSplit) {
+      if (isUserSplit) {
+        const box = document.createElement("div");
+        box.className = "hand-box center-seat";
+        box.style.visibility = "hidden";
+        box.style.pointerEvents = "none";
+        box.innerHTML = '<div style="height: calc(var(--card-h) + 24px);"></div>';
+        handsContainerEl.appendChild(box);
+      } else {
         playerHands.forEach((hand, idx) => {
           const score = calcHandScore(hand.cards);
           const box = document.createElement("div");
@@ -1276,12 +1410,187 @@
     if (messageBanner) messageBanner.textContent = "";
   };
 
+  // =========================================================================
+  // GEMINI 3.8 FLASH DEALER COMMENTARY & BASIC STRATEGY ADVISOR
+  // =========================================================================
+  let geminiAdvisorEnabled = (localStorage.getItem("cc_gemini_advisor_enabled") === "true");
+  let geminiCommentaryAbortId = 0;
+
+  function updateGeminiAdvisorUI() {
+    const btn = getEl("geminiAdvisorBtn");
+    const box = getEl("gemini-dealer-box");
+
+    if (btn) {
+      if (geminiAdvisorEnabled) {
+        btn.classList.add("active");
+        btn.classList.remove("muted");
+        btn.textContent = "✨ Gemini AI";
+      } else {
+        btn.classList.remove("active");
+        btn.classList.add("muted");
+        btn.textContent = "✨ AI OFF";
+      }
+    }
+
+    if (box) {
+      if (geminiAdvisorEnabled) {
+        box.classList.remove("hidden");
+        box.style.display = "flex";
+      } else {
+        box.classList.add("hidden");
+        box.style.display = "none";
+      }
+    }
+  }
+
+  global.toggleGeminiAdvisor = function () {
+    geminiAdvisorEnabled = !geminiAdvisorEnabled;
+    try {
+      localStorage.setItem("cc_gemini_advisor_enabled", geminiAdvisorEnabled ? "true" : "false");
+    } catch (e) {}
+    updateGeminiAdvisorUI();
+  };
+
+  async function callGeminiApi(action, payload) {
+    const candidateUrls = [
+      `${API_BASE}/gemini_api.php?action=${action}`,
+      `./gemini_api.php?action=${action}`,
+      `/gemini_api.php?action=${action}`
+    ];
+    for (const url of candidateUrls) {
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          return await res.json();
+        }
+      } catch (e) {}
+    }
+    return null;
+  }
+
+  async function triggerGeminiCommentary(event, extraData = {}) {
+    if (!geminiAdvisorEnabled) return;
+
+    const currentId = ++geminiCommentaryAbortId;
+    const commentaryEl = getEl("gemini-commentary-text");
+
+    const curHand = playerHands[activeHandIndex] || playerHands[0];
+    const playerCards = curHand && curHand.cards ? curHand.cards.map(c => c.name + c.suit) : [];
+    const playerScore = curHand && curHand.cards ? calcHandScore(curHand.cards) : (extraData.player_score || 0);
+    const upCard = dealerCards[0] ? (dealerCards[0].name + dealerCards[0].suit) : (extraData.dealer_upcard || "7");
+    const bet = curHand ? curHand.bet : (currentBet || 25);
+
+    const payload = {
+      event: event,
+      player_cards: playerCards,
+      player_score: playerScore,
+      dealer_upcard: upCard,
+      dealer_cards: dealerCards.map(c => c.name + c.suit),
+      dealer_score: calcHandScore(dealerCards),
+      bet: bet,
+      bankroll: userBank,
+      ...extraData
+    };
+
+    try {
+      const data = await callGeminiApi("commentary", payload);
+      if (currentId !== geminiCommentaryAbortId) return;
+
+      if (data && data.success && data.commentary) {
+        if (commentaryEl) {
+          commentaryEl.style.opacity = "0.2";
+          setTimeout(() => {
+            if (currentId === geminiCommentaryAbortId) {
+              commentaryEl.textContent = `"${data.commentary}"`;
+              commentaryEl.style.opacity = "1";
+            }
+          }, 150);
+        }
+      }
+    } catch (err) {
+      console.warn("Gemini 3.8 Flash commentary error:", err);
+    }
+  }
+
+  global.requestGeminiStrategyHint = async function () {
+    if (isRoundOver) return;
+
+    const curHand = playerHands[activeHandIndex];
+    if (!curHand || curHand.cards.length < 2) return;
+
+    // Automatically enable AI Assistant if it was off when hint requested
+    if (!geminiAdvisorEnabled) {
+      geminiAdvisorEnabled = true;
+      try {
+        localStorage.setItem("cc_gemini_advisor_enabled", "true");
+      } catch (e) {}
+      updateGeminiAdvisorUI();
+    }
+
+    const hintBox = getEl("gemini-strategy-hint");
+    const hintPillBtn = getEl("ai-hint-btn");
+    const hintBtn = getEl("btn-ai-hint");
+
+    if (hintPillBtn) hintPillBtn.textContent = "Thinking...";
+    if (hintBtn) hintBtn.textContent = "Thinking...";
+    if (hintBox) {
+      hintBox.style.display = "block";
+      hintBox.innerHTML = `<em>Consulting Gemini 3.8 Flash Basic Strategy...</em>`;
+    }
+
+    const upCardStr = dealerCards[0] ? dealerCards[0].name : "7";
+    const isSoft = isHandSoft(curHand.cards);
+    const score = calcHandScore(curHand.cards);
+    const canDouble = curHand.cards.length === 2 && userBank >= curHand.bet;
+    const isPair = curHand.cards.length === 2 && curHand.cards[0].value === curHand.cards[1].value;
+    const canSplit = isPair && playerHands.length < MAX_SPLIT_HANDS && userBank >= curHand.bet;
+
+    const payload = {
+      player_cards: curHand.cards.map(c => c.name + c.suit),
+      player_score: score,
+      is_soft: isSoft,
+      dealer_upcard: upCardStr,
+      can_double: canDouble,
+      can_split: canSplit,
+      bet: curHand.bet,
+      bankroll: userBank
+    };
+
+    try {
+      const data = await callGeminiApi("strategy_advisor", payload);
+      if (hintBox) {
+        if (data && data.success && data.recommendation) {
+          hintBox.style.display = "block";
+          const rec = data.recommendation;
+          const rationale = data.rationale || "Follow standard Basic Strategy probability.";
+          hintBox.innerHTML = `<strong>Gemini 3.8 Flash says: ${rec}</strong> &mdash; ${rationale}`;
+        } else {
+          hintBox.innerHTML = `<em>Unable to retrieve advice. Please try again.</em>`;
+        }
+      }
+    } catch (err) {
+      if (hintBox) {
+        hintBox.innerHTML = `<em>AI Strategy Advisor temporarily offline.</em>`;
+      }
+    } finally {
+      if (hintPillBtn) hintPillBtn.textContent = "💡 Strategy Advice";
+      if (hintBtn) hintBtn.textContent = "💡 AI Hint";
+    }
+  };
+
   function updateButtonStates() {
     const dealBtn = getEl("deal-btn");
     const hitBtn = getEl("hit-btn");
     const standBtn = getEl("stand-btn");
     const doubleBtn = getEl("double-btn");
     const splitBtn = getEl("split-btn");
+    const hintBtn = getEl("btn-ai-hint");
+    const hintPillBtn = getEl("ai-hint-btn");
     const chipControls = getEl("chip-controls");
 
     if (isRoundOver) {
@@ -1290,6 +1599,8 @@
       if (standBtn) standBtn.disabled = true;
       if (doubleBtn) doubleBtn.disabled = true;
       if (splitBtn) splitBtn.disabled = true;
+      if (hintBtn) hintBtn.disabled = true;
+      if (hintPillBtn) hintPillBtn.disabled = true;
       if (chipControls) {
         chipControls.style.opacity = "1";
         chipControls.querySelectorAll(".chip, button").forEach(c => (c.style.pointerEvents = "auto"));
@@ -1311,11 +1622,15 @@
       if (doubleBtn) doubleBtn.disabled = true;
       if (splitBtn) splitBtn.disabled = true;
       if (standBtn) standBtn.disabled = false;
+      if (hintBtn) hintBtn.disabled = true;
+      if (hintPillBtn) hintPillBtn.disabled = true;
       return;
     }
 
     if (hitBtn) hitBtn.disabled = false;
     if (standBtn) standBtn.disabled = false;
+    if (hintBtn) hintBtn.disabled = false;
+    if (hintPillBtn) hintPillBtn.disabled = false;
     if (doubleBtn) doubleBtn.disabled = !(curHand.cards.length === 2 && userBank >= curHand.bet);
 
     const isPair = curHand.cards.length === 2 && curHand.cards[0].value === curHand.cards[1].value;
@@ -1427,10 +1742,53 @@
     });
   }
 
+  // Evaluate immediate splits for bots dealt pairs upon initial deal
+  function evaluateBotInitialSplits() {
+    const dealerUpCard = dealerCards[0];
+    if (!dealerUpCard) return;
+
+    simulatedBotHands.forEach(botSeat => {
+      let splitOccurred = true;
+      while (splitOccurred && botSeat.length < MAX_SPLIT_HANDS) {
+        splitOccurred = false;
+        for (let i = 0; i < botSeat.length; i++) {
+          const subHand = botSeat[i];
+          if (
+            subHand.cards.length === 2 &&
+            !subHand.isSplitAce &&
+            shouldSplitBasicStrategy(subHand.cards[0], subHand.cards[1], dealerUpCard) &&
+            botSeat.length < MAX_SPLIT_HANDS
+          ) {
+            const isAceSplit = subHand.cards[0].name === "A";
+            const handA = {
+              cards: [subHand.cards[0], drawCard()],
+              status: isAceSplit ? "stood" : "playing",
+              isSplitAce: isAceSplit
+            };
+            const handB = {
+              cards: [subHand.cards[1], drawCard()],
+              status: isAceSplit ? "stood" : "playing",
+              isSplitAce: isAceSplit
+            };
+            botSeat.splice(i, 1, handA, handB);
+            splitOccurred = true;
+            break;
+          }
+        }
+      }
+    });
+  }
+
   global.startGame = async function () {
     if (roundCleanupTimer) {
       clearTimeout(roundCleanupTimer);
       roundCleanupTimer = null;
+    }
+
+    const hintBox = getEl("gemini-strategy-hint");
+    if (hintBox) {
+      hintBox.style.display = "none";
+      hintBox.innerHTML = "";
     }
 
     playCardDealSfx();
@@ -1478,9 +1836,17 @@
     for (let i = 0; i < botCount; i++) simulatedBotHands[i][0].cards.push(drawCard());
     dealerCards.push(drawCard());
 
+    evaluateBotInitialSplits();
     updateResponsiveCardScale();
     renderTable(true);
     updateButtonStates();
+
+    const playerHasNatural = playerHands[0].cards.length === 2 && calcHandScore(playerHands[0].cards) === 21;
+    if (playerHasNatural) {
+      triggerGeminiCommentary("BLACKJACK");
+    } else {
+      triggerGeminiCommentary("DEALT");
+    }
 
     const upCard = dealerCards[0];
     const dealerHasBlackjack = calcHandScore(dealerCards) === 21;
@@ -1536,6 +1902,9 @@
 
   global.playerHit = function () {
     playCardDealSfx();
+    const hintBox = getEl("gemini-strategy-hint");
+    if (hintBox) hintBox.style.display = "none";
+
     const hand = playerHands[activeHandIndex];
     hand.cards.push(drawCard());
 
@@ -1543,14 +1912,19 @@
     if (score >= 21) {
       hand.status = score > 21 ? "busted" : "stood";
       renderTable(true);
+      triggerGeminiCommentary(score > 21 ? "BUST" : "HIT", { player_score: score });
       advanceToNextHand();
     } else {
       renderTable(true);
       updateButtonStates();
+      triggerGeminiCommentary("HIT", { player_score: score });
     }
   };
 
   global.playerDouble = function () {
+    const hintBox = getEl("gemini-strategy-hint");
+    if (hintBox) hintBox.style.display = "none";
+
     const hand = playerHands[activeHandIndex];
     userBank -= hand.bet;
     hand.bet *= 2;
@@ -1559,10 +1933,14 @@
     const score = calcHandScore(hand.cards);
     hand.status = score > 21 ? "busted" : "stood";
     renderTable(true);
+    triggerGeminiCommentary("DOUBLE", { player_score: score });
     advanceToNextHand();
   };
 
   global.playerSplit = function () {
+    const hintBox = getEl("gemini-strategy-hint");
+    if (hintBox) hintBox.style.display = "none";
+
     const hand = playerHands[activeHandIndex];
     userBank -= hand.bet;
 
@@ -1589,6 +1967,7 @@
     playerHands.splice(activeHandIndex, 1, handA, handB);
     updateResponsiveCardScale();
     renderTable(true);
+    triggerGeminiCommentary("SPLIT");
 
     if (isAceSplit) {
       advanceToNextHand();
@@ -1598,7 +1977,12 @@
   };
 
   global.playerStand = function () {
+    const hintBox = getEl("gemini-strategy-hint");
+    if (hintBox) hintBox.style.display = "none";
+
+    const score = calcHandScore(playerHands[activeHandIndex].cards);
     playerHands[activeHandIndex].status = "stood";
+    triggerGeminiCommentary("STAND", { player_score: score });
     advanceToNextHand();
   };
 
@@ -1647,7 +2031,46 @@
     let hasNaturalBlackjack = false;
     let celebrationWinAmount = 0;
 
-    playerHands.forEach(hand => {
+    // Total hands being dealt across table
+    const botHandsCount = simulatedBotHands.reduce((acc, seat) => acc + seat.length, 0);
+    const totalHandsDealt = playerHands.length + botHandsCount;
+    const moreThanOneHandDealt = totalHandsDealt > 1;
+
+    // 1. Evaluate Bot Hands (other players at the table)
+    simulatedBotHands.forEach(botSeat => {
+      botSeat.forEach(subHand => {
+        const botScore = calcHandScore(subHand.cards);
+        const botIsNatural = subHand.cards.length === 2 && botScore === 21 && botSeat.length === 1;
+
+        if (botScore > 21) {
+          subHand.resTxt = "LOSS";
+          subHand.resType = "loss";
+        } else if (botIsNatural) {
+          if (dealerHasNatural) {
+            subHand.resTxt = "PUSH";
+            subHand.resType = "push";
+          } else {
+            subHand.resTxt = "WIN";
+            subHand.resType = "win";
+          }
+        } else if (dealerHasNatural) {
+          subHand.resTxt = "LOSS";
+          subHand.resType = "loss";
+        } else if (dealerScore > 21 || botScore > dealerScore) {
+          subHand.resTxt = "WIN";
+          subHand.resType = "win";
+        } else if (botScore === dealerScore) {
+          subHand.resTxt = "PUSH";
+          subHand.resType = "push";
+        } else {
+          subHand.resTxt = "LOSS";
+          subHand.resType = "loss";
+        }
+      });
+    });
+
+    // 2. Evaluate User Hands (ALL player hands belong to user and show exact $ won/lost)
+    playerHands.forEach((hand, idx) => {
       // Respect already-settled insurance payout badge
       if (hand.insuranceResolved) {
         if (dealerHasNatural && hand.cards.length === 2 && calcHandScore(hand.cards) === 21) {
@@ -1660,8 +2083,8 @@
       const isNatural = hand.cards.length === 2 && playerScore === 21 && playerHands.length === 1;
 
       if (playerScore > 21) {
-        hand.resTxt = "-$" + hand.bet;
         hand.resType = "loss";
+        hand.resTxt = "-$" + hand.bet;
       } else if (isNatural) {
         if (dealerHasNatural) {
           totalWon += hand.bet;
@@ -1672,23 +2095,23 @@
           totalWon += payout;
           hasNaturalBlackjack = true;
           celebrationWinAmount = payout;
-          hand.resTxt = "+$" + Math.floor(hand.bet * 1.5);
           hand.resType = "win";
+          hand.resTxt = "+$" + Math.floor(hand.bet * 1.5);
         }
       } else if (dealerHasNatural) {
-        hand.resTxt = "-$" + hand.bet;
         hand.resType = "loss";
+        hand.resTxt = "-$" + hand.bet;
       } else if (dealerScore > 21 || playerScore > dealerScore) {
         totalWon += hand.bet * 2;
-        hand.resTxt = "+$" + hand.bet;
         hand.resType = "win";
+        hand.resTxt = "+$" + hand.bet;
       } else if (playerScore === dealerScore) {
         totalWon += hand.bet;
         hand.resTxt = "PUSH";
         hand.resType = "push";
       } else {
-        hand.resTxt = "-$" + hand.bet;
         hand.resType = "loss";
+        hand.resTxt = "-$" + hand.bet;
       }
     });
 
@@ -1717,6 +2140,22 @@
     if (betDisplay) betDisplay.textContent = 0;
     updateButtonStates();
     syncBankToServer(userBank);
+
+    // Determine overall result for the main player hand (hand 0) to trigger Gemini Dealer commentary
+    let endEvent = "LOSS";
+    if (playerHands[0]) {
+      if (playerHands[0].resType === "win") {
+        endEvent = hasNaturalBlackjack ? "BLACKJACK" : "WIN";
+      } else if (playerHands[0].resType === "push") {
+        endEvent = "PUSH";
+      } else {
+        endEvent = "LOSS";
+      }
+    }
+    triggerGeminiCommentary(endEvent, {
+      player_score: playerHands[0] ? calcHandScore(playerHands[0].cards) : 0,
+      dealer_score: dealerScore
+    });
 
     if (hasNaturalBlackjack) {
       triggerCelebration(celebrationWinAmount);
@@ -1755,6 +2194,389 @@
     }
 
     updateResponsiveCardScale();
+    updateAudioButtonUI();
+    updateGeminiAdvisorUI();
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("test_split") === "1" || urlParams.get("test_bot_split") === "1") {
+      const gameScreen = getEl("game-screen");
+      const lobbyScreen = getEl("lobby-screen");
+      if (gameScreen && lobbyScreen) {
+        lobbyScreen.classList.remove("active");
+        gameScreen.classList.add("active");
+      }
+      global.triggerTestBotSplit();
+    } else if (urlParams.get("test_player_split") === "1") {
+      const gameScreen = getEl("game-screen");
+      const lobbyScreen = getEl("lobby-screen");
+      if (gameScreen && lobbyScreen) {
+        lobbyScreen.classList.remove("active");
+        gameScreen.classList.add("active");
+      }
+      global.triggerTestPlayerSplit();
+    } else if (urlParams.get("test_player_split_results") === "1") {
+      const gameScreen = getEl("game-screen");
+      const lobbyScreen = getEl("lobby-screen");
+      if (gameScreen && lobbyScreen) {
+        lobbyScreen.classList.remove("active");
+        gameScreen.classList.add("active");
+      }
+      global.triggerTestPlayerSplitResults();
+    } else if (urlParams.get("test_both_split") === "1") {
+      const gameScreen = getEl("game-screen");
+      const lobbyScreen = getEl("lobby-screen");
+      if (gameScreen && lobbyScreen) {
+        lobbyScreen.classList.remove("active");
+        gameScreen.classList.add("active");
+      }
+      global.triggerTestBothSplit();
+    } else if (urlParams.get("test_player_split_4") === "1") {
+      const gameScreen = getEl("game-screen");
+      const lobbyScreen = getEl("lobby-screen");
+      if (gameScreen && lobbyScreen) {
+        lobbyScreen.classList.remove("active");
+        gameScreen.classList.add("active");
+      }
+      global.triggerTestPlayerSplit4();
+    } else if (urlParams.get("test_all_three_split") === "1") {
+      const gameScreen = getEl("game-screen");
+      const lobbyScreen = getEl("lobby-screen");
+      if (gameScreen && lobbyScreen) {
+        lobbyScreen.classList.remove("active");
+        gameScreen.classList.add("active");
+      }
+      global.triggerTestAllThreeSplit();
+    } else if (urlParams.get("test_table") === "1") {
+      const gameScreen = getEl("game-screen");
+      const lobbyScreen = getEl("lobby-screen");
+      if (gameScreen && lobbyScreen) {
+        lobbyScreen.classList.remove("active");
+        gameScreen.classList.add("active");
+      }
+      renderTable(false);
+    }
   });
+
+  // Developer/Test helper: Force a bot split scenario for automated/browser testing
+  global.triggerTestBotSplit = function () {
+    activeTableSeats = 3;
+    const seatsInput = getEl("table-seats-input");
+    if (seatsInput) seatsInput.value = "3";
+    isRoundOver = false;
+    currentBet = 0;
+    activeHandIndex = 0;
+
+    // Player hand
+    playerHands = [{
+      cards: [
+        { suit: "♠", name: "10", value: 10 },
+        { suit: "♦", name: "9", value: 9 }
+      ],
+      bet: 20,
+      status: "playing",
+      isSplitAce: false,
+      insuranceResolved: false
+    }];
+
+    // Dealer cards
+    dealerCards = [
+      { suit: "♣", name: "6", value: 6 },
+      { suit: "♥", name: "K", value: 10 }
+    ];
+
+    // Bot 0 (Seat 1) has split 8s!
+    simulatedBotHands = [
+      [
+        { cards: [{ suit: "♠", name: "8", value: 8 }, { suit: "♥", name: "J", value: 10 }], status: "playing", isSplitAce: false },
+        { cards: [{ suit: "♦", name: "8", value: 8 }, { suit: "♣", name: "9", value: 9 }], status: "playing", isSplitAce: false }
+      ],
+      [
+        { cards: [{ suit: "♥", name: "K", value: 10 }, { suit: "♠", name: "7", value: 7 }], status: "playing", isSplitAce: false }
+      ]
+    ];
+
+    updateResponsiveCardScale();
+    renderTable(true);
+    updateButtonStates();
+    console.log("Triggered Bot Split Test Scenario! Check the high felt area.");
+  };
+
+  // Developer/Test helper: Force a player split scenario for automated/browser testing
+  global.triggerTestPlayerSplit = function () {
+    activeTableSeats = 3;
+    const seatsInput = getEl("table-seats-input");
+    if (seatsInput) seatsInput.value = "3";
+    isRoundOver = false;
+    currentBet = 0;
+    activeHandIndex = 0;
+
+    // Player split hands
+    playerHands = [
+      {
+        cards: [{ suit: "♠", name: "8", value: 8 }, { suit: "♥", name: "K", value: 10 }],
+        bet: 20,
+        status: "playing",
+        isSplitAce: false,
+        insuranceResolved: false
+      },
+      {
+        cards: [{ suit: "♦", name: "8", value: 8 }, { suit: "♣", name: "9", value: 9 }],
+        bet: 20,
+        status: "playing",
+        isSplitAce: false,
+        insuranceResolved: false
+      }
+    ];
+
+    // Dealer cards
+    dealerCards = [
+      { suit: "♣", name: "6", value: 6 },
+      { suit: "♥", name: "K", value: 10 }
+    ];
+
+    simulatedBotHands = [
+      [
+        { cards: [{ suit: "♠", name: "10", value: 10 }, { suit: "♥", name: "9", value: 9 }], status: "playing", isSplitAce: false }
+      ],
+      [
+        { cards: [{ suit: "♥", name: "K", value: 10 }, { suit: "♠", name: "7", value: 7 }], status: "playing", isSplitAce: false }
+      ]
+    ];
+
+    updateResponsiveCardScale();
+    renderTable(true);
+    updateButtonStates();
+    console.log("Triggered Player Split Test Scenario!");
+  };
+
+  // Developer/Test helper: Force a player split round-over scenario to verify win/loss badges
+  global.triggerTestPlayerSplitResults = function () {
+    activeTableSeats = 3;
+    const seatsInput = getEl("table-seats-input");
+    if (seatsInput) seatsInput.value = "3";
+    isRoundOver = true;
+    currentBet = 0;
+    activeHandIndex = -1;
+
+    // Player split hands: Hand 1 won (+$20), Hand 2 lost (-$20)
+    playerHands = [
+      {
+        cards: [{ suit: "♠", name: "8", value: 8 }, { suit: "♥", name: "K", value: 10 }],
+        bet: 20,
+        status: "stand",
+        isSplitAce: false,
+        insuranceResolved: false,
+        resTxt: "+$20",
+        resType: "win"
+      },
+      {
+        cards: [{ suit: "♦", name: "8", value: 8 }, { suit: "♣", name: "7", value: 7 }],
+        bet: 20,
+        status: "stand",
+        isSplitAce: false,
+        insuranceResolved: false,
+        resTxt: "-$20",
+        resType: "loss"
+      }
+    ];
+
+    dealerCards = [
+      { suit: "♣", name: "10", value: 10 },
+      { suit: "♥", name: "7", value: 7 }
+    ];
+
+    simulatedBotHands = [
+      [
+        { cards: [{ suit: "♠", name: "10", value: 10 }, { suit: "♥", name: "9", value: 9 }], status: "stand", isSplitAce: false, resTxt: "WIN", resType: "win" }
+      ],
+      [
+        { cards: [{ suit: "♥", name: "K", value: 10 }, { suit: "♠", name: "6", value: 6 }], status: "stand", isSplitAce: false, resTxt: "LOSS", resType: "loss" }
+      ]
+    ];
+
+    updateResponsiveCardScale();
+    renderTable(true);
+    updateButtonStates();
+    console.log("Triggered Player Split Results Test Scenario!");
+  };
+
+  // Developer/Test helper: Force scenario where BOTH Seat 1 (bot) and Seat 2 (player) have split hands
+  // Demonstrates Seat 1 split cards directly above Seat 1, and Seat 2 split cards directly above Seat 2
+  global.triggerTestBothSplit = function () {
+    activeTableSeats = 3;
+    const seatsInput = getEl("table-seats-input");
+    if (seatsInput) seatsInput.value = "3";
+    isRoundOver = false;
+    currentBet = 0;
+    activeHandIndex = 0;
+
+    // Player (Seat 2, center) has 2 split hands
+    playerHands = [
+      {
+        cards: [{ suit: "♠", name: "8", value: 8 }, { suit: "♥", name: "K", value: 10 }],
+        bet: 20,
+        status: "playing",
+        isSplitAce: false,
+        insuranceResolved: false
+      },
+      {
+        cards: [{ suit: "♦", name: "8", value: 8 }, { suit: "♣", name: "9", value: 9 }],
+        bet: 20,
+        status: "playing",
+        isSplitAce: false,
+        insuranceResolved: false
+      }
+    ];
+
+    // Dealer cards
+    dealerCards = [
+      { suit: "♣", name: "6", value: 6 },
+      { suit: "♥", name: "K", value: 10 }
+    ];
+
+    // Simulated Bot Hands:
+    // Bot 0 (Seat 1, left) has 2 split hands
+    // Bot 1 (Seat 3, right) has 1 normal hand
+    simulatedBotHands = [
+      [
+        { cards: [{ suit: "♠", name: "9", value: 9 }, { suit: "♦", name: "J", value: 10 }], status: "playing", isSplitAce: false },
+        { cards: [{ suit: "♥", name: "9", value: 9 }, { suit: "♣", name: "8", value: 8 }], status: "playing", isSplitAce: false }
+      ],
+      [
+        { cards: [{ suit: "♥", name: "K", value: 10 }, { suit: "♠", name: "7", value: 7 }], status: "playing", isSplitAce: false }
+      ]
+    ];
+
+    updateResponsiveCardScale();
+    renderTable(true);
+    updateButtonStates();
+    console.log("Triggered Both Split Test Scenario (Seat 1 bot + Seat 2 player split)!");
+  };
+
+  // Developer/Test helper: Force scenario where player splits up to 4 hands with compact scaling
+  global.triggerTestPlayerSplit4 = function () {
+    activeTableSeats = 3;
+    const seatsInput = getEl("table-seats-input");
+    if (seatsInput) seatsInput.value = "3";
+    isRoundOver = true;
+    currentBet = 0;
+    activeHandIndex = -1;
+
+    // Player (Seat 2, center) has 4 split hands, round over with win/loss badges
+    playerHands = [
+      {
+        cards: [{ suit: "♠", name: "8", value: 8 }, { suit: "♥", name: "K", value: 10 }],
+        bet: 20,
+        status: "stand",
+        isSplitAce: false,
+        insuranceResolved: false,
+        resTxt: "+$20",
+        resType: "win"
+      },
+      {
+        cards: [{ suit: "♦", name: "8", value: 8 }, { suit: "♣", name: "3", value: 3 }, { suit: "♠", name: "10", value: 10 }],
+        bet: 20,
+        status: "stand",
+        isSplitAce: false,
+        insuranceResolved: false,
+        resTxt: "+$20",
+        resType: "win"
+      },
+      {
+        cards: [{ suit: "♥", name: "8", value: 8 }, { suit: "♦", name: "7", value: 7 }, { suit: "♣", name: "5", value: 5 }],
+        bet: 20,
+        status: "stand",
+        isSplitAce: false,
+        insuranceResolved: false,
+        resTxt: "+$20",
+        resType: "win"
+      },
+      {
+        cards: [{ suit: "♣", name: "8", value: 8 }, { suit: "♠", name: "2", value: 2 }, { suit: "♥", name: "9", value: 9 }],
+        bet: 20,
+        status: "stand",
+        isSplitAce: false,
+        insuranceResolved: false,
+        resTxt: "-$20",
+        resType: "loss"
+      }
+    ];
+
+    dealerCards = [
+      { suit: "♣", name: "10", value: 10 },
+      { suit: "♥", name: "7", value: 7 }
+    ];
+
+    simulatedBotHands = [
+      [
+        { cards: [{ suit: "♠", name: "10", value: 10 }, { suit: "♥", name: "9", value: 9 }], status: "stand", isSplitAce: false, resTxt: "WIN", resType: "win" }
+      ],
+      [
+        { cards: [{ suit: "♥", name: "K", value: 10 }, { suit: "♠", name: "6", value: 6 }], status: "stand", isSplitAce: false, resTxt: "LOSS", resType: "loss" }
+      ]
+    ];
+
+    updateResponsiveCardScale();
+    renderTable(true);
+    updateButtonStates();
+    console.log("Triggered Player 4 Split Hands Test Scenario!");
+  };
+
+  // Developer/Test helper: Force scenario where ALL THREE seats have split hands
+  global.triggerTestAllThreeSplit = function () {
+    activeTableSeats = 3;
+    const seatsInput = getEl("table-seats-input");
+    if (seatsInput) seatsInput.value = "3";
+    isRoundOver = false;
+    currentBet = 0;
+    activeHandIndex = 0;
+
+    // Player (Seat 2, center) has 3 split hands
+    playerHands = [
+      {
+        cards: [{ suit: "♠", name: "9", value: 9 }, { suit: "♥", name: "2", value: 2 }, { suit: "♦", name: "K", value: 10 }],
+        bet: 20,
+        status: "stand",
+        isSplitAce: false,
+        insuranceResolved: false
+      },
+      {
+        cards: [{ suit: "♦", name: "9", value: 9 }, { suit: "♣", name: "10", value: 10 }],
+        bet: 20,
+        status: "playing",
+        isSplitAce: false,
+        insuranceResolved: false
+      },
+      {
+        cards: [{ suit: "♥", name: "9", value: 9 }, { suit: "♠", name: "8", value: 8 }],
+        bet: 20,
+        status: "playing",
+        isSplitAce: false,
+        insuranceResolved: false
+      }
+    ];
+
+    dealerCards = [
+      { suit: "♣", name: "5", value: 5 },
+      { suit: "♥", name: "10", value: 10 }
+    ];
+
+    // Bot 0 (Seat 1) has 2 split hands; Bot 1 (Seat 3) has 2 split hands
+    simulatedBotHands = [
+      [
+        { cards: [{ suit: "♠", name: "8", value: 8 }, { suit: "♥", name: "10", value: 10 }], status: "playing", isSplitAce: false },
+        { cards: [{ suit: "♦", name: "8", value: 8 }, { suit: "♣", name: "9", value: 9 }], status: "playing", isSplitAce: false }
+      ],
+      [
+        { cards: [{ suit: "♥", name: "7", value: 7 }, { suit: "♦", name: "4", value: 4 }, { suit: "♠", name: "9", value: 9 }], status: "playing", isSplitAce: false },
+        { cards: [{ suit: "♣", name: "7", value: 7 }, { suit: "♠", name: "10", value: 10 }], status: "playing", isSplitAce: false }
+      ]
+    ];
+
+    updateResponsiveCardScale();
+    renderTable(true);
+    updateButtonStates();
+    console.log("Triggered All Three Seats Split Test Scenario!");
+  };
 
 })(window);

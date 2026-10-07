@@ -310,12 +310,69 @@
             padding: clamp(16px, 3vw, 26px);
             border-radius: 12px;
             width: 100%;
-            max-width: 800px;
+            max-width: min(96vw, 1180px);
             max-height: 92vh;
             max-height: 92dvh;
             overflow-y: auto;
             border: 2px solid var(--gold-primary);
             box-sizing: border-box;
+        }
+
+        .table-scroll-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-top: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: #ffd700 #1e293b;
+        }
+        .table-scroll-container::-webkit-scrollbar {
+            height: 9px;
+        }
+        .table-scroll-container::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .table-scroll-container::-webkit-scrollbar-thumb {
+            background: #ffd700;
+            border-radius: 4px;
+        }
+        .table-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #ffae00;
+        }
+
+        .store-ledger-table {
+            width: 100%;
+            min-width: 1200px;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        .field-scroll-cell {
+            max-width: 250px;
+            min-width: 180px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: thin;
+            scrollbar-color: #64748b rgba(255, 255, 255, 0.05);
+            padding: 2px 0;
+        }
+        .field-scroll-cell::-webkit-scrollbar {
+            height: 4px;
+        }
+        .field-scroll-cell::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+        .field-scroll-cell::-webkit-scrollbar-thumb {
+            background: #64748b;
+            border-radius: 2px;
+        }
+        .field-scroll-cell::-webkit-scrollbar-thumb:hover {
+            background: #ffd700;
         }
 
         .admin-content h2 {
@@ -949,20 +1006,20 @@
                         </div>
                     </div>
 
-                    <div style="overflow-x: auto; background: rgba(0,0,0,0.3); border-radius: 8px; border: 1px solid #334155;">
-                        <table style="width: 100%; border-collapse: collapse; font-size: 0.82rem;">
+                    <div class="table-scroll-container">
+                        <table class="store-ledger-table">
                             <thead>
                                 <tr style="border-bottom: 1px solid #334155; background: rgba(255,215,0,0.06); color: var(--gold-primary); text-align: left;">
-                                    <th style="padding: 8px 10px;">ID</th>
-                                    <th style="padding: 8px 10px;">User</th>
-                                    <th style="padding: 8px 10px; text-align: center; white-space: nowrap;">Gateway & Mode</th>
-                                    <th style="padding: 8px 10px;">Order / GPA ID</th>
-                                    <th style="padding: 8px 10px;">Product SKU</th>
-                                    <th style="padding: 8px 10px;">Credits</th>
-                                    <th style="padding: 8px 10px;">Amount</th>
-                                    <th style="padding: 8px 10px; text-align: center; white-space: nowrap;">Status</th>
-                                    <th style="padding: 8px 10px;">Date</th>
-                                    <th style="padding: 8px 10px; text-align: center;">Details</th>
+                                    <th style="padding: 10px 12px; width: 60px;">ID</th>
+                                    <th style="padding: 10px 12px; min-width: 220px;">User Email</th>
+                                    <th style="padding: 10px 12px; text-align: center; white-space: nowrap; min-width: 160px;">Gateway & Mode</th>
+                                    <th style="padding: 10px 12px; min-width: 200px;">Order / GPA ID</th>
+                                    <th style="padding: 10px 12px; min-width: 150px;">Product SKU</th>
+                                    <th style="padding: 10px 12px; min-width: 90px;">Credits</th>
+                                    <th style="padding: 10px 12px; min-width: 80px;">Amount</th>
+                                    <th style="padding: 10px 12px; text-align: center; white-space: nowrap; min-width: 110px;">Status</th>
+                                    <th style="padding: 10px 12px; min-width: 100px;">Date</th>
+                                    <th style="padding: 10px 12px; text-align: center; min-width: 90px;">Details</th>
                                 </tr>
                             </thead>
                             <tbody id="adminStoreLedgerBody">

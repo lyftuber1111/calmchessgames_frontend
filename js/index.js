@@ -34,16 +34,44 @@
       ];
       const uniqueEndpoints = [...new Set(endpoints)];
 
+      let adminKey = '';
+      if (typeof getAdminKey === 'function') {
+          adminKey = getAdminKey();
+      }
+      if (!adminKey && sessionAdminPassword) {
+          adminKey = sessionAdminPassword;
+      }
+      if (!adminKey && payload && typeof payload === 'object') {
+          adminKey = payload.api_token || payload.admin_key || payload.admin_password || '';
+      }
+
+      const requestHeaders = { 'Content-Type': 'application/json' };
+      if (adminKey) {
+          requestHeaders['Authorization'] = `Bearer ${adminKey}`;
+          requestHeaders['X-Admin-Token'] = adminKey;
+          requestHeaders['X-API-Key'] = adminKey;
+      }
+
+      let requestBody = payload;
+      if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
+          requestBody = Object.assign({}, payload);
+          if (adminKey) {
+              if (!requestBody.api_token) requestBody.api_token = adminKey;
+              if (!requestBody.admin_key) requestBody.admin_key = adminKey;
+              if (!requestBody.admin_password) requestBody.admin_password = adminKey;
+          }
+      }
+
       let lastError = null;
       for (const url of uniqueEndpoints) {
           try {
               const fetchOptions = {
                   method: method,
-                  headers: { 'Content-Type': 'application/json' },
+                  headers: requestHeaders,
                   credentials: 'include'
               };
-              if (payload !== null && method !== 'GET') {
-                  fetchOptions.body = JSON.stringify(payload);
+              if (requestBody !== null && method !== 'GET') {
+                  fetchOptions.body = JSON.stringify(requestBody);
               }
               const res = await fetch(url, fetchOptions);
               const text = await res.text();
@@ -685,6 +713,7 @@
           const payload = {
               admin_password: password,
               admin_key: password,
+              api_token: password,
               segments: [
                   ...updatedSegments,
                   {
@@ -703,7 +732,13 @@
               try {
                   const response = await fetch(targetUrl, {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${password}`,
+                          'X-Admin-Token': password,
+                          'X-API-Key': password
+                      },
+                      credentials: 'include',
                       body: JSON.stringify(payload)
                   });
                   const result = await response.json();
@@ -803,10 +838,17 @@
       try {
           const res = await fetch(`${API_BASE}/admin_api.php?action=get_users&_t=${Date.now()}`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${adminKey}`,
+                  'X-Admin-Token': adminKey,
+                  'X-API-Key': adminKey
+              },
+              credentials: 'include',
               body: JSON.stringify({ 
                   admin_key: adminKey,
-                  admin_password: adminKey 
+                  admin_password: adminKey,
+                  api_token: adminKey
               })
           });
 
@@ -935,10 +977,17 @@
       try {
           const res = await fetch(`${API_BASE}/admin_api.php?action=create_user`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${adminKey}`,
+                  'X-Admin-Token': adminKey,
+                  'X-API-Key': adminKey
+              },
+              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
                   admin_password: adminKey,
+                  api_token: adminKey,
                   email: email,
                   password: password,
                   bank: bank,
@@ -974,10 +1023,17 @@
       try {
           const res = await fetch(`${API_BASE}/admin_api.php?action=update_user`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${adminKey}`,
+                  'X-Admin-Token': adminKey,
+                  'X-API-Key': adminKey
+              },
+              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
                   admin_password: adminKey,
+                  api_token: adminKey,
                   user_id: userId,
                   email: email,
                   bank: bank,
@@ -1005,10 +1061,17 @@
       try {
           const res = await fetch(`${API_BASE}/admin_api.php?action=toggle_ban_user`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${adminKey}`,
+                  'X-Admin-Token': adminKey,
+                  'X-API-Key': adminKey
+              },
+              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
                   admin_password: adminKey,
+                  api_token: adminKey,
                   user_id: userId,
                   is_active: newActiveStatus
               })
@@ -1032,10 +1095,17 @@
       try {
           const res = await fetch(`${API_BASE}/admin_api.php?action=delete_user`, {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${adminKey}`,
+                  'X-Admin-Token': adminKey,
+                  'X-API-Key': adminKey
+              },
+              credentials: 'include',
               body: JSON.stringify({
                   admin_key: adminKey,
                   admin_password: adminKey,
+                  api_token: adminKey,
                   user_id: userId
               })
           });
@@ -1342,20 +1412,25 @@
           const productIdDisplay = p.product_id || ('credits_' + p.credits_added);
           const dateDisplay = p.created_at ? p.created_at.split(' ')[0] : '';
 
+          const userEmailText = p.email || ('User #' + p.user_id);
           tr.innerHTML = `
-              <td style="padding: 8px 10px;">#${p.id}</td>
-              <td style="padding: 8px 10px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${p.email || ('User #' + p.user_id)}">${p.email || ('User #' + p.user_id)}</td>
-              <td style="padding: 8px 10px; text-align: center; white-space: nowrap;"><span class="badge-status badge-gateway ${methodBadgeClass}">${methodLabel}</span></td>
-              <td style="padding: 8px 10px; font-family: monospace; font-size: 0.75rem;">
-                  <span title="${orderIdDisplay}">${orderIdDisplay.length > 16 ? orderIdDisplay.substring(0, 16) + '...' : orderIdDisplay}</span>
+              <td style="padding: 10px 12px; font-weight: 600;">#${p.id}</td>
+              <td style="padding: 10px 12px; min-width: 220px;">
+                  <div class="field-scroll-cell" title="${userEmailText}">${userEmailText}</div>
               </td>
-              <td style="padding: 8px 10px; font-family: monospace; font-size: 0.75rem; color: #94a3b8;">${productIdDisplay}</td>
-              <td style="padding: 8px 10px; color: var(--gold-primary); font-weight: bold;">+${parseInt(p.credits_added, 10).toLocaleString()}</td>
-              <td style="padding: 8px 10px;">$${parseFloat(p.amount_paid || 0).toFixed(2)}</td>
-              <td style="padding: 8px 10px; text-align: center; white-space: nowrap;"><span class="badge-status ${p.status === 'COMPLETED' ? 'badge-active' : 'badge-banned'}" style="min-width: 90px;">${p.status || 'DONE'}</span></td>
-              <td style="padding: 8px 10px; color: var(--text-muted); font-size: 0.75rem;">${dateDisplay}</td>
-              <td style="padding: 8px 10px; text-align: center;">
-                  <button class="btn btn-sm btn-gold" style="padding: 3px 8px; font-size: 0.72rem;" onclick="viewPurchaseDetails(${p.id})">Details</button>
+              <td style="padding: 10px 12px; text-align: center; white-space: nowrap;"><span class="badge-status badge-gateway ${methodBadgeClass}">${methodLabel}</span></td>
+              <td style="padding: 10px 12px;">
+                  <div class="field-scroll-cell" style="font-family: monospace; font-size: 0.75rem;" title="${orderIdDisplay}">${orderIdDisplay}</div>
+              </td>
+              <td style="padding: 10px 12px;">
+                  <div class="field-scroll-cell" style="font-family: monospace; font-size: 0.75rem; color: #94a3b8;" title="${productIdDisplay}">${productIdDisplay}</div>
+              </td>
+              <td style="padding: 10px 12px; color: var(--gold-primary); font-weight: bold; white-space: nowrap;">+${parseInt(p.credits_added, 10).toLocaleString()}</td>
+              <td style="padding: 10px 12px; font-weight: 600; white-space: nowrap;">$${parseFloat(p.amount_paid || 0).toFixed(2)}</td>
+              <td style="padding: 10px 12px; text-align: center; white-space: nowrap;"><span class="badge-status ${p.status === 'COMPLETED' ? 'badge-active' : 'badge-banned'}" style="min-width: 90px;">${p.status || 'DONE'}</span></td>
+              <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.78rem; white-space: nowrap;">${dateDisplay}</td>
+              <td style="padding: 10px 12px; text-align: center; white-space: nowrap;">
+                  <button class="btn btn-sm btn-gold" style="padding: 4px 10px; font-size: 0.75rem;" onclick="viewPurchaseDetails(${p.id})">Details</button>
               </td>
           `;
           tbody.appendChild(tr);

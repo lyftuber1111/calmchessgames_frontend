@@ -23,47 +23,12 @@
   let androidSimulationMode = false;
   let desktopSimulationMode = false;
   let allowGuestAccess = true;
+  let geminiCommentaryEnabled = true;
+  let geminiConfigured = false;
 
   let allStorePurchases = [];
   let activePurchaseFilter = 'ALL';
   let activePurchaseSearchTerm = '';
-
-  /* --- API CALL HELPER --- */
-  async function callAdminApi(action, payload = null, method = 'POST') {
-      const endpoints = [
-          `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `./admin_api.php?action=${action}&_t=${Date.now()}`,
-          `/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `https://calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`
-      ];
-      const uniqueEndpoints = [...new Set(endpoints)];
-
-      let lastError = null;
-      for (const url of uniqueEndpoints) {
-          try {
-              const fetchOptions = {
-                  method: method,
-                  headers: { 'Content-Type': 'application/json' },
-                  credentials: 'include'
-              };
-              if (payload !== null && method !== 'GET') {
-                  fetchOptions.body = JSON.stringify(payload);
-              }
-              const res = await fetch(url, fetchOptions);
-              if (res.ok) {
-                  const text = await res.text();
-                  try {
-                      return JSON.parse(text);
-                  } catch (e) {
-                      console.warn('JSON parse warning on', url, 'content:', text.substring(0, 100));
-                  }
-              }
-          } catch (err) {
-              lastError = err;
-          }
-      }
-      throw lastError || new Error(`Failed to call admin API endpoint: ${action}`);
-  }
 
   function getAdminKey() {
       const pwdInput = document.getElementById('adminPassword');
@@ -81,6 +46,61 @@
           pwdInput.value = key;
       }
       return key;
+  }
+
+  /* --- API CALL HELPER (AUTHENTICATION API TOKEN ENABLED) --- */
+  async function callAdminApi(action, payload = null, method = 'POST') {
+      const endpoints = [
+          `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `./admin_api.php?action=${action}&_t=${Date.now()}`,
+          `/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `https://calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`
+      ];
+      const uniqueEndpoints = [...new Set(endpoints)];
+
+      const adminKey = getAdminKey();
+      const requestHeaders = { 'Content-Type': 'application/json' };
+      if (adminKey) {
+          requestHeaders['Authorization'] = `Bearer ${adminKey}`;
+          requestHeaders['X-Admin-Token'] = adminKey;
+          requestHeaders['X-API-Key'] = adminKey;
+      }
+
+      let requestBody = payload;
+      if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
+          requestBody = Object.assign({}, payload);
+          if (adminKey) {
+              if (!requestBody.api_token) requestBody.api_token = adminKey;
+              if (!requestBody.admin_key) requestBody.admin_key = adminKey;
+              if (!requestBody.admin_password) requestBody.admin_password = adminKey;
+          }
+      }
+
+      let lastError = null;
+      for (const url of uniqueEndpoints) {
+          try {
+              const fetchOptions = {
+                  method: method,
+                  headers: requestHeaders,
+                  credentials: 'include'
+              };
+              if (requestBody !== null && method !== 'GET') {
+                  fetchOptions.body = JSON.stringify(requestBody);
+              }
+              const res = await fetch(url, fetchOptions);
+              if (res.ok) {
+                  const text = await res.text();
+                  try {
+                      return JSON.parse(text);
+                  } catch (e) {
+                      console.warn('JSON parse warning on', url, 'content:', text.substring(0, 100));
+                  }
+              }
+          } catch (err) {
+              lastError = err;
+          }
+      }
+      throw lastError || new Error(`Failed to call admin API endpoint: ${action}`);
   }
 
   /* --- AUTHENTICATION IN STANDALONE CONSOLE --- */
@@ -345,6 +365,7 @@
           password: password,
           admin_key: password,
           admin_password: password,
+          api_token: password,
           segments: [
               ...updatedSegments,
               {
@@ -375,7 +396,13 @@
               try {
                   const res = await fetch(saveUrl, {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 
+                          'Content-Type': 'application/json',
+                          'Authorization': `Bearer ${password}`,
+                          'X-Admin-Token': password,
+                          'X-API-Key': password
+                      },
+                      credentials: 'include',
                       body: JSON.stringify(savePayload)
                   });
                   const data = await res.json();
@@ -682,16 +709,24 @@
               if (data.allow_guest !== undefined) {
                   allowGuestAccess = Boolean(data.allow_guest);
               }
+              if (data.gemini_commentary_enabled !== undefined) {
+                  geminiCommentaryEnabled = Boolean(data.gemini_commentary_enabled);
+              }
+              if (data.gemini_configured !== undefined) {
+                  geminiConfigured = Boolean(data.gemini_configured);
+              }
 
               const androidToggle = document.getElementById('adminAndroidSimToggle');
               const desktopToggle = document.getElementById('adminDesktopSimToggle');
               const guestToggle = document.getElementById('adminGuestToggle');
+              const geminiToggle = document.getElementById('adminGeminiToggle');
 
               if (androidToggle) androidToggle.checked = androidSimulationMode;
               if (desktopToggle) desktopToggle.checked = desktopSimulationMode;
               if (guestToggle) guestToggle.checked = allowGuestAccess;
+              if (geminiToggle) geminiToggle.checked = geminiCommentaryEnabled;
 
-              updateStoreBadges(androidSimulationMode, desktopSimulationMode, allowGuestAccess);
+              updateStoreBadges(androidSimulationMode, desktopSimulationMode, allowGuestAccess, geminiCommentaryEnabled, geminiConfigured);
 
               if (Array.isArray(data.purchases)) {
                   allStorePurchases = data.purchases;
@@ -716,16 +751,24 @@
                   if (data.allow_guest !== undefined) {
                       allowGuestAccess = Boolean(data.allow_guest);
                   }
+                  if (data.gemini_commentary_enabled !== undefined) {
+                      geminiCommentaryEnabled = Boolean(data.gemini_commentary_enabled);
+                  }
+                  if (data.gemini_configured !== undefined) {
+                      geminiConfigured = Boolean(data.gemini_configured);
+                  }
 
                   const androidToggle = document.getElementById('adminAndroidSimToggle');
                   const desktopToggle = document.getElementById('adminDesktopSimToggle');
                   const guestToggle = document.getElementById('adminGuestToggle');
+                  const geminiToggle = document.getElementById('adminGeminiToggle');
 
                   if (androidToggle) androidToggle.checked = androidSimulationMode;
                   if (desktopToggle) desktopToggle.checked = desktopSimulationMode;
                   if (guestToggle) guestToggle.checked = allowGuestAccess;
+                  if (geminiToggle) geminiToggle.checked = geminiCommentaryEnabled;
 
-                  updateStoreBadges(androidSimulationMode, desktopSimulationMode, allowGuestAccess);
+                  updateStoreBadges(androidSimulationMode, desktopSimulationMode, allowGuestAccess, geminiCommentaryEnabled, geminiConfigured);
               }
           } catch (e2) {
               showStoreAlert('Connection error loading settings from database: ' + e2.message, false);
@@ -737,15 +780,17 @@
       const androidToggle = document.getElementById('adminAndroidSimToggle');
       const desktopToggle = document.getElementById('adminDesktopSimToggle');
       const guestToggle = document.getElementById('adminGuestToggle');
+      const geminiToggle = document.getElementById('adminGeminiToggle');
 
       const isAndroidSim = androidToggle ? androidToggle.checked : false;
       const isDesktopSim = desktopToggle ? desktopToggle.checked : false;
       const isGuest = guestToggle ? guestToggle.checked : true;
+      const isGemini = geminiToggle ? geminiToggle.checked : true;
 
-      updateStoreBadges(isAndroidSim, isDesktopSim, isGuest);
+      updateStoreBadges(isAndroidSim, isDesktopSim, isGuest, isGemini, geminiConfigured);
   }
 
-  function updateStoreBadges(isAndroidSim, isDesktopSim, isGuest) {
+  function updateStoreBadges(isAndroidSim, isDesktopSim, isGuest, isGemini = true, isGeminiConfigured = false) {
       const androidBadge = document.getElementById('androidSimBadge');
       const androidExplanation = document.getElementById('androidModeExplanation');
       const androidCheckLabel = document.getElementById('androidCheckMarkLabel');
@@ -796,6 +841,40 @@
               ? 'Guest play is enabled. Players can enter tables immediately without logging in.'
               : 'Guest play is disabled. Players must sign in with a registered account.';
       }
+
+      const geminiBadge = document.getElementById('geminiModelBadge');
+      const geminiCheckLabel = document.getElementById('geminiCheckMarkLabel');
+      const geminiExplanation = document.getElementById('geminiModeExplanation');
+      const geminiKeyBadge = document.getElementById('geminiKeyStatusBadge');
+
+      if (geminiBadge) {
+          geminiBadge.className = `badge-status ${isGemini ? 'badge-active' : 'badge-banned'}`;
+          geminiBadge.textContent = isGemini ? 'gemini-3.8-flash (Active)' : 'Gemini AI (Disabled)';
+      }
+      if (geminiCheckLabel) {
+          geminiCheckLabel.textContent = isGemini ? '[✔] Active' : '[  ] Disabled';
+          geminiCheckLabel.style.color = isGemini ? '#93c5fd' : 'var(--text-muted)';
+      }
+      if (geminiExplanation) {
+          geminiExplanation.innerHTML = isGemini
+              ? (isGeminiConfigured
+                  ? 'Gemini 3.8 Flash live dealer commentary and strategic probabilities active via Google GenAI Interactions API.'
+                  : 'Gemini 3.8 Flash commentary active with built-in mathematical Basic Strategy & casino fallback engine.')
+              : 'Gemini AI dealer commentary and strategy advice are disabled for this table.';
+      }
+      if (geminiKeyBadge) {
+          if (isGeminiConfigured) {
+              geminiKeyBadge.className = 'badge-status badge-active';
+              geminiKeyBadge.textContent = 'API Key Configured';
+              geminiKeyBadge.style.background = 'rgba(46, 204, 113, 0.2)';
+              geminiKeyBadge.style.color = '#55efc4';
+          } else {
+              geminiKeyBadge.className = 'badge-status badge-sim';
+              geminiKeyBadge.textContent = 'Unconfigured (Simulation Fallback)';
+              geminiKeyBadge.style.background = 'rgba(245, 158, 11, 0.2)';
+              geminiKeyBadge.style.color = '#fbbf24';
+          }
+      }
   }
 
   function showStoreAlert(message, isSuccess = true) {
@@ -819,10 +898,14 @@
       const androidToggle = document.getElementById('adminAndroidSimToggle');
       const desktopToggle = document.getElementById('adminDesktopSimToggle');
       const guestToggle = document.getElementById('adminGuestToggle');
+      const geminiToggle = document.getElementById('adminGeminiToggle');
+      const geminiApiKeyInput = document.getElementById('adminGeminiApiKeyInput');
 
       const isAndroidSim = androidToggle ? androidToggle.checked : false;
       const isDesktopSim = desktopToggle ? desktopToggle.checked : false;
       const isGuest = guestToggle ? guestToggle.checked : true;
+      const isGemini = geminiToggle ? geminiToggle.checked : true;
+      const newApiKey = geminiApiKeyInput ? geminiApiKeyInput.value.trim() : '';
 
       showStoreAlert('Saving settings to MySQL database...', true);
 
@@ -833,8 +916,12 @@
               android_simulation_mode: isAndroidSim ? 1 : 0,
               desktop_simulation_mode: isDesktopSim ? 1 : 0,
               simulation_mode: isDesktopSim ? 1 : 0,
-              allow_guest: isGuest ? 1 : 0
+              allow_guest: isGuest ? 1 : 0,
+              gemini_commentary_enabled: isGemini ? 1 : 0
           };
+          if (newApiKey) {
+              payload.gemini_api_key = newApiKey;
+          }
 
           const data = await callAdminApi('set_mode', payload);
 
@@ -842,11 +929,21 @@
               androidSimulationMode = isAndroidSim;
               desktopSimulationMode = isDesktopSim;
               allowGuestAccess = isGuest;
-              updateStoreBadges(isAndroidSim, isDesktopSim, isGuest);
+              geminiCommentaryEnabled = isGemini;
+              if (data.gemini_configured !== undefined) {
+                  geminiConfigured = Boolean(data.gemini_configured);
+              } else if (newApiKey) {
+                  geminiConfigured = true;
+              }
+              if (geminiApiKeyInput && newApiKey) {
+                  geminiApiKeyInput.value = '';
+              }
+              updateStoreBadges(isAndroidSim, isDesktopSim, isGuest, isGemini, geminiConfigured);
 
               const androidLabel = isAndroidSim ? 'SIMULATED' : 'LIVE (Google Play)';
               const desktopLabel = isDesktopSim ? 'SIMULATED' : 'LIVE (PayPal)';
-              showStoreAlert(`✔ Database updated successfully!\nAndroid App: [${androidLabel}] | Desktop: [${desktopLabel}]`, true);
+              const geminiLabel = isGemini ? 'ACTIVE (gemini-3.8-flash)' : 'DISABLED';
+              showStoreAlert(`✔ Database updated successfully!\nAndroid: [${androidLabel}] | Desktop: [${desktopLabel}] | Gemini AI: [${geminiLabel}]`, true);
           } else {
               showStoreAlert((data && data.message) ? data.message : 'Error updating database settings.', false);
           }
@@ -941,20 +1038,25 @@
           const productIdDisplay = p.product_id || ('credits_' + p.credits_added);
           const dateDisplay = p.created_at ? p.created_at.split(' ')[0] : '';
 
+          const userEmailText = p.email || ('User #' + p.user_id);
           tr.innerHTML = `
-              <td style="padding: 8px 10px;">#${p.id}</td>
-              <td style="padding: 8px 10px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${p.email || ('User #' + p.user_id)}">${p.email || ('User #' + p.user_id)}</td>
-              <td style="padding: 8px 10px; text-align: center; white-space: nowrap;"><span class="badge-status badge-gateway ${methodBadgeClass}">${methodLabel}</span></td>
-              <td style="padding: 8px 10px; font-family: monospace; font-size: 0.75rem;">
-                  <span title="${orderIdDisplay}">${orderIdDisplay.length > 16 ? orderIdDisplay.substring(0, 16) + '...' : orderIdDisplay}</span>
+              <td style="padding: 10px 12px; font-weight: 600;">#${p.id}</td>
+              <td style="padding: 10px 12px; min-width: 220px;">
+                  <div class="field-scroll-cell" title="${userEmailText}">${userEmailText}</div>
               </td>
-              <td style="padding: 8px 10px; font-family: monospace; font-size: 0.75rem; color: #94a3b8;">${productIdDisplay}</td>
-              <td style="padding: 8px 10px; color: var(--gold-primary); font-weight: bold;">+${parseInt(p.credits_added, 10).toLocaleString()}</td>
-              <td style="padding: 8px 10px;">$${parseFloat(p.amount_paid || 0).toFixed(2)}</td>
-              <td style="padding: 8px 10px; text-align: center; white-space: nowrap;"><span class="badge-status ${p.status === 'COMPLETED' ? 'badge-active' : 'badge-banned'}" style="min-width: 90px;">${p.status || 'COMPLETED'}</span></td>
-              <td style="padding: 8px 10px; color: var(--text-muted); font-size: 0.75rem;">${dateDisplay}</td>
-              <td style="padding: 8px 10px; text-align: center;">
-                  <button class="btn btn-sm btn-gold" style="padding: 3px 8px; font-size: 0.72rem;" onclick="viewPurchaseDetails(${p.id})">Details</button>
+              <td style="padding: 10px 12px; text-align: center; white-space: nowrap;"><span class="badge-status badge-gateway ${methodBadgeClass}">${methodLabel}</span></td>
+              <td style="padding: 10px 12px;">
+                  <div class="field-scroll-cell" style="font-family: monospace; font-size: 0.75rem;" title="${orderIdDisplay}">${orderIdDisplay}</div>
+              </td>
+              <td style="padding: 10px 12px;">
+                  <div class="field-scroll-cell" style="font-family: monospace; font-size: 0.75rem; color: #94a3b8;" title="${productIdDisplay}">${productIdDisplay}</div>
+              </td>
+              <td style="padding: 10px 12px; color: var(--gold-primary); font-weight: bold; white-space: nowrap;">+${parseInt(p.credits_added, 10).toLocaleString()}</td>
+              <td style="padding: 10px 12px; font-weight: 600; white-space: nowrap;">$${parseFloat(p.amount_paid || 0).toFixed(2)}</td>
+              <td style="padding: 10px 12px; text-align: center; white-space: nowrap;"><span class="badge-status ${p.status === 'COMPLETED' ? 'badge-active' : 'badge-banned'}" style="min-width: 90px;">${p.status || 'COMPLETED'}</span></td>
+              <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.78rem; white-space: nowrap;">${dateDisplay}</td>
+              <td style="padding: 10px 12px; text-align: center; white-space: nowrap;">
+                  <button class="btn btn-sm btn-gold" style="padding: 4px 10px; font-size: 0.75rem;" onclick="viewPurchaseDetails(${p.id})">Details</button>
               </td>
           `;
           tbody.appendChild(tr);

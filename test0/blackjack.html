@@ -35,6 +35,7 @@
       --card-h: clamp(50px, 6.5vw, 122px);
       --card-font: clamp(0.68rem, 1.2vh, 1.05rem);
       --suit-font: clamp(0.85rem, 1.8vh, 1.45rem);
+      --seat-slot-max-w: clamp(200px, 24vw, 360px);
     }
 
     * {
@@ -370,7 +371,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-end;
       margin: 2px 0;
       width: 100%;
       min-height: 0;
@@ -390,9 +391,11 @@
       user-select: none;
       pointer-events: none;
       transition: opacity 0.2s ease;
+      margin: auto 0;
     }
-    .felt-rules-banner.faded {
-      opacity: 0.15;
+    .felt-rules-banner.faded,
+    #player-split-stage.active ~ .felt-rules-banner {
+      display: none !important;
     }
     .felt-rule-main { 
       font-size: clamp(0.75rem, 1.4vh, 0.98rem); 
@@ -409,55 +412,186 @@
       text-transform: uppercase; 
     }
 
-    /* ELEVATED SPLIT STAGE (PLAYER & BOTS) */
+    /* ELEVATED SPLIT STAGE JUST ABOVE OTHER PLAYERS CARDS */
+    /* ELEVATED SPLIT STAGE DIRECTLY ABOVE EACH SEAT SPOT */
     #player-split-stage {
       display: none;
       flex-direction: row;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
       justify-content: center;
       align-items: flex-end;
-      gap: clamp(6px, 1.2vw, 16px);
+      gap: clamp(2px, 0.4vw, 6px);
       width: 100%;
-      margin: 3px auto;
+      margin: auto auto clamp(6px, 1vh, 12px) auto;
+      padding: 2px clamp(6px, 1.2vw, 14px);
       z-index: 10;
+      box-sizing: border-box;
     }
     #player-split-stage.active {
       display: flex !important;
     }
+
+    #player-split-stage.multi-player-row {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      justify-content: center !important;
+      align-items: flex-end !important;
+      gap: clamp(2px, 0.4vw, 6px) !important;
+      width: 100% !important;
+    }
+
+    #player-split-stage.multi-player-row .split-seat-slot {
+      flex: 1 1 0 !important;
+      min-width: 0 !important;
+      max-width: var(--seat-slot-max-w, clamp(165px, 13vw, 215px)) !important;
+      padding: 2px clamp(2px, 0.5vw, 6px) !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: flex-end !important;
+      box-sizing: border-box !important;
+    }
+
+    #player-split-stage .split-seat-slot {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      box-sizing: border-box;
+      flex: 0 1 auto;
+    }
+
+    /* DYNAMIC SPLIT HANDS SCALING & READABILITY (Up to 4 hands per seat) */
     .split-seat-group {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 2px;
-      padding: 2px 4px;
-      border-radius: 8px;
+      gap: 3px;
+      padding: clamp(3px, 0.5vh, 6px) clamp(4px, 0.6vw, 10px);
+      border-radius: 12px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.65);
+      position: relative;
+      max-width: 100%;
+      box-sizing: border-box;
     }
-    .split-seat-group .split-hands-row {
+    .split-seat-group.user-split-group {
+      background: rgba(13, 19, 26, 0.92);
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 18px rgba(241, 196, 15, 0.4);
+    }
+    .split-seat-group.bot-split-group {
+      background: rgba(15, 23, 42, 0.92);
+      border: 2px solid #38bdf8;
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.4);
+    }
+
+    .split-header-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: clamp(0.58rem, 0.9vh, 0.72rem);
+      font-weight: 900;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+      white-space: nowrap;
+    }
+    .split-header-pill.user-pill {
+      background: linear-gradient(135deg, #f59e0b, #fbbf24);
+      color: #111;
+      border: 1px solid #fef08a;
+    }
+    .split-header-pill.bot-pill {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: #031525;
+      border: 1px solid #bae6fd;
+    }
+
+    .split-hands-row {
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
-      gap: clamp(4px, 0.8vw, 10px);
+      gap: clamp(3px, 0.6vw, 8px);
       align-items: flex-end;
       justify-content: center;
+      margin-top: 2px;
+      max-width: 100%;
     }
-    .split-placeholder {
-      border: 1.5px dashed rgba(241, 196, 15, 0.45) !important;
-      background: rgba(0, 0, 0, 0.18) !important;
-      min-height: 40px !important;
-      display: flex !important;
-      flex-direction: column !important;
-      align-items: center !important;
-      justify-content: center !important;
-      cursor: default !important;
+
+    /* 2 Split Hands (Standard) */
+    .split-seat-group.split-hands-2 .hand-box {
+      padding: clamp(2px, 0.4vh, 5px) clamp(3px, 0.5vw, 6px);
+      min-width: 0;
     }
-    .split-placeholder-label {
+
+    /* 3 Split Hands (Dynamic compact scale) */
+    .split-seat-group.split-hands-3 .split-header-pill {
+      padding: 1px 7px;
+      font-size: clamp(0.52rem, 0.8vh, 0.64rem);
+    }
+    .split-seat-group.split-hands-3 .split-hands-row {
+      gap: clamp(2px, 0.4vw, 5px);
+    }
+    .split-seat-group.split-hands-3 .hand-box {
+      padding: 1px clamp(2px, 0.3vw, 4px);
+      min-width: 0;
+    }
+    .split-seat-group.split-hands-3 .card {
+      width: calc(var(--card-w) * 0.82) !important;
+      height: calc(var(--card-h) * 0.82) !important;
+      font-size: calc(var(--card-font) * 0.84) !important;
+      padding: 1px 2px !important;
+    }
+    .split-seat-group.split-hands-3 .card .suit {
+      font-size: calc(var(--suit-font) * 0.8) !important;
+    }
+    .split-seat-group.split-hands-3 .cards-row.cascading .card + .card {
+      margin-left: calc(var(--card-w) * 0.82 * -0.68) !important;
+    }
+    .split-seat-group.split-hands-3 .hand-label {
+      font-size: clamp(0.52rem, 0.8vh, 0.68rem);
+    }
+    .split-seat-group.split-hands-3 .hand-result-badge {
       font-size: clamp(0.52rem, 0.8vh, 0.66rem);
-      font-weight: 800;
-      color: var(--gold);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-      opacity: 0.85;
+      padding: 1px 4px;
+      top: -20px;
+    }
+
+    /* 4 Split Hands (Dynamic extra-compact scale with preserved readability) */
+    .split-seat-group.split-hands-4 .split-header-pill {
+      padding: 1px 6px;
+      font-size: clamp(0.48rem, 0.75vh, 0.58rem);
+    }
+    .split-seat-group.split-hands-4 .split-hands-row {
+      gap: 2px;
+    }
+    .split-seat-group.split-hands-4 .hand-box {
+      padding: 1px 2px;
+      min-width: 0;
+    }
+    .split-seat-group.split-hands-4 .card {
+      width: calc(var(--card-w) * 0.7) !important;
+      height: calc(var(--card-h) * 0.7) !important;
+      font-size: calc(var(--card-font) * 0.75) !important;
+      line-height: 1 !important;
+      padding: 1px 2px !important;
+    }
+    .split-seat-group.split-hands-4 .card .suit {
+      font-size: calc(var(--suit-font) * 0.7) !important;
+    }
+    .split-seat-group.split-hands-4 .cards-row.cascading .card + .card {
+      margin-left: calc(var(--card-w) * 0.7 * -0.74) !important;
+    }
+    .split-seat-group.split-hands-4 .hand-label {
+      font-size: clamp(0.48rem, 0.75vh, 0.62rem);
+    }
+    .split-seat-group.split-hands-4 .hand-result-badge {
+      font-size: clamp(0.48rem, 0.75vh, 0.62rem);
+      padding: 1px 3px;
+      top: -18px;
     }
 
     /* PLAYER HANDS CONTAINER - Bottom table arc */
@@ -472,7 +606,7 @@
       justify-content: center;
       align-items: flex-end;
       padding: 2px;
-      margin-top: auto;
+      margin-top: 0;
       margin-bottom: clamp(3px, 0.6vh, 6px);
       z-index: 3;
     }
@@ -492,8 +626,9 @@
     .player-hands-container.multi-player-row .hand-group {
       flex: 1 1 0 !important;
       min-width: 0 !important;
-      max-width: clamp(165px, 13vw, 215px) !important;
+      max-width: var(--seat-slot-max-w, clamp(165px, 13vw, 215px)) !important;
       padding: 2px clamp(2px, 0.5vw, 6px) !important;
+      box-sizing: border-box !important;
     }
 
     .hand-box, .hand-group { 
@@ -1168,14 +1303,14 @@
         <div id="gemini-strategy-hint" class="gemini-strategy-hint" style="display: none;"></div>
       </div>
 
-      <!-- CENTER FELT AREA: TEXT & ELEVATED SPLIT STAGE -->
+      <!-- CENTER FELT AREA: TEXT & ELEVATED HIGH-UP SPLIT STAGE -->
       <div class="felt-center-area">
+        <div id="player-split-stage"></div>
         <div class="felt-rules-banner" id="felt-rules-banner">
           <div class="felt-rule-main">Blackjack Pays 3 to 2</div>
           <div class="felt-rule-sub">Dealer Must Hit Soft 17 and Stand on Hard 17</div>
           <div class="felt-rule-sub">Insurance Pays 2 to 1</div>
         </div>
-        <div id="player-split-stage"></div>
       </div>
       
       <!-- ALL PLAYER SEATS IN BOTTOM ROW -->

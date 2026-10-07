@@ -896,10 +896,9 @@
   async function callGeminiChessApi(action, payload) {
     const origin = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : '';
     const candidateUrls = [
-      './gemini_api.php?action=' + action,
-      '/gemini_api.php?action=' + action,
-      (origin ? origin + '/gemini_api.php?action=' + action : ''),
-      'https://api.calmchessgames.com/gemini_api.php?action=' + action
+      'https://api.calmchessgames.com/gemini_api.php?action=' + action,
+      (origin && !origin.includes('github.io') ? origin + '/gemini_api.php?action=' + action : ''),
+      './gemini_api.php?action=' + action
     ].filter(Boolean);
     const uniqueUrls = [...new Set(candidateUrls)];
 

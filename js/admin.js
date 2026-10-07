@@ -1,9 +1,18 @@
 (function (global) {
   "use strict";
 
-  // Dynamic origin detection for universal LAMP server hosting & local development
-  const CURRENT_ORIGIN = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://api.calmchessgames.com';
-  const API_BASE = CURRENT_ORIGIN;
+  // Dynamic origin detection: When frontend is served on GitHub Pages or static hosts, route API requests to DigitalOcean LAMP server
+  const API_BASE = (function () {
+    if (typeof window !== 'undefined' && window.location) {
+      if (window.CC_API_BASE) return window.CC_API_BASE;
+      const host = window.location.hostname;
+      if (host === 'api.calmchessgames.com') return window.location.origin;
+      if ((host === 'localhost' || host === '127.0.0.1') && (window.location.port === '' || window.location.port === '80' || window.location.port === '443')) {
+        return window.location.origin;
+      }
+    }
+    return 'https://api.calmchessgames.com';
+  })();
   let centerLogoUrl = 'chess.html';
 
   // Ensure HTTPS transport encryption immediately
@@ -68,10 +77,8 @@
   /* --- API CALL HELPER (AUTHENTICATION API TOKEN ENABLED WITH IN-TRANSIT ENCRYPTION) --- */
   async function callAdminApi(action, payload = null, method = 'POST') {
       const endpoints = [
-          `./admin_api.php?action=${action}&_t=${Date.now()}`,
           `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `https://calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`
+          `https://api.calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`
       ];
       const uniqueEndpoints = [...new Set(endpoints)];
 

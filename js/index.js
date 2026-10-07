@@ -21,6 +21,8 @@
   let allBlackjackUsers = [];
   let activeAdminTab = 'segments';
   let sessionAdminPassword = '';
+  let sessionAdminJwt = '';
+  try { sessionAdminJwt = sessionStorage.getItem('cc_admin_jwt') || ''; } catch(e) {}
   let androidSimulationMode = false;
   let desktopSimulationMode = false;
   let allowGuestAccess = true;
@@ -508,6 +510,10 @@
 
           if (data && data.success) {
               sessionAdminPassword = password;
+              if (data.token) {
+                  sessionAdminJwt = data.token;
+                  try { sessionStorage.setItem('cc_admin_jwt', data.token); } catch(e) {}
+              }
               closeAdminPasswordModal();
               openAdminModal(password);
           } else {
@@ -518,14 +524,8 @@
               if (authInput) authInput.focus();
           }
       } catch (err) {
-          if (password === 'blackjackadmin2026unke531@!') {
-              sessionAdminPassword = password;
-              closeAdminPasswordModal();
-              openAdminModal(password);
-              return;
-          }
           if (authError) {
-              authError.innerText = 'Authentication error: Could not reach API server.';
+              authError.innerText = 'Authentication error: Could not reach API server to verify credentials.';
               authError.style.display = 'block';
           }
       } finally {
@@ -593,6 +593,14 @@
   }
 
   function getAdminKey() {
+      if (sessionAdminJwt) return sessionAdminJwt;
+      try {
+          const stored = sessionStorage.getItem('cc_admin_jwt');
+          if (stored) {
+              sessionAdminJwt = stored;
+              return stored;
+          }
+      } catch(e) {}
       const pwdInput = document.getElementById('adminPassword');
       let key = pwdInput ? pwdInput.value.trim() : '';
       if (!key) {

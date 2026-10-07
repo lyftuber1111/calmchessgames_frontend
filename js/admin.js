@@ -20,6 +20,8 @@
   let allBlackjackUsers = [];
   let activeAdminTab = 'segments';
   let sessionAdminPassword = '';
+  let sessionAdminJwt = '';
+  try { sessionAdminJwt = sessionStorage.getItem('cc_admin_jwt') || ''; } catch(e) {}
   let androidSimulationMode = false;
   let desktopSimulationMode = false;
   let allowGuestAccess = true;
@@ -31,6 +33,14 @@
   let activePurchaseSearchTerm = '';
 
   function getAdminKey() {
+      if (sessionAdminJwt) return sessionAdminJwt;
+      try {
+          const stored = sessionStorage.getItem('cc_admin_jwt');
+          if (stored) {
+              sessionAdminJwt = stored;
+              return stored;
+          }
+      } catch(e) {}
       const pwdInput = document.getElementById('adminPassword');
       let key = pwdInput ? pwdInput.value.trim() : '';
       if (!key) {
@@ -129,6 +139,10 @@
           const data = await callAdminApi('verify_auth', { admin_key: password, admin_password: password });
           if (data && data.success) {
               sessionAdminPassword = password;
+              if (data.token) {
+                  sessionAdminJwt = data.token;
+                  try { sessionStorage.setItem('cc_admin_jwt', data.token); } catch(e) {}
+              }
               const authCard = document.getElementById('auth-card');
               const dashSection = document.getElementById('dash-section');
               const adminPwdInput = document.getElementById('adminPassword');
@@ -150,24 +164,8 @@
               if (authInput) authInput.focus();
           }
       } catch (err) {
-          if (password === 'blackjackadmin2026unke531@!') {
-              sessionAdminPassword = password;
-              const authCard = document.getElementById('auth-card');
-              const dashSection = document.getElementById('dash-section');
-              const adminPwdInput = document.getElementById('adminPassword');
-
-              if (authCard) authCard.style.display = 'none';
-              if (dashSection) dashSection.style.display = 'block';
-              if (adminPwdInput) adminPwdInput.value = password;
-
-              fetchSegments();
-              switchAdminTab('segments');
-              fetchStoreSettings();
-              fetchBlackjackUsers();
-              return;
-          }
           if (authMsg) {
-              authMsg.textContent = 'Authentication error: Could not reach API server.';
+              authMsg.textContent = 'Authentication error: Could not reach API server to verify credentials.';
               authMsg.style.display = 'block';
           }
       } finally {
@@ -180,6 +178,8 @@
 
   function logoutAdmin() {
       sessionAdminPassword = '';
+      sessionAdminJwt = '';
+      try { sessionStorage.removeItem('cc_admin_jwt'); } catch(e) {}
       const authInput = document.getElementById('adm-pass');
       const adminPwdInput = document.getElementById('adminPassword');
       const authCard = document.getElementById('auth-card');

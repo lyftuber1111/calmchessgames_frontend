@@ -722,12 +722,19 @@
     const androidSim = androidToggle && androidToggle.checked ? 1 : 0;
 
     try {
+      const headers = { "Content-Type": "application/json" };
+      const jwtToken = sessionStorage.getItem("cc_admin_jwt");
+      if (jwtToken) {
+        headers["Authorization"] = "Bearer " + jwtToken;
+      }
+
       const res = await fetch(API_BASE + "/admin_api.php?action=set_mode", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: headers,
         credentials: "include",
         body: JSON.stringify({
           admin_key: adminKey,
+          token: adminKey,
           desktop_simulation_mode: desktopSim,
           simulation_mode: desktopSim,
           android_simulation_mode: androidSim

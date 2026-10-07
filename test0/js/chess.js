@@ -234,7 +234,7 @@
   let isSocketConnected = false;
 
   // Gemini 3.8 Flash Grandmaster AI State
-  let isGeminiAdvisorEnabled = (localStorage.getItem('cc_gemini_chess_advisor_enabled') !== 'false');
+  let isGeminiAdvisorEnabled = (localStorage.getItem('cc_gemini_chess_advisor_enabled') === 'true');
   let currentEvaluation = '0.00';
   let geminiCommentaryAbortId = 0;
 

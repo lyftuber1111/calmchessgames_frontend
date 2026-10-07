@@ -94,89 +94,95 @@
 
     #game-screen.active {
       width: 100%;
-      max-width: min(97vw, 1560px);
+      max-width: min(96vw, 1600px);
       height: 100%;
-      max-height: calc(100dvh - max(6px, calc(var(--sat) + var(--sab))));
+      max-height: min(94dvh, 940px);
+      margin: auto;
       display: flex;
       flex-direction: column;
       justify-content: center;
+      align-items: center;
     }
 
     /* --- LOBBY STYLES --- */
     .lobby-card {
       width: 100%;
-      max-width: 440px;
+      max-width: 420px;
       max-height: calc(100dvh - 16px);
       overflow-y: auto;
       background: var(--bg-card);
       border: 2px solid rgba(241, 196, 15, 0.3);
-      border-radius: 20px;
+      border-radius: 18px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
-      padding: clamp(12px, 3vh, 24px) clamp(14px, 3.5vw, 22px);
+      padding: clamp(8px, 1.8vh, 16px) clamp(14px, 3vw, 20px);
       display: flex;
       flex-direction: column;
-      gap: clamp(8px, 1.8vh, 14px);
+      gap: clamp(4px, 1vh, 8px);
       margin: auto;
       box-sizing: border-box;
     }
 
     .lobby-header { text-align: center; }
-    .lobby-header h1 { font-size: clamp(1.3rem, 3.5vw, 1.7rem); color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
-    .lobby-header p { font-size: clamp(0.75rem, 2vw, 0.85rem); color: #94a3b8; }
+    .lobby-header h1 { font-size: clamp(1.15rem, 2.5vw, 1.4rem); color: var(--gold); text-transform: uppercase; margin-bottom: 2px; }
+    .lobby-header p { font-size: clamp(0.72rem, 1.4vw, 0.78rem); color: #94a3b8; }
 
     .lobby-footer {
       text-align: center;
-      padding-top: 10px;
+      padding-top: 6px;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       color: #94a3b8;
       display: flex;
       flex-direction: column;
-      gap: 5px;
+      gap: 3px;
     }
     .lobby-footer a { color: var(--gold); text-decoration: underline; font-weight: 600; }
-    .copyright-text { font-size: 0.72rem; color: #64748b; letter-spacing: 0.4px; }
+    .copyright-text { font-size: 0.68rem; color: #64748b; letter-spacing: 0.4px; }
 
-    .auth-toggle { display: flex; background: var(--input-bg); border-radius: 10px; padding: 4px; gap: 4px; }
-    .auth-toggle button { flex: 1; padding: 10px 8px; border: none; background: transparent; color: #94a3b8; font-weight: 700; border-radius: 6px; cursor: pointer; font-size: 0.88rem; }
+    .auth-toggle { display: flex; background: var(--input-bg); border-radius: 8px; padding: 3px; gap: 4px; }
+    .auth-toggle button { flex: 1; padding: 7px 6px; border: none; background: transparent; color: #94a3b8; font-weight: 700; border-radius: 6px; cursor: pointer; font-size: 0.82rem; }
     .auth-toggle button.active { background: var(--gold); color: #000; }
 
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
+    .form-group { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
     .form-group.register-only.hidden { display: none !important; }
-    .form-group label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: #cbd5e1; }
+    .form-group label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #cbd5e1; }
     .form-group input {
       background: var(--input-bg);
       border: 1.5px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      padding: 12px 14px;
+      border-radius: 6px;
+      padding: 8px 11px;
       color: #fff;
-      font-size: 1rem;
+      font-size: 0.88rem;
       outline: none;
     }
     .form-group input:focus { border-color: var(--gold); }
 
     .validation-rules {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 3px 8px;
       background: rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 12px;
-      font-size: 0.8rem;
+      border-radius: 7px;
+      padding: 6px 10px;
+      font-size: 0.72rem;
+      margin-top: 4px;
     }
     .validation-rules.hidden { display: none !important; }
 
     .rule-item {
       color: #94a3b8;
       transition: color 0.15s ease-in-out;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .rule-item.valid { color: #2ecc71 !important; font-weight: 600; }
     .rule-item.invalid { color: #94a3b8; }
     .rule-item.valid::before { content: "✔ "; color: #2ecc71 !important; }
     .rule-item.invalid::before { content: "✖ "; color: #64748b; }
 
-    .auth-btn { width: 100%; background: var(--gold); color: #111; border: none; padding: 12px; border-radius: 10px; font-size: 0.95rem; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 6px; }
+    .auth-btn { width: 100%; background: var(--gold); color: #111; border: none; padding: 9px; border-radius: 8px; font-size: 0.88rem; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 5px; }
     .auth-btn:hover { background: var(--gold-dark); }
 
     .auth-alert { padding: 12px; border-radius: 8px; font-size: 0.85rem; display: none; text-align: center; word-break: break-word; line-height: 1.4; }
@@ -196,7 +202,7 @@
       padding: clamp(4px, 0.8vh, 10px) clamp(6px, 1.2vw, 14px);
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-start;
       position: relative;
       box-sizing: border-box;
       overflow-y: auto;
@@ -365,10 +371,10 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      margin: 1px 0;
+      margin: 2px 0;
       width: 100%;
       min-height: 0;
-      flex: 0 1 auto;
+      flex: 1 1 auto;
       position: relative;
       z-index: 2;
     }
@@ -403,19 +409,55 @@
       text-transform: uppercase; 
     }
 
-    /* ELEVATED PLAYER SPLIT STAGE */
+    /* ELEVATED SPLIT STAGE (PLAYER & BOTS) */
     #player-split-stage {
       display: none;
       flex-direction: row;
+      flex-wrap: wrap;
       justify-content: center;
-      align-items: center;
-      gap: clamp(6px, 1.2vw, 14px);
+      align-items: flex-end;
+      gap: clamp(6px, 1.2vw, 16px);
       width: 100%;
-      margin: 4px auto;
+      margin: 3px auto;
       z-index: 10;
     }
     #player-split-stage.active {
       display: flex !important;
+    }
+    .split-seat-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 2px 4px;
+      border-radius: 8px;
+    }
+    .split-seat-group .split-hands-row {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: clamp(4px, 0.8vw, 10px);
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .split-placeholder {
+      border: 1.5px dashed rgba(241, 196, 15, 0.45) !important;
+      background: rgba(0, 0, 0, 0.18) !important;
+      min-height: 40px !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      justify-content: center !important;
+      cursor: default !important;
+    }
+    .split-placeholder-label {
+      font-size: clamp(0.52rem, 0.8vh, 0.66rem);
+      font-weight: 800;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      opacity: 0.85;
     }
 
     /* PLAYER HANDS CONTAINER - Bottom table arc */
@@ -430,6 +472,8 @@
       justify-content: center;
       align-items: flex-end;
       padding: 2px;
+      margin-top: auto;
+      margin-bottom: clamp(3px, 0.6vh, 6px);
       z-index: 3;
     }
 
@@ -520,7 +564,7 @@
       flex-direction: column; 
       gap: clamp(2px, 0.5vh, 6px); 
       align-items: center; 
-      margin-top: auto;
+      margin-top: 0;
       margin-bottom: 2px;
       flex-shrink: 0;
       z-index: 5;
@@ -737,6 +781,46 @@
         flex: 0 1 calc(50% - 6px) !important;
         max-width: calc(50% - 6px) !important;
         padding: 2px 4px !important;
+      }
+    }
+
+    /* Super High Resolution Displays (3840x2160 4K, 2560x1440, etc.) */
+    @media (min-width: 2400px), (min-height: 1300px) {
+      #game-screen.active {
+        max-width: min(85vw, 1920px);
+        max-height: min(82dvh, 1080px);
+        margin: auto;
+      }
+      #game-container {
+        padding: 12px 24px;
+        border-width: 8px;
+        border-radius: 26px;
+      }
+      :root {
+        --card-w: clamp(58px, 4.2vw, 84px);
+        --card-h: clamp(84px, 6vw, 120px);
+        --card-font: 1.15rem;
+        --suit-font: 2.1rem;
+      }
+      button.game-btn {
+        min-height: 40px;
+        padding: 6px 16px;
+        font-size: 0.92rem;
+        border-radius: 14px;
+      }
+      .chip {
+        width: 44px;
+        height: 44px;
+        font-size: 0.88rem;
+      }
+      .hand-box, .hand-group {
+        padding: 8px 12px;
+      }
+      .table-section {
+        gap: 4px;
+      }
+      .gemini-dealer-box {
+        max-width: 760px;
       }
     }
 
@@ -995,17 +1079,17 @@
           <input type="text" id="auth-identifier" required autocomplete="username" placeholder="player@casino.com">
         </div>
 
-        <div class="form-group" style="margin-top: 10px;">
+        <div class="form-group">
           <label>Password</label>
           <input type="password" id="auth-password" required autocomplete="current-password" oninput="checkPasswordRules(this.value)" onkeyup="checkPasswordRules(this.value)" onpaste="setTimeout(()=>checkPasswordRules(this.value),10)">
         </div>
 
-        <div class="form-group register-only" id="confirm-password-group" style="margin-top: 10px;">
+        <div class="form-group register-only" id="confirm-password-group">
           <label>Confirm Password</label>
           <input type="password" id="auth-password-confirm" autocomplete="new-password" placeholder="Confirm your password" oninput="checkPasswordMatch()" onkeyup="checkPasswordMatch()" onpaste="setTimeout(()=>checkPasswordMatch(),10)">
         </div>
 
-        <div id="password-rules" class="validation-rules" style="margin-top: 10px;">
+        <div id="password-rules" class="validation-rules">
           <div id="r-len" class="rule-item invalid">At least 8 characters</div>
           <div id="r-up" class="rule-item invalid">One uppercase letter (A-Z)</div>
           <div id="r-low" class="rule-item invalid">One lowercase letter (a-z)</div>

@@ -197,54 +197,6 @@
       border-color: var(--gold);
     }
 
-    .password-input-wrapper {
-      position: relative;
-      display: flex;
-      align-items: center;
-      width: 100%;
-    }
-
-    .password-input-wrapper input {
-      padding-right: 44px;
-    }
-
-    .pwd-toggle-btn {
-      position: absolute;
-      right: 8px;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 1.1rem;
-      padding: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: color 0.2s;
-    }
-
-    .pwd-toggle-btn:hover {
-      color: var(--gold);
-    }
-
-    .forgot-link-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 6px;
-      font-size: 0.82rem;
-    }
-
-    .forgot-link-row a {
-      color: var(--gold);
-      text-decoration: underline;
-      font-weight: 600;
-    }
-
-    .forgot-link-row a:hover {
-      color: #fff;
-    }
-
     .checkbox-group {
       display: flex;
       align-items: flex-start;
@@ -418,18 +370,6 @@
         </div>
 
         <div class="form-group">
-          <label for="del-password">Account Password *</label>
-          <div class="password-input-wrapper">
-            <input type="password" id="del-password" placeholder="Enter account password to verify identity" required autocomplete="current-password">
-            <button type="button" class="pwd-toggle-btn" onclick="toggleDelPasswordVisibility()" aria-label="Toggle password visibility" title="Show or hide password">👁</button>
-          </div>
-          <div class="forgot-link-row">
-            <span style="color: var(--text-muted); font-size: 0.8rem;">Required to authenticate before account deletion</span>
-            <a href="password_reset.html">Forgot password? Reset here &rarr;</a>
-          </div>
-        </div>
-
-        <div class="form-group">
           <label for="del-reason">Reason for Deletion (Optional)</label>
           <select id="del-reason">
             <option value="No longer using the app">No longer using the app</option>
@@ -509,11 +449,7 @@
       </ul>
     </div>
 
-    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px;">
-      <a href="index.html" class="back-btn">&larr; Return to Home</a>
-      <a href="blackjack.html" class="back-btn" style="background: rgba(241, 196, 15, 0.15); border: 1.5px solid var(--gold); color: var(--gold);">&larr; Return to Blackjack</a>
-      <a href="password_reset.html" class="back-btn" style="background: rgba(59, 130, 246, 0.15); border: 1.5px solid #60a5fa; color: #93c5fd;">🔑 Password Reset Portal &rarr;</a>
-    </div>
+    <a href="index.html" class="back-btn">&larr; Return to Home</a>
 
     <footer>
       <p>&copy; 2026 Calm Chess Computers. All Rights Reserved.</p>

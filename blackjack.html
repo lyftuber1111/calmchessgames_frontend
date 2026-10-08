@@ -351,62 +351,6 @@
       100% { transform: scale(1); opacity: 1; }
     }
 
-    .lobby-deletion-section {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px dashed rgba(255, 255, 255, 0.16);
-      text-align: center;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .lobby-del-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 100%;
-      box-sizing: border-box;
-      text-align: center;
-      text-decoration: none;
-      padding: 10px 14px;
-      background: rgba(231, 76, 60, 0.15);
-      border: 1.5px solid #e74c3c;
-      border-radius: 9px;
-      color: #ff8b8b;
-      font-size: clamp(0.82rem, 2.3vw, 0.9rem);
-      font-weight: 700;
-      letter-spacing: 0.02em;
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-    .lobby-del-btn:hover {
-      background: rgba(231, 76, 60, 0.35);
-      color: #ffffff;
-      border-color: #ff6b6b;
-      box-shadow: 0 0 14px rgba(231, 76, 60, 0.45);
-      transform: translateY(-1px);
-    }
-    .lobby-del-hint {
-      font-size: 0.72rem;
-      color: #94a3b8;
-      margin-top: 6px;
-      line-height: 1.35;
-    }
-    .del-acc-hdr-btn {
-      color: #ff8b8b !important;
-      border: 1px solid rgba(231, 76, 60, 0.5) !important;
-      background: rgba(231, 76, 60, 0.12) !important;
-      text-decoration: none !important;
-      display: inline-flex !important;
-      align-items: center;
-      justify-content: center;
-    }
-    .del-acc-hdr-btn:hover {
-      background: rgba(231, 76, 60, 0.3) !important;
-      color: #ffffff !important;
-      border-color: #e74c3c !important;
-    }
-
     /* Media query adjustments for tablets and large mobile */
     @media (min-width: 768px) {
       .lobby-card {
@@ -1452,9 +1396,6 @@
             <input type="password" id="auth-password" required autocomplete="current-password" oninput="checkPasswordRules(this.value)" onkeyup="checkPasswordRules(this.value)" onpaste="setTimeout(()=>checkPasswordRules(this.value),10)" aria-describedby="password-rules">
             <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('auth-password', this)" aria-label="Toggle password visibility" title="Show or hide password">👁</button>
           </div>
-          <div style="text-align: right; margin-top: 4px;">
-            <a href="password_reset.html" style="font-size: 0.8rem; color: var(--gold); text-decoration: underline;">Forgot password? Reset here &rarr;</a>
-          </div>
         </div>
 
         <div class="form-group register-only" id="confirm-password-group">
@@ -1478,21 +1419,8 @@
         <button type="submit" id="auth-submit-btn" class="auth-btn">Register & Play</button>
       </form>
 
-      <!-- EXPLICIT ACCOUNT & DATA DELETION (Google Play Compliance) -->
-      <div class="lobby-deletion-section">
-        <a href="delete_account.html" class="lobby-del-btn" id="lobby-delete-account-btn" title="Request Account Deletion & Permanent Data Purge (Google Play Compliance)">
-          🗑 Request Account &amp; Data Deletion
-        </a>
-        <p class="lobby-del-hint">Google Play Compliance &bull; Personal credentials permanently purged within 24–48 hours</p>
-      </div>
-
       <div class="lobby-footer">
         <div>By continuing, you accept our <a href="terms.html" target="_blank">Terms of Service</a>.</div>
-        <div style="margin-top: 6px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-          <a href="password_reset.html" style="color: var(--gold); text-decoration: underline; font-weight: 600;">🔑 Reset Password</a>
-          <span style="color: #64748b;">&bull;</span>
-          <a href="delete_account.html" style="color: #ff8b8b; text-decoration: underline; font-weight: 600;">🗑 Request Account Deletion</a>
-        </div>
         <div class="copyright-text">&copy; 2026 Calm Chess Computers. All Rights Reserved.</div>
       </div>
     </div>
@@ -1521,8 +1449,6 @@
             <button id="geminiAdvisorBtn" class="hdr-btn gemini-btn muted" onclick="toggleGeminiAdvisor()" title="Toggle Gemini 3.8 Flash AI Dealer & Strategy Advisor">✨ AI OFF</button>
             <button id="audioToggleBtn" class="hdr-btn muted" onclick="toggleAudio()">🔇 Audio OFF</button>
             <button class="hdr-btn buy-chips-hdr-btn" onclick="openStoreModal()">+ Credits</button>
-            <a href="password_reset.html" class="hdr-btn" style="background: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; text-decoration: none;" target="_blank" title="Update / Reset Account Password">Reset Password</a>
-            <a href="delete_account.html" class="hdr-btn del-acc-hdr-btn" target="_blank" title="Request Account Deletion & Permanent Data Purge">Delete Account</a>
             <button class="hdr-btn logout-btn" onclick="executeLogout()">Exit</button>
           </div>
         </div>
@@ -1593,7 +1519,6 @@
       </div>
 
       <div class="table-footer">
-        <a href="delete_account.html" target="_blank" style="color: #94a3b8; text-decoration: underline; margin-right: 14px;">Request Account Deletion</a>
         &copy; 2026 Calm Chess Computers. All Rights Reserved.
       </div>
     </div>

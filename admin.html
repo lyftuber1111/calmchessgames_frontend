@@ -264,8 +264,6 @@
         }
         .badge-active { background: rgba(46, 204, 113, 0.2); color: var(--success-green); border: 1px solid var(--success-green); min-width: 90px; }
         .badge-banned { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid var(--error-red); min-width: 90px; }
-        .badge-purge { background: rgba(239, 68, 68, 0.25); color: #fca5a5; border: 1.5px solid #ef4444; min-width: 140px; box-shadow: 0 0 8px rgba(239, 68, 68, 0.35); font-weight: 800; }
-        .user-card.purge-requested { border: 1.5px solid #ef4444; background: rgba(239, 68, 68, 0.08); }
 
         .user-card-inputs {
             display: grid;
@@ -515,10 +513,7 @@
         <div id="dash-section" style="display: none;" class="admin-card">
             <!-- Console Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,215,0,0.25); padding-bottom: 12px;">
-                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                    <h2 style="color: var(--gold-primary); margin-bottom: 0;">Admin Console</h2>
-                    <span id="adminPendingResetNotificationBadge" class="badge-reset-alert" style="display:none; background:rgba(243, 156, 18, 0.2); border:1px solid #f39c12; color:#f39c12; border-radius:12px; padding:3px 10px; font-size:0.8rem; font-weight:700; align-items:center; gap:5px;">🔑 Resets: <strong id="adminPendingResetCount">0</strong></span>
-                </div>
+                <h2 style="color: var(--gold-primary); margin-bottom: 0;">Admin Console</h2>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <a href="index.html" class="btn btn-sm btn-gold" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">← Main Rings (index.html)</a>
                     <button class="btn btn-sm" style="background: #64748b;" onclick="logoutAdmin()">Sign Out</button>
@@ -531,7 +526,6 @@
                 <button class="admin-tab-btn" id="tabBtnUsers" onclick="switchAdminTab('users')">Blackjack Users</button>
                 <button class="admin-tab-btn" id="tabBtnStore" onclick="switchAdminTab('store')">Blackjack Billing & Store</button>
                 <button class="admin-tab-btn" id="tabBtnDeletions" onclick="switchAdminTab('deletions')">Account Deletions <span id="delBadge" style="display:none; background:#e74c3c; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
-                <button class="admin-tab-btn" id="tabBtnResets" onclick="switchAdminTab('resets')">Password Resets <span id="resetBadge" style="display:none; background:#f39c12; color:#1a1000; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
                 <a href="index.html" class="admin-tab-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Back to Main Website">← Main Rings</a>
             </div>
 
@@ -570,20 +564,11 @@
 
             <!-- TAB 2: BLACKJACK USER MANAGEMENT -->
             <div id="tabContentUsers" style="display: none;">
-                <!-- User Search, Refresh & Status Filter Controls -->
-                <div class="user-mgmt-header" style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 14px;">
-                    <div style="display: flex; gap: 8px; align-items: center; flex: 1; min-width: 260px;">
-                        <input type="text" id="adminUserSearchInput" placeholder="Search by username, email, ID..." oninput="handleUserSearchInput(this.value)" style="flex: 1;">
-                        <button class="btn btn-sm btn-gold" onclick="fetchBlackjackUsers()">Refresh</button>
-                        <button class="btn btn-sm btn-success" onclick="toggleCreateUserPanel()">+ Create User</button>
-                    </div>
-                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;" id="userFilterButtons">
-                        <button class="filter-pill active" id="userFilterAll" onclick="setUserFilter('ALL')">All (<span id="userCountAll">0</span>)</button>
-                        <button class="filter-pill" id="userFilterActive" onclick="setUserFilter('ACTIVE')">Active (<span id="userCountActive">0</span>)</button>
-                        <button class="filter-pill" id="userFilterBanned" onclick="setUserFilter('BANNED')">Banned (<span id="userCountBanned">0</span>)</button>
-                        <button class="filter-pill" id="userFilterPurge" onclick="setUserFilter('PURGE')" style="border-color: #ef4444; color: #fca5a5;">⚠️ Purge Requested (<span id="userCountPurge">0</span>)</button>
-                        <button class="filter-pill" id="userFilterReset" onclick="setUserFilter('RESET')" style="border-color: #f39c12; color: #fed7aa;">🔑 Reset Requested (<span id="userCountReset">0</span>)</button>
-                    </div>
+                <!-- User Search & Refresh -->
+                <div class="user-mgmt-header">
+                    <input type="text" id="adminUserSearchInput" placeholder="Search by username or email..." oninput="handleUserSearchInput(this.value)">
+                    <button class="btn btn-sm btn-gold" onclick="fetchBlackjackUsers()">Refresh</button>
+                    <button class="btn btn-sm btn-success" onclick="toggleCreateUserPanel()">+ Create User</button>
                 </div>
 
                 <!-- Create User Sub-Panel -->
@@ -877,75 +862,6 @@
                         </thead>
                         <tbody id="adminDeletionsBody">
                             <tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">Loading account deletion requests...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- TAB 5: PASSWORD RESET REQUESTS (Industry Standard Token Management) -->
-            <div id="tabContentResets" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0; flex-wrap: wrap; gap: 8px;">
-                    <div>
-                        <h2 style="color: var(--gold-primary); font-size: 1.25rem; margin: 0 0 4px 0;">🔑 Password Reset Requests Ledger</h2>
-                        <span style="font-size: 0.88rem; color: var(--text-muted);">Manage 256-bit CSPRNG security tokens and reset authorizations</span>
-                    </div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <a href="password_reset.html" target="_blank" class="btn btn-sm" style="background: rgba(255,215,0,0.15); color: var(--gold-primary); border: 1px solid var(--gold-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">🔗 View Public Portal</a>
-                        <button class="btn btn-gold btn-sm" onclick="fetchPasswordResets()">↻ Refresh Resets</button>
-                    </div>
-                </div>
-
-                <!-- Security overview banner -->
-                <div style="background: rgba(243, 156, 18, 0.08); border: 1px solid rgba(243, 156, 18, 0.35); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.86rem; color: #fed7aa; line-height: 1.5;">
-                    <strong style="color: #f39c12; font-size: 0.95rem;">🛡️ Cryptographic Security Architecture:</strong><br>
-                    Tokens are 256-bit entropy generated via cryptographically secure pseudo-random number generator (CSPRNG). Only SHA-256 digests are stored in the database. Tokens strictly expire after <strong>60 minutes</strong> or upon first successful password reset (whichever occurs first).
-                </div>
-
-                <!-- Stats summary badges -->
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
-                    <div style="background: rgba(243, 156, 18, 0.12); border: 1px solid rgba(243, 156, 18, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
-                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #fed7aa; font-weight: 700;">Pending Active Resets</div>
-                        <div id="resetPendingCountDisplay" style="font-size: 1.6rem; font-weight: 800; color: #f39c12; margin-top: 4px;">0</div>
-                    </div>
-                    <div style="background: rgba(46, 204, 113, 0.12); border: 1px solid rgba(46, 204, 113, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
-                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #2ecc71; font-weight: 700;">Successfully Used</div>
-                        <div id="resetUsedCountDisplay" style="font-size: 1.6rem; font-weight: 800; color: #2ecc71; margin-top: 4px;">0</div>
-                    </div>
-                    <div style="background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
-                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Total Token History</div>
-                        <div id="resetTotalCountDisplay" style="font-size: 1.6rem; font-weight: 800; color: #cbd5e1; margin-top: 4px;">0</div>
-                    </div>
-                </div>
-
-                <!-- Search and Filter -->
-                <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center;">
-                    <input type="text" id="resetSearchInput" placeholder="Filter by email, username, or IP address..." style="flex: 1; min-width: 220px;" oninput="filterPasswordResets()">
-                    <div style="display: flex; gap: 6px;">
-                        <button class="btn btn-sm" id="resetFilterAll" style="background: var(--gold-primary); color: #000; font-weight: 700;" onclick="setResetFilter('ALL')">All</button>
-                        <button class="btn btn-sm" id="resetFilterPending" style="background: #334155; color: #fff;" onclick="setResetFilter('PENDING')">Pending</button>
-                        <button class="btn btn-sm" id="resetFilterUsed" style="background: #334155; color: #fff;" onclick="setResetFilter('USED')">Used</button>
-                        <button class="btn btn-sm" id="resetFilterExpired" style="background: #334155; color: #fff;" onclick="setResetFilter('EXPIRED')">Expired</button>
-                        <button class="btn btn-sm" id="resetFilterCancelled" style="background: #334155; color: #fff;" onclick="setResetFilter('CANCELLED')">Cancelled</button>
-                    </div>
-                </div>
-
-                <!-- Table -->
-                <div class="table-scroll-container">
-                    <table class="store-ledger-table" style="min-width: 900px;">
-                        <thead>
-                            <tr style="background: #1e293b; color: var(--gold-primary); border-bottom: 2px solid rgba(255,215,0,0.3);">
-                                <th style="padding: 10px 12px; text-align: left; width: 60px;">ID</th>
-                                <th style="padding: 10px 12px; text-align: left; min-width: 180px;">User Identifier</th>
-                                <th style="padding: 10px 12px; text-align: left; width: 130px;">Token Preview</th>
-                                <th style="padding: 10px 12px; text-align: left; width: 140px;">Requested At</th>
-                                <th style="padding: 10px 12px; text-align: left; width: 140px;">Expires At</th>
-                                <th style="padding: 10px 12px; text-align: left; width: 110px;">Status</th>
-                                <th style="padding: 10px 12px; text-align: left; width: 120px;">IP Address</th>
-                                <th style="padding: 10px 12px; text-align: center; width: 160px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminResetsBody">
-                            <tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">Loading password reset tokens...</td></tr>
                         </tbody>
                     </table>
                 </div>

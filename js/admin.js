@@ -82,7 +82,15 @@
   async function callAdminApi(action, payload = null, method = 'POST') {
       const endpoints = [
           `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `https://api.calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`
+          `${API_BASE}/php/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `./admin_api.php?action=${action}&_t=${Date.now()}`,
+          `./php/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `admin_api.php?action=${action}&_t=${Date.now()}`,
+          `php/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `../admin_api.php?action=${action}&_t=${Date.now()}`,
+          `../php/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `https://api.calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `https://api.calmchessgames.com/php/admin_api.php?action=${action}&_t=${Date.now()}`
       ];
       const uniqueEndpoints = [...new Set(endpoints)];
 
@@ -178,6 +186,7 @@
               switchAdminTab('segments');
               fetchStoreSettings();
               fetchBlackjackUsers();
+              fetchAccountDeletionRequests();
           } else {
               if (authMsg) {
                   authMsg.textContent = (data && data.message) ? data.message : 'Invalid Admin Password. Access Denied.';
@@ -532,6 +541,11 @@
       container.innerHTML = '';
       filtered.forEach(user => {
           const isBanned = parseInt(user.is_active, 10) === 0 || parseInt(user.is_banned, 10) === 1;
+          const userIdent = (user.email || user.username || '').toLowerCase();
+          const hasPendingDel = allDeletionRequests.some(r => 
+              (r.status || '').toUpperCase() === 'PENDING' && 
+              (String(r.user_id) === String(user.id) || (r.identifier && r.identifier.toLowerCase() === userIdent))
+          );
           const card = document.createElement('div');
           card.className = `user-card ${isBanned ? 'banned' : ''}`;
           card.id = `user_card_${user.id}`;
@@ -539,9 +553,10 @@
           card.innerHTML = `
               <div class="user-card-head">
                   <div style="font-weight: 700; color: var(--gold-primary); font-size: 0.95rem;">
-                      #${user.id} — <span id="user_display_${user.id}">${user.email || user.username}</span>
+                      #${user.id} — <span id="user_display_${user.id}">${escapeHtml(user.email || user.username)}</span>
                   </div>
-                  <div style="display: flex; gap: 8px; align-items: center;">
+                  <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                      ${hasPendingDel ? '<span class="badge-status" style="background: rgba(231,76,60,0.22); color: #ff6b6b; border: 1px solid #e74c3c;">⚠️ Pending Purge Request</span>' : ''}
                       <span class="badge-status ${isBanned ? 'badge-banned' : 'badge-active'}">${isBanned ? 'Banned' : 'Active'}</span>
                       <span style="font-size: 0.72rem; color: var(--text-muted);">${user.created_at ? user.created_at.split(' ')[0] : ''}</span>
                   </div>
@@ -550,7 +565,7 @@
               <div class="user-card-inputs">
                   <div>
                       <label>Username / Email</label>
-                      <input type="text" id="usr_email_${user.id}" value="${user.email || user.username || ''}">
+                      <input type="text" id="usr_email_${user.id}" value="${escapeHtml(user.email || user.username || '')}">
                   </div>
                   <div>
                       <label>Bankroll ($)</label>
@@ -572,7 +587,7 @@
                   <button class="btn btn-sm ${isBanned ? 'btn-success' : 'btn-warn'}" onclick="executeToggleBanUser(${user.id}, ${isBanned ? 1 : 0})">
                       ${isBanned ? 'Unban User' : 'Ban User'}
                   </button>
-                  <button class="btn btn-sm btn-danger" onclick="executeDeleteUser(${user.id}, '${user.email || user.username}')">Delete</button>
+                  <button class="btn btn-sm btn-danger" onclick="executeDeleteUser(${user.id}, '${escapeHtml(user.email || user.username)}')" title="Permanently Purge User Credentials (7-yr statutory financial audit retention)">${hasPendingDel ? 'Purge User (Pending)' : 'Purge User'}</button>
               </div>
           `;
           container.appendChild(card);
@@ -679,7 +694,7 @@
   }
 
   async function executeDeleteUser(userId, userEmail) {
-      if (!confirm(`Are you sure you want to permanently delete user #${userId} (${userEmail})?\nThis action cannot be undone.`)) {
+      if (!confirm(`PERMANENT USER DATA PURGE (7-Year Statutory Audit Policy):\n\nAre you sure you want to permanently delete user #${userId} (${userEmail})?\n\nPersonal credentials, password hashes, and profile balances will be permanently destroyed.\nFinancial transaction records in the purchases ledger will be pseudonymized and retained for 7 years in compliance with IRS and statutory audit regulations.\n\nThis action cannot be undone.`)) {
           return;
       }
 
@@ -692,8 +707,9 @@
           });
 
           if (data && data.success) {
-              showUserAdminAlert(`✔ User #${userId} deleted successfully.`, true);
+              showUserAdminAlert(`✔ User #${userId} permanently purged. Financial records archived for 7-year audit.`, true);
               fetchBlackjackUsers();
+              fetchAccountDeletionRequests();
           } else {
               showUserAdminAlert(data.message || 'Failed to delete user.', false);
           }

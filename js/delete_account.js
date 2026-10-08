@@ -73,7 +73,15 @@
 
     const endpoints = [
       `${API_BASE}/delete_account.php?_t=${Date.now()}`,
-      `https://api.calmchessgames.com/delete_account.php?_t=${Date.now()}`
+      `${API_BASE}/php/delete_account.php?_t=${Date.now()}`,
+      `./delete_account.php?_t=${Date.now()}`,
+      `./php/delete_account.php?_t=${Date.now()}`,
+      `delete_account.php?_t=${Date.now()}`,
+      `php/delete_account.php?_t=${Date.now()}`,
+      `../delete_account.php?_t=${Date.now()}`,
+      `../php/delete_account.php?_t=${Date.now()}`,
+      `https://api.calmchessgames.com/delete_account.php?_t=${Date.now()}`,
+      `https://api.calmchessgames.com/php/delete_account.php?_t=${Date.now()}`
     ];
     const uniqueEndpoints = [...new Set(endpoints)];
 

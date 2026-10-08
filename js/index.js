@@ -1,25 +1,9 @@
 (function (global) {
   "use strict";
 
-  // Dynamic origin detection: When frontend is served on GitHub Pages or static hosts, route API requests to DigitalOcean LAMP server
-  const API_BASE = (function () {
-    if (typeof window !== 'undefined' && window.location) {
-      if (window.CC_API_BASE) return window.CC_API_BASE;
-      const host = window.location.hostname;
-      if (host === 'api.calmchessgames.com') return window.location.origin;
-      if ((host === 'localhost' || host === '127.0.0.1') && (window.location.port === '' || window.location.port === '80' || window.location.port === '443')) {
-        return window.location.origin;
-      }
-    }
-    return 'https://api.calmchessgames.com';
-  })();
+  const API_BASE = 'https://api.calmchessgames.com';
   let showSegmentIdsOnRing = false;
   let centerLogoUrl = 'chess.html';
-
-  // Ensure HTTPS transport encryption immediately
-  if (typeof CryptoTransport !== 'undefined' && CryptoTransport.ensureHttps) {
-      CryptoTransport.ensureHttps();
-  }
 
   let currentSegments = [
       { ring_type: 'inner', segment_index: 0, title: 'Chess Game', url: 'chess.html', description: 'Offline Stockfish chess engine' },
@@ -46,7 +30,9 @@
   async function callAdminApi(action, payload = null, method = 'POST') {
       const endpoints = [
           `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `https://api.calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`
+          `./admin_api.php?action=${action}&_t=${Date.now()}`,
+          `/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `https://calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`
       ];
       const uniqueEndpoints = [...new Set(endpoints)];
 
@@ -87,13 +73,9 @@
                   credentials: 'include'
               };
               if (requestBody !== null && method !== 'GET') {
-                  fetchOptions.body = requestBody;
-                  fetchOptions.encrypt = true;
+                  fetchOptions.body = JSON.stringify(requestBody);
               }
-              const fetchFn = (typeof CryptoTransport !== 'undefined' && CryptoTransport.secureFetch)
-                  ? CryptoTransport.secureFetch
-                  : fetch;
-              const res = await fetchFn(url, fetchOptions);
+              const res = await fetch(url, fetchOptions);
               const text = await res.text();
               try {
                   const data = JSON.parse(text);
@@ -756,10 +738,7 @@
 
           for (const targetUrl of uniqueUrls) {
               try {
-                  const fetchFn = (typeof CryptoTransport !== 'undefined' && CryptoTransport.secureFetch)
-                      ? CryptoTransport.secureFetch
-                      : fetch;
-                  const response = await fetchFn(targetUrl, {
+                  const response = await fetch(targetUrl, {
                       method: 'POST',
                       headers: { 
                           'Content-Type': 'application/json',
@@ -768,8 +747,7 @@
                           'X-API-Key': password
                       },
                       credentials: 'include',
-                      body: payload,
-                      encrypt: true
+                      body: JSON.stringify(payload)
                   });
                   const result = await response.json();
                   if (result.success) {
@@ -866,13 +844,34 @@
       }
 
       try {
-          const data = await callAdminApi('get_users', {
-              admin_key: adminKey,
-              admin_password: adminKey,
-              api_token: adminKey
+          const res = await fetch(`${API_BASE}/admin_api.php?action=get_users&_t=${Date.now()}`, {
+              method: 'POST',
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${adminKey}`,
+                  'X-Admin-Token': adminKey,
+                  'X-API-Key': adminKey
+              },
+              credentials: 'include',
+              body: JSON.stringify({ 
+                  admin_key: adminKey,
+                  admin_password: adminKey,
+                  api_token: adminKey
+              })
           });
 
-          if (data && data.success && Array.isArray(data.users)) {
+          const rawText = await res.text();
+          let data;
+          try {
+              data = JSON.parse(rawText);
+          } catch (jsonErr) {
+              if (container) {
+                  container.innerHTML = `<p style="color: var(--error-red); text-align: center; padding: 20px;">Server Error (${res.status}): ${rawText.replace(/<[^>]*>?/gm, '').trim() || 'Internal Error'}</p>`;
+              }
+              return;
+          }
+
+          if (data.success && Array.isArray(data.users)) {
               allBlackjackUsers = data.users;
               const searchVal = document.getElementById('adminUserSearchInput') ? document.getElementById('adminUserSearchInput').value : '';
               renderBlackjackUsers(searchVal);
@@ -880,7 +879,7 @@
               if (container) {
                   container.innerHTML = `
                       <div style="text-align: center; padding: 24px;">
-                          <p style="color: var(--error-red); margin-bottom: 12px;">${(data && data.message) || 'Unauthorized access'}</p>
+                          <p style="color: var(--error-red); margin-bottom: 12px;">${data.message || 'Unauthorized access'}</p>
                           <button class="btn btn-sm btn-gold" onclick="promptAdminPassword()">Re-authenticate</button>
                       </div>
                   `;
@@ -984,23 +983,34 @@
       }
 
       try {
-          const data = await callAdminApi('create_user', {
-              admin_key: adminKey,
-              admin_password: adminKey,
-              api_token: adminKey,
-              email: email,
-              password: password,
-              bank: bank,
-              is_active: isActive
+          const res = await fetch(`${API_BASE}/admin_api.php?action=create_user`, {
+              method: 'POST',
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${adminKey}`,
+                  'X-Admin-Token': adminKey,
+                  'X-API-Key': adminKey
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                  admin_key: adminKey,
+                  admin_password: adminKey,
+                  api_token: adminKey,
+                  email: email,
+                  password: password,
+                  bank: bank,
+                  is_active: isActive
+              })
           });
-          if (data && data.success) {
+          const data = await res.json();
+          if (data.success) {
               showUserAdminAlert(data.message || 'User created successfully!', true);
               document.getElementById('new_user_email').value = '';
               document.getElementById('new_user_pwd').value = '';
               toggleCreateUserPanel(false);
               fetchBlackjackUsers();
           } else {
-              showUserAdminAlert((data && data.message) || 'Failed to create user.', false);
+              showUserAdminAlert(data.message || 'Failed to create user.', false);
           }
       } catch (err) {
           showUserAdminAlert('Error: ' + err.message, false);
@@ -1019,21 +1029,32 @@
       }
 
       try {
-          const data = await callAdminApi('update_user', {
-              admin_key: adminKey,
-              admin_password: adminKey,
-              api_token: adminKey,
-              user_id: userId,
-              email: email,
-              bank: bank,
-              password: newPwd || undefined
+          const res = await fetch(`${API_BASE}/admin_api.php?action=update_user`, {
+              method: 'POST',
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${adminKey}`,
+                  'X-Admin-Token': adminKey,
+                  'X-API-Key': adminKey
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                  admin_key: adminKey,
+                  admin_password: adminKey,
+                  api_token: adminKey,
+                  user_id: userId,
+                  email: email,
+                  bank: bank,
+                  password: newPwd || undefined
+              })
           });
-          if (data && data.success) {
+          const data = await res.json();
+          if (data.success) {
               showUserAdminAlert(`User #${userId} updated successfully!`, true);
               document.getElementById(`usr_pwd_${userId}`).value = '';
               fetchBlackjackUsers();
           } else {
-              showUserAdminAlert((data && data.message) || 'Update failed.', false);
+              showUserAdminAlert(data.message || 'Update failed.', false);
           }
       } catch (err) {
           showUserAdminAlert('Error: ' + err.message, false);
@@ -1046,18 +1067,29 @@
       if (!confirm(`Are you sure you want to ${actionLabel} user #${userId}?`)) return;
 
       try {
-          const data = await callAdminApi('toggle_ban_user', {
-              admin_key: adminKey,
-              admin_password: adminKey,
-              api_token: adminKey,
-              user_id: userId,
-              is_active: newActiveStatus
+          const res = await fetch(`${API_BASE}/admin_api.php?action=toggle_ban_user`, {
+              method: 'POST',
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${adminKey}`,
+                  'X-Admin-Token': adminKey,
+                  'X-API-Key': adminKey
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                  admin_key: adminKey,
+                  admin_password: adminKey,
+                  api_token: adminKey,
+                  user_id: userId,
+                  is_active: newActiveStatus
+              })
           });
-          if (data && data.success) {
+          const data = await res.json();
+          if (data.success) {
               showUserAdminAlert(data.message || `User #${userId} status updated!`, true);
               fetchBlackjackUsers();
           } else {
-              showUserAdminAlert((data && data.message) || 'Status change failed.', false);
+              showUserAdminAlert(data.message || 'Status change failed.', false);
           }
       } catch (err) {
           showUserAdminAlert('Error: ' + err.message, false);
@@ -1069,17 +1101,28 @@
       if (!confirm(`PERMANENT ACTION: Delete user #${userId} (${userEmail}) from the database?`)) return;
 
       try {
-          const data = await callAdminApi('delete_user', {
-              admin_key: adminKey,
-              admin_password: adminKey,
-              api_token: adminKey,
-              user_id: userId
+          const res = await fetch(`${API_BASE}/admin_api.php?action=delete_user`, {
+              method: 'POST',
+              headers: { 
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${adminKey}`,
+                  'X-Admin-Token': adminKey,
+                  'X-API-Key': adminKey
+              },
+              credentials: 'include',
+              body: JSON.stringify({
+                  admin_key: adminKey,
+                  admin_password: adminKey,
+                  api_token: adminKey,
+                  user_id: userId
+              })
           });
-          if (data && data.success) {
+          const data = await res.json();
+          if (data.success) {
               showUserAdminAlert(`User #${userId} permanently deleted.`, true);
               fetchBlackjackUsers();
           } else {
-              showUserAdminAlert((data && data.message) || 'Delete failed.', false);
+              showUserAdminAlert(data.message || 'Delete failed.', false);
           }
       } catch (err) {
           showUserAdminAlert('Error: ' + err.message, false);

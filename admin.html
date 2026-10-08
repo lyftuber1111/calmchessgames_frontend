@@ -525,6 +525,7 @@
                 <button class="admin-tab-btn active" id="tabBtnSegments" onclick="switchAdminTab('segments')">Ring Navigation</button>
                 <button class="admin-tab-btn" id="tabBtnUsers" onclick="switchAdminTab('users')">Blackjack Users</button>
                 <button class="admin-tab-btn" id="tabBtnStore" onclick="switchAdminTab('store')">Blackjack Billing & Store</button>
+                <button class="admin-tab-btn" id="tabBtnDeletions" onclick="switchAdminTab('deletions')">Account Deletions <span id="delBadge" style="display:none; background:#e74c3c; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
                 <a href="index.html" class="admin-tab-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Back to Main Website">← Main Rings</a>
             </div>
 
@@ -576,7 +577,7 @@
                     <div class="user-card-inputs" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
                         <div>
                             <label>Email / Username</label>
-                            <input type="text" id="new_user_email" placeholder="player@casino.com">
+                            <input type="text" id="new_user_email" placeholder="player@calmchessgames.com">
                         </div>
                         <div>
                             <label>Password</label>
@@ -797,6 +798,74 @@
                     </div>
                 </div>
             </div>
+
+            <!-- TAB 4: ACCOUNT DELETION REQUESTS (Google Play & Privacy Compliance) -->
+            <div id="tabContentDeletions" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <h2 style="color: var(--gold-primary); font-size: 1.25rem; margin: 0 0 4px 0;">Google Play & Privacy Account Deletion Requests</h2>
+                        <span style="font-size: 0.88rem; color: var(--text-muted);">Manage requests submitted from delete_account.html or in-app</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <a href="delete_account.html" target="_blank" class="btn btn-sm" style="background: rgba(255,215,0,0.15); color: var(--gold-primary); border: 1px solid var(--gold-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">🔗 View Public Page</a>
+                        <button class="btn btn-gold btn-sm" onclick="fetchAccountDeletionRequests()">↻ Refresh Requests</button>
+                    </div>
+                </div>
+
+                <!-- 7-Year Statutory Financial Retention Compliance Banner -->
+                <div style="background: rgba(241, 196, 15, 0.08); border: 1px solid rgba(241, 196, 15, 0.35); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.86rem; color: #cbd5e1; line-height: 1.5;">
+                    <strong style="color: var(--gold-primary); font-size: 0.95rem;">⚖️ 7-Year Statutory Financial Retention Policy:</strong><br>
+                    Clicking <strong>Purge User</strong> permanently destroys the player's credentials, password hash, profile, and active balance from the <code>users</code> database. Financial transaction records in the <code>purchases</code> table (Google Play Order IDs, PayPal transaction tokens, amounts, timestamps) are detached, pseudonymized, and retained for <strong>7 years</strong> in compliance with IRS, commercial accounting, and anti-fraud regulations.
+                </div>
+
+                <!-- Stats summary badges -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                    <div style="background: rgba(231, 76, 60, 0.12); border: 1px solid rgba(231, 76, 60, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
+                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #ff8b8b; font-weight: 700;">Pending Purge</div>
+                        <div id="delPendingCount" style="font-size: 1.6rem; font-weight: 800; color: #ff6b6b; margin-top: 4px;">0</div>
+                    </div>
+                    <div style="background: rgba(46, 204, 113, 0.12); border: 1px solid rgba(46, 204, 113, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
+                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #2ecc71; font-weight: 700;">Completed Purges</div>
+                        <div id="delCompletedCount" style="font-size: 1.6rem; font-weight: 800; color: #2ecc71; margin-top: 4px;">0</div>
+                    </div>
+                    <div style="background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
+                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Total Requests</div>
+                        <div id="delTotalCount" style="font-size: 1.6rem; font-weight: 800; color: #cbd5e1; margin-top: 4px;">0</div>
+                    </div>
+                </div>
+
+                <!-- Search and Filter -->
+                <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center;">
+                    <input type="text" id="delSearchInput" placeholder="Filter by email, username, or reason..." style="flex: 1; min-width: 220px;" oninput="filterDeletionRequests()">
+                    <div style="display: flex; gap: 6px;">
+                        <button class="btn btn-sm" id="delFilterAll" style="background: var(--gold-primary); color: #000; font-weight: 700;" onclick="setDeletionFilter('ALL')">All</button>
+                        <button class="btn btn-sm" id="delFilterPending" style="background: #334155; color: #fff;" onclick="setDeletionFilter('PENDING')">Pending</button>
+                        <button class="btn btn-sm" id="delFilterCompleted" style="background: #334155; color: #fff;" onclick="setDeletionFilter('COMPLETED')">Completed</button>
+                        <button class="btn btn-sm" id="delFilterCancelled" style="background: #334155; color: #fff;" onclick="setDeletionFilter('CANCELLED')">Cancelled</button>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-scroll-container">
+                    <table class="store-ledger-table" style="min-width: 900px;">
+                        <thead>
+                            <tr style="background: #1e293b; color: var(--gold-primary); border-bottom: 2px solid rgba(255,215,0,0.3);">
+                                <th style="padding: 10px 12px; text-align: left; width: 60px;">ID</th>
+                                <th style="padding: 10px 12px; text-align: left; min-width: 180px;">Identifier (Email/User)</th>
+                                <th style="padding: 10px 12px; text-align: left; width: 140px;">Submitted</th>
+                                <th style="padding: 10px 12px; text-align: left; width: 110px;">Status</th>
+                                <th style="padding: 10px 12px; text-align: left; min-width: 200px;">Reason</th>
+                                <th style="padding: 10px 12px; text-align: left; width: 120px;">IP Address</th>
+                                <th style="padding: 10px 12px; text-align: left; width: 140px;">Processed At</th>
+                                <th style="padding: 10px 12px; text-align: center; width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminDeletionsBody">
+                            <tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">Loading account deletion requests...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
         <!-- PURCHASE DETAILS INSPECTION MODAL -->
@@ -823,5 +892,6 @@
     <script src="js/crypto_transport.js"></script>
     <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
     <script src="js/admin.js"></script>
+    <script>if (typeof window.switchAdminTab === 'undefined') { document.write('<script src="../js/admin.js"><\/script>'); }</script>
 </body>
 </html>

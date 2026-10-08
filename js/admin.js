@@ -48,6 +48,10 @@
   let activePurchaseFilter = 'ALL';
   let activePurchaseSearchTerm = '';
 
+  let allDeletionRequests = [];
+  let activeDeletionFilter = 'ALL';
+  let activeDeletionSearchTerm = '';
+
   function getAdminKey() {
       if (sessionAdminJwt) return sessionAdminJwt;
       try {
@@ -217,6 +221,8 @@
           targetTab = 'store';
       } else if (normalized === 'users' || normalized === 'user' || normalized === 'players' || normalized === 'accounts') {
           targetTab = 'users';
+      } else if (normalized === 'deletions' || normalized === 'deletion' || normalized === 'delete' || normalized === 'gdpr') {
+          targetTab = 'deletions';
       } else {
           targetTab = 'segments';
       }
@@ -225,17 +231,21 @@
       const tabBtnSegments = document.getElementById('tabBtnSegments');
       const tabBtnUsers = document.getElementById('tabBtnUsers');
       const tabBtnStore = document.getElementById('tabBtnStore');
+      const tabBtnDeletions = document.getElementById('tabBtnDeletions');
       const contentSegments = document.getElementById('tabContentSegments');
       const contentUsers = document.getElementById('tabContentUsers');
       const contentStore = document.getElementById('tabContentStore');
+      const contentDeletions = document.getElementById('tabContentDeletions');
 
       if (tabBtnSegments) tabBtnSegments.classList.toggle('active', targetTab === 'segments');
       if (tabBtnUsers) tabBtnUsers.classList.toggle('active', targetTab === 'users');
       if (tabBtnStore) tabBtnStore.classList.toggle('active', targetTab === 'store');
+      if (tabBtnDeletions) tabBtnDeletions.classList.toggle('active', targetTab === 'deletions');
 
       if (contentSegments) contentSegments.style.display = (targetTab === 'segments') ? 'block' : 'none';
       if (contentUsers) contentUsers.style.display = (targetTab === 'users') ? 'block' : 'none';
       if (contentStore) contentStore.style.display = (targetTab === 'store') ? 'block' : 'none';
+      if (contentDeletions) contentDeletions.style.display = (targetTab === 'deletions') ? 'block' : 'none';
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -243,6 +253,8 @@
           fetchBlackjackUsers();
       } else if (targetTab === 'store') {
           fetchStoreSettings();
+      } else if (targetTab === 'deletions') {
+          fetchAccountDeletionRequests();
       }
   }
 
@@ -754,6 +766,12 @@
                   allStorePurchases = data.purchases;
                   renderStoreLedger();
               }
+
+              if (Array.isArray(data.deletion_requests)) {
+                  allDeletionRequests = data.deletion_requests;
+                  updateDeletionBadge(data.pending_deletion_count || 0);
+                  renderDeletionRequestsTable();
+              }
           } else {
               showStoreAlert((data && data.message) ? data.message : 'Failed to load store settings from database.', false);
           }
@@ -1221,10 +1239,172 @@
       });
   }
 
+  /* --- TAB 4: ACCOUNT DELETION REQUESTS (Google Play & Privacy Compliance) --- */
+  function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+  }
+
+  function updateDeletionBadge(pendingCount) {
+      const badge = document.getElementById('delBadge');
+      if (badge) {
+          badge.textContent = pendingCount;
+          badge.style.display = (pendingCount > 0) ? 'inline-block' : 'none';
+      }
+      const pendingEl = document.getElementById('delPendingCount');
+      if (pendingEl) pendingEl.textContent = pendingCount;
+
+      let completed = 0;
+      let total = allDeletionRequests.length;
+      allDeletionRequests.forEach(r => {
+          if ((r.status || '').toUpperCase() === 'COMPLETED') completed++;
+      });
+      const completedEl = document.getElementById('delCompletedCount');
+      if (completedEl) completedEl.textContent = completed;
+      const totalEl = document.getElementById('delTotalCount');
+      if (totalEl) totalEl.textContent = total;
+  }
+
+  async function fetchAccountDeletionRequests() {
+      const tbody = document.getElementById('adminDeletionsBody');
+      if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">Fetching account deletion requests from database...</td></tr>';
+      }
+
+      const res = await callAdminApi('get_deletion_requests');
+      if (res && res.success && res.data) {
+          allDeletionRequests = res.data.requests || [];
+          updateDeletionBadge(res.data.pending_count || 0);
+          renderDeletionRequestsTable();
+      } else {
+          if (tbody) {
+              tbody.innerHTML = `<tr><td colspan="8" style="padding: 16px; text-align: center; color: #ff6b6b;">Failed to load requests: ${res && res.message ? res.message : 'Unauthorized or database error'}</td></tr>`;
+          }
+      }
+  }
+
+  function setDeletionFilter(filter) {
+      activeDeletionFilter = (filter || 'ALL').toUpperCase();
+      ['All', 'Pending', 'Completed', 'Cancelled'].forEach(f => {
+          const btn = document.getElementById('delFilter' + f);
+          if (btn) {
+              if (f.toUpperCase() === activeDeletionFilter) {
+                  btn.style.background = 'var(--gold-primary)';
+                  btn.style.color = '#000';
+                  btn.style.fontWeight = '700';
+              } else {
+                  btn.style.background = '#334155';
+                  btn.style.color = '#fff';
+                  btn.style.fontWeight = 'normal';
+              }
+          }
+      });
+      renderDeletionRequestsTable();
+  }
+
+  function filterDeletionRequests() {
+      const input = document.getElementById('delSearchInput');
+      activeDeletionSearchTerm = input ? input.value.trim().toLowerCase() : '';
+      renderDeletionRequestsTable();
+  }
+
+  function renderDeletionRequestsTable() {
+      const tbody = document.getElementById('adminDeletionsBody');
+      if (!tbody) return;
+
+      let filtered = allDeletionRequests.filter(r => {
+          if (activeDeletionFilter !== 'ALL' && (r.status || '').toUpperCase() !== activeDeletionFilter) {
+              return false;
+          }
+          if (activeDeletionSearchTerm) {
+              const str = `${r.id} ${r.identifier} ${r.reason || ''} ${r.ip_address || ''} ${r.status || ''}`.toLowerCase();
+              if (!str.includes(activeDeletionSearchTerm)) return false;
+          }
+          return true;
+      });
+
+      if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">No account deletion requests found matching the current criteria.</td></tr>';
+          return;
+      }
+
+      let html = '';
+      filtered.forEach(r => {
+          const isPending = (r.status || '').toUpperCase() === 'PENDING';
+          const isCompleted = (r.status || '').toUpperCase() === 'COMPLETED';
+
+          let statusBadge = '';
+          if (isPending) {
+              statusBadge = '<span style="background: rgba(241,196,15,0.18); color: #f1c40f; border: 1px solid rgba(241,196,15,0.5); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.78rem;">PENDING</span>';
+          } else if (isCompleted) {
+              statusBadge = '<span style="background: rgba(46,204,113,0.18); color: #2ecc71; border: 1px solid rgba(46,204,113,0.5); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 0.78rem;">COMPLETED</span>';
+          } else {
+              statusBadge = '<span style="background: rgba(148,163,184,0.18); color: #94a3b8; border: 1px solid rgba(148,163,184,0.5); padding: 2px 8px; border-radius: 4px; font-size: 0.78rem;">CANCELLED</span>';
+          }
+
+          let actionButtons = '';
+          if (isPending) {
+              actionButtons = `
+                  <button class="btn btn-sm" style="background: #e74c3c; color: #fff; font-weight: 700; padding: 4px 8px; margin-right: 4px;" onclick="processDeletionRequest(${r.id}, 'purge')" title="Permanently delete user and records">Purge User</button>
+                  <button class="btn btn-sm" style="background: #475569; color: #fff; padding: 4px 8px;" onclick="processDeletionRequest(${r.id}, 'cancel')" title="Cancel this request">Dismiss</button>
+              `;
+          } else if (isCompleted) {
+              actionButtons = '<span style="color: #2ecc71; font-size: 0.82rem; font-weight: bold;">✓ Purged &amp; Archived</span>';
+          } else {
+              actionButtons = '<span style="color: #94a3b8; font-size: 0.82rem;">Dismissed</span>';
+          }
+
+          const submittedDate = r.created_at ? r.created_at.replace('T', ' ').substring(0, 19) : '—';
+          const processedDate = r.processed_at ? r.processed_at.replace('T', ' ').substring(0, 19) : '—';
+
+          html += `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                  <td style="padding: 10px 12px; font-weight: bold; color: var(--gold-primary);">${r.id}</td>
+                  <td style="padding: 10px 12px; font-weight: 600; color: #fff;">${escapeHtml(r.identifier || '—')}</td>
+                  <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${submittedDate}</td>
+                  <td style="padding: 10px 12px;">${statusBadge}</td>
+                  <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.85rem;" title="${escapeHtml(r.reason || '')}">${escapeHtml(r.reason || '—')}</td>
+                  <td style="padding: 10px 12px; font-family: monospace; font-size: 0.8rem; color: #94a3b8;">${escapeHtml(r.ip_address || '—')}</td>
+                  <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${processedDate}</td>
+                  <td style="padding: 10px 12px; text-align: center;">${actionButtons}</td>
+              </tr>
+          `;
+      });
+
+      tbody.innerHTML = html;
+  }
+
+  async function processDeletionRequest(requestId, subaction) {
+      if (subaction === 'purge') {
+          const ok = confirm("PERMANENT USER DATA PURGE:\n\nAre you sure you want to permanently delete this user's account, personal profile, and login credentials?\n\nFinancial transaction records will remain archived in the purchases ledger for 7-year statutory audit compliance.\n\nThis action cannot be undone.");
+          if (!ok) return;
+      }
+
+      const res = await callAdminApi('process_deletion_request', { request_id: requestId, subaction: subaction });
+      if (res && res.success) {
+          alert(res.message || 'Deletion request processed successfully.');
+          fetchAccountDeletionRequests();
+          if (typeof fetchBlackjackUsers === 'function') {
+              fetchBlackjackUsers();
+          }
+      } else {
+          alert('Error processing request: ' + (res && res.message ? res.message : 'Unknown error'));
+      }
+  }
+
   // Bind to global scope
   global.authenticateAdmin = authenticateAdmin;
   global.logoutAdmin = logoutAdmin;
   global.switchAdminTab = switchAdminTab;
+  global.fetchAccountDeletionRequests = fetchAccountDeletionRequests;
+  global.setDeletionFilter = setDeletionFilter;
+  global.filterDeletionRequests = filterDeletionRequests;
+  global.processDeletionRequest = processDeletionRequest;
   global.fetchSegments = fetchSegments;
   global.saveSegments = saveSegments;
   global.toggleSegmentIds = toggleSegmentIds;

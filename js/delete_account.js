@@ -122,7 +122,7 @@
       confirmCheckbox.checked = false;
     } else {
       alertEl.className = "status-alert error";
-      alertEl.innerHTML = `<strong>Notice:</strong> ${responseData && responseData.message ? responseData.message : "Unable to reach the server. Please email your request directly to <a href='mailto:privacy@calmchessgames.com' style='color:#fff;text-decoration:underline;'>privacy@calmchessgames.com</a>."}`;
+      alertEl.innerHTML = `<strong>Notice:</strong> ${responseData && responseData.message ? responseData.message : "Unable to reach the server. Please email your request directly to <a href='mailto:bberry@calmchessgames.com' style='color:#fff;text-decoration:underline;'>bberry@calmchessgames.com</a>."}`;
       alertEl.style.display = "block";
     }
   }

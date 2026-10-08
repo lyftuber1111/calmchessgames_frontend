@@ -483,24 +483,32 @@
     const submitBtn = getEl("auth-submit-btn");
     const idLabel = getEl("auth-id-label");
     const idInput = getEl("auth-identifier");
+    const pwdInput = getEl("auth-password");
 
     if (tab === "register") {
       if (rulesEl) {
         rulesEl.classList.remove("hidden");
-        rulesEl.style.setProperty("display", "flex", "important");
+        rulesEl.style.removeProperty("display");
+        rulesEl.style.display = "flex";
+        rulesEl.style.flexDirection = "column";
       }
       if (confirmGroup) {
         confirmGroup.classList.remove("hidden");
-        confirmGroup.style.setProperty("display", "flex", "important");
+        confirmGroup.style.removeProperty("display");
+        confirmGroup.style.display = "flex";
+        confirmGroup.style.flexDirection = "column";
       }
       if (confirmInput) {
         confirmInput.disabled = false;
         confirmInput.required = true;
       }
+      if (pwdInput) {
+        pwdInput.setAttribute("autocomplete", "new-password");
+      }
       if (submitBtn) submitBtn.textContent = "Register & Play";
       if (idLabel) idLabel.textContent = "Email Address";
-      if (idInput) idInput.placeholder = "player@casino.com";
-      const pwdVal = getEl("auth-password") ? getEl("auth-password").value : "";
+      if (idInput) idInput.placeholder = "player@calmchessgames.com";
+      const pwdVal = pwdInput ? pwdInput.value : "";
       global.checkPasswordRules(pwdVal);
     } else {
       if (rulesEl) {
@@ -516,6 +524,9 @@
         confirmInput.required = false;
         confirmInput.value = "";
       }
+      if (pwdInput) {
+        pwdInput.setAttribute("autocomplete", "current-password");
+      }
       if (submitBtn) submitBtn.textContent = "Sign In";
       if (idLabel) idLabel.textContent = "Username or Email";
       if (idInput) idInput.placeholder = "username or email";
@@ -523,12 +534,30 @@
     clearAuthAlert();
   };
 
-  function showAuthAlert(msg, isError) {
+  global.togglePasswordVisibility = function (inputId, btn) {
+    const input = getEl(inputId);
+    if (!input) return;
+    const isPassword = input.type === "password";
+    input.type = isPassword ? "text" : "password";
+    if (btn) {
+      btn.textContent = isPassword ? "🙈" : "👁";
+      btn.setAttribute("aria-label", isPassword ? "Hide password" : "Show password");
+    }
+  };
+
+  function showAuthAlert(msg, type) {
     const alertEl = getEl("auth-alert");
     if (!alertEl) return;
-    alertEl.innerHTML = msg;
-    alertEl.className = isError ? "auth-alert error" : "auth-alert success";
-    alertEl.style.display = "block";
+    if (type === "switch-badge" || type === "info") {
+      alertEl.innerHTML = '<span class="badge-pill-tag">✦ ALREADY REGISTERED</span>' +
+        '<span class="badge-msg-text">' + (msg || "Switched to Sign In — please enter your password.") + '</span>';
+      alertEl.className = "auth-alert switch-badge";
+      alertEl.style.display = "flex";
+    } else {
+      alertEl.innerHTML = msg;
+      alertEl.className = (type === true || type === "error") ? "auth-alert error" : "auth-alert success";
+      alertEl.style.display = "block";
+    }
   }
 
   function clearAuthAlert() {
@@ -603,13 +632,30 @@
         return;
       }
 
-      if (res.status === 409 || (data && (data.error_code === "EMAIL_EXISTS" || (data.message && data.message.includes("already registered"))))) {
-        showAuthAlert(data.message, true);
-        global.showNotification(data.message + "\n\nSwitching to Sign In tab.", false);
+      const isAlreadyRegistered = res.status === 409 ||
+        (data && (
+          data.error_code === "EMAIL_EXISTS" ||
+          (data.data && data.data.error_code === "EMAIL_EXISTS") ||
+          (data.message && /already\s+registered/i.test(data.message))
+        ));
+
+      if (isAlreadyRegistered) {
+        // Automatically switch to Sign In tab
         global.switchAuthTab("login");
-        if (getEl("auth-password")) {
-          getEl("auth-password").value = "";
-          getEl("auth-password").focus();
+        // Keep the entered email/identifier so user does not have to retype it
+        const idField = getEl("auth-identifier");
+        if (idField && identifier) {
+          idField.value = identifier;
+        }
+        // Present message badge indicating the switch
+        const badgeMsg = (data && data.message && data.message.toLowerCase().includes("already registered"))
+          ? data.message + " Switched to Sign In — enter your password."
+          : "Account already registered. Switched to Sign In — enter your password.";
+        showAuthAlert(badgeMsg, "switch-badge");
+        const pwd = getEl("auth-password");
+        if (pwd) {
+          pwd.value = "";
+          pwd.focus();
         }
         return;
       }

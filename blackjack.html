@@ -70,6 +70,8 @@
       color: #fff;
       overflow-x: hidden;
       overflow-y: auto;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
 
     body {
@@ -109,14 +111,16 @@
     /* --- LOBBY STYLES --- */
     .lobby-card {
       width: 100%;
-      max-width: 420px;
+      max-width: 440px;
       max-height: calc(100dvh - 16px);
       overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       background: var(--bg-card);
-      border: 2px solid rgba(241, 196, 15, 0.3);
+      border: 2px solid rgba(241, 196, 15, 0.35);
       border-radius: 18px;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
-      padding: clamp(8px, 1.8vh, 16px) clamp(14px, 3vw, 20px);
+      padding: clamp(10px, 2vh, 18px) clamp(14px, 3.5vw, 22px);
+      padding-bottom: max(16px, calc(14px + var(--sab)));
       display: flex;
       flex-direction: column;
       gap: clamp(4px, 1vh, 8px);
@@ -125,71 +129,242 @@
     }
 
     .lobby-header { text-align: center; }
-    .lobby-header h1 { font-size: clamp(1.15rem, 2.5vw, 1.4rem); color: var(--gold); text-transform: uppercase; margin-bottom: 2px; }
-    .lobby-header p { font-size: clamp(0.72rem, 1.4vw, 0.78rem); color: #94a3b8; }
+    .lobby-header h1 { font-size: clamp(1.18rem, 2.8vw, 1.45rem); color: var(--gold); text-transform: uppercase; margin-bottom: 2px; }
+    .lobby-header p { font-size: clamp(0.74rem, 1.5vw, 0.82rem); color: #cbd5e1; }
 
     .lobby-footer {
       text-align: center;
       padding-top: 6px;
       border-top: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 0.72rem;
+      font-size: 0.74rem;
       color: #94a3b8;
       display: flex;
       flex-direction: column;
       gap: 3px;
     }
     .lobby-footer a { color: var(--gold); text-decoration: underline; font-weight: 600; }
-    .copyright-text { font-size: 0.68rem; color: #64748b; letter-spacing: 0.4px; }
+    .copyright-text { font-size: 0.7rem; color: #64748b; letter-spacing: 0.4px; }
 
     .auth-toggle { display: flex; background: var(--input-bg); border-radius: 8px; padding: 3px; gap: 4px; }
-    .auth-toggle button { flex: 1; padding: 7px 6px; border: none; background: transparent; color: #94a3b8; font-weight: 700; border-radius: 6px; cursor: pointer; font-size: 0.82rem; }
+    .auth-toggle button { flex: 1; padding: 8px 6px; border: none; background: transparent; color: #cbd5e1; font-weight: 700; border-radius: 6px; cursor: pointer; font-size: 0.85rem; min-height: 38px; }
     .auth-toggle button.active { background: var(--gold); color: #000; }
 
-    .form-group { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+    .form-group { display: flex; flex-direction: column; gap: 4px; margin-top: 5px; }
     .form-group.register-only.hidden { display: none !important; }
-    .form-group label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #cbd5e1; }
+    .form-group label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #cbd5e1; letter-spacing: 0.5px; }
     .form-group input {
       background: var(--input-bg);
-      border: 1.5px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-      padding: 8px 11px;
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 10px 12px;
       color: #fff;
-      font-size: 0.88rem;
+      font-size: 16px; /* Disables auto-zoom on Apple iOS Safari */
       outline: none;
+      -webkit-appearance: none;
+      box-sizing: border-box;
+      min-height: 44px; /* Apple HIG standard touch target */
+      width: 100%;
+      transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .form-group input:focus { border-color: var(--gold); }
+    .form-group input:focus {
+      border-color: var(--gold);
+      box-shadow: 0 0 0 2px rgba(241, 196, 15, 0.25);
+    }
 
-    .validation-rules {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3px 8px;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 7px;
+    .input-password-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+    }
+    .input-password-wrapper input {
+      padding-right: 44px;
+    }
+    .pwd-toggle-btn {
+      position: absolute;
+      right: 4px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      color: #94a3b8;
+      font-size: 1.15rem;
       padding: 6px 10px;
-      font-size: 0.72rem;
-      margin-top: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+      min-width: 36px;
+      min-height: 36px;
+    }
+    .pwd-toggle-btn:hover, .pwd-toggle-btn:focus {
+      color: var(--gold);
+    }
+
+    /* Single Column Vertical Validation List */
+    .validation-rules {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 5px;
+      background: rgba(10, 16, 26, 0.95);
+      border: 1.5px solid rgba(241, 196, 15, 0.35);
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-top: 6px;
+      box-sizing: border-box;
+      width: 100%;
+      box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.5);
     }
     .validation-rules.hidden { display: none !important; }
 
-    .rule-item {
-      color: #94a3b8;
-      transition: color 0.15s ease-in-out;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+    .rules-header {
+      font-size: clamp(0.72rem, 2.2vw, 0.82rem);
+      font-weight: 800;
+      color: var(--gold);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin-bottom: 2px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      gap: 5px;
     }
-    .rule-item.valid { color: #2ecc71 !important; font-weight: 600; }
-    .rule-item.invalid { color: #94a3b8; }
-    .rule-item.valid::before { content: "✔ "; color: #2ecc71 !important; }
-    .rule-item.invalid::before { content: "✖ "; color: #64748b; }
 
-    .auth-btn { width: 100%; background: var(--gold); color: #111; border: none; padding: 9px; border-radius: 8px; font-size: 0.88rem; font-weight: 800; text-transform: uppercase; cursor: pointer; margin-top: 5px; }
+    .rule-item {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #f1f5f9; /* High-contrast crisp white/silver */
+      font-size: clamp(0.8rem, 2.5vw, 0.9rem);
+      line-height: 1.35;
+      white-space: normal;
+      word-break: break-word;
+      padding: 2px 0;
+      transition: color 0.15s ease-in-out;
+    }
+    .rule-item::before {
+      content: "✕";
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      min-width: 18px;
+      border-radius: 50%;
+      background: rgba(148, 163, 184, 0.18);
+      border: 1.5px solid #94a3b8;
+      color: #cbd5e1;
+      font-size: 0.7rem;
+      font-weight: 850;
+      flex-shrink: 0;
+      transition: all 0.15s ease-in-out;
+    }
+    .rule-item.valid { color: #4ade80 !important; font-weight: 600; }
+    .rule-item.invalid { color: #f1f5f9; }
+    .rule-item.valid::before {
+      content: "✓";
+      background: rgba(46, 204, 113, 0.25);
+      border: 1.5px solid #2ecc71;
+      color: #2ecc71 !important;
+      box-shadow: 0 0 6px rgba(46, 204, 113, 0.4);
+    }
+    .rule-item.invalid::before {
+      content: "✕";
+      background: rgba(148, 163, 184, 0.18);
+      border: 1.5px solid #94a3b8;
+      color: #cbd5e1;
+    }
+
+    .auth-btn {
+      width: 100%;
+      background: var(--gold);
+      color: #111;
+      border: none;
+      padding: 11px;
+      min-height: 44px;
+      border-radius: 8px;
+      font-size: clamp(0.88rem, 2.5vw, 1rem);
+      font-weight: 800;
+      text-transform: uppercase;
+      cursor: pointer;
+      margin-top: 6px;
+      box-shadow: 0 4px 12px rgba(241, 196, 15, 0.3);
+      transition: background 0.15s, transform 0.1s;
+    }
     .auth-btn:hover { background: var(--gold-dark); }
+    .auth-btn:active { transform: scale(0.98); }
 
-    .auth-alert { padding: 12px; border-radius: 8px; font-size: 0.85rem; display: none; text-align: center; word-break: break-word; line-height: 1.4; }
-    .auth-alert.error { background: rgba(231, 76, 60, 0.25); border: 1px solid var(--error-red); color: #ff7675; display: block; }
-    .auth-alert.success { background: rgba(46, 204, 113, 0.25); border: 1px solid var(--success-green); color: #55efc4; display: block; }
+    .auth-alert {
+      padding: 11px 14px;
+      border-radius: 9px;
+      font-size: clamp(0.84rem, 2.4vw, 0.94rem);
+      display: none;
+      text-align: center;
+      word-break: break-word;
+      line-height: 1.45;
+      font-weight: 600;
+      margin-top: 4px;
+      margin-bottom: 4px;
+      box-sizing: border-box;
+      width: 100%;
+    }
+    .auth-alert.error { background: rgba(231, 76, 60, 0.25); border: 1.5px solid var(--error-red); color: #ff7675; display: block; }
+    .auth-alert.success { background: rgba(46, 204, 113, 0.25); border: 1.5px solid var(--success-green); color: #55efc4; display: block; }
+    .auth-alert.switch-badge, .auth-alert.info {
+      background: rgba(241, 196, 15, 0.16);
+      border: 1.5px solid var(--gold);
+      color: #fff;
+      display: flex !important;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(241, 196, 15, 0.25);
+      animation: alertBadgePop 0.25s ease-out;
+    }
+    .badge-pill-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--gold);
+      color: #0b131a;
+      font-size: 0.72rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      padding: 2px 10px;
+      border-radius: 20px;
+    }
+    .badge-msg-text {
+      font-size: clamp(0.78rem, 2.2vw, 0.88rem);
+      color: #f8fafc;
+      font-weight: 600;
+    }
+    @keyframes alertBadgePop {
+      0% { transform: scale(0.96); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* Media query adjustments for tablets and large mobile */
+    @media (min-width: 768px) {
+      .lobby-card {
+        max-width: 480px;
+        padding: 24px 28px;
+        border-radius: 20px;
+      }
+      .lobby-header h1 {
+        font-size: 1.55rem;
+      }
+      .rule-item {
+        font-size: 0.92rem;
+      }
+    }
 
     /* --- FELT TABLE CONTAINER --- */
     #game-container {
@@ -1212,20 +1387,27 @@
       <form id="auth-form" onsubmit="event.preventDefault(); handleAuthSubmit(event);">
         <div class="form-group">
           <label id="auth-id-label">Email Address</label>
-          <input type="text" id="auth-identifier" required autocomplete="username" placeholder="player@casino.com">
+          <input type="text" id="auth-identifier" required autocomplete="username" placeholder="player@calmchessgames.com">
         </div>
 
         <div class="form-group">
-          <label>Password</label>
-          <input type="password" id="auth-password" required autocomplete="current-password" oninput="checkPasswordRules(this.value)" onkeyup="checkPasswordRules(this.value)" onpaste="setTimeout(()=>checkPasswordRules(this.value),10)">
+          <label for="auth-password">Password</label>
+          <div class="input-password-wrapper">
+            <input type="password" id="auth-password" required autocomplete="current-password" oninput="checkPasswordRules(this.value)" onkeyup="checkPasswordRules(this.value)" onpaste="setTimeout(()=>checkPasswordRules(this.value),10)" aria-describedby="password-rules">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('auth-password', this)" aria-label="Toggle password visibility" title="Show or hide password">👁</button>
+          </div>
         </div>
 
         <div class="form-group register-only" id="confirm-password-group">
-          <label>Confirm Password</label>
-          <input type="password" id="auth-password-confirm" autocomplete="new-password" placeholder="Confirm your password" oninput="checkPasswordMatch()" onkeyup="checkPasswordMatch()" onpaste="setTimeout(()=>checkPasswordMatch(),10)">
+          <label for="auth-password-confirm">Confirm Password</label>
+          <div class="input-password-wrapper">
+            <input type="password" id="auth-password-confirm" autocomplete="new-password" placeholder="Confirm your password" oninput="checkPasswordMatch()" onkeyup="checkPasswordMatch()" onpaste="setTimeout(()=>checkPasswordMatch(),10)">
+            <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('auth-password-confirm', this)" aria-label="Toggle password visibility" title="Show or hide password">👁</button>
+          </div>
         </div>
 
-        <div id="password-rules" class="validation-rules">
+        <div id="password-rules" class="validation-rules" aria-live="polite">
+          <div class="rules-header">Password Requirements:</div>
           <div id="r-len" class="rule-item invalid">At least 8 characters</div>
           <div id="r-up" class="rule-item invalid">One uppercase letter (A-Z)</div>
           <div id="r-low" class="rule-item invalid">One lowercase letter (a-z)</div>
@@ -1345,5 +1527,6 @@
   <script src="js/crypto_transport.js"></script>
   <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
   <script src="js/blackjack.js"></script>
+  <script>if (typeof window.checkPasswordRules === 'undefined') { document.write('<script src="../js/blackjack.js"><\/script>'); }</script>
 </body>
 </html>

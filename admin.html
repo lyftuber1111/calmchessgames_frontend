@@ -530,7 +530,7 @@
                 <button class="admin-tab-btn active" id="tabBtnSegments" onclick="switchAdminTab('segments')">Ring Navigation</button>
                 <button class="admin-tab-btn" id="tabBtnUsers" onclick="switchAdminTab('users')">Blackjack Users</button>
                 <button class="admin-tab-btn" id="tabBtnStore" onclick="switchAdminTab('store')">Blackjack Billing & Store</button>
-                <button class="admin-tab-btn" id="tabBtnDeletions" onclick="switchAdminTab('deletions')">Account Deletions <span id="delBadge" style="display:none; background:#e74c3c; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
+                <button class="admin-tab-btn" id="tabBtnDeletions" onclick="switchAdminTab('purge')">Accounts to be Purged <span id="delBadge" style="display:none; background:#e74c3c; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
                 <button class="admin-tab-btn" id="tabBtnResets" onclick="switchAdminTab('resets')">Password Resets <span id="resetBadge" style="display:none; background:#f39c12; color:#1a1000; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
                 <a href="index.html" class="admin-tab-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Back to Main Website">← Main Rings</a>
             </div>
@@ -814,17 +814,25 @@
                 </div>
             </div>
 
-            <!-- TAB 4: ACCOUNT DELETION REQUESTS (Google Play & Privacy Compliance) -->
+            <!-- TAB 4: ACCOUNTS TO BE PURGED (Admin Console Purge Tab & Compliance) -->
             <div id="tabContentDeletions" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0; flex-wrap: wrap; gap: 8px;">
                     <div>
-                        <h2 style="color: var(--gold-primary); font-size: 1.25rem; margin: 0 0 4px 0;">Google Play & Privacy Account Deletion Requests</h2>
-                        <span style="font-size: 0.88rem; color: var(--text-muted);">Manage requests submitted from delete_account.html or in-app</span>
+                        <h2 style="color: var(--gold-primary); font-size: 1.25rem; margin: 0 0 4px 0;">Accounts to be Purged</h2>
+                        <span style="font-size: 0.88rem; color: var(--text-muted);">Review and permanently purge accounts requested for deletion, Google Play compliance, or admin purges</span>
                     </div>
-                    <div style="display: flex; gap: 8px; align-items: center;">
+                    <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                         <a href="delete_account.html" target="_blank" class="btn btn-sm" style="background: rgba(255,215,0,0.15); color: var(--gold-primary); border: 1px solid var(--gold-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">🔗 View Public Page</a>
-                        <button class="btn btn-gold btn-sm" onclick="fetchAccountDeletionRequests()">↻ Refresh Requests</button>
+                        <button class="btn btn-gold btn-sm" onclick="fetchAccountDeletionRequests()">↻ Refresh Purge List</button>
+                        <button class="btn btn-sm" style="background: #e74c3c; color: #fff; font-weight: 700; border: none; padding: 6px 12px;" onclick="purgeAllPendingAccounts()">⚠️ Purge All Pending Accounts</button>
                     </div>
+                </div>
+
+                <!-- Quick Purge Individual Account Tool -->
+                <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <span style="font-weight: 700; color: var(--gold-primary); font-size: 0.86rem;">⚡ Quick Purge Account:</span>
+                    <input type="text" id="quickPurgeIdentifier" placeholder="Enter email or username to purge immediately..." style="flex: 1; min-width: 220px; padding: 7px 12px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.86rem;">
+                    <button class="btn btn-sm" style="background: #e74c3c; color: #fff; font-weight: 700; padding: 7px 14px; border: none; border-radius: 4px; cursor: pointer;" onclick="quickPurgeAccount()">Purge User</button>
                 </div>
 
                 <!-- 7-Year Statutory Financial Retention Compliance Banner -->
@@ -844,7 +852,7 @@
                         <div id="delCompletedCount" style="font-size: 1.6rem; font-weight: 800; color: #2ecc71; margin-top: 4px;">0</div>
                     </div>
                     <div style="background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
-                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Total Requests</div>
+                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Total In Purge Queue</div>
                         <div id="delTotalCount" style="font-size: 1.6rem; font-weight: 800; color: #cbd5e1; margin-top: 4px;">0</div>
                     </div>
                 </div>
@@ -853,8 +861,8 @@
                 <div style="display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; align-items: center;">
                     <input type="text" id="delSearchInput" placeholder="Filter by email, username, or reason..." style="flex: 1; min-width: 220px;" oninput="filterDeletionRequests()">
                     <div style="display: flex; gap: 6px;">
-                        <button class="btn btn-sm" id="delFilterAll" style="background: var(--gold-primary); color: #000; font-weight: 700;" onclick="setDeletionFilter('ALL')">All</button>
-                        <button class="btn btn-sm" id="delFilterPending" style="background: #334155; color: #fff;" onclick="setDeletionFilter('PENDING')">Pending</button>
+                        <button class="btn btn-sm" id="delFilterAll" style="background: var(--gold-primary); color: #000; font-weight: 700;" onclick="setDeletionFilter('ALL')">All Accounts</button>
+                        <button class="btn btn-sm" id="delFilterPending" style="background: #334155; color: #fff;" onclick="setDeletionFilter('PENDING')">Pending Purge</button>
                         <button class="btn btn-sm" id="delFilterCompleted" style="background: #334155; color: #fff;" onclick="setDeletionFilter('COMPLETED')">Completed</button>
                         <button class="btn btn-sm" id="delFilterCancelled" style="background: #334155; color: #fff;" onclick="setDeletionFilter('CANCELLED')">Cancelled</button>
                     </div>
@@ -876,18 +884,18 @@
                             </tr>
                         </thead>
                         <tbody id="adminDeletionsBody">
-                            <tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">Loading account deletion requests...</td></tr>
+                            <tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">Loading accounts to be purged...</td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- TAB 5: PASSWORD RESET REQUESTS (Industry Standard Token Management) -->
+            <!-- TAB 5: PASSWORD RESET REQUESTS (Email Authentications) -->
             <div id="tabContentResets" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0; flex-wrap: wrap; gap: 8px;">
                     <div>
-                        <h2 style="color: var(--gold-primary); font-size: 1.25rem; margin: 0 0 4px 0;">🔑 Password Reset Requests Ledger</h2>
-                        <span style="font-size: 0.88rem; color: var(--text-muted);">Manage 256-bit CSPRNG security tokens and reset authorizations</span>
+                        <h2 style="color: var(--gold-primary); font-size: 1.25rem; margin: 0 0 4px 0;">🔑 Password Reset Requests (Email Authentications)</h2>
+                        <span style="font-size: 0.88rem; color: var(--text-muted);">Monitor email password reset requests, verify user email response status, or cancel pending requests</span>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center;">
                         <a href="password_reset.html" target="_blank" class="btn btn-sm" style="background: rgba(255,215,0,0.15); color: var(--gold-primary); border: 1px solid var(--gold-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">🔗 View Public Portal</a>
@@ -897,22 +905,22 @@
 
                 <!-- Security overview banner -->
                 <div style="background: rgba(243, 156, 18, 0.08); border: 1px solid rgba(243, 156, 18, 0.35); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.86rem; color: #fed7aa; line-height: 1.5;">
-                    <strong style="color: #f39c12; font-size: 0.95rem;">🛡️ Cryptographic Security Architecture:</strong><br>
-                    Tokens are 256-bit entropy generated via cryptographically secure pseudo-random number generator (CSPRNG). Only SHA-256 digests are stored in the database. Tokens strictly expire after <strong>60 minutes</strong> or upon first successful password reset (whichever occurs first).
+                    <strong style="color: #f39c12; font-size: 0.95rem;">🛡️ Email Response Authentication Policy:</strong><br>
+                    Users authenticate forgotten password resets by receiving and responding to an authentication email. Reset authorizations strictly expire after <strong>60 minutes</strong> or upon successful password update.
                 </div>
 
                 <!-- Stats summary badges -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
                     <div style="background: rgba(243, 156, 18, 0.12); border: 1px solid rgba(243, 156, 18, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
-                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #fed7aa; font-weight: 700;">Pending Active Resets</div>
+                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #fed7aa; font-weight: 700;">Pending Email Responses</div>
                         <div id="resetPendingCountDisplay" style="font-size: 1.6rem; font-weight: 800; color: #f39c12; margin-top: 4px;">0</div>
                     </div>
                     <div style="background: rgba(46, 204, 113, 0.12); border: 1px solid rgba(46, 204, 113, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
-                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #2ecc71; font-weight: 700;">Successfully Used</div>
+                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #2ecc71; font-weight: 700;">Completed Resets</div>
                         <div id="resetUsedCountDisplay" style="font-size: 1.6rem; font-weight: 800; color: #2ecc71; margin-top: 4px;">0</div>
                     </div>
                     <div style="background: rgba(148, 163, 184, 0.12); border: 1px solid rgba(148, 163, 184, 0.4); border-radius: 8px; padding: 12px; text-align: center;">
-                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Total Token History</div>
+                        <div style="font-size: 0.78rem; text-transform: uppercase; color: #94a3b8; font-weight: 700;">Total Reset Requests</div>
                         <div id="resetTotalCountDisplay" style="font-size: 1.6rem; font-weight: 800; color: #cbd5e1; margin-top: 4px;">0</div>
                     </div>
                 </div>
@@ -923,7 +931,7 @@
                     <div style="display: flex; gap: 6px;">
                         <button class="btn btn-sm" id="resetFilterAll" style="background: var(--gold-primary); color: #000; font-weight: 700;" onclick="setResetFilter('ALL')">All</button>
                         <button class="btn btn-sm" id="resetFilterPending" style="background: #334155; color: #fff;" onclick="setResetFilter('PENDING')">Pending</button>
-                        <button class="btn btn-sm" id="resetFilterUsed" style="background: #334155; color: #fff;" onclick="setResetFilter('USED')">Used</button>
+                        <button class="btn btn-sm" id="resetFilterUsed" style="background: #334155; color: #fff;" onclick="setResetFilter('USED')">Completed</button>
                         <button class="btn btn-sm" id="resetFilterExpired" style="background: #334155; color: #fff;" onclick="setResetFilter('EXPIRED')">Expired</button>
                         <button class="btn btn-sm" id="resetFilterCancelled" style="background: #334155; color: #fff;" onclick="setResetFilter('CANCELLED')">Cancelled</button>
                     </div>
@@ -936,16 +944,16 @@
                             <tr style="background: #1e293b; color: var(--gold-primary); border-bottom: 2px solid rgba(255,215,0,0.3);">
                                 <th style="padding: 10px 12px; text-align: left; width: 60px;">ID</th>
                                 <th style="padding: 10px 12px; text-align: left; min-width: 180px;">User Identifier</th>
-                                <th style="padding: 10px 12px; text-align: left; width: 130px;">Token Preview</th>
+                                <th style="padding: 10px 12px; text-align: left; width: 140px;">Auth Method</th>
                                 <th style="padding: 10px 12px; text-align: left; width: 140px;">Requested At</th>
                                 <th style="padding: 10px 12px; text-align: left; width: 140px;">Expires At</th>
                                 <th style="padding: 10px 12px; text-align: left; width: 110px;">Status</th>
                                 <th style="padding: 10px 12px; text-align: left; width: 120px;">IP Address</th>
-                                <th style="padding: 10px 12px; text-align: center; width: 160px;">Actions</th>
+                                <th style="padding: 10px 12px; text-align: center; width: 140px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="adminResetsBody">
-                            <tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">Loading password reset tokens...</td></tr>
+                            <tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">Loading password reset requests...</td></tr>
                         </tbody>
                     </table>
                 </div>

@@ -612,16 +612,38 @@
       }
     }
 
-    const endpoint = API_BASE + (currentAuthTab === "register" ? "/register.php" : "/login.php");
+    const baseScript = currentAuthTab === "register" ? "register.php" : "login.php";
+    const candidateEndpoints = [
+      `${API_BASE}/${baseScript}?_t=${Date.now()}`,
+      `${API_BASE}/php/${baseScript}?_t=${Date.now()}`,
+      `./${baseScript}?_t=${Date.now()}`,
+      `./php/${baseScript}?_t=${Date.now()}`
+    ];
 
     try {
-      const res = await secureFetchApi(endpoint + "?_t=" + Date.now(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        encrypt: true,
-        body: { identifier: identifier, email: identifier, password: password }
-      });
+      let res = null;
+      let lastErr = null;
+      for (const ep of candidateEndpoints) {
+        try {
+          const attempt = await secureFetchApi(ep, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            encrypt: true,
+            body: { identifier: identifier, email: identifier, password: password }
+          });
+          if (attempt && attempt.status !== 404 && attempt.status !== 502 && attempt.status !== 503) {
+            res = attempt;
+            break;
+          }
+        } catch (fetchErr) {
+          lastErr = fetchErr;
+        }
+      }
+
+      if (!res) {
+        throw lastErr || new Error("Unable to establish secure connection with authentication service.");
+      }
 
       const rawText = await res.text();
       let data;

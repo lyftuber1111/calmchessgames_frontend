@@ -235,7 +235,7 @@
           targetTab = 'store';
       } else if (normalized === 'users' || normalized === 'user' || normalized === 'players' || normalized === 'accounts') {
           targetTab = 'users';
-      } else if (normalized === 'deletions' || normalized === 'deletion' || normalized === 'delete' || normalized === 'gdpr') {
+      } else if (normalized === 'purge' || normalized === 'purged' || normalized === 'purges' || normalized === 'deletions' || normalized === 'deletion' || normalized === 'delete' || normalized === 'gdpr') {
           targetTab = 'deletions';
       } else if (normalized === 'resets' || normalized === 'reset' || normalized === 'password-reset' || normalized === 'tokens') {
           targetTab = 'resets';
@@ -1660,6 +1660,47 @@
       }
   }
 
+  async function purgeAllPendingAccounts() {
+      const ok = confirm("BULK PERMANENT ACCOUNT PURGE:\n\nAre you sure you want to permanently purge ALL pending player accounts in the purge queue?\n\nThis permanently erases all login credentials, password hashes, profiles, and active bankrolls from the database.\n\nFinancial transaction records are pseudonymized and preserved for 7-year statutory audit compliance.\n\nThis action cannot be undone.");
+      if (!ok) return;
+
+      const res = await callAdminApi('purge_all_pending');
+      if (res && res.success) {
+          alert(res.message || 'All pending accounts have been permanently purged.');
+          fetchAccountDeletionRequests();
+          if (typeof fetchBlackjackUsers === 'function') {
+              fetchBlackjackUsers();
+          }
+      } else {
+          alert('Error during bulk purge: ' + (res && res.message ? res.message : 'Unknown error'));
+      }
+  }
+
+  async function quickPurgeAccount() {
+      const input = document.getElementById('quickPurgeIdentifier');
+      const identifier = input ? input.value.trim() : '';
+      if (!identifier) {
+          alert('Please enter an account email or username to purge.');
+          if (input) input.focus();
+          return;
+      }
+
+      const ok = confirm(`PERMANENT USER DATA PURGE:\n\nAre you sure you want to permanently purge user '${identifier}'?\n\nThis action cannot be undone.`);
+      if (!ok) return;
+
+      const res = await callAdminApi('quick_purge_account', { identifier: identifier });
+      if (res && res.success) {
+          alert(res.message || `Account '${identifier}' permanently purged.`);
+          if (input) input.value = '';
+          fetchAccountDeletionRequests();
+          if (typeof fetchBlackjackUsers === 'function') {
+              fetchBlackjackUsers();
+          }
+      } else {
+          alert('Error purging account: ' + (res && res.message ? res.message : 'Unknown error'));
+      }
+  }
+
   /* --- TAB 5: PASSWORD RESET MANAGEMENT --- */
   async function fetchPasswordResets() {
       const adminKey = getAdminKey();
@@ -1783,13 +1824,13 @@
 
           const createdDate = r.created_at ? r.created_at.replace('T', ' ').substring(0, 19) : '—';
           const expiresDate = r.expires_at ? r.expires_at.replace('T', ' ').substring(0, 19) : '—';
-          const preview = r.raw_token_preview || '••••••••';
+          const authMethod = r.verification_type || 'Email Response';
 
           html += `
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
                   <td style="padding: 10px 12px; font-weight: bold; color: var(--gold-primary);">${r.id}</td>
                   <td style="padding: 10px 12px; font-weight: 600; color: #fff;">${escapeHtml(r.identifier || '—')}</td>
-                  <td style="padding: 10px 12px; font-family: monospace; font-size: 0.82rem; color: #cbd5e1;"><code>${escapeHtml(preview)}</code></td>
+                  <td style="padding: 10px 12px; font-size: 0.82rem; color: #55efc4; font-weight: 600;">${escapeHtml(authMethod)}</td>
                   <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${createdDate}</td>
                   <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${expiresDate}</td>
                   <td style="padding: 10px 12px;">${statusBadge}</td>
@@ -1803,7 +1844,7 @@
   }
 
   async function cancelPasswordReset(tokenId) {
-      if (!confirm("Revoke this password reset security token? The user will no longer be able to use it to change their password.")) return;
+      if (!confirm("Cancel this password reset request? The user will no longer be able to use it to authenticate their password change.")) return;
       const adminKey = getAdminKey();
       try {
           const res = await callAdminApi('cancel_password_reset', {
@@ -1812,13 +1853,13 @@
               token_id: tokenId
           });
           if (res && res.success) {
-              alert(res.message || 'Token revoked successfully.');
+              alert(res.message || 'Request cancelled successfully.');
               fetchPasswordResets();
           } else {
-              alert('Error revoking token: ' + (res && res.message ? res.message : 'Unknown error'));
+              alert('Error cancelling request: ' + (res && res.message ? res.message : 'Unknown error'));
           }
       } catch (err) {
-          alert('Failed to revoke token: ' + err.message);
+          alert('Failed to cancel request: ' + err.message);
       }
   }
 
@@ -1835,23 +1876,13 @@
       }
   }
 
-  function copyResetToken(token) {
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(token).then(() => {
-              alert("Security token copied to clipboard!");
-          }).catch(() => {
-              prompt("Copy token manually:", token);
-          });
-      } else {
-          prompt("Copy token manually:", token);
-      }
-  }
-
   // Bind to global scope
   global.authenticateAdmin = authenticateAdmin;
   global.logoutAdmin = logoutAdmin;
   global.switchAdminTab = switchAdminTab;
   global.fetchAccountDeletionRequests = fetchAccountDeletionRequests;
+  global.purgeAllPendingAccounts = purgeAllPendingAccounts;
+  global.quickPurgeAccount = quickPurgeAccount;
   global.setDeletionFilter = setDeletionFilter;
   global.filterDeletionRequests = filterDeletionRequests;
   global.processDeletionRequest = processDeletionRequest;
@@ -1885,7 +1916,6 @@
   global.filterPasswordResets = filterPasswordResets;
   global.cancelPasswordReset = cancelPasswordReset;
   global.copyUserResetLink = copyUserResetLink;
-  global.copyResetToken = copyResetToken;
 
   window.addEventListener('DOMContentLoaded', () => {
       const authInput = document.getElementById('adm-pass');

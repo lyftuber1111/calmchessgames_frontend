@@ -8,45 +8,66 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
     body {
-      background-color: #0d131a;
-      color: #cbd5e1;
+      background: #0b0f19;
+      color: #e2e8f0;
       padding: 30px 20px;
-      line-height: 1.6;
-      max-width: 800px;
-      margin: 0 auto;
+      display: flex;
+      justify-content: center;
     }
-    h1, h2 { color: #f1c40f; margin-bottom: 12px; }
-    h1 { border-bottom: 2px solid #1e2936; padding-bottom: 10px; font-size: 1.8rem; text-transform: uppercase; line-height: 1.2; }
-    h2 { font-size: 1.2rem; margin-top: 24px; text-transform: uppercase; color: #f1c40f; }
-    p, li { font-size: 0.95rem; margin-bottom: 12px; color: #cbd5e1; }
-    ul { padding-left: 20px; }
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background: #1e293b;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,215,0,0.2);
+    }
+    h1 {
+      color: #f1c40f;
+      font-size: 2rem;
+      margin-bottom: 20px;
+      border-bottom: 2px solid rgba(255,215,0,0.3);
+      padding-bottom: 10px;
+    }
+    h2 {
+      color: #cbd5e1;
+      font-size: 1.25rem;
+      margin-top: 25px;
+      margin-bottom: 10px;
+    }
+    p {
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 15px;
+    }
     .back-btn {
       display: inline-block;
-      margin-top: 20px;
-      padding: 10px 18px;
+      margin-top: 30px;
+      padding: 10px 20px;
       background: #f1c40f;
-      color: #111;
-      font-weight: 800;
+      color: #0b0f19;
       text-decoration: none;
-      border-radius: 8px;
-      text-transform: uppercase;
-      font-size: 0.85rem;
+      font-weight: bold;
+      border-radius: 6px;
       transition: background 0.2s;
     }
-    .back-btn:hover { background: #c0980b; }
+    .back-btn:hover {
+      background: #d4ac0d;
+    }
     footer {
       margin-top: 40px;
-      padding-top: 15px;
-      border-top: 1px solid #1e2936;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       color: #64748b;
-      text-align: center;
+      border-top: 1px solid #334155;
+      padding-top: 15px;
     }
   </style>
 </head>
 <body>
-  <div id="_cc_tos">
+  <div class="container">
     <h1>Terms of Service</h1>
+    <p>Last updated: October 2026</p>
     <h2>1. Entertainment Purpose Only</h2>
     <p>This web-based 6-deck Blackjack game is provided strictly as a social gaming simulation for entertainment purposes. No real money gambling or wagering of real-currency value takes place during gameplay.</p>
     <h2>2. In-Game Play Credits</h2>
@@ -55,7 +76,9 @@
     <p>Any credit purchases processed via PayPal or administrative test mode represent licensing fees for using virtual entertainment tokens. By completing a transaction, you acknowledge and agree that all transactions are final and non-refundable.</p>
     <h2>4. Accounts and Eligibility</h2>
     <p>Users must be of legal age in their respective jurisdiction to play social casino simulations. Calm Chess Computers reserves the right to suspend or terminate access for any violation of these terms.</p>
-    <a href="index.html" class="back-btn">&quot; Return to Table</a>
+    <h2>5. Account & Data Deletion</h2>
+    <p>In accordance with Google Play Store policies and privacy standards, users may request permanent deletion of their account credentials and gameplay data at any time by visiting our <a href="delete_account.html" style="color: #f1c40f; text-decoration: underline;">Account Deletion Request Page</a> or emailing <a href="mailto:bberry@calmchessgames.com" style="color: #f1c40f;">bberry@calmchessgames.com</a>.</p>
+    <a href="index.html" class="back-btn">&larr; Return to Table</a>
     <footer>
       &copy; 2026 Calm Chess Computers. All Rights Reserved.
     </footer>

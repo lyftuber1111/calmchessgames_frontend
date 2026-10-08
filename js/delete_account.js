@@ -50,6 +50,8 @@
     alertEl.textContent = "";
 
     const identifier = identifierInput.value.trim();
+    const passwordInput = document.getElementById("del-password");
+    const password = passwordInput ? passwordInput.value : "";
     const reason = reasonSelect ? reasonSelect.value : "Requested via Google Play web deletion page";
 
     if (!identifier) {
@@ -57,6 +59,14 @@
       alertEl.textContent = "Please enter your registered email address or username.";
       alertEl.style.display = "block";
       identifierInput.focus();
+      return;
+    }
+
+    if (!password) {
+      alertEl.className = "status-alert error";
+      alertEl.textContent = "Please enter your account password to authenticate and verify identity.";
+      alertEl.style.display = "block";
+      if (passwordInput) passwordInput.focus();
       return;
     }
 
@@ -69,7 +79,7 @@
     }
 
     submitBtn.disabled = true;
-    submitBtn.textContent = "Submitting Secure Request...";
+    submitBtn.textContent = "Authenticating & Submitting Encrypted Request...";
 
     const endpoints = [
       `${API_BASE}/delete_account.php?_t=${Date.now()}`,
@@ -97,6 +107,7 @@
           encrypt: true,
           body: {
             identifier: identifier,
+            password: password,
             reason: reason,
             confirmed: true
           }
@@ -123,18 +134,32 @@
 
     if (completed && responseData && responseData.success) {
       alertEl.className = "status-alert success";
-      alertEl.innerHTML = `<strong>Request Registered Successfully!</strong><br>${responseData.message || "Your account deletion request has been registered and scheduled for permanent purge."}`;
+      alertEl.innerHTML = `<strong>Identity Authenticated & Deletion Request Registered!</strong><br>${responseData.message || "Your account deletion request has been registered and scheduled for permanent purge."}`;
       alertEl.style.display = "block";
 
       identifierInput.value = "";
+      if (passwordInput) passwordInput.value = "";
       confirmCheckbox.checked = false;
     } else {
       alertEl.className = "status-alert error";
-      alertEl.innerHTML = `<strong>Notice:</strong> ${responseData && responseData.message ? responseData.message : "Unable to reach the server. Please email your request directly to <a href='mailto:bberry@calmchessgames.com' style='color:#fff;text-decoration:underline;'>bberry@calmchessgames.com</a>."}`;
+      const errMsg = responseData && responseData.message ? responseData.message : "Unable to reach server. Please email your request to bberry@calmchessgames.com";
+      const isAuthFail = responseData && (responseData.auth_failed || responseData.auth_required);
+      alertEl.innerHTML = `<strong>${isAuthFail ? "Authentication Failed:" : "Notice:"}</strong> ${errMsg}${isAuthFail ? '<br><div style="margin-top:8px;"><a href="password_reset.html" style="color:#ffd700; text-decoration:underline; font-weight:700;">Forgot password? Reset your password here &rarr;</a></div>' : ""}`;
       alertEl.style.display = "block";
     }
   }
 
+  function toggleDelPasswordVisibility() {
+    const pwdInput = document.getElementById("del-password");
+    if (!pwdInput) return;
+    if (pwdInput.type === "password") {
+      pwdInput.type = "text";
+    } else {
+      pwdInput.type = "password";
+    }
+  }
+
   global.submitDeletionRequest = submitDeletionRequest;
+  global.toggleDelPasswordVisibility = toggleDelPasswordVisibility;
 
 })(typeof window !== "undefined" ? window : globalThis);

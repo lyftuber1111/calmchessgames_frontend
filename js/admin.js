@@ -52,6 +52,10 @@
   let activeDeletionFilter = 'ALL';
   let activeDeletionSearchTerm = '';
 
+  let allPasswordResets = [];
+  let activeResetFilter = 'ALL';
+  let activeResetSearchTerm = '';
+
   function getAdminKey() {
       if (sessionAdminJwt) return sessionAdminJwt;
       try {
@@ -187,6 +191,7 @@
               fetchStoreSettings();
               fetchBlackjackUsers();
               fetchAccountDeletionRequests();
+              fetchPasswordResets();
           } else {
               if (authMsg) {
                   authMsg.textContent = (data && data.message) ? data.message : 'Invalid Admin Password. Access Denied.';
@@ -232,6 +237,8 @@
           targetTab = 'users';
       } else if (normalized === 'deletions' || normalized === 'deletion' || normalized === 'delete' || normalized === 'gdpr') {
           targetTab = 'deletions';
+      } else if (normalized === 'resets' || normalized === 'reset' || normalized === 'password-reset' || normalized === 'tokens') {
+          targetTab = 'resets';
       } else {
           targetTab = 'segments';
       }
@@ -241,20 +248,24 @@
       const tabBtnUsers = document.getElementById('tabBtnUsers');
       const tabBtnStore = document.getElementById('tabBtnStore');
       const tabBtnDeletions = document.getElementById('tabBtnDeletions');
+      const tabBtnResets = document.getElementById('tabBtnResets');
       const contentSegments = document.getElementById('tabContentSegments');
       const contentUsers = document.getElementById('tabContentUsers');
       const contentStore = document.getElementById('tabContentStore');
       const contentDeletions = document.getElementById('tabContentDeletions');
+      const contentResets = document.getElementById('tabContentResets');
 
       if (tabBtnSegments) tabBtnSegments.classList.toggle('active', targetTab === 'segments');
       if (tabBtnUsers) tabBtnUsers.classList.toggle('active', targetTab === 'users');
       if (tabBtnStore) tabBtnStore.classList.toggle('active', targetTab === 'store');
       if (tabBtnDeletions) tabBtnDeletions.classList.toggle('active', targetTab === 'deletions');
+      if (tabBtnResets) tabBtnResets.classList.toggle('active', targetTab === 'resets');
 
       if (contentSegments) contentSegments.style.display = (targetTab === 'segments') ? 'block' : 'none';
       if (contentUsers) contentUsers.style.display = (targetTab === 'users') ? 'block' : 'none';
       if (contentStore) contentStore.style.display = (targetTab === 'store') ? 'block' : 'none';
       if (contentDeletions) contentDeletions.style.display = (targetTab === 'deletions') ? 'block' : 'none';
+      if (contentResets) contentResets.style.display = (targetTab === 'resets') ? 'block' : 'none';
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -264,6 +275,8 @@
           fetchStoreSettings();
       } else if (targetTab === 'deletions') {
           fetchAccountDeletionRequests();
+      } else if (targetTab === 'resets') {
+          fetchPasswordResets();
       }
   }
 
@@ -500,6 +513,14 @@
 
           if (data && data.success && Array.isArray(data.users)) {
               allBlackjackUsers = data.users;
+              if (Array.isArray(data.deletion_requests)) {
+                  allDeletionRequests = data.deletion_requests;
+                  updateDeletionBadge(data.pending_deletion_count || 0);
+              }
+              if (Array.isArray(data.password_resets)) {
+                  allPasswordResets = data.password_resets;
+                  updateResetBadges(data.pending_reset_count || 0);
+              }
               const searchVal = document.getElementById('adminUserSearchInput') ? document.getElementById('adminUserSearchInput').value : '';
               renderBlackjackUsers(searchVal);
           } else {
@@ -518,6 +539,40 @@
       }
   }
 
+  let activeUserFilter = 'ALL';
+
+  function setUserFilter(filter) {
+      activeUserFilter = (filter || 'ALL').toUpperCase();
+      ['All', 'Active', 'Banned', 'Purge', 'Reset'].forEach(f => {
+          const btn = document.getElementById('userFilter' + f);
+          if (btn) {
+              if (f.toUpperCase() === activeUserFilter) {
+                  btn.classList.add('active');
+                  if (f === 'Purge') {
+                      btn.style.background = 'rgba(239, 68, 68, 0.25)';
+                      btn.style.color = '#f87171';
+                      btn.style.borderColor = '#ef4444';
+                  } else if (f === 'Reset') {
+                      btn.style.background = 'rgba(243, 156, 18, 0.25)';
+                      btn.style.color = '#fed7aa';
+                      btn.style.borderColor = '#f39c12';
+                  } else {
+                      btn.style.background = 'rgba(255, 215, 0, 0.2)';
+                      btn.style.color = 'var(--gold-primary)';
+                      btn.style.borderColor = 'var(--gold-primary)';
+                  }
+              } else {
+                  btn.classList.remove('active');
+                  btn.style.background = 'rgba(0, 0, 0, 0.35)';
+                  btn.style.color = (f === 'Purge') ? '#fca5a5' : ((f === 'Reset') ? '#fed7aa' : 'var(--text-muted)');
+                  btn.style.borderColor = (f === 'Purge') ? '#ef4444' : ((f === 'Reset') ? '#f39c12' : '#334155');
+              }
+          }
+      });
+      const searchVal = document.getElementById('adminUserSearchInput') ? document.getElementById('adminUserSearchInput').value : '';
+      renderBlackjackUsers(searchVal);
+  }
+
   function handleUserSearchInput(term) {
       renderBlackjackUsers(term);
   }
@@ -527,10 +582,68 @@
       if (!container) return;
 
       const term = (filterTerm || '').toLowerCase().trim();
+
+      // Calculate real-time counts for status filter pills
+      let countAll = allBlackjackUsers.length;
+      let countActive = 0;
+      let countBanned = 0;
+      let countPurge = 0;
+      let countReset = 0;
+
+      allBlackjackUsers.forEach(u => {
+          const uIdent = (u.email || u.username || '').toLowerCase();
+          const hasDel = (parseInt(u.deletion_requested, 10) === 1) || allDeletionRequests.some(r => 
+              (r.status || '').toUpperCase() === 'PENDING' && 
+              (String(r.user_id) === String(u.id) || (r.identifier && r.identifier.toLowerCase() === uIdent))
+          );
+          const hasReset = (parseInt(u.reset_requested, 10) === 1) || allPasswordResets.some(r => 
+              (r.status || '').toUpperCase() === 'PENDING' && 
+              (String(r.user_id) === String(u.id) || (r.identifier && r.identifier.toLowerCase() === uIdent))
+          );
+          const isRawInactive = parseInt(u.is_active, 10) === 0 || parseInt(u.is_banned, 10) === 1;
+
+          if (hasReset) countReset++;
+          if (hasDel) {
+              countPurge++;
+          } else if (isRawInactive) {
+              countBanned++;
+          } else {
+              countActive++;
+          }
+      });
+
+      const elCountAll = document.getElementById('userCountAll');
+      const elCountActive = document.getElementById('userCountActive');
+      const elCountBanned = document.getElementById('userCountBanned');
+      const elCountPurge = document.getElementById('userCountPurge');
+      const elCountReset = document.getElementById('userCountReset');
+      if (elCountAll) elCountAll.textContent = countAll;
+      if (elCountActive) elCountActive.textContent = countActive;
+      if (elCountBanned) elCountBanned.textContent = countBanned;
+      if (elCountPurge) elCountPurge.textContent = countPurge;
+      if (elCountReset) elCountReset.textContent = countReset;
+
       const filtered = allBlackjackUsers.filter(u => {
           const email = (u.email || u.username || '').toLowerCase();
           const id = String(u.id || '');
-          return email.includes(term) || id.includes(term);
+          const matchesSearch = !term || email.includes(term) || id.includes(term);
+          if (!matchesSearch) return false;
+
+          const hasDel = (parseInt(u.deletion_requested, 10) === 1) || allDeletionRequests.some(r => 
+              (r.status || '').toUpperCase() === 'PENDING' && 
+              (String(r.user_id) === String(u.id) || (r.identifier && r.identifier.toLowerCase() === email))
+          );
+          const hasReset = (parseInt(u.reset_requested, 10) === 1) || allPasswordResets.some(r => 
+              (r.status || '').toUpperCase() === 'PENDING' && 
+              (String(r.user_id) === String(u.id) || (r.identifier && r.identifier.toLowerCase() === email))
+          );
+          const isRawInactive = parseInt(u.is_active, 10) === 0 || parseInt(u.is_banned, 10) === 1;
+
+          if (activeUserFilter === 'PURGE') return hasDel;
+          if (activeUserFilter === 'RESET') return hasReset;
+          if (activeUserFilter === 'BANNED') return isRawInactive && !hasDel;
+          if (activeUserFilter === 'ACTIVE') return !isRawInactive && !hasDel;
+          return true; // 'ALL'
       });
 
       if (filtered.length === 0) {
@@ -540,15 +653,86 @@
 
       container.innerHTML = '';
       filtered.forEach(user => {
-          const isBanned = parseInt(user.is_active, 10) === 0 || parseInt(user.is_banned, 10) === 1;
           const userIdent = (user.email || user.username || '').toLowerCase();
-          const hasPendingDel = allDeletionRequests.some(r => 
+          const matchingDel = allDeletionRequests.find(r => 
               (r.status || '').toUpperCase() === 'PENDING' && 
               (String(r.user_id) === String(user.id) || (r.identifier && r.identifier.toLowerCase() === userIdent))
           );
+          const matchingReset = allPasswordResets.find(r => 
+              (r.status || '').toUpperCase() === 'PENDING' && 
+              (String(r.user_id) === String(user.id) || (r.identifier && r.identifier.toLowerCase() === userIdent))
+          );
+          const hasPendingDel = (parseInt(user.deletion_requested, 10) === 1) || Boolean(matchingDel);
+          const delReqId = user.deletion_request_id || (matchingDel ? matchingDel.id : null);
+          const delReason = user.deletion_reason || (matchingDel ? matchingDel.reason : '');
+          const delDate = user.deletion_requested_at || (matchingDel ? matchingDel.created_at : '');
+
+          const hasPendingReset = (parseInt(user.reset_requested, 10) === 1) || Boolean(matchingReset);
+          const resetTokenId = user.reset_request_id || (matchingReset ? matchingReset.id : null);
+          const resetExp = user.reset_expires_at || (matchingReset ? matchingReset.expires_at : '');
+
+          const isRawInactive = parseInt(user.is_active, 10) === 0 || parseInt(user.is_banned, 10) === 1;
+          const isBanned = isRawInactive && !hasPendingDel;
+          const isActive = !isRawInactive && !hasPendingDel;
+
           const card = document.createElement('div');
-          card.className = `user-card ${isBanned ? 'banned' : ''}`;
+          card.className = `user-card ${hasPendingDel ? 'purge-requested' : (isBanned ? 'banned' : '')}`;
           card.id = `user_card_${user.id}`;
+
+          let statusBadgeHtml = '';
+          let banToggleHtml = '';
+          let deleteBtnHtml = '';
+
+          const resetBadgeHtml = hasPendingReset ? `
+              <span class="badge-status badge-reset" style="background: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; font-weight: 700; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem;" title="User has requested a password reset. Token active.">
+                  🔑 RESET REQUESTED
+              </span>
+          ` : '';
+
+          if (hasPendingDel) {
+              // User has EXPLICITLY requested account and data deletion
+              statusBadgeHtml = `
+                  <span class="badge-status badge-purge" title="User explicitly requested account and personal data deletion via Google Play deletion portal">
+                      ⚠️ PURGE REQUESTED
+                  </span>
+              `;
+              banToggleHtml = `
+                  <button class="btn btn-sm" disabled style="background: #334155; color: #94a3b8; border: 1px solid #475569; cursor: not-allowed; opacity: 0.8;" title="Account deactivated pending permanent data purge. Use Purge button to permanently delete.">
+                      Deactivated (Purge Pending)
+                  </button>
+              `;
+              deleteBtnHtml = `
+                  <button class="btn btn-sm btn-danger" style="background: #dc2626; color: #ffffff; font-weight: 800; border: 1.5px solid #ef4444; letter-spacing: 0.04em; box-shadow: 0 0 10px rgba(220, 38, 38, 0.45); cursor: pointer;" onclick="executePurgeUser(${user.id}, '${escapeHtml(user.email || user.username)}', ${delReqId || 0})" title="Permanently Purge User Credentials (7-Year Statutory Audit Retention)">
+                      Purge
+                  </button>
+              `;
+          } else if (isBanned) {
+              // Administratively banned (NOT a deletion request)
+              statusBadgeHtml = `<span class="badge-status badge-banned">Banned</span>`;
+              banToggleHtml = `
+                  <button class="btn btn-sm btn-success" onclick="executeToggleBanUser(${user.id}, 1)">
+                      Unban User
+                  </button>
+              `;
+              deleteBtnHtml = `
+                  <button class="btn btn-sm btn-danger" onclick="executeDeleteUser(${user.id}, '${escapeHtml(user.email || user.username)}')" title="Administrative user deletion (7-yr statutory financial audit retention)">
+                      Delete
+                  </button>
+              `;
+          } else {
+              // Active user
+              statusBadgeHtml = `<span class="badge-status badge-active">Active</span>`;
+              banToggleHtml = `
+                  <button class="btn btn-sm btn-warn" onclick="executeToggleBanUser(${user.id}, 0)">
+                      Ban User
+                  </button>
+              `;
+              deleteBtnHtml = `
+                  <button class="btn btn-sm btn-danger" onclick="executeDeleteUser(${user.id}, '${escapeHtml(user.email || user.username)}')" title="Administrative user deletion (7-yr statutory financial audit retention)">
+                      Delete
+                  </button>
+              `;
+          }
 
           card.innerHTML = `
               <div class="user-card-head">
@@ -556,11 +740,31 @@
                       #${user.id} — <span id="user_display_${user.id}">${escapeHtml(user.email || user.username)}</span>
                   </div>
                   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
-                      ${hasPendingDel ? '<span class="badge-status" style="background: rgba(231,76,60,0.22); color: #ff6b6b; border: 1px solid #e74c3c;">⚠️ Pending Purge Request</span>' : ''}
-                      <span class="badge-status ${isBanned ? 'badge-banned' : 'badge-active'}">${isBanned ? 'Banned' : 'Active'}</span>
+                      ${resetBadgeHtml}
+                      ${statusBadgeHtml}
                       <span style="font-size: 0.72rem; color: var(--text-muted);">${user.created_at ? user.created_at.split(' ')[0] : ''}</span>
                   </div>
               </div>
+
+              ${hasPendingReset ? `
+              <div style="margin: 4px 0 6px 0; padding: 7px 11px; background: rgba(243, 156, 18, 0.12); border-left: 3px solid #f39c12; border-radius: 4px; font-size: 0.78rem; color: #fed7aa; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                  <div>
+                      <strong>🔑 Password Reset Request Pending:</strong> Active token expires at <em>${escapeHtml(resetExp || '1 hour')}</em>.
+                  </div>
+                  <div style="display: flex; gap: 6px;">
+                      <button type="button" class="btn btn-sm" style="background: #f39c12; color: #1a1000; font-weight: 700; padding: 2px 8px; font-size: 0.72rem;" onclick="copyUserResetLink('${escapeHtml(user.email || user.username)}', ${resetTokenId || 0})">
+                          📋 Copy Reset URL
+                      </button>
+                  </div>
+              </div>
+              ` : ''}
+
+              ${hasPendingDel ? `
+              <div style="margin: 4px 0 6px 0; padding: 7px 11px; background: rgba(220, 38, 38, 0.14); border-left: 3px solid #ef4444; border-radius: 4px; font-size: 0.78rem; color: #fca5a5;">
+                  <strong>⚠️ Explicit Data Purge Request:</strong> User submitted an account and personal data deletion request${delDate ? ` on <em>${escapeHtml(delDate)}</em>` : ''}.
+                  ${delReason ? `<div style="margin-top: 3px; color: #fecaca;"><em>Reason:</em> "${escapeHtml(delReason)}"</div>` : ''}
+              </div>
+              ` : ''}
 
               <div class="user-card-inputs">
                   <div>
@@ -584,10 +788,8 @@
 
               <div class="user-card-actions">
                   <button class="btn btn-sm btn-gold" onclick="executeUpdateUser(${user.id})">Save Edit</button>
-                  <button class="btn btn-sm ${isBanned ? 'btn-success' : 'btn-warn'}" onclick="executeToggleBanUser(${user.id}, ${isBanned ? 1 : 0})">
-                      ${isBanned ? 'Unban User' : 'Ban User'}
-                  </button>
-                  <button class="btn btn-sm btn-danger" onclick="executeDeleteUser(${user.id}, '${escapeHtml(user.email || user.username)}')" title="Permanently Purge User Credentials (7-yr statutory financial audit retention)">${hasPendingDel ? 'Purge User (Pending)' : 'Purge User'}</button>
+                  ${banToggleHtml}
+                  ${deleteBtnHtml}
               </div>
           `;
           container.appendChild(card);
@@ -693,8 +895,53 @@
       }
   }
 
+  async function executePurgeUser(userId, userEmail, requestId = 0) {
+      const confirmMsg = `CONFIRM PERMANENT USER PURGE (Google Play & Privacy Request):\n\n` +
+          `User #${userId} (${userEmail}) has submitted an explicit account and data deletion request.\n\n` +
+          `Executing this action will:\n` +
+          `1. Permanently delete all credentials, passwords, and user records from database.\n` +
+          `2. Mark any pending deletion request in the privacy ledger as COMPLETED.\n` +
+          `3. Pseudonymize and detach all purchase records for 7-year statutory financial compliance.\n` +
+          `4. Write an immutable administrative audit record.\n\n` +
+          `Are you sure you want to permanently PURGE this user?`;
+
+      if (!confirm(confirmMsg)) {
+          return;
+      }
+
+      const adminKey = getAdminKey();
+      try {
+          // If a request ID is attached, approve the deletion request
+          if (requestId && Number(requestId) > 0) {
+              await callAdminApi('process_deletion_request', {
+                  admin_key: adminKey,
+                  admin_password: adminKey,
+                  request_id: requestId,
+                  decision: 'APPROVE'
+              });
+          }
+
+          // Permanently delete user credentials and pseudonymize purchases
+          const data = await callAdminApi('delete_user', {
+              admin_key: adminKey,
+              admin_password: adminKey,
+              user_id: userId
+          });
+
+          if (data && data.success) {
+              showUserAdminAlert(`✔ User #${userId} (${userEmail}) permanently PURGED. Financial ledger pseudonymized for 7-year audit retention.`, true);
+              fetchBlackjackUsers();
+              fetchAccountDeletionRequests();
+          } else {
+              showUserAdminAlert((data && data.message) || 'Purge failed.', false);
+          }
+      } catch (err) {
+          showUserAdminAlert('Purge connection error: ' + err.message, false);
+      }
+  }
+
   async function executeDeleteUser(userId, userEmail) {
-      if (!confirm(`PERMANENT USER DATA PURGE (7-Year Statutory Audit Policy):\n\nAre you sure you want to permanently delete user #${userId} (${userEmail})?\n\nPersonal credentials, password hashes, and profile balances will be permanently destroyed.\nFinancial transaction records in the purchases ledger will be pseudonymized and retained for 7 years in compliance with IRS and statutory audit regulations.\n\nThis action cannot be undone.`)) {
+      if (!confirm(`ADMINISTRATIVE USER DELETION:\n\nAre you sure you want to delete user #${userId} (${userEmail})?\n\nPersonal credentials, password hashes, and profile balances will be permanently removed.\nFinancial transaction records in the purchases ledger will be pseudonymized and retained for 7 years in compliance with statutory audit regulations.\n\nThis action cannot be undone.`)) {
           return;
       }
 
@@ -707,7 +954,7 @@
           });
 
           if (data && data.success) {
-              showUserAdminAlert(`✔ User #${userId} permanently purged. Financial records archived for 7-year audit.`, true);
+              showUserAdminAlert(`✔ User #${userId} deleted. Financial records pseudonymized for 7-year audit retention.`, true);
               fetchBlackjackUsers();
               fetchAccountDeletionRequests();
           } else {
@@ -1413,6 +1660,193 @@
       }
   }
 
+  /* --- TAB 5: PASSWORD RESET MANAGEMENT --- */
+  async function fetchPasswordResets() {
+      const adminKey = getAdminKey();
+      try {
+          const data = await callAdminApi('get_password_resets', {
+              admin_key: adminKey,
+              admin_password: adminKey
+          });
+
+          if (data && data.success && Array.isArray(data.resets)) {
+              allPasswordResets = data.resets;
+              updateResetBadges(data.pending_count || 0);
+              renderPasswordResets();
+              // Also refresh user cards if loaded to reflect latest reset tokens
+              const searchVal = document.getElementById('adminUserSearchInput') ? document.getElementById('adminUserSearchInput').value : '';
+              if (allBlackjackUsers.length > 0) {
+                  renderBlackjackUsers(searchVal);
+              }
+          }
+      } catch (err) {
+          console.error('Error fetching password resets:', err);
+      }
+  }
+
+  function updateResetBadges(pendingCount) {
+      const topBadge = document.getElementById('adminPendingResetNotificationBadge');
+      const topCount = document.getElementById('adminPendingResetCount');
+      const tabBadge = document.getElementById('resetBadge');
+
+      const count = (typeof pendingCount === 'number') ? pendingCount : allPasswordResets.filter(r => (r.status || '').toUpperCase() === 'PENDING').length;
+
+      if (topCount) topCount.textContent = count;
+      if (topBadge) {
+          topBadge.style.display = count > 0 ? 'inline-flex' : 'none';
+      }
+      if (tabBadge) {
+          tabBadge.textContent = count;
+          tabBadge.style.display = count > 0 ? 'inline-block' : 'none';
+      }
+
+      const pCountEl = document.getElementById('resetPendingCountDisplay');
+      const uCountEl = document.getElementById('resetUsedCountDisplay');
+      const tCountEl = document.getElementById('resetTotalCountDisplay');
+
+      if (pCountEl) pCountEl.textContent = count;
+      if (uCountEl) uCountEl.textContent = allPasswordResets.filter(r => (r.status || '').toUpperCase() === 'USED').length;
+      if (tCountEl) tCountEl.textContent = allPasswordResets.length;
+
+      const userPillCount = document.getElementById('userCountReset');
+      if (userPillCount) userPillCount.textContent = count;
+  }
+
+  function setResetFilter(filter) {
+      activeResetFilter = (filter || 'ALL').toUpperCase();
+      ['All', 'Pending', 'Used', 'Expired', 'Cancelled'].forEach(f => {
+          const btn = document.getElementById('resetFilter' + f);
+          if (btn) {
+              if (f.toUpperCase() === activeResetFilter) {
+                  btn.style.background = 'var(--gold-primary)';
+                  btn.style.color = '#000';
+              } else {
+                  btn.style.background = '#334155';
+                  btn.style.color = '#fff';
+              }
+          }
+      });
+      renderPasswordResets();
+  }
+
+  function filterPasswordResets() {
+      const input = document.getElementById('resetSearchInput');
+      activeResetSearchTerm = input ? input.value.trim().toLowerCase() : '';
+      renderPasswordResets();
+  }
+
+  function renderPasswordResets() {
+      const tbody = document.getElementById('adminResetsBody');
+      if (!tbody) return;
+
+      const filtered = allPasswordResets.filter(r => {
+          const matchesStatus = (activeResetFilter === 'ALL') || ((r.status || '').toUpperCase() === activeResetFilter);
+          if (!matchesStatus) return false;
+
+          if (!activeResetSearchTerm) return true;
+          const ident = (r.identifier || '').toLowerCase();
+          const ip = (r.ip_address || '').toLowerCase();
+          const id = String(r.id || '');
+          return ident.includes(activeResetSearchTerm) || ip.includes(activeResetSearchTerm) || id.includes(activeResetSearchTerm);
+      });
+
+      if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="padding: 24px; text-align: center; color: var(--text-muted);">No password reset requests match current filter.</td></tr>';
+          return;
+      }
+
+      let html = '';
+      filtered.forEach(r => {
+          const status = (r.status || 'PENDING').toUpperCase();
+          let statusBadge = '';
+          if (status === 'PENDING') {
+              statusBadge = '<span style="background: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; border-radius: 4px; padding: 2px 7px; font-weight: 700; font-size: 0.76rem;">PENDING</span>';
+          } else if (status === 'USED') {
+              statusBadge = '<span style="background: rgba(46, 204, 113, 0.2); border: 1px solid #2ecc71; color: #2ecc71; border-radius: 4px; padding: 2px 7px; font-weight: 700; font-size: 0.76rem;">USED</span>';
+          } else if (status === 'EXPIRED') {
+              statusBadge = '<span style="background: rgba(148, 163, 184, 0.2); border: 1px solid #64748b; color: #94a3b8; border-radius: 4px; padding: 2px 7px; font-weight: 700; font-size: 0.76rem;">EXPIRED</span>';
+          } else {
+              statusBadge = '<span style="background: rgba(239, 68, 68, 0.2); border: 1px solid #ef4444; color: #f87171; border-radius: 4px; padding: 2px 7px; font-weight: 700; font-size: 0.76rem;">CANCELLED</span>';
+          }
+
+          let actionButtons = '';
+          if (status === 'PENDING') {
+              actionButtons = `
+                  <button class="btn btn-sm" style="background: #f39c12; color: #1a1000; font-weight: 700; padding: 3px 8px; margin-right: 4px; font-size: 0.74rem;" onclick="copyUserResetLink('${escapeHtml(r.identifier)}', ${r.id})" title="Copy Password Reset Link">Copy Link</button>
+                  <button class="btn btn-sm" style="background: #475569; color: #fff; padding: 3px 8px; font-size: 0.74rem;" onclick="cancelPasswordReset(${r.id})" title="Cancel this reset token">Revoke</button>
+              `;
+          } else if (status === 'USED') {
+              actionButtons = '<span style="color: #2ecc71; font-size: 0.8rem; font-weight: 700;">✓ Consumed</span>';
+          } else {
+              actionButtons = '<span style="color: #94a3b8; font-size: 0.8rem;">Inactive</span>';
+          }
+
+          const createdDate = r.created_at ? r.created_at.replace('T', ' ').substring(0, 19) : '—';
+          const expiresDate = r.expires_at ? r.expires_at.replace('T', ' ').substring(0, 19) : '—';
+          const preview = r.raw_token_preview || '••••••••';
+
+          html += `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                  <td style="padding: 10px 12px; font-weight: bold; color: var(--gold-primary);">${r.id}</td>
+                  <td style="padding: 10px 12px; font-weight: 600; color: #fff;">${escapeHtml(r.identifier || '—')}</td>
+                  <td style="padding: 10px 12px; font-family: monospace; font-size: 0.82rem; color: #cbd5e1;"><code>${escapeHtml(preview)}</code></td>
+                  <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${createdDate}</td>
+                  <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${expiresDate}</td>
+                  <td style="padding: 10px 12px;">${statusBadge}</td>
+                  <td style="padding: 10px 12px; font-family: monospace; font-size: 0.8rem; color: #94a3b8;">${escapeHtml(r.ip_address || '—')}</td>
+                  <td style="padding: 10px 12px; text-align: center;">${actionButtons}</td>
+              </tr>
+          `;
+      });
+
+      tbody.innerHTML = html;
+  }
+
+  async function cancelPasswordReset(tokenId) {
+      if (!confirm("Revoke this password reset security token? The user will no longer be able to use it to change their password.")) return;
+      const adminKey = getAdminKey();
+      try {
+          const res = await callAdminApi('cancel_password_reset', {
+              admin_key: adminKey,
+              admin_password: adminKey,
+              token_id: tokenId
+          });
+          if (res && res.success) {
+              alert(res.message || 'Token revoked successfully.');
+              fetchPasswordResets();
+          } else {
+              alert('Error revoking token: ' + (res && res.message ? res.message : 'Unknown error'));
+          }
+      } catch (err) {
+          alert('Failed to revoke token: ' + err.message);
+      }
+  }
+
+  function copyUserResetLink(identifier, tokenId) {
+      const resetUrl = `${window.location.origin}/password_reset.html`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(resetUrl).then(() => {
+              alert(`Password Reset Portal Link copied:\n${resetUrl}\n\nDirect user to this page.`);
+          }).catch(() => {
+              prompt("Password Reset Portal URL:", resetUrl);
+          });
+      } else {
+          prompt("Password Reset Portal URL:", resetUrl);
+      }
+  }
+
+  function copyResetToken(token) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(token).then(() => {
+              alert("Security token copied to clipboard!");
+          }).catch(() => {
+              prompt("Copy token manually:", token);
+          });
+      } else {
+          prompt("Copy token manually:", token);
+      }
+  }
+
   // Bind to global scope
   global.authenticateAdmin = authenticateAdmin;
   global.logoutAdmin = logoutAdmin;
@@ -1431,6 +1865,8 @@
   global.executeUpdateUser = executeUpdateUser;
   global.executeToggleBanUser = executeToggleBanUser;
   global.executeDeleteUser = executeDeleteUser;
+  global.executePurgeUser = executePurgeUser;
+  global.setUserFilter = setUserFilter;
   global.quickAddBankroll = quickAddBankroll;
   global.fetchStoreSettings = fetchStoreSettings;
   global.handleStoreToggleChange = handleStoreToggleChange;
@@ -1442,6 +1878,14 @@
   global.viewPurchaseDetails = viewPurchaseDetails;
   global.closePurchaseDetailsModal = closePurchaseDetailsModal;
   global.copyPurchaseField = copyPurchaseField;
+  global.fetchPasswordResets = fetchPasswordResets;
+  global.updateResetBadges = updateResetBadges;
+  global.renderPasswordResets = renderPasswordResets;
+  global.setResetFilter = setResetFilter;
+  global.filterPasswordResets = filterPasswordResets;
+  global.cancelPasswordReset = cancelPasswordReset;
+  global.copyUserResetLink = copyUserResetLink;
+  global.copyResetToken = copyResetToken;
 
   window.addEventListener('DOMContentLoaded', () => {
       const authInput = document.getElementById('adm-pass');

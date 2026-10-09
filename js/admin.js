@@ -519,9 +519,10 @@
 
           if (data && data.success && Array.isArray(data.users)) {
               allBlackjackUsers = data.users;
-              if (Array.isArray(data.deletion_requests)) {
-                  allDeletionRequests = data.deletion_requests;
-                  updateDeletionBadge(data.pending_deletion_count || 0);
+              const delReqs = Array.isArray(data.deletion_requests) ? data.deletion_requests : (Array.isArray(data.requests) ? data.requests : null);
+              if (delReqs) {
+                  allDeletionRequests = delReqs;
+                  updateDeletionBadge((data.pending_deletion_count !== undefined) ? data.pending_deletion_count : data.pending_count);
               }
               if (Array.isArray(data.password_resets)) {
                   allPasswordResets = data.password_resets;
@@ -996,9 +997,10 @@
                   renderStoreLedger();
               }
 
-              if (Array.isArray(data.deletion_requests)) {
-                  allDeletionRequests = data.deletion_requests;
-                  updateDeletionBadge(data.pending_deletion_count || 0);
+              const delReqs = Array.isArray(data.deletion_requests) ? data.deletion_requests : (Array.isArray(data.requests) ? data.requests : null);
+              if (delReqs) {
+                  allDeletionRequests = delReqs;
+                  updateDeletionBadge((data.pending_deletion_count !== undefined) ? data.pending_deletion_count : data.pending_count);
                   renderDeletionRequestsTable();
               }
           } else {
@@ -1480,6 +1482,9 @@
   }
 
   function updateDeletionBadge(pendingCount) {
+      if (pendingCount === undefined || pendingCount === null) {
+          pendingCount = allDeletionRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length;
+      }
       const badge = document.getElementById('delBadge');
       if (badge) {
           badge.textContent = pendingCount;
@@ -1506,9 +1511,32 @@
       }
 
       const res = await callAdminApi('get_deletion_requests');
-      if (res && res.success && res.data) {
-          allDeletionRequests = res.data.requests || [];
-          updateDeletionBadge(res.data.pending_count || 0);
+      if (res && res.success) {
+          const requests = (res.data && Array.isArray(res.data.requests))
+              ? res.data.requests
+              : (res.data && Array.isArray(res.data.deletion_requests))
+              ? res.data.deletion_requests
+              : (Array.isArray(res.requests))
+              ? res.requests
+              : (Array.isArray(res.deletion_requests))
+              ? res.deletion_requests
+              : (Array.isArray(res.data))
+              ? res.data
+              : [];
+
+          allDeletionRequests = requests;
+
+          const pendingCount = (res.pending_count !== undefined)
+              ? res.pending_count
+              : (res.pending_deletion_count !== undefined)
+              ? res.pending_deletion_count
+              : (res.data && res.data.pending_count !== undefined)
+              ? res.data.pending_count
+              : (res.data && res.data.pending_deletion_count !== undefined)
+              ? res.data.pending_deletion_count
+              : allDeletionRequests.filter(r => (r.status || '').toUpperCase() === 'PENDING').length;
+
+          updateDeletionBadge(pendingCount);
           renderDeletionRequestsTable();
       } else {
           if (tbody) {

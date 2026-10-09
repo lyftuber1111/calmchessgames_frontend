@@ -83,18 +83,14 @@
   }
 
   /* --- API CALL HELPER (AUTHENTICATION API TOKEN ENABLED WITH IN-TRANSIT ENCRYPTION) --- */
-  async function callAdminApi(action, payload = null, method = 'POST') {
+  async function callAdminApi(action, payload = {}, method = 'POST') {
       const endpoints = [
           `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `${API_BASE}/php/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `./admin_api.php?action=${action}&_t=${Date.now()}`,
-          `./php/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `admin_api.php?action=${action}&_t=${Date.now()}`,
-          `php/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `../admin_api.php?action=${action}&_t=${Date.now()}`,
-          `../php/admin_api.php?action=${action}&_t=${Date.now()}`,
           `https://api.calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `https://api.calmchessgames.com/php/admin_api.php?action=${action}&_t=${Date.now()}`
+          `${API_BASE}/php/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `https://api.calmchessgames.com/php/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `./admin_api.php?action=${action}&_t=${Date.now()}`,
+          `admin_api.php?action=${action}&_t=${Date.now()}`
       ];
       const uniqueEndpoints = [...new Set(endpoints)];
 
@@ -106,14 +102,13 @@
           requestHeaders['X-API-Key'] = adminKey;
       }
 
-      let requestBody = payload;
-      if (payload !== null && typeof payload === 'object' && !Array.isArray(payload)) {
-          requestBody = Object.assign({}, payload);
-          if (adminKey) {
-              if (!requestBody.api_token) requestBody.api_token = adminKey;
-              if (!requestBody.admin_key) requestBody.admin_key = adminKey;
-              if (!requestBody.admin_password) requestBody.admin_password = adminKey;
-          }
+      let requestBody = (payload && typeof payload === 'object' && !Array.isArray(payload))
+          ? Object.assign({}, payload)
+          : (payload !== null ? payload : {});
+      if (typeof requestBody === 'object' && !Array.isArray(requestBody) && adminKey) {
+          if (!requestBody.api_token) requestBody.api_token = adminKey;
+          if (!requestBody.admin_key) requestBody.admin_key = adminKey;
+          if (!requestBody.admin_password) requestBody.admin_password = adminKey;
       }
 
       let lastError = null;
@@ -132,19 +127,22 @@
                   ? CryptoTransport.secureFetch 
                   : fetch;
               const res = await fetchFn(url, fetchOptions);
+              const text = await res.text();
+              let parsed = null;
+              try {
+                  parsed = JSON.parse(text);
+              } catch (e) {}
+
               if (res.ok) {
-                  const text = await res.text();
-                  try {
-                      return JSON.parse(text);
-                  } catch (e) {
-                      console.warn('JSON parse warning on', url, 'content:', text.substring(0, 100));
-                  }
+                  return parsed || { success: true };
+              } else if (parsed && typeof parsed === 'object') {
+                  return parsed;
               }
           } catch (err) {
               lastError = err;
           }
       }
-      throw lastError || new Error(`Failed to call admin API endpoint: ${action}`);
+      return { success: false, message: lastError ? lastError.message : `Failed to call admin API endpoint: ${action}` };
   }
 
   /* --- AUTHENTICATION IN STANDALONE CONSOLE --- */
@@ -1657,7 +1655,7 @@
       const ok = confirm("BULK PERMANENT ACCOUNT PURGE:\n\nAre you sure you want to permanently purge ALL pending player accounts in the purge queue?\n\nThis permanently erases all login credentials, password hashes, profiles, and active bankrolls from the database.\n\nFinancial transaction records are pseudonymized and preserved for 7-year statutory audit compliance.\n\nThis action cannot be undone.");
       if (!ok) return;
 
-      const res = await callAdminApi('purge_all_pending');
+      const res = await callAdminApi('purge_all_pending', {});
       if (res && res.success) {
           alert(res.message || 'All pending accounts have been permanently purged.');
           fetchAccountDeletionRequests();

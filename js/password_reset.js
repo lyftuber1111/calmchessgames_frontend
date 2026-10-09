@@ -219,6 +219,12 @@
         if (compCodeInput) {
           compCodeInput.focus();
         }
+        const alertComp = document.getElementById("alert-email-comp");
+        if (alertComp) {
+          alertComp.className = "status-alert success";
+          alertComp.innerHTML = "<strong>✔ Email Dispatched:</strong> A 6-digit verification code has been sent to your email. <em>Notice: This code will expire after 1 hour (60 minutes).</em>";
+          alertComp.style.display = "block";
+        }
       } else {
         alertEl.className = "status-alert error";
         alertEl.textContent = (data && data.message) ? data.message : "Failed to send reset email. Please try again.";

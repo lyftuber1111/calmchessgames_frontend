@@ -683,7 +683,8 @@
       }
 
       if (!data.success) {
-        showAuthAlert(data.message, true);
+        const errorMsg = data.detail || data.message || "Invalid credentials entered.";
+        showAuthAlert(errorMsg, true);
         return;
       }
 

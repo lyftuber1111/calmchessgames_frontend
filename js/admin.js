@@ -705,6 +705,8 @@
               `;
           }
 
+          const resetTokenId = user.reset_request_id || (matchingReset ? matchingReset.id : 0);
+
           card.innerHTML = `
               <div class="user-card-head">
                   <div style="font-weight: 700; color: var(--gold-primary); font-size: 0.95rem;">
@@ -730,13 +732,6 @@
               </div>
               ` : ''}
 
-              ${hasPendingDel ? `
-              <div style="margin: 4px 0 6px 0; padding: 7px 11px; background: rgba(220, 38, 38, 0.14); border-left: 3px solid #ef4444; border-radius: 4px; font-size: 0.78rem; color: #fca5a5;">
-                  <strong>⚠️ Explicit Data Purge Request:</strong> User submitted an account and personal data deletion request${delDate ? ` on <em>${escapeHtml(delDate)}</em>` : ''}.
-                  ${delReason ? `<div style="margin-top: 3px; color: #fecaca;"><em>Reason:</em> "${escapeHtml(delReason)}"</div>` : ''}
-              </div>
-              ` : ''}
-
               <div class="user-card-inputs">
                   <div>
                       <label>Username / Email</label>
@@ -758,7 +753,7 @@
               </div>
 
               <div class="user-card-actions">
-                  <button class="btn btn-sm btn-gold" onclick="executeUpdateUser(${user.id})">Save Edit</button>
+                  <button class="btn btn-sm btn-gold" onclick="executeUpdateUser(${user.id})" title="Update password and account settings">Update Password &amp; Profile</button>
                   ${banToggleHtml}
                   ${deleteBtnHtml}
               </div>
@@ -1584,17 +1579,16 @@
           let actionButtons = '';
           if (isPending) {
               actionButtons = `
-                  <button class="btn btn-sm" style="background: #e74c3c; color: #fff; font-weight: 700; padding: 4px 8px; margin-right: 4px;" onclick="processDeletionRequest(${r.id}, 'purge')" title="Permanently delete user and records">Purge User</button>
-                  <button class="btn btn-sm" style="background: #475569; color: #fff; padding: 4px 8px;" onclick="processDeletionRequest(${r.id}, 'cancel')" title="Cancel this request">Dismiss</button>
+                  <button class="btn btn-sm btn-danger" style="font-weight: 800; padding: 5px 14px; margin-right: 4px;" onclick="processDeletionRequest(${r.id}, 'purge')" title="Permanently purge user personal data (retains 7-yr financial ledger)">Purge</button>
+                  <button class="btn btn-sm" style="background: #475569; color: #fff; padding: 5px 8px;" onclick="processDeletionRequest(${r.id}, 'cancel')" title="Cancel this request">Dismiss</button>
               `;
           } else if (isCompleted) {
-              actionButtons = '<span style="color: #2ecc71; font-size: 0.82rem; font-weight: bold;">✓ Purged &amp; Archived</span>';
+              actionButtons = '<span style="color: #2ecc71; font-size: 0.82rem; font-weight: bold;">✓ Purged (7-Yr Financial Ledger Preserved)</span>';
           } else {
               actionButtons = '<span style="color: #94a3b8; font-size: 0.82rem;">Dismissed</span>';
           }
 
           const submittedDate = r.created_at ? r.created_at.replace('T', ' ').substring(0, 19) : '—';
-          const processedDate = r.processed_at ? r.processed_at.replace('T', ' ').substring(0, 19) : '—';
 
           html += `
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
@@ -1603,8 +1597,8 @@
                   <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${submittedDate}</td>
                   <td style="padding: 10px 12px;">${statusBadge}</td>
                   <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.85rem;" title="${escapeHtml(r.reason || '')}">${escapeHtml(r.reason || '—')}</td>
-                  <td style="padding: 10px 12px; font-family: monospace; font-size: 0.8rem; color: #94a3b8;">${escapeHtml(r.ip_address || '—')}</td>
-                  <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${processedDate}</td>
+                  <td style="padding: 10px 12px; font-size: 0.78rem; color: #fca5a5;">Credentials, Passwords, Bankroll</td>
+                  <td style="padding: 10px 12px; font-size: 0.78rem; color: #fcd34d; font-weight: 600;">7-Yr Purchases Ledger</td>
                   <td style="padding: 10px 12px; text-align: center;">${actionButtons}</td>
               </tr>
           `;
@@ -1615,7 +1609,7 @@
 
   async function processDeletionRequest(requestId, subaction) {
       if (subaction === 'purge') {
-          const ok = confirm("PERMANENT USER DATA PURGE:\n\nAre you sure you want to permanently delete this user's account, personal profile, and login credentials?\n\nFinancial transaction records will remain archived in the purchases ledger for 7-year statutory audit compliance.\n\nThis action cannot be undone.");
+          const ok = confirm("PERMANENT USER DATA PURGE:\n\nAre you sure you want to permanently purge this user's account, personal profile, and login credentials?\n\nFinancial transaction records will remain archived in the purchases ledger for 7-year statutory audit compliance.\n\nThis action cannot be undone.");
           if (!ok) return;
       }
 
@@ -1656,7 +1650,7 @@
           return;
       }
 
-      const ok = confirm(`PERMANENT USER DATA PURGE:\n\nAre you sure you want to permanently purge user '${identifier}'?\n\nThis action cannot be undone.`);
+      const ok = confirm(`PERMANENT USER DATA PURGE:\n\nAre you sure you want to permanently purge user '${identifier}'?\n\nAll personal credentials, password hashes, and active balances will be permanently destroyed.\nFinancial transaction records are pseudonymized and preserved for 7-year statutory audit compliance.\n\nThis action cannot be undone.`);
       if (!ok) return;
 
       const res = await callAdminApi('quick_purge_account', { identifier: identifier });

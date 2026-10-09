@@ -530,7 +530,7 @@
                 <button class="admin-tab-btn active" id="tabBtnSegments" onclick="switchAdminTab('segments')">Ring Navigation</button>
                 <button class="admin-tab-btn" id="tabBtnUsers" onclick="switchAdminTab('users')">Blackjack Users</button>
                 <button class="admin-tab-btn" id="tabBtnStore" onclick="switchAdminTab('store')">Blackjack Billing & Store</button>
-                <button class="admin-tab-btn" id="tabBtnDeletions" onclick="switchAdminTab('purge')">Accounts to be Purged <span id="delBadge" style="display:none; background:#e74c3c; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
+                <button class="admin-tab-btn" id="tabBtnDeletions" onclick="switchAdminTab('purge')" title="Purge user accounts and data (preserves 7-year financial transactions)">User Data Purge (7-Yr Financial Retention) <span id="delBadge" style="display:none; background:#e74c3c; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
                 <button class="admin-tab-btn" id="tabBtnResets" onclick="switchAdminTab('resets')">Password Resets <span id="resetBadge" style="display:none; background:#f39c12; color:#1a1000; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
                 <a href="index.html" class="admin-tab-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Back to Main Website">← Main Rings</a>
             </div>
@@ -570,6 +570,10 @@
 
             <!-- TAB 2: BLACKJACK USER MANAGEMENT -->
             <div id="tabContentUsers" style="display: none;">
+                <div style="margin-bottom: 14px;">
+                    <h3 style="color: var(--gold-primary); font-size: 1.15rem; margin-bottom: 2px;">Blackjack Users</h3>
+                    <span style="font-size: 0.85rem; color: var(--text-muted);">Manage player accounts, ban/unban status, delete users, and update passwords. (Users who requested their data deleted are managed separately in the User Data Purge tab).</span>
+                </div>
                 <!-- User Search, Refresh & Status Filter Controls -->
                 <div class="user-mgmt-header" style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 14px;">
                     <div style="display: flex; gap: 8px; align-items: center; flex: 1; min-width: 260px;">
@@ -813,12 +817,12 @@
                 </div>
             </div>
 
-            <!-- TAB 4: ACCOUNTS TO BE PURGED (Admin Console Purge Tab & Compliance) -->
+            <!-- TAB 4: USER DATA TO BE PURGED (Admin Console Purge Tab & 7-Year Financial Retention) -->
             <div id="tabContentDeletions" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0; flex-wrap: wrap; gap: 8px;">
                     <div>
-                        <h2 style="color: var(--gold-primary); font-size: 1.25rem; margin: 0 0 4px 0;">Accounts to be Purged</h2>
-                        <span style="font-size: 0.88rem; color: var(--text-muted);">Review and permanently purge accounts requested for deletion, Google Play compliance, or admin purges</span>
+                        <h2 style="color: var(--gold-primary); font-size: 1.25rem; margin: 0 0 4px 0;">User Data to be Purged (Deletion Requests)</h2>
+                        <span style="font-size: 0.88rem; color: var(--text-muted);">Manage user data that needs purged from the database because users have requested their data deleted. Permanently purges user account credentials, passwords, profiles, and active bankrolls while retaining financial transaction ledgers for 7 years for statutory compliance.</span>
                     </div>
                     <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                         <a href="delete_account.html" target="_blank" class="btn btn-sm" style="background: rgba(255,215,0,0.15); color: var(--gold-primary); border: 1px solid var(--gold-primary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">🔗 View Public Page</a>
@@ -831,13 +835,13 @@
                 <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid #334155; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     <span style="font-weight: 700; color: var(--gold-primary); font-size: 0.86rem;">⚡ Quick Purge Account:</span>
                     <input type="text" id="quickPurgeIdentifier" placeholder="Enter email or username to purge immediately..." style="flex: 1; min-width: 220px; padding: 7px 12px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.86rem;">
-                    <button class="btn btn-sm" style="background: #e74c3c; color: #fff; font-weight: 700; padding: 7px 14px; border: none; border-radius: 4px; cursor: pointer;" onclick="quickPurgeAccount()">Purge User</button>
+                    <button class="btn btn-sm btn-danger" style="font-weight: 700; padding: 7px 16px; border: none; border-radius: 4px; cursor: pointer;" onclick="quickPurgeAccount()">Purge</button>
                 </div>
 
                 <!-- 7-Year Statutory Financial Retention Compliance Banner -->
                 <div style="background: rgba(241, 196, 15, 0.08); border: 1px solid rgba(241, 196, 15, 0.35); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 0.86rem; color: #cbd5e1; line-height: 1.5;">
                     <strong style="color: var(--gold-primary); font-size: 0.95rem;">⚖️ 7-Year Statutory Financial Retention Policy:</strong><br>
-                    Clicking <strong>Purge User</strong> permanently destroys the player's credentials, password hash, profile, and active balance from the <code>users</code> database. Financial transaction records in the <code>purchases</code> table (Google Play Order IDs, PayPal transaction tokens, amounts, timestamps) are detached, pseudonymized, and retained for <strong>7 years</strong> in compliance with IRS, commercial accounting, and anti-fraud regulations.
+                    Clicking <strong>Purge</strong> permanently destroys the player's credentials, password hash, profile, and active balance from the <code>users</code> database. Financial transaction records in the <code>purchases</code> table (Google Play Order IDs, PayPal transaction tokens, amounts, timestamps) are detached, pseudonymized, and retained for <strong>7 years</strong> in compliance with IRS, commercial accounting, and anti-fraud regulations.
                 </div>
 
                 <!-- Stats summary badges -->
@@ -869,17 +873,17 @@
 
                 <!-- Table -->
                 <div class="table-scroll-container">
-                    <table class="store-ledger-table" style="min-width: 900px;">
+                    <table class="store-ledger-table" style="min-width: 950px;">
                         <thead>
                             <tr style="background: #1e293b; color: var(--gold-primary); border-bottom: 2px solid rgba(255,215,0,0.3);">
-                                <th style="padding: 10px 12px; text-align: left; width: 60px;">ID</th>
-                                <th style="padding: 10px 12px; text-align: left; min-width: 180px;">Identifier (Email/User)</th>
-                                <th style="padding: 10px 12px; text-align: left; width: 140px;">Submitted</th>
+                                <th style="padding: 10px 12px; text-align: left; width: 50px;">ID</th>
+                                <th style="padding: 10px 12px; text-align: left; min-width: 170px;">Identifier (Email/User)</th>
+                                <th style="padding: 10px 12px; text-align: left; width: 130px;">Submitted</th>
                                 <th style="padding: 10px 12px; text-align: left; width: 110px;">Status</th>
-                                <th style="padding: 10px 12px; text-align: left; min-width: 200px;">Reason</th>
-                                <th style="padding: 10px 12px; text-align: left; width: 120px;">IP Address</th>
-                                <th style="padding: 10px 12px; text-align: left; width: 140px;">Processed At</th>
-                                <th style="padding: 10px 12px; text-align: center; width: 180px;">Actions</th>
+                                <th style="padding: 10px 12px; text-align: left; min-width: 160px;">Reason</th>
+                                <th style="padding: 10px 12px; text-align: left; width: 150px;">Purged User Data</th>
+                                <th style="padding: 10px 12px; text-align: left; width: 180px;">Preserved Financial Data</th>
+                                <th style="padding: 10px 12px; text-align: center; width: 140px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="adminDeletionsBody">

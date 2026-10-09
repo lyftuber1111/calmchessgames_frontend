@@ -490,12 +490,27 @@
             color: #64748b;
             margin-top: 24px;
         }
+        .corner-home-link {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            transition: transform 0.2s ease, filter 0.2s ease;
+        }
+        .corner-home-link:hover {
+            transform: scale(1.08);
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9));
+        }
     </style>
 </head>
 <body>
     <div class="admin-page-container">
         <!-- AUTHENTICATION CARD (Displayed when not signed in) -->
         <div class="admin-card" id="auth-card" style="max-width: 440px; margin: 40px auto; text-align: center;">
+            <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+                <a href="https://calmchessgames.com" class="corner-home-link" title="Return to Calm Chess Games (https://calmchessgames.com)" aria-label="Calm Chess Games Homepage">
+                    <img src="knight_left0.png" alt="Calm Chess Knight Logo" style="height: 52px; width: auto; object-fit: contain; filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.7));">
+                </a>
+            </div>
             <h2 style="color: var(--gold-primary); margin-bottom: 12px; font-size: 1.4rem;">Admin Authentication</h2>
             <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px; line-height: 1.5;">
                 Enter the Admin Console password to continue:
@@ -516,6 +531,9 @@
             <!-- Console Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,215,0,0.25); padding-bottom: 12px;">
                 <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <a href="https://calmchessgames.com" class="corner-home-link" title="Return to Calm Chess Games (https://calmchessgames.com)" aria-label="Calm Chess Games Homepage">
+                        <img src="knight_left0.png" alt="Calm Chess Knight Logo" style="height: 38px; width: auto; object-fit: contain; filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));">
+                    </a>
                     <h2 style="color: var(--gold-primary); margin-bottom: 0;">Admin Console</h2>
                     <span id="adminPendingResetNotificationBadge" class="badge-reset-alert" style="display:none; background:rgba(243, 156, 18, 0.2); border:1px solid #f39c12; color:#f39c12; border-radius:12px; padding:3px 10px; font-size:0.8rem; font-weight:700; align-items:center; gap:5px;">🔑 Resets: <strong id="adminPendingResetCount">0</strong></span>
                 </div>

@@ -525,6 +525,18 @@
       border: 1px solid transparent; 
       white-space: nowrap;
     }
+
+    .corner-home-link {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      transition: transform 0.2s ease, filter 0.2s ease;
+      flex-shrink: 0;
+    }
+    .corner-home-link:hover {
+      transform: scale(1.08);
+      filter: drop-shadow(0 0 8px rgba(241, 196, 15, 0.9));
+    }
     .buy-chips-hdr-btn { background: var(--gold); color: #000; }
     .logout-btn { background: rgba(231, 76, 60, 0.25); border-color: var(--error-red); color: #fff; }
     #audioToggleBtn {
@@ -1429,6 +1441,11 @@
   <div id="lobby-screen" class="view-screen active">
     <div class="lobby-card">
       <div class="lobby-header">
+        <div style="display: flex; justify-content: center; margin-bottom: 8px;">
+          <a href="https://calmchessgames.com" class="corner-home-link" title="Return to Calm Chess Games (https://calmchessgames.com)" aria-label="Calm Chess Games Homepage">
+            <img src="knight_left0.png" alt="Calm Chess Knight Logo" style="height: 52px; width: auto; object-fit: contain; filter: drop-shadow(0 0 8px rgba(241, 196, 15, 0.7));">
+          </a>
+        </div>
         <h1>Blackjack Lobby</h1>
         <p>Register or sign in with your credentials</p>
       </div>
@@ -1504,9 +1521,14 @@
       
       <div class="top-bar-wrapper">
         <div class="top-row-main">
-          <div class="title" id="table-title">
-            Blackjack
-            <span>6-Deck Classic Table</span>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <a href="https://calmchessgames.com" class="corner-home-link" title="Return to Calm Chess Games (https://calmchessgames.com)" aria-label="Calm Chess Games Homepage">
+              <img src="knight_left0.png" alt="Calm Chess Knight Logo" style="height: clamp(28px, 3.8vh, 36px); width: auto; object-fit: contain; filter: drop-shadow(0 0 6px rgba(241, 196, 15, 0.7));">
+            </a>
+            <div class="title" id="table-title">
+              Blackjack
+              <span>6-Deck Classic Table</span>
+            </div>
           </div>
 
           <div class="top-user-group">

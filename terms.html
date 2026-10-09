@@ -62,10 +62,25 @@
       border-top: 1px solid #334155;
       padding-top: 15px;
     }
+    .corner-home-link {
+      display: inline-flex;
+      align-items: center;
+      text-decoration: none;
+      transition: transform 0.2s ease, filter 0.2s ease;
+    }
+    .corner-home-link:hover {
+      transform: scale(1.08);
+      filter: drop-shadow(0 0 8px rgba(241, 196, 15, 0.9));
+    }
   </style>
 </head>
 <body>
   <div class="container">
+    <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 16px;">
+      <a href="https://calmchessgames.com" class="corner-home-link" title="Return to Calm Chess Games (https://calmchessgames.com)" aria-label="Calm Chess Games Homepage">
+        <img src="knight_left0.png" alt="Calm Chess Knight Logo" style="height: 44px; width: auto; object-fit: contain; filter: drop-shadow(0 0 6px rgba(241, 196, 15, 0.6));">
+      </a>
+    </div>
     <h1>Terms of Service</h1>
     <p>Last updated: October 2026</p>
     <h2>1. Entertainment Purpose Only</h2>

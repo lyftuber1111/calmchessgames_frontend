@@ -835,7 +835,7 @@
             <div id="tabContentUsers" style="display: none;">
                 <!-- User Search & Refresh -->
                 <div class="user-mgmt-header">
-                    <input type="text" id="adminUserSearchInput" placeholder="Search by username or email..." oninput="handleUserSearchInput(this.value)">
+                    <input type="text" id="adminUserSearchInput" placeholder="Search by username or email..." autocomplete="off" value="" oninput="handleUserSearchInput(this.value)">
                     <button class="btn btn-sm btn-gold" onclick="fetchBlackjackUsers()">Refresh</button>
                     <button class="btn btn-sm btn-success" onclick="toggleCreateUserPanel()">+ Create User</button>
                 </div>

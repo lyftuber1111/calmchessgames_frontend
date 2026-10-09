@@ -586,6 +586,8 @@
       }
 
       if (targetTab === 'users') {
+          const searchInput = document.getElementById('adminUserSearchInput');
+          if (searchInput) searchInput.value = '';
           fetchBlackjackUsers();
       } else if (targetTab === 'store') {
           fetchStoreSettings();
@@ -625,6 +627,11 @@
       const adminPwdInput = document.getElementById('adminPassword');
       if (adminPwdInput) {
           adminPwdInput.value = sessionAdminPassword || providedPassword || '';
+      }
+
+      const searchInput = document.getElementById('adminUserSearchInput');
+      if (searchInput) {
+          searchInput.value = '';
       }
 
       const centerLogoInput = document.getElementById('adminCenterLogoUrl');

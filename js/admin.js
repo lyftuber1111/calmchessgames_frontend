@@ -185,6 +185,10 @@
               if (dashSection) dashSection.style.display = 'block';
               if (adminPwdInput) adminPwdInput.value = password;
 
+              // Ensure search input on Blackjack Users tab is blank/unpopulated
+              const searchInput = document.getElementById('adminUserSearchInput');
+              if (searchInput) searchInput.value = '';
+
               // Initialize all tabs data
               await fetchSegments();
               switchAdminTab('segments');
@@ -270,6 +274,8 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
       if (targetTab === 'users') {
+          const searchInput = document.getElementById('adminUserSearchInput');
+          if (searchInput) searchInput.value = '';
           fetchBlackjackUsers();
       } else if (targetTab === 'store') {
           fetchStoreSettings();
@@ -543,16 +549,12 @@
 
   function setUserFilter(filter) {
       activeUserFilter = (filter || 'ALL').toUpperCase();
-      ['All', 'Active', 'Banned', 'Purge', 'Reset'].forEach(f => {
+      ['All', 'Active', 'Banned', 'Reset'].forEach(f => {
           const btn = document.getElementById('userFilter' + f);
           if (btn) {
               if (f.toUpperCase() === activeUserFilter) {
                   btn.classList.add('active');
-                  if (f === 'Purge') {
-                      btn.style.background = 'rgba(239, 68, 68, 0.25)';
-                      btn.style.color = '#f87171';
-                      btn.style.borderColor = '#ef4444';
-                  } else if (f === 'Reset') {
+                  if (f === 'Reset') {
                       btn.style.background = 'rgba(243, 156, 18, 0.25)';
                       btn.style.color = '#fed7aa';
                       btn.style.borderColor = '#f39c12';
@@ -564,8 +566,8 @@
               } else {
                   btn.classList.remove('active');
                   btn.style.background = 'rgba(0, 0, 0, 0.35)';
-                  btn.style.color = (f === 'Purge') ? '#fca5a5' : ((f === 'Reset') ? '#fed7aa' : 'var(--text-muted)');
-                  btn.style.borderColor = (f === 'Purge') ? '#ef4444' : ((f === 'Reset') ? '#f39c12' : '#334155');
+                  btn.style.color = (f === 'Reset') ? '#fed7aa' : 'var(--text-muted)';
+                  btn.style.borderColor = (f === 'Reset') ? '#f39c12' : '#334155';
               }
           }
       });
@@ -577,25 +579,33 @@
       renderBlackjackUsers(term);
   }
 
+  function isUserPurgeRequested(user) {
+      if (!user) return false;
+      const uIdent = (user.email || user.username || '').toLowerCase();
+      return (parseInt(user.deletion_requested, 10) === 1) || allDeletionRequests.some(r => 
+          (r.status || '').toUpperCase() === 'PENDING' && 
+          (String(r.user_id) === String(user.id) || (r.identifier && r.identifier.toLowerCase() === uIdent))
+      );
+  }
+
   function renderBlackjackUsers(filterTerm = '') {
       const container = document.getElementById('adminUsersList');
       if (!container) return;
 
       const term = (filterTerm || '').toLowerCase().trim();
 
+      // Separate out users requesting account deletion / purge:
+      // Excluded from the Blackjack Users tab and managed exclusively in the dedicated Purge tab.
+      const regularUsers = allBlackjackUsers.filter(u => !isUserPurgeRequested(u));
+
       // Calculate real-time counts for status filter pills
-      let countAll = allBlackjackUsers.length;
+      let countAll = regularUsers.length;
       let countActive = 0;
       let countBanned = 0;
-      let countPurge = 0;
       let countReset = 0;
 
-      allBlackjackUsers.forEach(u => {
+      regularUsers.forEach(u => {
           const uIdent = (u.email || u.username || '').toLowerCase();
-          const hasDel = (parseInt(u.deletion_requested, 10) === 1) || allDeletionRequests.some(r => 
-              (r.status || '').toUpperCase() === 'PENDING' && 
-              (String(r.user_id) === String(u.id) || (r.identifier && r.identifier.toLowerCase() === uIdent))
-          );
           const hasReset = (parseInt(u.reset_requested, 10) === 1) || allPasswordResets.some(r => 
               (r.status || '').toUpperCase() === 'PENDING' && 
               (String(r.user_id) === String(u.id) || (r.identifier && r.identifier.toLowerCase() === uIdent))
@@ -603,9 +613,7 @@
           const isRawInactive = parseInt(u.is_active, 10) === 0 || parseInt(u.is_banned, 10) === 1;
 
           if (hasReset) countReset++;
-          if (hasDel) {
-              countPurge++;
-          } else if (isRawInactive) {
+          if (isRawInactive) {
               countBanned++;
           } else {
               countActive++;
@@ -615,34 +623,27 @@
       const elCountAll = document.getElementById('userCountAll');
       const elCountActive = document.getElementById('userCountActive');
       const elCountBanned = document.getElementById('userCountBanned');
-      const elCountPurge = document.getElementById('userCountPurge');
       const elCountReset = document.getElementById('userCountReset');
       if (elCountAll) elCountAll.textContent = countAll;
       if (elCountActive) elCountActive.textContent = countActive;
       if (elCountBanned) elCountBanned.textContent = countBanned;
-      if (elCountPurge) elCountPurge.textContent = countPurge;
       if (elCountReset) elCountReset.textContent = countReset;
 
-      const filtered = allBlackjackUsers.filter(u => {
+      const filtered = regularUsers.filter(u => {
           const email = (u.email || u.username || '').toLowerCase();
           const id = String(u.id || '');
           const matchesSearch = !term || email.includes(term) || id.includes(term);
           if (!matchesSearch) return false;
 
-          const hasDel = (parseInt(u.deletion_requested, 10) === 1) || allDeletionRequests.some(r => 
-              (r.status || '').toUpperCase() === 'PENDING' && 
-              (String(r.user_id) === String(u.id) || (r.identifier && r.identifier.toLowerCase() === email))
-          );
           const hasReset = (parseInt(u.reset_requested, 10) === 1) || allPasswordResets.some(r => 
               (r.status || '').toUpperCase() === 'PENDING' && 
               (String(r.user_id) === String(u.id) || (r.identifier && r.identifier.toLowerCase() === email))
           );
           const isRawInactive = parseInt(u.is_active, 10) === 0 || parseInt(u.is_banned, 10) === 1;
 
-          if (activeUserFilter === 'PURGE') return hasDel;
           if (activeUserFilter === 'RESET') return hasReset;
-          if (activeUserFilter === 'BANNED') return isRawInactive && !hasDel;
-          if (activeUserFilter === 'ACTIVE') return !isRawInactive && !hasDel;
+          if (activeUserFilter === 'BANNED') return isRawInactive;
+          if (activeUserFilter === 'ACTIVE') return !isRawInactive;
           return true; // 'ALL'
       });
 
@@ -654,29 +655,18 @@
       container.innerHTML = '';
       filtered.forEach(user => {
           const userIdent = (user.email || user.username || '').toLowerCase();
-          const matchingDel = allDeletionRequests.find(r => 
-              (r.status || '').toUpperCase() === 'PENDING' && 
-              (String(r.user_id) === String(user.id) || (r.identifier && r.identifier.toLowerCase() === userIdent))
-          );
           const matchingReset = allPasswordResets.find(r => 
               (r.status || '').toUpperCase() === 'PENDING' && 
               (String(r.user_id) === String(user.id) || (r.identifier && r.identifier.toLowerCase() === userIdent))
           );
-          const hasPendingDel = (parseInt(user.deletion_requested, 10) === 1) || Boolean(matchingDel);
-          const delReqId = user.deletion_request_id || (matchingDel ? matchingDel.id : null);
-          const delReason = user.deletion_reason || (matchingDel ? matchingDel.reason : '');
-          const delDate = user.deletion_requested_at || (matchingDel ? matchingDel.created_at : '');
-
           const hasPendingReset = (parseInt(user.reset_requested, 10) === 1) || Boolean(matchingReset);
-          const resetTokenId = user.reset_request_id || (matchingReset ? matchingReset.id : null);
           const resetExp = user.reset_expires_at || (matchingReset ? matchingReset.expires_at : '');
 
           const isRawInactive = parseInt(user.is_active, 10) === 0 || parseInt(user.is_banned, 10) === 1;
-          const isBanned = isRawInactive && !hasPendingDel;
-          const isActive = !isRawInactive && !hasPendingDel;
+          const isBanned = isRawInactive;
 
           const card = document.createElement('div');
-          card.className = `user-card ${hasPendingDel ? 'purge-requested' : (isBanned ? 'banned' : '')}`;
+          card.className = `user-card ${isBanned ? 'banned' : ''}`;
           card.id = `user_card_${user.id}`;
 
           let statusBadgeHtml = '';
@@ -689,25 +679,7 @@
               </span>
           ` : '';
 
-          if (hasPendingDel) {
-              // User has EXPLICITLY requested account and data deletion
-              statusBadgeHtml = `
-                  <span class="badge-status badge-purge" title="User explicitly requested account and personal data deletion via Google Play deletion portal">
-                      ⚠️ PURGE REQUESTED
-                  </span>
-              `;
-              banToggleHtml = `
-                  <button class="btn btn-sm" disabled style="background: #334155; color: #94a3b8; border: 1px solid #475569; cursor: not-allowed; opacity: 0.8;" title="Account deactivated pending permanent data purge. Use Purge button to permanently delete.">
-                      Deactivated (Purge Pending)
-                  </button>
-              `;
-              deleteBtnHtml = `
-                  <button class="btn btn-sm btn-danger" style="background: #dc2626; color: #ffffff; font-weight: 800; border: 1.5px solid #ef4444; letter-spacing: 0.04em; box-shadow: 0 0 10px rgba(220, 38, 38, 0.45); cursor: pointer;" onclick="executePurgeUser(${user.id}, '${escapeHtml(user.email || user.username)}', ${delReqId || 0})" title="Permanently Purge User Credentials (7-Year Statutory Audit Retention)">
-                      Purge
-                  </button>
-              `;
-          } else if (isBanned) {
-              // Administratively banned (NOT a deletion request)
+          if (isBanned) {
               statusBadgeHtml = `<span class="badge-status badge-banned">Banned</span>`;
               banToggleHtml = `
                   <button class="btn btn-sm btn-success" onclick="executeToggleBanUser(${user.id}, 1)">
@@ -716,11 +688,10 @@
               `;
               deleteBtnHtml = `
                   <button class="btn btn-sm btn-danger" onclick="executeDeleteUser(${user.id}, '${escapeHtml(user.email || user.username)}')" title="Administrative user deletion (7-yr statutory financial audit retention)">
-                      Delete
+                      Delete User
                   </button>
               `;
           } else {
-              // Active user
               statusBadgeHtml = `<span class="badge-status badge-active">Active</span>`;
               banToggleHtml = `
                   <button class="btn btn-sm btn-warn" onclick="executeToggleBanUser(${user.id}, 0)">
@@ -729,7 +700,7 @@
               `;
               deleteBtnHtml = `
                   <button class="btn btn-sm btn-danger" onclick="executeDeleteUser(${user.id}, '${escapeHtml(user.email || user.username)}')" title="Administrative user deletion (7-yr statutory financial audit retention)">
-                      Delete
+                      Delete User
                   </button>
               `;
           }
@@ -1918,6 +1889,11 @@
   global.copyUserResetLink = copyUserResetLink;
 
   window.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('adminUserSearchInput');
+      if (searchInput) {
+          searchInput.value = '';
+      }
+
       const authInput = document.getElementById('adm-pass');
       if (authInput) {
           authInput.addEventListener('keydown', (e) => {

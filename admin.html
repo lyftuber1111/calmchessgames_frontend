@@ -573,7 +573,7 @@
                 <!-- User Search, Refresh & Status Filter Controls -->
                 <div class="user-mgmt-header" style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 14px;">
                     <div style="display: flex; gap: 8px; align-items: center; flex: 1; min-width: 260px;">
-                        <input type="text" id="adminUserSearchInput" placeholder="Search by username, email, ID..." oninput="handleUserSearchInput(this.value)" style="flex: 1;">
+                        <input type="text" id="adminUserSearchInput" placeholder="Search by username, email, ID..." autocomplete="off" value="" oninput="handleUserSearchInput(this.value)" style="flex: 1;">
                         <button class="btn btn-sm btn-gold" onclick="fetchBlackjackUsers()">Refresh</button>
                         <button class="btn btn-sm btn-success" onclick="toggleCreateUserPanel()">+ Create User</button>
                     </div>
@@ -581,7 +581,6 @@
                         <button class="filter-pill active" id="userFilterAll" onclick="setUserFilter('ALL')">All (<span id="userCountAll">0</span>)</button>
                         <button class="filter-pill" id="userFilterActive" onclick="setUserFilter('ACTIVE')">Active (<span id="userCountActive">0</span>)</button>
                         <button class="filter-pill" id="userFilterBanned" onclick="setUserFilter('BANNED')">Banned (<span id="userCountBanned">0</span>)</button>
-                        <button class="filter-pill" id="userFilterPurge" onclick="setUserFilter('PURGE')" style="border-color: #ef4444; color: #fca5a5;">⚠️ Purge Requested (<span id="userCountPurge">0</span>)</button>
                         <button class="filter-pill" id="userFilterReset" onclick="setUserFilter('RESET')" style="border-color: #f39c12; color: #fed7aa;">🔑 Reset Requested (<span id="userCountReset">0</span>)</button>
                     </div>
                 </div>

@@ -67,17 +67,6 @@
             display: block;
         }
 
-        .corner-home-link {
-            display: inline-flex;
-            align-items: center;
-            text-decoration: none;
-            transition: transform 0.2s ease, filter 0.2s ease;
-        }
-        .corner-home-link:hover {
-            transform: scale(1.08);
-            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.9));
-        }
-
         nav.top-nav {
             margin-top: 15px;
             display: flex;
@@ -731,17 +720,12 @@
 <body>
 
     <header>
-        <div style="width: 100%; max-width: min(100%, 850px); display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-            <a href="https://calmchessgames.com" class="corner-home-link" title="Calm Chess Games Homepage (https://calmchessgames.com)" aria-label="Calm Chess Games Homepage">
-                <img src="knight_left0.png" alt="Calm Chess Knight Logo" style="height: 44px; width: auto; object-fit: contain; filter: drop-shadow(0 0 6px rgba(255, 215, 0, 0.6));">
-            </a>
-            <nav class="top-nav" style="margin-top: 0;">
-                <a href="#games">Games</a>
-                <a href="#about">About</a>
-                <a href="#contact">Contact</a>
-            </nav>
-        </div>
         <img src="header000.png" alt="Calm Chess Computers & Games" class="header-banner">
+        <nav class="top-nav">
+            <a href="#games">Games</a>
+            <a href="#about">About</a>
+            <a href="#contact">Contact</a>
+        </nav>
     </header>
 
     <main>

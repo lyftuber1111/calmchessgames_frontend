@@ -85,12 +85,14 @@
   /* --- API CALL HELPER (AUTHENTICATION API TOKEN ENABLED WITH IN-TRANSIT ENCRYPTION) --- */
   async function callAdminApi(action, payload = {}, method = 'POST') {
       const endpoints = [
+          `./admin_api.php?action=${action}&_t=${Date.now()}`,
+          `admin_api.php?action=${action}&_t=${Date.now()}`,
+          `${API_BASE}/admin/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `https://api.calmchessgames.com/admin/admin_api.php?action=${action}&_t=${Date.now()}`,
           `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
           `https://api.calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`,
           `${API_BASE}/php/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `https://api.calmchessgames.com/php/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `./admin_api.php?action=${action}&_t=${Date.now()}`,
-          `admin_api.php?action=${action}&_t=${Date.now()}`
+          `https://api.calmchessgames.com/php/admin_api.php?action=${action}&_t=${Date.now()}`
       ];
       const uniqueEndpoints = [...new Set(endpoints)];
 
@@ -990,6 +992,18 @@
 
               updateStoreBadges(androidSimulationMode, desktopSimulationMode, allowGuestAccess, geminiCommentaryEnabled, geminiConfigured);
 
+              if (data.admin_allowed_ip !== undefined) {
+                  const ipInput = document.getElementById('adminAllowedIpInput');
+                  if (ipInput) ipInput.value = data.admin_allowed_ip;
+                  const ipBadge = document.getElementById('adminIpBadge');
+                  if (ipBadge) ipBadge.textContent = data.admin_allowed_ip === '*' ? 'Public (*)' : data.admin_allowed_ip;
+              }
+              if (data.client_ip) {
+                  const detectedDisplay = document.getElementById('detectedClientIpDisplay');
+                  if (detectedDisplay) detectedDisplay.textContent = data.client_ip;
+                  window._detectedAdminClientIp = data.client_ip;
+              }
+
               if (Array.isArray(data.purchases)) {
                   allStorePurchases = data.purchases;
                   renderStoreLedger();
@@ -1038,6 +1052,18 @@
                   if (geminiToggle) geminiToggle.checked = geminiCommentaryEnabled;
 
                   updateStoreBadges(androidSimulationMode, desktopSimulationMode, allowGuestAccess, geminiCommentaryEnabled, geminiConfigured);
+
+                  if (data.admin_allowed_ip !== undefined) {
+                      const ipInput = document.getElementById('adminAllowedIpInput');
+                      if (ipInput) ipInput.value = data.admin_allowed_ip;
+                      const ipBadge = document.getElementById('adminIpBadge');
+                      if (ipBadge) ipBadge.textContent = data.admin_allowed_ip === '*' ? 'Public (*)' : data.admin_allowed_ip;
+                  }
+                  if (data.client_ip) {
+                      const detectedDisplay = document.getElementById('detectedClientIpDisplay');
+                      if (detectedDisplay) detectedDisplay.textContent = data.client_ip;
+                      window._detectedAdminClientIp = data.client_ip;
+                  }
               }
           } catch (e2) {
               showStoreAlert('Connection error loading settings from database: ' + e2.message, false);
@@ -1176,6 +1202,9 @@
       const isGemini = geminiToggle ? geminiToggle.checked : true;
       const newApiKey = geminiApiKeyInput ? geminiApiKeyInput.value.trim() : '';
 
+      const ipInput = document.getElementById('adminAllowedIpInput');
+      const newAllowedIp = ipInput ? ipInput.value.trim() : '';
+
       showStoreAlert('Saving settings to MySQL database...', true);
 
       try {
@@ -1190,6 +1219,9 @@
           };
           if (newApiKey) {
               payload.gemini_api_key = newApiKey;
+          }
+          if (newAllowedIp) {
+              payload.admin_allowed_ip = newAllowedIp;
           }
 
           const data = await callAdminApi('set_mode', payload);
@@ -1207,6 +1239,10 @@
               if (geminiApiKeyInput && newApiKey) {
                   geminiApiKeyInput.value = '';
               }
+              if (data.admin_allowed_ip !== undefined) {
+                  const ipBadge = document.getElementById('adminIpBadge');
+                  if (ipBadge) ipBadge.textContent = data.admin_allowed_ip === '*' ? 'Public (*)' : data.admin_allowed_ip;
+              }
               updateStoreBadges(isAndroidSim, isDesktopSim, isGuest, isGemini, geminiConfigured);
 
               const androidLabel = isAndroidSim ? 'SIMULATED' : 'LIVE (Google Play)';
@@ -1218,6 +1254,65 @@
           }
       } catch (err) {
           showStoreAlert('Failed to save settings: ' + err.message, false);
+      }
+  }
+
+  function useCurrentDetectedIp() {
+      const ipInput = document.getElementById('adminAllowedIpInput');
+      const detectedDisplay = document.getElementById('detectedClientIpDisplay');
+      let clientIp = window._detectedAdminClientIp || (detectedDisplay ? detectedDisplay.textContent.trim() : '');
+      if (clientIp && clientIp !== 'Detecting...' && ipInput) {
+          ipInput.value = clientIp;
+          showStoreAlert(`Copied detected IP [${clientIp}] into Authorized IP field. Click "Save Allowed IP" to apply.`, true);
+          return;
+      }
+      fetch('https://api.ipify.org?format=json')
+          .then(r => r.json())
+          .then(d => {
+              if (d && d.ip && ipInput) {
+                  ipInput.value = d.ip;
+                  if (detectedDisplay) detectedDisplay.textContent = d.ip;
+                  window._detectedAdminClientIp = d.ip;
+                  showStoreAlert(`Detected IP [${d.ip}] copied into field. Click "Save Allowed IP" to apply.`, true);
+              }
+          })
+          .catch(() => alert('Could not detect public IP automatically. Please type your IP address manually.'));
+  }
+
+  async function saveAdminAllowedIp() {
+      const adminKey = getAdminKey();
+      if (!adminKey) {
+          alert('Admin password required. Please re-authenticate.');
+          return;
+      }
+      const ipInput = document.getElementById('adminAllowedIpInput');
+      const newIp = ipInput ? ipInput.value.trim() : '';
+      if (!newIp) {
+          alert('Please enter an authorized IP address or "*" to permit all IPs.');
+          return;
+      }
+
+      if (!confirm(`Are you sure you want to restrict Admin Console access to:\n${newIp}\n\nAll requests from other IP addresses will receive 403 Forbidden.`)) {
+          return;
+      }
+
+      showStoreAlert('Updating admin IP whitelist in database...', true);
+      try {
+          const data = await callAdminApi('update_allowed_ip', {
+              admin_key: adminKey,
+              admin_password: adminKey,
+              admin_allowed_ip: newIp,
+              allowed_ip: newIp
+          });
+          if (data && data.success) {
+              showStoreAlert(`✔ Admin access restricted to: ${newIp}`, true);
+              const badge = document.getElementById('adminIpBadge');
+              if (badge) badge.textContent = newIp === '*' ? 'Public (*)' : newIp;
+          } else {
+              showStoreAlert((data && data.message) ? data.message : 'Error updating allowed IP.', false);
+          }
+      } catch (err) {
+          showStoreAlert('Failed to update allowed IP: ' + err.message, false);
       }
   }
 
@@ -1893,6 +1988,8 @@
   global.fetchStoreSettings = fetchStoreSettings;
   global.handleStoreToggleChange = handleStoreToggleChange;
   global.saveStoreSettings = saveStoreSettings;
+  global.useCurrentDetectedIp = useCurrentDetectedIp;
+  global.saveAdminAllowedIp = saveAdminAllowedIp;
   global.updateStoreBadges = updateStoreBadges;
   global.setPurchaseFilter = setPurchaseFilter;
   global.handlePurchaseSearchInput = handlePurchaseSearchInput;

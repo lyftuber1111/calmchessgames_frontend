@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
     <title>Casino Operations Admin - Calm Chess Computers</title>
+    <script>
+        // Standalone Server Gateway Enforcement: redirect calmchessgames.com requests to IP-gated server gateway
+        if (window.location.hostname === 'calmchessgames.com' || window.location.hostname.endsWith('github.io')) {
+            window.location.replace('https://api.calmchessgames.com/admin/admin.html' + window.location.search + window.location.hash);
+        }
+    </script>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -782,6 +788,42 @@
                             <label style="font-size: 0.78rem; font-weight: 700; color: var(--gold-primary);">GEMINI_API_KEY:</label>
                             <input type="password" id="adminGeminiApiKeyInput" placeholder="AIzaSy... (leave blank to keep existing key)" style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 5px 10px; color: #fff; font-size: 0.8rem; width: 300px; max-width: 100%;">
                             <span id="geminiKeyStatusBadge" class="badge-status" style="font-size: 0.72rem;">Checking...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Setting Card 5: Standalone Admin Console IP Access Restriction -->
+                <div class="store-setting-card">
+                    <div class="store-setting-head">
+                        <div>
+                            <div class="store-setting-title">
+                                <span>🛡️ Admin Console & API IP Access Restriction</span>
+                                <span id="adminIpBadge" class="badge-status badge-active" style="background: rgba(239, 68, 68, 0.2); border-color: #ef4444; color: #fca5a5;">IP Restricted</span>
+                            </div>
+                            <div class="store-setting-desc">
+                                Restricts access to the standalone Admin Console (<code>admin.html</code>) and administrative API endpoints to authorized IP addresses. All other domains and networks receive <code>403 Forbidden</code>.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="store-setting-details">
+                        <div class="mode-state-desc">
+                            <strong>Access Rule:</strong> Access is permitted only from the authorized IP(s) listed below or localhost. To allow multiple addresses, separate with commas (e.g. <code>50.96.3.12, 192.168.1.100</code>). Use <code>*</code> to permit all IPs.
+                            <div style="margin-top: 6px; font-size: 0.8rem; color: #94a3b8;">
+                                <strong>Manual Database Update:</strong> You can also update this setting directly in MySQL:<br>
+                                <code style="color: #ffd700; background: #0b0f19; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 3px;">UPDATE site_settings SET setting_value = 'YOUR_IP' WHERE setting_key = 'admin_allowed_ip';</code>
+                            </div>
+                        </div>
+                        <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <label style="font-size: 0.82rem; font-weight: 700; color: var(--gold-primary); min-width: 140px;">Authorized IP(s):</label>
+                                <input type="text" id="adminAllowedIpInput" value="50.96.3.12" placeholder="50.96.3.12 or comma-separated IPs" style="background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 6px 12px; color: #fff; font-size: 0.85rem; width: 320px; max-width: 100%; font-family: monospace;">
+                                <button class="btn btn-gold btn-sm" onclick="saveAdminAllowedIp()">Save Allowed IP</button>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.8rem; color: #94a3b8;">
+                                <span>Detected Your IP:</span>
+                                <span id="detectedClientIpDisplay" style="color: #ffd700; font-family: monospace; font-weight: 700; background: #0b0f19; padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(255,215,0,0.3);">50.96.3.12</span>
+                                <button class="btn btn-sm" style="background: #334155; color: #fff; font-size: 0.76rem;" onclick="useCurrentDetectedIp()">Use Detected IP</button>
+                            </div>
                         </div>
                     </div>
                 </div>

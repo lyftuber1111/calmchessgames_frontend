@@ -5,6 +5,50 @@
   let showSegmentIdsOnRing = false;
   let centerLogoUrl = 'chess.html';
 
+  // Non-persistent Segment IDs for Admin Reference:
+  // Detects show_segment_ids parameter in URL or temp storage keys, enables IDs for the current view,
+  // then immediately purges storage and removes query param via history.replaceState so that
+  // any page reload (refresh) immediately causes the segment IDs to disappear.
+  function checkOneTimeSegmentIds() {
+      let shouldShow = false;
+      try {
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.get('show_segment_ids') === '1' || urlParams.get('show_segment_ids') === 'true') {
+              shouldShow = true;
+          }
+      } catch (e) {}
+
+      try {
+          if (sessionStorage.getItem('calmchess_temp_show_segment_ids') === '1' ||
+              localStorage.getItem('calmchess_temp_show_segment_ids') === '1') {
+              shouldShow = true;
+          }
+      } catch (e) {}
+
+      if (shouldShow) {
+          showSegmentIdsOnRing = true;
+
+          // Immediately clear storage so IDs are strictly non-persistent
+          try {
+              sessionStorage.removeItem('calmchess_temp_show_segment_ids');
+              localStorage.removeItem('calmchess_temp_show_segment_ids');
+          } catch (e) {}
+
+          // Remove query param from browser address bar without page reload
+          try {
+              const url = new URL(window.location.href);
+              if (url.searchParams.has('show_segment_ids')) {
+                  url.searchParams.delete('show_segment_ids');
+                  const newSearch = url.searchParams.toString();
+                  const cleanUrl = url.pathname + (newSearch ? '?' + newSearch : '') + url.hash;
+                  window.history.replaceState({}, document.title, cleanUrl);
+              }
+          } catch (e) {}
+      }
+  }
+
+  checkOneTimeSegmentIds();
+
   // Ensure HTTPS transport encryption immediately
   if (typeof CryptoTransport !== 'undefined' && CryptoTransport.ensureHttps) {
       CryptoTransport.ensureHttps();
@@ -375,6 +419,16 @@
               if (centerLogoUrl && centerLogoUrl.trim() !== '') {
                   handleCenterLogoRedirect(centerLogoUrl);
               }
+          }
+      });
+  }
+
+  // Header click listener linking to calmchessgames.com
+  const siteHeader = document.getElementById('siteHeader') || document.querySelector('header');
+  if (siteHeader) {
+      siteHeader.addEventListener('click', function (e) {
+          if (!e.target.closest('nav') && !e.target.closest('a') && !e.target.closest('button')) {
+              window.location.href = 'https://calmchessgames.com';
           }
       });
   }

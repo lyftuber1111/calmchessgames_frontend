@@ -196,6 +196,7 @@
               fetchBlackjackUsers();
               fetchAccountDeletionRequests();
               fetchPasswordResets();
+              fetchAppointments();
           } else {
               if (authMsg) {
                   authMsg.textContent = (data && data.message) ? data.message : 'Invalid Admin Password. Access Denied.';
@@ -243,6 +244,8 @@
           targetTab = 'deletions';
       } else if (normalized === 'resets' || normalized === 'reset' || normalized === 'password-reset' || normalized === 'tokens') {
           targetTab = 'resets';
+      } else if (normalized === 'appointments' || normalized === 'appointment' || normalized === 'bookings' || normalized === 'consultation' || normalized === 'consultations') {
+          targetTab = 'appointments';
       } else {
           targetTab = 'segments';
       }
@@ -253,23 +256,28 @@
       const tabBtnStore = document.getElementById('tabBtnStore');
       const tabBtnDeletions = document.getElementById('tabBtnDeletions');
       const tabBtnResets = document.getElementById('tabBtnResets');
+      const tabBtnAppointments = document.getElementById('tabBtnAppointments');
+
       const contentSegments = document.getElementById('tabContentSegments');
       const contentUsers = document.getElementById('tabContentUsers');
       const contentStore = document.getElementById('tabContentStore');
       const contentDeletions = document.getElementById('tabContentDeletions');
       const contentResets = document.getElementById('tabContentResets');
+      const contentAppointments = document.getElementById('tabContentAppointments');
 
       if (tabBtnSegments) tabBtnSegments.classList.toggle('active', targetTab === 'segments');
       if (tabBtnUsers) tabBtnUsers.classList.toggle('active', targetTab === 'users');
       if (tabBtnStore) tabBtnStore.classList.toggle('active', targetTab === 'store');
       if (tabBtnDeletions) tabBtnDeletions.classList.toggle('active', targetTab === 'deletions');
       if (tabBtnResets) tabBtnResets.classList.toggle('active', targetTab === 'resets');
+      if (tabBtnAppointments) tabBtnAppointments.classList.toggle('active', targetTab === 'appointments');
 
       if (contentSegments) contentSegments.style.display = (targetTab === 'segments') ? 'block' : 'none';
       if (contentUsers) contentUsers.style.display = (targetTab === 'users') ? 'block' : 'none';
       if (contentStore) contentStore.style.display = (targetTab === 'store') ? 'block' : 'none';
       if (contentDeletions) contentDeletions.style.display = (targetTab === 'deletions') ? 'block' : 'none';
       if (contentResets) contentResets.style.display = (targetTab === 'resets') ? 'block' : 'none';
+      if (contentAppointments) contentAppointments.style.display = (targetTab === 'appointments') ? 'block' : 'none';
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -283,6 +291,8 @@
           fetchAccountDeletionRequests();
       } else if (targetTab === 'resets') {
           fetchPasswordResets();
+      } else if (targetTab === 'appointments') {
+          fetchAppointments();
       }
   }
 
@@ -388,8 +398,25 @@
       }
   }
 
+  function updateRingLinksWithParam(show) {
+      const headerLink = document.getElementById('linkMainRingsHeader');
+      const tabLink = document.getElementById('linkMainRingsTab');
+      const targetUrl = show ? 'https://calmchessgames.com/index.html?show_segment_ids=1' : 'https://calmchessgames.com/index.html';
+      if (headerLink) headerLink.href = targetUrl;
+      if (tabLink) tabLink.href = targetUrl;
+  }
+
   function toggleSegmentIds(checked) {
-      console.log('Segment IDs toggle:', checked);
+      try {
+          if (checked) {
+              localStorage.setItem('calmchess_temp_show_segment_ids', '1');
+              sessionStorage.setItem('calmchess_temp_show_segment_ids', '1');
+          } else {
+              localStorage.removeItem('calmchess_temp_show_segment_ids');
+              sessionStorage.removeItem('calmchess_temp_show_segment_ids');
+          }
+      } catch (e) {}
+      updateRingLinksWithParam(checked);
   }
 
   async function saveSegments() {
@@ -411,6 +438,19 @@
           }
           return;
       }
+
+      const masterShowIds = document.getElementById('masterShowIds');
+      const shouldShowIds = masterShowIds ? masterShowIds.checked : false;
+      try {
+          if (shouldShowIds) {
+              localStorage.setItem('calmchess_temp_show_segment_ids', '1');
+              sessionStorage.setItem('calmchess_temp_show_segment_ids', '1');
+          } else {
+              localStorage.removeItem('calmchess_temp_show_segment_ids');
+              sessionStorage.removeItem('calmchess_temp_show_segment_ids');
+          }
+      } catch(e) {}
+      updateRingLinksWithParam(shouldShowIds);
 
       const nonCenterSegments = currentSegments.filter(s => s.ring_type !== 'center');
       const updatedSegments = nonCenterSegments.map((seg, index) => {
@@ -491,6 +531,13 @@
           if (saved) {
               currentSegments = updatedSegments;
               centerLogoUrl = updatedCenterLogoUrl;
+              if (shouldShowIds) {
+                  try {
+                      localStorage.setItem('calmchess_temp_show_segment_ids', '1');
+                      sessionStorage.setItem('calmchess_temp_show_segment_ids', '1');
+                  } catch(e) {}
+                  updateRingLinksWithParam(true);
+              }
               alert('✔ Ring settings saved successfully to MySQL database!');
           } else {
               alert('Save failed: ' + (lastErrMsg || 'Please verify admin password.'));
@@ -2045,6 +2092,455 @@
   global.filterPasswordResets = filterPasswordResets;
   global.cancelPasswordReset = cancelPasswordReset;
   global.copyUserResetLink = copyUserResetLink;
+  global.fetchAppointments = fetchAppointments;
+  global.setAppFilter = setAppFilter;
+  global.filterAppointments = filterAppointments;
+  global.renderAppointments = renderAppointments;
+  global.updateAppointmentStatus = updateAppointmentStatus;
+  global.deleteAppointment = deleteAppointment;
+  global.setMessageFilter = setMessageFilter;
+  global.renderContactMessages = renderContactMessages;
+  global.updateContactMessageStatus = updateContactMessageStatus;
+  global.openNewAppointmentModal = openNewAppointmentModal;
+  global.openEditAppointmentModal = openEditAppointmentModal;
+  global.closeAppointmentModal = closeAppointmentModal;
+  global.submitAppointmentModal = submitAppointmentModal;
+
+  /* --- TAB 6: CONSULTATION APPOINTMENTS & INQUIRIES --- */
+  let allAppointments = [];
+  let allContactMessages = [];
+  let activeAppFilter = 'ALL';
+  let activeAppSearchTerm = '';
+  let activeMsgFilter = 'ALL';
+
+  async function fetchAppointments() {
+      const appBody = document.getElementById('adminAppointmentsBody');
+      const msgBody = document.getElementById('adminContactMessagesBody');
+      const adminKey = getAdminKey();
+
+      if (!adminKey) {
+          if (appBody) appBody.innerHTML = '<tr><td colspan="7" style="padding:16px; text-align:center; color:var(--error-red);">Admin authentication required.</td></tr>';
+          return;
+      }
+
+      try {
+          const res = await callAdminApi('get_appointments', { admin_key: adminKey });
+          if (res && res.success) {
+              const data = res.data || {};
+              allAppointments = Array.isArray(data.appointments) ? data.appointments : [];
+              allContactMessages = Array.isArray(data.contact_messages) ? data.contact_messages : [];
+              const stats = data.stats || {};
+
+              const todayEl = document.getElementById('appTodayCountDisplay');
+              const confEl = document.getElementById('appConfirmedCountDisplay');
+              const pendEl = document.getElementById('appPendingCountDisplay');
+              const msgsEl = document.getElementById('appMessagesCountDisplay');
+              const totalEl = document.getElementById('appTotalCountDisplay');
+              const badgeEl = document.getElementById('appBadge');
+
+              if (todayEl) todayEl.textContent = stats.today || 0;
+              if (confEl) confEl.textContent = stats.confirmed || 0;
+              if (pendEl) pendEl.textContent = stats.pending || 0;
+              if (msgsEl) msgsEl.textContent = (data.unread_messages !== undefined ? data.unread_messages : allContactMessages.length);
+              if (totalEl) totalEl.textContent = stats.total || allAppointments.length;
+
+              const attentionCount = (stats.pending || 0) + (data.unread_messages || 0);
+              if (badgeEl) {
+                  if (attentionCount > 0) {
+                      badgeEl.textContent = attentionCount;
+                      badgeEl.style.display = 'inline-block';
+                  } else {
+                      badgeEl.style.display = 'none';
+                  }
+              }
+
+              renderAppointments();
+              renderContactMessages();
+          } else {
+              if (appBody) appBody.innerHTML = `<tr><td colspan="7" style="padding:16px; text-align:center; color:var(--error-red);">${res && res.message ? res.message : 'Failed to load appointments.'}</td></tr>`;
+          }
+      } catch (err) {
+          if (appBody) appBody.innerHTML = `<tr><td colspan="7" style="padding:16px; text-align:center; color:var(--error-red);">Error loading appointments: ${err.message}</td></tr>`;
+      }
+  }
+
+  function setAppFilter(filter) {
+      activeAppFilter = (filter || 'ALL').toUpperCase();
+      ['All', 'Today', 'Confirmed', 'Pending', 'Completed', 'Cancelled'].forEach(btnKey => {
+          const btn = document.getElementById(`appFilter${btnKey}`);
+          if (btn) {
+              const isActive = (btnKey.toUpperCase() === activeAppFilter);
+              btn.style.background = isActive ? 'var(--gold-primary)' : '#334155';
+              btn.style.color = isActive ? '#000' : '#fff';
+              btn.style.fontWeight = isActive ? '700' : '400';
+          }
+      });
+      renderAppointments();
+  }
+
+  function filterAppointments() {
+      const searchInput = document.getElementById('appSearchInput');
+      activeAppSearchTerm = searchInput ? searchInput.value.trim().toLowerCase() : '';
+      renderAppointments();
+  }
+
+  function renderAppointments() {
+      const tbody = document.getElementById('adminAppointmentsBody');
+      if (!tbody) return;
+
+      const todayStr = new Date().toISOString().slice(0, 10);
+
+      const filtered = allAppointments.filter(app => {
+          const status = (app.status || 'confirmed').toUpperCase();
+          if (activeAppFilter === 'TODAY' && app.appointment_date !== todayStr) return false;
+          if (activeAppFilter === 'CONFIRMED' && status !== 'CONFIRMED') return false;
+          if (activeAppFilter === 'PENDING' && status !== 'PENDING') return false;
+          if (activeAppFilter === 'COMPLETED' && status !== 'COMPLETED') return false;
+          if (activeAppFilter === 'CANCELLED' && status !== 'CANCELLED') return false;
+
+          if (activeAppSearchTerm) {
+              const name = (app.attendee_name || '').toLowerCase();
+              const email = (app.attendee_email || '').toLowerCase();
+              const phone = (app.attendee_phone || '').toLowerCase();
+              const topic = (app.topic || '').toLowerCase();
+              const notes = (app.notes || '').toLowerCase();
+              const date = (app.appointment_date || '').toLowerCase();
+              if (!name.includes(activeAppSearchTerm) &&
+                  !email.includes(activeAppSearchTerm) &&
+                  !phone.includes(activeAppSearchTerm) &&
+                  !topic.includes(activeAppSearchTerm) &&
+                  !notes.includes(activeAppSearchTerm) &&
+                  !date.includes(activeAppSearchTerm)) {
+                  return false;
+              }
+          }
+          return true;
+      });
+
+      if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="padding:24px; text-align:center; color:var(--text-muted);">No consultation appointments match the selected filters.</td></tr>';
+          return;
+      }
+
+      tbody.innerHTML = filtered.map(app => {
+          const st = (app.status || 'confirmed').toLowerCase();
+          let badgeStyle = 'background:rgba(46, 204, 113, 0.2); color:#2ecc71; border:1px solid #2ecc71;';
+          if (st === 'pending') badgeStyle = 'background:rgba(243, 156, 18, 0.2); color:#f39c12; border:1px solid #f39c12;';
+          else if (st === 'cancelled') badgeStyle = 'background:rgba(231, 76, 60, 0.2); color:#ff6b6b; border:1px solid #ff6b6b;';
+          else if (st === 'completed') badgeStyle = 'background:rgba(52, 152, 219, 0.2); color:#70a1ff; border:1px solid #70a1ff;';
+
+          const safeName = escapeHtml(app.attendee_name || 'Anonymous');
+          const safeEmail = escapeHtml(app.attendee_email || 'No email');
+          const safePhone = escapeHtml(app.attendee_phone || '—');
+          const safeDate = escapeHtml(app.appointment_date || '—');
+          const safeTime = escapeHtml(app.appointment_time || '—');
+          const safeTz = escapeHtml(app.timezone || 'EST');
+          const safeTopic = escapeHtml(app.topic || 'Consultation');
+          const safeNotes = escapeHtml(app.notes || '—');
+
+          return `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                  <td style="padding: 10px 12px; font-weight:700; color:var(--gold-primary);">${app.id}</td>
+                  <td style="padding: 10px 12px;">
+                      <strong style="color:#fff; font-size:0.95rem;">${safeName}</strong>
+                  </td>
+                  <td style="padding: 10px 12px; font-size:0.85rem;">
+                      <div><a href="mailto:${safeEmail}" style="color:var(--accent-blue); text-decoration:none;">✉️ ${safeEmail}</a></div>
+                      ${app.attendee_phone ? `<div><a href="tel:${safePhone}" style="color:#94a3b8; text-decoration:none;">📞 ${safePhone}</a></div>` : ''}
+                  </td>
+                  <td style="padding: 10px 12px; font-size:0.86rem; color:#cbd5e1;">
+                      <div style="font-weight:700; color:#fff;">📅 ${safeDate}</div>
+                      <div style="color:var(--gold-primary);">⏰ ${safeTime} <span style="font-size:0.75rem; color:#94a3b8;">(${safeTz})</span></div>
+                  </td>
+                  <td style="padding: 10px 12px; font-size:0.85rem;">
+                      <div style="font-weight:600; color:#cbd5e1;">${safeTopic}</div>
+                      ${app.notes ? `<div style="color:#94a3b8; font-style:italic; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${safeNotes}">📝 ${safeNotes}</div>` : ''}
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <select onchange="updateAppointmentStatus(${app.id}, this.value)" style="${badgeStyle} border-radius:4px; padding:3px 8px; font-size:0.82rem; font-weight:700; cursor:pointer;">
+                          <option value="confirmed" ${st === 'confirmed' ? 'selected' : ''}>Confirmed</option>
+                          <option value="pending" ${st === 'pending' ? 'selected' : ''}>Pending</option>
+                          <option value="completed" ${st === 'completed' ? 'selected' : ''}>Completed</option>
+                          <option value="cancelled" ${st === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                      </select>
+                  </td>
+                  <td style="padding: 10px 12px; text-align:center;">
+                      <div style="display:flex; gap:6px; justify-content:center;">
+                          <button class="btn btn-sm" style="background:#334155; color:#fff; padding:4px 8px; font-size:0.78rem;" onclick="openEditAppointmentModal(${app.id})">Edit</button>
+                          <button class="btn btn-sm btn-danger" style="padding:4px 8px; font-size:0.78rem;" onclick="deleteAppointment(${app.id})">Delete</button>
+                      </div>
+                  </td>
+              </tr>
+          `;
+      }).join('');
+  }
+
+  async function updateAppointmentStatus(id, newStatus) {
+      const adminKey = getAdminKey();
+      try {
+          const res = await callAdminApi('update_appointment', {
+              admin_key: adminKey,
+              id: id,
+              status: newStatus
+          });
+          if (res && res.success) {
+              fetchAppointments();
+          } else {
+              alert('Failed to update status: ' + (res && res.message ? res.message : 'Unknown error'));
+              fetchAppointments();
+          }
+      } catch (err) {
+          alert('Error updating status: ' + err.message);
+          fetchAppointments();
+      }
+  }
+
+  async function deleteAppointment(id) {
+      if (!confirm(`Are you sure you want to permanently delete appointment #${id}?`)) {
+          return;
+      }
+      const adminKey = getAdminKey();
+      try {
+          const res = await callAdminApi('delete_appointment', {
+              admin_key: adminKey,
+              id: id
+          });
+          if (res && res.success) {
+              fetchAppointments();
+          } else {
+              alert('Failed to delete appointment: ' + (res && res.message ? res.message : 'Unknown error'));
+          }
+      } catch (err) {
+          alert('Error deleting appointment: ' + err.message);
+      }
+  }
+
+  function setMessageFilter(filter) {
+      activeMsgFilter = (filter || 'ALL').toUpperCase();
+      ['All', 'Unread', 'Read', 'Replied'].forEach(btnKey => {
+          const btn = document.getElementById(`msgFilter${btnKey}`);
+          if (btn) {
+              const isActive = (btnKey.toUpperCase() === activeMsgFilter);
+              btn.style.background = isActive ? 'var(--gold-primary)' : '#334155';
+              btn.style.color = isActive ? '#000' : '#fff';
+              btn.style.fontWeight = isActive ? '700' : '400';
+          }
+      });
+      renderContactMessages();
+  }
+
+  function renderContactMessages() {
+      const tbody = document.getElementById('adminContactMessagesBody');
+      if (!tbody) return;
+
+      const filtered = allContactMessages.filter(msg => {
+          const st = (msg.status || 'unread').toUpperCase();
+          if (activeMsgFilter === 'UNREAD' && st !== 'UNREAD') return false;
+          if (activeMsgFilter === 'READ' && st !== 'READ') return false;
+          if (activeMsgFilter === 'REPLIED' && st !== 'REPLIED') return false;
+          return true;
+      });
+
+      if (filtered.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="padding:24px; text-align:center; color:var(--text-muted);">No contact messages match the selected filter.</td></tr>';
+          return;
+      }
+
+      tbody.innerHTML = filtered.map(msg => {
+          const st = (msg.status || 'unread').toLowerCase();
+          let badgeStyle = 'background:rgba(243, 156, 18, 0.2); color:#f39c12; border:1px solid #f39c12;';
+          if (st === 'read') badgeStyle = 'background:rgba(148, 163, 184, 0.2); color:#cbd5e1; border:1px solid #94a3b8;';
+          else if (st === 'replied') badgeStyle = 'background:rgba(46, 204, 113, 0.2); color:#2ecc71; border:1px solid #2ecc71;';
+
+          const safeSender = escapeHtml(msg.sender_name || 'Anonymous');
+          const safeEmail = escapeHtml(msg.sender_email || '');
+          const safeSubject = escapeHtml(msg.subject || '(No Subject)');
+          const safeMsg = escapeHtml(msg.message || '');
+          const dateStr = msg.created_at ? msg.created_at.slice(0, 16).replace('T', ' ') : '—';
+
+          return `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                  <td style="padding: 10px 12px; font-weight:700; color:var(--gold-primary);">${msg.id}</td>
+                  <td style="padding: 10px 12px; font-size:0.82rem; color:#94a3b8;">${dateStr}</td>
+                  <td style="padding: 10px 12px;">
+                      <div style="font-weight:700; color:#fff;">${safeSender}</div>
+                      <div><a href="mailto:${safeEmail}?subject=Re:%20${encodeURIComponent(msg.subject || 'Calm Chess Consultation')}" style="color:var(--accent-blue); text-decoration:none; font-size:0.82rem;">✉️ ${safeEmail}</a></div>
+                  </td>
+                  <td style="padding: 10px 12px; font-weight:600; color:#fed7aa; font-size:0.88rem;">${safeSubject}</td>
+                  <td style="padding: 10px 12px; font-size:0.84rem; color:#cbd5e1; max-width:280px;">
+                      <div style="max-height:60px; overflow-y:auto; line-height:1.4;">${safeMsg}</div>
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <select onchange="updateContactMessageStatus(${msg.id}, this.value)" style="${badgeStyle} border-radius:4px; padding:3px 8px; font-size:0.82rem; font-weight:700; cursor:pointer;">
+                          <option value="unread" ${st === 'unread' ? 'selected' : ''}>Unread</option>
+                          <option value="read" ${st === 'read' ? 'selected' : ''}>Read</option>
+                          <option value="replied" ${st === 'replied' ? 'selected' : ''}>Replied</option>
+                          <option value="archived" ${st === 'archived' ? 'selected' : ''}>Archived</option>
+                      </select>
+                  </td>
+                  <td style="padding: 10px 12px; text-align:center;">
+                      <a href="mailto:${safeEmail}?subject=Re:%20${encodeURIComponent(msg.subject || 'Calm Chess Consultation')}" class="btn btn-sm btn-gold" style="padding:4px 8px; font-size:0.78rem; text-decoration:none; display:inline-block;" onclick="updateContactMessageStatus(${msg.id}, 'replied')">✉️ Reply</a>
+                  </td>
+              </tr>
+          `;
+      }).join('');
+  }
+
+  async function updateContactMessageStatus(id, newStatus) {
+      const adminKey = getAdminKey();
+      try {
+          const res = await callAdminApi('update_contact_message', {
+              admin_key: adminKey,
+              id: id,
+              status: newStatus
+          });
+          if (res && res.success) {
+              fetchAppointments();
+          }
+      } catch (err) {
+          console.error('Error updating message status:', err);
+      }
+  }
+
+  function openNewAppointmentModal() {
+      const modal = document.getElementById('appointmentModal');
+      const title = document.getElementById('appModalTitle');
+      const idInput = document.getElementById('appModalId');
+      const nameInput = document.getElementById('appModalName');
+      const emailInput = document.getElementById('appModalEmail');
+      const phoneInput = document.getElementById('appModalPhone');
+      const dateInput = document.getElementById('appModalDate');
+      const timeInput = document.getElementById('appModalTime');
+      const topicInput = document.getElementById('appModalTopic');
+      const statusInput = document.getElementById('appModalStatus');
+      const tzInput = document.getElementById('appModalTimezone');
+      const notesInput = document.getElementById('appModalNotes');
+
+      if (title) title.textContent = '📅 Schedule Consultation Appointment';
+      if (idInput) idInput.value = '';
+      if (nameInput) nameInput.value = '';
+      if (emailInput) emailInput.value = '';
+      if (phoneInput) phoneInput.value = '';
+      if (dateInput) {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          dateInput.value = tomorrow.toISOString().slice(0, 10);
+      }
+      if (timeInput) timeInput.value = '10:00 AM EST';
+      if (topicInput) topicInput.value = 'Chess Engine & Architecture Consultation';
+      if (statusInput) statusInput.value = 'confirmed';
+      if (tzInput) tzInput.value = 'America/New_York (EST)';
+      if (notesInput) notesInput.value = '';
+
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function openEditAppointmentModal(id) {
+      const app = allAppointments.find(a => Number(a.id) === Number(id));
+      if (!app) return;
+
+      const modal = document.getElementById('appointmentModal');
+      const title = document.getElementById('appModalTitle');
+      const idInput = document.getElementById('appModalId');
+      const nameInput = document.getElementById('appModalName');
+      const emailInput = document.getElementById('appModalEmail');
+      const phoneInput = document.getElementById('appModalPhone');
+      const dateInput = document.getElementById('appModalDate');
+      const timeInput = document.getElementById('appModalTime');
+      const topicInput = document.getElementById('appModalTopic');
+      const statusInput = document.getElementById('appModalStatus');
+      const tzInput = document.getElementById('appModalTimezone');
+      const notesInput = document.getElementById('appModalNotes');
+
+      if (title) title.textContent = `✏️ Edit Appointment #${app.id}`;
+      if (idInput) idInput.value = app.id;
+      if (nameInput) nameInput.value = app.attendee_name || '';
+      if (emailInput) emailInput.value = app.attendee_email || '';
+      if (phoneInput) phoneInput.value = app.attendee_phone || '';
+      if (dateInput) dateInput.value = app.appointment_date || '';
+      if (timeInput) timeInput.value = app.appointment_time || '';
+      if (topicInput) topicInput.value = app.topic || '';
+      if (statusInput) statusInput.value = app.status || 'confirmed';
+      if (tzInput) tzInput.value = app.timezone || 'America/New_York (EST)';
+      if (notesInput) notesInput.value = app.notes || '';
+
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function closeAppointmentModal() {
+      const modal = document.getElementById('appointmentModal');
+      if (modal) modal.style.display = 'none';
+  }
+
+  async function submitAppointmentModal() {
+      const id = document.getElementById('appModalId')?.value;
+      const name = document.getElementById('appModalName')?.value.trim();
+      const email = document.getElementById('appModalEmail')?.value.trim();
+      const phone = document.getElementById('appModalPhone')?.value.trim();
+      const date = document.getElementById('appModalDate')?.value.trim();
+      const time = document.getElementById('appModalTime')?.value.trim();
+      const topic = document.getElementById('appModalTopic')?.value.trim();
+      const status = document.getElementById('appModalStatus')?.value.trim();
+      const timezone = document.getElementById('appModalTimezone')?.value.trim();
+      const notes = document.getElementById('appModalNotes')?.value.trim();
+      const adminKey = getAdminKey();
+
+      if (!name) { alert('Attendee name is required'); return; }
+      if (!email) { alert('Valid attendee email is required'); return; }
+      if (!date) { alert('Appointment date is required'); return; }
+      if (!time) { alert('Appointment time is required'); return; }
+
+      const saveBtn = document.getElementById('btnSaveAppModal');
+      if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+
+      try {
+          let res;
+          if (id) {
+              res = await callAdminApi('update_appointment', {
+                  admin_key: adminKey,
+                  id: id,
+                  status: status,
+                  notes: notes,
+                  appointment_date: date,
+                  appointment_time: time
+              });
+          } else {
+              res = await callAdminApi('create_appointment', {
+                  admin_key: adminKey,
+                  name: name,
+                  email: email,
+                  phone: phone,
+                  date: date,
+                  time: time,
+                  topic: topic,
+                  status: status,
+                  timezone: timezone,
+                  notes: notes
+              });
+          }
+
+          if (res && res.success) {
+              closeAppointmentModal();
+              fetchAppointments();
+          } else {
+              alert('Failed to save appointment: ' + (res && res.message ? res.message : 'Unknown error'));
+          }
+      } catch (err) {
+          alert('Error saving appointment: ' + err.message);
+      } finally {
+          if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Appointment'; }
+      }
+  }
+
+  function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+  }
 
   window.addEventListener('DOMContentLoaded', () => {
       const searchInput = document.getElementById('adminUserSearchInput');

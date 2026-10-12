@@ -61,6 +61,7 @@
             align-items: center;
             border-bottom: 2px solid var(--divider-red);
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            cursor: pointer;
         }
 
         .header-banner {
@@ -139,8 +140,8 @@
 
         .profile-avatar-wrap {
             position: relative;
-            width: 84px;
-            height: 84px;
+            width: 88px;
+            height: 88px;
             border-radius: 50%;
             padding: 3px;
             background: linear-gradient(135deg, var(--gold-primary), #4a90e2);
@@ -148,14 +149,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+            background-clip: padding-box;
         }
 
         .profile-avatar {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            object-fit: cover;
+            object-fit: contain;
+            box-sizing: border-box;
+            padding: 6px;
             background: #0b0f19;
+            display: block;
         }
 
         .profile-details h1 {
@@ -779,9 +786,11 @@
 </head>
 <body>
 
-    <header>
-        <img src="header000.png" alt="Calm Chess Computers & Games" class="header-banner">
-        <nav class="top-nav">
+    <header id="siteHeader">
+        <a href="https://calmchessgames.com" class="header-banner-link" style="display: block; text-decoration: none; max-width: min(100%, 850px); width: 100%;" aria-label="Calm Chess Computers & Games Home">
+            <img src="header000.png" alt="Calm Chess Computers & Games" class="header-banner">
+        </a>
+        <nav class="top-nav" onclick="event.stopPropagation();">
             <a href="index.html">Home</a>
             <a href="index.html#games">Games</a>
             <a href="blackjack.html">Blackjack</a>
@@ -1025,5 +1034,17 @@
     <script src="js/crypto_transport.js"></script>
     <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
     <script src="js/contact.js"></script>
+    <script>
+        (function() {
+            var hdr = document.getElementById('siteHeader') || document.querySelector('header');
+            if (hdr) {
+                hdr.addEventListener('click', function(e) {
+                    if (!e.target.closest('nav') && !e.target.closest('a') && !e.target.closest('button')) {
+                        window.location.href = 'https://calmchessgames.com';
+                    }
+                });
+            }
+        })();
+    </script>
 </body>
 </html>

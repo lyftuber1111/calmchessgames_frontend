@@ -1029,7 +1029,7 @@
     if (guestWarning) {
       if (isGuest) {
         guestWarning.style.display = "block";
-        const idSpan = getEl("guest-store-session-id");
+        const idSpan = getEl("guest-store-session-id") || getEl("guest-session-id-display");
         if (idSpan) idSpan.textContent = guestSessionId || "GUEST-SESSION";
         const labelSpan = getEl("guest-store-session-label");
         if (labelSpan) labelSpan.textContent = guestSessionId || "Session ID";
@@ -1037,6 +1037,7 @@
         guestWarning.style.display = "none";
       }
     }
+    updatePayPalValidation();
   };
 
   global.closeStoreModal = function () {
@@ -1111,13 +1112,9 @@
     }
 
     if (isGuest) {
-      const proceed = window.confirm(
-        "⚠️ GUEST PURCHASE WARNING\n\n" +
-        "You are logged in as a Guest (Session ID: " + (guestSessionId || "Unknown") + ").\n\n" +
-        "WARNING: If your session expires, your bankroll will be automatically reset to $500 in the database!\n\n" +
-        "Do you want to proceed with purchasing credits as a guest?"
-      );
-      if (!proceed) {
+      const guestAck = getEl("accept-guest-check");
+      if (guestAck && !guestAck.checked) {
+        global.showNotification("Please acknowledge the Guest Player Notice before proceeding.", false);
         return;
       }
     }
@@ -1156,89 +1153,129 @@
     }
   };
 
+  let paypalActions = null;
+
+  function updatePayPalValidation() {
+    if (!paypalActions) return;
+    const terms = getEl("accept-terms-check");
+    const guestAck = getEl("accept-guest-check");
+    const termsOk = !terms || terms.checked;
+    const guestOk = !isGuest || !guestAck || guestAck.checked;
+    if (termsOk && guestOk) {
+      if (typeof paypalActions.enable === "function") paypalActions.enable();
+    } else {
+      if (typeof paypalActions.disable === "function") paypalActions.disable();
+    }
+  }
+
   function renderPayPalButtons() {
     if (paypalButtonsRendered || typeof paypal === "undefined") return;
 
     paypal.Buttons({
       style: { layout: "vertical", color: "gold", shape: "rect", label: "pay" },
+      onInit: function (data, actions) {
+        paypalActions = actions;
+        updatePayPalValidation();
+
+        const termsEl = getEl("accept-terms-check");
+        if (termsEl && !termsEl._hasPayPalListener) {
+          termsEl.addEventListener("change", updatePayPalValidation);
+          termsEl._hasPayPalListener = true;
+        }
+        const guestEl = getEl("accept-guest-check");
+        if (guestEl && !guestEl._hasPayPalListener) {
+          guestEl.addEventListener("change", updatePayPalValidation);
+          guestEl._hasPayPalListener = true;
+        }
+      },
       onClick: function (data, actions) {
         const terms = getEl("accept-terms-check");
+        const guestAck = getEl("accept-guest-check");
         if (terms && !terms.checked) {
           global.showNotification("Accept Terms of Service before continuing.", false);
-          return actions.reject();
+        } else if (isGuest && guestAck && !guestAck.checked) {
+          global.showNotification("Please acknowledge the Guest Player Notice before continuing.", false);
         }
-        if (isGuest) {
-          const proceed = window.confirm(
-            "⚠️ GUEST PURCHASE WARNING\n\n" +
-            "You are logged in as a Guest (Session ID: " + (guestSessionId || "Unknown") + ").\n\n" +
-            "WARNING: If your session expires, your bankroll will be automatically reset to $500 in the database!\n\n" +
-            "Do you want to proceed with purchasing credits as a guest?"
-          );
-          if (!proceed) {
-            return actions.reject();
-          }
-        }
-        return actions.resolve();
       },
       createOrder: async function () {
-        const res = await secureFetchApi(API_BASE + "/paypal_api.php?action=create_order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          encrypt: true,
-          body: { 
-            package: selectedPackageCredits, 
-            user_id: userId, 
-            email: userEmail,
-            is_guest: isGuest,
-            guest_session_id: guestSessionId,
-            guest_token: guestToken
+        try {
+          const res = await secureFetchApi(API_BASE + "/paypal_api.php?action=create_order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            encrypt: true,
+            body: { 
+              package: selectedPackageCredits, 
+              user_id: userId, 
+              email: userEmail,
+              is_guest: isGuest,
+              guest_session_id: guestSessionId,
+              guest_token: guestToken
+            }
+          });
+          const orderData = await res.json();
+          if (!orderData.success) {
+            global.showNotification("Order creation failed: " + (orderData.message || "Unknown error"), false);
+            throw new Error(orderData.message || "Order creation failed");
           }
-        });
-        const orderData = await res.json();
-        if (!orderData.success) throw new Error(orderData.message);
-        return orderData.orderID;
-      },
-      onApprove: async function (data) {
-        const purchaseReportPayload = {
-          event: "PAYPAL_ON_APPROVE",
-          orderID: data.orderID,
-          payerID: data.payerID || null,
-          paymentID: data.paymentID || null,
-          package_credits: selectedPackageCredits,
-          client_timestamp: new Date().toISOString(),
-          user_agent: navigator.userAgent
-        };
-        const res = await secureFetchApi(API_BASE + "/paypal_api.php?action=capture_order", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          encrypt: true,
-          body: {
-            orderID: data.orderID,
-            package: selectedPackageCredits,
-            user_id: userId,
-            email: userEmail,
-            is_guest: isGuest,
-            guest_session_id: guestSessionId,
-            guest_token: guestToken,
-            purchase_report: purchaseReportPayload
-          }
-        });
-        const captureData = await res.json();
-        if (captureData.success) {
-          userBank = parseFloat(captureData.new_bank);
-          const bankDisplay = getEl("bank-display");
-          if (bankDisplay) bankDisplay.textContent = userBank;
-          syncBankToServer(userBank);
-          global.showNotification(captureData.message, true);
-          global.closeStoreModal();
-        } else {
-          global.showNotification("Capture Error: " + captureData.message, false);
+          return orderData.orderID;
+        } catch (err) {
+          global.showNotification("Unable to start PayPal checkout: " + err.message, false);
+          throw err;
         }
       },
+      onApprove: async function (data) {
+        try {
+          const purchaseReportPayload = {
+            event: "PAYPAL_ON_APPROVE",
+            orderID: data.orderID,
+            payerID: data.payerID || null,
+            paymentID: data.paymentID || null,
+            package_credits: selectedPackageCredits,
+            client_timestamp: new Date().toISOString(),
+            user_agent: navigator.userAgent
+          };
+          const res = await secureFetchApi(API_BASE + "/paypal_api.php?action=capture_order", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            encrypt: true,
+            body: {
+              orderID: data.orderID,
+              package: selectedPackageCredits,
+              user_id: userId,
+              email: userEmail,
+              is_guest: isGuest,
+              guest_session_id: guestSessionId,
+              guest_token: guestToken,
+              purchase_report: purchaseReportPayload
+            }
+          });
+          const captureData = await res.json();
+          if (captureData.success) {
+            userBank = parseFloat(captureData.new_bank);
+            const bankDisplay = getEl("bank-display");
+            if (bankDisplay) bankDisplay.textContent = userBank;
+            syncBankToServer(userBank);
+            global.showNotification(captureData.message || "Purchase completed! Credits added.", true);
+            global.closeStoreModal();
+          } else {
+            global.showNotification("Capture Error: " + captureData.message, false);
+          }
+        } catch (err) {
+          global.showNotification("Capture failed: " + err.message, false);
+        }
+      },
+      onCancel: function (data) {
+        console.warn("PayPal checkout cancelled by user:", data);
+        global.showNotification("PayPal checkout cancelled.", false);
+      },
       onError: function (err) {
-        global.showNotification("Payment error: " + err, false);
+        console.error("PayPal Error:", err);
+        const errStr = String(err || "");
+        if (!errStr.includes("popup close") && !errStr.includes("window closed")) {
+          global.showNotification("Payment error: " + (err.message || err), false);
+        }
       }
     }).render("#paypal-button-container");
 

@@ -1363,7 +1363,13 @@
 
       <!-- GUEST STORE WARNING BANNER -->
       <div id="guest-store-warning" style="display: none; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 0.82rem; color: #fef08a; line-height: 1.45;">
-        ⚠️ <strong>Guest Player Notice:</strong> You are playing as a guest (Session: <code id="guest-session-id-display" style="background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #fff; font-weight: 700;"></code>). You can buy credits, but if your session expires, your bankroll will be reset to $500.
+        <div style="margin-bottom: 6px;">
+          ⚠️ <strong>Guest Player Notice:</strong> You are playing as a guest (Session: <code id="guest-store-session-id" style="background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #fff; font-weight: 700;"></code>). You can buy credits, but if your session expires, your bankroll will be reset to $500.
+        </div>
+        <label style="display: flex; align-items: center; gap: 8px; margin-top: 6px; cursor: pointer; color: #fef08a; font-weight: 600;">
+          <input type="checkbox" id="accept-guest-check" checked style="margin: 0; cursor: pointer;">
+          <span>I understand my guest bankroll resets if my session expires</span>
+        </label>
       </div>
 
       <div class="package-grid">
@@ -1633,8 +1639,8 @@
   <script src="js/crypto_transport.js"></script>
   <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
   <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="crypto_transport.js"><\/script>'); }</script>
-  <script src="js/blackjack.js"></script>
-  <script>if (typeof window.checkPasswordRules === 'undefined') { document.write('<script src="../js/blackjack.js"><\/script>'); }</script>
-  <script>if (typeof window.checkPasswordRules === 'undefined') { document.write('<script src="blackjack.js"><\/script>'); }</script>
+  <script src="js/blackjack.js?v=2.2"></script>
+  <script>if (typeof window.checkPasswordRules === 'undefined') { document.write('<script src="../js/blackjack.js?v=2.2"><\/script>'); }</script>
+  <script>if (typeof window.checkPasswordRules === 'undefined') { document.write('<script src="blackjack.js?v=2.2"><\/script>'); }</script>
 </body>
 </html>

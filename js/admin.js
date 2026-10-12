@@ -547,6 +547,39 @@
       }
   }
 
+  function updateGuestLoginsDisplay(data) {
+      if (!data) return;
+      const total = data.guest_logins_total !== undefined ? Number(data.guest_logins_total) : (data.total_guest_logins !== undefined ? Number(data.total_guest_logins) : null);
+      const today = data.guest_logins_today !== undefined ? Number(data.guest_logins_today) : null;
+      const active = data.guest_active_24h !== undefined ? Number(data.guest_active_24h) : null;
+      const dbCount = data.guest_db_count !== undefined ? Number(data.guest_db_count) : null;
+
+      if (total !== null) {
+          const elHeader = document.getElementById('adminGuestLoginCount');
+          if (elHeader) elHeader.textContent = total.toLocaleString();
+          const elTotal = document.getElementById('adminGuestTotalText');
+          if (elTotal) elTotal.textContent = total.toLocaleString();
+          const elStat = document.getElementById('adminGuestStatDisplay');
+          if (elStat) elStat.textContent = total.toLocaleString();
+      }
+      if (today !== null) {
+          const elToday = document.getElementById('adminGuestTodayText');
+          if (elToday) elToday.textContent = today.toLocaleString();
+          const elStatToday = document.getElementById('adminGuestStatTodayDisplay');
+          if (elStatToday) elStatToday.textContent = today.toLocaleString();
+      }
+      if (active !== null) {
+          const elActive = document.getElementById('adminGuestActiveText');
+          if (elActive) elActive.textContent = active.toLocaleString();
+          const elStatActive = document.getElementById('adminGuestStatActiveDisplay');
+          if (elStatActive) elStatActive.textContent = active.toLocaleString();
+      }
+      if (dbCount !== null) {
+          const elDb = document.getElementById('adminGuestDbText');
+          if (elDb) elDb.textContent = dbCount.toLocaleString();
+      }
+  }
+
   /* --- TAB 2: BLACKJACK USERS MANAGEMENT --- */
   async function fetchBlackjackUsers() {
       const container = document.getElementById('adminUsersList');
@@ -575,6 +608,7 @@
 
           if (data && data.success && Array.isArray(data.users)) {
               allBlackjackUsers = data.users;
+              updateGuestLoginsDisplay(data);
               const delReqs = Array.isArray(data.deletion_requests) ? data.deletion_requests : (Array.isArray(data.requests) ? data.requests : null);
               if (delReqs) {
                   allDeletionRequests = delReqs;
@@ -606,7 +640,7 @@
 
   function setUserFilter(filter) {
       activeUserFilter = (filter || 'ALL').toUpperCase();
-      ['All', 'Active', 'Banned', 'Reset'].forEach(f => {
+      ['All', 'Active', 'Banned', 'Guests', 'Reset'].forEach(f => {
           const btn = document.getElementById('userFilter' + f);
           if (btn) {
               if (f.toUpperCase() === activeUserFilter) {
@@ -615,6 +649,10 @@
                       btn.style.background = 'rgba(243, 156, 18, 0.25)';
                       btn.style.color = '#fed7aa';
                       btn.style.borderColor = '#f39c12';
+                  } else if (f === 'Guests') {
+                      btn.style.background = 'rgba(52, 152, 219, 0.25)';
+                      btn.style.color = '#93c5fd';
+                      btn.style.borderColor = '#3498db';
                   } else {
                       btn.style.background = 'rgba(255, 215, 0, 0.2)';
                       btn.style.color = 'var(--gold-primary)';
@@ -623,8 +661,16 @@
               } else {
                   btn.classList.remove('active');
                   btn.style.background = 'rgba(0, 0, 0, 0.35)';
-                  btn.style.color = (f === 'Reset') ? '#fed7aa' : 'var(--text-muted)';
-                  btn.style.borderColor = (f === 'Reset') ? '#f39c12' : '#334155';
+                  if (f === 'Reset') {
+                      btn.style.color = '#fed7aa';
+                      btn.style.borderColor = '#f39c12';
+                  } else if (f === 'Guests') {
+                      btn.style.color = '#93c5fd';
+                      btn.style.borderColor = '#3498db';
+                  } else {
+                      btn.style.color = 'var(--text-muted)';
+                      btn.style.borderColor = '#334155';
+                  }
               }
           }
       });
@@ -659,6 +705,7 @@
       let countAll = regularUsers.length;
       let countActive = 0;
       let countBanned = 0;
+      let countGuests = 0;
       let countReset = 0;
 
       regularUsers.forEach(u => {
@@ -668,7 +715,9 @@
               (String(r.user_id) === String(u.id) || (r.identifier && r.identifier.toLowerCase() === uIdent))
           );
           const isRawInactive = parseInt(u.is_active, 10) === 0 || parseInt(u.is_banned, 10) === 1;
+          const isGuest = parseInt(u.is_guest, 10) === 1 || uIdent.startsWith('guest_') || (u.username && u.username.toLowerCase().startsWith('guest_'));
 
+          if (isGuest) countGuests++;
           if (hasReset) countReset++;
           if (isRawInactive) {
               countBanned++;
@@ -680,10 +729,12 @@
       const elCountAll = document.getElementById('userCountAll');
       const elCountActive = document.getElementById('userCountActive');
       const elCountBanned = document.getElementById('userCountBanned');
+      const elCountGuests = document.getElementById('userCountGuests');
       const elCountReset = document.getElementById('userCountReset');
       if (elCountAll) elCountAll.textContent = countAll;
       if (elCountActive) elCountActive.textContent = countActive;
       if (elCountBanned) elCountBanned.textContent = countBanned;
+      if (elCountGuests) elCountGuests.textContent = countGuests;
       if (elCountReset) elCountReset.textContent = countReset;
 
       const filtered = regularUsers.filter(u => {
@@ -697,10 +748,12 @@
               (String(r.user_id) === String(u.id) || (r.identifier && r.identifier.toLowerCase() === email))
           );
           const isRawInactive = parseInt(u.is_active, 10) === 0 || parseInt(u.is_banned, 10) === 1;
+          const isGuest = parseInt(u.is_guest, 10) === 1 || email.startsWith('guest_') || (u.username && u.username.toLowerCase().startsWith('guest_'));
 
           if (activeUserFilter === 'RESET') return hasReset;
           if (activeUserFilter === 'BANNED') return isRawInactive;
           if (activeUserFilter === 'ACTIVE') return !isRawInactive;
+          if (activeUserFilter === 'GUESTS') return isGuest;
           return true; // 'ALL'
       });
 
@@ -721,6 +774,7 @@
 
           const isRawInactive = parseInt(user.is_active, 10) === 0 || parseInt(user.is_banned, 10) === 1;
           const isBanned = isRawInactive;
+          const isGuestUser = parseInt(user.is_guest, 10) === 1 || userIdent.startsWith('guest_') || (user.username && user.username.toLowerCase().startsWith('guest_'));
 
           const card = document.createElement('div');
           card.className = `user-card ${isBanned ? 'banned' : ''}`;
@@ -729,6 +783,12 @@
           let statusBadgeHtml = '';
           let banToggleHtml = '';
           let deleteBtnHtml = '';
+
+          const guestBadgeHtml = isGuestUser ? `
+              <span class="badge-status" style="background: rgba(52, 152, 219, 0.2); border: 1px solid #3498db; color: #93c5fd; font-weight: 700; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem;" title="Guest account">
+                  👤 GUEST
+              </span>
+          ` : '';
 
           const resetBadgeHtml = hasPendingReset ? `
               <span class="badge-status badge-reset" style="background: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; font-weight: 700; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem;" title="User has requested a password reset. Token active.">
@@ -770,6 +830,7 @@
                       #${user.id} — <span id="user_display_${user.id}">${escapeHtml(user.email || user.username)}</span>
                   </div>
                   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                      ${guestBadgeHtml}
                       ${resetBadgeHtml}
                       ${statusBadgeHtml}
                       <span style="font-size: 0.72rem; color: var(--text-muted);">${user.created_at ? user.created_at.split(' ')[0] : ''}</span>
@@ -1018,6 +1079,7 @@
       try {
           const data = await callAdminApi('get_dashboard_data', { admin_key: adminKey, admin_password: adminKey });
           if (data && data.success) {
+              updateGuestLoginsDisplay(data);
               if (data.android_simulation_mode !== undefined) {
                   androidSimulationMode = Boolean(data.android_simulation_mode);
               }
@@ -1079,6 +1141,7 @@
           try {
               const data = await callAdminApi('get_mode', null, 'GET');
               if (data && data.success) {
+                  updateGuestLoginsDisplay(data);
                   if (data.android_simulation_mode !== undefined) {
                       androidSimulationMode = Boolean(data.android_simulation_mode);
                   }
@@ -2073,6 +2136,7 @@
   global.executePurgeUser = executePurgeUser;
   global.setUserFilter = setUserFilter;
   global.quickAddBankroll = quickAddBankroll;
+  global.updateGuestLoginsDisplay = updateGuestLoginsDisplay;
   global.fetchStoreSettings = fetchStoreSettings;
   global.handleStoreToggleChange = handleStoreToggleChange;
   global.saveStoreSettings = saveStoreSettings;

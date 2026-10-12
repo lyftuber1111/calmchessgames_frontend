@@ -2126,10 +2126,26 @@
       try {
           const res = await callAdminApi('get_appointments', { admin_key: adminKey });
           if (res && res.success) {
-              const data = res.data || {};
-              allAppointments = Array.isArray(data.appointments) ? data.appointments : [];
-              allContactMessages = Array.isArray(data.contact_messages) ? data.contact_messages : [];
-              const stats = data.stats || {};
+              const data = res.data || res || {};
+              allAppointments = Array.isArray(data.appointments)
+                  ? data.appointments
+                  : (Array.isArray(res.appointments) ? res.appointments : []);
+              allContactMessages = Array.isArray(data.contact_messages)
+                  ? data.contact_messages
+                  : (Array.isArray(data.messages)
+                      ? data.messages
+                      : (Array.isArray(res.contact_messages)
+                          ? res.contact_messages
+                          : (Array.isArray(res.messages) ? res.messages : [])));
+              const rawStats = data.stats || res.stats || {};
+              const stats = {
+                  today: rawStats.today !== undefined ? rawStats.today : (rawStats.today_count !== undefined ? rawStats.today_count : 0),
+                  confirmed: rawStats.confirmed !== undefined ? rawStats.confirmed : (rawStats.confirmed_count !== undefined ? rawStats.confirmed_count : 0),
+                  pending: rawStats.pending !== undefined ? rawStats.pending : (rawStats.pending_count !== undefined ? rawStats.pending_count : 0),
+                  completed: rawStats.completed !== undefined ? rawStats.completed : (rawStats.completed_count !== undefined ? rawStats.completed_count : 0),
+                  cancelled: rawStats.cancelled !== undefined ? rawStats.cancelled : (rawStats.cancelled_count !== undefined ? rawStats.cancelled_count : 0),
+                  total: rawStats.total !== undefined ? rawStats.total : (rawStats.total_count !== undefined ? rawStats.total_count : allAppointments.length)
+              };
 
               const todayEl = document.getElementById('appTodayCountDisplay');
               const confEl = document.getElementById('appConfirmedCountDisplay');
@@ -2138,13 +2154,13 @@
               const totalEl = document.getElementById('appTotalCountDisplay');
               const badgeEl = document.getElementById('appBadge');
 
-              if (todayEl) todayEl.textContent = stats.today || 0;
-              if (confEl) confEl.textContent = stats.confirmed || 0;
-              if (pendEl) pendEl.textContent = stats.pending || 0;
-              if (msgsEl) msgsEl.textContent = (data.unread_messages !== undefined ? data.unread_messages : allContactMessages.length);
-              if (totalEl) totalEl.textContent = stats.total || allAppointments.length;
+              if (todayEl) todayEl.textContent = stats.today;
+              if (confEl) confEl.textContent = stats.confirmed;
+              if (pendEl) pendEl.textContent = stats.pending;
+              if (msgsEl) msgsEl.textContent = (data.unread_messages !== undefined ? data.unread_messages : (res.unread_messages !== undefined ? res.unread_messages : allContactMessages.length));
+              if (totalEl) totalEl.textContent = stats.total;
 
-              const attentionCount = (stats.pending || 0) + (data.unread_messages || 0);
+              const attentionCount = (parseInt(stats.pending, 10) || 0) + (parseInt(data.unread_messages !== undefined ? data.unread_messages : (res.unread_messages || 0), 10) || 0);
               if (badgeEl) {
                   if (attentionCount > 0) {
                       badgeEl.textContent = attentionCount;

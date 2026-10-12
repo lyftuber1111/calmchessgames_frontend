@@ -2101,6 +2101,11 @@
   global.setMessageFilter = setMessageFilter;
   global.renderContactMessages = renderContactMessages;
   global.updateContactMessageStatus = updateContactMessageStatus;
+  global.toggleSelectAllContactMessages = toggleSelectAllContactMessages;
+  global.onContactMessageCheckboxChange = onContactMessageCheckboxChange;
+  global.updateSelectedContactMessagesCount = updateSelectedContactMessagesCount;
+  global.deleteContactMessage = deleteContactMessage;
+  global.deleteSelectedContactMessages = deleteSelectedContactMessages;
   global.openNewAppointmentModal = openNewAppointmentModal;
   global.openEditAppointmentModal = openEditAppointmentModal;
   global.closeAppointmentModal = closeAppointmentModal;
@@ -2349,6 +2354,13 @@
       const tbody = document.getElementById('adminContactMessagesBody');
       if (!tbody) return;
 
+      const selectAll = document.getElementById('selectAllContactMessages');
+      if (selectAll) {
+          selectAll.checked = false;
+          selectAll.indeterminate = false;
+      }
+      updateSelectedContactMessagesCount();
+
       const filtered = allContactMessages.filter(msg => {
           const st = (msg.status || 'unread').toUpperCase();
           if (activeMsgFilter === 'UNREAD' && st !== 'UNREAD') return false;
@@ -2358,7 +2370,7 @@
       });
 
       if (filtered.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="7" style="padding:24px; text-align:center; color:var(--text-muted);">No contact messages match the selected filter.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="8" style="padding:24px; text-align:center; color:var(--text-muted);">No contact messages match the selected filter.</td></tr>';
           return;
       }
 
@@ -2376,6 +2388,9 @@
 
           return `
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <input type="checkbox" class="contact-msg-checkbox" value="${msg.id}" onchange="onContactMessageCheckboxChange()" style="cursor: pointer; width: 16px; height: 16px;">
+                  </td>
                   <td style="padding: 10px 12px; font-weight:700; color:var(--gold-primary);">${msg.id}</td>
                   <td style="padding: 10px 12px; font-size:0.82rem; color:#94a3b8;">${dateStr}</td>
                   <td style="padding: 10px 12px;">
@@ -2394,12 +2409,93 @@
                           <option value="archived" ${st === 'archived' ? 'selected' : ''}>Archived</option>
                       </select>
                   </td>
-                  <td style="padding: 10px 12px; text-align:center;">
-                      <a href="mailto:${safeEmail}?subject=Re:%20${encodeURIComponent(msg.subject || 'Calm Chess Consultation')}" class="btn btn-sm btn-gold" style="padding:4px 8px; font-size:0.78rem; text-decoration:none; display:inline-block;" onclick="updateContactMessageStatus(${msg.id}, 'replied')">✉️ Reply</a>
+                  <td style="padding: 10px 12px; text-align:center; white-space: nowrap;">
+                      <a href="mailto:${safeEmail}?subject=Re:%20${encodeURIComponent(msg.subject || 'Calm Chess Consultation')}" class="btn btn-sm btn-gold" style="padding:4px 8px; font-size:0.78rem; text-decoration:none; display:inline-block; margin-right:4px;" onclick="updateContactMessageStatus(${msg.id}, 'replied')">✉️ Reply</a>
+                      <button class="btn btn-sm" style="background:#ef4444; color:#fff; padding:4px 8px; font-size:0.78rem; border:none; border-radius:4px; cursor:pointer;" onclick="deleteContactMessage(${msg.id})" title="Delete message">🗑️ Delete</button>
                   </td>
               </tr>
           `;
       }).join('');
+  }
+
+  function toggleSelectAllContactMessages(checked) {
+      const checkboxes = document.querySelectorAll('.contact-msg-checkbox');
+      checkboxes.forEach(cb => {
+          cb.checked = checked;
+      });
+      updateSelectedContactMessagesCount();
+  }
+
+  function onContactMessageCheckboxChange() {
+      const allCbs = document.querySelectorAll('.contact-msg-checkbox');
+      const checkedCbs = document.querySelectorAll('.contact-msg-checkbox:checked');
+      const selectAll = document.getElementById('selectAllContactMessages');
+      if (selectAll) {
+          selectAll.checked = allCbs.length > 0 && checkedCbs.length === allCbs.length;
+          selectAll.indeterminate = checkedCbs.length > 0 && checkedCbs.length < allCbs.length;
+      }
+      updateSelectedContactMessagesCount();
+  }
+
+  function updateSelectedContactMessagesCount() {
+      const checkedCbs = document.querySelectorAll('.contact-msg-checkbox:checked');
+      const count = checkedCbs.length;
+      const btn = document.getElementById('btnDeleteSelectedMessages');
+      const countSpan = document.getElementById('selectedMsgCount');
+      if (countSpan) countSpan.textContent = count;
+      if (btn) {
+          btn.style.display = count > 0 ? 'inline-flex' : 'none';
+      }
+  }
+
+  async function deleteContactMessage(id) {
+      if (!id) return;
+      if (!confirm(`Are you sure you want to delete contact message #${id}?`)) {
+          return;
+      }
+      const adminKey = getAdminKey();
+      try {
+          const res = await callAdminApi('delete_contact_message', {
+              admin_key: adminKey,
+              id: id
+          });
+          if (res && res.success) {
+              allContactMessages = allContactMessages.filter(m => Number(m.id) !== Number(id));
+              renderContactMessages();
+          } else {
+              alert('Failed to delete message: ' + (res && res.message ? res.message : 'Unknown error'));
+          }
+      } catch (err) {
+          alert('Error deleting message: ' + err.message);
+      }
+  }
+
+  async function deleteSelectedContactMessages() {
+      const checkedCbs = Array.from(document.querySelectorAll('.contact-msg-checkbox:checked'));
+      const ids = checkedCbs.map(cb => parseInt(cb.value, 10)).filter(id => !isNaN(id) && id > 0);
+      if (ids.length === 0) {
+          alert('Please select at least one contact message to delete.');
+          return;
+      }
+      if (!confirm(`Are you sure you want to delete the ${ids.length} selected contact message(s)? This action cannot be undone.`)) {
+          return;
+      }
+      const adminKey = getAdminKey();
+      try {
+          const res = await callAdminApi('delete_contact_messages', {
+              admin_key: adminKey,
+              ids: ids
+          });
+          if (res && res.success) {
+              const idSet = new Set(ids.map(Number));
+              allContactMessages = allContactMessages.filter(m => !idSet.has(Number(m.id)));
+              renderContactMessages();
+          } else {
+              alert('Failed to delete messages: ' + (res && res.message ? res.message : 'Unknown error'));
+          }
+      } catch (err) {
+          alert('Error deleting messages: ' + err.message);
+      }
   }
 
   async function updateContactMessageStatus(id, newStatus) {

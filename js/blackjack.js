@@ -506,8 +506,8 @@
         pwdInput.setAttribute("autocomplete", "new-password");
       }
       if (submitBtn) submitBtn.textContent = "Register & Play";
-      if (idLabel) idLabel.textContent = "Email Address";
-      if (idInput) idInput.placeholder = "player@calmchessgames.com";
+      if (idLabel) idLabel.textContent = "Username / Email";
+      if (idInput) idInput.placeholder = "Username or email";
       const pwdVal = pwdInput ? pwdInput.value : "";
       global.checkPasswordRules(pwdVal);
     } else {
@@ -528,8 +528,8 @@
         pwdInput.setAttribute("autocomplete", "current-password");
       }
       if (submitBtn) submitBtn.textContent = "Sign In";
-      if (idLabel) idLabel.textContent = "Username or Email";
-      if (idInput) idInput.placeholder = "username or email";
+      if (idLabel) idLabel.textContent = "Username / Email";
+      if (idInput) idInput.placeholder = "Username or email";
     }
     clearAuthAlert();
   };
@@ -593,6 +593,12 @@
     const confirmInput = getEl("auth-password-confirm");
     const confirmPassword = confirmInput ? confirmInput.value : "";
 
+    if (currentAuthTab === "register" && userId) {
+      global.switchAuthTab("login");
+      showAuthAlert("You are already logged in to an active session. Switched to Sign In tab.", "switch-badge");
+      return;
+    }
+
     if (currentAuthTab === "register") {
       if (password !== confirmPassword) {
         showAuthAlert("Passwords do not match. Please verify your password.", true);
@@ -651,6 +657,26 @@
         data = JSON.parse(rawText);
       } catch (jsonErr) {
         showAuthAlert("Server Error (" + res.status + "): " + rawText.replace(/<[^>]*>?/gm, "").trim(), true);
+        return;
+      }
+
+      const isAlreadyLoggedIn = (data && (
+        data.error_code === "ALREADY_LOGGED_IN" ||
+        (data.data && data.data.error_code === "ALREADY_LOGGED_IN") ||
+        (data.message && /already\s+(logged|signed)\s+in/i.test(data.message))
+      ));
+
+      if (isAlreadyLoggedIn) {
+        // Automatically switch to Sign In tab
+        global.switchAuthTab("login");
+        const idField = getEl("auth-identifier");
+        if (idField && identifier) {
+          idField.value = identifier;
+        }
+        const badgeMsg = (data && data.message)
+          ? data.message + " Switched to Sign In tab."
+          : "You are already logged in to an active session. Switched to Sign In tab.";
+        showAuthAlert(badgeMsg, "switch-badge");
         return;
       }
 
@@ -908,11 +934,26 @@
         return orderData.orderID;
       },
       onApprove: async function (data) {
+        const purchaseReportPayload = {
+          event: "PAYPAL_ON_APPROVE",
+          orderID: data.orderID,
+          payerID: data.payerID || null,
+          paymentID: data.paymentID || null,
+          package_credits: selectedPackageCredits,
+          client_timestamp: new Date().toISOString(),
+          user_agent: navigator.userAgent
+        };
         const res = await secureFetchApi(API_BASE + "/paypal_api.php?action=capture_order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: { orderID: data.orderID, package: selectedPackageCredits, user_id: userId, email: userEmail }
+          body: {
+            orderID: data.orderID,
+            package: selectedPackageCredits,
+            user_id: userId,
+            email: userEmail,
+            purchase_report: purchaseReportPayload
+          }
         });
         const captureData = await res.json();
         if (captureData.success) {

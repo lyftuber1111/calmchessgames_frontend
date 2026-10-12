@@ -181,6 +181,8 @@
     const alertEl = document.getElementById("alert-email-req");
     const submitBtn = document.getElementById("btn-submit-send-email");
     const idInput = document.getElementById("email-req-identifier");
+    const groupDest = document.getElementById("group-dest-email");
+    const destInput = document.getElementById("email-req-dest-email");
     if (!alertEl || !submitBtn || !idInput) return;
 
     const identifier = idInput.value.trim();
@@ -192,15 +194,39 @@
       return;
     }
 
+    const payload = { identifier: identifier };
+
+    // If destination email field is visible, validate and send destination_email
+    if (groupDest && groupDest.style.display !== "none") {
+      const destEmail = destInput ? destInput.value.trim() : "";
+      if (!destEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destEmail)) {
+        alertEl.className = "status-alert error";
+        alertEl.textContent = "Please enter a valid email address to receive your password reset verification code.";
+        alertEl.style.display = "block";
+        if (destInput) destInput.focus();
+        return;
+      }
+      payload.destination_email = destEmail;
+    }
+
     alertEl.style.display = "none";
     submitBtn.disabled = true;
     submitBtn.textContent = "Dispatching Authentication Email...";
 
     try {
-      const data = await postApiEncrypted("send_reset_email", { identifier: identifier });
+      const data = await postApiEncrypted("send_reset_email", payload);
 
       submitBtn.disabled = false;
       submitBtn.textContent = "Send Authentication Email";
+
+      if (data && data.requires_email) {
+        if (groupDest) groupDest.style.display = "block";
+        alertEl.className = "status-alert info";
+        alertEl.textContent = (data && data.message) ? data.message : "This account was registered with only a username. Please provide an email address to receive your password reset code.";
+        alertEl.style.display = "block";
+        if (destInput) destInput.focus();
+        return;
+      }
 
       if (data && data.success) {
         // Transition to complete step
@@ -213,7 +239,7 @@
         if (stepComp) stepComp.style.display = "block";
 
         if (compIdInput) {
-          compIdInput.value = (data.data && data.data.email) ? data.data.email : identifier;
+          compIdInput.value = (data.data && data.data.email) ? data.data.email : (payload.destination_email || identifier);
         }
 
         if (compCodeInput) {

@@ -1357,11 +1357,13 @@
               const orderId = (p.order_id || p.paypal_order_id || '').toLowerCase();
               const productId = (p.product_id || '').toLowerCase();
               const token = (p.purchase_token || '').toLowerCase();
+              const report = (p.purchase_report || '').toLowerCase();
               const id = String(p.id || '');
               return email.includes(activePurchaseSearchTerm) ||
                      orderId.includes(activePurchaseSearchTerm) ||
                      productId.includes(activePurchaseSearchTerm) ||
                      token.includes(activePurchaseSearchTerm) ||
+                     report.includes(activePurchaseSearchTerm) ||
                      id.includes(activePurchaseSearchTerm);
           });
       }
@@ -1402,11 +1404,19 @@
           const productIdDisplay = p.product_id || ('credits_' + p.credits_added);
           const dateDisplay = p.created_at ? p.created_at.split(' ')[0] : '';
 
-          const userEmailText = p.email || ('User #' + p.user_id);
+          const isDeletedUser = !p.user_id || p.user_id === 0 || p.email === '[Deleted User - 7-Yr Retained]' || String(p.email).includes('Deleted User') || p.email === 'User #null';
+          let userDisplayHtml = '';
+          if (isDeletedUser) {
+              userDisplayHtml = `<span class="badge-status badge-banned" style="font-size: 0.72rem; letter-spacing: 0.5px;">[Deleted User - 7-Yr Retained]</span>`;
+          } else {
+              const userEmailText = escapeHtml(p.email || ('User #' + p.user_id));
+              userDisplayHtml = `<div class="field-scroll-cell" title="${userEmailText}">${userEmailText}</div>`;
+          }
+
           tr.innerHTML = `
               <td style="padding: 10px 12px; font-weight: 600;">#${p.id}</td>
               <td style="padding: 10px 12px; min-width: 220px;">
-                  <div class="field-scroll-cell" title="${userEmailText}">${userEmailText}</div>
+                  ${userDisplayHtml}
               </td>
               <td style="padding: 10px 12px; text-align: center; white-space: nowrap;"><span class="badge-status badge-gateway ${methodBadgeClass}">${methodLabel}</span></td>
               <td style="padding: 10px 12px;">
@@ -1454,6 +1464,11 @@
       const productId = p.product_id || ('credits_' + p.credits_added);
       const purchaseToken = p.purchase_token || '';
 
+      const isDeletedUser = !p.user_id || p.user_id === 0 || p.email === '[Deleted User - 7-Yr Retained]' || String(p.email).includes('Deleted User') || p.email === 'User #null';
+      const playerInfoDisplay = isDeletedUser
+          ? `<span class="badge-status badge-banned" style="font-size: 0.75rem;">[Deleted User - 7-Yr Retained]</span> <span style="color: var(--text-muted); font-size: 0.8rem; margin-left: 6px;">(Account & credentials purged per GDPR/Play compliance; transaction retained for 7-year audit)</span>`
+          : `${escapeHtml(p.email || ('User #' + p.user_id))} (User ID: #${p.user_id})`;
+
       content.innerHTML = `
           <div class="purchase-detail-row">
               <span class="purchase-detail-label">Transaction Record ID</span>
@@ -1471,7 +1486,7 @@
 
           <div class="purchase-detail-row">
               <span class="purchase-detail-label">Player Account Information</span>
-              <span class="purchase-detail-val">${p.email || ('User #' + p.user_id)} (User ID: #${p.user_id})</span>
+              <span class="purchase-detail-val">${playerInfoDisplay}</span>
           </div>
 
           <div class="purchase-detail-row">
@@ -1519,6 +1534,23 @@
               <span class="purchase-detail-label">Transaction Timestamp</span>
               <span class="purchase-detail-val">${p.created_at || 'N/A'}</span>
           </div>
+
+          ${p.purchase_report ? `
+          <div class="purchase-detail-row">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span class="purchase-detail-label" style="color: #34d399; font-weight: 600;">Financial Purchase Report (Verified Audit Payload)</span>
+                  <button class="copy-chip-btn" id="btnCopyReportJson" onclick="copyPurchaseField(decodeURIComponent('${encodeURIComponent(p.purchase_report)}'), this)">Copy Purchase Report</button>
+              </div>
+              <div style="margin-top: 4px;">
+                  <pre style="background: rgba(0,0,0,0.6); border: 1px solid rgba(16,185,129,0.4); border-radius: 4px; padding: 8px 10px; font-family: monospace; font-size: 0.72rem; color: #6ee7b7; max-height: 140px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;">${(()=>{
+                      try {
+                          return JSON.stringify(JSON.parse(p.purchase_report), null, 2);
+                      } catch(e) {
+                          return p.purchase_report;
+                      }
+                  })()}</pre>
+              </div>
+          </div>` : ''}
 
           ${p.raw_response ? `
           <div class="purchase-detail-row">

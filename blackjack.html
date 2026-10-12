@@ -1459,8 +1459,8 @@
 
       <form id="auth-form" onsubmit="event.preventDefault(); handleAuthSubmit(event);">
         <div class="form-group">
-          <label id="auth-id-label">Email Address</label>
-          <input type="text" id="auth-identifier" required autocomplete="username" placeholder="player@calmchessgames.com">
+          <label id="auth-id-label">Username/Email</label>
+          <input type="text" id="auth-identifier" required autocomplete="username" placeholder="Username or email">
         </div>
 
         <div class="form-group">
@@ -1543,8 +1543,6 @@
             <button id="geminiAdvisorBtn" class="hdr-btn gemini-btn muted" onclick="toggleGeminiAdvisor()" title="Toggle Gemini 3.8 Flash AI Dealer & Strategy Advisor">✨ AI OFF</button>
             <button id="audioToggleBtn" class="hdr-btn muted" onclick="toggleAudio()">🔇 Audio OFF</button>
             <button class="hdr-btn buy-chips-hdr-btn" onclick="openStoreModal()">+ Credits</button>
-            <a href="password_reset.html" class="hdr-btn" style="background: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; text-decoration: none;" target="_blank" title="Update / Reset Account Password">Reset Password</a>
-            <a href="delete_account.html" class="hdr-btn del-acc-hdr-btn" target="_blank" title="Request Account Deletion & Permanent Data Purge">Delete Account</a>
             <button class="hdr-btn logout-btn" onclick="executeLogout()">Exit</button>
           </div>
         </div>
@@ -1615,7 +1613,6 @@
       </div>
 
       <div class="table-footer">
-        <a href="delete_account.html" target="_blank" style="color: #94a3b8; text-decoration: underline; margin-right: 14px;">Request Account Deletion</a>
         &copy; 2026 Calm Chess Computers. All Rights Reserved.
       </div>
     </div>

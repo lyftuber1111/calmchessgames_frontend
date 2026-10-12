@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
 -- Table for credit purchases & payment ledger (Supports PayPal, Google Play In-App Billing, and Simulated purchases)
 CREATE TABLE IF NOT EXISTS purchases (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_id INT NULL,
     paypal_order_id VARCHAR(100) NULL,
     order_id VARCHAR(100) NULL,
     product_id VARCHAR(100) NULL,
@@ -169,6 +169,7 @@ CREATE TABLE IF NOT EXISTS purchases (
     status VARCHAR(50) DEFAULT 'COMPLETED',
     payment_method VARCHAR(50) DEFAULT 'PAYPAL',
     raw_response TEXT NULL,
+    purchase_report LONGTEXT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_purchases_order (order_id),
     INDEX idx_purchases_user (user_id),
@@ -222,6 +223,16 @@ SET @sql = IF(@col_exists = 0, 'ALTER TABLE purchases ADD COLUMN payment_method 
 PREPARE stmt6 FROM @sql;
 EXECUTE stmt6;
 DEALLOCATE PREPARE stmt6;
+
+-- 7. Ensure 'purchase_report' exists in 'purchases'
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @dbname AND TABLE_NAME = 'purchases' AND COLUMN_NAME = 'purchase_report');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE purchases ADD COLUMN purchase_report LONGTEXT NULL AFTER raw_response', 'SELECT 1');
+PREPARE stmt7 FROM @sql;
+EXECUTE stmt7;
+DEALLOCATE PREPARE stmt7;
+
+-- 8. Allow 'user_id' in 'purchases' to be NULL for GDPR/Google Play 7-year statutory financial retention
+ALTER TABLE purchases MODIFY COLUMN user_id INT NULL;
 
 -- =============================================================================
 -- 7. DATABASE USER IN-TRANSIT TLS / SSL TRANSPORT SECURITY

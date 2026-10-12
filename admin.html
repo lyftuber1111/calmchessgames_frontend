@@ -530,6 +530,17 @@
                 <button class="btn btn-gold" id="auth-submit-btn" onclick="authenticateAdmin()">Unlock Console</button>
                 <a href="https://calmchessgames.com/index.html" class="btn" style="background: #64748b; text-decoration: none;">Return to Website</a>
             </div>
+
+            <!-- Running Guest Summary Preview on Auth Card -->
+            <div id="authGuestRunningCountBanner" style="margin-top: 18px; padding: 10px 14px; background: rgba(52, 152, 219, 0.08); border: 1px solid rgba(52, 152, 219, 0.3); border-radius: 8px; font-size: 0.85rem; color: #94a3b8; text-align: center;">
+                <span style="color: #5dade2; font-weight: 700;">👥 Running Guest Logins: <span class="guest-total-val" style="color: #fff; font-size: 0.95rem;">0</span></span>
+                <span style="margin: 0 4px; color: var(--text-muted);">|</span>
+                <span>Today: <strong class="guest-today-val" style="color: #a5f3fc;">0</strong></span>
+                <span style="margin: 0 4px; color: var(--text-muted);">|</span>
+                <span>Active (24h): <strong class="guest-active-val" style="color: #86efac;">0</strong></span>
+                <span style="margin: 0 4px; color: var(--text-muted);">|</span>
+                <span>Provisioned in DB: <strong class="guest-db-val" style="color: #fde047;">0</strong></span>
+            </div>
         </div>
 
         <!-- MAIN DASHBOARD CONSOLE (Displayed after authentication) -->
@@ -542,12 +553,21 @@
                     </a>
                     <h2 style="color: var(--gold-primary); margin-bottom: 0;">Admin Console</h2>
                     <span id="adminPendingResetNotificationBadge" class="badge-reset-alert" style="display:none; background:rgba(243, 156, 18, 0.2); border:1px solid #f39c12; color:#f39c12; border-radius:12px; padding:3px 10px; font-size:0.8rem; font-weight:700; align-items:center; gap:5px;">🔑 Resets: <strong id="adminPendingResetCount">0</strong></span>
-                    <span id="adminGuestCountBadge" class="badge-guest-alert" style="background:rgba(52, 152, 219, 0.2); border:1px solid #3498db; color:#5dade2; border-radius:12px; padding:3px 10px; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:5px;" title="Running count of guest logins">👥 Guests: <strong id="adminGuestLoginCount">0</strong></span>
+                    <span id="adminGuestCountBadge" class="badge-guest-alert" style="background:rgba(52, 152, 219, 0.2); border:1px solid #3498db; color:#5dade2; border-radius:12px; padding:3px 10px; font-size:0.8rem; font-weight:700; display:inline-flex; align-items:center; gap:5px;" title="Running count of guest logins">👥 Guests: <strong id="adminGuestLoginCount" class="guest-total-val">0</strong></span>
                 </div>
                 <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                     <a href="https://calmchessgames.com/index.html" id="linkMainRingsHeader" class="btn btn-sm btn-gold" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">← Main Rings (index.html)</a>
                     <button class="btn btn-sm" style="background: #64748b;" onclick="logoutAdmin()">Sign Out</button>
                 </div>
+            </div>
+
+            <!-- Guest Analytics Running Summary Banner (Globally visible across all tabs in dashboard) -->
+            <div id="guestRunningCountBanner" style="display: flex; gap: 14px; align-items: center; background: rgba(52, 152, 219, 0.08); border: 1px solid rgba(52, 152, 219, 0.35); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.88rem; flex-wrap: wrap;">
+                <span style="color: #5dade2; font-weight: 700;">👥 Running Guest Logins: <span id="adminGuestTotalText" class="guest-total-val" style="color: #fff; font-size: 1.05rem;">0</span></span>
+                <span style="color: var(--text-muted);">| Today: <strong id="adminGuestTodayText" class="guest-today-val" style="color: #a5f3fc;">0</strong></span>
+                <span style="color: var(--text-muted);">| Active (24h): <strong id="adminGuestActiveText" class="guest-active-val" style="color: #86efac;">0</strong></span>
+                <span style="color: var(--text-muted);">| Provisioned in DB: <strong id="adminGuestDbText" class="guest-db-val" style="color: #fde047;">0</strong></span>
+                <span style="color: #64748b; font-size: 0.8rem; margin-left: auto;">Option 1: 0 DB rows for trial players</span>
             </div>
 
             <!-- Tab Switcher -->
@@ -617,15 +637,6 @@
                         <button class="filter-pill" id="userFilterGuests" onclick="setUserFilter('GUESTS')" style="border-color: #3498db; color: #93c5fd;">👥 Guests (<span id="userCountGuests">0</span>)</button>
                         <button class="filter-pill" id="userFilterReset" onclick="setUserFilter('RESET')" style="border-color: #f39c12; color: #fed7aa;">🔑 Reset Requested (<span id="userCountReset">0</span>)</button>
                     </div>
-                </div>
-
-                <!-- Guest Analytics Running Summary Banner -->
-                <div id="guestRunningCountBanner" style="display: flex; gap: 14px; align-items: center; background: rgba(52, 152, 219, 0.08); border: 1px solid rgba(52, 152, 219, 0.35); border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; font-size: 0.88rem; flex-wrap: wrap;">
-                    <span style="color: #5dade2; font-weight: 700;">👥 Running Guest Logins: <span id="adminGuestTotalText" style="color: #fff; font-size: 1.05rem;">0</span></span>
-                    <span style="color: var(--text-muted);">| Today: <strong id="adminGuestTodayText" style="color: #a5f3fc;">0</strong></span>
-                    <span style="color: var(--text-muted);">| Active (24h): <strong id="adminGuestActiveText" style="color: #86efac;">0</strong></span>
-                    <span style="color: var(--text-muted);">| Provisioned in DB: <strong id="adminGuestDbText" style="color: #fde047;">0</strong></span>
-                    <span style="color: #64748b; font-size: 0.8rem; margin-left: auto;">Option 1: 0 DB rows for trial players</span>
                 </div>
 
                 <!-- Create User Sub-Panel -->

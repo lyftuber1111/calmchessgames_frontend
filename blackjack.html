@@ -1399,6 +1399,9 @@
           ✔ Simulation Mode Active (No actual payment card charged)
         </div>
         <button id="sim-buy-btn" class="auth-btn" onclick="executeSimulatedPurchase()">Add Credits (Simulated $4.99)</button>
+        <div id="sim-limit-banner" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: 0.8rem; text-align: center; color: #fca5a5; line-height: 1.4;">
+          🔒 <span id="sim-limit-banner-msg">Simulated credit limit reached (Max 6,000 credits). Switch to live PayPal to purchase more credits.</span>
+        </div>
       </div>
 
       <div id="paypal-live-container" style="display: none; flex-direction: column; gap: 8px;">

@@ -982,6 +982,107 @@
   };
 
   let androidSimulationMode = false;
+  let simCreditsPurchased = 0;
+  const MAX_SIMULATED_CREDITS = 6000;
+
+  function getSimCreditsStorageKey() {
+    if (isGuest) {
+      return "cc_sim_credits_guest_" + (guestSessionId || "guest");
+    }
+    return "cc_sim_credits_user_" + (userId || userEmail || "default");
+  }
+
+  function getLocalSimCredits() {
+    try {
+      const val = localStorage.getItem(getSimCreditsStorageKey());
+      return val ? parseInt(val, 10) || 0 : 0;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  function setLocalSimCredits(amt) {
+    try {
+      localStorage.setItem(getSimCreditsStorageKey(), String(amt));
+    } catch (e) {}
+  }
+
+  function updateSimulatedPurchaseButtonState() {
+    const simBtn = getEl("sim-buy-btn");
+    const limitBanner = getEl("sim-limit-banner");
+    const limitMsg = getEl("sim-limit-banner-msg");
+    if (!simBtn) return;
+
+    // If simulation mode is toggled OFF, re-enable the button and reset state
+    if (!simulationMode) {
+      simBtn.disabled = false;
+      simBtn.style.opacity = "1";
+      simBtn.style.cursor = "pointer";
+      simBtn.style.background = "";
+      simBtn.textContent = "Add Credits (Simulated $" + selectedPackagePrice + ")";
+      if (limitBanner) limitBanner.style.display = "none";
+      return;
+    }
+
+    // When simulation mode is enabled, enforce 6,000 credit cap
+    const currentSim = Math.max(simCreditsPurchased, getLocalSimCredits());
+    const exceedsLimit = (currentSim >= MAX_SIMULATED_CREDITS) || (currentSim + selectedPackageCredits > MAX_SIMULATED_CREDITS);
+
+    if (exceedsLimit) {
+      simBtn.disabled = true;
+      simBtn.style.opacity = "0.55";
+      simBtn.style.cursor = "not-allowed";
+      simBtn.style.background = "#64748b";
+
+      if (currentSim >= MAX_SIMULATED_CREDITS) {
+        simBtn.textContent = `Simulation Limit Reached (6,000 / ${MAX_SIMULATED_CREDITS.toLocaleString()} Credits)`;
+        if (limitBanner) {
+          limitBanner.style.display = "block";
+          if (limitMsg) {
+            limitMsg.innerHTML = `🔒 <strong>Simulation Limit Reached:</strong> You have reached the maximum allowed <strong>${MAX_SIMULATED_CREDITS.toLocaleString()}</strong> simulated credits. Please toggle off simulation mode in Admin settings to purchase live credits.`;
+          }
+        }
+      } else {
+        const remaining = Math.max(0, MAX_SIMULATED_CREDITS - currentSim);
+        simBtn.textContent = `Limit Exceeded (${selectedPackageCredits.toLocaleString()} > ${remaining.toLocaleString()} left)`;
+        if (limitBanner) {
+          limitBanner.style.display = "block";
+          if (limitMsg) {
+            limitMsg.innerHTML = `⚠️ <strong>Package Exceeds Cap:</strong> You currently have <strong>${currentSim.toLocaleString()}</strong> simulated credits (Cap: <strong>${MAX_SIMULATED_CREDITS.toLocaleString()}</strong>, Remaining: <strong>${remaining.toLocaleString()}</strong>). Please select a smaller package or toggle off simulation mode.`;
+          }
+        }
+      }
+    } else {
+      simBtn.disabled = false;
+      simBtn.style.opacity = "1";
+      simBtn.style.cursor = "pointer";
+      simBtn.style.background = "";
+      simBtn.textContent = "Add Credits (Simulated $" + selectedPackagePrice + ")";
+      if (limitBanner) limitBanner.style.display = "none";
+    }
+  }
+
+  async function syncSimulatedCreditsFromServer() {
+    try {
+      const params = new URLSearchParams();
+      if (userId) params.set("user_id", String(userId));
+      if (userEmail) params.set("email", userEmail);
+      if (isGuest) {
+        params.set("is_guest", "1");
+        if (guestSessionId) params.set("guest_session_id", guestSessionId);
+      }
+      const res = await fetch(API_BASE + "/admin_api.php?action=get_simulated_credits&" + params.toString(), {
+        method: "GET",
+        credentials: "include"
+      });
+      const data = await res.json();
+      if (data && data.success && data.simulated_credits_total !== undefined) {
+        simCreditsPurchased = parseInt(data.simulated_credits_total, 10) || 0;
+        setLocalSimCredits(simCreditsPurchased);
+        updateSimulatedPurchaseButtonState();
+      }
+    } catch (e) {}
+  }
 
   async function loadAdminMode() {
     try {
@@ -1004,6 +1105,8 @@
     if (simBox) simBox.style.display = simulationMode ? "block" : "none";
     if (liveBox) liveBox.style.display = simulationMode ? "none" : "flex";
 
+    updateSimulatedPurchaseButtonState();
+
     if (!simulationMode) {
       renderPayPalButtons();
     }
@@ -1016,12 +1119,13 @@
     document.querySelectorAll(".package-box").forEach(el => el.classList.remove("selected"));
     if (cardEl) cardEl.classList.add("selected");
 
-    const simBtn = getEl("sim-buy-btn");
-    if (simBtn) simBtn.textContent = "Add Credits (Simulated $" + price + ")";
+    updateSimulatedPurchaseButtonState();
   };
 
   global.openStoreModal = function () {
     loadAdminMode();
+    syncSimulatedCreditsFromServer();
+    updateSimulatedPurchaseButtonState();
     const modal = getEl("store-modal");
     if (modal) modal.classList.add("active");
 
@@ -1119,6 +1223,20 @@
       }
     }
 
+    // Check simulated credit cap before initiating purchase
+    const currentSim = Math.max(simCreditsPurchased, getLocalSimCredits());
+    if (currentSim >= MAX_SIMULATED_CREDITS) {
+      global.showNotification("Simulated credit limit reached: You have reached the maximum allowed 6,000 simulated credits. Please toggle off simulation mode in Admin settings to make live purchases.", false);
+      updateSimulatedPurchaseButtonState();
+      return;
+    }
+    if (currentSim + selectedPackageCredits > MAX_SIMULATED_CREDITS) {
+      const remaining = Math.max(0, MAX_SIMULATED_CREDITS - currentSim);
+      global.showNotification("Package exceeds limit: You currently have " + currentSim.toLocaleString() + " simulated credits. You can only purchase up to " + remaining.toLocaleString() + " more.", false);
+      updateSimulatedPurchaseButtonState();
+      return;
+    }
+
     try {
       const res = await secureFetchApi(API_BASE + "/admin_api.php?action=buy_credits", {
         method: "POST",
@@ -1138,6 +1256,13 @@
       const data = await res.json();
 
       if (!data.success) {
+        if (data.limit_reached || (data.simulated_credits_total !== undefined && data.simulated_credits_total >= MAX_SIMULATED_CREDITS)) {
+          if (data.simulated_credits_total !== undefined) {
+            simCreditsPurchased = parseInt(data.simulated_credits_total, 10);
+            setLocalSimCredits(simCreditsPurchased);
+          }
+          updateSimulatedPurchaseButtonState();
+        }
         global.showNotification(data.message, false);
         return;
       }
@@ -1146,6 +1271,15 @@
       const bankDisplay = getEl("bank-display");
       if (bankDisplay) bankDisplay.textContent = userBank;
       syncBankToServer(userBank);
+
+      if (data.total_simulated_credits !== undefined) {
+        simCreditsPurchased = parseInt(data.total_simulated_credits, 10) || 0;
+      } else {
+        simCreditsPurchased = currentSim + selectedPackageCredits;
+      }
+      setLocalSimCredits(simCreditsPurchased);
+      updateSimulatedPurchaseButtonState();
+
       global.showNotification("[SIMULATION]: " + data.message, true);
       global.closeStoreModal();
     } catch (err) {

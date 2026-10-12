@@ -561,23 +561,36 @@
           if (elTotal) elTotal.textContent = total.toLocaleString();
           const elStat = document.getElementById('adminGuestStatDisplay');
           if (elStat) elStat.textContent = total.toLocaleString();
+          document.querySelectorAll('.guest-total-val').forEach(el => { el.textContent = total.toLocaleString(); });
       }
       if (today !== null) {
           const elToday = document.getElementById('adminGuestTodayText');
           if (elToday) elToday.textContent = today.toLocaleString();
           const elStatToday = document.getElementById('adminGuestStatTodayDisplay');
           if (elStatToday) elStatToday.textContent = today.toLocaleString();
+          document.querySelectorAll('.guest-today-val').forEach(el => { el.textContent = today.toLocaleString(); });
       }
       if (active !== null) {
           const elActive = document.getElementById('adminGuestActiveText');
           if (elActive) elActive.textContent = active.toLocaleString();
           const elStatActive = document.getElementById('adminGuestStatActiveDisplay');
           if (elStatActive) elStatActive.textContent = active.toLocaleString();
+          document.querySelectorAll('.guest-active-val').forEach(el => { el.textContent = active.toLocaleString(); });
       }
       if (dbCount !== null) {
           const elDb = document.getElementById('adminGuestDbText');
           if (elDb) elDb.textContent = dbCount.toLocaleString();
+          document.querySelectorAll('.guest-db-val').forEach(el => { el.textContent = dbCount.toLocaleString(); });
       }
+  }
+
+  async function fetchPublicGuestStats() {
+      try {
+          const data = await callAdminApi('get_mode', null, 'GET');
+          if (data && data.success) {
+              updateGuestLoginsDisplay(data);
+          }
+      } catch (e) {}
   }
 
   /* --- TAB 2: BLACKJACK USERS MANAGEMENT --- */
@@ -2719,6 +2732,8 @@
   }
 
   window.addEventListener('DOMContentLoaded', () => {
+      fetchPublicGuestStats();
+
       const searchInput = document.getElementById('adminUserSearchInput');
       if (searchInput) {
           searchInput.value = '';

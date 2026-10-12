@@ -6,8 +6,8 @@
 -- Supported Features:
 --   1. Google Play In-App Billing (IAB) purchases & receipt tracking
 --   2. In-App Billing Purchase Report JSON persistence for 7-year audit retention
---   3. User registration & authentication (supporting both Email and Username)
---   4. Password reset flow with secondary email binding for username-only accounts
+--   3. User registration & authentication: Mandatory Email address, optional Username
+--   4. Password reset protected flow via 6-digit verification code to registered email
 --   5. Account Deletion & GDPR/Google Play Data Safety compliance
 --   6. 7-Year Statutory Financial Retention pseudonymization ('[Deleted User - 7-Yr Retained]')
 --   7. Server & client simulation mode toggling for offline/sandbox testing
@@ -19,12 +19,15 @@ USE calmchess;
 -- -----------------------------------------------------------------------------
 -- 1. USERS TABLE (Player Accounts & Chip Balances)
 -- Mirrors Android local/remote user profile, authentication, and chips bankroll.
+-- Policy: Email address is REQUIRED for all registrations. Username is OPTIONAL
+--         (defaults to the email prefix if not supplied). Password protection
+--         rules (8+ chars, uppercase, lowercase, number, symbol) are enforced.
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    -- Email is optional if the user signs up with a username only, but unique if present
-    email VARCHAR(255) UNIQUE NULL,
-    -- Username allows login via username or email across mobile and web clients
+    -- Email is mandatory for account registration and password recovery, unique across accounts
+    email VARCHAR(255) UNIQUE NOT NULL,
+    -- Username is optional (defaults to email prefix if omitted); unique if set
     username VARCHAR(100) UNIQUE NULL,
     -- Bcrypt or Argon2 password hash
     password_hash VARCHAR(255) NOT NULL,

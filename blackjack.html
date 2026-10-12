@@ -151,6 +151,7 @@
 
     .form-group { display: flex; flex-direction: column; gap: 4px; margin-top: 5px; }
     .form-group.register-only.hidden { display: none !important; }
+    .form-group.login-only.hidden { display: none !important; }
     .form-group label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: #cbd5e1; letter-spacing: 0.5px; }
     .form-group input {
       background: var(--input-bg);
@@ -1458,9 +1459,24 @@
       <div id="auth-alert" class="auth-alert"></div>
 
       <form id="auth-form" onsubmit="event.preventDefault(); handleAuthSubmit(event);">
-        <div class="form-group">
-          <label id="auth-id-label">Username/Email</label>
-          <input type="text" id="auth-identifier" required autocomplete="username" placeholder="Username or email">
+        <!-- LOGIN ONLY: Identifier (Username or Email) -->
+        <div class="form-group login-only hidden" id="login-identifier-group">
+          <label for="auth-identifier">Email Address or Username</label>
+          <input type="text" id="auth-identifier" autocomplete="username" placeholder="Registered email or username">
+        </div>
+
+        <!-- REGISTER ONLY: Required Email Address -->
+        <div class="form-group register-only" id="register-email-group">
+          <label for="auth-email">Email Address <span style="color:var(--gold);">*</span></label>
+          <input type="email" id="auth-email" required autocomplete="email" placeholder="e.g. player@example.com">
+          <small style="font-size: 0.72rem; color: #94a3b8; margin-top: 1px;">Required: Used for account access &amp; secure password recovery.</small>
+        </div>
+
+        <!-- REGISTER ONLY: Optional Username -->
+        <div class="form-group register-only" id="register-username-group">
+          <label for="auth-username">Username <span style="color:#94a3b8; font-weight:normal; text-transform:none;">(Optional)</span></label>
+          <input type="text" id="auth-username" autocomplete="username" placeholder="Choose a username (optional)">
+          <small style="font-size: 0.72rem; color: #94a3b8; margin-top: 1px;">Optional: Displayed at tables. Defaults to your email prefix if omitted.</small>
         </div>
 
         <div class="form-group">

@@ -481,11 +481,53 @@
     const confirmGroup = getEl("confirm-password-group");
     const confirmInput = getEl("auth-password-confirm");
     const submitBtn = getEl("auth-submit-btn");
-    const idLabel = getEl("auth-id-label");
-    const idInput = getEl("auth-identifier");
     const pwdInput = getEl("auth-password");
 
+    const loginIdGroup = getEl("login-identifier-group");
+    const loginIdInput = getEl("auth-identifier");
+    const regEmailGroup = getEl("register-email-group");
+    const regEmailInput = getEl("auth-email");
+    const regUserGroup = getEl("register-username-group");
+    const regUserInput = getEl("auth-username");
+
     if (tab === "register") {
+      // Hide login-only identifier
+      if (loginIdGroup) {
+        loginIdGroup.classList.add("hidden");
+        loginIdGroup.style.setProperty("display", "none", "important");
+      }
+      if (loginIdInput) {
+        loginIdInput.disabled = true;
+        loginIdInput.required = false;
+      }
+
+      // Show register-only email and optional username
+      if (regEmailGroup) {
+        regEmailGroup.classList.remove("hidden");
+        regEmailGroup.style.removeProperty("display");
+        regEmailGroup.style.display = "flex";
+        regEmailGroup.style.flexDirection = "column";
+      }
+      if (regEmailInput) {
+        regEmailInput.disabled = false;
+        regEmailInput.required = true;
+        // Transfer email if user entered one in login identifier
+        if (loginIdInput && loginIdInput.value.trim().includes("@") && !regEmailInput.value.trim()) {
+          regEmailInput.value = loginIdInput.value.trim();
+        }
+      }
+
+      if (regUserGroup) {
+        regUserGroup.classList.remove("hidden");
+        regUserGroup.style.removeProperty("display");
+        regUserGroup.style.display = "flex";
+        regUserGroup.style.flexDirection = "column";
+      }
+      if (regUserInput) {
+        regUserInput.disabled = false;
+        regUserInput.required = false;
+      }
+
       if (rulesEl) {
         rulesEl.classList.remove("hidden");
         rulesEl.style.removeProperty("display");
@@ -506,11 +548,42 @@
         pwdInput.setAttribute("autocomplete", "new-password");
       }
       if (submitBtn) submitBtn.textContent = "Register & Play";
-      if (idLabel) idLabel.textContent = "Username / Email";
-      if (idInput) idInput.placeholder = "Username or email";
       const pwdVal = pwdInput ? pwdInput.value : "";
       global.checkPasswordRules(pwdVal);
     } else {
+      // Login mode
+      if (regEmailGroup) {
+        regEmailGroup.classList.add("hidden");
+        regEmailGroup.style.setProperty("display", "none", "important");
+      }
+      if (regEmailInput) {
+        regEmailInput.disabled = true;
+        regEmailInput.required = false;
+      }
+
+      if (regUserGroup) {
+        regUserGroup.classList.add("hidden");
+        regUserGroup.style.setProperty("display", "none", "important");
+      }
+      if (regUserInput) {
+        regUserInput.disabled = true;
+        regUserInput.required = false;
+      }
+
+      if (loginIdGroup) {
+        loginIdGroup.classList.remove("hidden");
+        loginIdGroup.style.removeProperty("display");
+        loginIdGroup.style.display = "flex";
+        loginIdGroup.style.flexDirection = "column";
+      }
+      if (loginIdInput) {
+        loginIdInput.disabled = false;
+        loginIdInput.required = true;
+        if (regEmailInput && regEmailInput.value.trim() && !loginIdInput.value.trim()) {
+          loginIdInput.value = regEmailInput.value.trim();
+        }
+      }
+
       if (rulesEl) {
         rulesEl.classList.add("hidden");
         rulesEl.style.setProperty("display", "none", "important");
@@ -528,8 +601,6 @@
         pwdInput.setAttribute("autocomplete", "current-password");
       }
       if (submitBtn) submitBtn.textContent = "Sign In";
-      if (idLabel) idLabel.textContent = "Username / Email";
-      if (idInput) idInput.placeholder = "Username or email";
     }
     clearAuthAlert();
   };
@@ -576,6 +647,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        encrypt: true,
         keepalive: true,
         body: { user_id: userId, email: userEmail, bank: bank }
       });
@@ -586,20 +658,41 @@
     if (e && e.preventDefault) e.preventDefault();
     clearAuthAlert();
 
-    const idInput = getEl("auth-identifier");
     const pwdInput = getEl("auth-password");
-    const identifier = idInput ? idInput.value.trim() : "";
     const password = pwdInput ? pwdInput.value : "";
-    const confirmInput = getEl("auth-password-confirm");
-    const confirmPassword = confirmInput ? confirmInput.value : "";
 
-    if (currentAuthTab === "register" && userId) {
-      global.switchAuthTab("login");
-      showAuthAlert("You are already logged in to an active session. Switched to Sign In tab.", "switch-badge");
-      return;
-    }
+    let email = "";
+    let username = "";
+    let identifier = "";
 
     if (currentAuthTab === "register") {
+      const emailInput = getEl("auth-email");
+      const userInput = getEl("auth-username");
+      const confirmInput = getEl("auth-password-confirm");
+      const confirmPassword = confirmInput ? confirmInput.value : "";
+
+      email = emailInput ? emailInput.value.trim() : "";
+      username = userInput ? userInput.value.trim() : "";
+
+      if (userId) {
+        global.switchAuthTab("login");
+        showAuthAlert("You are already logged in to an active session. Switched to Sign In tab.", "switch-badge");
+        return;
+      }
+
+      if (!email) {
+        showAuthAlert("Please provide a valid email address.", true);
+        if (emailInput) emailInput.focus();
+        return;
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showAuthAlert("Please provide a valid email address format (e.g. player@example.com).", true);
+        if (emailInput) emailInput.focus();
+        return;
+      }
+
       if (password !== confirmPassword) {
         showAuthAlert("Passwords do not match. Please verify your password.", true);
         if (confirmInput) confirmInput.focus();
@@ -616,6 +709,22 @@
         showAuthAlert("Please satisfy all password complexity requirements.", true);
         return;
       }
+
+      identifier = email;
+    } else {
+      const idInput = getEl("auth-identifier");
+      identifier = idInput ? idInput.value.trim() : "";
+
+      if (!identifier) {
+        showAuthAlert("Please enter your registered email address or username.", true);
+        if (idInput) idInput.focus();
+        return;
+      }
+      if (!password) {
+        showAuthAlert("Please enter your password.", true);
+        if (pwdInput) pwdInput.focus();
+        return;
+      }
     }
 
     const baseScript = currentAuthTab === "register" ? "register.php" : "login.php";
@@ -625,6 +734,18 @@
       `./${baseScript}?_t=${Date.now()}`,
       `./php/${baseScript}?_t=${Date.now()}`
     ];
+
+    const reqBody = currentAuthTab === "register" ? {
+      email: email,
+      username: username,
+      password: password,
+      confirm_password: getEl("auth-password-confirm") ? getEl("auth-password-confirm").value : password,
+      identifier: email
+    } : {
+      identifier: identifier,
+      email: identifier,
+      password: password
+    };
 
     try {
       let res = null;
@@ -636,7 +757,7 @@
             headers: { "Content-Type": "application/json" },
             credentials: "include",
             encrypt: true,
-            body: { identifier: identifier, email: identifier, password: password }
+            body: reqBody
           });
           if (attempt && attempt.status !== 404 && attempt.status !== 502 && attempt.status !== 503) {
             res = attempt;
@@ -667,11 +788,10 @@
       ));
 
       if (isAlreadyLoggedIn) {
-        // Automatically switch to Sign In tab
         global.switchAuthTab("login");
         const idField = getEl("auth-identifier");
-        if (idField && identifier) {
-          idField.value = identifier;
+        if (idField && (email || identifier)) {
+          idField.value = email || identifier;
         }
         const badgeMsg = (data && data.message)
           ? data.message + " Switched to Sign In tab."
@@ -688,14 +808,11 @@
         ));
 
       if (isAlreadyRegistered) {
-        // Automatically switch to Sign In tab
         global.switchAuthTab("login");
-        // Keep the entered email/identifier so user does not have to retype it
         const idField = getEl("auth-identifier");
-        if (idField && identifier) {
-          idField.value = identifier;
+        if (idField && (email || identifier)) {
+          idField.value = email || identifier;
         }
-        // Present message badge indicating the switch
         const badgeMsg = (data && data.message && data.message.toLowerCase().includes("already registered"))
           ? data.message + " Switched to Sign In — enter your password."
           : "Account already registered. Switched to Sign In — enter your password.";
@@ -889,6 +1006,7 @@
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
+        encrypt: true,
         body: { package: selectedPackageCredits, user_id: userId, email: userEmail, platform: 'desktop' }
       });
       const data = await res.json();
@@ -927,6 +1045,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
+          encrypt: true,
           body: { package: selectedPackageCredits, user_id: userId, email: userEmail }
         });
         const orderData = await res.json();
@@ -947,6 +1066,7 @@
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
+          encrypt: true,
           body: {
             orderID: data.orderID,
             package: selectedPackageCredits,

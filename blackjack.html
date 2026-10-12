@@ -1361,6 +1361,11 @@
         Play credits are for social entertainment only. Credits hold <strong>zero monetary value</strong> and are <strong>non-redeemable and non-refundable</strong>.
       </p>
 
+      <!-- GUEST STORE WARNING BANNER -->
+      <div id="guest-store-warning" style="display: none; background: rgba(234, 179, 8, 0.15); border: 1px solid #eab308; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; font-size: 0.82rem; color: #fef08a; line-height: 1.45;">
+        ⚠️ <strong>Guest Player Notice:</strong> You are playing as a guest (Session: <code id="guest-session-id-display" style="background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px; font-family: monospace; color: #fff; font-weight: 700;"></code>). You can buy credits, but if your session expires, your bankroll will be reset to $500.
+      </div>
+
       <div class="package-grid">
         <div class="package-box selected" onclick="selectPackage(1000, 4.99, this)">
           <div class="pkg-credits">+1,000</div>
@@ -1379,7 +1384,7 @@
       <div class="terms-box">
         <input type="checkbox" id="accept-terms-check" checked style="margin-top: 2px;">
         <label for="accept-terms-check">
-          I agree to the <a href="terms.html" target="_blank">Terms of Service</a> and understand credits are non-refundable and hold no cash value.
+          I agree to the <a href="terms.html" target="_blank">Terms of Service</a> &amp; <a href="privacy.html" target="_blank">Privacy &amp; Cookies Policy</a> and understand credits are non-refundable and hold no cash value.
         </label>
       </div>
 
@@ -1395,35 +1400,6 @@
       </div>
 
       <button class="game-btn" onclick="closeStoreModal()">Back to Table</button>
-    </div>
-  </div>
-
-  <!-- ADMIN CONSOLE MODAL -->
-  <div id="admin-modal" class="modal-overlay">
-    <div class="modal-card">
-      <h2>Admin Console</h2>
-      <div class="form-group">
-        <label>Admin Passcode</label>
-        <input type="password" id="admin-key" placeholder="Enter ADMIN_SECRET_KEY">
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; background: var(--input-bg); padding: 10px 12px; border-radius: 8px;">
-          <div>
-            <div style="font-size: 0.85rem; font-weight: 700;">💻 Desktop App (Bypass PayPal)</div>
-            <div style="font-size: 0.72rem; color: #94a3b8;">Simulated checkout on blackjack.html</div>
-          </div>
-          <input type="checkbox" id="admin-sim-toggle" style="width: 22px; height: 22px; cursor: pointer;">
-        </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; background: var(--input-bg); padding: 10px 12px; border-radius: 8px;">
-          <div>
-            <div style="font-size: 0.85rem; font-weight: 700;">📱 Android App (Bypass Google Play)</div>
-            <div style="font-size: 0.72rem; color: #94a3b8;">Simulated in-app purchases on Android</div>
-          </div>
-          <input type="checkbox" id="admin-android-sim-toggle" style="width: 22px; height: 22px; cursor: pointer;">
-        </div>
-      </div>
-      <button class="auth-btn" onclick="saveAdminSettings()">Save Mode</button>
-      <button class="game-btn" onclick="closeAdminModal()">Close</button>
     </div>
   </div>
 
@@ -1511,6 +1487,19 @@
         <button type="submit" id="auth-submit-btn" class="auth-btn">Register & Play</button>
       </form>
 
+      <!-- GUEST / TRIAL PLAY OPTION -->
+      <div class="guest-login-divider" style="display: flex; align-items: center; margin: 8px 0 6px 0; color: #94a3b8; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.5px;">
+        <span style="flex: 1; border-bottom: 1px solid rgba(255,255,255,0.12);"></span>
+        <span style="padding: 0 8px; font-weight: 700;">Or Play Instantly</span>
+        <span style="flex: 1; border-bottom: 1px solid rgba(255,255,255,0.12);"></span>
+      </div>
+      <button type="button" id="guest-login-btn" class="auth-btn guest-btn" onclick="handleGuestLogin()" style="background: linear-gradient(135deg, #1e293b, #334155); border: 1.5px solid var(--gold); color: #fef08a; font-weight: 800; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+        <span>🎲 Play as Guest ($500 Trial Bankroll)</span>
+      </button>
+      <div style="font-size: 0.68rem; color: #94a3b8; text-align: center; margin-top: 2px;">
+        Session active for 30 days. Warning: Bankroll resets to $500 if session expires.
+      </div>
+
       <!-- EXPLICIT ACCOUNT & DATA DELETION (Google Play Compliance) -->
       <div class="lobby-deletion-section">
         <a href="delete_account.html" class="lobby-del-btn" id="lobby-delete-account-btn" title="Request Account Deletion & Permanent Data Purge (Google Play Compliance)">
@@ -1520,8 +1509,12 @@
       </div>
 
       <div class="lobby-footer">
-        <div>By continuing, you accept our <a href="terms.html" target="_blank">Terms of Service</a>.</div>
+        <div>By continuing, you accept our <a href="terms.html" target="_blank">Terms of Service</a> &amp; <a href="privacy.html" target="_blank">Privacy &amp; Cookies Policy</a>.</div>
         <div style="margin-top: 6px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+          <a href="terms.html" style="color: var(--gold); text-decoration: underline; font-weight: 600;">📜 Terms of Service</a>
+          <span style="color: #64748b;">&bull;</span>
+          <a href="privacy.html" style="color: var(--gold); text-decoration: underline; font-weight: 600;">🔒 Privacy &amp; Cookies Policy</a>
+          <span style="color: #64748b;">&bull;</span>
           <a href="contact.html" style="color: var(--gold); text-decoration: underline; font-weight: 600;">📅 Contact &amp; Consultation</a>
           <span style="color: #64748b;">&bull;</span>
           <a href="password_reset.html" style="color: var(--gold); text-decoration: underline; font-weight: 600;">🔑 Reset Password</a>
@@ -1558,6 +1551,7 @@
               <span class="seats-hint"><span class="hint-range">(1-7)</span><span class="hint-max">Max 7</span></span>
             </div>
 
+            <span id="guest-indicator-pill" style="display: none; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: clamp(0.58rem, 0.9vh, 0.7rem); font-weight: 700; padding: clamp(2px, 0.4vh, 4px) 6px; border-radius: 6px; white-space: nowrap;" title="Guest Mode Active: Bankroll resets to $500 upon session expiry.">👤 GUEST</span>
             <button id="geminiAdvisorBtn" class="hdr-btn gemini-btn muted" onclick="toggleGeminiAdvisor()" title="Toggle Gemini 3.8 Flash AI Dealer & Strategy Advisor">✨ AI OFF</button>
             <button id="audioToggleBtn" class="hdr-btn muted" onclick="toggleAudio()">🔇 Audio OFF</button>
             <button class="hdr-btn buy-chips-hdr-btn" onclick="openStoreModal()">+ Credits</button>

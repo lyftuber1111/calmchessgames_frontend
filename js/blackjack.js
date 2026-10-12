@@ -232,6 +232,8 @@
 
   let userId = null;
   let userEmail = "";
+  let isGuest = false;
+  let guestSessionId = "";
 
   // Table Seats tracker - Default to 1 seat at startup
   let activeTableSeats = 1;
@@ -833,6 +835,10 @@
 
       userId = data.user.id;
       userEmail = data.user.email || identifier;
+      isGuest = false;
+      guestSessionId = "";
+      const guestPill = getEl("guest-indicator-pill");
+      if (guestPill) guestPill.style.display = "none";
       const loadedBank = parseFloat(data.user.bank);
 
       const lobbyScreen = getEl("lobby-screen");
@@ -845,6 +851,47 @@
       updateResponsiveCardScale();
     } catch (err) {
       showAuthAlert("Network Error: " + err.message, true);
+    }
+  };
+
+  global.handleGuestLogin = async function () {
+    clearAuthAlert();
+    try {
+      const res = await secureFetchApi(API_BASE + "/guest_login.php?action=guest&_t=" + Date.now(), {
+        method: "POST",
+        credentials: "include"
+      });
+      const data = await res.json();
+      if (!data.success) {
+        showAuthAlert(data.message || "Guest login failed.", true);
+        return;
+      }
+
+      userId = data.user.id;
+      userEmail = data.user.email || ("guest_" + data.user.id + "@calmchessgames.local");
+      isGuest = true;
+      guestSessionId = data.session_id || data.user.session_id || "";
+      const loadedBank = parseFloat(data.user.bank !== undefined ? data.user.bank : 500);
+
+      const lobbyScreen = getEl("lobby-screen");
+      const gameScreen = getEl("game-screen");
+      if (lobbyScreen) lobbyScreen.classList.remove("active");
+      if (gameScreen) gameScreen.classList.add("active");
+
+      const guestPill = getEl("guest-indicator-pill");
+      if (guestPill) {
+        guestPill.style.display = "inline-block";
+        guestPill.title = "Guest Mode Active: Bankroll resets to $500 if session expires (Session ID: " + guestSessionId + ")";
+      }
+
+      loadAdminMode();
+      initGameState(loadedBank);
+      updateResponsiveCardScale();
+
+      const shortId = guestSessionId.length > 16 ? guestSessionId.substring(0, 16) + "..." : guestSessionId;
+      global.showNotification("🎲 Logged in as Guest ($500 Bankroll)\nSession: " + shortId + "\nNote: Bankroll resets to $500 if session expires.", true);
+    } catch (err) {
+      showAuthAlert("Network Error during guest login: " + err.message, true);
     }
   };
 
@@ -876,6 +923,13 @@
     if (pwdEl) pwdEl.value = "";
     const confirmEl = getEl("auth-password-confirm");
     if (confirmEl) confirmEl.value = "";
+
+    isGuest = false;
+    guestSessionId = "";
+    const guestPill = getEl("guest-indicator-pill");
+    if (guestPill) guestPill.style.display = "none";
+    const guestWarning = getEl("guest-store-warning");
+    if (guestWarning) guestWarning.style.display = "none";
 
     userId = null;
     userEmail = "";
@@ -928,6 +982,19 @@
     loadAdminMode();
     const modal = getEl("store-modal");
     if (modal) modal.classList.add("active");
+
+    const guestWarning = getEl("guest-store-warning");
+    if (guestWarning) {
+      if (isGuest) {
+        guestWarning.style.display = "block";
+        const idSpan = getEl("guest-store-session-id");
+        if (idSpan) idSpan.textContent = guestSessionId || "GUEST-SESSION";
+        const labelSpan = getEl("guest-store-session-label");
+        if (labelSpan) labelSpan.textContent = guestSessionId || "Session ID";
+      } else {
+        guestWarning.style.display = "none";
+      }
+    }
   };
 
   global.closeStoreModal = function () {
@@ -1001,6 +1068,18 @@
       return;
     }
 
+    if (isGuest) {
+      const proceed = window.confirm(
+        "⚠️ GUEST PURCHASE WARNING\n\n" +
+        "You are logged in as a Guest (Session ID: " + (guestSessionId || "Unknown") + ").\n\n" +
+        "WARNING: If your session expires, your bankroll will be automatically reset to $500 in the database!\n\n" +
+        "Do you want to proceed with purchasing credits as a guest?"
+      );
+      if (!proceed) {
+        return;
+      }
+    }
+
     try {
       const res = await secureFetchApi(API_BASE + "/admin_api.php?action=buy_credits", {
         method: "POST",
@@ -1037,6 +1116,17 @@
         if (terms && !terms.checked) {
           global.showNotification("Accept Terms of Service before continuing.", false);
           return actions.reject();
+        }
+        if (isGuest) {
+          const proceed = window.confirm(
+            "⚠️ GUEST PURCHASE WARNING\n\n" +
+            "You are logged in as a Guest (Session ID: " + (guestSessionId || "Unknown") + ").\n\n" +
+            "WARNING: If your session expires, your bankroll will be automatically reset to $500 in the database!\n\n" +
+            "Do you want to proceed with purchasing credits as a guest?"
+          );
+          if (!proceed) {
+            return actions.reject();
+          }
         }
         return actions.resolve();
       },
@@ -2437,24 +2527,7 @@
     }, 4000);
   }
 
-  // Triple click table title to open Admin Modal
   document.addEventListener("DOMContentLoaded", function () {
-    const titleEl = getEl("table-title");
-    let clickCount = 0;
-    let clickTimer = null;
-
-    if (titleEl) {
-      titleEl.addEventListener("click", function () {
-        clickCount++;
-        clearTimeout(clickTimer);
-        clickTimer = setTimeout(() => { clickCount = 0; }, 900);
-        if (clickCount >= 3) {
-          clickCount = 0;
-          global.openAdminModal();
-        }
-      });
-    }
-
     updateResponsiveCardScale();
     updateAudioButtonUI();
     updateGeminiAdvisorUI();

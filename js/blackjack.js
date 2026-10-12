@@ -234,6 +234,7 @@
   let userEmail = "";
   let isGuest = false;
   let guestSessionId = "";
+  let guestToken = "";
 
   // Table Seats tracker - Default to 1 seat at startup
   let activeTableSeats = 1;
@@ -642,7 +643,32 @@
     const bank = Math.max(0, parseFloat(bankValue) || 0);
     try {
       if (userId) localStorage.setItem("calmchess_bank_" + userId, bank.toFixed(2));
+      if (isGuest) localStorage.setItem("calmchess_guest_bank", bank.toFixed(2));
     } catch (e) {}
+
+    if (isGuest) {
+      try {
+        const res = await secureFetchApi(API_BASE + "/guest_login.php?action=update_bank", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          keepalive: true,
+          body: { guest_token: guestToken, bank: bank, session_id: guestSessionId }
+        });
+        const data = await res.json();
+        if (data && data.guest_token) {
+          guestToken = data.guest_token;
+          try { localStorage.setItem("cc_guest_token", guestToken); } catch (e) {}
+        }
+        if (data && data.was_reset) {
+          userBank = 500;
+          const bankDisplay = getEl("bank-display");
+          if (bankDisplay) bankDisplay.textContent = userBank;
+          global.showNotification("⚠️ Guest session expired. Bankroll reset to $500.00.", false);
+        }
+      } catch (e) {}
+      return;
+    }
 
     try {
       await secureFetchApi(API_BASE + "/admin_api.php?action=sync_bank", {
@@ -857,9 +883,12 @@
   global.handleGuestLogin = async function () {
     clearAuthAlert();
     try {
-      const res = await secureFetchApi(API_BASE + "/guest_login.php?action=guest&_t=" + Date.now(), {
+      const storedToken = localStorage.getItem("cc_guest_token") || "";
+      const res = await secureFetchApi(API_BASE + "/guest_login.php?action=login&_t=" + Date.now(), {
         method: "POST",
-        credentials: "include"
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: { guest_token: storedToken }
       });
       const data = await res.json();
       if (!data.success) {
@@ -867,10 +896,14 @@
         return;
       }
 
-      userId = data.user.id;
-      userEmail = data.user.email || ("guest_" + data.user.id + "@calmchessgames.local");
+      userId = data.user.id || 0;
+      userEmail = data.user.email || ("guest_" + (data.session_id || "trial") + "@calmchessgames.local");
       isGuest = true;
       guestSessionId = data.session_id || data.user.session_id || "";
+      if (data.guest_token) {
+        guestToken = data.guest_token;
+        try { localStorage.setItem("cc_guest_token", guestToken); } catch (e) {}
+      }
       const loadedBank = parseFloat(data.user.bank !== undefined ? data.user.bank : 500);
 
       const lobbyScreen = getEl("lobby-screen");
@@ -889,7 +922,11 @@
       updateResponsiveCardScale();
 
       const shortId = guestSessionId.length > 16 ? guestSessionId.substring(0, 16) + "..." : guestSessionId;
-      global.showNotification("🎲 Logged in as Guest ($500 Bankroll)\nSession: " + shortId + "\nNote: Bankroll resets to $500 if session expires.", true);
+      if (data.was_reset) {
+        global.showNotification("⚠️ Your 30-day guest session expired.\nBankroll has been reset to $500.00.", false);
+      } else {
+        global.showNotification("🎲 Logged in as Guest ($500 Bankroll)\nSession: " + shortId + "\nNote: Bankroll resets to $500 if session expires.", true);
+      }
     } catch (err) {
       showAuthAlert("Network Error during guest login: " + err.message, true);
     }
@@ -905,6 +942,11 @@
       currentBet = 0;
     }
     await syncBankToServer(userBank);
+
+    isGuest = false;
+    guestSessionId = "";
+    guestToken = "";
+    try { localStorage.removeItem("cc_guest_token"); } catch (e) {}
 
     try {
       await secureFetchApi(API_BASE + "/logout.php?_t=" + Date.now(), {
@@ -1086,7 +1128,15 @@
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         encrypt: true,
-        body: { package: selectedPackageCredits, user_id: userId, email: userEmail, platform: 'desktop' }
+        body: { 
+          package: selectedPackageCredits, 
+          user_id: userId, 
+          email: userEmail, 
+          platform: 'desktop',
+          is_guest: isGuest,
+          guest_session_id: guestSessionId,
+          guest_token: guestToken
+        }
       });
       const data = await res.json();
 
@@ -1136,7 +1186,14 @@
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           encrypt: true,
-          body: { package: selectedPackageCredits, user_id: userId, email: userEmail }
+          body: { 
+            package: selectedPackageCredits, 
+            user_id: userId, 
+            email: userEmail,
+            is_guest: isGuest,
+            guest_session_id: guestSessionId,
+            guest_token: guestToken
+          }
         });
         const orderData = await res.json();
         if (!orderData.success) throw new Error(orderData.message);
@@ -1162,6 +1219,9 @@
             package: selectedPackageCredits,
             user_id: userId,
             email: userEmail,
+            is_guest: isGuest,
+            guest_session_id: guestSessionId,
+            guest_token: guestToken,
             purchase_report: purchaseReportPayload
           }
         });

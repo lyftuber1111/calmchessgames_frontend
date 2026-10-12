@@ -311,6 +311,111 @@ ALTER TABLE users MODIFY COLUMN email VARCHAR(255) NULL;
 --      "timestamp": "2026-10-12 01:30:00"
 --    }
 --
+-- -----------------------------------------------------------------------------
+-- 6. CONSULTATION APPOINTMENTS TABLE (Appointments & Calendar Booking)
+-- Stores scheduled advisory consultations with Brian Berry (bberry@calmchessgames.com).
+-- Integrated with interactive calendar, time slots, and automated email reminders.
+-- Android app can query available slots and schedule strategy sessions directly.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS consultation_appointments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    -- Full name of attendee / client
+    attendee_name VARCHAR(120) NOT NULL,
+    -- Email address of attendee (receives confirmation and reminder)
+    attendee_email VARCHAR(180) NOT NULL,
+    -- Optional telephone / contact number
+    attendee_phone VARCHAR(50) DEFAULT NULL,
+    -- Appointment date in YYYY-MM-DD format
+    appointment_date DATE NOT NULL,
+    -- Selected time slot (e.g., '10:00 AM', '02:00 PM')
+    appointment_time VARCHAR(20) NOT NULL,
+    -- Timezone for the appointment (e.g. 'America/New_York (EST)')
+    timezone VARCHAR(80) DEFAULT 'America/New_York (EST)',
+    -- Subject / consultation focus topic
+    topic VARCHAR(150) NOT NULL,
+    -- Agenda details or preliminary questions
+    notes TEXT DEFAULT NULL,
+    -- Email reminder preference flag (1 = send reminders to both parties, 0 = disabled)
+    email_reminder TINYINT(1) DEFAULT 1,
+    -- Booking status: confirmed, pending, cancelled, completed
+    status ENUM('confirmed', 'pending', 'cancelled', 'completed') DEFAULT 'confirmed',
+    -- Created timestamp
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Last updated timestamp
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_appointment_date (appointment_date),
+    INDEX idx_attendee_email (attendee_email),
+    INDEX idx_appointment_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- 7. CONTACT INQUIRIES & DIRECT MESSAGES TABLE
+-- Stores direct messages submitted to Brian Berry via contact.html or Android app.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    -- Sender's name
+    sender_name VARCHAR(120) NOT NULL,
+    -- Sender's email address
+    sender_email VARCHAR(180) NOT NULL,
+    -- Message subject
+    subject VARCHAR(200) NOT NULL,
+    -- Full message text
+    message TEXT NOT NULL,
+    -- Submitter IP address for abuse rate limiting (max 10 / hr)
+    ip_address VARCHAR(45) DEFAULT NULL,
+    -- Status of inquiry: unread, read, archived, replied
+    status ENUM('unread', 'read', 'archived', 'replied') DEFAULT 'unread',
+    -- Creation timestamp
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_sender_email (sender_email),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- ANDROID APP CLIENT INTEGRATION NOTES & CONTRACT SPECIFICATION:
+-- =============================================================================
+-- 1. In-App Purchase Payload Format (POST to /google_play_billing_api.php?action=verify):
+--    {
+--      "purchase_token": "<BillingClient PurchaseToken>",
+--      "product_id": "credits_1200",
+--      "order_id": "GPA.3341-8921-9920-11245",
+--      "package_name": "com.calmchess.blackjack",
+--      "credits": 1200,
+--      "amount": 9.99,
+--      "currency": "USD",
+--      "is_simulated": false,
+--      "client_report": {
+--        "device_model": "Pixel 8 Pro",
+--        "android_version": "14",
+--        "app_version": "1.0.4",
+--        "billing_client_version": "7.0.0",
+--        "timestamp": "2026-10-12T01:30:00Z"
+--      }
+--    }
+--
+-- 2. Server Purchase Report Saved in `purchases.purchase_report`:
+--    {
+--      "report_type": "GOOGLE_PLAY_IN_APP_BILLING_REPORT",
+--      "version": "1.0",
+--      "order_id": "GPA.3341-8921-9920-11245",
+--      "product_id": "credits_1200",
+--      "credits_added": 1200,
+--      "amount_paid": "9.99",
+--      "currency": "USD",
+--      "status": "COMPLETED",
+--      "payment_method": "GOOGLE_PLAY",
+--      "package_name": "com.calmchess.blackjack",
+--      "purchase_token": "...",
+--      "payer_email": "player@example.com",
+--      "payer_id": "GPA.3341-8921-9920-11245",
+--      "is_simulated": false,
+--      "client_report": { ... },
+--      "google_receipt": { ... },
+--      "audit_compliance": "7_YEAR_STATUTORY_FINANCIAL_RETENTION",
+--      "timestamp": "2026-10-12 01:30:00"
+--    }
+--
 -- 3. Account Deletion & 7-Year Statutory Financial Retention:
 --    When the user requests account deletion via /account_deletion_api.php:
 --    - The user row is purged from `users` (or anonymized).
@@ -318,4 +423,9 @@ ALTER TABLE users MODIFY COLUMN email VARCHAR(255) NULL;
 --        UPDATE purchases SET user_id = NULL, payer_email = '[Deleted User - 7-Yr Retained]' WHERE user_id = :id;
 --    - The purchase ledger records remain intact with full financial amounts,
 --      order_id, and purchase_report for IRS / 7-year audit compliance.
+--
+-- 4. Consultation & Advisory Booking (POST to /contact_api.php?action=book_appointment):
+--    - Payload: { name, email, phone, appointment_date, appointment_time, timezone, topic, notes }
+--    - Sends transactional notification emails to Brian Berry (bberry@calmchessgames.com)
+--    - Sends confirmation email with calendar reminder to attendee.
 -- =============================================================================

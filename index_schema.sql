@@ -2,12 +2,13 @@ CREATE DATABASE IF NOT EXISTS calmchess CHARACTER SET utf8mb4 COLLATE utf8mb4_un
 USE calmchess;
 
 -- Table to store ring segments (Inner, Outer rings, and optional Center logo)
+-- Ring segment URLs and titles can be left blank; only the center knight logo URL is required for save.
 CREATE TABLE IF NOT EXISTS ring_segments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     ring_type ENUM('inner', 'outer', 'center') NOT NULL,
     segment_index INT NOT NULL,
-    title VARCHAR(100) NOT NULL,
-    url VARCHAR(255) NOT NULL,
+    title VARCHAR(100) NULL DEFAULT '',
+    url VARCHAR(255) NULL DEFAULT '',
     description TEXT,
     show_text TINYINT(1) DEFAULT 1,
     is_active TINYINT(1) DEFAULT 1,
@@ -234,8 +235,47 @@ DEALLOCATE PREPARE stmt7;
 -- 8. Allow 'user_id' in 'purchases' to be NULL for GDPR/Google Play 7-year statutory financial retention
 ALTER TABLE purchases MODIFY COLUMN user_id INT NULL;
 
+-- 9. Allow ring_segments 'title' and 'url' to be blank / NULL (only center logo URL is required)
+ALTER TABLE ring_segments MODIFY COLUMN title VARCHAR(100) NULL DEFAULT '';
+ALTER TABLE ring_segments MODIFY COLUMN url VARCHAR(255) NULL DEFAULT '';
+
 -- =============================================================================
--- 7. DATABASE USER IN-TRANSIT TLS / SSL TRANSPORT SECURITY
+-- 7. CONSULTATION APPOINTMENTS & CONTACT MESSAGES TABLES
+-- =============================================================================
+CREATE TABLE IF NOT EXISTS consultation_appointments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    attendee_name VARCHAR(120) NOT NULL,
+    attendee_email VARCHAR(180) NOT NULL,
+    attendee_phone VARCHAR(50) DEFAULT NULL,
+    appointment_date DATE NOT NULL,
+    appointment_time VARCHAR(20) NOT NULL,
+    timezone VARCHAR(80) DEFAULT 'America/New_York (EST)',
+    topic VARCHAR(150) NOT NULL,
+    notes TEXT DEFAULT NULL,
+    email_reminder TINYINT(1) DEFAULT 1,
+    status ENUM('confirmed', 'pending', 'cancelled', 'completed') DEFAULT 'confirmed',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_appointment_date (appointment_date),
+    INDEX idx_attendee_email (attendee_email),
+    INDEX idx_appointment_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS contact_messages (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    sender_name VARCHAR(120) NOT NULL,
+    sender_email VARCHAR(180) NOT NULL,
+    subject VARCHAR(200) NOT NULL,
+    message TEXT NOT NULL,
+    ip_address VARCHAR(45) DEFAULT NULL,
+    status ENUM('unread', 'read', 'archived', 'replied') DEFAULT 'unread',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_sender_email (sender_email),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =============================================================================
+-- 8. DATABASE USER IN-TRANSIT TLS / SSL TRANSPORT SECURITY
 -- Mandates encrypted MySQL / MariaDB network connections for the application user
 -- Prevents unencrypted database traffic, packet sniffing, and MITM on internal networks
 -- =============================================================================
@@ -244,4 +284,5 @@ ALTER TABLE purchases MODIFY COLUMN user_id INT NULL;
 -- ALTER USER IF EXISTS 'chessadmin'@'localhost' REQUIRE SSL;
 -- For remote database host setups:
 -- ALTER USER IF EXISTS 'chessadmin'@'%' REQUIRE SSL;
+
 

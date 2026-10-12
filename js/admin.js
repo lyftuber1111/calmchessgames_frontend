@@ -403,6 +403,15 @@
       const centerLogoInput = document.getElementById('adminCenterLogoUrl');
       const updatedCenterLogoUrl = centerLogoInput ? centerLogoInput.value.trim() : centerLogoUrl;
 
+      if (!updatedCenterLogoUrl) {
+          alert('Center knight logo URL is required to save ring configurations. Ring segments URL and text can be left blank.');
+          if (centerLogoInput) {
+              centerLogoInput.focus();
+              centerLogoInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          return;
+      }
+
       const nonCenterSegments = currentSegments.filter(s => s.ring_type !== 'center');
       const updatedSegments = nonCenterSegments.map((seg, index) => {
           const titleEl = document.getElementById(`admin_title_${index}`);
@@ -412,9 +421,9 @@
           return {
               ring_type: seg.ring_type,
               segment_index: seg.segment_index,
-              title: titleEl ? titleEl.value.trim() : seg.title,
-              url: urlEl ? urlEl.value.trim() : seg.url,
-              description: descEl ? descEl.value.trim() : seg.description,
+              title: titleEl ? titleEl.value.trim() : (seg.title || ''),
+              url: urlEl ? urlEl.value.trim() : (seg.url || ''),
+              description: descEl ? descEl.value.trim() : (seg.description || ''),
               is_active: seg.is_active !== undefined ? seg.is_active : 1
           };
       });

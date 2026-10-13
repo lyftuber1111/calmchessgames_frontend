@@ -1399,6 +1399,7 @@
           ✔ Simulation Mode Active (No actual payment card charged)
         </div>
         <button id="sim-buy-btn" class="auth-btn" onclick="executeSimulatedPurchase()">Add Credits (Simulated $4.99)</button>
+        <div id="sim-max-badge" style="display: none; background: #dc2626; color: #fff; font-size: 0.75rem; font-weight: 800; padding: 4px 8px; border-radius: 6px; text-align: center; margin-top: 6px; letter-spacing: 0.5px; box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);">⚠️ MAX (6,000 / 6,000 Credits)</div>
         <div id="sim-limit-banner" style="display: none; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 8px; padding: 8px 12px; margin-top: 8px; font-size: 0.8rem; text-align: center; color: #fca5a5; line-height: 1.4;">
           🔒 <span id="sim-limit-banner-msg">Simulated credit limit reached (Max 6,000 credits). Switch to live PayPal to purchase more credits.</span>
         </div>
@@ -1563,7 +1564,7 @@
             <span id="guest-indicator-pill" style="display: none; background: rgba(245, 158, 11, 0.2); border: 1px solid #f59e0b; color: #fbbf24; font-size: clamp(0.58rem, 0.9vh, 0.7rem); font-weight: 700; padding: clamp(2px, 0.4vh, 4px) 6px; border-radius: 6px; white-space: nowrap;" title="Guest Mode Active: Bankroll resets to $500 upon session expiry.">👤 GUEST</span>
             <button id="geminiAdvisorBtn" class="hdr-btn gemini-btn muted" onclick="toggleGeminiAdvisor()" title="Toggle Gemini 3.8 Flash AI Dealer & Strategy Advisor">✨ AI OFF</button>
             <button id="audioToggleBtn" class="hdr-btn muted" onclick="toggleAudio()">🔇 Audio OFF</button>
-            <button class="hdr-btn buy-chips-hdr-btn" onclick="openStoreModal()">+ Credits</button>
+            <button id="buyCreditsHeaderBtn" class="hdr-btn buy-chips-hdr-btn" onclick="openStoreModal()">+ Credits <span id="headerCreditsMaxBadge" style="display:none; background:#ef4444; color:#fff; font-size:0.65rem; font-weight:800; padding:1px 5px; border-radius:4px; margin-left:4px; vertical-align:middle; text-transform:uppercase;">MAX</span></button>
             <button class="hdr-btn logout-btn" onclick="executeLogout()">Exit</button>
           </div>
         </div>
@@ -1642,8 +1643,8 @@
   <script src="js/crypto_transport.js"></script>
   <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
   <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="crypto_transport.js"><\/script>'); }</script>
-  <script src="js/blackjack.js?v=2.2"></script>
-  <script>if (typeof window.checkPasswordRules === 'undefined') { document.write('<script src="../js/blackjack.js?v=2.2"><\/script>'); }</script>
-  <script>if (typeof window.checkPasswordRules === 'undefined') { document.write('<script src="blackjack.js?v=2.2"><\/script>'); }</script>
+  <script src="js/blackjack.js?v=2.4"></script>
+  <script>if (typeof window.checkPasswordRules === 'undefined') { document.write('<script src="../js/blackjack.js?v=2.4"><\/script>'); }</script>
+  <script>if (typeof window.checkPasswordRules === 'undefined') { document.write('<script src="blackjack.js?v=2.4"><\/script>'); }</script>
 </body>
 </html>

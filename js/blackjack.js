@@ -1105,6 +1105,7 @@
       if (limitBanner) limitBanner.style.display = "none";
     }
   }
+  global.updateSimulatedPurchaseButtonState = updateSimulatedPurchaseButtonState;
 
   async function syncSimulatedCreditsFromServer() {
     try {
@@ -1156,6 +1157,11 @@
       renderPayPalButtons();
     }
   }
+  global.applyStoreModeUI = applyStoreModeUI;
+  global.setSimulationMode = function (val) {
+    simulationMode = Boolean(val);
+    applyStoreModeUI();
+  };
 
   global.selectPackage = function (credits, price, cardEl) {
     selectedPackageCredits = credits;

@@ -85,12 +85,12 @@
   /* --- API CALL HELPER (AUTHENTICATION API TOKEN ENABLED WITH IN-TRANSIT ENCRYPTION) --- */
   async function callAdminApi(action, payload = {}, method = 'POST') {
       const endpoints = [
-          `./admin_api.php?action=${action}&_t=${Date.now()}`,
-          `admin_api.php?action=${action}&_t=${Date.now()}`,
-          `${API_BASE}/admin/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `https://api.calmchessgames.com/admin/admin_api.php?action=${action}&_t=${Date.now()}`,
           `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
           `https://api.calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `${API_BASE}/admin/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `https://api.calmchessgames.com/admin/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `./admin_api.php?action=${action}&_t=${Date.now()}`,
+          `admin_api.php?action=${action}&_t=${Date.now()}`,
           `${API_BASE}/php/admin_api.php?action=${action}&_t=${Date.now()}`,
           `https://api.calmchessgames.com/php/admin_api.php?action=${action}&_t=${Date.now()}`
       ];
@@ -190,6 +190,7 @@
               if (searchInput) searchInput.value = '';
 
               // Initialize all tabs data
+              await fetchPublicGuestStats();
               await fetchSegments();
               switchAdminTab('segments');
               fetchStoreSettings();
@@ -2731,7 +2732,7 @@
           .replace(/'/g, '&#39;');
   }
 
-  window.addEventListener('DOMContentLoaded', () => {
+  function initAdminConsole() {
       fetchPublicGuestStats();
 
       const searchInput = document.getElementById('adminUserSearchInput');
@@ -2740,7 +2741,8 @@
       }
 
       const authInput = document.getElementById('adm-pass');
-      if (authInput) {
+      if (authInput && !authInput.dataset.boundEnter) {
+          authInput.dataset.boundEnter = 'true';
           authInput.addEventListener('keydown', (e) => {
               if (e.key === 'Enter') {
                   e.preventDefault();
@@ -2748,6 +2750,15 @@
               }
           });
       }
+  }
+
+  if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', initAdminConsole);
+  } else {
+      initAdminConsole();
+  }
+  window.addEventListener('load', () => {
+      fetchPublicGuestStats();
   });
 
 })(window);

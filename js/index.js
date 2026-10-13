@@ -435,11 +435,11 @@
 
   // Standalone admin portal redirect fallback if invoked programmatically
   function promptAdminPassword() {
-      window.location.href = 'admin.html';
+      window.location.href = 'https://api.calmchessgames.com/admin/admin.html';
   }
 
   function openAdminModal() {
-      window.location.href = 'admin.html';
+      window.location.href = 'https://api.calmchessgames.com/admin/admin.html';
   }
 
   // Explicit Global Scope Binding

@@ -594,6 +594,50 @@
       } catch (e) {}
   }
 
+  async function resetGuestLoginCount() {
+      if (!confirm('Are you sure you want to reset the running guest login count to zero?')) {
+          return;
+      }
+
+      const resetBtns = [
+          document.getElementById('btnResetGuestCountBanner'),
+          document.getElementById('btnResetGuestCountStore')
+      ].filter(Boolean);
+
+      resetBtns.forEach(btn => {
+          btn.disabled = true;
+          btn.innerHTML = '<span>⏳</span> Resetting...';
+      });
+
+      try {
+          const res = await callAdminApi('reset_guest_logins', {}, 'POST');
+          if (res && res.success) {
+              updateGuestLoginsDisplay({
+                  guest_logins_total: 0,
+                  guest_logins_today: 0,
+                  guest_active_24h: 0,
+                  guest_db_count: 0
+              });
+              alert('✔ ' + (res.message || 'Guest login counts have been reset to zero!'));
+              if (typeof fetchBlackjackUsers === 'function') {
+                  fetchBlackjackUsers();
+              }
+              if (typeof fetchStoreSettings === 'function') {
+                  fetchStoreSettings();
+              }
+          } else {
+              alert('Failed to reset guest login count: ' + (res && res.message ? res.message : 'Unknown error'));
+          }
+      } catch (err) {
+          alert('Error resetting guest login count: ' + (err.message || err));
+      } finally {
+          resetBtns.forEach(btn => {
+              btn.disabled = false;
+              btn.innerHTML = '<span>🔄</span> Reset Guest Count';
+          });
+      }
+  }
+
   /* --- TAB 2: BLACKJACK USERS MANAGEMENT --- */
   async function fetchBlackjackUsers() {
       const container = document.getElementById('adminUsersList');
@@ -2151,6 +2195,7 @@
   global.setUserFilter = setUserFilter;
   global.quickAddBankroll = quickAddBankroll;
   global.updateGuestLoginsDisplay = updateGuestLoginsDisplay;
+  global.resetGuestLoginCount = resetGuestLoginCount;
   global.fetchStoreSettings = fetchStoreSettings;
   global.handleStoreToggleChange = handleStoreToggleChange;
   global.saveStoreSettings = saveStoreSettings;

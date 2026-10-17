@@ -691,6 +691,7 @@
       updateSimulatedPurchaseButtonState();
     }
   }
+  global.syncBankToServer = syncBankToServer;
 
   global.handleAuthSubmit = async function (e) {
     if (e && e.preventDefault) e.preventDefault();

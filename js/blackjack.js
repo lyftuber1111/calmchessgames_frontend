@@ -643,7 +643,10 @@
     const bank = Math.max(0, parseFloat(bankValue) || 0);
     try {
       if (userId) localStorage.setItem("calmchess_bank_" + userId, bank.toFixed(2));
-      if (isGuest) localStorage.setItem("calmchess_guest_bank", bank.toFixed(2));
+      if (isGuest) {
+        localStorage.setItem("calmchess_guest_bank", bank.toFixed(2));
+        sessionStorage.setItem("cc_guest_active", "1");
+      }
     } catch (e) {}
 
     if (isGuest) {
@@ -659,6 +662,10 @@
         if (data && data.guest_token) {
           guestToken = data.guest_token;
           try { localStorage.setItem("cc_guest_token", guestToken); } catch (e) {}
+        }
+        if (data && data.bank !== undefined) {
+          userBank = parseFloat(data.bank);
+          try { localStorage.setItem("calmchess_guest_bank", userBank.toFixed(2)); } catch (e) {}
         }
         if (data && data.was_reset) {
           userBank = 500;
@@ -883,19 +890,26 @@
     }
   };
 
-  global.handleGuestLogin = async function () {
+  global.handleGuestLogin = async function (isAutoRestore) {
     clearAuthAlert();
     try {
       const storedToken = localStorage.getItem("cc_guest_token") || "";
+      const storedSessionId = localStorage.getItem("cc_guest_session_id") || "";
+      const storedBank = localStorage.getItem("calmchess_guest_bank") || "";
+
+      const payload = { guest_token: storedToken };
+      if (storedSessionId) payload.session_id = storedSessionId;
+      if (storedBank && !isNaN(parseFloat(storedBank))) payload.bank = parseFloat(storedBank);
+
       const res = await secureFetchApi(API_BASE + "/guest_login.php?action=login&_t=" + Date.now(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: { guest_token: storedToken }
+        body: payload
       });
       const data = await res.json();
       if (!data.success) {
-        showAuthAlert(data.message || "Guest login failed.", true);
+        if (!isAutoRestore) showAuthAlert(data.message || "Guest login failed.", true);
         return;
       }
 
@@ -907,7 +921,13 @@
         guestToken = data.guest_token;
         try { localStorage.setItem("cc_guest_token", guestToken); } catch (e) {}
       }
-      const loadedBank = parseFloat(data.user.bank !== undefined ? data.user.bank : 500);
+      if (guestSessionId) {
+        try { localStorage.setItem("cc_guest_session_id", guestSessionId); } catch (e) {}
+      }
+      try { sessionStorage.setItem("cc_guest_active", "1"); } catch (e) {}
+
+      const loadedBank = parseFloat(data.user.bank !== undefined ? data.user.bank : (data.bank !== undefined ? data.bank : 500));
+      try { localStorage.setItem("calmchess_guest_bank", loadedBank.toFixed(2)); } catch (e) {}
 
       const lobbyScreen = getEl("lobby-screen");
       const gameScreen = getEl("game-screen");
@@ -927,11 +947,11 @@
       const shortId = guestSessionId.length > 16 ? guestSessionId.substring(0, 16) + "..." : guestSessionId;
       if (data.was_reset) {
         global.showNotification("⚠️ Your 30-day guest session expired.\nBankroll has been reset to $500.00.", false);
-      } else {
-        global.showNotification("🎲 Logged in as Guest ($500 Bankroll)\nSession: " + shortId + "\nNote: Bankroll resets to $500 if session expires.", true);
+      } else if (!isAutoRestore) {
+        global.showNotification("🎲 Logged in as Guest ($" + loadedBank.toFixed(2) + " Bankroll)\nSession: " + shortId + "\nNote: Bankroll resets to $500 if session expires.", true);
       }
     } catch (err) {
-      showAuthAlert("Network Error during guest login: " + err.message, true);
+      if (!isAutoRestore) showAuthAlert("Network Error during guest login: " + err.message, true);
     }
   };
 
@@ -949,7 +969,12 @@
     isGuest = false;
     guestSessionId = "";
     guestToken = "";
-    try { localStorage.removeItem("cc_guest_token"); } catch (e) {}
+    try {
+      sessionStorage.removeItem("cc_guest_active");
+      localStorage.removeItem("cc_guest_token");
+      localStorage.removeItem("cc_guest_session_id");
+      localStorage.removeItem("calmchess_guest_bank");
+    } catch (e) {}
 
     try {
       await secureFetchApi(API_BASE + "/logout.php?_t=" + Date.now(), {
@@ -2822,6 +2847,26 @@
     window.addEventListener("focus", () => {
       loadAdminMode().then(() => syncSimulatedCreditsFromServer());
     });
+
+    // Check if player was actively in a guest session prior to page refresh
+    const wasGuestActive = (function () {
+      try {
+        return sessionStorage.getItem("cc_guest_active") === "1" ||
+               (Boolean(localStorage.getItem("cc_guest_token")) && Boolean(localStorage.getItem("cc_guest_session_id")));
+      } catch (e) { return false; }
+    })();
+
+    if (wasGuestActive) {
+      // Pre-populate cached bankroll onto HUD immediately to avoid visual flicker before server verification
+      try {
+        const cachedBank = localStorage.getItem("calmchess_guest_bank");
+        if (cachedBank && !isNaN(parseFloat(cachedBank))) {
+          const bankDisplay = getEl("bank-display");
+          if (bankDisplay) bankDisplay.textContent = Math.round(parseFloat(cachedBank));
+        }
+      } catch (e) {}
+      global.handleGuestLogin(true);
+    }
 
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("test_split") === "1" || urlParams.get("test_bot_split") === "1") {

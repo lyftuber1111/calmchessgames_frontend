@@ -2849,26 +2849,6 @@
       loadAdminMode().then(() => syncSimulatedCreditsFromServer());
     });
 
-    // Check if player was actively in a guest session prior to page refresh
-    const wasGuestActive = (function () {
-      try {
-        return sessionStorage.getItem("cc_guest_active") === "1" ||
-               (Boolean(localStorage.getItem("cc_guest_token")) && Boolean(localStorage.getItem("cc_guest_session_id")));
-      } catch (e) { return false; }
-    })();
-
-    if (wasGuestActive) {
-      // Pre-populate cached bankroll onto HUD immediately to avoid visual flicker before server verification
-      try {
-        const cachedBank = localStorage.getItem("calmchess_guest_bank");
-        if (cachedBank && !isNaN(parseFloat(cachedBank))) {
-          const bankDisplay = getEl("bank-display");
-          if (bankDisplay) bankDisplay.textContent = Math.round(parseFloat(cachedBank));
-        }
-      } catch (e) {}
-      global.handleGuestLogin(true);
-    }
-
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("test_split") === "1" || urlParams.get("test_bot_split") === "1") {
       const gameScreen = getEl("game-screen");

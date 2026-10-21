@@ -188,13 +188,13 @@
     <ul>
       <li><strong>Registered Account Information:</strong> Email address (for account recovery and login identification), optional chosen username, and a cryptographic Bcrypt hash of your password. We never store plain-text passwords.</li>
       <li><strong>Guest &amp; Trial Play Information:</strong> When playing as a guest, a randomized anonymous identifier (e.g. <code>guest_&lt;id&gt;</code>) and a PHP session token are generated. No email, name, or phone number is collected for guest trials.</li>
-      <li><strong>In-Game Bankroll &amp; State:</strong> Virtual entertainment credit balances, active game seats, sound preferences, and AI commentary settings are saved to provide continuous gameplay.</li>
+      <li><strong>In-Game Preferences &amp; State:</strong> Game settings, board configurations, sound preferences, and session state are saved to provide continuous gameplay.</li>
       <li><strong>In-App Purchase &amp; Financial Ledger:</strong> For transactions processed via PayPal or Google Play In-App Billing, we record order IDs, product SKU, purchase timestamp, credits awarded, and payment method to fulfill orders and comply with statutory 7-year financial accounting and tax retention regulations (IRS compliance). Payment card details are processed exclusively by PayPal or Google Play and are never received or stored on our servers.</li>
       <li><strong>Consultation &amp; Contact Requests:</strong> When submitting appointment requests or contact inquiries, we collect attendee name, email address, optional phone number, and consultation topic solely to schedule and conduct the requested meeting.</li>
     </ul>
 
     <h2><span class="num">2.</span> Cookies &amp; Local Storage Policy</h2>
-    <p>We use cookies and browser local storage strictly for essential operations, session continuity, and security. We do <strong>not</strong> use third-party tracking, behavioral advertising, or data-broker cookies.</p>
+    <p>We use cookies and browser local storage strictly for essential operations, session continuity, and user preferences. We do <strong>not</strong> use third-party tracking, behavioral advertising, or data-broker cookies.</p>
 
     <table class="cookie-table">
       <thead>
@@ -209,14 +209,8 @@
         <tr>
           <td><code>PHPSESSID</code></td>
           <td>Essential / First-Party</td>
-          <td>Session (or 30 days for Guest trial)</td>
-          <td>Secures your authenticated session, associates your current table seat and bankroll, and prevents cross-site request forgery.</td>
-        </tr>
-        <tr>
-          <td><code>cc_guest_token</code></td>
-          <td>Essential / First-Party</td>
-          <td>30 days</td>
-          <td>Maintains guest session continuity so your trial $500 bankroll persists across browser refreshes.</td>
+          <td>Session</td>
+          <td>Secures your authenticated session, maintains essential application state, and prevents cross-site request forgery.</td>
         </tr>
         <tr>
           <td><code>cc_admin_jwt</code></td>
@@ -225,26 +219,24 @@
           <td>HMAC-SHA256 authenticated administrative authorization token for authorized maintenance.</td>
         </tr>
         <tr>
+          <td><code>calmchess_segments</code></td>
+          <td>Functional / LocalStorage</td>
+          <td>Persistent</td>
+          <td>Caches navigation ring layouts and interactive board configurations for rapid rendering.</td>
+        </tr>
+        <tr>
           <td><code>cc_sound_pref</code></td>
           <td>Functional / LocalStorage</td>
           <td>Persistent</td>
-          <td>Remembers your audio mute/unmute preference across table sessions.</td>
+          <td>Remembers your audio mute/unmute preferences across gameplay sessions.</td>
         </tr>
       </tbody>
     </table>
 
     <p>All session cookies are configured with strict security flags: <code>SameSite=Lax</code> or <code>SameSite=Strict</code>, <code>HttpOnly</code> (blocking JavaScript credential theft), and <code>Secure</code> (mandating TLS/HTTPS transport).</p>
-    <p>You may configure your web browser to reject cookies; however, doing so will prevent you from staying signed in, preserving guest bankrolls, or accessing authenticated gaming features.</p>
+    <p>You may configure your web browser to reject cookies; however, doing so will prevent you from staying signed in, preserving preferences, or accessing authenticated gaming features.</p>
 
-    <h2><span class="num">3.</span> Guest Sessions &amp; Bankroll Reset Policy</h2>
-    <p>Guest accounts provide instant access to trial gameplay without providing personal details. Please note the following session rules:</p>
-    <ul>
-      <li>Guest sessions persist for an industry-standard maximum duration of <strong>30 days (2,592,000 seconds)</strong> from your last active game round.</li>
-      <li><strong>Bankroll Reset on Expiry:</strong> If your guest session expires, the database automatically cleans up expired tokens and resets your starting bankroll to <strong>$500</strong>.</li>
-      <li><strong>Credit Purchases:</strong> Guests may purchase virtual entertainment credits, but a prominent warning will display your active Session ID reminding you that expired sessions reset to $500. To protect your credits permanently across all devices and sessions, we encourage registering a free account.</li>
-    </ul>
-
-    <h2><span class="num">4.</span> In-Transit Encryption &amp; Security Standards</h2>
+    <h2><span class="num">3.</span> In-Transit Encryption &amp; Security Standards</h2>
     <p>We employ multi-layer security protections to safeguard your data:</p>
     <ul>
       <li><strong>Transport Layer Security (TLS 1.3):</strong> All network traffic between your client and our backend is encrypted via HTTPS with modern cipher suites.</li>
@@ -252,7 +244,7 @@
       <li><strong>Prepared SQL Statements:</strong> All database queries use parameterized prepared statements with strict type binding to eliminate SQL injection vectors.</li>
     </ul>
 
-    <h2><span class="num">5.</span> Account &amp; Data Deletion (GDPR &amp; Google Play Compliance)</h2>
+    <h2><span class="num">4.</span> Account &amp; Data Deletion (GDPR &amp; Google Play Compliance)</h2>
     <p>You have the absolute right to request permanent deletion of your account credentials and personal data at any time. To exercise this right:</p>
     <ul>
       <li>Visit our automated <a href="delete_account.html" style="color: #f1c40f; text-decoration: underline;">Account Deletion Request Page</a> to submit an immediate deletion request.</li>
@@ -260,7 +252,7 @@
     </ul>
     <p>Personal credentials, emails, and active game states will be permanently purged within 24–48 hours. In accordance with statutory tax and financial accounting requirements, financial transaction ledger rows are retained in a pseudonymized, anonymized form (with user IDs removed and emails replaced with audit placeholders).</p>
 
-    <h2><span class="num">6.</span> Contacting Us</h2>
+    <h2><span class="num">5.</span> Contacting Us</h2>
     <p>If you have questions regarding this Privacy Policy, our cookie practices, or wish to exercise your data privacy rights, please contact:</p>
     <p>
       <strong>Brian Berry &bull; Calm Chess Computers</strong><br>

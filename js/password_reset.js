@@ -304,7 +304,7 @@
         alertEl.innerHTML = `
           <strong>✔ Password Updated Successfully!</strong><br>
           ${data.message || "Your password has been reset."}<br><br>
-          <a href="blackjack.html" class="btn-submit" style="display:inline-block; text-align:center; text-decoration:none; padding:10px 18px; margin-top:8px;">Sign In to Blackjack &rarr;</a>
+          <a href="index.html" class="btn-submit" style="display:inline-block; text-align:center; text-decoration:none; padding:10px 18px; margin-top:8px;">Return to Home &rarr;</a>
         `;
         alertEl.style.display = "block";
         newPwdInput.value = "";
@@ -385,7 +385,7 @@
         alertEl.innerHTML = `
           <strong>✔ Password Changed Successfully!</strong><br>
           ${data.message || "Your password has been changed."}<br><br>
-          <a href="blackjack.html" class="btn-submit" style="display:inline-block; text-align:center; text-decoration:none; padding:10px 18px; margin-top:8px;">Sign In to Blackjack &rarr;</a>
+          <a href="index.html" class="btn-submit" style="display:inline-block; text-align:center; text-decoration:none; padding:10px 18px; margin-top:8px;">Return to Home &rarr;</a>
         `;
         alertEl.style.display = "block";
         currPwdInput.value = "";

@@ -473,6 +473,98 @@
     return isMatch;
   };
 
+    // ==========================================
+  // AGE VERIFICATION POP-UP GATE & COOKIE LOGIC
+  // ==========================================
+  const AGE_COOKIE_KEY = "cc_age_verified";
+  const AGE_COOKIE_DAYS = 365; // Persist for 1 year so user is not prompted repeatedly on refresh
+
+  function getAgeCookie() {
+    try {
+      const match = document.cookie.match(/(?:^|;\s*)cc_age_verified=([^;]*)/);
+      if (match) {
+        const val = decodeURIComponent(match[1]);
+        if (val === "1" || val === "true") return true;
+      }
+    } catch (e) {}
+    return false;
+  }
+
+  function setAgeCookie(val, days) {
+    try {
+      let expires = "";
+      if (days) {
+        const date = new Date();
+        date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+        expires = "; expires=" + date.toUTCString();
+      }
+      const isHttps = (typeof location !== "undefined" && location.protocol === "https:");
+      document.cookie = AGE_COOKIE_KEY + "=" + encodeURIComponent(val) + expires + "; path=/; SameSite=Lax" + (isHttps ? "; Secure" : "");
+    } catch (e) {}
+    try {
+      localStorage.setItem(AGE_COOKIE_KEY, val);
+    } catch (e) {}
+  }
+
+  global.isAgeGateVerified = function () {
+    if (getAgeCookie()) return true;
+    try {
+      if (localStorage.getItem(AGE_COOKIE_KEY) === "1" || localStorage.getItem(AGE_COOKIE_KEY) === "true") {
+        setAgeCookie("1", AGE_COOKIE_DAYS);
+        return true;
+      }
+    } catch (e) {}
+    return false;
+  };
+
+  global.handleAgeGateCheckboxChange = function (checked) {
+    const btn = getEl("age-gate-enter-btn");
+    const err = getEl("age-gate-error");
+    if (err) err.style.display = "none";
+    if (btn) {
+      if (checked) {
+        btn.disabled = false;
+        btn.style.opacity = "1";
+        btn.style.cursor = "pointer";
+      } else {
+        btn.disabled = true;
+        btn.style.opacity = "0.5";
+        btn.style.cursor = "not-allowed";
+      }
+    }
+  };
+
+  global.handleAgeGateConfirm = function () {
+    const check = getEl("age-gate-checkbox");
+    const err = getEl("age-gate-error");
+    if (!check || !check.checked) {
+      if (err) {
+        err.style.display = "block";
+        err.textContent = '⚠️ You must check "I am 18 or older" to proceed.';
+      }
+      return;
+    }
+    // Set cookie and localStorage for 365 days
+    setAgeCookie("1", AGE_COOKIE_DAYS);
+    const modal = getEl("age-gate-modal");
+    if (modal) {
+      modal.classList.remove("active");
+      modal.style.display = "none";
+    }
+  };
+
+  global.checkAgeGateOnLoad = function () {
+    const modal = getEl("age-gate-modal");
+    if (!modal) return;
+    if (global.isAgeGateVerified()) {
+      modal.classList.remove("active");
+      modal.style.display = "none";
+    } else {
+      modal.classList.add("active");
+      modal.style.display = "flex";
+    }
+  };
+
   global.switchAuthTab = function (tab) {
     currentAuthTab = tab;
     const tabReg = getEl("tab-reg");
@@ -537,6 +629,23 @@
         rulesEl.style.display = "flex";
         rulesEl.style.flexDirection = "column";
       }
+      const tosDisclosure = getEl("register-tos-disclosure-group");
+      if (tosDisclosure) {
+        tosDisclosure.classList.remove("hidden");
+        tosDisclosure.style.removeProperty("display");
+        tosDisclosure.style.display = "block";
+      }
+      const ageCheckGroup = getEl("register-age-checkbox-group");
+      if (ageCheckGroup) {
+        ageCheckGroup.classList.remove("hidden");
+        ageCheckGroup.style.removeProperty("display");
+        ageCheckGroup.style.display = "block";
+      }
+      const ageCheckInput = getEl("auth-age-check");
+      if (ageCheckInput) {
+        ageCheckInput.disabled = false;
+        ageCheckInput.required = true;
+      }
       if (confirmGroup) {
         confirmGroup.classList.remove("hidden");
         confirmGroup.style.removeProperty("display");
@@ -590,6 +699,21 @@
       if (rulesEl) {
         rulesEl.classList.add("hidden");
         rulesEl.style.setProperty("display", "none", "important");
+      }
+      const tosDisclosure = getEl("register-tos-disclosure-group");
+      if (tosDisclosure) {
+        tosDisclosure.classList.add("hidden");
+        tosDisclosure.style.setProperty("display", "none", "important");
+      }
+      const ageCheckGroup = getEl("register-age-checkbox-group");
+      if (ageCheckGroup) {
+        ageCheckGroup.classList.add("hidden");
+        ageCheckGroup.style.setProperty("display", "none", "important");
+      }
+      const ageCheckInput = getEl("auth-age-check");
+      if (ageCheckInput) {
+        ageCheckInput.disabled = true;
+        ageCheckInput.required = false;
       }
       if (confirmGroup) {
         confirmGroup.classList.add("hidden");
@@ -749,6 +873,13 @@
         return;
       }
 
+      const ageCheck = getEl("auth-age-check");
+      if (ageCheck && !ageCheck.checked) {
+        showAuthAlert("Registration is strictly restricted to individuals 18 years of age or older. Please check 'I am 18 or older'.", true);
+        if (ageCheck.focus) ageCheck.focus();
+        return;
+      }
+
       identifier = email;
     } else {
       const idInput = getEl("auth-identifier");
@@ -779,7 +910,9 @@
       username: username,
       password: password,
       confirm_password: getEl("auth-password-confirm") ? getEl("auth-password-confirm").value : password,
-      identifier: email
+      identifier: email,
+      is_18: 1,
+      age_verified: 1
     } : {
       identifier: identifier,
       email: identifier,
@@ -883,6 +1016,7 @@
       if (lobbyScreen) lobbyScreen.classList.remove("active");
       if (gameScreen) gameScreen.classList.add("active");
 
+      setAgeCookie("1", AGE_COOKIE_DAYS);
       loadAdminMode().then(() => syncSimulatedCreditsFromServer());
       initGameState(loadedBank);
       updateResponsiveCardScale();
@@ -893,6 +1027,14 @@
 
   global.handleGuestLogin = async function (isAutoRestore) {
     clearAuthAlert();
+    if (!global.isAgeGateVerified()) {
+      const modal = getEl("age-gate-modal");
+      if (modal) {
+        modal.classList.add("active");
+        modal.style.display = "flex";
+      }
+      return;
+    }
     try {
       const storedToken = localStorage.getItem("cc_guest_token") || "";
       const storedSessionId = localStorage.getItem("cc_guest_session_id") || "";
@@ -941,6 +1083,7 @@
         guestPill.title = "Guest Mode Active: Bankroll resets to $500 if session expires (Session ID: " + guestSessionId + ")";
       }
 
+      setAgeCookie("1", AGE_COOKIE_DAYS);
       loadAdminMode().then(() => syncSimulatedCreditsFromServer());
       initGameState(loadedBank);
       updateResponsiveCardScale();
@@ -2445,6 +2588,14 @@
   }
 
   global.startGame = async function () {
+    if (!global.isAgeGateVerified()) {
+      const modal = getEl("age-gate-modal");
+      if (modal) {
+        modal.classList.add("active");
+        modal.style.display = "flex";
+      }
+      return;
+    }
     if (roundCleanupTimer) {
       clearTimeout(roundCleanupTimer);
       roundCleanupTimer = null;
@@ -2841,6 +2992,7 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    global.checkAgeGateOnLoad();
     updateResponsiveCardScale();
     updateAudioButtonUI();
     updateGeminiAdvisorUI();

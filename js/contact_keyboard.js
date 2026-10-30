@@ -454,11 +454,19 @@
     });
   }
 
+  const isTouchDevice = () => {
+    return /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+           (('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 900) ||
+           window.innerWidth <= 850;
+  };
+
   function clearKeyboardText() {
     const field = document.getElementById('wood-kb-textarea');
     if (field) {
       field.value = '';
-      field.focus();
+      if (!isTouchDevice()) {
+        try { field.focus({ preventScroll: true }); } catch (_) {}
+      }
     }
     if (activeTargetInput) {
       activeTargetInput.value = '';
@@ -558,9 +566,23 @@
       window.woodAudio.init();
     }
 
-    // Ready parchment cursor
+    // Suppress phone's native software keyboard
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+    if ('virtualKeyboard' in navigator) {
+      try { navigator.virtualKeyboard.hide(); } catch (_) {}
+    }
+
     if (field) {
-      setTimeout(() => field.focus({ preventScroll: true }), 100);
+      field.readOnly = true;
+      field.inputMode = 'none';
+      field.setAttribute('readonly', 'readonly');
+      if (!isTouchDevice()) {
+        setTimeout(() => {
+          try { field.focus({ preventScroll: true }); } catch (_) {}
+        }, 100);
+      }
     }
   }
 
@@ -579,6 +601,13 @@
     const field = document.getElementById('wood-kb-textarea');
     if (field && activeTargetInput) {
       activeTargetInput.value = field.value;
+    }
+    // Dismiss any keyboard focus
+    if (document.activeElement && typeof document.activeElement.blur === 'function') {
+      document.activeElement.blur();
+    }
+    if ('virtualKeyboard' in navigator) {
+      try { navigator.virtualKeyboard.hide(); } catch (_) {}
     }
   }
 
@@ -784,29 +813,50 @@
 
     // Auto-open when user clicks or focuses contact message textarea
     if (contactMessage) {
-      contactMessage.addEventListener('focus', () => {
+      const handleContactOpen = (e) => {
+        if (contactMessage && typeof contactMessage.blur === 'function') {
+          contactMessage.blur();
+        }
+        if ('virtualKeyboard' in navigator) {
+          try { navigator.virtualKeyboard.hide(); } catch (_) {}
+        }
         activeTargetInput = contactMessage;
         openWoodKeyboard(contactMessage);
-      });
-      contactMessage.addEventListener('click', () => {
-        activeTargetInput = contactMessage;
-        openWoodKeyboard(contactMessage);
-      });
+      };
+      contactMessage.addEventListener('focus', handleContactOpen);
+      contactMessage.addEventListener('click', handleContactOpen);
     }
 
     // Auto-open when user clicks or focuses booking notes textarea
     if (bookingNotes) {
-      bookingNotes.addEventListener('focus', () => {
+      const handleBookingOpen = (e) => {
+        if (bookingNotes && typeof bookingNotes.blur === 'function') {
+          bookingNotes.blur();
+        }
+        if ('virtualKeyboard' in navigator) {
+          try { navigator.virtualKeyboard.hide(); } catch (_) {}
+        }
         activeTargetInput = bookingNotes;
         openWoodKeyboard(bookingNotes);
-      });
-      bookingNotes.addEventListener('click', () => {
-        activeTargetInput = bookingNotes;
-        openWoodKeyboard(bookingNotes);
-      });
+      };
+      bookingNotes.addEventListener('focus', handleBookingOpen);
+      bookingNotes.addEventListener('click', handleBookingOpen);
     }
 
     if (field) {
+      field.readOnly = true;
+      field.inputMode = 'none';
+      field.setAttribute('readonly', 'readonly');
+      field.addEventListener('focus', () => {
+        if ('virtualKeyboard' in navigator) {
+          try { navigator.virtualKeyboard.hide(); } catch (_) {}
+        }
+      });
+      field.addEventListener('touchstart', () => {
+        if ('virtualKeyboard' in navigator) {
+          try { navigator.virtualKeyboard.hide(); } catch (_) {}
+        }
+      }, { passive: true });
       field.addEventListener('input', () => {
         if (activeTargetInput) activeTargetInput.value = field.value;
         updateKeyboardStats();

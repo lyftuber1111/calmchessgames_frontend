@@ -394,8 +394,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateStats();
-    if (document.activeElement !== field) {
-      field.focus({ preventScroll: true });
+    const isTouch = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                    (('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 900);
+    if (!isTouch && document.activeElement !== field) {
+      try { field.focus({ preventScroll: true }); } catch (_) {}
     }
     if ('virtualKeyboard' in navigator) {
       try { navigator.virtualKeyboard.hide(); } catch (_) {}

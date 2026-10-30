@@ -919,6 +919,90 @@
             background: rgba(255, 215, 0, 0.22);
             transform: scale(1.03);
         }
+        /* System Keyboard & Speech-to-Text Input Mode Controls */
+        .input-mode-controls {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn-system-input-toggle {
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-system-input-toggle:hover {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            border-color: #94a3b8;
+        }
+        .btn-system-input-toggle.is-active {
+            background: linear-flex;
+            background: rgba(59, 130, 246, 0.22);
+            color: #60a5fa;
+            border-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
+        }
+        .btn-dictate-prompt {
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffd700;
+            border: 1px solid #cfa860;
+            border-radius: 6px;
+            padding: 4px 9px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-dictate-prompt:hover {
+            background: rgba(255, 215, 0, 0.22);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+        }
+        .btn-dictate-prompt.is-dictating,
+        .wood-pill-btn.is-dictating {
+            background: linear-gradient(135deg, #b91c1c, #ef4444) !important;
+            color: #ffffff !important;
+            border-color: #fca5a5 !important;
+            animation: pulseDictating 1.2s infinite ease-in-out !important;
+        }
+        @keyframes pulseDictating {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+        .btn-system-kb {
+            border-color: #3b82f6 !important;
+            color: #93c5fd !important;
+        }
+        .btn-system-kb:hover {
+            background: rgba(59, 130, 246, 0.25) !important;
+            color: #ffffff !important;
+        }
+        .btn-dictate {
+            border-color: #ffd700 !important;
+            color: #ffd700 !important;
+        }
+        .btn-dictate:hover {
+            background: rgba(255, 215, 0, 0.25) !important;
+        }
+        /* Mobile auto-rotate adjustments for system kb button */
+        body.mobile-auto-rotate .btn-system-kb,
+        body.mobile-auto-rotate .btn-dictate {
+            display: inline-flex !important;
+            padding: 1px 5px !important;
+            font-size: 0.65rem !important;
+        }
     </style>
 
     <!-- Wooden Mechanical Keyboard Styles -->
@@ -1482,6 +1566,8 @@
 
 </head>
 <body>
+    <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true" style="position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;"></div>
+
 
     <header id="siteHeader">
         <a href="https://calmchessgames.com" class="header-banner-link" style="display: block; text-decoration: none; max-width: min(100%, 850px); width: 100%;" aria-label="Calm Chess Computers & Games Home">
@@ -1615,9 +1701,19 @@
                             <div class="form-group">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
                                     <label class="form-label" for="bookingNotes" style="margin-bottom: 0;">Agenda / Questions for Brian</label>
-                                    <button type="button" id="btnOpenWoodKeyboardBooking" class="btn-wood-prompt" style="background: linear-gradient(135deg, #5a3721, #3f2516); color: #ffd700; border: 1px solid #cfa860; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
-                                        ⌨️ Type with Wooden Keyboard
-                                    </button>
+                                    <div class="input-mode-controls">
+                                        <button type="button" id="btnToggleSystemKbBooking" class="btn-system-input-toggle" title="Switch to System Input Field &amp; Keyboard" aria-label="Use System Keyboard and Input Field">
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
+                                            <span class="system-kb-btn-text">📱 System Keyboard</span>
+                                        </button>
+                                        <button type="button" id="btnDictateBooking" class="btn-dictate-prompt" title="Speech to Text Dictation" aria-label="Speech to Text Voice Dictation">
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.38-1.14-1-1.14z"/></svg>
+                                            <span class="dictate-btn-text">🎙️ Dictate</span>
+                                        </button>
+                                        <button type="button" id="btnOpenWoodKeyboardBooking" class="btn-wood-prompt" style="background: linear-gradient(135deg, #5a3721, #3f2516); color: #ffd700; border: 1px solid #cfa860; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+                                            ⌨️ Wooden Keyboard
+                                        </button>
+                                    </div>
                                 </div>
                                 <textarea id="bookingNotes" class="form-textarea" placeholder="Briefly outline what you'd like to discuss or accomplish during our session, or tap above to type with our acoustic wooden mechanical keyboard..."></textarea>
                             </div>
@@ -1686,9 +1782,19 @@
                         <div class="form-group">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
                                 <label class="form-label" for="contactMessage" style="margin-bottom: 0;">Message <span class="req">*</span></label>
-                                <button type="button" id="btnOpenWoodKeyboard" class="btn-wood-prompt" style="background: linear-gradient(135deg, #5a3721, #3f2516); color: #ffd700; border: 1px solid #cfa860; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
-                                    ⌨️ Type with Wooden Keyboard
-                                </button>
+                                <div class="input-mode-controls">
+                                    <button type="button" id="btnToggleSystemKbContact" class="btn-system-input-toggle" title="Switch to System Input Field &amp; Keyboard" aria-label="Use System Keyboard and Input Field">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
+                                        <span class="system-kb-btn-text">📱 System Keyboard</span>
+                                    </button>
+                                    <button type="button" id="btnDictateContact" class="btn-dictate-prompt" title="Speech to Text Dictation" aria-label="Speech to Text Voice Dictation">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.38-1.14-1-1.14z"/></svg>
+                                        <span class="dictate-btn-text">🎙️ Dictate</span>
+                                    </button>
+                                    <button type="button" id="btnOpenWoodKeyboard" class="btn-wood-prompt" style="background: linear-gradient(135deg, #5a3721, #3f2516); color: #ffd700; border: 1px solid #cfa860; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+                                        ⌨️ Wooden Keyboard
+                                    </button>
+                                </div>
                             </div>
                             <textarea id="contactMessage" class="form-textarea" style="min-height: 140px;" placeholder="Write your message here, or tap above to type with our acoustic wooden mechanical keyboard..." required></textarea>
                         </div>
@@ -1816,6 +1922,12 @@
                     </div>
                     <button type="button" id="mute-btn-contact" class="wood-pill-btn" title="Toggle Mute">🔊</button>
                     <button type="button" id="rotate-btn-contact" class="wood-pill-btn" title="Rotate Keyboard for Mobile">🔄 Rotate</button>
+                    <button type="button" id="switch-to-system-kb-btn" class="wood-pill-btn btn-system-kb" title="Switch to System Input Field &amp; Keyboard" aria-label="Switch to System Keyboard and Input Field">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="vertical-align: -2px; margin-right: 3px;" aria-hidden="true"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>📱 System KB
+                    </button>
+                    <button type="button" id="speech-dictate-modal-btn" class="wood-pill-btn btn-dictate" title="Speech to Text / Voice Dictation" aria-label="Speech to Text Voice Dictation">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="vertical-align: -2px; margin-right: 3px;" aria-hidden="true"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.38-1.14-1-1.14z"/></svg>🎙️ Dictate
+                    </button>
                     <button type="button" id="close-keyboard-btn" class="wood-pill-btn close-btn" title="Close Keyboard">✕ Close</button>
                 </div>
             </div>
@@ -1824,7 +1936,10 @@
             <div class="wood-kb-display-plaque">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
                     <span id="wood-kb-title-label" style="font-size: 0.82rem; color: #ffd700; font-weight: 700;">Message to Brian Berry:</span>
-                    <div style="display: flex; gap: 6px; align-items: center;">
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" id="plaque-system-kb-btn" class="wood-pill-btn btn-system-kb" title="Switch to System Input Field &amp; Keyboard" aria-label="Use System Keyboard">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align: -1px; margin-right: 2px;" aria-hidden="true"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>📱 System KB
+                        </button>
                         <button type="button" id="copy-kb-btn" class="wood-pill-btn" title="Copy text to clipboard">📋 Copy</button>
                         <button type="button" id="clear-kb-btn" class="wood-pill-btn" title="Clear message text">🗑️ Clear</button>
                         <button type="button" id="send-kb-btn" class="wood-pill-btn btn-send-message" title="Send Message to Brian Berry">✉️ Send Message</button>

@@ -492,6 +492,238 @@
     });
   }
 
+  /* ==========================================================================
+     SYSTEM KEYBOARD & ACCESSIBILITY / SPEECH-TO-TEXT DETECTION SYSTEM
+     ========================================================================== */
+  let isSystemInputPreferred = false;
+  let isScreenReaderDetected = false;
+  let isSpeechToTextActive = false;
+  let lastPointerInteractionTime = 0;
+  let speechRecognizerInstance = null;
+  let isSpeechListening = false;
+
+  // Track recent pointer interactions to differentiate screen reader virtual clicks from real touch/mouse
+  window.addEventListener('pointerdown', () => { lastPointerInteractionTime = Date.now(); }, { passive: true });
+  window.addEventListener('touchstart', () => { lastPointerInteractionTime = Date.now(); }, { passive: true });
+  window.addEventListener('mousedown', () => { lastPointerInteractionTime = Date.now(); }, { passive: true });
+
+  // Screen Reader Accessibility Announcer
+  function announceA11y(message) {
+    const announcer = document.getElementById('a11y-announcer');
+    if (announcer) {
+      announcer.textContent = '';
+      setTimeout(() => { announcer.textContent = message; }, 50);
+    }
+  }
+
+  // Detect Assistive Technology (Screen Readers, Accessibility Preferences)
+  function checkAssistiveTech() {
+    let detected = false;
+    try {
+      if (window.matchMedia('(forced-colors: active)').matches ||
+          window.matchMedia('(prefers-contrast: more)').matches ||
+          window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        detected = true;
+      }
+    } catch (_) {}
+
+    const ua = navigator.userAgent || '';
+    if (/TalkBack|VoiceOver|NVDA|JAWS|Orca|Accessibility|Android.*Version\/[0-9].*Chrome\/[0-9]/i.test(ua)) {
+      detected = true;
+    }
+
+    if (detected && !isScreenReaderDetected) {
+      isScreenReaderDetected = true;
+      activateSystemInputMode('screen_reader_detected');
+    }
+    return detected;
+  }
+
+  // Activate System Input Mode (Switches from wooden keyboard to native system input)
+  function activateSystemInputMode(reason, targetInput) {
+    isSystemInputPreferred = true;
+    const target = targetInput || activeTargetInput || document.getElementById('contactMessage') || document.getElementById('bookingNotes');
+    activeTargetInput = target;
+
+    // Close wooden keyboard modal if currently open
+    if (isKeyboardOpen) {
+      const field = document.getElementById('wood-kb-textarea');
+      if (field && target) {
+        target.value = field.value;
+      }
+      closeWoodKeyboard();
+    }
+
+    // Ensure system textarea is writable and native keyboard is enabled
+    if (target) {
+      target.readOnly = false;
+      target.removeAttribute('readonly');
+      target.inputMode = 'text';
+      target.setAttribute('inputmode', 'text');
+    }
+
+    // Update button states on page
+    updateSystemToggleButtons(true);
+
+    if (reason === 'screen_reader_detected') {
+      announceA11y('Screen reader detected. Switched to system input field and system keyboard.');
+    } else if (reason === 'speech_to_text_detected' || reason === 'voice_dictation') {
+      announceA11y('Speech-to-text active. System input field and keyboard ready for voice input.');
+    } else {
+      announceA11y('Switched to system input field and system keyboard.');
+    }
+
+    // Focus system input field smoothly
+    if (target && reason !== 'init') {
+      setTimeout(() => {
+        try { target.focus({ preventScroll: false }); } catch (_) {}
+      }, 100);
+    }
+  }
+
+  // Switch back to Wooden Keyboard Mode
+  function activateWoodKeyboardMode(targetInput) {
+    isSystemInputPreferred = false;
+    updateSystemToggleButtons(false);
+    const target = targetInput || activeTargetInput || document.getElementById('contactMessage') || document.getElementById('bookingNotes');
+    openWoodKeyboard(target);
+    announceA11y('Switched to acoustic wooden mechanical keyboard.');
+  }
+
+  // Update Toggle Button Labels & Active Styles
+  function updateSystemToggleButtons(isSystemActive) {
+    const bookingBtn = document.getElementById('btnToggleSystemKbBooking');
+    const contactBtn = document.getElementById('btnToggleSystemKbContact');
+    [bookingBtn, contactBtn].forEach(btn => {
+      if (!btn) return;
+      btn.classList.toggle('is-active', isSystemActive);
+      const textSpan = btn.querySelector('.system-kb-btn-text');
+      if (textSpan) {
+        textSpan.textContent = isSystemActive ? '✓ System KB Active' : '📱 System Keyboard';
+      }
+    });
+  }
+
+  // Speech to Text (Web Speech API / Dictation Engine)
+  function initSpeechEngine() {
+    const SpeechClass = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechClass) return null;
+    try {
+      const recognizer = new SpeechClass();
+      recognizer.continuous = true;
+      recognizer.interimResults = true;
+      recognizer.lang = navigator.language || 'en-US';
+      return recognizer;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function toggleSpeechDictation(targetInput) {
+    const target = targetInput || activeTargetInput || document.getElementById('contactMessage') || document.getElementById('bookingNotes');
+    activeTargetInput = target;
+
+    // Switch to system input field immediately for speech-to-text
+    activateSystemInputMode('speech_to_text_detected', target);
+
+    if (!speechRecognizerInstance) {
+      speechRecognizerInstance = initSpeechEngine();
+    }
+
+    const dictateBtns = [
+      document.getElementById('btnDictateBooking'),
+      document.getElementById('btnDictateContact'),
+      document.getElementById('speech-dictate-modal-btn')
+    ];
+
+    if (!speechRecognizerInstance) {
+      // Fallback for browsers without Web Speech API
+      announceA11y('System input field active. Tap your mobile keyboard microphone button to dictate.');
+      if (target) {
+        target.focus();
+        target.placeholder = 'Type here or tap your phone keyboard microphone to dictate...';
+      }
+      return;
+    }
+
+    if (isSpeechListening) {
+      try { speechRecognizerInstance.stop(); } catch (_) {}
+      isSpeechListening = false;
+      dictateBtns.forEach(b => {
+        if (!b) return;
+        b.classList.remove('is-dictating');
+        const textEl = b.querySelector('.dictate-btn-text') || b;
+        textEl.textContent = '🎙️ Dictate';
+      });
+      announceA11y('Voice dictation stopped.');
+      return;
+    }
+
+    try {
+      let initialText = target ? target.value : '';
+      speechRecognizerInstance.onresult = (event) => {
+        let transcript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (target) {
+          target.value = initialText + (initialText && !initialText.endsWith(' ') ? ' ' : '') + transcript;
+          target.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      };
+
+      speechRecognizerInstance.onerror = (event) => {
+        console.warn('Speech recognition event:', event.error);
+        isSpeechListening = false;
+        dictateBtns.forEach(b => {
+          if (!b) return;
+          b.classList.remove('is-dictating');
+          const textEl = b.querySelector('.dictate-btn-text') || b;
+          textEl.textContent = '🎙️ Dictate';
+        });
+      };
+
+      speechRecognizerInstance.onend = () => {
+        isSpeechListening = false;
+        dictateBtns.forEach(b => {
+          if (!b) return;
+          b.classList.remove('is-dictating');
+          const textEl = b.querySelector('.dictate-btn-text') || b;
+          textEl.textContent = '🎙️ Dictate';
+        });
+      };
+
+      speechRecognizerInstance.start();
+      isSpeechListening = true;
+      dictateBtns.forEach(b => {
+        if (!b) return;
+        b.classList.add('is-dictating');
+        const textEl = b.querySelector('.dictate-btn-text') || b;
+        textEl.textContent = '🎙️ Listening...';
+      });
+      announceA11y('Listening for voice speech to text. Speak into your microphone.');
+    } catch (err) {
+      console.warn('Could not start speech recognition:', err);
+    }
+  }
+
+  // Global detection for speech dictation inputs (InputEvent insertFromSpeech / insertFromDictation)
+  document.addEventListener('beforeinput', (e) => {
+    if (e.inputType === 'insertFromSpeech' || e.inputType === 'insertFromDictation') {
+      isSpeechToTextActive = true;
+      activateSystemInputMode('speech_to_text_detected', e.target);
+    }
+  });
+
+  // Global detection for keyboard / screen reader tab navigation
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') {
+      if (!isSystemInputPreferred) {
+        checkAssistiveTech();
+      }
+    }
+  });
+
   // Rotation prompt badge state
   let hasBeenHorizontalInSession = false;
   let rotateBadgeDismissedThisSession = false;
@@ -862,9 +1094,17 @@
       });
     }
 
-    // Auto-open when user clicks or focuses contact message textarea
+    // System Keyboard & Wooden Keyboard Selection for contactMessage
     if (contactMessage) {
       const handleContactOpen = (e) => {
+        if (isSystemInputPreferred || isScreenReaderDetected || isSpeechToTextActive) {
+          return;
+        }
+        const isNonPointerFocus = (Date.now() - lastPointerInteractionTime > 600);
+        if (isNonPointerFocus) {
+          activateSystemInputMode('screen_reader_detected', contactMessage);
+          return;
+        }
         if (contactMessage && typeof contactMessage.blur === 'function') {
           contactMessage.blur();
         }
@@ -878,9 +1118,17 @@
       contactMessage.addEventListener('click', handleContactOpen);
     }
 
-    // Auto-open when user clicks or focuses booking notes textarea
+    // System Keyboard & Wooden Keyboard Selection for bookingNotes
     if (bookingNotes) {
       const handleBookingOpen = (e) => {
+        if (isSystemInputPreferred || isScreenReaderDetected || isSpeechToTextActive) {
+          return;
+        }
+        const isNonPointerFocus = (Date.now() - lastPointerInteractionTime > 600);
+        if (isNonPointerFocus) {
+          activateSystemInputMode('screen_reader_detected', bookingNotes);
+          return;
+        }
         if (bookingNotes && typeof bookingNotes.blur === 'function') {
           bookingNotes.blur();
         }
@@ -926,6 +1174,72 @@
       });
     }
 
+    // Switch to system keyboard buttons inside wooden keyboard modal
+    const btnSwitchSystemKb = document.getElementById('switch-to-system-kb-btn');
+    const btnPlaqueSystemKb = document.getElementById('plaque-system-kb-btn');
+    [btnSwitchSystemKb, btnPlaqueSystemKb].forEach(btn => {
+      if (btn) {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          activateSystemInputMode('user_switched', activeTargetInput);
+        });
+      }
+    });
+
+    // Voice dictation button inside modal
+    const btnDictateModal = document.getElementById('speech-dictate-modal-btn');
+    if (btnDictateModal) {
+      btnDictateModal.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleSpeechDictation(activeTargetInput);
+      });
+    }
+
+    // System Keyboard toggle buttons on page
+    const btnToggleSysBooking = document.getElementById('btnToggleSystemKbBooking');
+    if (btnToggleSysBooking) {
+      btnToggleSysBooking.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (isSystemInputPreferred) {
+          activateWoodKeyboardMode(bookingNotes);
+        } else {
+          activateSystemInputMode('user_toggled', bookingNotes);
+        }
+      });
+    }
+
+    const btnToggleSysContact = document.getElementById('btnToggleSystemKbContact');
+    if (btnToggleSysContact) {
+      btnToggleSysContact.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (isSystemInputPreferred) {
+          activateWoodKeyboardMode(contactMessage);
+        } else {
+          activateSystemInputMode('user_toggled', contactMessage);
+        }
+      });
+    }
+
+    // Speech dictation buttons on page
+    const btnDictBooking = document.getElementById('btnDictateBooking');
+    if (btnDictBooking) {
+      btnDictBooking.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleSpeechDictation(bookingNotes);
+      });
+    }
+
+    const btnDictContact = document.getElementById('btnDictateContact');
+    if (btnDictContact) {
+      btnDictContact.addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleSpeechDictation(contactMessage);
+      });
+    }
+
+    // Check accessibility on init
+    checkAssistiveTech();
+
     if (woodSelect) {
       woodSelect.addEventListener('change', (e) => {
         const val = e.target.value;
@@ -969,5 +1283,9 @@
 
   global.openWoodKeyboard = openWoodKeyboard;
   global.closeWoodKeyboard = closeWoodKeyboard;
+  global.activateSystemInputMode = activateSystemInputMode;
+  global.activateWoodKeyboardMode = activateWoodKeyboardMode;
+  global.toggleSpeechDictation = toggleSpeechDictation;
+  global.checkAssistiveTech = checkAssistiveTech;
 
 })(window);

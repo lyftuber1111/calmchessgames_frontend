@@ -1,0 +1,736 @@
+/* ==========================================================================
+   WOODEN MECHANICAL KEYBOARD - STYLESHEET
+   Crafted with rich wood grain textures, brass accents, & 3D tactile keycaps
+   ========================================================================== */
+
+:root {
+  /* Wood Theme Color Palettes */
+  --desk-bg: #1e140d;
+  --desk-gradient: radial-gradient(circle at 50% 25%, #2c1b12 0%, #150d08 100%);
+
+  /* Default: Walnut */
+  --chassis-main: #3a2215;
+  --chassis-rim: #24140b;
+  --chassis-inner: #190e07;
+  --chassis-highlight: #613b24;
+  --key-top-start: #5a3721;
+  --key-top-end: #3f2516;
+  --key-bevel: #28160c;
+  --key-shadow: #140904;
+  --glyph-color: #ebd7bd;
+  --glyph-engrave: rgba(26, 13, 6, 0.9);
+  --glyph-glow: rgba(255, 220, 160, 0.3);
+  --brass-gold: #cfa860;
+  --brass-dark: #7a5a22;
+  --brass-shine: #fff2c7;
+  --parchment-bg: #f5eedb;
+  --parchment-text: #2c1d11;
+  --parchment-border: #442a18;
+}
+
+/* Wood variations */
+body[data-wood="oak"] {
+  --chassis-main: #4a341e;
+  --chassis-rim: #2e1f10;
+  --chassis-inner: #201409;
+  --chassis-highlight: #775532;
+  --key-top-start: #6f4e2c;
+  --key-top-end: #4e351c;
+  --key-bevel: #342211;
+  --key-shadow: #180e06;
+  --glyph-color: #f7e6ce;
+}
+
+body[data-wood="teak"] {
+  --chassis-main: #361f13;
+  --chassis-rim: #1f1109;
+  --chassis-inner: #140a04;
+  --chassis-highlight: #5b3621;
+  --key-top-start: #532f1b;
+  --key-top-end: #381e10;
+  --key-bevel: #221108;
+  --key-shadow: #0f0602;
+  --glyph-color: #f3dbc2;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+html, body {
+  width: 100%;
+  min-height: 100vh;
+  background-color: var(--desk-bg);
+  background-image: var(--desk-gradient);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #d8c2aa;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Background Wood grain overlay */
+.desk-grain-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  opacity: 0.14;
+  background-image: radial-gradient(#6d4323 15%, transparent 16%),
+                    radial-gradient(#4d2e16 15%, transparent 16%);
+  background-size: 60px 60px;
+  background-position: 0 0, 30px 30px;
+  z-index: 0;
+}
+
+/* Main Container */
+.app-container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1140px;
+  padding: clamp(10px, 2.5vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 2vw, 22px);
+  align-items: center;
+}
+
+/* Header & Brass Emblem */
+.header-section {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 4px 8px;
+}
+
+.brand-emblem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo-svg {
+  width: 36px;
+  height: 36px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.6));
+}
+
+.brand-text h1 {
+  font-size: clamp(1.1rem, 2.2vw, 1.6rem);
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--brass-gold);
+  text-shadow: 0 1px 2px #000, 0 0 10px rgba(207, 168, 96, 0.35);
+  font-family: "Georgia", serif;
+}
+
+.brand-text .subheading {
+  font-size: clamp(0.68rem, 1.1vw, 0.85rem);
+  color: #9d8167;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+/* Top Desk Controls Bar */
+.desk-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(25, 14, 7, 0.85);
+  border: 1px solid #4a2f1b;
+  border-radius: 30px;
+  padding: 6px 14px;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), 0 2px 8px rgba(0,0,0,0.4);
+}
+
+.control-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: #c4a98a;
+}
+
+.wood-dropdown {
+  background: #392213;
+  color: #e2ceb8;
+  border: 1px solid #633e24;
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.wood-dropdown:hover {
+  border-color: var(--brass-gold);
+}
+
+.brass-icon-btn {
+  background: linear-gradient(180deg, #442a17 0%, #29170b 100%);
+  border: 1px solid #684124;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--brass-gold);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.brass-icon-btn:hover {
+  border-color: var(--brass-shine);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.brass-icon-btn:active {
+  transform: translateY(1px);
+}
+
+.brass-icon-btn.is-muted {
+  color: #8c5a4a;
+  border-color: #633324;
+}
+
+.volume-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.volume-range {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 65px;
+  height: 5px;
+  background: #25140b;
+  border-radius: 3px;
+  outline: none;
+}
+
+.volume-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--brass-gold);
+  border: 1px solid #fff2c7;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+/* ==========================================================================
+   TEXT DISPLAY FIELD SECTION
+   Handcrafted carved wood plaque with antique parchment screen
+   ========================================================================== */
+.display-plaque {
+  width: 100%;
+  background: linear-gradient(180deg, var(--chassis-main) 0%, var(--chassis-rim) 100%);
+  border-radius: 14px;
+  padding: clamp(10px, 1.8vw, 16px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.7),
+              inset 0 1px 1px rgba(255, 255, 255, 0.15),
+              inset 0 -2px 4px rgba(0, 0, 0, 0.8);
+  border: 2px solid var(--chassis-highlight);
+  position: relative;
+}
+
+.display-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.display-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: clamp(0.75rem, 1.2vw, 0.9rem);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  color: var(--brass-gold);
+}
+
+.display-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.wood-pill-btn {
+  background: linear-gradient(180deg, #442a17 0%, #2b170c 100%);
+  border: 1px solid #6c4424;
+  border-radius: 6px;
+  color: #dfcdb8;
+  padding: 4px 12px;
+  font-size: clamp(0.72rem, 1vw, 0.82rem);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.12s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+}
+
+.wood-pill-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.wood-pill-btn:hover {
+  border-color: var(--brass-gold);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.wood-pill-btn:active {
+  transform: translateY(1px);
+}
+
+/* Parchment Text Input Area */
+.parchment-frame {
+  position: relative;
+  background-color: var(--parchment-bg);
+  background-image:
+    radial-gradient(ellipse at 50% 50%, rgba(255,255,255,0.4) 0%, rgba(0,0,0,0.06) 100%),
+    linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 28px;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.35),
+              0 1px 2px rgba(255, 255, 255, 0.1);
+  border: 1px solid #6b4c30;
+}
+
+.display-textarea {
+  width: 100%;
+  min-height: 85px;
+  max-height: 160px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: vertical;
+  font-family: "Courier New", Courier, monospace;
+  font-size: clamp(1rem, 1.8vw, 1.25rem);
+  line-height: 1.5;
+  color: var(--parchment-text);
+  user-select: text;
+  caret-color: #8a3d14;
+}
+
+.display-textarea::placeholder {
+  color: #8c765f;
+  font-style: italic;
+}
+
+/* Display Footer / Metadata Stats */
+.display-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 8px;
+  padding: 0 4px;
+  font-size: clamp(0.68rem, 1vw, 0.78rem);
+  color: #ab9279;
+}
+
+.display-stats {
+  display: flex;
+  gap: 14px;
+}
+
+.stat-item span {
+  color: var(--brass-gold);
+  font-weight: 600;
+}
+
+.mobile-hint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #cca46c;
+}
+
+/* ==========================================================================
+   VIRTUAL KEYBOARD CHASSIS
+   Horizontal responsive wooden casework with brass brackets & screws
+   ========================================================================== */
+.keyboard-chassis {
+  width: 100%;
+  position: relative;
+  background: linear-gradient(180deg, var(--chassis-main) 0%, var(--chassis-rim) 100%);
+  border-radius: clamp(14px, 2.2vw, 22px);
+  padding: clamp(12px, 2vw, 24px);
+  border: 3px solid var(--chassis-highlight);
+  box-shadow:
+    0 22px 45px rgba(0, 0, 0, 0.8),
+    0 6px 12px rgba(0, 0, 0, 0.5),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2),
+    inset 0 -4px 6px rgba(0, 0, 0, 0.8);
+}
+
+/* Brass Corner Brackets */
+.corner-bracket {
+  position: absolute;
+  width: clamp(24px, 4vw, 38px);
+  height: clamp(24px, 4vw, 38px);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.corner-top-left {
+  top: 6px;
+  left: 6px;
+}
+
+.corner-top-right {
+  top: 6px;
+  right: 6px;
+  transform: rotate(90deg);
+}
+
+.corner-bottom-left {
+  bottom: 6px;
+  left: 6px;
+  transform: rotate(270deg);
+}
+
+.corner-bottom-right {
+  bottom: 6px;
+  right: 6px;
+  transform: rotate(180deg);
+}
+
+/* Brass Screws */
+.chassis-screw {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, var(--brass-shine) 0%, var(--brass-gold) 60%, var(--brass-dark) 100%);
+  box-shadow: inset 0 1px 1px rgba(255,255,255,0.7), 0 1px 2px rgba(0,0,0,0.6);
+  pointer-events: none;
+}
+
+.chassis-screw::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 20%;
+  right: 20%;
+  height: 1.5px;
+  background: #3c240d;
+  transform: translateY(-50%) rotate(38deg);
+}
+
+.screw-tl { top: 12px; left: 12px; }
+.screw-tr { top: 12px; right: 12px; }
+.screw-bl { bottom: 12px; left: 12px; }
+.screw-br { bottom: 12px; right: 12px; }
+
+/* Inset Keybed Tray */
+.keybed-recess {
+  width: 100%;
+  background: var(--chassis-inner);
+  border-radius: clamp(10px, 1.5vw, 14px);
+  padding: clamp(6px, 1vw, 12px);
+  box-shadow:
+    inset 0 4px 10px rgba(0, 0, 0, 0.9),
+    inset 0 1px 2px rgba(0, 0, 0, 0.8),
+    0 1px 1px rgba(255, 255, 255, 0.1);
+  border: 1px solid #1a0f07;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Keyboard Grid (Always Horizontal) */
+.keyboard-grid {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 0.65vw, 8px);
+  width: 100%;
+  min-width: 580px; /* guarantees comfortable horizontal aspect ratio on mobile */
+}
+
+.keyboard-row {
+  display: flex;
+  width: 100%;
+  gap: clamp(3px, 0.5vw, 7px);
+  justify-content: space-between;
+}
+
+/* ==========================================================================
+   INDIVIDUAL WOODEN MECHANICAL KEYCAPS
+   Sculpted 3D beveled wooden keys with laser-engraved glyphs
+   ========================================================================== */
+.wood-key {
+  position: relative;
+  height: clamp(38px, 5.2vw, 56px);
+  background: transparent;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  touch-action: manipulation;
+  transition: transform 0.05s ease, filter 0.05s ease;
+}
+
+/* Keycap 3D Structure */
+.key-cap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, var(--key-top-start) 0%, var(--key-top-end) 100%);
+  border-radius: clamp(5px, 0.8vw, 8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: 1px solid rgba(0, 0, 0, 0.35);
+  border-bottom: 1px solid var(--key-shadow);
+  box-shadow:
+    0 5px 0 var(--key-bevel),
+    0 6px 1px var(--key-shadow),
+    0 8px 10px rgba(0, 0, 0, 0.6),
+    inset 0 1px 1px rgba(255, 255, 255, 0.2),
+    inset 0 -2px 3px rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateY(0);
+  transition: transform 0.05s cubic-bezier(0.2, 0.9, 0.3, 1),
+              box-shadow 0.05s cubic-bezier(0.2, 0.9, 0.3, 1),
+              filter 0.05s ease;
+}
+
+/* Subtle wood texture on keycap face */
+.key-cap::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.015) 0px,
+    rgba(255, 255, 255, 0.015) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  pointer-events: none;
+}
+
+/* Keycap Labels (Laser-engraved into wood) */
+.key-label-wrapper {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  color: var(--glyph-color);
+  text-shadow:
+    0 -1px 1px var(--glyph-engrave),
+    0 1px 1px rgba(0, 0, 0, 0.8),
+    0 0 6px var(--glyph-glow);
+  font-weight: 600;
+  font-size: clamp(0.72rem, 1.25vw, 1.05rem);
+  line-height: 1;
+}
+
+.shift-glyph {
+  font-size: 0.72em;
+  opacity: 0.8;
+}
+
+.main-glyph {
+  font-size: 1em;
+}
+
+.key-icon {
+  width: clamp(14px, 2.1vw, 20px);
+  height: clamp(14px, 2.1vw, 20px);
+  stroke: var(--glyph-color);
+  filter: drop-shadow(0 1px 1px #000);
+}
+
+.icon-label-text {
+  font-size: clamp(0.55rem, 0.85vw, 0.72rem);
+  text-transform: uppercase;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+}
+
+/* Spacebar aesthetic styling */
+.key-type-space .key-cap {
+  background: linear-gradient(180deg, var(--key-top-start) 0%, var(--key-top-end) 90%);
+}
+
+.key-type-space .key-label-wrapper {
+  font-size: clamp(0.65rem, 1vw, 0.82rem);
+  letter-spacing: 2px;
+  opacity: 0.75;
+}
+
+/* Special Modifier Keys */
+.key-type-modifier .key-cap,
+.key-type-action .key-cap {
+  background: linear-gradient(180deg, #442a17 0%, #2f190d 100%);
+}
+
+/* CapsLock Indicator Light */
+.caps-indicator-dot {
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #462c14;
+  border: 1px solid #754f2c;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.8);
+  transition: all 0.2s ease;
+}
+
+.key-type-caps.is-active-modifier .caps-indicator-dot,
+.lit-caps-indicator {
+  background: #ffb732 !important;
+  border-color: #ffe699 !important;
+  box-shadow: 0 0 8px #ffa600, 0 0 3px #fff !important;
+}
+
+/* Active Modifier Keys (Shift, Caps) */
+.is-active-modifier .key-cap {
+  border-color: var(--brass-gold);
+  background: linear-gradient(180deg, #663d22 0%, #462512 100%);
+}
+
+/* ==========================================================================
+   KEY PRESS ANIMATION (TACTILE BOTTOM-OUT)
+   ========================================================================== */
+.wood-key.is-pressed .key-cap,
+.wood-key:active .key-cap {
+  transform: translateY(4px);
+  box-shadow:
+    0 1px 0 var(--key-bevel),
+    0 1px 1px var(--key-shadow),
+    0 2px 4px rgba(0, 0, 0, 0.7),
+    inset 0 1px 3px rgba(0, 0, 0, 0.6);
+  filter: brightness(0.92);
+}
+
+.wood-key.is-pressed .key-label-wrapper,
+.wood-key:active .key-label-wrapper {
+  transform: translateY(0.5px);
+  color: #fff;
+  text-shadow: 0 0 8px rgba(255, 230, 180, 0.8), 0 1px 2px #000;
+}
+
+/* ==========================================================================
+   TOAST NOTIFICATION
+   ========================================================================== */
+.toast-notice {
+  position: fixed;
+  bottom: 24px;
+  background: linear-gradient(180deg, #3f2716 0%, #221208 100%);
+  color: var(--brass-gold);
+  border: 1px solid var(--brass-gold);
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.7);
+  z-index: 999;
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.toast-notice.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   RESPONSIVE HORIZONTAL DESIGN FOR MOBILE & DESKTOP
+   ========================================================================== */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 8px;
+    gap: 10px;
+  }
+
+  .header-section {
+    justify-content: center;
+  }
+
+  .brand-text {
+    text-align: center;
+  }
+
+  .display-plaque {
+    padding: 8px;
+  }
+
+  .parchment-frame {
+    padding: 8px 10px;
+  }
+
+  .display-textarea {
+    min-height: 70px;
+    font-size: 0.95rem;
+  }
+
+  .keyboard-chassis {
+    padding: 8px;
+    border-width: 2px;
+  }
+
+  .keybed-recess {
+    padding: 4px;
+  }
+}
+
+/* Landscape mobile optimization */
+@media (max-height: 520px) and (orientation: landscape) {
+  .app-container {
+    padding: 4px;
+    gap: 6px;
+  }
+
+  .brand-text h1 {
+    font-size: 0.95rem;
+  }
+
+  .display-textarea {
+    min-height: 50px;
+  }
+
+  .wood-key {
+    height: clamp(30px, 8.5vh, 42px);
+  }
+}

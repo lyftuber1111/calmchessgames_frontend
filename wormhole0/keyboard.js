@@ -217,13 +217,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // Setup interactions for virtual keys
   function setupKeyListeners(keyBtn, keyData) {
     const handleDown = (e) => {
-      if (e.cancelable && e.type.startsWith('touch')) {
+      // Prevent default to stop mobile OS from focusing/summoning native virtual keyboard
+      if (e.cancelable) {
         e.preventDefault();
       }
       pressKey(keyData.code, true);
     };
 
     const handleUp = (e) => {
+      if (e.cancelable) {
+        e.preventDefault();
+      }
       releaseKey(keyData.code, true);
     };
 
@@ -355,7 +359,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     updateStats();
-    field.focus();
+    if (document.activeElement !== field) {
+      field.focus({ preventScroll: true });
+    }
+    if ('virtualKeyboard' in navigator) {
+      try { navigator.virtualKeyboard.hide(); } catch (_) {}
+    }
     field.scrollTop = field.scrollHeight;
   }
 
@@ -567,8 +576,22 @@ document.addEventListener('DOMContentLoaded', () => {
     keyElementsMap.forEach(entry => entry.el.classList.remove('is-pressed'));
   });
 
-  // Display field direct input syncing
+  // Display field direct input syncing & native mobile keyboard suppression
   displayField.addEventListener('input', updateStats);
+  displayField.addEventListener('focus', () => {
+    if ('virtualKeyboard' in navigator) {
+      try { navigator.virtualKeyboard.hide(); } catch (_) {}
+    }
+  });
+  displayField.addEventListener('touchstart', () => {
+    if ('virtualKeyboard' in navigator) {
+      try { navigator.virtualKeyboard.hide(); } catch (_) {}
+    }
+  }, { passive: true });
+
+  if ('virtualKeyboard' in navigator) {
+    try { navigator.virtualKeyboard.overlaysContent = false; } catch (_) {}
+  }
 
   // Audio & UI Controls
   if (volumeSlider) {

@@ -356,6 +356,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateStats();
     field.focus();
+    field.scrollTop = field.scrollHeight;
   }
 
   // Update statistics (character and word counters)
@@ -498,6 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       displayField.value += char;
       displayField.selectionStart = displayField.selectionEnd = displayField.value.length;
+      displayField.scrollTop = displayField.scrollHeight;
       updateStats();
       totalKeyPresses++;
       if (keyPressCountEl) keyPressCountEl.textContent = totalKeyPresses.toString();

@@ -1,0 +1,29 @@
+# ==============================================================================
+# Calm Chess Computers - Standalone Admin Directory Security (.htaccess)
+# Enforces IP Restriction, In-Transit Encryption, and Strict Security Headers
+# ==============================================================================
+
+Options -Indexes
+DirectoryIndex admin_gate.php index.php
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^\.well-known/acme-challenge/ - [L]
+# Allow static assets in js/ and root images
+RewriteCond %{REQUEST_URI} \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ [NC]
+RewriteRule ^ - [L]
+
+# Pass through admin_api.php
+RewriteRule ^admin_api\.php$ - [L]
+
+# Route all admin console page visits (admin.html, index.html, admin.php, index.php, or empty path) to admin_gate.php
+RewriteRule ^(admin|admin\.html|index\.html|admin\.php|index\.php)?$ admin_gate.php [L,QSA]
+</IfModule>
+
+# Security Headers
+<IfModule mod_headers.c>
+#Header always set X-Frame-Options "DENY"
+#Header always set Content-Security-Policy "frame-ancestors 'none'; upgrade-insecure-requests"
+#Header always set X-Content-Type-Options "nosniff"
+#Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>

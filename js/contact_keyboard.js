@@ -492,7 +492,45 @@
     });
   }
 
-  // Handle Automatic Mobile Rotate Logic
+  // Rotation prompt badge state
+  let hasBeenHorizontalInSession = false;
+  let rotateBadgeDismissedThisSession = false;
+
+  function isDeviceHorizontal() {
+    return window.innerWidth > window.innerHeight;
+  }
+
+  function showRotateBadge() {
+    if (rotateBadgeDismissedThisSession || !isKeyboardOpen) return;
+    const badge = document.getElementById('wood-kb-rotate-badge');
+    if (badge) {
+      badge.style.display = 'block';
+    }
+  }
+
+  function hideRotateBadge() {
+    const badge = document.getElementById('wood-kb-rotate-badge');
+    if (badge) {
+      badge.style.display = 'none';
+    }
+  }
+
+  function handleOrientationShift() {
+    if (!isKeyboardOpen) return;
+    const isHorizontal = isDeviceHorizontal();
+
+    if (isHorizontal) {
+      hasBeenHorizontalInSession = true;
+      hideRotateBadge();
+    } else {
+      if (hasBeenHorizontalInSession) {
+        showRotateBadge();
+      }
+    }
+    checkMobileAutoRotate();
+  }
+
+  // Automatic Mobile Rotate Logic
   function checkMobileAutoRotate() {
     if (!isKeyboardOpen) return;
     const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
@@ -561,6 +599,9 @@
 
     renderKeyboardGrid();
     updateKeyboardStats();
+    hasBeenHorizontalInSession = isDeviceHorizontal();
+    rotateBadgeDismissedThisSession = false;
+    hideRotateBadge();
     checkMobileAutoRotate();
 
     if (window.woodAudio && window.woodAudio.init) {
@@ -597,6 +638,9 @@
     document.body.classList.remove('wood-kb-open');
     document.documentElement.classList.remove('wood-kb-open');
     document.body.classList.remove('mobile-auto-rotate');
+    hasBeenHorizontalInSession = false;
+    rotateBadgeDismissedThisSession = false;
+    hideRotateBadge();
     stopBackspaceRepeat();
 
     // Final sync back to target input
@@ -630,64 +674,51 @@
       return;
     }
 
-    // If typing message to Brian Berry, validate and submit
+    // Transfer text to contactMessage textarea
     const contactMessage = document.getElementById('contactMessage');
+    if (contactMessage) {
+      contactMessage.value = field.value;
+    }
+
+    // Close the keyboard immediately upon clicking send
+    closeWoodKeyboard();
+
+    // Ensure contact tab is active and visible
+    if (typeof window.switchToContactTab === 'function') {
+      window.switchToContactTab();
+    } else if (typeof window.switchTab === 'function') {
+      window.switchTab('contact');
+    }
+
+    const contactForm = document.getElementById('contactForm');
     const contactName = document.getElementById('contactName');
     const contactEmail = document.getElementById('contactEmail');
-    const contactSubject = document.getElementById('contactSubject');
+    const nameVal = contactName ? contactName.value.trim() : '';
+    const emailVal = contactEmail ? contactEmail.value.trim() : '';
 
-    if (contactMessage) contactMessage.value = field.value;
-
-    // Check if name is provided
-    let nameVal = contactName ? contactName.value.trim() : '';
-    if (!nameVal) {
-      nameVal = prompt('Please enter your Name for Brian Berry:');
-      if (!nameVal || !nameVal.trim()) {
-        alert('Your name is required to dispatch the message.');
-        return;
-      }
-      if (contactName) contactName.value = nameVal.trim();
-    }
-
-    // Check if email is provided
-    let emailVal = contactEmail ? contactEmail.value.trim() : '';
-    if (!emailVal || !emailVal.includes('@')) {
-      emailVal = prompt('Please enter your Email Address so Brian can respond:');
-      if (!emailVal || !emailVal.trim() || !emailVal.includes('@')) {
-        alert('A valid email address is required.');
-        return;
-      }
-      if (contactEmail) contactEmail.value = emailVal.trim();
-    }
-
-    // Check if subject is provided
-    let subjVal = contactSubject ? contactSubject.value.trim() : '';
-    if (!subjVal) {
-      subjVal = 'Direct Inquiry via Wooden Mechanical Keyboard';
-      if (contactSubject) contactSubject.value = subjVal;
-    }
-
-    const sendBtn = document.getElementById('send-kb-btn');
-    if (sendBtn) {
-      sendBtn.disabled = true;
-      sendBtn.textContent = '⏳ Sending...';
-    }
-
-    try {
+    // If name and email are already populated, trigger submission
+    if (nameVal && emailVal && emailVal.includes('@')) {
       if (typeof window.handleContactSubmit === 'function') {
         const fakeEvent = new Event('submit', { cancelable: true });
-        await window.handleContactSubmit(fakeEvent);
+        try {
+          await window.handleContactSubmit(fakeEvent);
+          clearKeyboardText();
+        } catch (err) {
+          console.error('Error submitting contact form:', err);
+        }
       }
-      alert('✔ Your message has been securely delivered to Brian Berry (bberry@calmchessgames.com)!');
-      clearKeyboardText();
-      closeWoodKeyboard();
-    } catch (err) {
-      alert('Failed to send message: ' + err.message);
-    } finally {
-      if (sendBtn) {
-        sendBtn.disabled = false;
-        sendBtn.innerHTML = '✉️ Send Message';
+    } else {
+      // Smoothly navigate to contact form so user can fill in name / email
+      if (contactForm) {
+        contactForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
+      setTimeout(() => {
+        if (!nameVal && contactName) {
+          contactName.focus();
+        } else if (!emailVal && contactEmail) {
+          contactEmail.focus();
+        }
+      }, 350);
     }
   }
 
@@ -800,6 +831,24 @@
 
     // Modal action controls
     if (btnClose) btnClose.addEventListener('click', closeWoodKeyboard);
+
+    const btnBadgeClose = document.getElementById('btnBadgeCloseKb');
+    const btnBadgeKeep = document.getElementById('btnBadgeKeepKb');
+    if (btnBadgeClose) {
+      btnBadgeClose.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        closeWoodKeyboard();
+      });
+    }
+    if (btnBadgeKeep) {
+      btnBadgeKeep.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        rotateBadgeDismissedThisSession = true;
+        hideRotateBadge();
+      });
+    }
     if (btnSend) btnSend.addEventListener('click', handleKeyboardSendMessage);
     if (btnCopy) btnCopy.addEventListener('click', copyKeyboardText);
     if (btnClear) btnClear.addEventListener('click', clearKeyboardText);
@@ -906,8 +955,10 @@
       });
     }
 
-    window.addEventListener('resize', checkMobileAutoRotate);
-    window.addEventListener('orientationchange', checkMobileAutoRotate);
+    window.addEventListener('resize', handleOrientationShift);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(handleOrientationShift, 100);
+    });
   }
 
   if (document.readyState === 'loading') {

@@ -845,6 +845,80 @@
             text-decoration: underline;
             margin: 0 8px;
         }
+        /* Rotation Prompt Badge (When rotated horizontal to use keyboard, then back vertical) */
+        .wood-kb-rotate-badge {
+            position: fixed;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100002;
+            background: linear-gradient(135deg, rgba(24, 34, 58, 0.98), rgba(11, 15, 25, 0.98));
+            border: 2px solid var(--gold-primary, #ffd700);
+            border-radius: 10px;
+            padding: 8px 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 16px rgba(255, 215, 0, 0.35);
+            max-width: 92vw;
+            width: auto;
+            box-sizing: border-box;
+            animation: badgeSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes badgeSlideDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -15px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+        .rotate-badge-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .rotate-badge-icon {
+            font-size: 1.25rem;
+        }
+        .rotate-badge-text {
+            color: #f1f5f9;
+            font-size: clamp(0.78rem, 2.2vw, 0.88rem);
+            font-weight: 600;
+        }
+        .rotate-badge-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .badge-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: clamp(0.72rem, 2vw, 0.82rem);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .badge-btn-close {
+            background: linear-gradient(135deg, #8b0000, #b91c1c);
+            color: #ffffff;
+            border: 1px solid #ef4444;
+        }
+        .badge-btn-close:hover, .badge-btn-close:active {
+            background: #dc2626;
+            transform: scale(1.03);
+        }
+        .badge-btn-keep {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--gold-primary, #ffd700);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+        }
+        .badge-btn-keep:hover, .badge-btn-keep:active {
+            background: rgba(255, 215, 0, 0.22);
+            transform: scale(1.03);
+        }
     </style>
 
     <!-- Wooden Mechanical Keyboard Styles -->
@@ -1709,6 +1783,17 @@
 
     <!-- WOODEN MECHANICAL KEYBOARD MODAL OVERLAY -->
     <div id="woodKeyboardModal" class="wood-kb-modal-overlay" style="display: none;">
+        <!-- Rotation Prompt Badge (Shown when user rotates horizontal to type, then back to vertical) -->
+        <div id="wood-kb-rotate-badge" class="wood-kb-rotate-badge" style="display: none;">
+            <div class="rotate-badge-content">
+                <span class="rotate-badge-icon">📱</span>
+                <span class="rotate-badge-text">Phone rotated vertical. Close wooden keyboard?</span>
+                <div class="rotate-badge-actions">
+                    <button type="button" id="btnBadgeCloseKb" class="badge-btn badge-btn-close">✕ Close Keyboard</button>
+                    <button type="button" id="btnBadgeKeepKb" class="badge-btn badge-btn-keep">Keep Open</button>
+                </div>
+            </div>
+        </div>
         <div class="wood-kb-container" data-wood="walnut">
             <!-- Header with controls -->
             <div class="wood-kb-header">

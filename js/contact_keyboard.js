@@ -551,6 +551,7 @@
     isKeyboardOpen = true;
     modal.style.display = 'flex';
     document.body.classList.add('wood-kb-open');
+    document.documentElement.classList.add('wood-kb-open');
 
     // Sync text into parchment display
     const field = document.getElementById('wood-kb-textarea');
@@ -594,6 +595,7 @@
     isKeyboardOpen = false;
     modal.style.display = 'none';
     document.body.classList.remove('wood-kb-open');
+    document.documentElement.classList.remove('wood-kb-open');
     document.body.classList.remove('mobile-auto-rotate');
     stopBackspaceRepeat();
 

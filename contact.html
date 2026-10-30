@@ -1181,12 +1181,24 @@
                 background-color: #0b0f19 !important;
                 scrollbar-color: #5a3721 #131b2e !important;
                 scrollbar-width: thin !important;
-                overflow: hidden !important;
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
             }
 
+            body {
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            html.wood-kb-open,
             body.wood-kb-open {
                 background-color: #0b0f19 !important;
                 overflow: hidden !important;
+                height: 100% !important;
+                position: fixed !important;
+                width: 100% !important;
             }
 
             body.mobile-auto-rotate .wood-kb-modal-overlay {
@@ -1404,7 +1416,7 @@
         <nav class="top-nav" onclick="event.stopPropagation();">
             <a href="index.html">Home</a>
             <a href="index.html#games">Games</a>
-            <a href="contact.html" class="active">Contact &amp; Consultation</a>
+            <a href="#tabContentBooking" onclick="event.preventDefault(); switchToBookingTab();" class="nav-booking-link active">&#128197; Book Consultation</a>
             <a href="#tabContentContact" onclick="event.preventDefault(); switchToContactTab();" class="nav-msg-link">&#9993; Send a Message</a>
         </nav>
     </header>
@@ -1763,6 +1775,13 @@
 
     <!-- Quick Tab & Scroll Helpers -->
     <script>
+        if (typeof window.switchToBookingTab !== 'function') {
+            window.switchToBookingTab = function () {
+                if (typeof window.switchTab === 'function') window.switchTab('booking');
+                const target = document.getElementById('tabContentBooking') || document.querySelector('.tabs-container');
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+        }
         if (typeof window.switchToContactTab !== 'function') {
             window.switchToContactTab = function () {
                 if (typeof window.switchTab === 'function') window.switchTab('contact');
@@ -1770,7 +1789,7 @@
                 if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 setTimeout(function() {
                     const nameInput = document.getElementById('contactName');
-                    if (nameInput) nameInput.focus({ preventScroll: true });
+                    if (nameInput && window.innerWidth > 850) nameInput.focus({ preventScroll: true });
                 }, 350);
             };
         }

@@ -154,6 +154,14 @@
         selectedTimeSlot = null; // Reset slot upon date change
         renderCalendar();
         loadAvailabilityForSelectedDate();
+
+        // Smooth navigation to available time slots
+        setTimeout(() => {
+            const slotsSection = document.querySelector('.time-slots-section');
+            if (slotsSection) {
+                slotsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }, 50);
     }
 
     function updateSelectedDateDisplay() {
@@ -268,6 +276,14 @@
         if (clickedBtn) {
             clickedBtn.classList.add('selected');
         }
+
+        // Smooth navigation to consultation details attendee form
+        setTimeout(() => {
+            const formCard = document.querySelector('.booking-layout .form-card') || document.getElementById('appointmentForm');
+            if (formCard) {
+                formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 50);
     }
 
     /* --- TABS NAVIGATION --- */
@@ -276,25 +292,31 @@
         const btnContact = document.getElementById('tabBtnContact');
         const contentBooking = document.getElementById('tabContentBooking');
         const contentContact = document.getElementById('tabContentContact');
+        const navBooking = document.querySelector('.nav-booking-link');
+        const navMsg = document.querySelector('.nav-msg-link');
 
         if (tabName === 'booking') {
-            btnBooking.classList.add('active');
-            btnContact.classList.remove('active');
-            contentBooking.classList.add('active');
-            contentContact.classList.remove('active');
+            if (btnBooking) btnBooking.classList.add('active');
+            if (btnContact) btnContact.classList.remove('active');
+            if (contentBooking) contentBooking.classList.add('active');
+            if (contentContact) contentContact.classList.remove('active');
+            if (navBooking) navBooking.classList.add('active');
+            if (navMsg) navMsg.classList.remove('active');
         } else {
-            btnContact.classList.add('active');
-            btnBooking.classList.remove('active');
-            contentContact.classList.add('active');
-            contentBooking.classList.remove('active');
+            if (btnContact) btnContact.classList.add('active');
+            if (btnBooking) btnBooking.classList.remove('active');
+            if (contentContact) contentContact.classList.add('active');
+            if (contentBooking) contentBooking.classList.remove('active');
+            if (navMsg) navMsg.classList.add('active');
+            if (navBooking) navBooking.classList.remove('active');
         }
     };
 
     window.switchToBookingTab = function () {
         window.switchTab('booking');
-        const container = document.querySelector('.tabs-container');
-        if (container) {
-            container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const target = document.getElementById('tabContentBooking') || document.querySelector('.tabs-container');
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
     };
 
@@ -306,7 +328,7 @@
         }
         setTimeout(() => {
             const nameInput = document.getElementById('contactName');
-            if (nameInput) {
+            if (nameInput && window.innerWidth > 850) {
                 nameInput.focus({ preventScroll: true });
             }
         }, 350);

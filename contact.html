@@ -44,6 +44,22 @@
             scroll-behavior: smooth;
             overflow-x: hidden;
             width: 100%;
+            background-color: var(--bg-color, #0b0f19);
+            scrollbar-color: #5a3721 #131b2e;
+            scrollbar-width: thin;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131b2e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #5a3721;
+            border-radius: 3px;
+            border: 1px solid #7a5a22;
         }
 
         body {
@@ -1161,59 +1177,218 @@
            MOBILE AUTOMATIC ROTATION FOR MODAL (90° HORIZONTAL ROTATION)
            ========================================================================== */
         @media screen and (max-width: 850px) and (orientation: portrait) {
+            html {
+                background-color: #0b0f19 !important;
+                scrollbar-color: #5a3721 #131b2e !important;
+                scrollbar-width: thin !important;
+                overflow: hidden !important;
+            }
+
+            body.wood-kb-open {
+                background-color: #0b0f19 !important;
+                overflow: hidden !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-modal-overlay {
+                background: rgba(11, 15, 25, 0.98) !important;
+                width: 100vw !important;
+                height: 100dvh !important;
+                overflow: hidden !important;
+            }
+
             body.mobile-auto-rotate .wood-kb-container {
                 overflow: hidden !important;
                 position: fixed !important;
-                width: 100vh !important;
-                height: 100vw !important;
-                max-width: 100vh !important;
-                max-height: 100vw !important;
+                width: 100dvh !important;
+                height: 100dvw !important;
+                min-width: 0 !important;
+                max-width: 100dvh !important;
+                min-height: 0 !important;
+                max-height: 100dvw !important;
                 top: 50% !important;
                 left: 50% !important;
                 transform: translate(-50%, -50%) rotate(90deg) !important;
                 transform-origin: center center !important;
                 margin: 0 !important;
-                padding: 4px 8px !important;
+                padding: 4px 6px !important;
                 border-radius: 0 !important;
-                gap: 4px !important;
-                justify-content: space-between !important;
+                gap: 3px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+                align-items: stretch !important;
+                box-sizing: border-box !important;
+                background: #1e140d !important;
             }
 
+            /* Sleek compact header retaining Rotate and Close buttons */
+            body.mobile-auto-rotate .wood-kb-header {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                height: 22px !important;
+                min-height: 0 !important;
+                padding: 1px 4px !important;
+                margin-bottom: 0 !important;
+                border-bottom: 1px solid rgba(207, 168, 96, 0.2) !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-header > div:first-child strong {
+                font-size: 0.74rem !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-controls {
+                gap: 4px !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-controls > div {
+                display: none !important;
+            }
+
+            /* Compact display plaque containing text and action buttons */
             body.mobile-auto-rotate .wood-kb-display-plaque {
-                padding: 3px 6px !important;
+                padding: 2px 5px !important;
+                margin-bottom: 0 !important;
+                flex: 0 0 auto !important;
+                height: auto !important;
+                max-height: 56px !important;
+                width: 100% !important;
+                min-height: 0 !important;
+                box-sizing: border-box !important;
+                border-radius: 4px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                gap: 2px !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-display-plaque > div:first-child {
+                margin-bottom: 0 !important;
+                gap: 4px !important;
+            }
+
+            body.mobile-auto-rotate #wood-kb-title-label {
+                font-size: 0.74rem !important;
+            }
+
+            /* Hide decorative text in plaque footer */
+            body.mobile-auto-rotate .wood-kb-display-plaque > div:last-child {
+                display: none !important;
             }
 
             body.mobile-auto-rotate .parchment-frame {
-                padding: 2px 4px !important;
+                padding: 1px 4px !important;
+                border-width: 1px !important;
+                border-radius: 3px !important;
             }
 
             body.mobile-auto-rotate .display-textarea {
-                font-size: 0.8rem !important;
-                height: 2.2em !important;
-                line-height: 1.25 !important;
+                font-size: 0.74rem !important;
+                height: 1.4em !important;
+                min-height: 1.4em !important;
+                max-height: 1.4em !important;
+                line-height: 1.2 !important;
             }
 
+            body.mobile-auto-rotate .wood-pill-btn {
+                padding: 1px 5px !important;
+                font-size: 0.65rem !important;
+                border-radius: 8px !important;
+            }
+
+            /* Keyboard Chassis: Takes all remaining height and full width */
             body.mobile-auto-rotate .keyboard-chassis {
-                padding: 3px !important;
+                padding: 2px !important;
+                flex: 1 1 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                min-height: 0 !important;
+                height: auto !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+                border-radius: 5px !important;
             }
 
             body.mobile-auto-rotate .keybed-recess {
                 padding: 2px !important;
+                flex: 1 1 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                min-height: 0 !important;
+                height: 100% !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+                border-radius: 3px !important;
+                scrollbar-width: none !important;
             }
 
-            body.mobile-auto-rotate .wood-key {
-                height: clamp(26px, 7.2vh, 36px) !important;
+            body.mobile-auto-rotate .keybed-recess::-webkit-scrollbar {
+                display: none !important;
             }
 
             body.mobile-auto-rotate .keyboard-grid {
+                min-width: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
                 gap: 2px !important;
+                flex: 1 1 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                min-height: 0 !important;
+                height: 100% !important;
+                box-sizing: border-box !important;
             }
 
             body.mobile-auto-rotate .keyboard-row {
                 gap: 2px !important;
+                flex: 1 1 0 !important;
+                min-height: 0 !important;
+                width: 100% !important;
+                display: flex !important;
+                align-items: stretch !important;
+                box-sizing: border-box !important;
             }
 
-            body.mobile-auto-rotate .corner-bracket {
+            body.mobile-auto-rotate .wood-key {
+                height: 100% !important;
+                min-height: 0 !important;
+                max-height: unset !important;
+            }
+
+            body.mobile-auto-rotate .key-cap {
+                height: 100% !important;
+                padding: 1px 2px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                border-radius: 3px !important;
+            }
+
+            body.mobile-auto-rotate .key-primary {
+                font-size: clamp(0.58rem, 1.8vh, 0.78rem) !important;
+                line-height: 1 !important;
+            }
+
+            body.mobile-auto-rotate .key-sub {
+                font-size: 0.48rem !important;
+                line-height: 1 !important;
+            }
+
+            body.mobile-auto-rotate .key-icon {
+                width: clamp(10px, 1.6vh, 13px) !important;
+                height: clamp(10px, 1.6vh, 13px) !important;
+            }
+
+            body.mobile-auto-rotate .corner-bracket,
+            body.mobile-auto-rotate .chassis-screw {
                 display: none !important;
             }
         }

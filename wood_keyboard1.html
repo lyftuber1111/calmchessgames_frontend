@@ -70,6 +70,24 @@ body[data-wood="teak"] {
   user-select: none;
 }
 
+html {
+  scrollbar-color: #5a3721 #1e140d;
+  scrollbar-width: thin;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1e140d;
+}
+::-webkit-scrollbar-thumb {
+  background: #5a3721;
+  border-radius: 3px;
+  border: 1px solid #7a5a22;
+}
+
 html, body {
   width: 100%;
   min-height: 100vh;
@@ -833,86 +851,193 @@ html, body {
    MOBILE AUTOMATIC ROTATION (90° LANDSCAPE FITTING)
    ========================================================================== */
 @media screen and (max-width: 850px) and (orientation: portrait) {
+  html {
+    background-color: #1e140d !important;
+    background-image: radial-gradient(circle at 50% 25%, #2c1b12 0%, #150d08 100%) !important;
+    overflow: hidden !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   body.mobile-auto-rotate {
     overflow: hidden !important;
     position: fixed !important;
-    width: 100vh !important;
-    height: 100vw !important;
-    max-width: 100vh !important;
-    max-height: 100vw !important;
+    width: 100dvh !important;
+    height: 100dvw !important;
+    min-width: 0 !important;
+    max-width: 100dvh !important;
+    min-height: 0 !important;
+    max-height: 100dvw !important;
     top: 50% !important;
     left: 50% !important;
     transform: translate(-50%, -50%) rotate(90deg) !important;
     transform-origin: center center !important;
     margin: 0 !important;
     padding: 0 !important;
+    box-sizing: border-box !important;
+    background-color: #1e140d !important;
+    background-image: radial-gradient(circle at 50% 25%, #2c1b12 0%, #150d08 100%) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
   }
 
   body.mobile-auto-rotate .app-container {
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
-    padding: 4px 8px !important;
-    gap: 4px !important;
-    justify-content: space-between !important;
+    min-height: 0 !important;
+    max-height: 100% !important;
+    padding: 3px 6px !important;
+    gap: 3px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
+    box-sizing: border-box !important;
   }
 
-  body.mobile-auto-rotate .header-section {
-    padding: 2px 4px !important;
-    margin-bottom: 2px !important;
-    gap: 6px !important;
-  }
-
-  body.mobile-auto-rotate .brand-emblem {
-    display: none !important;
-  }
-
-  body.mobile-auto-rotate .brand-logo-svg {
-    width: 22px !important;
-    height: 22px !important;
-  }
-
-  body.mobile-auto-rotate .display-plaque {
-    padding: 4px 6px !important;
-    margin-bottom: 2px !important;
-  }
-
-  body.mobile-auto-rotate .parchment-frame {
-    padding: 2px 6px !important;
-  }
-
-  body.mobile-auto-rotate .display-textarea {
-    font-size: 0.85rem !important;
-    height: 2.1em !important;
-    min-height: 2.1em !important;
-    max-height: 2.1em !important;
-    line-height: 1.3 !important;
-  }
-
+  body.mobile-auto-rotate .header-section,
+  body.mobile-auto-rotate .brand-emblem,
+  body.mobile-auto-rotate .corner-bracket,
+  body.mobile-auto-rotate .chassis-screw,
   body.mobile-auto-rotate .display-footer {
     display: none !important;
   }
 
+  body.mobile-auto-rotate .display-plaque {
+    padding: 3px 6px !important;
+    margin-bottom: 0 !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+    border-radius: 6px !important;
+  }
+
+  body.mobile-auto-rotate .display-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 2px !important;
+  }
+
+  body.mobile-auto-rotate .display-actions {
+    gap: 4px !important;
+  }
+
+  body.mobile-auto-rotate .wood-pill-btn {
+    padding: 2px 7px !important;
+    font-size: 0.68rem !important;
+    border-radius: 10px !important;
+  }
+
+  body.mobile-auto-rotate .parchment-frame {
+    padding: 2px 5px !important;
+    border-width: 1px !important;
+    border-radius: 4px !important;
+  }
+
+  body.mobile-auto-rotate .display-textarea {
+    font-size: 0.78rem !important;
+    height: 1.6em !important;
+    min-height: 1.6em !important;
+    max-height: 1.6em !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Keyboard Chassis: Takes all remaining height and full width */
   body.mobile-auto-rotate .keyboard-chassis {
-    padding: 4px !important;
+    padding: 3px !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    min-height: 0 !important;
+    height: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    border-radius: 6px !important;
   }
 
   body.mobile-auto-rotate .keybed-recess {
-    padding: 2px !important;
+    padding: 2px 3px !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    min-height: 0 !important;
+    height: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    border-radius: 4px !important;
+    scrollbar-width: none !important;
   }
 
-  body.mobile-auto-rotate .wood-key {
-    height: clamp(28px, 7.5vh, 38px) !important;
+  body.mobile-auto-rotate .keybed-recess::-webkit-scrollbar {
+    display: none !important;
   }
 
   body.mobile-auto-rotate .keyboard-grid {
-    min-width: unset !important;
+    min-width: 0 !important;
     width: 100% !important;
-    gap: 3px !important;
+    max-width: 100% !important;
+    gap: 2px !important;
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
   }
 
   body.mobile-auto-rotate .keyboard-row {
-    gap: 3px !important;
+    gap: 2px !important;
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: stretch !important;
+    box-sizing: border-box !important;
+  }
+
+  body.mobile-auto-rotate .wood-key {
+    height: 100% !important;
+    min-height: 0 !important;
+    max-height: unset !important;
+  }
+
+  body.mobile-auto-rotate .key-cap {
+    height: 100% !important;
+    padding: 1px 2px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    border-radius: 3px !important;
+  }
+
+  body.mobile-auto-rotate .key-primary {
+    font-size: clamp(0.6rem, 1.8vh, 0.8rem) !important;
+    line-height: 1 !important;
+  }
+
+  body.mobile-auto-rotate .key-sub {
+    font-size: 0.5rem !important;
+    line-height: 1 !important;
+  }
+
+  body.mobile-auto-rotate .key-icon {
+    width: clamp(10px, 1.6vh, 14px) !important;
+    height: clamp(10px, 1.6vh, 14px) !important;
   }
 }
 

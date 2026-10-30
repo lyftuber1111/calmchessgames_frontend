@@ -487,8 +487,10 @@
   // Handle Automatic Mobile Rotate Logic
   function checkMobileAutoRotate() {
     if (!isKeyboardOpen) return;
-    const isMobile = window.innerWidth <= 768;
-    const isPortrait = window.innerHeight > window.innerWidth;
+    const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     (('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 900) ||
+                     window.innerWidth <= 850;
+    const isPortrait = window.matchMedia('(orientation: portrait)').matches || (window.innerHeight > window.innerWidth);
 
     if (manualRotatePreference !== null) {
       if (manualRotatePreference) {

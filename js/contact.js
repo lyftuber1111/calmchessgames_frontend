@@ -298,6 +298,20 @@
         }
     };
 
+    window.switchToContactTab = function () {
+        window.switchTab('contact');
+        const target = document.getElementById('tabContentContact') || document.querySelector('.tabs-container');
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        setTimeout(() => {
+            const nameInput = document.getElementById('contactName');
+            if (nameInput) {
+                nameInput.focus({ preventScroll: true });
+            }
+        }, 350);
+    };
+
     /* --- EMAIL CLIPBOARD HELPER --- */
     window.copyEmailToClipboard = function () {
         const email = 'bberry@calmchessgames.com';

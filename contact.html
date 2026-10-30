@@ -272,6 +272,44 @@
             box-shadow: 0 6px 16px rgba(255, 215, 0, 0.45);
         }
 
+        .btn-message-quick {
+            background: rgba(255, 215, 0, 0.08);
+            color: var(--gold-primary);
+            border: 1px solid var(--gold-primary);
+            font-weight: bold;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-message-quick:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-color: #3b82f6;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.45);
+        }
+
+        .nav-msg-link {
+            border: 1px solid rgba(255, 215, 0, 0.4) !important;
+            background: rgba(255, 215, 0, 0.08) !important;
+        }
+
+        .nav-msg-link:hover {
+            border-color: var(--gold-primary) !important;
+            background: rgba(255, 215, 0, 0.22) !important;
+        }
+
         @media (max-width: 768px) {
             .profile-card {
                 grid-template-columns: 1fr;
@@ -1192,6 +1230,7 @@
             <a href="index.html">Home</a>
             <a href="index.html#games">Games</a>
             <a href="contact.html" class="active">Contact &amp; Consultation</a>
+            <a href="#tabContentContact" onclick="event.preventDefault(); switchToContactTab();" class="nav-msg-link">&#9993; Send a Message</a>
         </nav>
     </header>
 
@@ -1221,8 +1260,11 @@
                 </div>
             </div>
             <div class="profile-actions">
-                <button class="btn-schedule-quick" onclick="switchToBookingTab()">
+                <button class="btn-schedule-quick" onclick="switchToBookingTab()" title="Scroll down to book a consultation">
                     &#128197; Book Consultation
+                </button>
+                <button class="btn-message-quick" onclick="switchToContactTab()" title="Scroll down to send a direct message">
+                    &#9993; Send a Message
                 </button>
             </div>
         </section>
@@ -1538,6 +1580,21 @@
             </div>
         </div>
     </div>
+
+    <!-- Quick Tab & Scroll Helpers -->
+    <script>
+        if (typeof window.switchToContactTab !== 'function') {
+            window.switchToContactTab = function () {
+                if (typeof window.switchTab === 'function') window.switchTab('contact');
+                const target = document.getElementById('tabContentContact') || document.querySelector('.tabs-container');
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setTimeout(function() {
+                    const nameInput = document.getElementById('contactName');
+                    if (nameInput) nameInput.focus({ preventScroll: true });
+                }, 350);
+            };
+        }
+    </script>
 
     <!-- Wooden Mechanical Keyboard Audio & Controller Scripts -->
     <script src="js/audio.js"></script>

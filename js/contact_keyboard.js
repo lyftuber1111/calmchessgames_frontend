@@ -1,7 +1,8 @@
 /**
  * Contact Portal Wooden Mechanical Keyboard Integration
  * Provides acoustic wooden tactile typing, automatic mobile rotation,
- * repeating Backspace on hold, and direct message dispatch to Brian Berry.
+ * repeating Backspace on hold, multi-field support (Direct Message & Consultation Agenda),
+ * and direct message dispatch to Brian Berry.
  */
 
 (function (global) {
@@ -125,8 +126,9 @@
     `,
     clear: `
       <svg class="key-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 6h18"/>
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
       </svg>
     `
   };
@@ -138,6 +140,7 @@
   let manualRotatePreference = null;
   let backspaceRepeatTimer = null;
   let backspaceInterval = null;
+  let activeTargetInput = null;
 
   function stopBackspaceRepeat() {
     if (backspaceRepeatTimer) {
@@ -154,6 +157,9 @@
   function playKeySound(type, isPress = true) {
     if (window.woodAudio) {
       try {
+        if (!window.woodAudio.ctx && window.woodAudio.init) {
+          window.woodAudio.init();
+        }
         if (window.woodAudio.ctx && window.woodAudio.ctx.state === 'suspended') {
           window.woodAudio.ctx.resume();
         }
@@ -229,6 +235,7 @@
   // Listeners on virtual buttons with repeating Backspace
   function setupKeyListeners(keyBtn, keyData) {
     const handleDown = (e) => {
+      // Prevent focus shift so parchment textarea remains active for physical typing
       if (e.cancelable) e.preventDefault();
       pressKey(keyData.code, true);
 
@@ -292,7 +299,6 @@
 
   function processKeyInput(keyData) {
     const field = document.getElementById('wood-kb-textarea');
-    const contactMessage = document.getElementById('contactMessage');
     if (!field) return;
 
     const start = field.selectionStart ?? field.value.length;
@@ -375,9 +381,9 @@
       }
     }
 
-    // Sync to main form message
-    if (contactMessage) {
-      contactMessage.value = field.value;
+    // Sync in real-time to active form target
+    if (activeTargetInput) {
+      activeTargetInput.value = field.value;
     }
     updateKeyboardStats();
   }
@@ -389,73 +395,100 @@
 
     const charCountEl = document.getElementById('kb-char-count');
     const wordCountEl = document.getElementById('kb-word-count');
-    if (charCountEl) charCountEl.textContent = text.length;
+
+    if (charCountEl) {
+      charCountEl.textContent = text.length.toString();
+    }
     if (wordCountEl) {
-      const trimmed = text.trim();
-      wordCountEl.textContent = trimmed ? trimmed.split(/\s+/).length : 0;
+      const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+      wordCountEl.textContent = words.toString();
     }
   }
 
+  function updateCapsLockVisuals() {
+    const capsKey = keyElementsMap.get('CapsLock');
+    if (capsKey) {
+      capsKey.el.classList.toggle('is-locked', isCapsLockActive);
+      const dot = capsKey.el.querySelector('.caps-indicator-dot');
+      if (dot) {
+        dot.classList.toggle('active', isCapsLockActive);
+      }
+    }
+    updateKeyFaceGlyphs();
+  }
+
   function updateShiftVisuals() {
-    const shiftLeft = keyElementsMap.get('ShiftLeft');
-    const shiftRight = keyElementsMap.get('ShiftRight');
-    [shiftLeft, shiftRight].forEach(s => {
-      if (s) {
-        s.el.classList.toggle('is-active-modifier', isShiftActive);
+    ['ShiftLeft', 'ShiftRight'].forEach(code => {
+      const entry = keyElementsMap.get(code);
+      if (entry) {
+        entry.el.classList.toggle('is-locked', isShiftActive);
       }
     });
+    updateKeyFaceGlyphs();
+  }
 
-    keyElementsMap.forEach(entry => {
-      const { el, data } = entry;
+  function updateKeyFaceGlyphs() {
+    const shouldBeUpper = isShiftActive ? !isCapsLockActive : isCapsLockActive;
+
+    keyElementsMap.forEach(({ el, data }) => {
       if (data.type === 'standard') {
-        const glyphEl = el.querySelector('.main-glyph');
-        if (glyphEl && /^[a-zA-Z]$/.test(data.key)) {
-          const shouldBeUpper = isShiftActive ? !isCapsLockActive : isCapsLockActive;
-          glyphEl.textContent = shouldBeUpper ? data.shiftKey : data.key;
+        const mainGlyph = el.querySelector('.main-glyph');
+        const shiftGlyph = el.querySelector('.shift-glyph');
+
+        if (mainGlyph) {
+          if (data.shiftLabel) {
+            // Number / symbol key
+            if (isShiftActive) {
+              if (shiftGlyph) shiftGlyph.classList.add('is-active-glyph');
+              mainGlyph.classList.add('is-dimmed-glyph');
+            } else {
+              if (shiftGlyph) shiftGlyph.classList.remove('is-active-glyph');
+              mainGlyph.classList.remove('is-dimmed-glyph');
+            }
+          } else {
+            // Letter key
+            mainGlyph.textContent = shouldBeUpper ? data.shiftKey : data.key;
+          }
         }
       }
     });
   }
 
-  function updateCapsLockVisuals() {
-    const capsEntry = keyElementsMap.get('CapsLock');
-    if (capsEntry) {
-      capsEntry.el.classList.toggle('is-active-modifier', isCapsLockActive);
-      const dot = capsEntry.el.querySelector('.caps-indicator-dot');
-      if (dot) dot.classList.toggle('lit', isCapsLockActive);
+  function clearKeyboardText() {
+    const field = document.getElementById('wood-kb-textarea');
+    if (field) {
+      field.value = '';
+      field.focus();
     }
-    updateShiftVisuals();
+    if (activeTargetInput) {
+      activeTargetInput.value = '';
+    }
+    updateKeyboardStats();
   }
 
   function copyKeyboardText() {
     const field = document.getElementById('wood-kb-textarea');
-    if (!field || !field.value) {
-      alert('Message display is empty.');
-      return;
-    }
+    if (!field || !field.value) return;
+
     navigator.clipboard.writeText(field.value).then(() => {
-      alert('✔ Message copied to clipboard!');
+      const copyBtn = document.getElementById('copy-kb-btn');
+      if (copyBtn) {
+        const prevText = copyBtn.textContent;
+        copyBtn.textContent = '✔ Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = prevText;
+        }, 1500);
+      }
     }).catch(() => {
-      field.select();
-      document.execCommand('copy');
-      alert('✔ Message copied to clipboard!');
+      alert('Parchment text: ' + field.value);
     });
   }
 
-  function clearKeyboardText() {
-    const field = document.getElementById('wood-kb-textarea');
-    const contactMessage = document.getElementById('contactMessage');
-    if (field) field.value = '';
-    if (contactMessage) contactMessage.value = '';
-    updateKeyboardStats();
-  }
-
-  // Mobile Auto-Rotate handler
+  // Handle Automatic Mobile Rotate Logic
   function checkMobileAutoRotate() {
     if (!isKeyboardOpen) return;
-    const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
-                     (('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 900);
-    const isPortrait = window.matchMedia('(orientation: portrait)').matches || (window.innerHeight > window.innerWidth);
+    const isMobile = window.innerWidth <= 768;
+    const isPortrait = window.innerHeight > window.innerWidth;
 
     if (manualRotatePreference !== null) {
       if (manualRotatePreference) {
@@ -463,34 +496,56 @@
       } else {
         document.body.classList.remove('mobile-auto-rotate');
       }
+      return;
+    }
+
+    if (isMobile && isPortrait) {
+      document.body.classList.add('mobile-auto-rotate');
     } else {
-      if (isMobile && isPortrait) {
-        document.body.classList.add('mobile-auto-rotate');
-        try {
-          if (screen.orientation && screen.orientation.lock) {
-            screen.orientation.lock('landscape').catch(() => {});
-          }
-        } catch (_) {}
-      } else {
-        document.body.classList.remove('mobile-auto-rotate');
-      }
+      document.body.classList.remove('mobile-auto-rotate');
     }
   }
 
-  // Open the wooden keyboard modal
-  function openWoodKeyboard() {
+  // Open the wooden keyboard modal for a specified textarea (or default to contactMessage)
+  function openWoodKeyboard(targetIdOrElem) {
     const modal = document.getElementById('woodKeyboardModal');
     if (!modal) return;
+
+    // Resolve target input
+    if (typeof targetIdOrElem === 'string') {
+      activeTargetInput = document.getElementById(targetIdOrElem);
+    } else if (targetIdOrElem && targetIdOrElem.nodeType === 1) {
+      activeTargetInput = targetIdOrElem;
+    } else if (!activeTargetInput) {
+      activeTargetInput = document.getElementById('contactMessage') || document.getElementById('bookingNotes');
+    }
+
+    // Configure header label and send button based on active target
+    const titleLabel = document.getElementById('wood-kb-title-label');
+    const sendBtn = document.getElementById('send-kb-btn');
+    const isBooking = activeTargetInput && activeTargetInput.id === 'bookingNotes';
+
+    if (titleLabel) {
+      titleLabel.textContent = isBooking ? 'Consultation Agenda & Notes for Brian:' : 'Message to Brian Berry:';
+    }
+    if (sendBtn) {
+      if (isBooking) {
+        sendBtn.innerHTML = '💾 Save to Agenda';
+        sendBtn.title = 'Save notes to Consultation Agenda form';
+      } else {
+        sendBtn.innerHTML = '✉️ Send Message';
+        sendBtn.title = 'Send Message directly to Brian Berry';
+      }
+    }
 
     isKeyboardOpen = true;
     modal.style.display = 'flex';
     document.body.classList.add('wood-kb-open');
 
-    // Sync current message from contact form
-    const contactMessage = document.getElementById('contactMessage');
+    // Sync text into parchment display
     const field = document.getElementById('wood-kb-textarea');
-    if (contactMessage && field) {
-      field.value = contactMessage.value || '';
+    if (activeTargetInput && field) {
+      field.value = activeTargetInput.value || '';
     }
 
     renderKeyboardGrid();
@@ -499,6 +554,11 @@
 
     if (window.woodAudio && window.woodAudio.init) {
       window.woodAudio.init();
+    }
+
+    // Ready parchment cursor
+    if (field) {
+      setTimeout(() => field.focus({ preventScroll: true }), 100);
     }
   }
 
@@ -513,29 +573,37 @@
     document.body.classList.remove('mobile-auto-rotate');
     stopBackspaceRepeat();
 
-    // Sync back
+    // Final sync back to target input
     const field = document.getElementById('wood-kb-textarea');
-    const contactMessage = document.getElementById('contactMessage');
-    if (field && contactMessage) {
-      contactMessage.value = field.value;
+    if (field && activeTargetInput) {
+      activeTargetInput.value = field.value;
     }
   }
 
-  // Send Message button handler on the wooden keyboard
+  // Action button handler on the wooden keyboard
   async function handleKeyboardSendMessage() {
     const field = document.getElementById('wood-kb-textarea');
+    const msg = field ? field.value.trim() : '';
+
+    if (!msg) {
+      alert('Please type text before saving or sending.');
+      return;
+    }
+
+    // If typing for booking notes, save to booking form and close
+    if (activeTargetInput && activeTargetInput.id === 'bookingNotes') {
+      activeTargetInput.value = field.value;
+      closeWoodKeyboard();
+      return;
+    }
+
+    // If typing message to Brian Berry, validate and submit
     const contactMessage = document.getElementById('contactMessage');
     const contactName = document.getElementById('contactName');
     const contactEmail = document.getElementById('contactEmail');
     const contactSubject = document.getElementById('contactSubject');
 
-    const msg = field ? field.value.trim() : '';
-    if (!msg) {
-      alert('Please type a message before sending.');
-      return;
-    }
-
-    if (contactMessage) contactMessage.value = msg;
+    if (contactMessage) contactMessage.value = field.value;
 
     // Check if name is provided
     let nameVal = contactName ? contactName.value.trim() : '';
@@ -574,7 +642,6 @@
 
     try {
       if (typeof window.handleContactSubmit === 'function') {
-        const dummyForm = document.getElementById('contactForm');
         const fakeEvent = new Event('submit', { cancelable: true });
         await window.handleContactSubmit(fakeEvent);
       }
@@ -586,7 +653,7 @@
     } finally {
       if (sendBtn) {
         sendBtn.disabled = false;
-        sendBtn.textContent = '✉️ Send Message';
+        sendBtn.innerHTML = '✉️ Send Message';
       }
     }
   }
@@ -594,8 +661,17 @@
   // Physical keyboard synchronization while wooden keyboard modal is open
   window.addEventListener('keydown', (e) => {
     if (!isKeyboardOpen) return;
+
+    // Close on Escape
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      closeWoodKeyboard();
+      return;
+    }
+
     const code = e.code;
     const entry = keyElementsMap.get(code);
+    const field = document.getElementById('wood-kb-textarea');
 
     if (entry) {
       if (!e.repeat) {
@@ -603,6 +679,21 @@
         playKeySound(entry.data.type, true);
       } else if (code === 'Backspace') {
         playKeySound('backspace', true);
+      }
+
+      // If user is not directly focused on the textarea or focus was on a button:
+      // Route the typed character into the parchment display
+      if (document.activeElement !== field) {
+        if (['Space', 'Enter', 'Backspace', 'Tab'].includes(code) || entry.data.type === 'standard') {
+          e.preventDefault();
+        }
+        processKeyInput(entry.data);
+      } else {
+        // Active in field: handle Tab specially
+        if (code === 'Tab') {
+          e.preventDefault();
+          processKeyInput(entry.data);
+        }
       }
     }
 
@@ -615,9 +706,9 @@
     }
 
     setTimeout(() => {
-      const field = document.getElementById('wood-kb-textarea');
-      const contactMessage = document.getElementById('contactMessage');
-      if (field && contactMessage) contactMessage.value = field.value;
+      if (activeTargetInput && field) {
+        activeTargetInput.value = field.value;
+      }
       updateKeyboardStats();
     }, 10);
   });
@@ -646,7 +737,9 @@
   // Setup DOM bindings when ready
   function initContactKeyboard() {
     const contactMessage = document.getElementById('contactMessage');
-    const btnOpen = document.getElementById('btnOpenWoodKeyboard');
+    const bookingNotes = document.getElementById('bookingNotes');
+    const btnOpenContact = document.getElementById('btnOpenWoodKeyboard');
+    const btnOpenBooking = document.getElementById('btnOpenWoodKeyboardBooking');
     const btnClose = document.getElementById('close-keyboard-btn');
     const btnSend = document.getElementById('send-kb-btn');
     const btnCopy = document.getElementById('copy-kb-btn');
@@ -656,26 +749,64 @@
     const volSlider = document.getElementById('volume-slider-contact');
     const muteBtn = document.getElementById('mute-btn-contact');
     const field = document.getElementById('wood-kb-textarea');
+    const modal = document.getElementById('woodKeyboardModal');
 
-    if (btnOpen) btnOpen.addEventListener('click', openWoodKeyboard);
+    // Trigger buttons
+    if (btnOpenContact) {
+      btnOpenContact.addEventListener('click', () => {
+        activeTargetInput = contactMessage;
+        openWoodKeyboard(contactMessage);
+      });
+    }
+    if (btnOpenBooking) {
+      btnOpenBooking.addEventListener('click', () => {
+        activeTargetInput = bookingNotes;
+        openWoodKeyboard(bookingNotes);
+      });
+    }
+
+    // Modal action controls
     if (btnClose) btnClose.addEventListener('click', closeWoodKeyboard);
     if (btnSend) btnSend.addEventListener('click', handleKeyboardSendMessage);
     if (btnCopy) btnCopy.addEventListener('click', copyKeyboardText);
     if (btnClear) btnClear.addEventListener('click', clearKeyboardText);
 
+    // Close on backdrop click outside container
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeWoodKeyboard();
+        }
+      });
+    }
+
     // Auto-open when user clicks or focuses contact message textarea
     if (contactMessage) {
       contactMessage.addEventListener('focus', () => {
-        openWoodKeyboard();
+        activeTargetInput = contactMessage;
+        openWoodKeyboard(contactMessage);
       });
       contactMessage.addEventListener('click', () => {
-        openWoodKeyboard();
+        activeTargetInput = contactMessage;
+        openWoodKeyboard(contactMessage);
+      });
+    }
+
+    // Auto-open when user clicks or focuses booking notes textarea
+    if (bookingNotes) {
+      bookingNotes.addEventListener('focus', () => {
+        activeTargetInput = bookingNotes;
+        openWoodKeyboard(bookingNotes);
+      });
+      bookingNotes.addEventListener('click', () => {
+        activeTargetInput = bookingNotes;
+        openWoodKeyboard(bookingNotes);
       });
     }
 
     if (field) {
       field.addEventListener('input', () => {
-        if (contactMessage) contactMessage.value = field.value;
+        if (activeTargetInput) activeTargetInput.value = field.value;
         updateKeyboardStats();
       });
     }

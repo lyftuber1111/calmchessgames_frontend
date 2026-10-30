@@ -18,10 +18,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const demoBtn = document.getElementById('demo-btn');
   const woodSelect = document.getElementById('wood-select');
   const toast = document.getElementById('toast');
+  const rotateBtn = document.getElementById('rotate-btn');
 
   let isShiftActive = false;
   let isCapsLockActive = false;
   let totalKeyPresses = 0;
+  let manualRotatePreference = null;
+  let backspaceRepeatTimer = null;
+  let backspaceInterval = null;
+
+  function stopBackspaceRepeat() {
+    if (backspaceRepeatTimer) {
+      clearTimeout(backspaceRepeatTimer);
+      backspaceRepeatTimer = null;
+    }
+    if (backspaceInterval) {
+      clearInterval(backspaceInterval);
+      backspaceInterval = null;
+    }
+  }
 
   // Key mapping definition for rendering and physical sync
   // Each key: { code: 'KeyQ', key: 'q', shiftKey: 'Q', label: 'Q', type: 'standard', width: 1 }
@@ -222,16 +237,33 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
       }
       pressKey(keyData.code, true);
+
+      // Backspace repeat when held down on virtual key
+      if (keyData.code === 'Backspace') {
+        stopBackspaceRepeat();
+        backspaceRepeatTimer = setTimeout(() => {
+          backspaceInterval = setInterval(() => {
+            pressKey('Backspace', true);
+            releaseKey('Backspace', false);
+          }, 60);
+        }, 360);
+      }
     };
 
     const handleUp = (e) => {
       if (e.cancelable) {
         e.preventDefault();
       }
+      if (keyData.code === 'Backspace') {
+        stopBackspaceRepeat();
+      }
       releaseKey(keyData.code, true);
     };
 
     const handleCancel = () => {
+      if (keyData.code === 'Backspace') {
+        stopBackspaceRepeat();
+      }
       releaseKey(keyData.code, false);
     };
 
@@ -240,6 +272,9 @@ document.addEventListener('DOMContentLoaded', () => {
     keyBtn.addEventListener('pointerleave', handleCancel);
     keyBtn.addEventListener('pointercancel', handleCancel);
   }
+
+  window.addEventListener('pointerup', stopBackspaceRepeat);
+  window.addEventListener('pointercancel', stopBackspaceRepeat);
 
   // Handle key press logic
   function pressKey(code, isVirtual = false) {
@@ -532,11 +567,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const code = e.code;
     const entry = keyElementsMap.get(code);
 
-    if (entry && !e.repeat) {
-      entry.el.classList.add('is-pressed');
-      window.woodAudio.playKeyPress(entry.data.type);
-      totalKeyPresses++;
-      if (keyPressCountEl) keyPressCountEl.textContent = totalKeyPresses.toString();
+    if (entry) {
+      if (!e.repeat) {
+        entry.el.classList.add('is-pressed');
+        window.woodAudio.playKeyPress(entry.data.type);
+        totalKeyPresses++;
+        if (keyPressCountEl) keyPressCountEl.textContent = totalKeyPresses.toString();
+      } else if (code === 'Backspace') {
+        window.woodAudio.playKeyPress('backspace');
+        totalKeyPresses++;
+        if (keyPressCountEl) keyPressCountEl.textContent = totalKeyPresses.toString();
+      }
     }
 
     if (e.key === 'CapsLock') {
@@ -622,8 +663,52 @@ document.addEventListener('DOMContentLoaded', () => {
   if (clearBtn) clearBtn.addEventListener('click', clearText);
   if (demoBtn) demoBtn.addEventListener('click', runDemo);
 
+  // Mobile Automatic Rotation Management
+  function checkMobileAutoRotate() {
+    const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     (('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 900);
+    const isPortrait = window.matchMedia('(orientation: portrait)').matches || (window.innerHeight > window.innerWidth);
+
+    if (manualRotatePreference !== null) {
+      if (manualRotatePreference) {
+        document.body.classList.add('mobile-auto-rotate');
+      } else {
+        document.body.classList.remove('mobile-auto-rotate');
+      }
+    } else {
+      if (isMobile && isPortrait) {
+        document.body.classList.add('mobile-auto-rotate');
+        try {
+          if (screen.orientation && screen.orientation.lock) {
+            screen.orientation.lock('landscape').catch(() => {});
+          }
+        } catch (_) {}
+      } else {
+        document.body.classList.remove('mobile-auto-rotate');
+      }
+    }
+  }
+
+  if (rotateBtn) {
+    rotateBtn.addEventListener('click', () => {
+      const isCurrentlyRotated = document.body.classList.contains('mobile-auto-rotate');
+      manualRotatePreference = !isCurrentlyRotated;
+      if (manualRotatePreference) {
+        document.body.classList.add('mobile-auto-rotate');
+        showToast('Rotated to Horizontal Mode 🔄');
+      } else {
+        document.body.classList.remove('mobile-auto-rotate');
+        showToast('Vertical Mode 📱');
+      }
+    });
+  }
+
+  window.addEventListener('resize', checkMobileAutoRotate);
+  window.addEventListener('orientationchange', checkMobileAutoRotate);
+
   // Initialize
   renderKeyboard();
   updateStats();
   document.body.dataset.wood = 'walnut';
+  checkMobileAutoRotate();
 });

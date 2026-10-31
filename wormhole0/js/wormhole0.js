@@ -7,9 +7,9 @@
  * Calm Chess Games / Brian Berry (C) 2026
  */
 
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
-import { VRButton } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/VRButton.js';
-import { XRControllerModelFactory } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/webxr/XRControllerModelFactory.js';
+import * as THREE from 'three';
+import { VRButton } from 'three/addons/webxr/VRButton.js';
+import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
 // =============================================================================
 // STATE & CONFIGURATION
@@ -98,72 +98,124 @@ const detectedHardware = {
   arSupported: false
 };
 
+// WebGL Capability Probe
+function checkWebGLSupport() {
+  try {
+    if (!window.WebGLRenderingContext) {
+      return { supported: false, reason: 'WebGL is not supported by this browser.' };
+    }
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) {
+      return { supported: false, reason: 'Unable to initialize WebGL graphics context. Hardware acceleration may be disabled.' };
+    }
+    const vs = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vs, 'void main(){gl_Position=vec4(0.0,0.0,0.0,1.0);}');
+    gl.compileShader(vs);
+    if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+      return { supported: false, reason: 'GPU shader compilation failed.' };
+    }
+    return { supported: true, gl };
+  } catch (err) {
+    return { supported: false, reason: 'WebGL error: ' + (err.message || 'unknown error') };
+  }
+}
+
 // =============================================================================
 // THREE.JS CORE SCENE INITIALIZATION
 // =============================================================================
-const container = document.getElementById('webgl-container');
-const scene = new THREE.Scene();
-scene.fog = new THREE.FogExp2(0x01050a, 0.0016);
+let container = document.getElementById('webgl-container');
+let scene = null;
+let camera = null;
+let renderer = null;
+let vrBtn = null;
+let webglInitError = null;
 
-const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2500);
-camera.position.copy(state.position);
-
-const renderer = new THREE.WebGLRenderer({
-  powerPreference: 'high-performance',
-  antialias: false,
-  alpha: true,
-  stencil: false,
-  depth: true
-});
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.2;
-renderer.xr.enabled = true;
-container.appendChild(renderer.domElement);
-
-// WebXR Button
-const vrBtn = VRButton.createButton(renderer);
-vrBtn.id = 'xr-enter-btn';
-document.body.appendChild(vrBtn);
-
-renderer.xr.addEventListener('sessionstart', () => {
-  state.isXR = true;
-  document.body.classList.add('in-xr-session');
-  console.log('[Wormhole XR] WebXR session started.');
-  showToast('XR IMMERSIVE SESSION ACTIVE');
-});
-renderer.xr.addEventListener('sessionend', () => {
-  state.isXR = false;
-  document.body.classList.remove('in-xr-session');
-  console.log('[Wormhole XR] WebXR session exited.');
-});
-
-// XR Hand Controllers
-const controllerModelFactory = new XRControllerModelFactory();
 const controllers = [];
-for (let i = 0; i < 2; i++) {
-  const controller = renderer.xr.getController(i);
-  scene.add(controller);
-  
-  const grip = renderer.xr.getControllerGrip(i);
-  grip.add(controllerModelFactory.createControllerModel(grip));
-  scene.add(grip);
 
-  const laserGeom = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0, 0, -5)
-  ]);
-  const laserMat = new THREE.LineBasicMaterial({
-    color: 0x00f0ff,
-    transparent: true,
-    opacity: 0.8,
-    blending: THREE.AdditiveBlending
-  });
-  const laser = new THREE.Line(laserGeom, laserMat);
-  controller.add(laser);
-  controllers.push(controller);
+try {
+  const probe = checkWebGLSupport();
+  if (!probe.supported) {
+    webglInitError = new Error(probe.reason);
+  } else {
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x01050a, 0.0016);
+
+    camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2500);
+    camera.position.copy(state.position);
+
+    renderer = new THREE.WebGLRenderer({
+      powerPreference: 'high-performance',
+      antialias: false,
+      alpha: true,
+      stencil: false,
+      depth: true
+    });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    renderer.xr.enabled = true;
+    if (container) container.appendChild(renderer.domElement);
+
+    // WebXR Button
+    try {
+      vrBtn = VRButton.createButton(renderer);
+      vrBtn.id = 'xr-enter-btn';
+      document.body.appendChild(vrBtn);
+    } catch (e) {}
+
+    renderer.xr.addEventListener('sessionstart', () => {
+      state.isXR = true;
+      document.body.classList.add('in-xr-session');
+      console.log('[Wormhole XR] WebXR session started.');
+      showToast('XR IMMERSIVE SESSION ACTIVE');
+    });
+    renderer.xr.addEventListener('sessionend', () => {
+      state.isXR = false;
+      document.body.classList.remove('in-xr-session');
+      console.log('[Wormhole XR] WebXR session exited.');
+    });
+
+    // XR Hand Controllers
+    try {
+      const controllerModelFactory = new XRControllerModelFactory();
+      for (let i = 0; i < 2; i++) {
+        const controller = renderer.xr.getController(i);
+        scene.add(controller);
+        
+        const grip = renderer.xr.getControllerGrip(i);
+        if (controllerModelFactory) {
+          try {
+            grip.add(controllerModelFactory.createControllerModel(grip));
+          } catch (e) {}
+        }
+        scene.add(grip);
+
+        const laserGeom = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(0, 0, 0),
+          new THREE.Vector3(0, 0, -5)
+        ]);
+        const laserMat = new THREE.LineBasicMaterial({
+          color: 0x00f0ff,
+          transparent: true,
+          opacity: 0.8,
+          blending: THREE.AdditiveBlending
+        });
+        const laser = new THREE.Line(laserGeom, laserMat);
+        controller.add(laser);
+        controllers.push(controller);
+      }
+    } catch (e) {}
+  }
+} catch (err) {
+  console.warn('[Wormhole XR] WebGL renderer creation caught error:', err);
+  webglInitError = err;
 }
+
+// Fallback dummy scene & camera so shaders and materials instantiate safely without throwing
+if (!scene) scene = new THREE.Scene();
+if (!camera) camera = new THREE.PerspectiveCamera(65, 1.0, 0.1, 1000);
 
 // Lighting
 const ambientLight = new THREE.AmbientLight(0x02111c, 0.4);
@@ -979,25 +1031,6 @@ const btnDismissModal = document.getElementById('btn-dismiss-modal');
 const btnSwitchRec = document.getElementById('btn-switch-recommended');
 const btnForceContinue = document.getElementById('btn-force-continue');
 
-function checkWebGLSupport() {
-  try {
-    const canvas = document.createElement('canvas');
-    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
-    if (!gl) {
-      return { supported: false, reason: 'WebGL is disabled or unsupported on this device/browser.' };
-    }
-    const vs = gl.createShader(gl.VERTEX_SHADER);
-    gl.shaderSource(vs, 'void main(){gl_Position=vec4(0.0,0.0,0.0,1.0);}');
-    gl.compileShader(vs);
-    if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
-      return { supported: false, reason: 'Shader compilation failed on this graphics hardware.' };
-    }
-    return { supported: true, gl };
-  } catch (err) {
-    return { supported: false, reason: 'WebGL initialization failed: ' + (err.message || 'unknown error') };
-  }
-}
-
 function getDescriptiveDeviceName() {
   const ua = navigator.userAgent;
   let model = '';
@@ -1090,11 +1123,21 @@ function getDescriptiveDeviceName() {
 
 async function detectHardwareDiagnostics() {
   try {
-    const gl = renderer.getContext();
-    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
-    if (dbg) {
-      detectedHardware.gpu = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
-    }
+    let gl = null;
+    try {
+      if (typeof renderer !== 'undefined' && renderer && renderer.getContext) {
+        gl = renderer.getContext();
+      } else {
+        const testCanvas = document.createElement('canvas');
+        gl = testCanvas.getContext('webgl2') || testCanvas.getContext('webgl') || testCanvas.getContext('experimental-webgl');
+      }
+      if (gl) {
+        const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+        if (dbg) {
+          detectedHardware.gpu = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+        }
+      }
+    } catch (e) {}
 
     const ua = navigator.userAgent;
     if (/Quest|Oculus/i.test(ua)) {
@@ -2182,7 +2225,8 @@ function updateFlight(delta) {
 }
 
 // Main Animation Loop
-renderer.setAnimationLoop((timestamp) => {
+if (renderer) {
+  renderer.setAnimationLoop((timestamp) => {
   const delta = (timestamp - state.lastFrameTime) * 0.001;
   state.lastFrameTime = timestamp;
   state.time += delta;
@@ -2226,6 +2270,8 @@ renderer.setAnimationLoop((timestamp) => {
   }
 });
 
+}
+
 // Resize Handler
 window.addEventListener('resize', () => {
   const w = window.innerWidth;
@@ -2262,7 +2308,7 @@ async function runStartupDiagnosticsAndSplashScreen() {
 
     // 1. Test WebGL Runnable Capability
     const webglCheck = checkWebGLSupport();
-    const isWebglRunnable = webglCheck.supported;
+    const isWebglRunnable = webglCheck.supported && !webglInitError;
 
     // 2. Hardware profile detection
     await detectHardwareDiagnostics();

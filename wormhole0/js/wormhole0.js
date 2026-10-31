@@ -1,7 +1,8 @@
 /**
  * Wormhole XR - Stage 1: The Distant Neon Cyan Wormhole
- * Enhanced with 6-DOF Desktop Flight, Gravitational Lensing Shaders,
- * Interactive Mission Objectives, and Audio Engine (.wav + Web Audio API).
+ * Multi-Platform XR Experience with Collapsible Auto-Hide HUD,
+ * Mode Switcher (Desktop XR, Desktop VR, Mobile XR, Mobile AR),
+ * Game Controller Support, and Touch Controls.
  * 
  * Calm Chess Games / Brian Berry (C) 2026
  */
@@ -31,7 +32,8 @@ const CONFIG = {
   flightSpeed: 45.0,
   boostMultiplier: 2.2,
   pitchSpeed: 0.0022,
-  yawSpeed: 0.0022
+  yawSpeed: 0.0022,
+  gamepadDeadzone: 0.14
 };
 
 // Application & Flight state
@@ -42,8 +44,13 @@ const state = {
   frameCount: 0,
   lastFpsUpdate: performance.now(),
   isXR: false,
+  xrMode: 'desktop-xr', // 'desktop-xr', 'desktop-vr', 'mobile-xr', 'mobile-ar'
   hudVisible: true,
   postProcessingEnabled: true,
+  
+  // Drawer / Sidebar state
+  isDrawerPinned: false,
+  isDrawerAutoHide: true,
   
   // Player Position & Flight Dynamics
   position: new THREE.Vector3(0, 2.5, CONFIG.wormholeDistance),
@@ -54,6 +61,15 @@ const state = {
   isMouseDown: false,
   lastMouseX: 0,
   lastMouseY: 0,
+  
+  // Virtual Touch Joystick input
+  touchMove: { x: 0, y: 0 },
+  touchActive: false,
+  
+  // Gamepad State
+  gamepadIndex: null,
+  gamepadMode: 'auto', // 'auto', 'enabled', 'disabled'
+  lastPadButtons: {},
   
   // Mission Objectives State
   scanProgress: 0.0,
@@ -82,7 +98,7 @@ camera.position.copy(state.position);
 const renderer = new THREE.WebGLRenderer({
   powerPreference: 'high-performance',
   antialias: false,
-  alpha: false,
+  alpha: true, // Alpha enabled for AR passthrough
   stencil: false,
   depth: true
 });
@@ -101,13 +117,13 @@ document.body.appendChild(vrBtn);
 renderer.xr.addEventListener('sessionstart', () => {
   state.isXR = true;
   document.body.classList.add('in-xr-session');
-  console.log('[Wormhole XR] VR session active.');
-  showToast('VR HEADSET ATTACHED - FULL 6-DOF IMMERSION');
+  console.log('[Wormhole XR] WebXR session started.');
+  showToast('XR IMMERSIVE SESSION ACTIVE');
 });
 renderer.xr.addEventListener('sessionend', () => {
   state.isXR = false;
   document.body.classList.remove('in-xr-session');
-  console.log('[Wormhole XR] VR session exited.');
+  console.log('[Wormhole XR] WebXR session exited.');
 });
 
 // XR Controllers
@@ -691,14 +707,12 @@ const compositeShader = {
     void main() {
       vec2 uv = vUv;
 
-      // Gravitational Deflection Vector
       vec2 lensedUv = uv;
       if (uIsBehind < 0.5 && uLensingStrength > 0.01) {
         vec2 d = uv - uWormholeScreenPos;
         d.x *= uAspect;
         float r = length(d);
 
-        // Einstein Radius Deflection Formula: alpha = r_E^2 / r
         float rE = 0.075 * uLensingStrength;
         if (r > 0.008 && r < 0.45) {
           float deflection = (rE * rE) / (r + 0.015);
@@ -712,7 +726,6 @@ const compositeShader = {
       vec2 dir = lensedUv - center;
       float dist = length(dir);
 
-      // Chromatic Aberration
       vec2 redUv   = lensedUv + dir * (uChromaticAberration * dist);
       vec2 greenUv = lensedUv;
       vec2 blueUv  = lensedUv - dir * (uChromaticAberration * dist);
@@ -723,14 +736,11 @@ const compositeShader = {
       sceneColor.b = texture2D(tScene, blueUv).b;
 
       vec3 bloomColor = texture2D(tBloom, lensedUv).rgb * uBloomStrength;
-
       vec3 finalColor = sceneColor + bloomColor;
 
-      // Vignette
       float vignette = smoothstep(1.3, 0.4, dist);
       finalColor *= vignette;
 
-      // Hologram Scanline
       float scanline = sin(uv.y * 900.0) * 0.018;
       finalColor -= scanline;
 
@@ -773,7 +783,6 @@ class AudioManager {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AudioCtx();
 
-      // HTML5 Audio Elements for .wav sound assets
       this.droneAudio = new Audio('audio/wormhole_drone.wav');
       this.droneAudio.loop = true;
       this.droneAudio.volume = 0.55;
@@ -787,7 +796,6 @@ class AudioManager {
       this.coilAudio = new Audio('audio/coil_calibrate.wav');
       this.coilAudio.volume = 0.75;
 
-      // Procedural Synth Backup / Proximity Drone
       this.synthOsc = this.ctx.createOscillator();
       this.synthGain = this.ctx.createGain();
       this.synthOsc.type = 'sawtooth';
@@ -804,8 +812,6 @@ class AudioManager {
       this.synthOsc.start();
 
       this.isInitialized = true;
-      console.log('[Audio] Audio Engine initialized with .wav and Web Audio API.');
-
       if (!CONFIG.audioMuted) {
         this.playDrone();
       }
@@ -817,7 +823,6 @@ class AudioManager {
   playDrone() {
     if (this.droneAudio && !CONFIG.audioMuted) {
       this.droneAudio.play().catch(() => {
-        // Fallback to Web Audio oscillator if browser blocks autoplay
         if (this.synthGain) this.synthGain.gain.setValueAtTime(0.15, this.ctx.currentTime);
       });
     }
@@ -862,6 +867,317 @@ class AudioManager {
 const audioMgr = new AudioManager();
 
 // =============================================================================
+// COLLAPSIBLE LEFT DRAWER (HOVER, PIN & AUTO-HIDE CONTROLS)
+// =============================================================================
+const leftDrawer = document.getElementById('left-drawer-container');
+const drawerTab = document.getElementById('drawer-tab');
+const chkAutoHide = document.getElementById('chk-autohide');
+const btnToggleDrawer = document.getElementById('btn-toggle-drawer');
+
+function toggleDrawerPin() {
+  state.isDrawerPinned = !state.isDrawerPinned;
+  if (leftDrawer) {
+    leftDrawer.classList.toggle('pinned', state.isDrawerPinned);
+  }
+  if (btnToggleDrawer) {
+    btnToggleDrawer.classList.toggle('active', state.isDrawerPinned);
+  }
+}
+
+if (drawerTab) {
+  drawerTab.addEventListener('click', toggleDrawerPin);
+}
+
+if (btnToggleDrawer) {
+  btnToggleDrawer.addEventListener('click', toggleDrawerPin);
+}
+
+if (chkAutoHide) {
+  chkAutoHide.addEventListener('change', (e) => {
+    state.isDrawerAutoHide = e.target.checked;
+    if (!state.isDrawerAutoHide) {
+      // Pin open when auto-hide is turned off
+      state.isDrawerPinned = true;
+      if (leftDrawer) leftDrawer.classList.add('pinned');
+    }
+  });
+}
+
+// Global key shortcut to toggle drawer (Tab or M)
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Tab' || e.code === 'KeyM') {
+    e.preventDefault();
+    toggleDrawerPin();
+  }
+});
+
+// =============================================================================
+// MULTI-PLATFORM & XR MODE SWITCHER
+// =============================================================================
+const selectModeEl = document.getElementById('select-mode');
+if (selectModeEl) {
+  selectModeEl.addEventListener('change', (e) => {
+    state.xrMode = e.target.value;
+    handleModeChange(state.xrMode);
+  });
+}
+
+function handleModeChange(mode) {
+  console.log(`[Wormhole XR] Operating mode changed to: ${mode}`);
+  if (mode === 'desktop-xr') {
+    state.postProcessingEnabled = true;
+    scene.background = null;
+    showToast('MODE: DESKTOP XR (6-DOF FLIGHT & CUSTOM SHADERS)');
+  } else if (mode === 'desktop-vr') {
+    state.postProcessingEnabled = false;
+    showToast('MODE: DESKTOP VR (CLICK ENTER VR FOR HMD)');
+  } else if (mode === 'mobile-xr') {
+    state.postProcessingEnabled = false;
+    requestDeviceOrientation();
+    showToast('MODE: MOBILE XR (ROTATE LANDSCAPE FOR DUAL-STICK TOUCH)');
+  } else if (mode === 'mobile-ar') {
+    state.postProcessingEnabled = false;
+    scene.background = null; // Transparent for camera passthrough
+    showToast('MODE: MOBILE AR (ARCORE PASSTHROUGH ACTIVE)');
+  }
+}
+
+// Accelerometer / DeviceOrientation permission helper (iOS / Mobile)
+function requestDeviceOrientation() {
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission()
+      .then(res => {
+        if (res === 'granted') {
+          window.addEventListener('deviceorientation', handleOrientation);
+        }
+      })
+      .catch(console.warn);
+  } else {
+    window.addEventListener('deviceorientation', handleOrientation);
+  }
+}
+
+function handleOrientation(e) {
+  if (state.isXR || state.xrMode !== 'mobile-xr') return;
+  if (e.gamma !== null && e.beta !== null) {
+    // Landscape orientation adjustments
+    state.yaw = THREE.MathUtils.degToRad(-e.alpha || 0);
+    state.pitch = THREE.MathUtils.degToRad(e.gamma || 0);
+  }
+}
+
+// =============================================================================
+// GAMEPAD CONTROLLER API INTEGRATION
+// =============================================================================
+const gamepadPill = document.getElementById('gamepad-status-pill');
+const gamepadNameText = document.getElementById('gamepad-name-text');
+const btnToggleController = document.getElementById('btn-toggle-controller');
+
+if (btnToggleController) {
+  btnToggleController.addEventListener('click', () => {
+    if (state.gamepadMode === 'auto') state.gamepadMode = 'enabled';
+    else if (state.gamepadMode === 'enabled') state.gamepadMode = 'disabled';
+    else state.gamepadMode = 'auto';
+
+    btnToggleController.textContent = `🎮 Controller: ${state.gamepadMode.toUpperCase()}`;
+    showToast(`GAMEPAD POLLING: ${state.gamepadMode.toUpperCase()}`);
+    updateGamepadUI();
+  });
+}
+
+window.addEventListener('gamepadconnected', (e) => {
+  console.log('[Gamepad] Controller connected:', e.gamepad.id);
+  state.gamepadIndex = e.gamepad.index;
+  updateGamepadUI(e.gamepad);
+  showToast(`CONTROLLER CONNECTED: ${e.gamepad.id.slice(0, 24)}...`);
+  if (!audioMgr.isInitialized) audioMgr.init();
+});
+
+window.addEventListener('gamepaddisconnected', (e) => {
+  console.log('[Gamepad] Controller disconnected:', e.gamepad.id);
+  if (state.gamepadIndex === e.gamepad.index) {
+    state.gamepadIndex = null;
+  }
+  updateGamepadUI(null);
+  showToast('CONTROLLER DISCONNECTED');
+});
+
+function updateGamepadUI(pad = null) {
+  if (!pad && state.gamepadIndex !== null) {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    pad = pads[state.gamepadIndex];
+  }
+
+  if (pad && state.gamepadMode !== 'disabled') {
+    if (gamepadPill) gamepadPill.classList.add('connected');
+    const simpleName = pad.id.includes('Xbox') ? 'XBOX' : (pad.id.includes('Dual') ? 'PS5/4' : 'PAD');
+    if (gamepadNameText) gamepadNameText.textContent = `${simpleName}: ON`;
+  } else {
+    if (gamepadPill) gamepadPill.classList.remove('connected');
+    if (gamepadNameText) gamepadNameText.textContent = `PAD: ${state.gamepadMode === 'disabled' ? 'OFF' : 'AUTO'}`;
+  }
+}
+
+function pollGamepad(delta) {
+  if (state.gamepadMode === 'disabled') return;
+  const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+  if (!gamepads) return;
+
+  for (let i = 0; i < gamepads.length; i++) {
+    const pad = gamepads[i];
+    if (!pad) continue;
+
+    // Left Stick: Axes 0 (X), 1 (Y) -> Movement
+    const lx = Math.abs(pad.axes[0]) > CONFIG.gamepadDeadzone ? pad.axes[0] : 0;
+    const ly = Math.abs(pad.axes[1]) > CONFIG.gamepadDeadzone ? pad.axes[1] : 0;
+
+    // Right Stick: Axes 2 (X), 3 (Y) -> Pitch & Yaw Look
+    const rx = Math.abs(pad.axes[2]) > CONFIG.gamepadDeadzone ? pad.axes[2] : 0;
+    const ry = Math.abs(pad.axes[3]) > CONFIG.gamepadDeadzone ? pad.axes[3] : 0;
+
+    state.yaw -= rx * CONFIG.yawSpeed * 22.0;
+    state.pitch -= ry * CONFIG.pitchSpeed * 22.0;
+    state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
+
+    // Flight translation via Left Stick
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+
+    if (ly !== 0) state.velocity.addScaledVector(forward, -ly * CONFIG.flightSpeed * delta * 4.0);
+    if (lx !== 0) state.velocity.addScaledVector(right, lx * CONFIG.flightSpeed * delta * 4.0);
+
+    // Triggers: R2 (Button 7) Forward Boost, L2 (Button 6) Retro Brake
+    const r2 = pad.buttons[7] ? pad.buttons[7].value : 0;
+    const l2 = pad.buttons[6] ? pad.buttons[6].value : 0;
+    if (r2 > 0.1) state.velocity.addScaledVector(forward, r2 * CONFIG.flightSpeed * CONFIG.boostMultiplier * delta * 3.5);
+    if (l2 > 0.1) state.velocity.multiplyScalar(0.85);
+
+    // Face Buttons
+    // Button 0 (A / Cross): Scan
+    if (pad.buttons[0] && pad.buttons[0].pressed && !state.lastPadButtons[0]) {
+      const btnScan = document.getElementById('btn-do-scan');
+      if (btnScan) btnScan.click();
+      vibratePad(pad, 150);
+    }
+    // Button 2 (X / Square): Calibrate Next Coil
+    if (pad.buttons[2] && pad.buttons[2].pressed && !state.lastPadButtons[2]) {
+      const uncalibrated = state.coils.findIndex(c => !c);
+      if (uncalibrated !== -1) {
+        const cBtn = document.getElementById(`btn-coil-${uncalibrated + 1}`);
+        if (cBtn) cBtn.click();
+        vibratePad(pad, 200);
+      }
+    }
+    // Button 3 (Y / Triangle): Engage Warp Jump
+    if (pad.buttons[3] && pad.buttons[3].pressed && !state.lastPadButtons[3]) {
+      triggerWarpJump();
+      vibratePad(pad, 400);
+    }
+
+    state.lastPadButtons = {
+      0: pad.buttons[0] ? pad.buttons[0].pressed : false,
+      2: pad.buttons[2] ? pad.buttons[2].pressed : false,
+      3: pad.buttons[3] ? pad.buttons[3].pressed : false
+    };
+
+    break; // Target primary active gamepad
+  }
+}
+
+function vibratePad(pad, durationMs) {
+  if (pad && pad.vibrationActuator && typeof pad.vibrationActuator.playEffect === 'function') {
+    pad.vibrationActuator.playEffect('dual-rumble', {
+      startDelay: 0,
+      duration: durationMs,
+      weakMagnitude: 0.6,
+      strongMagnitude: 0.9
+    }).catch(() => {});
+  }
+}
+
+// =============================================================================
+// MOBILE TOUCH VIRTUAL JOYSTICK & TOUCH BUTTONS
+// =============================================================================
+const touchStickZone = document.getElementById('touch-stick-zone');
+const touchStickKnob = document.getElementById('touch-stick-knob');
+const touchBtnScan = document.getElementById('touch-btn-scan');
+const touchBtnWarp = document.getElementById('touch-btn-warp');
+
+let stickCenter = { x: 0, y: 0 };
+const maxStickRadius = 38;
+
+if (touchStickZone) {
+  touchStickZone.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const rect = touchStickZone.getBoundingClientRect();
+    stickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    state.touchActive = true;
+    updateStickPos(e.touches[0].clientX, e.touches[0].clientY);
+    if (!audioMgr.isInitialized) audioMgr.init();
+    lockLandscape();
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!state.touchActive) return;
+    for (let i = 0; i < e.touches.length; i++) {
+      const touch = e.touches[i];
+      if (touch.target === touchStickZone || touchStickZone.contains(touch.target)) {
+        updateStickPos(touch.clientX, touch.clientY);
+        break;
+      }
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchend', () => {
+    if (state.touchActive) {
+      state.touchActive = false;
+      state.touchMove.x = 0;
+      state.touchMove.y = 0;
+      if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
+    }
+  });
+}
+
+function updateStickPos(clientX, clientY) {
+  const dx = clientX - stickCenter.x;
+  const dy = clientY - stickCenter.y;
+  const dist = Math.hypot(dx, dy);
+  const angle = Math.atan2(dy, dx);
+  const clampedDist = Math.min(dist, maxStickRadius);
+
+  const knobX = Math.cos(angle) * clampedDist;
+  const knobY = Math.sin(angle) * clampedDist;
+
+  if (touchStickKnob) {
+    touchStickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+  }
+
+  state.touchMove.x = knobX / maxStickRadius;
+  state.touchMove.y = knobY / maxStickRadius;
+}
+
+if (touchBtnScan) {
+  touchBtnScan.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const btnScan = document.getElementById('btn-do-scan');
+    if (btnScan) btnScan.click();
+  });
+}
+
+if (touchBtnWarp) {
+  touchBtnWarp.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    triggerWarpJump();
+  });
+}
+
+function lockLandscape() {
+  if (screen.orientation && typeof screen.orientation.lock === 'function') {
+    screen.orientation.lock('landscape').catch(() => {});
+  }
+}
+
+// =============================================================================
 // DESKTOP 6-DOF FLIGHT CONTROLS & POINTER LOCK
 // =============================================================================
 window.addEventListener('keydown', (e) => {
@@ -877,7 +1193,6 @@ window.addEventListener('keyup', (e) => {
   keys[e.code] = false;
 });
 
-// Pointer Lock / Mouse Look
 const mouseLockBtn = document.getElementById('btn-mouse-lock');
 if (mouseLockBtn) {
   mouseLockBtn.addEventListener('click', () => {
@@ -931,7 +1246,6 @@ window.addEventListener('mousemove', (e) => {
 // =============================================================================
 // MISSION OBJECTIVES & INTERACTIVE CALIBRATION SYSTEM
 // =============================================================================
-const hudStatusEl = document.getElementById('hud-status');
 const hudDistEl = document.getElementById('hud-distance');
 const hudVectorEl = document.getElementById('hud-vector');
 const hudFluxEl = document.getElementById('hud-flux');
@@ -941,7 +1255,6 @@ const vectorRingEl = document.getElementById('vector-alignment-ring');
 const warpBtn = document.getElementById('btn-warp');
 const objTotalProgressEl = document.getElementById('obj-total-progress');
 
-// Toast Feedback Helper
 function showToast(msg, duration = 3200) {
   if (!toastEl) return;
   toastEl.textContent = msg;
@@ -1020,14 +1333,13 @@ coilBtns.forEach((btn, idx) => {
   });
 });
 
-// Objective 3 & 4 Progress Checking
 function checkObjectives() {
   let completed = 0;
   if (state.scanProgress >= 1.0) completed++;
   if (state.coils.every(c => c)) completed++;
   if (state.isVectorAligned && state.isInRange) completed++;
 
-  objTotalProgressEl.textContent = `${completed}/4 COMPLETE`;
+  if (objTotalProgressEl) objTotalProgressEl.textContent = `${completed}/4 COMPLETE`;
 
   if (completed === 3 && !state.isWarpReady) {
     state.isWarpReady = true;
@@ -1047,7 +1359,6 @@ function checkObjectives() {
   }
 }
 
-// Trigger Warp Jump
 function triggerWarpJump() {
   if (state.isHyperWarping) return;
   audioMgr.init();
@@ -1067,7 +1378,7 @@ function triggerWarpJump() {
   if (objJump) objJump.classList.add('completed');
   if (statusJump) statusJump.textContent = 'PASSING EVENT HORIZON';
   if (barJump) barJump.style.width = '100%';
-  objTotalProgressEl.textContent = '4/4 COMPLETE';
+  if (objTotalProgressEl) objTotalProgressEl.textContent = '4/4 COMPLETE';
 }
 
 if (warpBtn) {
@@ -1114,7 +1425,6 @@ if (toggleAudioBtn) {
 
 const toggleHudBtn = document.getElementById('btn-toggle-hud');
 const hudPanel = document.getElementById('hud-panel');
-const missionPanel = document.getElementById('mission-panel');
 const flightPanel = document.getElementById('flight-panel');
 if (toggleHudBtn) {
   toggleHudBtn.addEventListener('click', () => {
@@ -1122,7 +1432,6 @@ if (toggleHudBtn) {
     const disp = state.hudVisible ? 'flex' : 'none';
     const blockDisp = state.hudVisible ? 'block' : 'none';
     if (hudPanel) hudPanel.style.display = disp;
-    if (missionPanel) missionPanel.style.display = blockDisp;
     if (flightPanel) flightPanel.style.display = blockDisp;
   });
 }
@@ -1134,11 +1443,9 @@ const tempVec = new THREE.Vector3();
 const wormholeScreenVec = new THREE.Vector3();
 
 function renderPostProcessing() {
-  // 1. Calculate Wormhole screen position for Gravitational Lensing
   tempVec.set(0, 0, 0);
   tempVec.project(camera);
 
-  // Check if wormhole is in front of camera
   const isBehind = tempVec.z > 1.0 ? 1.0 : 0.0;
   wormholeScreenVec.x = (tempVec.x * 0.5) + 0.5;
   wormholeScreenVec.y = (tempVec.y * 0.5) + 0.5;
@@ -1147,11 +1454,9 @@ function renderPostProcessing() {
   compositeShader.uniforms.uIsBehind.value = isBehind;
   compositeShader.uniforms.uAspect.value = window.innerWidth / window.innerHeight;
 
-  // 2. Render Scene to HDR texture
   renderer.setRenderTarget(sceneRenderTarget);
   renderer.render(scene, camera);
 
-  // 3. High-Pass Luminance Pass
   highPassMaterial.uniforms.tDiffuse.value = sceneRenderTarget.texture;
   highPassMaterial.uniforms.uThreshold.value = CONFIG.bloomThreshold;
   postScene.clear();
@@ -1159,7 +1464,6 @@ function renderPostProcessing() {
   renderer.setRenderTarget(renderTargetA);
   renderer.render(postScene, postCamera);
 
-  // 4. Separable Horizontal Blur
   blurMaterial.uniforms.tDiffuse.value = renderTargetA.texture;
   blurMaterial.uniforms.uDirection.value.set(1.0, 0.0);
   blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
@@ -1168,14 +1472,12 @@ function renderPostProcessing() {
   renderer.setRenderTarget(renderTargetB);
   renderer.render(postScene, postCamera);
 
-  // 5. Separable Vertical Blur
   blurMaterial.uniforms.tDiffuse.value = renderTargetB.texture;
   blurMaterial.uniforms.uDirection.value.set(0.0, 1.0);
   blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
   renderer.setRenderTarget(renderTargetA);
   renderer.render(postScene, postCamera);
 
-  // 6. Final Composite Pass: Gravitational Lensing + Bloom + Tone Mapping
   compositeMaterial.uniforms.tScene.value = sceneRenderTarget.texture;
   compositeMaterial.uniforms.tBloom.value = renderTargetA.texture;
   compositeMaterial.uniforms.uBloomStrength.value = CONFIG.bloomStrength;
@@ -1187,14 +1489,11 @@ function renderPostProcessing() {
   renderer.render(postScene, postCamera);
 }
 
-// 6-DOF Flight Kinematics
 function updateFlight(delta) {
-  // Apply mouse rotation Euler
   camera.rotation.order = 'YXZ';
   camera.rotation.y = state.yaw;
   camera.rotation.x = state.pitch;
 
-  // Directions
   const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
   const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
   const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
@@ -1202,6 +1501,7 @@ function updateFlight(delta) {
   const accel = new THREE.Vector3(0, 0, 0);
   const speed = CONFIG.flightSpeed * (keys['ShiftLeft'] || keys['ShiftRight'] ? CONFIG.boostMultiplier : 1.0);
 
+  // Keyboard controls
   if (keys['KeyW'] || keys['ArrowUp']) accel.add(forward);
   if (keys['KeyS'] || keys['ArrowDown']) accel.sub(forward);
   if (keys['KeyD'] || keys['ArrowRight']) accel.add(right);
@@ -1209,17 +1509,23 @@ function updateFlight(delta) {
   if (keys['Space']) accel.add(up);
   if (keys['ControlLeft'] || keys['KeyC']) accel.sub(up);
 
-  // Roll keys
   if (keys['KeyQ']) state.yaw += 0.02;
   if (keys['KeyE']) state.yaw -= 0.02;
 
-  // Hyper-Warp Drive sequence acceleration
+  // Mobile Touch Virtual Joystick translation
+  if (state.touchActive) {
+    accel.addScaledVector(forward, -state.touchMove.y);
+    accel.addScaledVector(right, state.touchMove.x);
+  }
+
+  // Poll Gamepad Controller
+  pollGamepad(delta);
+
   if (state.isHyperWarping) {
     state.warpJumpTimer += delta;
     const targetWarpDir = new THREE.Vector3(0, 0, 0).sub(state.position).normalize();
     camera.position.addScaledVector(targetWarpDir, delta * 320.0);
 
-    // FOV Warp Expansion
     camera.fov = THREE.MathUtils.lerp(camera.fov, 125, 0.05);
     camera.updateProjectionMatrix();
 
@@ -1228,31 +1534,25 @@ function updateFlight(delta) {
       showToast('WORMHOLE TRANSIT COMPLETE - STAGE 2 UNLOCKED');
     }
   } else {
-    // Normal sub-light flight inertia
     if (accel.lengthSq() > 0) {
       accel.normalize();
       state.velocity.addScaledVector(accel, speed * delta * 4.0);
     }
-    // Atmospheric / space drag dampening
     state.velocity.multiplyScalar(0.92);
     camera.position.addScaledVector(state.velocity, delta);
   }
 
-  // Prevent flying backwards through boundaries
   state.position.copy(camera.position);
 
-  // Singularity Distance & Vector Deviation
   const distKm = Math.round(state.position.length() * 420);
   if (hudDistEl) hudDistEl.textContent = `${distKm.toLocaleString()} KM`;
 
-  // Angle between forward vector and wormhole vector
   const toWormhole = new THREE.Vector3(0, 0, 0).sub(state.position).normalize();
   const forwardDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
   const angleDeg = THREE.MathUtils.radToDeg(forwardDir.angleTo(toWormhole));
 
   if (hudVectorEl) hudVectorEl.textContent = `${angleDeg.toFixed(1)}°`;
 
-  // Objective 3 validation
   state.isVectorAligned = (angleDeg < 7.0);
   state.isInRange = (distKm < 50000);
 
@@ -1285,7 +1585,6 @@ renderer.setAnimationLoop((timestamp) => {
   state.lastFrameTime = timestamp;
   state.time += delta;
 
-  // FPS calculation
   state.frameCount++;
   if (timestamp - state.lastFpsUpdate >= 500) {
     state.fps = Math.round((state.frameCount * 1000) / (timestamp - state.lastFpsUpdate));
@@ -1294,18 +1593,15 @@ renderer.setAnimationLoop((timestamp) => {
     if (hudFpsEl) hudFpsEl.textContent = `${state.fps} FPS`;
   }
 
-  // Update Flight Kinematics
   if (!state.isXR) {
     updateFlight(delta);
   }
 
-  // Shader Uniform Updates
   accretionUniforms.uTime.value = state.time;
   secondaryDiskMaterial.uniforms.uTime.value = state.time;
   photonRingUniforms.uTime.value = state.time;
   particleMaterial.uniforms.uTime.value = state.time;
 
-  // Expanding Shockwaves
   for (let i = 0; i < shockwaves.length; i++) {
     const sw = shockwaves[i];
     let prog = sw.mesh.material.uniforms.uProgress.value + delta * sw.speed;
@@ -1321,7 +1617,6 @@ renderer.setAnimationLoop((timestamp) => {
     hudFluxEl.textContent = `${flux} TeV`;
   }
 
-  // Render Execution
   if (state.isXR || !state.postProcessingEnabled) {
     renderer.render(scene, camera);
   } else {

@@ -2,9 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#01050a">
-  <meta name="description" content="Multi-stage Sci-Fi WebXR experience - Stage 1: Distant Neon Cyan Wormhole built with Three.js, custom GLSL gravitational lensing, and audio.">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Multi-stage Sci-Fi WebXR experience - Stage 1: Distant Neon Cyan Wormhole with Desktop XR, Desktop VR/AR, Mobile XR/VR/AR, Game Controller, and Collapsible HUD.">
   <title>Wormhole XR - Stage 1: Distant Neon Cyan Singularity</title>
 
   <!-- Favicon and App Icons -->
@@ -15,7 +17,7 @@
   <!-- Embedded Styling (HTML + CSS in same file as requested) -->
   <style>
     /* ==========================================================================
-       SCIFI XR WORMHOLE HUD, COCKPIT & MISSION SYSTEM
+       SCIFI XR WORMHOLE COCKPIT & MULTI-PLATFORM HUD
        Color Palette: Deep Space Void (#01050a), Neon Cyan (#00f0ff), Plasma Blue (#0077aa)
        ========================================================================== */
     :root {
@@ -24,7 +26,7 @@
       --cyan-glow: rgba(0, 240, 255, 0.45);
       --cyan-dark: #00374d;
       --cyan-dim: #0a4f66;
-      --panel-bg: rgba(2, 14, 26, 0.78);
+      --panel-bg: rgba(2, 14, 26, 0.86);
       --panel-border: rgba(0, 240, 255, 0.35);
       --text-main: #e0f9ff;
       --text-dim: #7dc4d9;
@@ -48,6 +50,7 @@
       background-color: var(--bg-space);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       color: var(--text-main);
+      touch-action: none;
     }
 
     /* WebGL 3D Canvas Mount */
@@ -73,21 +76,21 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: clamp(10px, 2vmin, 20px);
+      padding: clamp(6px, 1.5vmin, 16px);
     }
 
     /* Corner Holographic Reticles */
     .hud-reticle {
       position: absolute;
-      width: 22px;
-      height: 22px;
+      width: 20px;
+      height: 20px;
       border: 2px solid var(--cyan-neon);
       opacity: 0.55;
     }
-    .reticle-tl { top: 12px; left: 12px; border-right: none; border-bottom: none; }
-    .reticle-tr { top: 12px; right: 12px; border-left: none; border-bottom: none; }
-    .reticle-bl { bottom: 12px; left: 12px; border-right: none; border-top: none; }
-    .reticle-br { bottom: 12px; right: 12px; border-left: none; border-top: none; }
+    .reticle-tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+    .reticle-tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+    .reticle-bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+    .reticle-br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
 
     /* Top Telemetry Header */
     .hud-header {
@@ -95,14 +98,15 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
       border-radius: 8px;
-      padding: 10px 18px;
+      padding: 8px 14px;
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15), inset 0 0 15px rgba(0, 240, 255, 0.05);
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
       width: 100%;
     }
@@ -110,15 +114,15 @@
     .title-group {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
     .pulsing-orb {
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       background-color: var(--cyan-neon);
-      box-shadow: 0 0 12px var(--cyan-neon), 0 0 24px var(--cyan-neon);
+      box-shadow: 0 0 10px var(--cyan-neon), 0 0 20px var(--cyan-neon);
       animation: pulseGlow 1.8s infinite ease-in-out;
     }
 
@@ -128,7 +132,7 @@
     }
 
     .game-title {
-      font-size: clamp(0.95rem, 1.8vmin, 1.25rem);
+      font-size: clamp(0.85rem, 1.6vmin, 1.15rem);
       font-weight: 700;
       letter-spacing: 2px;
       text-transform: uppercase;
@@ -137,15 +141,41 @@
     }
 
     .game-subtitle {
-      font-size: clamp(0.7rem, 1.1vmin, 0.8rem);
-      letter-spacing: 1.5px;
+      font-size: clamp(0.65rem, 1vmin, 0.76rem);
+      letter-spacing: 1.2px;
       color: var(--cyan-neon);
       text-transform: uppercase;
     }
 
+    /* Mode Selector Dropdown & Controller Switch */
+    .mode-switch-cluster {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-select {
+      background: rgba(0, 36, 56, 0.95);
+      border: 1px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+      letter-spacing: 0.8px;
+    }
+
+    .hud-select option {
+      background: #011422;
+      color: #e0f9ff;
+    }
+
     .telemetry-badges {
       display: flex;
-      gap: 16px;
+      gap: 12px;
       align-items: center;
     }
 
@@ -153,49 +183,162 @@
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       color: var(--text-dim);
     }
 
     .badge-val {
       font-family: 'Courier New', Courier, monospace;
-      font-size: 0.95rem;
+      font-size: 0.88rem;
       font-weight: bold;
       color: var(--cyan-neon);
     }
 
-    /* Side Mission & Objective Calibration Panel (Left Side) */
-    .mission-sidebar {
+    /* Gamepad Status Pill Indicator */
+    .gamepad-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(0, 32, 50, 0.8);
+      border: 1px solid var(--panel-border);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+    .gamepad-pill.connected {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+    .gamepad-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #666;
+    }
+    .gamepad-pill.connected .gamepad-dot {
+      background: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green);
+    }
+
+    /* ==========================================================================
+       COLLAPSIBLE LEFT-HAND MISSION & CONTROLS SLIDE-OUT DRAWER
+       Hides off the left screen edge; reveals on strip hover or button click.
+       ========================================================================== */
+    #left-drawer-container {
       pointer-events: auto;
-      align-self: flex-start;
-      margin-top: 12px;
-      width: clamp(260px, 24vw, 320px);
+      position: fixed;
+      left: 0;
+      top: 65px;
+      bottom: 85px;
+      display: flex;
+      align-items: flex-start;
+      z-index: 50;
+      transform: translateX(-100%);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Auto-reveal on hover when auto-hide is active, or stay open when pinned */
+    #left-drawer-container:hover,
+    #left-drawer-container.pinned,
+    #left-drawer-container.hover-active {
+      transform: translateX(0);
+    }
+
+    .drawer-content {
+      width: clamp(270px, 24vw, 320px);
+      max-height: 100%;
+      overflow-y: auto;
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
-      border-radius: 8px;
+      border-left: none;
+      border-radius: 0 8px 8px 0;
       padding: 12px 14px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 4px 18px rgba(0, 240, 255, 0.12);
-      font-size: 0.78rem;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 4px 0 24px rgba(0, 240, 255, 0.2);
+      font-size: 0.74rem;
+    }
+
+    /* Vertical Holographic Pull Strip */
+    .drawer-strip-handle {
+      width: 30px;
+      height: 140px;
+      background: rgba(0, 32, 50, 0.92);
+      border: 1px solid var(--cyan-neon);
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 2px 0 14px rgba(0, 240, 255, 0.35);
+      transition: all 0.25s ease;
+    }
+
+    .drawer-strip-handle:hover {
+      background: rgba(0, 50, 80, 0.98);
+      box-shadow: 3px 0 20px var(--cyan-neon);
+    }
+
+    .drawer-strip-text {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      letter-spacing: 2px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      text-shadow: 0 0 8px var(--cyan-neon);
+    }
+
+    .strip-chevron {
+      font-size: 0.75rem;
+      color: var(--cyan-neon);
+      transition: transform 0.3s ease;
+    }
+    #left-drawer-container.pinned .strip-chevron,
+    #left-drawer-container:hover .strip-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* Auto-Hide Toggle Checkbox */
+    .drawer-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.25);
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+    }
+
+    .autohide-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+    .autohide-toggle input[type="checkbox"] {
+      accent-color: var(--cyan-neon);
+      cursor: pointer;
     }
 
     .panel-heading {
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 700;
       color: var(--cyan-neon);
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      border-bottom: 1px solid rgba(0, 240, 255, 0.25);
-      padding-bottom: 6px;
-      margin-bottom: 10px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
     .objective-item {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       padding: 6px 8px;
       background: rgba(0, 30, 48, 0.55);
       border-left: 3px solid var(--cyan-dark);
@@ -217,11 +360,11 @@
       display: flex;
       justify-content: space-between;
       font-weight: 600;
-      margin-bottom: 4px;
+      margin-bottom: 3px;
     }
 
     .obj-status {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       color: var(--accent-gold);
     }
     .objective-item.completed .obj-status {
@@ -230,11 +373,11 @@
 
     .obj-bar-wrap {
       width: 100%;
-      height: 6px;
+      height: 5px;
       background: rgba(0, 20, 35, 0.85);
       border-radius: 3px;
       overflow: hidden;
-      margin: 4px 0 6px 0;
+      margin: 3px 0 5px 0;
       border: 1px solid rgba(0, 240, 255, 0.2);
     }
 
@@ -247,19 +390,19 @@
 
     .obj-actions {
       display: flex;
-      gap: 6px;
-      margin-top: 4px;
+      gap: 5px;
+      margin-top: 3px;
     }
 
     .btn-action {
       background: rgba(0, 48, 75, 0.9);
       border: 1px solid var(--cyan-neon);
       color: var(--cyan-neon);
-      font-size: 0.7rem;
-      padding: 4px 8px;
+      font-size: 0.68rem;
+      padding: 4px 7px;
       border-radius: 3px;
       cursor: pointer;
-      letter-spacing: 0.8px;
+      letter-spacing: 0.6px;
       transition: all 0.2s;
     }
 
@@ -282,23 +425,23 @@
       pointer-events: auto;
       align-self: flex-end;
       position: absolute;
-      right: clamp(10px, 2vmin, 20px);
-      top: 80px;
-      width: clamp(240px, 22vw, 290px);
+      right: clamp(6px, 1.5vmin, 16px);
+      top: 68px;
+      width: clamp(230px, 20vw, 275px);
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
       border-radius: 8px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       box-shadow: 0 4px 18px rgba(0, 240, 255, 0.12);
-      font-size: 0.75rem;
+      font-size: 0.72rem;
     }
 
     .key-row {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 5px;
+      margin-bottom: 4px;
       color: var(--text-dim);
     }
 
@@ -306,10 +449,10 @@
       background: rgba(0, 50, 75, 0.85);
       border: 1px solid var(--cyan-neon);
       color: #fff;
-      padding: 2px 6px;
+      padding: 1px 5px;
       border-radius: 3px;
       font-family: monospace;
-      font-size: 0.72rem;
+      font-size: 0.68rem;
     }
 
     /* Interactive Bottom Navigation & Controls */
@@ -319,15 +462,15 @@
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
+      gap: 10px;
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
       border-radius: 8px;
-      padding: 12px 18px;
+      padding: 10px 16px;
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       box-shadow: 0 -4px 20px rgba(0, 240, 255, 0.12);
-      max-width: 1100px;
+      max-width: 1200px;
       margin: 0 auto;
       width: 100%;
     }
@@ -335,7 +478,7 @@
     .control-cluster {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       flex-wrap: wrap;
     }
 
@@ -343,16 +486,16 @@
       background: rgba(0, 40, 60, 0.85);
       border: 1px solid var(--cyan-neon);
       color: var(--cyan-neon);
-      padding: 8px 16px;
-      font-size: 0.82rem;
+      padding: 6px 14px;
+      font-size: 0.78rem;
       font-weight: 600;
-      letter-spacing: 1.2px;
+      letter-spacing: 1px;
       text-transform: uppercase;
       border-radius: 4px;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
       box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
     }
@@ -385,16 +528,16 @@
     .hud-slider-group {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 0.74rem;
+      gap: 6px;
+      font-size: 0.7rem;
       color: var(--text-dim);
     }
 
     .hud-slider-group input[type="range"] {
       -webkit-appearance: none;
       appearance: none;
-      width: 85px;
-      height: 5px;
+      width: 75px;
+      height: 4px;
       background: var(--cyan-dark);
       border-radius: 3px;
       outline: none;
@@ -402,8 +545,8 @@
 
     .hud-slider-group input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
+      width: 12px;
+      height: 12px;
       border-radius: 50%;
       background: var(--cyan-neon);
       cursor: pointer;
@@ -413,7 +556,7 @@
     /* WebXR Native Button Styling Override */
     #xr-enter-btn {
       position: fixed !important;
-      bottom: 24px !important;
+      bottom: 20px !important;
       left: 50% !important;
       transform: translateX(-50%) !important;
       z-index: 100 !important;
@@ -422,12 +565,13 @@
       border: 1px solid #ffffff !important;
       font-weight: 700 !important;
       letter-spacing: 1.5px !important;
-      padding: 12px 24px !important;
+      padding: 10px 20px !important;
       border-radius: 30px !important;
       box-shadow: 0 0 25px rgba(0, 240, 255, 0.8) !important;
       cursor: pointer !important;
       font-family: inherit !important;
       text-transform: uppercase !important;
+      font-size: 0.85rem !important;
     }
 
     #xr-enter-btn:hover {
@@ -489,34 +633,175 @@
     /* Notification Banner */
     #toast-msg {
       position: absolute;
-      top: 90px;
+      top: 80px;
       left: 50%;
       transform: translateX(-50%);
-      background: rgba(2, 20, 35, 0.92);
+      background: rgba(2, 20, 35, 0.94);
       border: 1px solid var(--cyan-neon);
-      padding: 8px 24px;
+      padding: 7px 20px;
       border-radius: 20px;
-      font-size: 0.85rem;
-      letter-spacing: 1.5px;
+      font-size: 0.82rem;
+      letter-spacing: 1.2px;
       color: #fff;
       box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
       display: none;
       z-index: 100;
       text-transform: uppercase;
       text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ==========================================================================
+       MOBILE TOUCH VIRTUAL JOYSTICK & TOUCH ACTION CONTROLS
+       ========================================================================== */
+    #mobile-touch-controls {
+      display: none;
+      position: absolute;
+      bottom: 75px;
+      left: 0;
+      width: 100%;
+      height: 130px;
+      pointer-events: none;
+      z-index: 25;
+      padding: 0 20px;
+      box-sizing: border-box;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .virtual-stick-zone {
+      pointer-events: auto;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: rgba(0, 35, 55, 0.45);
+      border: 2px dashed rgba(0, 240, 255, 0.4);
+      position: relative;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .virtual-stick-knob {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--cyan-neon);
+      box-shadow: 0 0 12px var(--cyan-neon);
+      position: absolute;
+      pointer-events: none;
+      transform: translate(0px, 0px);
+    }
+
+    .mobile-touch-actions {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .touch-btn {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: rgba(0, 48, 75, 0.85);
+      border: 2px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      font-size: 0.72rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+      cursor: pointer;
+    }
+    .touch-btn:active {
+      background: var(--cyan-neon);
+      color: #000;
+      transform: scale(0.95);
+    }
+
+    /* ==========================================================================
+       MOBILE LANDSCAPE ORIENTATION ENFORCEMENT OVERLAY
+       ========================================================================== */
+    #landscape-rotate-prompt {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(1, 5, 10, 0.96);
+      z-index: 9999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      box-sizing: border-box;
+      backdrop-filter: blur(15px);
+    }
+
+    .rotate-icon-wrap {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 20px;
+      animation: rotatePhone 2.2s infinite ease-in-out;
+    }
+
+    @keyframes rotatePhone {
+      0%, 20% { transform: rotate(0deg); }
+      50%, 70% { transform: rotate(-90deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    .rotate-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      text-shadow: 0 0 12px var(--cyan-neon);
+    }
+
+    .rotate-desc {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      max-width: 320px;
+      line-height: 1.45;
+    }
+
+    @media screen and (orientation: portrait) and (max-width: 900px) {
+      #landscape-rotate-prompt {
+        display: flex !important;
+      }
+      #hud-layer,
+      #left-drawer-container {
+        display: none !important;
+      }
     }
 
     /* Hide HUD in XR presentation mode */
-    body.in-xr-session #hud-layer {
+    body.in-xr-session #hud-layer,
+    body.in-xr-session #left-drawer-container,
+    body.in-xr-session #mobile-touch-controls {
       display: none !important;
     }
 
+    /* Responsive adjustments */
     @media (max-width: 900px) {
       .flight-sidebar {
         display: none;
       }
       .telemetry-badges .badge:not(:first-child) {
         display: none;
+      }
+      .hud-slider-group {
+        display: none;
+      }
+      #mobile-touch-controls {
+        display: flex;
       }
     }
   </style>
@@ -526,58 +811,35 @@
   <!-- WebGL 3D Canvas Mount Point -->
   <div id="webgl-container"></div>
 
-  <!-- Holographic Sci-Fi Telemetry & Cockpit HUD -->
-  <div id="hud-layer">
-    <!-- Corner Boundary Reticles -->
-    <div class="hud-reticle reticle-tl"></div>
-    <div class="hud-reticle reticle-tr"></div>
-    <div class="hud-reticle reticle-bl"></div>
-    <div class="hud-reticle reticle-br"></div>
-
-    <!-- Center Crosshairs & Vector Alignment Marker -->
-    <div class="center-crosshair">
-      <div class="crosshair-circle"></div>
+  <!-- Mobile Landscape Warning Prompt -->
+  <div id="landscape-rotate-prompt">
+    <div class="rotate-icon-wrap">
+      <svg viewBox="0 0 64 64" fill="none" stroke="#00f0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:100%; height:100%;">
+        <rect x="18" y="10" width="28" height="44" rx="4"></rect>
+        <circle cx="32" cy="46" r="2"></circle>
+        <path d="M48 24l6-6-6-6"></path>
+        <path d="M54 18A24 24 0 0 0 32 6"></path>
+      </svg>
     </div>
-    <div id="vector-alignment-ring"></div>
+    <div class="rotate-title">ROTATE TO LANDSCAPE</div>
+    <div class="rotate-desc">
+      Wormhole XR requires horizontal landscape orientation for stereoscopic XR projection and tactile dual-stick cockpit flight.
+    </div>
+  </div>
 
-    <!-- Notification Toast Banner -->
-    <div id="toast-msg"></div>
-
-    <!-- Top Telemetry Bar -->
-    <header class="hud-header">
-      <div class="title-group">
-        <div class="pulsing-orb"></div>
-        <div>
-          <div class="game-title">WORMHOLE XR</div>
-          <div id="hud-status" class="game-subtitle">STAGE 1: GRAVITATIONAL ANOMALY MONITOR</div>
-        </div>
+  <!-- Collapsible Left-Hand Mission & Calibration Slide-Out Drawer -->
+  <div id="left-drawer-container">
+    <div class="drawer-content" id="mission-panel">
+      <div class="drawer-top-bar">
+        <span class="panel-heading">STAGE 1 OBJECTIVES</span>
+        <label class="autohide-toggle" title="When checked, panel automatically tucks away when pointer leaves">
+          <input type="checkbox" id="chk-autohide" checked> Auto-hide
+        </label>
       </div>
 
-      <div class="telemetry-badges">
-        <div class="badge">
-          <span>SINGULARITY RANGE</span>
-          <span id="hud-distance" class="badge-val">92,400 KM</span>
-        </div>
-        <div class="badge">
-          <span>VECTOR DEVIATION</span>
-          <span id="hud-vector" class="badge-val">12.4°</span>
-        </div>
-        <div class="badge">
-          <span>TACHYON FLUX</span>
-          <span id="hud-flux" class="badge-val">14.8 TeV</span>
-        </div>
-        <div class="badge">
-          <span>FRAME REFRESH</span>
-          <span id="hud-fps" class="badge-val">60 FPS</span>
-        </div>
-      </div>
-    </header>
-
-    <!-- Mission & Calibration System (Left Sidebar) -->
-    <div class="mission-sidebar" id="mission-panel">
-      <div class="panel-heading">
-        <span>STAGE 1 OBJECTIVES</span>
-        <span id="obj-total-progress" style="color:var(--cyan-neon);">0/4 COMPLETE</span>
+      <div style="font-size:0.68rem; color:var(--cyan-neon); margin-bottom:8px; display:flex; justify-content:space-between;">
+        <span>SYSTEM PROGRESS</span>
+        <span id="obj-total-progress">0/4 COMPLETE</span>
       </div>
 
       <!-- Objective 1: Resonance Scanner -->
@@ -619,8 +881,8 @@
         <div class="obj-bar-wrap">
           <div class="obj-bar" id="bar-vector"></div>
         </div>
-        <div style="font-size:0.68rem; color:var(--text-dim); margin-top:2px;">
-          Use <span class="kbd">WASD</span> to steer toward cyan wormhole core &lt; 50,000 KM.
+        <div style="font-size:0.65rem; color:var(--text-dim); margin-top:2px;">
+          Fly toward cyan wormhole core &lt; 50,000 KM (<span class="kbd">WASD</span> / Stick / Pad).
         </div>
       </div>
 
@@ -636,21 +898,90 @@
       </div>
     </div>
 
-    <!-- Desktop Keybinding Flight Legend (Right Sidebar) -->
+    <!-- Vertical Holographic Pull Strip Tab -->
+    <div class="drawer-strip-handle" id="drawer-tab" title="Hover or click to toggle Objectives Panel">
+      <span class="strip-chevron">▶</span>
+      <span class="drawer-strip-text">OBJECTIVES</span>
+    </div>
+  </div>
+
+  <!-- Holographic Sci-Fi Telemetry & Cockpit HUD -->
+  <div id="hud-layer">
+    <!-- Corner Boundary Reticles -->
+    <div class="hud-reticle reticle-tl"></div>
+    <div class="hud-reticle reticle-tr"></div>
+    <div class="hud-reticle reticle-bl"></div>
+    <div class="hud-reticle reticle-br"></div>
+
+    <!-- Center Crosshairs & Vector Alignment Marker -->
+    <div class="center-crosshair">
+      <div class="crosshair-circle"></div>
+    </div>
+    <div id="vector-alignment-ring"></div>
+
+    <!-- Notification Toast Banner -->
+    <div id="toast-msg"></div>
+
+    <!-- Top Telemetry Header -->
+    <header class="hud-header">
+      <div class="title-group">
+        <div class="pulsing-orb"></div>
+        <div>
+          <div class="game-title">WORMHOLE XR</div>
+          <div id="hud-status" class="game-subtitle">STAGE 1: GRAVITATIONAL ANOMALY</div>
+        </div>
+      </div>
+
+      <!-- Multi-Platform & XR Mode Switcher -->
+      <div class="mode-switch-cluster">
+        <select id="select-mode" class="hud-select" title="Choose rendering & XR operating mode">
+          <option value="desktop-xr" selected>🖥️ DESKTOP XR (6-DOF)</option>
+          <option value="desktop-vr">🥽 DESKTOP VR (PCVR/HMD)</option>
+          <option value="mobile-xr">📱 MOBILE XR (WebXR/VR)</option>
+          <option value="mobile-ar">🌐 MOBILE AR (ARCore)</option>
+        </select>
+
+        <!-- Gamepad Connection Indicator -->
+        <div id="gamepad-status-pill" class="gamepad-pill" title="HTML5 Gamepad API Controller Status">
+          <span class="gamepad-dot"></span>
+          <span id="gamepad-name-text">PAD: AUTO</span>
+        </div>
+      </div>
+
+      <div class="telemetry-badges">
+        <div class="badge">
+          <span>SINGULARITY RANGE</span>
+          <span id="hud-distance" class="badge-val">92,400 KM</span>
+        </div>
+        <div class="badge">
+          <span>VECTOR DEVIATION</span>
+          <span id="hud-vector" class="badge-val">12.4°</span>
+        </div>
+        <div class="badge">
+          <span>TACHYON FLUX</span>
+          <span id="hud-flux" class="badge-val">14.8 TeV</span>
+        </div>
+        <div class="badge">
+          <span>FRAME REFRESH</span>
+          <span id="hud-fps" class="badge-val">60 FPS</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Desktop Keybinding & Gamepad Legend (Right Sidebar) -->
     <div class="flight-sidebar" id="flight-panel">
       <div class="panel-heading">
-        <span>FLIGHT CONTROLS</span>
-        <span style="font-size:0.7rem; color:var(--text-dim);">DESKTOP / XR</span>
+        <span>FLIGHT / CONTROLLER</span>
+        <span style="font-size:0.68rem; color:var(--text-dim);">DESKTOP / PAD</span>
       </div>
-      <div class="key-row"><span>Forward Thrusters:</span> <span class="kbd">W</span> / <span class="kbd">↑</span></div>
-      <div class="key-row"><span>Retro-Brakes:</span> <span class="kbd">S</span> / <span class="kbd">↓</span></div>
-      <div class="key-row"><span>Strafe Left / Right:</span> <span class="kbd">A</span> / <span class="kbd">D</span></div>
-      <div class="key-row"><span>Vertical Elevate / Dive:</span> <span class="kbd">Space</span> / <span class="kbd">Shift</span></div>
-      <div class="key-row"><span>Roll Stabilization:</span> <span class="kbd">Q</span> / <span class="kbd">E</span></div>
-      <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse Drag</span></div>
-      <div class="key-row"><span>Engage Warp Key:</span> <span class="kbd">F</span></div>
-      <div class="key-row" style="margin-top:6px; border-top:1px solid rgba(0,240,255,0.2); padding-top:6px;">
-        <span style="color:var(--cyan-neon);">XR Headset:</span> <span>HMD Look + Triggers</span>
+      <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">Left Stick</span></div>
+      <div class="key-row"><span>Strafe Left / Right:</span> <span class="kbd">A / D</span> or <span class="kbd">L-Stick X</span></div>
+      <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse</span> or <span class="kbd">Right Stick</span></div>
+      <div class="key-row"><span>Elevate / Dive:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">R2 / L2</span></div>
+      <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">A / X Button</span></div>
+      <div class="key-row"><span>Warp Jump Trigger:</span> <span class="kbd">F</span> or <span class="kbd">Y Button</span></div>
+      <div class="key-row" style="margin-top:5px; border-top:1px solid rgba(0,240,255,0.2); padding-top:4px;">
+        <span style="color:var(--cyan-neon);">Toggle Panel:</span> <span class="kbd">Tab</span> / <span class="kbd">M</span>
       </div>
     </div>
 
@@ -660,8 +991,14 @@
         <button id="btn-warp" class="hud-btn" title="Initiate sub-light cruise or hyper-warp jump">
           🚀 Engage Warp
         </button>
+        <button id="btn-toggle-drawer" class="hud-btn" title="Toggle left-hand Objectives Panel">
+          📋 Objectives
+        </button>
         <button id="btn-toggle-audio" class="hud-btn" title="Toggle audio sound effects and synth">
           <span class="icon">🔊</span> Audio: ON (.wav)
+        </button>
+        <button id="btn-toggle-controller" class="hud-btn" title="Toggle Gamepad Controller Polling">
+          🎮 Controller: AUTO
         </button>
         <button id="btn-mouse-lock" class="hud-btn" title="Toggle flight crosshair mouse capture">
           🎯 Flight Mouse
@@ -670,12 +1007,12 @@
 
       <div class="control-cluster">
         <div class="hud-slider-group">
-          <label for="slider-bloom">BLOOM GLOW</label>
+          <label for="slider-bloom">BLOOM</label>
           <input id="slider-bloom" type="range" min="0.0" max="3.5" step="0.1" value="1.85">
           <span id="val-bloom" class="badge-val">1.85</span>
         </div>
         <div class="hud-slider-group">
-          <label for="slider-lensing">GRAV LENS</label>
+          <label for="slider-lensing">LENS</label>
           <input id="slider-lensing" type="range" min="0.0" max="2.0" step="0.1" value="1.0">
           <span id="val-lensing" class="badge-val">1.0</span>
         </div>
@@ -684,6 +1021,20 @@
         </button>
       </div>
     </footer>
+  </div>
+
+  <!-- Mobile Touch On-Screen Controls (Landscape) -->
+  <div id="mobile-touch-controls">
+    <!-- Left Virtual Joystick Zone (Movement) -->
+    <div class="virtual-stick-zone" id="touch-stick-zone">
+      <div class="virtual-stick-knob" id="touch-stick-knob"></div>
+    </div>
+
+    <!-- Right Touch Action Cluster -->
+    <div class="mobile-touch-actions">
+      <div class="touch-btn" id="touch-btn-scan" title="Scan Singularity">📡</div>
+      <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
+    </div>
   </div>
 
   <!-- Primary Game Module -->

@@ -1037,6 +1037,18 @@ function hideUnsupportedBadge() {
 if (btnCloseModal) btnCloseModal.addEventListener('click', hideUnsupportedBadge);
 if (btnDismissModal) btnDismissModal.addEventListener('click', hideUnsupportedBadge);
 
+// Close on backdrop overlay click or ESC key
+if (modalOverlay) {
+  modalOverlay.addEventListener('click', (e) => {
+    if (e.target === modalOverlay) hideUnsupportedBadge();
+  });
+}
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modalOverlay && modalOverlay.style.display === 'flex') {
+    hideUnsupportedBadge();
+  }
+});
+
 if (btnSwitchRec) {
   btnSwitchRec.addEventListener('click', () => {
     hideUnsupportedBadge();
@@ -1128,38 +1140,42 @@ async function evaluateSpecificDeviceCompatibility(mode, bypassCheck = false, fo
   detectedHardware.activeDeviceType = effDevType;
 
   if (!bypassCheck) {
+    let localSupported = true;
+    let localReason = '';
+    let localRecMode = 'desktop-xr';
+
     // 1. SPECIFIC CHECK: DESKTOP VR (PCVR / HMD)
     if (mode === 'desktop-vr') {
       if (!effVrSupported || effDevType === 'desktop' || effDevType === 'tablet') {
-        const reason = `DESKTOP VR REQUIRES AN ACTIVE VR HEADSET (HMD): Selected device '${effDevName}' has no active 6-DOF OpenXR/PCVR headset connected. WebXR 'immersive-vr' session cannot be started without physical HMD hardware (Meta Quest Link, Valve Index, or HTC Vive).`;
-        showUnsupportedBadge(mode, reason, 'desktop-xr');
-        return;
+        localSupported = false;
+        localReason = `DESKTOP VR REQUIRES AN ACTIVE VR HEADSET (HMD): Selected device '${effDevName}' has no active 6-DOF OpenXR/PCVR headset connected. WebXR 'immersive-vr' session cannot be started without physical HMD hardware (Meta Quest Link, Valve Index, or HTC Vive).`;
+        localRecMode = 'desktop-xr';
       } else if (effDevType === 'mobile') {
-        const reason = `DESKTOP VR IS NOT DESIGNED FOR SMARTPHONES: Target mode 'DESKTOP VR' requires a tethered PCVR headset or standalone HMD browser. Mobile devices must use 'MOBILE XR' mode with a Google Cardboard viewer.`;
-        showUnsupportedBadge(mode, reason, 'mobile-xr');
-        return;
+        localSupported = false;
+        localReason = `DESKTOP VR IS NOT DESIGNED FOR SMARTPHONES: Target mode 'DESKTOP VR' requires a tethered PCVR headset or standalone HMD browser. Mobile devices must use 'MOBILE XR' mode with a Google Cardboard viewer.`;
+        localRecMode = 'mobile-xr';
       }
     }
 
     // 2. SPECIFIC CHECK: MOBILE AR (ARCore Camera Passthrough)
     else if (mode === 'mobile-ar') {
       if (!effArSupported || effDevType === 'desktop') {
-        const reason = `MOBILE AR REQUIRES ARCore CAMERA PASSTHROUGH: Selected device '${effDevName}' lacks spatial environmental tracking sensors. Desktop displays and basic phones without Google Play Services for AR (ARCore) or Apple ARKit cannot project holographic passthrough into physical space.`;
-        showUnsupportedBadge(mode, reason, 'desktop-xr');
-        return;
+        localSupported = false;
+        localReason = `MOBILE AR REQUIRES ARCore CAMERA PASSTHROUGH: Selected device '${effDevName}' lacks spatial environmental tracking sensors. Desktop displays and basic phones without Google Play Services for AR (ARCore) or Apple ARKit cannot project holographic passthrough into physical space.`;
+        localRecMode = 'desktop-xr';
       }
     }
 
     // 3. SPECIFIC CHECK: DESKTOP XR (6-DOF Flight)
     else if (mode === 'desktop-xr') {
       if (effDevType === 'mobile' && window.innerHeight > window.innerWidth) {
-        const reason = `DESKTOP XR INPUT & ORIENTATION NOTICE: Desktop XR is calibrated for horizontal monitors with keyboard (WASD) and mouse targeting. On smartphones, rotate to horizontal landscape or switch to 'MOBILE XR' for on-screen touch thumbstick controls.`;
-        showUnsupportedBadge(mode, reason, 'mobile-xr');
-        return;
+        localSupported = false;
+        localReason = `DESKTOP XR INPUT & ORIENTATION NOTICE: Desktop XR is calibrated for horizontal monitors with keyboard (WASD) and mouse targeting. On smartphones, rotate to horizontal landscape or switch to 'MOBILE XR' for on-screen touch thumbstick controls.`;
+        localRecMode = 'mobile-xr';
       }
     }
 
-    // 4. Remote database telemetry check
+    // 4. Remote database telemetry check & registration (ALWAYS recorded in database)
     const payload = {
       mode: mode,
       device_name: effDevName,
@@ -1170,14 +1186,17 @@ async function evaluateSpecificDeviceCompatibility(mode, bypassCheck = false, fo
       immersive_vr: effVrSupported,
       immersive_ar: effArSupported,
       has_touch: effTouch,
-      has_gamepad: (typeof navigator.getGamepads === 'function')
+      has_gamepad: (typeof navigator.getGamepads === 'function'),
+      is_supported: localSupported ? 1 : 0,
+      reason: localReason
     };
 
     let checkResult = null;
     const checkEndpoints = [
+      'https://api.calmchessgames.com/wormhole_device_api.php?action=check',
+      'wormhole_device_api.php?action=check',
       '../wormhole_device_api.php?action=check',
-      '/wormhole_device_api.php?action=check',
-      'https://api.calmchessgames.com/wormhole_device_api.php?action=check'
+      '/wormhole_device_api.php?action=check'
     ];
     for (const ep of checkEndpoints) {
       try {
@@ -1193,8 +1212,11 @@ async function evaluateSpecificDeviceCompatibility(mode, bypassCheck = false, fo
       } catch (e) {}
     }
 
-    if (checkResult && checkResult.supported === false) {
-      showUnsupportedBadge(mode, checkResult.reason, checkResult.recommended_mode || 'desktop-xr');
+    // If database marked it unsupported OR local capability check failed
+    if ((checkResult && checkResult.supported === false) || !localSupported) {
+      const finalReason = (checkResult && checkResult.reason) ? checkResult.reason : localReason;
+      const finalRecMode = (checkResult && checkResult.recommended_mode) ? checkResult.recommended_mode : localRecMode;
+      showUnsupportedBadge(mode, finalReason, finalRecMode);
       return;
     }
   }
@@ -1205,7 +1227,7 @@ async function evaluateSpecificDeviceCompatibility(mode, bypassCheck = false, fo
   // If user explicitly ran "Test Device" or validation succeeded, show positive notification
   if (forceShowValidation || mode === 'desktop-xr') {
     const gpuInfo = detectedHardware.gpu ? ` [${detectedHardware.gpu.split('/')[0].trim()}]` : '';
-    showToast(`âœ“ HARDWARE VALIDATED: ${effDevName}${gpuInfo} ready for ${mode.toUpperCase()}`);
+    showToast(`✓ HARDWARE VALIDATED: ${effDevName}${gpuInfo} ready for ${mode.toUpperCase()}`);
     if (audioMgr && audioMgr.playScan) audioMgr.playScan();
   }
 
@@ -1982,7 +2004,8 @@ window.addEventListener('resize', () => {
   compositeShader.uniforms.uAspect.value = w / h;
 });
 
-// Initial startup hardware detection
+// Initial startup hardware detection & device compatibility verification
 detectHardwareDiagnostics().then(() => {
   console.log('[Wormhole XR] Hardware profile detected:', detectedHardware);
+  evaluateSpecificDeviceCompatibility(state.xrMode, false, false);
 });

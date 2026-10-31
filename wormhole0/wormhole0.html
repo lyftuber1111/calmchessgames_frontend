@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#01050a">
-  <meta name="description" content="Multi-stage Sci-Fi WebXR experience - Stage 1: Distant Neon Cyan Wormhole built with Three.js and custom GLSL bloom shaders.">
+  <meta name="description" content="Multi-stage Sci-Fi WebXR experience - Stage 1: Distant Neon Cyan Wormhole built with Three.js, custom GLSL gravitational lensing, and audio.">
   <title>Wormhole XR - Stage 1: Distant Neon Cyan Singularity</title>
 
   <!-- Favicon and App Icons -->
@@ -15,19 +15,22 @@
   <!-- Embedded Styling (HTML + CSS in same file as requested) -->
   <style>
     /* ==========================================================================
-       SCIFI XR WORMHOLE HUD & COCKPIT THEME
+       SCIFI XR WORMHOLE HUD, COCKPIT & MISSION SYSTEM
        Color Palette: Deep Space Void (#01050a), Neon Cyan (#00f0ff), Plasma Blue (#0077aa)
        ========================================================================== */
     :root {
       --bg-space: #01050a;
       --cyan-neon: #00f0ff;
       --cyan-glow: rgba(0, 240, 255, 0.45);
-      --cyan-dark: #004d66;
-      --panel-bg: rgba(2, 16, 28, 0.72);
+      --cyan-dark: #00374d;
+      --cyan-dim: #0a4f66;
+      --panel-bg: rgba(2, 14, 26, 0.78);
       --panel-border: rgba(0, 240, 255, 0.35);
       --text-main: #e0f9ff;
       --text-dim: #7dc4d9;
-      --accent-alert: #ff477e;
+      --accent-gold: #ffd166;
+      --accent-green: #06d6a0;
+      --accent-alert: #ef476f;
     }
 
     * {
@@ -36,7 +39,6 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
-      touch-action: manipulation;
     }
 
     html, body {
@@ -48,7 +50,7 @@
       color: var(--text-main);
     }
 
-    /* WebGL 3D Canvas Canvas Container */
+    /* WebGL 3D Canvas Mount */
     #webgl-container {
       position: absolute;
       top: 0;
@@ -56,7 +58,7 @@
       width: 100%;
       height: 100%;
       z-index: 1;
-      background: radial-gradient(circle at center, #021220 0%, #01050a 100%);
+      cursor: crosshair;
     }
 
     /* Sci-Fi Hologram Overlay HUD */
@@ -71,16 +73,16 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      padding: clamp(10px, 2.5vmin, 24px);
+      padding: clamp(10px, 2vmin, 20px);
     }
 
-    /* Holographic Corner Reticles */
+    /* Corner Holographic Reticles */
     .hud-reticle {
       position: absolute;
-      width: 24px;
-      height: 24px;
+      width: 22px;
+      height: 22px;
       border: 2px solid var(--cyan-neon);
-      opacity: 0.6;
+      opacity: 0.55;
     }
     .reticle-tl { top: 12px; left: 12px; border-right: none; border-bottom: none; }
     .reticle-tr { top: 12px; right: 12px; border-left: none; border-bottom: none; }
@@ -97,10 +99,10 @@
       border: 1px solid var(--panel-border);
       border-radius: 8px;
       padding: 10px 18px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15), inset 0 0 15px rgba(0, 240, 255, 0.05);
-      max-width: 960px;
+      max-width: 1100px;
       margin: 0 auto;
       width: 100%;
     }
@@ -126,7 +128,7 @@
     }
 
     .game-title {
-      font-size: clamp(0.95rem, 2vmin, 1.35rem);
+      font-size: clamp(0.95rem, 1.8vmin, 1.25rem);
       font-weight: 700;
       letter-spacing: 2px;
       text-transform: uppercase;
@@ -135,7 +137,7 @@
     }
 
     .game-subtitle {
-      font-size: clamp(0.7rem, 1.2vmin, 0.82rem);
+      font-size: clamp(0.7rem, 1.1vmin, 0.8rem);
       letter-spacing: 1.5px;
       color: var(--cyan-neon);
       text-transform: uppercase;
@@ -143,7 +145,7 @@
 
     .telemetry-badges {
       display: flex;
-      gap: 12px;
+      gap: 16px;
       align-items: center;
     }
 
@@ -151,7 +153,7 @@
       display: flex;
       flex-direction: column;
       align-items: flex-end;
-      font-size: 0.72rem;
+      font-size: 0.7rem;
       color: var(--text-dim);
     }
 
@@ -160,6 +162,154 @@
       font-size: 0.95rem;
       font-weight: bold;
       color: var(--cyan-neon);
+    }
+
+    /* Side Mission & Objective Calibration Panel (Left Side) */
+    .mission-sidebar {
+      pointer-events: auto;
+      align-self: flex-start;
+      margin-top: 12px;
+      width: clamp(260px, 24vw, 320px);
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 18px rgba(0, 240, 255, 0.12);
+      font-size: 0.78rem;
+    }
+
+    .panel-heading {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.25);
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .objective-item {
+      margin-bottom: 10px;
+      padding: 6px 8px;
+      background: rgba(0, 30, 48, 0.55);
+      border-left: 3px solid var(--cyan-dark);
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .objective-item.active {
+      border-left-color: var(--cyan-neon);
+      background: rgba(0, 48, 75, 0.75);
+    }
+
+    .objective-item.completed {
+      border-left-color: var(--accent-green);
+      background: rgba(6, 214, 160, 0.12);
+    }
+
+    .obj-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .obj-status {
+      font-size: 0.72rem;
+      color: var(--accent-gold);
+    }
+    .objective-item.completed .obj-status {
+      color: var(--accent-green);
+    }
+
+    .obj-bar-wrap {
+      width: 100%;
+      height: 6px;
+      background: rgba(0, 20, 35, 0.85);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 4px 0 6px 0;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+    }
+
+    .obj-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0077aa, var(--cyan-neon));
+      transition: width 0.3s ease;
+    }
+
+    .obj-actions {
+      display: flex;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .btn-action {
+      background: rgba(0, 48, 75, 0.9);
+      border: 1px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      font-size: 0.7rem;
+      padding: 4px 8px;
+      border-radius: 3px;
+      cursor: pointer;
+      letter-spacing: 0.8px;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: var(--cyan-neon);
+      color: #010810;
+      box-shadow: 0 0 10px var(--cyan-neon);
+    }
+
+    .btn-action:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #555;
+      color: #888;
+      box-shadow: none;
+    }
+
+    /* Right Flight Navigation & Keybinding Legend */
+    .flight-sidebar {
+      pointer-events: auto;
+      align-self: flex-end;
+      position: absolute;
+      right: clamp(10px, 2vmin, 20px);
+      top: 80px;
+      width: clamp(240px, 22vw, 290px);
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 18px rgba(0, 240, 255, 0.12);
+      font-size: 0.75rem;
+    }
+
+    .key-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      color: var(--text-dim);
+    }
+
+    .kbd {
+      background: rgba(0, 50, 75, 0.85);
+      border: 1px solid var(--cyan-neon);
+      color: #fff;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.72rem;
     }
 
     /* Interactive Bottom Navigation & Controls */
@@ -174,10 +324,10 @@
       border: 1px solid var(--panel-border);
       border-radius: 8px;
       padding: 12px 18px;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       box-shadow: 0 -4px 20px rgba(0, 240, 255, 0.12);
-      max-width: 960px;
+      max-width: 1100px;
       margin: 0 auto;
       width: 100%;
     }
@@ -220,18 +370,30 @@
       border-color: #fff;
     }
 
+    .hud-btn.btn-ready {
+      background: linear-gradient(135deg, #00f0ff, #06d6a0);
+      color: #000;
+      font-weight: 800;
+      animation: readyPulse 1.2s infinite alternate;
+    }
+
+    @keyframes readyPulse {
+      0% { box-shadow: 0 0 15px var(--cyan-neon); }
+      100% { box-shadow: 0 0 32px var(--accent-green); }
+    }
+
     .hud-slider-group {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       color: var(--text-dim);
     }
 
     .hud-slider-group input[type="range"] {
       -webkit-appearance: none;
       appearance: none;
-      width: 90px;
+      width: 85px;
       height: 5px;
       background: var(--cyan-dark);
       border-radius: 3px;
@@ -280,10 +442,10 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       pointer-events: none;
-      opacity: 0.4;
+      opacity: 0.5;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -297,21 +459,63 @@
     }
     .center-crosshair::before { width: 100%; height: 1px; }
     .center-crosshair::after { height: 100%; width: 1px; }
+    
+    .crosshair-circle {
+      width: 18px;
+      height: 18px;
+      border: 1px dashed var(--cyan-neon);
+      border-radius: 50%;
+    }
+
+    /* Vector Lock Indicator */
+    #vector-alignment-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70px;
+      height: 70px;
+      border: 2px solid rgba(0, 240, 255, 0.3);
+      border-radius: 50%;
+      pointer-events: none;
+      transition: all 0.25s ease;
+    }
+
+    #vector-alignment-ring.locked {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 15px var(--accent-green);
+    }
+
+    /* Notification Banner */
+    #toast-msg {
+      position: absolute;
+      top: 90px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(2, 20, 35, 0.92);
+      border: 1px solid var(--cyan-neon);
+      padding: 8px 24px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      letter-spacing: 1.5px;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+      display: none;
+      z-index: 100;
+      text-transform: uppercase;
+      text-align: center;
+    }
 
     /* Hide HUD in XR presentation mode */
     body.in-xr-session #hud-layer {
       display: none !important;
     }
 
-    /* Responsive adjustments */
-    @media (max-width: 680px) {
-      .hud-header, .hud-footer {
-        padding: 8px 12px;
-      }
-      .badge:not(:first-child) {
+    @media (max-width: 900px) {
+      .flight-sidebar {
         display: none;
       }
-      .hud-slider-group {
+      .telemetry-badges .badge:not(:first-child) {
         display: none;
       }
     }
@@ -322,7 +526,7 @@
   <!-- WebGL 3D Canvas Mount Point -->
   <div id="webgl-container"></div>
 
-  <!-- Holographic Sci-Fi Telemetry HUD -->
+  <!-- Holographic Sci-Fi Telemetry & Cockpit HUD -->
   <div id="hud-layer">
     <!-- Corner Boundary Reticles -->
     <div class="hud-reticle reticle-tl"></div>
@@ -330,8 +534,14 @@
     <div class="hud-reticle reticle-bl"></div>
     <div class="hud-reticle reticle-br"></div>
 
-    <!-- Center Aim Reticle -->
-    <div class="center-crosshair"></div>
+    <!-- Center Crosshairs & Vector Alignment Marker -->
+    <div class="center-crosshair">
+      <div class="crosshair-circle"></div>
+    </div>
+    <div id="vector-alignment-ring"></div>
+
+    <!-- Notification Toast Banner -->
+    <div id="toast-msg"></div>
 
     <!-- Top Telemetry Bar -->
     <header class="hud-header">
@@ -339,7 +549,7 @@
         <div class="pulsing-orb"></div>
         <div>
           <div class="game-title">WORMHOLE XR</div>
-          <div id="hud-status" class="game-subtitle">STAGE 1: DISTANT ANOMALY MONITOR</div>
+          <div id="hud-status" class="game-subtitle">STAGE 1: GRAVITATIONAL ANOMALY MONITOR</div>
         </div>
       </div>
 
@@ -347,6 +557,10 @@
         <div class="badge">
           <span>SINGULARITY RANGE</span>
           <span id="hud-distance" class="badge-val">92,400 KM</span>
+        </div>
+        <div class="badge">
+          <span>VECTOR DEVIATION</span>
+          <span id="hud-vector" class="badge-val">12.4°</span>
         </div>
         <div class="badge">
           <span>TACHYON FLUX</span>
@@ -359,22 +573,111 @@
       </div>
     </header>
 
+    <!-- Mission & Calibration System (Left Sidebar) -->
+    <div class="mission-sidebar" id="mission-panel">
+      <div class="panel-heading">
+        <span>STAGE 1 OBJECTIVES</span>
+        <span id="obj-total-progress" style="color:var(--cyan-neon);">0/4 COMPLETE</span>
+      </div>
+
+      <!-- Objective 1: Resonance Scanner -->
+      <div class="objective-item" id="obj-scan">
+        <div class="obj-header">
+          <span>1. Resonance Scanner</span>
+          <span class="obj-status" id="status-scan">PENDING</span>
+        </div>
+        <div class="obj-bar-wrap">
+          <div class="obj-bar" id="bar-scan"></div>
+        </div>
+        <div class="obj-actions">
+          <button class="btn-action" id="btn-do-scan">📡 Scan Singularity</button>
+        </div>
+      </div>
+
+      <!-- Objective 2: Warp Coil Calibration -->
+      <div class="objective-item" id="obj-coils">
+        <div class="obj-header">
+          <span>2. Warp Coils (Tachyon Sync)</span>
+          <span class="obj-status" id="status-coils">0/3 CALIBRATED</span>
+        </div>
+        <div class="obj-bar-wrap">
+          <div class="obj-bar" id="bar-coils"></div>
+        </div>
+        <div class="obj-actions">
+          <button class="btn-action" id="btn-coil-1">Coil α</button>
+          <button class="btn-action" id="btn-coil-2">Coil β</button>
+          <button class="btn-action" id="btn-coil-3">Coil γ</button>
+        </div>
+      </div>
+
+      <!-- Objective 3: Vector & Proximity -->
+      <div class="objective-item" id="obj-vector">
+        <div class="obj-header">
+          <span>3. Alignment & Range</span>
+          <span class="obj-status" id="status-vector">ALIGN WITH CORE</span>
+        </div>
+        <div class="obj-bar-wrap">
+          <div class="obj-bar" id="bar-vector"></div>
+        </div>
+        <div style="font-size:0.68rem; color:var(--text-dim); margin-top:2px;">
+          Use <span class="kbd">WASD</span> to steer toward cyan wormhole core &lt; 50,000 KM.
+        </div>
+      </div>
+
+      <!-- Objective 4: Engage Warp Jump -->
+      <div class="objective-item" id="obj-jump">
+        <div class="obj-header">
+          <span>4. Warp Horizon Jump</span>
+          <span class="obj-status" id="status-jump">LOCKED</span>
+        </div>
+        <div class="obj-bar-wrap">
+          <div class="obj-bar" id="bar-jump"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desktop Keybinding Flight Legend (Right Sidebar) -->
+    <div class="flight-sidebar" id="flight-panel">
+      <div class="panel-heading">
+        <span>FLIGHT CONTROLS</span>
+        <span style="font-size:0.7rem; color:var(--text-dim);">DESKTOP / XR</span>
+      </div>
+      <div class="key-row"><span>Forward Thrusters:</span> <span class="kbd">W</span> / <span class="kbd">↑</span></div>
+      <div class="key-row"><span>Retro-Brakes:</span> <span class="kbd">S</span> / <span class="kbd">↓</span></div>
+      <div class="key-row"><span>Strafe Left / Right:</span> <span class="kbd">A</span> / <span class="kbd">D</span></div>
+      <div class="key-row"><span>Vertical Elevate / Dive:</span> <span class="kbd">Space</span> / <span class="kbd">Shift</span></div>
+      <div class="key-row"><span>Roll Stabilization:</span> <span class="kbd">Q</span> / <span class="kbd">E</span></div>
+      <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse Drag</span></div>
+      <div class="key-row"><span>Engage Warp Key:</span> <span class="kbd">F</span></div>
+      <div class="key-row" style="margin-top:6px; border-top:1px solid rgba(0,240,255,0.2); padding-top:6px;">
+        <span style="color:var(--cyan-neon);">XR Headset:</span> <span>HMD Look + Triggers</span>
+      </div>
+    </div>
+
     <!-- Bottom Tactical Control Panel -->
     <footer id="hud-panel" class="hud-footer">
       <div class="control-cluster">
-        <button id="btn-warp" class="hud-btn" title="Initiate sub-light cruise towards the event horizon">
+        <button id="btn-warp" class="hud-btn" title="Initiate sub-light cruise or hyper-warp jump">
           🚀 Engage Warp
         </button>
-        <button id="btn-toggle-audio" class="hud-btn" title="Toggle procedural cosmic synthesizer">
-          <span class="icon">🔇</span> Synth Audio: OFF
+        <button id="btn-toggle-audio" class="hud-btn" title="Toggle audio sound effects and synth">
+          <span class="icon">🔊</span> Audio: ON (.wav)
+        </button>
+        <button id="btn-mouse-lock" class="hud-btn" title="Toggle flight crosshair mouse capture">
+          🎯 Flight Mouse
         </button>
       </div>
 
       <div class="control-cluster">
         <div class="hud-slider-group">
-          <label for="slider-bloom">NEON BLOOM</label>
+          <label for="slider-bloom">BLOOM GLOW</label>
           <input id="slider-bloom" type="range" min="0.0" max="3.5" step="0.1" value="1.85">
           <span id="val-bloom" class="badge-val">1.85</span>
+        </div>
+        <div class="hud-slider-group">
+          <label for="slider-lensing">GRAV LENS</label>
+          <input id="slider-lensing" type="range" min="0.0" max="2.0" step="0.1" value="1.0">
+          <span id="val-lensing" class="badge-val">1.0</span>
         </div>
         <button id="btn-toggle-hud" class="hud-btn" title="Toggle interface overlay visibility">
           👁 HUD

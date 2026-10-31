@@ -248,9 +248,7 @@
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    #left-drawer-container:hover,
-    #left-drawer-container.pinned,
-    #left-drawer-container.hover-active {
+    #left-drawer-container.open {
       transform: translateX(0) !important;
     }
 
@@ -337,8 +335,7 @@
       color: var(--cyan-neon);
       transition: transform 0.3s ease;
     }
-    #left-drawer-container.pinned .strip-chevron,
-    #left-drawer-container:hover .strip-chevron {
+    #left-drawer-container.open .strip-chevron {
       transform: rotate(180deg);
     }
 
@@ -508,9 +505,7 @@
       max-width: 1200px;
     }
 
-    #top-drawer-container:hover,
-    #top-drawer-container.pinned,
-    #top-drawer-container.hover-active {
+    #top-drawer-container.open {
       transform: translateX(-50%) translateY(0) !important;
     }
 
@@ -571,9 +566,7 @@
       display: inline-block;
     }
 
-    #top-drawer-container.pinned .top-strip-chevron,
-    #top-drawer-container:hover .top-strip-chevron,
-    #top-drawer-container.hover-active .top-strip-chevron {
+    #top-drawer-container.open .top-strip-chevron {
       transform: rotate(180deg);
     }
 
@@ -595,9 +588,7 @@
       max-width: 1200px;
     }
 
-    #bottom-drawer-container:hover,
-    #bottom-drawer-container.pinned,
-    #bottom-drawer-container.hover-active {
+    #bottom-drawer-container.open {
       transform: translateX(-50%) translateY(0) !important;
     }
 
@@ -658,9 +649,7 @@
       display: inline-block;
     }
 
-    #bottom-drawer-container.pinned .bottom-strip-chevron,
-    #bottom-drawer-container:hover .bottom-strip-chevron,
-    #bottom-drawer-container.hover-active .bottom-strip-chevron {
+    #bottom-drawer-container.open .bottom-strip-chevron {
       transform: rotate(180deg);
     }
 
@@ -865,13 +854,13 @@
        ========================================================================== */
     #mobile-touch-controls {
       display: none;
-      position: absolute;
+      position: fixed;
       bottom: 35px;
       left: 0;
       width: 100%;
       height: 130px;
       pointer-events: none;
-      z-index: 30;
+      z-index: 60;
       padding: 0 20px;
       box-sizing: border-box;
       justify-content: space-between;
@@ -1631,8 +1620,8 @@
     <div class="drawer-content" id="mission-panel">
       <div class="drawer-top-bar">
         <span class="panel-heading">COCKPIT CONTROLS & MISSIONS</span>
-        <label class="autohide-toggle" title="When checked, controls automatically hide off the left screen edge when pointer leaves">
-          <input type="checkbox" id="chk-autohide" checked> Auto-hide
+        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
+          <input type="checkbox" id="chk-auto-close-left" class="chk-auto-close" checked> Auto close
         </label>
       </div>
 
@@ -1794,8 +1783,8 @@
       </div>
 
       <div style="display:flex; align-items:center; gap:8px;">
-        <label class="autohide-toggle" title="When checked, header automatically hides off top edge when pointer leaves">
-          <input type="checkbox" id="chk-header-autohide" checked> Auto-hide
+        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
+          <input type="checkbox" id="chk-auto-close-top" class="chk-auto-close" checked> Auto close
         </label>
       </div>
     </header>
@@ -1850,8 +1839,8 @@
           <input id="slider-lensing" type="range" min="0.0" max="2.0" step="0.1" value="1.0">
           <span id="val-lensing" class="badge-val">1.0</span>
         </div>
-        <label class="autohide-toggle" title="When checked, controls automatically hide off bottom edge when pointer leaves">
-          <input type="checkbox" id="chk-footer-autohide" checked> Auto-hide
+        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
+          <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto close
         </label>
         <button id="btn-toggle-hud" class="hud-btn" title="Toggle interface overlay visibility">
           👁 HUD

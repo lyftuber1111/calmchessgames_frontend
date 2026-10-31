@@ -85,12 +85,12 @@
   /* --- API CALL HELPER (AUTHENTICATION API TOKEN ENABLED WITH IN-TRANSIT ENCRYPTION) --- */
   async function callAdminApi(action, payload = {}, method = 'POST') {
       const endpoints = [
-          `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `https://api.calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `${API_BASE}/admin/admin_api.php?action=${action}&_t=${Date.now()}`,
-          `https://api.calmchessgames.com/admin/admin_api.php?action=${action}&_t=${Date.now()}`,
           `./admin_api.php?action=${action}&_t=${Date.now()}`,
           `admin_api.php?action=${action}&_t=${Date.now()}`,
+          `${API_BASE}/admin/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `https://api.calmchessgames.com/admin/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `${API_BASE}/admin_api.php?action=${action}&_t=${Date.now()}`,
+          `https://api.calmchessgames.com/admin_api.php?action=${action}&_t=${Date.now()}`,
           `${API_BASE}/php/admin_api.php?action=${action}&_t=${Date.now()}`,
           `https://api.calmchessgames.com/php/admin_api.php?action=${action}&_t=${Date.now()}`
       ];

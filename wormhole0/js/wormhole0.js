@@ -1081,26 +1081,26 @@ async function handleModeChange(mode, bypassCheck = false) {
     };
 
     let checkResult = null;
-    try {
-      let r = await fetch('wormhole_device_api.php?action=check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-        body: JSON.stringify(payload)
-      }).catch(() => null);
-
-      if (!r || !r.ok) {
-        r = await fetch('../wormhole_device_api.php?action=check', {
+    const checkEndpoints = [
+      '../wormhole_device_api.php?action=check',
+      '/wormhole_device_api.php?action=check',
+      'https://api.calmchessgames.com/wormhole_device_api.php?action=check',
+      'wormhole_device_api.php?action=check'
+    ];
+    for (const ep of checkEndpoints) {
+      try {
+        const r = await fetch(ep, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
           body: JSON.stringify(payload)
-        }).catch(() => null);
+        });
+        if (r && r.ok) {
+          checkResult = await r.json().catch(() => null);
+          if (checkResult) break;
+        }
+      } catch (e) {
+        // try next endpoint
       }
-
-      if (r && r.ok) {
-        checkResult = await r.json().catch(() => null);
-      }
-    } catch (e) {
-      console.warn('[WormholeXR] Remote check fetch error:', e);
     }
 
     if (checkResult && checkResult.supported === false) {

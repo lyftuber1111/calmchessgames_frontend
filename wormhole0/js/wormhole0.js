@@ -1466,13 +1466,37 @@ if (btnCloseModal) {
 }
 if (btnDismissModal) btnDismissModal.addEventListener('click', hideUnsupportedBadge);
 
-// Dismiss rotate advisory prompt
+// Dismiss or manage mobile fullscreen rotate advisory prompt
 const btnDismissRotate = document.getElementById('btn-dismiss-rotate');
+const btnCloseRotateTop = document.getElementById('btn-close-rotate-top');
 const landscapePrompt = document.getElementById('landscape-rotate-prompt');
-if (btnDismissRotate && landscapePrompt) {
-  btnDismissRotate.addEventListener('click', () => {
-    landscapePrompt.style.display = 'none';
-  });
+
+function dismissRotatePrompt() {
+  if (landscapePrompt) {
+    landscapePrompt.classList.add('dismissed');
+  }
+  document.body.classList.add('portrait-dismissed');
+}
+
+if (btnDismissRotate) {
+  btnDismissRotate.addEventListener('click', dismissRotatePrompt);
+}
+if (btnCloseRotateTop) {
+  btnCloseRotateTop.addEventListener('click', dismissRotatePrompt);
+}
+
+function handleOrientationPromptUpdate() {
+  const isLandscape = (window.innerWidth > window.innerHeight);
+  if (isLandscape) {
+    if (landscapePrompt) landscapePrompt.classList.remove('dismissed');
+    document.body.classList.remove('portrait-dismissed');
+  }
+}
+
+window.addEventListener('resize', handleOrientationPromptUpdate);
+window.addEventListener('orientationchange', handleOrientationPromptUpdate);
+if (screen.orientation && typeof screen.orientation.addEventListener === 'function') {
+  screen.orientation.addEventListener('change', handleOrientationPromptUpdate);
 }
 
 // Close on backdrop overlay click or ESC key

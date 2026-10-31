@@ -239,8 +239,8 @@
       pointer-events: auto;
       position: fixed;
       left: 0;
-      top: 65px;
-      bottom: 85px;
+      top: 36px;
+      bottom: 36px;
       display: flex;
       align-items: flex-start;
       z-index: 50;
@@ -490,6 +490,180 @@
       font-size: 0.68rem;
     }
 
+    /* ==========================================================================
+       COLLAPSIBLE TOP TELEMETRY & HEADER DRAWER (SLIDES OFF TOP EDGE)
+       ========================================================================== */
+    #top-drawer-container {
+      pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(calc(-100% + 28px));
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 45;
+      width: min(1200px, calc(100vw - 20px));
+      max-width: 1200px;
+    }
+
+    #top-drawer-container:hover,
+    #top-drawer-container.pinned,
+    #top-drawer-container.hover-active {
+      transform: translateX(-50%) translateY(0) !important;
+    }
+
+    #top-drawer-container .hud-header {
+      pointer-events: auto;
+      width: 100%;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .top-strip-handle {
+      pointer-events: auto;
+      height: 28px;
+      padding: 0 20px;
+      background: rgba(0, 24, 38, 0.96);
+      border: 1px solid var(--cyan-neon);
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 240, 255, 0.5);
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+      animation: topStripGlow 2.5s infinite ease-in-out;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    @keyframes topStripGlow {
+      0%, 100% { box-shadow: 0 2px 12px rgba(0, 240, 255, 0.4); }
+      50% { box-shadow: 0 4px 22px rgba(0, 240, 255, 0.85); }
+    }
+
+    .top-strip-handle:hover {
+      background: rgba(0, 55, 90, 0.98);
+      box-shadow: 0 4px 28px var(--cyan-neon);
+      border-color: #fff;
+    }
+
+    .top-strip-text {
+      letter-spacing: 2px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      text-shadow: 0 0 8px var(--cyan-neon);
+    }
+
+    .top-strip-chevron {
+      font-size: 0.72rem;
+      color: var(--cyan-neon);
+      transition: transform 0.3s ease;
+      display: inline-block;
+    }
+
+    #top-drawer-container.pinned .top-strip-chevron,
+    #top-drawer-container:hover .top-strip-chevron,
+    #top-drawer-container.hover-active .top-strip-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* ==========================================================================
+       COLLAPSIBLE BOTTOM TACTICAL CONTROLS DRAWER (SLIDES OFF BOTTOM EDGE)
+       ========================================================================== */
+    #bottom-drawer-container {
+      pointer-events: none;
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(calc(100% - 28px));
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 45;
+      width: min(1200px, calc(100vw - 20px));
+      max-width: 1200px;
+    }
+
+    #bottom-drawer-container:hover,
+    #bottom-drawer-container.pinned,
+    #bottom-drawer-container.hover-active {
+      transform: translateX(-50%) translateY(0) !important;
+    }
+
+    #bottom-drawer-container .hud-footer {
+      pointer-events: auto;
+      width: 100%;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .bottom-strip-handle {
+      pointer-events: auto;
+      height: 28px;
+      padding: 0 20px;
+      background: rgba(0, 24, 38, 0.96);
+      border: 1px solid var(--cyan-neon);
+      border-bottom: none;
+      border-radius: 10px 10px 0 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 -4px 16px rgba(0, 240, 255, 0.5);
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+      animation: bottomStripGlow 2.5s infinite ease-in-out;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    @keyframes bottomStripGlow {
+      0%, 100% { box-shadow: 0 -2px 12px rgba(0, 240, 255, 0.4); }
+      50% { box-shadow: 0 -4px 22px rgba(0, 240, 255, 0.85); }
+    }
+
+    .bottom-strip-handle:hover {
+      background: rgba(0, 55, 90, 0.98);
+      box-shadow: 0 -4px 28px var(--cyan-neon);
+      border-color: #fff;
+    }
+
+    .bottom-strip-text {
+      letter-spacing: 2px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      text-shadow: 0 0 8px var(--cyan-neon);
+    }
+
+    .bottom-strip-chevron {
+      font-size: 0.72rem;
+      color: var(--cyan-neon);
+      transition: transform 0.3s ease;
+      display: inline-block;
+    }
+
+    #bottom-drawer-container.pinned .bottom-strip-chevron,
+    #bottom-drawer-container:hover .bottom-strip-chevron,
+    #bottom-drawer-container.hover-active .bottom-strip-chevron {
+      transform: rotate(180deg);
+    }
+
     /* Interactive Bottom Navigation & Controls */
     .hud-footer {
       pointer-events: auto;
@@ -692,12 +866,12 @@
     #mobile-touch-controls {
       display: none;
       position: absolute;
-      bottom: 75px;
+      bottom: 35px;
       left: 0;
       width: 100%;
       height: 130px;
       pointer-events: none;
-      z-index: 25;
+      z-index: 30;
       padding: 0 20px;
       box-sizing: border-box;
       justify-content: space-between;
@@ -1296,6 +1470,8 @@
 
     body.in-xr-session #hud-layer,
     body.in-xr-session #left-drawer-container,
+    body.in-xr-session #top-drawer-container,
+    body.in-xr-session #bottom-drawer-container,
     body.in-xr-session #mobile-touch-controls {
       display: none !important;
     }
@@ -1473,7 +1649,13 @@
         <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">A / X Button</span></div>
         <div class="key-row"><span>Warp Jump Trigger:</span> <span class="kbd">F</span> or <span class="kbd">Y Button</span></div>
         <div class="key-row" style="margin-top:5px; border-top:1px solid rgba(0,240,255,0.2); padding-top:4px;">
-          <span style="color:var(--cyan-neon);">Toggle Panel:</span> <span class="kbd">Tab</span> / <span class="kbd">M</span>
+          <span style="color:var(--cyan-neon);">Toggle Left Panel:</span> <span class="kbd">Tab</span> / <span class="kbd">M</span>
+        </div>
+        <div class="key-row">
+          <span style="color:var(--cyan-neon);">Toggle Top Header:</span> <span class="kbd">H</span>
+        </div>
+        <div class="key-row">
+          <span style="color:var(--cyan-neon);">Toggle Bottom Panel:</span> <span class="kbd">B</span>
         </div>
       </div>
 
@@ -1548,24 +1730,8 @@
     </div>
   </div>
 
-  <!-- Holographic Sci-Fi Telemetry & Cockpit HUD -->
-  <div id="hud-layer">
-    <!-- Corner Boundary Reticles -->
-    <div class="hud-reticle reticle-tl"></div>
-    <div class="hud-reticle reticle-tr"></div>
-    <div class="hud-reticle reticle-bl"></div>
-    <div class="hud-reticle reticle-br"></div>
-
-    <!-- Center Crosshairs & Vector Alignment Marker -->
-    <div class="center-crosshair">
-      <div class="crosshair-circle"></div>
-    </div>
-    <div id="vector-alignment-ring"></div>
-
-    <!-- Notification Toast Banner -->
-    <div id="toast-msg"></div>
-
-    <!-- Top Telemetry Header -->
+  <!-- Collapsible Top Telemetry & Header Slide-Out Drawer -->
+  <div id="top-drawer-container">
     <header class="hud-header">
       <div class="title-group">
         <div class="pulsing-orb"></div>
@@ -1626,11 +1792,31 @@
           <span id="hud-fps" class="badge-val">60 FPS</span>
         </div>
       </div>
+
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label class="autohide-toggle" title="When checked, header automatically hides off top edge when pointer leaves">
+          <input type="checkbox" id="chk-header-autohide" checked> Auto-hide
+        </label>
+      </div>
     </header>
 
-    <!-- Upper Right Corner Cleared: Controls now docked in Collapsible Left Drawer -->
+    <!-- Top Holographic Pull Strip Tab (Visible on top edge; hover/click expands header) -->
+    <div class="top-strip-handle" id="top-drawer-tab" title="Hover over or click to toggle Telemetry Header">
+      <span class="top-strip-chevron">▼</span>
+      <span class="top-strip-text">TELEMETRY &amp; MODES</span>
+      <span class="top-strip-chevron">▼</span>
+    </div>
+  </div>
 
-    <!-- Bottom Tactical Control Panel -->
+  <!-- Collapsible Bottom Tactical Controls Slide-Out Drawer -->
+  <div id="bottom-drawer-container">
+    <!-- Bottom Holographic Pull Strip Tab (Visible on bottom edge; hover/click expands footer) -->
+    <div class="bottom-strip-handle" id="bottom-drawer-tab" title="Hover over or click to toggle Tactical Controls">
+      <span class="bottom-strip-chevron">▲</span>
+      <span class="bottom-strip-text">TACTICAL CONTROLS &amp; FLIGHT HUD</span>
+      <span class="bottom-strip-chevron">▲</span>
+    </div>
+
     <footer id="hud-panel" class="hud-footer">
       <div class="control-cluster">
         <button id="btn-warp" class="hud-btn" title="Initiate sub-light cruise or hyper-warp jump">
@@ -1638,6 +1824,9 @@
         </button>
         <button id="btn-toggle-drawer" class="hud-btn" title="Toggle left-hand Controls & Objectives Panel">
           📋 Objectives
+        </button>
+        <button id="btn-toggle-header" class="hud-btn" title="Toggle top Telemetry & Modes Header">
+          📡 Telemetry
         </button>
         <button id="btn-toggle-audio" class="hud-btn" title="Toggle audio sound effects and synth">
           <span class="icon">🔊</span> Audio: ON (.wav)
@@ -1661,11 +1850,32 @@
           <input id="slider-lensing" type="range" min="0.0" max="2.0" step="0.1" value="1.0">
           <span id="val-lensing" class="badge-val">1.0</span>
         </div>
+        <label class="autohide-toggle" title="When checked, controls automatically hide off bottom edge when pointer leaves">
+          <input type="checkbox" id="chk-footer-autohide" checked> Auto-hide
+        </label>
         <button id="btn-toggle-hud" class="hud-btn" title="Toggle interface overlay visibility">
           👁 HUD
         </button>
       </div>
     </footer>
+  </div>
+
+  <!-- Holographic Sci-Fi Telemetry & Cockpit HUD -->
+  <div id="hud-layer">
+    <!-- Corner Boundary Reticles -->
+    <div class="hud-reticle reticle-tl"></div>
+    <div class="hud-reticle reticle-tr"></div>
+    <div class="hud-reticle reticle-bl"></div>
+    <div class="hud-reticle reticle-br"></div>
+
+    <!-- Center Crosshairs & Vector Alignment Marker -->
+    <div class="center-crosshair">
+      <div class="crosshair-circle"></div>
+    </div>
+    <div id="vector-alignment-ring"></div>
+
+    <!-- Notification Toast Banner -->
+    <div id="toast-msg"></div>
   </div>
 
   <!-- Mobile Touch On-Screen Controls (Landscape) -->

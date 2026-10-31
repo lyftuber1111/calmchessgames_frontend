@@ -51,6 +51,10 @@ const state = {
   // Drawer state
   isDrawerPinned: false,
   isDrawerAutoHide: true,
+  isHeaderPinned: false,
+  isHeaderAutoHide: true,
+  isFooterPinned: false,
+  isFooterAutoHide: true,
   
   // Player Position & Dynamics
   position: new THREE.Vector3(0, 2.5, CONFIG.wormholeDistance),
@@ -946,17 +950,27 @@ class AudioManager {
 const audioMgr = new AudioManager();
 
 // =============================================================================
-// COLLAPSIBLE LEFT DRAWER (HOVER, PIN & AUTO-HIDE CONTROLS)
+// COLLAPSIBLE DRAWERS: LEFT (MISSION), TOP (TELEMETRY), BOTTOM (TACTICAL)
 // =============================================================================
 const leftDrawer = document.getElementById('left-drawer-container');
 const drawerTab = document.getElementById('drawer-tab');
 const chkAutoHide = document.getElementById('chk-autohide');
 const btnToggleDrawer = document.getElementById('btn-toggle-drawer');
 
+const topDrawer = document.getElementById('top-drawer-container');
+const topDrawerTab = document.getElementById('top-drawer-tab');
+const chkHeaderAutoHide = document.getElementById('chk-header-autohide');
+const btnToggleHeader = document.getElementById('btn-toggle-header');
+
+const bottomDrawer = document.getElementById('bottom-drawer-container');
+const bottomDrawerTab = document.getElementById('bottom-drawer-tab');
+const chkFooterAutoHide = document.getElementById('chk-footer-autohide');
+
 function toggleDrawerPin() {
   state.isDrawerPinned = !state.isDrawerPinned;
   if (leftDrawer) {
     leftDrawer.classList.toggle('pinned', state.isDrawerPinned);
+    if (!state.isDrawerPinned) leftDrawer.classList.remove('hover-active');
   }
   if (btnToggleDrawer) {
     btnToggleDrawer.classList.toggle('active', state.isDrawerPinned);
@@ -964,15 +978,34 @@ function toggleDrawerPin() {
   showToast(state.isDrawerPinned ? 'CONTROLS PINNED OPEN' : 'CONTROLS AUTO-HIDE ACTIVE');
 }
 
-// Hover event listeners for panel strip handle
+function toggleHeaderPin() {
+  state.isHeaderPinned = !state.isHeaderPinned;
+  if (topDrawer) {
+    topDrawer.classList.toggle('pinned', state.isHeaderPinned);
+    if (!state.isHeaderPinned) topDrawer.classList.remove('hover-active');
+  }
+  if (btnToggleHeader) {
+    btnToggleHeader.classList.toggle('active', state.isHeaderPinned);
+  }
+  showToast(state.isHeaderPinned ? 'HEADER TELEMETRY PINNED OPEN' : 'HEADER TELEMETRY AUTO-HIDE ACTIVE');
+}
+
+function toggleFooterPin() {
+  state.isFooterPinned = !state.isFooterPinned;
+  if (bottomDrawer) {
+    bottomDrawer.classList.toggle('pinned', state.isFooterPinned);
+    if (!state.isFooterPinned) bottomDrawer.classList.remove('hover-active');
+  }
+  showToast(state.isFooterPinned ? 'TACTICAL CONTROLS PINNED OPEN' : 'TACTICAL CONTROLS AUTO-HIDE ACTIVE');
+}
+
+// --- Left Drawer Event Listeners ---
 if (drawerTab) {
   drawerTab.addEventListener('click', toggleDrawerPin);
   drawerTab.addEventListener('mouseenter', () => {
     if (leftDrawer) leftDrawer.classList.add('hover-active');
   });
 }
-
-// Hover over the drawer container keeps it open; leaving collapses it
 if (leftDrawer) {
   leftDrawer.addEventListener('mouseenter', () => {
     leftDrawer.classList.add('hover-active');
@@ -983,11 +1016,9 @@ if (leftDrawer) {
     }
   });
 }
-
 if (btnToggleDrawer) {
   btnToggleDrawer.addEventListener('click', toggleDrawerPin);
 }
-
 if (chkAutoHide) {
   chkAutoHide.addEventListener('change', (e) => {
     state.isDrawerAutoHide = e.target.checked;
@@ -1004,10 +1035,92 @@ if (chkAutoHide) {
   });
 }
 
+// --- Top Drawer (Telemetry Header) Event Listeners ---
+if (topDrawerTab) {
+  topDrawerTab.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleHeaderPin();
+  });
+  topDrawerTab.addEventListener('mouseenter', () => {
+    if (topDrawer) topDrawer.classList.add('hover-active');
+  });
+}
+if (topDrawer) {
+  topDrawer.addEventListener('mouseenter', () => {
+    topDrawer.classList.add('hover-active');
+  });
+  topDrawer.addEventListener('mouseleave', () => {
+    if (state.isHeaderAutoHide && !state.isHeaderPinned) {
+      topDrawer.classList.remove('hover-active');
+    }
+  });
+}
+if (btnToggleHeader) {
+  btnToggleHeader.addEventListener('click', toggleHeaderPin);
+}
+if (chkHeaderAutoHide) {
+  chkHeaderAutoHide.addEventListener('change', (e) => {
+    state.isHeaderAutoHide = e.target.checked;
+    if (!state.isHeaderAutoHide) {
+      state.isHeaderPinned = true;
+      if (topDrawer) topDrawer.classList.add('pinned');
+    } else {
+      state.isHeaderPinned = false;
+      if (topDrawer) {
+        topDrawer.classList.remove('pinned');
+        topDrawer.classList.remove('hover-active');
+      }
+    }
+  });
+}
+
+// --- Bottom Drawer (Tactical Controls) Event Listeners ---
+if (bottomDrawerTab) {
+  bottomDrawerTab.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleFooterPin();
+  });
+  bottomDrawerTab.addEventListener('mouseenter', () => {
+    if (bottomDrawer) bottomDrawer.classList.add('hover-active');
+  });
+}
+if (bottomDrawer) {
+  bottomDrawer.addEventListener('mouseenter', () => {
+    bottomDrawer.classList.add('hover-active');
+  });
+  bottomDrawer.addEventListener('mouseleave', () => {
+    if (state.isFooterAutoHide && !state.isFooterPinned) {
+      bottomDrawer.classList.remove('hover-active');
+    }
+  });
+}
+if (chkFooterAutoHide) {
+  chkFooterAutoHide.addEventListener('change', (e) => {
+    state.isFooterAutoHide = e.target.checked;
+    if (!state.isFooterAutoHide) {
+      state.isFooterPinned = true;
+      if (bottomDrawer) bottomDrawer.classList.add('pinned');
+    } else {
+      state.isFooterPinned = false;
+      if (bottomDrawer) {
+        bottomDrawer.classList.remove('pinned');
+        bottomDrawer.classList.remove('hover-active');
+      }
+    }
+  });
+}
+
+// Global keyboard shortcuts for sliding panels
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Tab' || e.code === 'KeyM') {
     e.preventDefault();
     toggleDrawerPin();
+  } else if (e.code === 'KeyH') {
+    e.preventDefault();
+    toggleHeaderPin();
+  } else if (e.code === 'KeyB') {
+    e.preventDefault();
+    toggleFooterPin();
   }
 });
 
@@ -2061,15 +2174,20 @@ if (toggleAudioBtn) {
 }
 
 const toggleHudBtn = document.getElementById('btn-toggle-hud');
-const hudPanel = document.getElementById('hud-panel');
 const flightPanel = document.getElementById('flight-panel');
 if (toggleHudBtn) {
   toggleHudBtn.addEventListener('click', () => {
     state.hudVisible = !state.hudVisible;
-    const disp = state.hudVisible ? 'flex' : 'none';
-    const blockDisp = state.hudVisible ? 'block' : 'none';
-    if (hudPanel) hudPanel.style.display = disp;
-    if (flightPanel) flightPanel.style.display = blockDisp;
+    const hudLayer = document.getElementById('hud-layer');
+    if (hudLayer) hudLayer.style.display = state.hudVisible ? 'block' : 'none';
+    if (!state.hudVisible) {
+      if (topDrawer) { topDrawer.classList.remove('pinned', 'hover-active'); state.isHeaderPinned = false; }
+      if (bottomDrawer) { bottomDrawer.classList.remove('pinned', 'hover-active'); state.isFooterPinned = false; }
+      if (leftDrawer) { leftDrawer.classList.remove('pinned', 'hover-active'); state.isDrawerPinned = false; }
+      showToast('HUD DISPLAY: MINIMIZED');
+    } else {
+      showToast('HUD DISPLAY: ON');
+    }
   });
 }
 

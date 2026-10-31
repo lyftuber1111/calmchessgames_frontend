@@ -65,7 +65,7 @@ const state = {
   touchMove: { x: 0, y: 0 },
   touchActive: false,
   
-  // Virtual Aim Joystick input & Crosshair Reticle (Right Thumb Aim & Laser)
+  // Virtual Aim Joystick input & Crosshair Reticle (Right Thumb Aim)
   aimMove: { x: 0, y: 0 },
   aimActive: false,
   crosshair: {
@@ -73,6 +73,12 @@ const state = {
     y: typeof window !== 'undefined' ? window.innerHeight / 2 : 300
   },
   lastLaserShotTime: 0,
+
+  // Left Joystick Flight Lockout Timer (3s on touch, 1s resetting on fire tap)
+  flightLockoutUntil: 0,
+
+  // Crosshair Aim speed multiplier (default 1.764, ~2% slower than original 1.8)
+  crosshairSpeedMultiplier: 1.764,
   
   // Gamepad State
   gamepadIndex: null,
@@ -1889,7 +1895,7 @@ function vibratePad(pad, durationMs) {
 }
 
 // =============================================================================
-// MOBILE TOUCH VIRTUAL JOYSTICKS (LEFT: FLIGHT, RIGHT: AIM & LASER CANNON)
+// MOBILE TOUCH VIRTUAL JOYSTICKS (LEFT: FIRE & FLIGHT, RIGHT: AIM RETICLE)
 // =============================================================================
 const touchStickZone = document.getElementById('touch-stick-zone');
 const touchStickKnob = document.getElementById('touch-stick-knob');
@@ -1904,10 +1910,13 @@ const maxStickRadius = 38;
 
 let flightTouchId = null;
 let aimTouchId = null;
-let aimTapStartTime = 0;
-let aimTotalMove = 0;
+let flightTapStartTime = 0;
+let flightTotalMove = 0;
+let isMouseFlight = false;
+let mouseFlightStartTime = 0;
+let mouseFlightMove = 0;
 
-// 1. LEFT THUMB FLIGHT JOYSTICK
+// 1. LEFT THUMB JOYSTICK (TAP TO FIRE LASER / HOLD FOR FLIGHT)
 if (touchStickZone) {
   touchStickZone.addEventListener('touchstart', (e) => {
     e.preventDefault();
@@ -1919,6 +1928,10 @@ if (touchStickZone) {
       if (touch.target === touchStickZone || touchStickZone.contains(touch.target)) {
         flightTouchId = touch.identifier;
         state.touchActive = true;
+        flightTapStartTime = performance.now();
+        // Lock out joystick from activating as flight control for 3 seconds when touched
+        state.flightLockoutUntil = flightTapStartTime + 3000;
+        flightTotalMove = 0;
         updateStickPos(touch.clientX, touch.clientY);
         handleFlightActivity(); // Closes panels if open
         break;
@@ -1930,66 +1943,98 @@ if (touchStickZone) {
 
   window.addEventListener('touchmove', (e) => {
     if (!state.touchActive) return;
-    for (let i = 0; i < e.touches.length; i++) {
-      const touch = e.touches[i];
-      if (touch.identifier === flightTouchId) {
-        updateStickPos(touch.clientX, touch.clientY);
-        handleFlightActivity();
-        break;
+    const touchList = (e.touches && e.touches.length > 0) ? e.touches : e.changedTouches;
+    if (touchList) {
+      for (let i = 0; i < touchList.length; i++) {
+        const touch = touchList[i];
+        if (touch.identifier === flightTouchId || touch.target === touchStickZone || touchStickZone.contains(touch.target)) {
+          updateStickPos(touch.clientX, touch.clientY);
+          handleFlightActivity();
+          break;
+        }
       }
     }
   }, { passive: true });
 
   const endFlightTouch = (e) => {
     if (!state.touchActive) return;
+    let ended = false;
     if (e.changedTouches) {
       for (let i = 0; i < e.changedTouches.length; i++) {
         if (e.changedTouches[i].identifier === flightTouchId || e.touches.length === 0) {
-          state.touchActive = false;
-          flightTouchId = null;
-          state.touchMove.x = 0;
-          state.touchMove.y = 0;
-          if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
+          ended = true;
           break;
         }
       }
     } else {
+      ended = true;
+    }
+
+    if (ended) {
+      const duration = performance.now() - flightTapStartTime;
+      const wasTap = (duration < 380 && flightTotalMove < 28);
       state.touchActive = false;
       flightTouchId = null;
       state.touchMove.x = 0;
       state.touchMove.y = 0;
       if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
+
+      // Switched fire button to left hand joystick:
+      // If fire is being tapped, lockout flight control for 1 second resetting each time fire tapped
+      if (wasTap) {
+        fireLaserBeam();
+        state.flightLockoutUntil = performance.now() + 1000;
+      }
     }
   };
 
   window.addEventListener('touchend', endFlightTouch);
   window.addEventListener('touchcancel', endFlightTouch);
 
-  // Mouse interaction for flight joystick
-  let isMouseFlight = false;
+  // Mouse interaction for left joystick
   touchStickZone.addEventListener('mousedown', (e) => {
     e.preventDefault();
     const rect = touchStickZone.getBoundingClientRect();
     stickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     isMouseFlight = true;
     state.touchActive = true;
+    mouseFlightStartTime = performance.now();
+    // Lock out for 3 seconds when touched
+    state.flightLockoutUntil = mouseFlightStartTime + 3000;
+    mouseFlightMove = 0;
     updateStickPos(e.clientX, e.clientY);
     handleFlightActivity();
   });
+
   window.addEventListener('mousemove', (e) => {
     if (isMouseFlight) {
       updateStickPos(e.clientX, e.clientY);
       handleFlightActivity();
     }
   });
+
   window.addEventListener('mouseup', () => {
     if (isMouseFlight) {
+      const duration = performance.now() - mouseFlightStartTime;
+      const wasTap = (duration < 380 && mouseFlightMove < 28);
       isMouseFlight = false;
       state.touchActive = false;
       state.touchMove.x = 0;
       state.touchMove.y = 0;
       if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
+      if (wasTap) {
+        fireLaserBeam();
+        state.flightLockoutUntil = performance.now() + 1000;
+      }
     }
+  });
+
+  // Direct click / tap backup on left stick to fire laser and lockout for 1s
+  touchStickZone.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleFlightActivity();
+    fireLaserBeam();
+    state.flightLockoutUntil = performance.now() + 1000;
   });
 }
 
@@ -1997,6 +2042,8 @@ function updateStickPos(clientX, clientY) {
   const dx = clientX - stickCenter.x;
   const dy = clientY - stickCenter.y;
   const dist = Math.hypot(dx, dy);
+  flightTotalMove += dist;
+  if (isMouseFlight) mouseFlightMove += dist;
   const angle = Math.atan2(dy, dx);
   const clampedDist = Math.min(dist, maxStickRadius);
 
@@ -2011,7 +2058,7 @@ function updateStickPos(clientX, clientY) {
   state.touchMove.y = knobY / maxStickRadius;
 }
 
-// 2. RIGHT THUMB AIM & NEON RED LASER JOYSTICK
+// 2. RIGHT THUMB AIM JOYSTICK (RAPIDLY MOVES CROSSHAIR RETICLE)
 if (aimStickZone) {
   aimStickZone.addEventListener('touchstart', (e) => {
     e.preventDefault();
@@ -2023,8 +2070,6 @@ if (aimStickZone) {
       if (touch.target === aimStickZone || aimStickZone.contains(touch.target)) {
         aimTouchId = touch.identifier;
         state.aimActive = true;
-        aimTapStartTime = performance.now();
-        aimTotalMove = 0;
         updateAimStickPos(touch.clientX, touch.clientY);
         handleFlightActivity(); // Closes all panels if open!
         break;
@@ -2036,12 +2081,15 @@ if (aimStickZone) {
 
   window.addEventListener('touchmove', (e) => {
     if (!state.aimActive) return;
-    for (let i = 0; i < e.touches.length; i++) {
-      const touch = e.touches[i];
-      if (touch.identifier === aimTouchId) {
-        updateAimStickPos(touch.clientX, touch.clientY);
-        handleFlightActivity(); // Closes all panels if open!
-        break;
+    const touchList = (e.touches && e.touches.length > 0) ? e.touches : e.changedTouches;
+    if (touchList) {
+      for (let i = 0; i < touchList.length; i++) {
+        const touch = touchList[i];
+        if (touch.identifier === aimTouchId || touch.target === aimStickZone || (aimStickZone && aimStickZone.contains(touch.target))) {
+          updateAimStickPos(touch.clientX, touch.clientY);
+          handleFlightActivity(); // Closes all panels if open!
+          break;
+        }
       }
     }
   }, { passive: true });
@@ -2051,16 +2099,11 @@ if (aimStickZone) {
     if (e.changedTouches) {
       for (let i = 0; i < e.changedTouches.length; i++) {
         if (e.changedTouches[i].identifier === aimTouchId || e.touches.length === 0) {
-          const duration = performance.now() - aimTapStartTime;
-          const wasTap = (duration < 380 && aimTotalMove < 28);
           state.aimActive = false;
           aimTouchId = null;
           state.aimMove.x = 0;
           state.aimMove.y = 0;
           if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
-          if (wasTap) {
-            fireLaserBeam();
-          }
           break;
         }
       }
@@ -2076,7 +2119,7 @@ if (aimStickZone) {
   window.addEventListener('touchend', endAimTouch);
   window.addEventListener('touchcancel', endAimTouch);
 
-  // Mouse interaction for Aim stick (desktop testing and click-to-fire)
+  // Mouse interaction for Aim stick (desktop testing and dragging aim)
   let isMouseAim = false;
   aimStickZone.addEventListener('mousedown', (e) => {
     e.preventDefault();
@@ -2084,8 +2127,6 @@ if (aimStickZone) {
     aimStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     isMouseAim = true;
     state.aimActive = true;
-    aimTapStartTime = performance.now();
-    aimTotalMove = 0;
     updateAimStickPos(e.clientX, e.clientY);
     handleFlightActivity(); // Closes all panels if open!
   });
@@ -2099,24 +2140,17 @@ if (aimStickZone) {
 
   window.addEventListener('mouseup', () => {
     if (isMouseAim) {
-      const duration = performance.now() - aimTapStartTime;
-      const wasTap = (duration < 380 && aimTotalMove < 28);
       isMouseAim = false;
       state.aimActive = false;
       state.aimMove.x = 0;
       state.aimMove.y = 0;
       if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
-      if (wasTap) {
-        fireLaserBeam();
-      }
     }
   });
 
-  // Direct tap click backup on right stick
   aimStickZone.addEventListener('click', (e) => {
     e.preventDefault();
     handleFlightActivity();
-    fireLaserBeam();
   });
 }
 
@@ -2124,7 +2158,6 @@ function updateAimStickPos(clientX, clientY) {
   const dx = clientX - aimStickCenter.x;
   const dy = clientY - aimStickCenter.y;
   const dist = Math.hypot(dx, dy);
-  aimTotalMove += dist;
   const angle = Math.atan2(dy, dx);
   const clampedDist = Math.min(dist, maxStickRadius);
 
@@ -2256,9 +2289,10 @@ function updateLaserBolts(delta) {
 }
 
 function updateCrosshairPosition(delta) {
-  // Move crosshair quickly when aim stick is tilted
+  // Move crosshair quickly when aim stick is tilted (speed scaled by slider multiplier)
   if (state.aimActive && (state.aimMove.x !== 0 || state.aimMove.y !== 0)) {
-    const speed = Math.max(window.innerWidth, window.innerHeight) * 1.8;
+    const baseSpeed = Math.max(window.innerWidth, window.innerHeight);
+    const speed = baseSpeed * (state.crosshairSpeedMultiplier || 1.764);
     state.crosshair.x += state.aimMove.x * speed * delta;
     state.crosshair.y += state.aimMove.y * speed * delta;
 
@@ -2536,6 +2570,33 @@ if (lensingSlider) {
   });
 }
 
+// Crosshair Speed Slider in Flight Control Panel & Bottom Drawer
+const crosshairSpeedSlider = document.getElementById('slider-crosshair-speed');
+const crosshairSpeedValDisplay = document.getElementById('val-crosshair-speed');
+const crosshairSpeedSliderBottom = document.getElementById('slider-crosshair-speed-bottom');
+const crosshairSpeedValDisplayBottom = document.getElementById('val-crosshair-speed-bottom');
+
+function updateCrosshairSpeedMultiplier(val) {
+  const num = parseFloat(val);
+  state.crosshairSpeedMultiplier = num;
+  const formatted = num.toFixed(2) + 'x';
+  if (crosshairSpeedSlider) crosshairSpeedSlider.value = num;
+  if (crosshairSpeedValDisplay) crosshairSpeedValDisplay.textContent = formatted;
+  if (crosshairSpeedSliderBottom) crosshairSpeedSliderBottom.value = num;
+  if (crosshairSpeedValDisplayBottom) crosshairSpeedValDisplayBottom.textContent = formatted;
+}
+
+if (crosshairSpeedSlider) {
+  crosshairSpeedSlider.addEventListener('input', (e) => {
+    updateCrosshairSpeedMultiplier(e.target.value);
+  });
+}
+if (crosshairSpeedSliderBottom) {
+  crosshairSpeedSliderBottom.addEventListener('input', (e) => {
+    updateCrosshairSpeedMultiplier(e.target.value);
+  });
+}
+
 const toggleAudioBtn = document.getElementById('btn-toggle-audio');
 if (toggleAudioBtn) {
   toggleAudioBtn.addEventListener('click', () => {
@@ -2655,7 +2716,17 @@ function updateFlight(delta) {
   if (keys['KeyQ']) state.yaw += 0.02;
   if (keys['KeyE']) state.yaw -= 0.02;
 
-  if (state.touchActive) {
+  // Left joystick flight control lockout check (3s on initial touch, 1s resetting on fire tap)
+  const isFlightLockedOut = performance.now() < state.flightLockoutUntil;
+  if (touchStickZone) {
+    if (isFlightLockedOut && state.touchActive) {
+      touchStickZone.classList.add('flight-locked');
+    } else {
+      touchStickZone.classList.remove('flight-locked');
+    }
+  }
+
+  if (state.touchActive && !isFlightLockedOut) {
     // Top of stick (touchMove.y < 0): move forward AND move down in 3D space
     accel.addScaledVector(forward, -state.touchMove.y);
     accel.addScaledVector(up, state.touchMove.y); // Negative when at top -> dives/moves down
@@ -2968,6 +3039,8 @@ if (typeof window !== 'undefined') {
   window.laserBolts = laserBolts;
   window.fireLaserBeam = fireLaserBeam;
   window.updateCrosshairPosition = updateCrosshairPosition;
+  window.isFlightControlLocked = () => performance.now() < state.flightLockoutUntil;
+  window.updateCrosshairSpeedMultiplier = updateCrosshairSpeedMultiplier;
 }
 
 runStartupDiagnosticsAndSplashScreen();

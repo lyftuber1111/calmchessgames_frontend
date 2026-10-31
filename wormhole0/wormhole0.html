@@ -909,7 +909,7 @@
     }
 
     .virtual-stick-zone::after {
-      content: 'FLIGHT';
+      content: 'TAP: FIRE / FLIGHT';
       position: absolute;
       top: -18px;
       font-size: 0.62rem;
@@ -921,45 +921,56 @@
       pointer-events: none;
     }
 
+    .virtual-stick-zone.flight-locked::after {
+      content: 'FIRE (FLIGHT LOCK)';
+      color: #ffaa00;
+      text-shadow: 0 0 8px rgba(255, 170, 0, 0.8);
+    }
+
     .virtual-stick-knob {
       width: 44px;
       height: 44px;
       border-radius: 50%;
-      background: var(--cyan-neon);
-      box-shadow: 0 0 14px var(--cyan-neon);
+      background: radial-gradient(circle, #ff1144 28%, var(--cyan-neon) 62%);
+      box-shadow: 0 0 14px var(--cyan-neon), 0 0 8px #ff0044;
       position: absolute;
       pointer-events: none;
       transform: translate(0px, 0px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
     }
 
-    /* Right Thumb Aim / Laser Joystick */
+    /* Right Thumb Aim Joystick */
     .aim-stick-zone {
-      background: rgba(55, 5, 20, 0.45);
-      border: 2px dashed rgba(255, 25, 75, 0.6);
-      box-shadow: 0 0 18px rgba(255, 0, 60, 0.22);
+      background: rgba(0, 30, 50, 0.45);
+      border: 2px dashed rgba(0, 240, 255, 0.5);
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.18);
       cursor: crosshair;
     }
 
     .aim-stick-zone::after {
-      content: 'AIM / TAP FIRE';
+      content: 'AIM RETICLE';
       position: absolute;
       top: -18px;
       font-size: 0.62rem;
-      color: #ff3366;
+      color: var(--cyan-neon);
       letter-spacing: 1px;
       font-weight: 700;
       white-space: nowrap;
-      text-shadow: 0 0 8px #ff0044;
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.7);
       pointer-events: none;
     }
 
     .aim-stick-knob {
-      background: #ff1144;
-      box-shadow: 0 0 16px #ff1144, 0 0 26px rgba(255, 17, 68, 0.7);
+      background: rgba(0, 50, 80, 0.9);
+      border: 2px solid var(--cyan-neon);
+      box-shadow: 0 0 14px var(--cyan-neon);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      color: var(--cyan-neon);
       font-size: 0.85rem;
     }
 
@@ -1709,6 +1720,7 @@
         <div class="key-row"><span>Strafe Left / Right:</span> <span class="kbd">A / D</span> or <span class="kbd">L-Stick X</span></div>
         <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse</span> or <span class="kbd">Right Stick</span></div>
         <div class="key-row"><span>Elevate / Dive:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">R2 / L2</span></div>
+        <div class="key-row"><span>Fire Laser Cannon:</span> <span class="kbd">L-Stick Tap / X</span></div>
         <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">A / X Button</span></div>
         <div class="key-row"><span>Warp Jump Trigger:</span> <span class="kbd">F</span> or <span class="kbd">Y Button</span></div>
         <div class="key-row" style="margin-top:5px; border-top:1px solid rgba(0,240,255,0.2); padding-top:4px;">
@@ -1719,6 +1731,13 @@
         </div>
         <div class="key-row">
           <span style="color:var(--cyan-neon);">Toggle Bottom Panel:</span> <span class="kbd">B</span>
+        </div>
+
+        <!-- Crosshair Speed Slider in Flight Control Panel -->
+        <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;">
+          <label for="slider-crosshair-speed" style="font-size: 0.72rem; color: var(--cyan-neon); font-weight: 700;">CROSSHAIR SPEED</label>
+          <input id="slider-crosshair-speed" type="range" min="0.4" max="3.5" step="0.05" value="1.76" style="width: 100px; cursor: pointer;">
+          <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">1.76x</span>
         </div>
       </div>
 
@@ -1913,6 +1932,11 @@
           <input id="slider-lensing" type="range" min="0.0" max="2.0" step="0.1" value="1.0">
           <span id="val-lensing" class="badge-val">1.0</span>
         </div>
+        <div class="hud-slider-group">
+          <label for="slider-crosshair-speed-bottom">AIM SPEED</label>
+          <input id="slider-crosshair-speed-bottom" type="range" min="0.4" max="3.5" step="0.05" value="1.76">
+          <span id="val-crosshair-speed-bottom" class="badge-val">1.76x</span>
+        </div>
         <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
           <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto close
         </label>
@@ -1943,9 +1967,9 @@
 
   <!-- Mobile Touch On-Screen Controls (Landscape) -->
   <div id="mobile-touch-controls">
-    <!-- Left Virtual Joystick Zone (Movement) -->
-    <div class="virtual-stick-zone" id="touch-stick-zone" title="Flight Thruster Control">
-      <div class="virtual-stick-knob" id="touch-stick-knob"></div>
+    <!-- Left Virtual Joystick Zone (Tap: Fire Laser / Hold: Flight Thruster) -->
+    <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Hold: Flight Thrusters">
+      <div class="virtual-stick-knob" id="touch-stick-knob">🔴</div>
     </div>
 
     <!-- Center Touch Action Cluster -->
@@ -1954,9 +1978,9 @@
       <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
     </div>
 
-    <!-- Right Virtual Joystick Zone (Aim & Laser Cannon) -->
-    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Aim Reticle / Tap to Fire Laser">
-      <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob">🔴</div>
+    <!-- Right Virtual Joystick Zone (Aim Reticle Across Screen) -->
+    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Aim Reticle Across Screen">
+      <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob">🎯</div>
     </div>
   </div>
 

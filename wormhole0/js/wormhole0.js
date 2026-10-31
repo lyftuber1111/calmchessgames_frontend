@@ -894,10 +894,27 @@ function toggleDrawerPin() {
   if (btnToggleDrawer) {
     btnToggleDrawer.classList.toggle('active', state.isDrawerPinned);
   }
+  showToast(state.isDrawerPinned ? 'CONTROLS PINNED OPEN' : 'CONTROLS AUTO-HIDE ACTIVE');
 }
 
+// Hover event listeners for panel strip handle
 if (drawerTab) {
   drawerTab.addEventListener('click', toggleDrawerPin);
+  drawerTab.addEventListener('mouseenter', () => {
+    if (leftDrawer) leftDrawer.classList.add('hover-active');
+  });
+}
+
+// Hover over the drawer container keeps it open; leaving collapses it
+if (leftDrawer) {
+  leftDrawer.addEventListener('mouseenter', () => {
+    leftDrawer.classList.add('hover-active');
+  });
+  leftDrawer.addEventListener('mouseleave', () => {
+    if (state.isDrawerAutoHide && !state.isDrawerPinned) {
+      leftDrawer.classList.remove('hover-active');
+    }
+  });
 }
 
 if (btnToggleDrawer) {
@@ -910,6 +927,12 @@ if (chkAutoHide) {
     if (!state.isDrawerAutoHide) {
       state.isDrawerPinned = true;
       if (leftDrawer) leftDrawer.classList.add('pinned');
+    } else {
+      state.isDrawerPinned = false;
+      if (leftDrawer) {
+        leftDrawer.classList.remove('pinned');
+        leftDrawer.classList.remove('hover-active');
+      }
     }
   });
 }

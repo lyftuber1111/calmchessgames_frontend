@@ -5,31 +5,61 @@
  * Calm Chess Computers (c) 2026. All Rights Reserved.
  */
 
-if (file_exists(__DIR__ . '/cors.php')) {
-    require_once __DIR__ . '/cors.php';
-} elseif (file_exists(__DIR__ . '/../cors.php')) {
-    require_once __DIR__ . '/../cors.php';
+$corsPaths = [
+    __DIR__ . '/cors.php',
+    __DIR__ . '/../cors.php',
+    __DIR__ . '/../../cors.php',
+    dirname(__DIR__) . '/cors.php'
+];
+foreach ($corsPaths as $cp) {
+    if (file_exists($cp)) {
+        require_once $cp;
+        break;
+    }
 }
 
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
-if (file_exists(__DIR__ . '/config.php')) {
-    require_once __DIR__ . '/config.php';
-} elseif (file_exists(__DIR__ . '/../config.php')) {
-    require_once __DIR__ . '/../config.php';
+$configPaths = [
+    __DIR__ . '/config.php',
+    __DIR__ . '/../config.php',
+    __DIR__ . '/../../config.php',
+    dirname(__DIR__) . '/config.php'
+];
+foreach ($configPaths as $cp) {
+    if (file_exists($cp)) {
+        require_once $cp;
+        break;
+    }
 }
 
 header('Content-Type: application/json; charset=utf-8');
 
 function sendDeviceResponse(bool $success, string $message, array $data = [], int $httpCode = 200) {
-    http_response_code($httpCode);
-    echo json_encode(array_merge([
-        'success' => $success,
-        'message' => $message,
-        'timestamp' => date('c')
-    ], $data), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    exit;
+    if (function_exists('sendJsonResponse')) {
+        sendJsonResponse($success, $message, $data, $httpCode);
+    } else {
+        http_response_code($httpCode);
+        echo json_encode(array_merge([
+            'success' => $success,
+            'message' => $message,
+            'timestamp' => date('c')
+        ], $data), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
+if (!function_exists('sendJsonResponse')) {
+    function sendJsonResponse(bool $success, string $message, array $data = [], int $httpCode = 200) {
+        http_response_code($httpCode);
+        echo json_encode(array_merge([
+            'success' => $success,
+            'message' => $message,
+            'timestamp' => date('c')
+        ], $data), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 }
 
 // Auto-initialize table if needed with unique device constraint
@@ -228,6 +258,213 @@ try {
         $upStmt->execute(['hash' => $uaHash, 'name' => $deviceName]);
 
         sendDeviceResponse(true, 'Telemetry logged successfully.');
+    }
+
+    // =========================================================================
+    // ACTION: GET WORMHOLE DEVICES (ADMIN CONSOLE)
+    // =========================================================================
+    if ($action === 'get_wormhole_devices') {
+        if (function_exists('requireAdminApiToken')) {
+            requireAdminApiToken($input, 'Unauthorized: Accessing Wormhole device registry requires administrative credentials');
+        }
+
+        $stmt = $pdo->query("SELECT * FROM `wormhole_devices` ORDER BY `updated_at` DESC, `reported_count` DESC");
+        $devices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $totalCount = count($devices);
+        $supportedCount = 0;
+        $unsupportedCount = 0;
+        $vrCount = 0;
+        $mobileCount = 0;
+
+        foreach ($devices as $d) {
+            if ((int)$d['is_supported'] === 1) {
+                $supportedCount++;
+            } else {
+                $unsupportedCount++;
+            }
+            if ($d['device_type'] === 'vr_hmd') $vrCount++;
+            if ($d['device_type'] === 'mobile' || $d['device_type'] === 'tablet') $mobileCount++;
+        }
+
+        sendDeviceResponse(true, 'Wormhole devices retrieved successfully', [
+            'devices'      => $devices,
+            'total'        => $totalCount,
+            'supported'    => $supportedCount,
+            'unsupported'  => $unsupportedCount,
+            'vr_count'     => $vrCount,
+            'mobile_count' => $mobileCount
+        ]);
+    }
+
+    // =========================================================================
+    // ACTION: ADD WORMHOLE DEVICE (ADMIN CONSOLE)
+    // =========================================================================
+    if ($action === 'add_wormhole_device') {
+        if (function_exists('requireAdminApiToken')) {
+            requireAdminApiToken($input, 'Unauthorized: Adding hardware entries requires administrative credentials');
+        }
+
+        $deviceName = htmlspecialchars(trim($input['device_name'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $deviceType = trim($input['device_type'] ?? 'unknown');
+        $osPlatform = htmlspecialchars(trim($input['os_platform'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $browser = htmlspecialchars(trim($input['browser'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $gpuRenderer = htmlspecialchars(trim($input['gpu_renderer'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $supportedModes = htmlspecialchars(trim($input['supported_modes'] ?? 'desktop-xr'), ENT_QUOTES, 'UTF-8');
+        $isSupported = isset($input['is_supported']) && ($input['is_supported'] === 1 || $input['is_supported'] === '1' || $input['is_supported'] === true) ? 1 : 0;
+        $notes = htmlspecialchars(trim($input['notes'] ?? ''), ENT_QUOTES, 'UTF-8');
+
+        if (empty($deviceName)) {
+            sendDeviceResponse(false, 'Device name / model is required', ['field' => 'device_name'], 400);
+        }
+
+        $validTypes = ['desktop', 'vr_hmd', 'mobile', 'tablet', 'ar_glasses', 'unknown'];
+        if (!in_array($deviceType, $validTypes, true)) {
+            $deviceType = 'unknown';
+        }
+
+        $stmt = $pdo->prepare("
+            INSERT INTO `wormhole_devices` 
+            (`device_name`, `device_type`, `os_platform`, `browser`, `gpu_renderer`, `supported_modes`, `is_supported`, `source`, `reported_count`, `notes`)
+            VALUES
+            (:name, :type, :os, :browser, :gpu, :modes, :supp, 'manual', 1, :notes)
+            ON DUPLICATE KEY UPDATE
+              `device_type` = VALUES(`device_type`),
+              `os_platform` = VALUES(`os_platform`),
+              `browser` = VALUES(`browser`),
+              `gpu_renderer` = VALUES(`gpu_renderer`),
+              `supported_modes` = VALUES(`supported_modes`),
+              `is_supported` = VALUES(`is_supported`),
+              `notes` = VALUES(`notes`),
+              `source` = 'manual',
+              `updated_at` = NOW()
+        ");
+        $stmt->execute([
+            'name'    => $deviceName,
+            'type'    => $deviceType,
+            'os'      => $osPlatform,
+            'browser' => $browser,
+            'gpu'     => $gpuRenderer,
+            'modes'   => $supportedModes,
+            'supp'    => $isSupported,
+            'notes'   => $notes
+        ]);
+
+        sendDeviceResponse(true, "Device '{$deviceName}' registered successfully into hardware database.", [
+            'id' => (int)$pdo->lastInsertId()
+        ]);
+    }
+
+    // =========================================================================
+    // ACTION: UPDATE WORMHOLE DEVICE (ADMIN CONSOLE)
+    // =========================================================================
+    if ($action === 'update_wormhole_device') {
+        if (function_exists('requireAdminApiToken')) {
+            requireAdminApiToken($input, 'Unauthorized: Updating hardware status requires administrative credentials');
+        }
+
+        $deviceId = intval($input['id'] ?? 0);
+        if ($deviceId <= 0) {
+            sendDeviceResponse(false, 'Valid device ID is required', ['field' => 'id'], 400);
+        }
+
+        $fields = [];
+        $params = ['id' => $deviceId];
+
+        if (isset($input['is_supported'])) {
+            $fields[] = "`is_supported` = :is_supported";
+            $params['is_supported'] = (!empty($input['is_supported']) && $input['is_supported'] != '0') ? 1 : 0;
+        }
+        if (isset($input['supported_modes'])) {
+            $fields[] = "`supported_modes` = :modes";
+            $params['modes'] = htmlspecialchars(trim($input['supported_modes']), ENT_QUOTES, 'UTF-8');
+        }
+        if (isset($input['notes'])) {
+            $fields[] = "`notes` = :notes";
+            $params['notes'] = htmlspecialchars(trim($input['notes']), ENT_QUOTES, 'UTF-8');
+        }
+
+        if (empty($fields)) {
+            sendDeviceResponse(false, 'No fields specified for update', [], 400);
+        }
+
+        $sql = "UPDATE `wormhole_devices` SET " . implode(', ', $fields) . ", `updated_at` = NOW() WHERE `id` = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+
+        sendDeviceResponse(true, "Device #{$deviceId} updated successfully");
+    }
+
+    // =========================================================================
+    // ACTION: DELETE WORMHOLE DEVICE (ADMIN CONSOLE)
+    // =========================================================================
+    if ($action === 'delete_wormhole_device') {
+        if (function_exists('requireAdminApiToken')) {
+            requireAdminApiToken($input, 'Unauthorized: Deleting hardware records requires administrative credentials');
+        }
+
+        $deviceId = intval($input['id'] ?? 0);
+        if ($deviceId <= 0) {
+            sendDeviceResponse(false, 'Valid device ID is required', ['field' => 'id'], 400);
+        }
+
+        $stmt = $pdo->prepare("DELETE FROM `wormhole_devices` WHERE `id` = :id");
+        $stmt->execute(['id' => $deviceId]);
+
+        sendDeviceResponse(true, "Device entry #{$deviceId} deleted successfully", ['id' => $deviceId]);
+    }
+
+    // =========================================================================
+    // ACTION: SEED WORMHOLE DEVICES (ADMIN CONSOLE)
+    // =========================================================================
+    if ($action === 'seed_wormhole_devices') {
+        if (function_exists('requireAdminApiToken')) {
+            requireAdminApiToken($input, 'Unauthorized: Seeding hardware records requires administrative credentials');
+        }
+
+        $seedDevices = [
+            ['Meta Quest 3', 'vr_hmd', 'Meta Horizon OS', 'OculusBrowser', 'Snapdragon XR2 Gen 2 / Adreno 740', 'desktop-xr,desktop-vr,mobile-xr', 1, 'Certified 6-DOF standalone and PC Link HMD with color passthrough.'],
+            ['Meta Quest 2', 'vr_hmd', 'Meta Horizon OS', 'OculusBrowser', 'Snapdragon XR2 Gen 1 / Adreno 650', 'desktop-xr,desktop-vr,mobile-xr', 1, 'Certified 6-DOF standalone and PC Link HMD.'],
+            ['Meta Quest Pro', 'vr_hmd', 'Meta Horizon OS', 'OculusBrowser', 'Snapdragon XR2+ / Adreno 650', 'desktop-xr,desktop-vr,mobile-xr', 1, 'Certified 6-DOF standalone and PC Link HMD with eye/face tracking.'],
+            ['Apple Vision Pro', 'vr_hmd', 'visionOS 1.2+', 'Safari 17+ (WebXR enabled)', 'Apple M2 Dual-Chip', 'desktop-xr,desktop-vr,mobile-xr', 1, 'Certified spatial computing headset with high-res WebXR.'],
+            ['Valve Index', 'vr_hmd', 'SteamVR (Windows/Linux)', 'Chromium / Chrome', 'NVIDIA GeForce / AMD Radeon', 'desktop-xr,desktop-vr', 1, 'Certified PCVR tethered HMD with Knuckles controllers.'],
+            ['HTC Vive XR Elite', 'vr_hmd', 'VIVE Wave OS', 'Vive Browser', 'Snapdragon XR2 Gen 1', 'desktop-xr,desktop-vr,mobile-xr', 1, 'Certified standalone & tethered PCVR HMD.'],
+            ['Pico 4', 'vr_hmd', 'Pico OS', 'Pico Browser', 'Snapdragon XR2 / Adreno 650', 'desktop-xr,desktop-vr,mobile-xr', 1, 'Certified standalone & PCVR HMD.'],
+            ['Google Pixel 8 / 8 Pro', 'mobile', 'Android 14', 'Chrome 120+', 'Google Tensor G3 / Mali-G715', 'desktop-xr,mobile-xr,mobile-ar', 1, 'Google ARCore certified. Full WebXR immersive-ar support.'],
+            ['Google Pixel 7 / 7 Pro', 'mobile', 'Android 13/14', 'Chrome 115+', 'Google Tensor G2 / Mali-G710', 'desktop-xr,mobile-xr,mobile-ar', 1, 'Google ARCore certified device.'],
+            ['Samsung Galaxy S24 Ultra', 'mobile', 'Android 14', 'Chrome / Samsung Internet', 'Snapdragon 8 Gen 3 / Adreno 750', 'desktop-xr,mobile-xr,mobile-ar', 1, 'Google ARCore certified flagship with WebXR camera passthrough.'],
+            ['Samsung Galaxy S23 / S23+', 'mobile', 'Android 13/14', 'Chrome', 'Snapdragon 8 Gen 2 / Adreno 740', 'desktop-xr,mobile-xr,mobile-ar', 1, 'Google ARCore certified flagship.'],
+            ['iPhone 15 Pro / Pro Max', 'mobile', 'iOS 17+', 'WebXR Viewer / Safari Experimental', 'Apple A17 Pro', 'desktop-xr,mobile-xr,mobile-ar', 1, 'Apple ARKit device. WebXR requires Mozilla WebXR Viewer or Safari experimental flags.'],
+            ['Generic Windows Desktop PC', 'desktop', 'Windows 10/11', 'Chrome / Edge', 'NVIDIA GeForce RTX / GTX / AMD Radeon', 'desktop-xr,desktop-vr', 1, 'Standard PC desktop with 6-DOF keyboard & mouse flight and OpenXR PCVR capability.'],
+            ['Legacy Android (Non-ARCore)', 'mobile', 'Android 8.0 or older', 'Legacy Android Browser', 'Adreno 330 / Mali-400', '', 0, 'Blocked / Unsupported. Lacks WebGL2, WebXR Device API, and ARCore services.']
+        ];
+
+        $insStmt = $pdo->prepare("
+            INSERT INTO `wormhole_devices`
+            (`device_name`, `device_type`, `os_platform`, `browser`, `gpu_renderer`, `supported_modes`, `is_supported`, `source`, `reported_count`, `notes`)
+            VALUES
+            (:name, :type, :os, :browser, :gpu, :modes, :supp, 'seeded', 5, :notes)
+            ON DUPLICATE KEY UPDATE `is_supported` = VALUES(`is_supported`), `supported_modes` = VALUES(`supported_modes`)
+        ");
+
+        $seededCount = 0;
+        foreach ($seedDevices as $sd) {
+            $insStmt->execute([
+                'name'    => $sd[0],
+                'type'    => $sd[1],
+                'os'      => $sd[2],
+                'browser' => $sd[3],
+                'gpu'     => $sd[4],
+                'modes'   => $sd[5],
+                'supp'    => $sd[6],
+                'notes'   => $sd[7]
+            ]);
+            $seededCount++;
+        }
+
+        sendDeviceResponse(true, "Successfully populated {$seededCount} certified Open-Source XR/ARCore devices into registry.", [
+            'seeded_count' => $seededCount
+        ]);
     }
 
     sendDeviceResponse(false, "Unrecognized action '{$action}'.", [], 400);

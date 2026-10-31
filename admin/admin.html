@@ -14,7 +14,12 @@
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="manifest" href="site.webmanifest">
     <meta name="theme-color" content="#0b0f19">
-    <!-- Standalone Admin Portal -->
+    <script>
+        // Standalone Server Gateway Enforcement: redirect calmchessgames.com requests to IP-gated server gateway
+        if (window.location.hostname === 'calmchessgames.com' || window.location.hostname.endsWith('github.io')) {
+            window.location.replace('https://api.calmchessgames.com/admin/admin.html' + window.location.search + window.location.hash);
+        }
+    </script>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -1325,6 +1330,73 @@
             </div>
 
 
+<!-- ADD WORMHOLE DEVICE MODAL -->
+        <div id="addWormholeDeviceModal" class="modal-overlay" style="display: none; z-index: 10005;">
+            <div class="modal-box" style="max-width: 620px; background: #07121f; border: 1px solid #00f0ff;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 10px; margin-bottom: 14px;">
+                    <h3 style="color: #00f0ff; font-size: 1.15rem; margin: 0;">🌌 Register Hardware Device</h3>
+                    <button style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;" onclick="closeAddWormholeDeviceModal()">&times;</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem;">
+                    <div>
+                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Device Name / Model <span style="color:#ff6b6b;">*</span></label>
+                        <input type="text" id="newDevName" placeholder="e.g. Meta Quest 3, Samsung Galaxy S24 Ultra" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Device Type</label>
+                            <select id="newDevType" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                                <option value="desktop">Desktop PC / Mac</option>
+                                <option value="vr_hmd">VR Headset (HMD)</option>
+                                <option value="mobile">Mobile Smartphone</option>
+                                <option value="tablet">Tablet</option>
+                                <option value="ar_glasses">AR Smart Glasses</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Support Status</label>
+                            <select id="newDevSupported" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                                <option value="1">✓ Supported (Whitelisted)</option>
+                                <option value="0">✗ Unsupported / Blocked</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">OS / Platform</label>
+                            <input type="text" id="newDevOs" placeholder="e.g. Meta Horizon OS, Android 14, Windows 11" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                        </div>
+                        <div>
+                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Browser</label>
+                            <input type="text" id="newDevBrowser" placeholder="e.g. OculusBrowser, Chrome 126, Safari" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">GPU Architecture / Unmasked Renderer</label>
+                        <input type="text" id="newDevGpu" placeholder="e.g. Snapdragon XR2 Gen 2 / Adreno 740, Apple M2, RTX 4080" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Supported Modes</label>
+                        <div style="display: flex; gap: 14px; flex-wrap: wrap; background: #0b0f19; padding: 8px 12px; border-radius: 6px; border: 1px solid #334155;">
+                            <label><input type="checkbox" id="chkModeDesktopXr" checked> Desktop XR</label>
+                            <label><input type="checkbox" id="chkModeDesktopVr" checked> Desktop VR (PCVR)</label>
+                            <label><input type="checkbox" id="chkModeMobileXr"> Mobile XR (VR/Gyro)</label>
+                            <label><input type="checkbox" id="chkModeMobileAr"> Mobile AR (ARCore)</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Notes / Hardware Constraints</label>
+                        <textarea id="newDevNotes" rows="2" placeholder="e.g. Tested on OculusBrowser 32.0; 90fps native." style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;"></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                        <button style="padding: 8px 16px; background: rgba(255,255,255,0.08); border: 1px solid #475569; border-radius: 6px; color: #fff; cursor: pointer;" onclick="closeAddWormholeDeviceModal()">Cancel</button>
+                        <button style="padding: 8px 20px; background: #00f0ff; border: none; border-radius: 6px; color: #01050a; font-weight: bold; cursor: pointer;" onclick="saveManualWormholeDevice()">Save Device</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 <!-- MODIFY MESSAGE MODAL -->
         <div id="modifyMessageModal" class="modal-overlay" style="display: none; z-index: 10003;">
             <div class="modal-box" style="max-width: 580px;">
@@ -1496,72 +1568,6 @@
     <script>if (typeof window.switchAdminTab === 'undefined') { document.write('<script src="../js/admin.js"><\/script>'); }</script>
     <script>if (typeof window.switchAdminTab === 'undefined') { document.write('<script src="admin.js"><\/script>'); }</script>
 
-        <!-- ADD WORMHOLE DEVICE MODAL -->
-        <div id="addWormholeDeviceModal" class="modal-overlay" style="display: none; z-index: 10005;">
-            <div class="modal-box" style="max-width: 620px; background: #07121f; border: 1px solid #00f0ff;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 10px; margin-bottom: 14px;">
-                    <h3 style="color: #00f0ff; font-size: 1.15rem; margin: 0;">🌌 Register Hardware Device</h3>
-                    <button style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;" onclick="closeAddWormholeDeviceModal()">&times;</button>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem;">
-                    <div>
-                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Device Name / Model <span style="color:#ff6b6b;">*</span></label>
-                        <input type="text" id="newDevName" placeholder="e.g. Meta Quest 3, Samsung Galaxy S24 Ultra" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div>
-                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Device Type</label>
-                            <select id="newDevType" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
-                                <option value="desktop">Desktop PC / Mac</option>
-                                <option value="vr_hmd">VR Headset (HMD)</option>
-                                <option value="mobile">Mobile Smartphone</option>
-                                <option value="tablet">Tablet</option>
-                                <option value="ar_glasses">AR Smart Glasses</option>
-                                <option value="unknown">Unknown</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Support Status</label>
-                            <select id="newDevSupported" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
-                                <option value="1">✓ Supported (Whitelisted)</option>
-                                <option value="0">✗ Unsupported / Blocked</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                        <div>
-                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">OS / Platform</label>
-                            <input type="text" id="newDevOs" placeholder="e.g. Meta Horizon OS, Android 14, Windows 11" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
-                        </div>
-                        <div>
-                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Browser</label>
-                            <input type="text" id="newDevBrowser" placeholder="e.g. OculusBrowser, Chrome 126, Safari" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
-                        </div>
-                    </div>
-                    <div>
-                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">GPU Architecture / Unmasked Renderer</label>
-                        <input type="text" id="newDevGpu" placeholder="e.g. Snapdragon XR2 Gen 2 / Adreno 740, Apple M2, RTX 4080" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
-                    </div>
-                    <div>
-                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Supported Modes</label>
-                        <div style="display: flex; gap: 14px; flex-wrap: wrap; background: #0b0f19; padding: 8px 12px; border-radius: 6px; border: 1px solid #334155;">
-                            <label><input type="checkbox" id="chkModeDesktopXr" checked> Desktop XR</label>
-                            <label><input type="checkbox" id="chkModeDesktopVr" checked> Desktop VR (PCVR)</label>
-                            <label><input type="checkbox" id="chkModeMobileXr"> Mobile XR (VR/Gyro)</label>
-                            <label><input type="checkbox" id="chkModeMobileAr"> Mobile AR (ARCore)</label>
-                        </div>
-                    </div>
-                    <div>
-                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Notes / Hardware Constraints</label>
-                        <textarea id="newDevNotes" rows="2" placeholder="e.g. Tested on OculusBrowser 32.0; 90fps native." style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;"></textarea>
-                    </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
-                        <button style="padding: 8px 16px; background: rgba(255,255,255,0.08); border: 1px solid #475569; border-radius: 6px; color: #fff; cursor: pointer;" onclick="closeAddWormholeDeviceModal()">Cancel</button>
-                        <button style="padding: 8px 20px; background: #00f0ff; border: none; border-radius: 6px; color: #01050a; font-weight: bold; cursor: pointer;" onclick="saveManualWormholeDevice()">Save Device</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
+        
 </body>
 </html>

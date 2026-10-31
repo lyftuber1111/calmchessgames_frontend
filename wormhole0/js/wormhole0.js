@@ -1037,11 +1037,11 @@ function showUnsupportedBadge(mode, reason, recommendedMode = 'desktop-xr') {
   const arReady = (detectedHardware.activeDeviceType === 'vr_hmd' || detectedHardware.activeDeviceName?.includes('ARCore') || detectedHardware.activeDeviceName?.includes('ARKit')) || detectedHardware.arSupported;
 
   if (specVrStatus) {
-    specVrStatus.textContent = vrReady ? '✓ READY / SUPPORTED' : '✗ NOT CONNECTED / UNSUPPORTED';
+    specVrStatus.textContent = vrReady ? 'âœ“ READY / SUPPORTED' : 'âœ— NOT CONNECTED / UNSUPPORTED';
     specVrStatus.style.color = vrReady ? 'var(--accent-green)' : 'var(--accent-alert)';
   }
   if (specArStatus) {
-    specArStatus.textContent = arReady ? '✓ PASSTHROUGH CERTIFIED' : '✗ ARCore NOT AVAILABLE';
+    specArStatus.textContent = arReady ? 'âœ“ PASSTHROUGH CERTIFIED' : 'âœ— ARCore NOT AVAILABLE';
     specArStatus.style.color = arReady ? 'var(--accent-green)' : 'var(--accent-alert)';
   }
 
@@ -1217,8 +1217,11 @@ async function evaluateSpecificDeviceCompatibility(mode, bypassCheck = false, fo
     let checkResult = null;
     const checkEndpoints = [
       'https://api.calmchessgames.com/wormhole_device_api.php?action=check',
+      'https://api.calmchessgames.com/admin/wormhole_device_api.php?action=check',
       'wormhole_device_api.php?action=check',
       '../wormhole_device_api.php?action=check',
+      '../admin/wormhole_device_api.php?action=check',
+      'admin/wormhole_device_api.php?action=check',
       '/wormhole_device_api.php?action=check'
     ];
     for (const ep of checkEndpoints) {
@@ -1250,7 +1253,7 @@ async function evaluateSpecificDeviceCompatibility(mode, bypassCheck = false, fo
   // If user explicitly ran "Test Device" or validation succeeded, show positive notification
   if (forceShowValidation || mode === 'desktop-xr') {
     const gpuInfo = detectedHardware.gpu ? ` [${detectedHardware.gpu.split('/')[0].trim()}]` : '';
-    showToast(`✓ HARDWARE VALIDATED: ${effDevName}${gpuInfo} ready for ${mode.toUpperCase()}`);
+    showToast(`âœ“ HARDWARE VALIDATED: ${effDevName}${gpuInfo} ready for ${mode.toUpperCase()}`);
     if (audioMgr && audioMgr.playScan) audioMgr.playScan();
   }
 
@@ -1277,10 +1280,13 @@ async function handleModeChange_old(mode, bypassCheck = false) {
 
     let checkResult = null;
     const checkEndpoints = [
-      '../wormhole_device_api.php?action=check',
-      '/wormhole_device_api.php?action=check',
       'https://api.calmchessgames.com/wormhole_device_api.php?action=check',
-      'wormhole_device_api.php?action=check'
+      'https://api.calmchessgames.com/admin/wormhole_device_api.php?action=check',
+      'wormhole_device_api.php?action=check',
+      '../wormhole_device_api.php?action=check',
+      '../admin/wormhole_device_api.php?action=check',
+      'admin/wormhole_device_api.php?action=check',
+      '/wormhole_device_api.php?action=check'
     ];
     for (const ep of checkEndpoints) {
       try {
@@ -1374,7 +1380,7 @@ if (btnToggleController) {
     else if (state.gamepadMode === 'enabled') state.gamepadMode = 'disabled';
     else state.gamepadMode = 'auto';
 
-    btnToggleController.textContent = `🎮 Controller: ${state.gamepadMode.toUpperCase()}`;
+    btnToggleController.textContent = `ðŸŽ® Controller: ${state.gamepadMode.toUpperCase()}`;
     showToast(`GAMEPAD POLLING: ${state.gamepadMode.toUpperCase()}`);
     updateGamepadUI();
   });
@@ -1595,7 +1601,7 @@ document.addEventListener('pointerlockchange', () => {
   state.isPointerLocked = (document.pointerLockElement === container);
   if (mouseLockBtn) {
     mouseLockBtn.classList.toggle('active', state.isPointerLocked);
-    mouseLockBtn.textContent = state.isPointerLocked ? '🎯 MOUSE LOCKED (ESC)' : '🎯 Flight Mouse';
+    mouseLockBtn.textContent = state.isPointerLocked ? 'ðŸŽ¯ MOUSE LOCKED (ESC)' : 'ðŸŽ¯ Flight Mouse';
   }
 });
 
@@ -1677,7 +1683,7 @@ if (btnScan) {
         state.isScanning = false;
         objScan.classList.add('completed');
         statusScan.textContent = 'LOCKED (432.8 THz)';
-        btnScan.textContent = '✓ Scanned';
+        btnScan.textContent = 'âœ“ Scanned';
         showToast('OBJECTIVE 1: RESONANCE SCAN COMPLETE');
         checkObjectives();
       }
@@ -1739,7 +1745,7 @@ function checkObjectives() {
 
     if (warpBtn) {
       warpBtn.classList.add('btn-ready');
-      warpBtn.innerHTML = '⚡ ENGAGE WARP JUMP [F]';
+      warpBtn.innerHTML = 'âš¡ ENGAGE WARP JUMP [F]';
     }
     showToast('ALL SYSTEMS GREEN: WARP HORIZON JUMP AUTHORIZED');
   }
@@ -1799,11 +1805,11 @@ if (toggleAudioBtn) {
     CONFIG.audioMuted = !CONFIG.audioMuted;
     if (CONFIG.audioMuted) {
       audioMgr.stopDrone();
-      toggleAudioBtn.innerHTML = '<span class="icon">🔇</span> Audio: OFF';
+      toggleAudioBtn.innerHTML = '<span class="icon">ðŸ”‡</span> Audio: OFF';
       toggleAudioBtn.classList.remove('active');
     } else {
       audioMgr.playDrone();
-      toggleAudioBtn.innerHTML = '<span class="icon">🔊</span> Audio: ON (.wav)';
+      toggleAudioBtn.innerHTML = '<span class="icon">ðŸ”Š</span> Audio: ON (.wav)';
       toggleAudioBtn.classList.add('active');
     }
   });
@@ -1934,7 +1940,7 @@ function updateFlight(delta) {
   const forwardDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
   const angleDeg = THREE.MathUtils.radToDeg(forwardDir.angleTo(toWormhole));
 
-  if (hudVectorEl) hudVectorEl.textContent = `${angleDeg.toFixed(1)}°`;
+  if (hudVectorEl) hudVectorEl.textContent = `${angleDeg.toFixed(1)}Â°`;
 
   state.isVectorAligned = (angleDeg < 7.0);
   state.isInRange = (distKm < 50000);
@@ -1954,7 +1960,7 @@ function updateFlight(delta) {
     if (vectorRingEl) vectorRingEl.classList.add('locked');
   } else {
     if (objVector) objVector.classList.remove('completed');
-    if (statusVector) statusVector.textContent = `${angleDeg.toFixed(1)}° / ${distKm.toLocaleString()} KM`;
+    if (statusVector) statusVector.textContent = `${angleDeg.toFixed(1)}Â° / ${distKm.toLocaleString()} KM`;
     if (vectorRingEl) vectorRingEl.classList.remove('locked');
   }
 

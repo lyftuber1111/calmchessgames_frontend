@@ -396,7 +396,7 @@
               listContainer.innerHTML += `
                   <div class="user-card" style="margin-bottom: 14px;">
                       <h4 style="color: var(--gold-primary); margin-bottom: 8px; font-size: 0.95rem;">
-                          ${ringLabel} — Segment #${seg.segment_index}
+                          ${ringLabel} â€” Segment #${seg.segment_index}
                       </h4>
                       <div class="form-group">
                           <label>Title</label>
@@ -556,7 +556,7 @@
                   } catch(e) {}
                   updateRingLinksWithParam(true);
               }
-              alert('✔ Ring settings saved successfully to MySQL database!');
+              alert('âœ” Ring settings saved successfully to MySQL database!');
           } else {
               alert('Save failed: ' + (lastErrMsg || 'Please verify admin password.'));
           }
@@ -623,7 +623,7 @@
 
       resetBtns.forEach(btn => {
           btn.disabled = true;
-          btn.innerHTML = '<span>⏳</span> Resetting...';
+          btn.innerHTML = '<span>â³</span> Resetting...';
       });
 
       try {
@@ -635,7 +635,7 @@
                   guest_active_24h: 0,
                   guest_db_count: 0
               });
-              alert('✔ ' + (res.message || 'Guest login counts have been reset to zero!'));
+              alert('âœ” ' + (res.message || 'Guest login counts have been reset to zero!'));
               if (typeof fetchBlackjackUsers === 'function') {
                   fetchBlackjackUsers();
               }
@@ -650,7 +650,7 @@
       } finally {
           resetBtns.forEach(btn => {
               btn.disabled = false;
-              btn.innerHTML = '<span>🔄</span> Reset Guest Count';
+              btn.innerHTML = '<span>ðŸ”„</span> Reset Guest Count';
           });
       }
   }
@@ -861,13 +861,13 @@
 
           const guestBadgeHtml = isGuestUser ? `
               <span class="badge-status" style="background: rgba(52, 152, 219, 0.2); border: 1px solid #3498db; color: #93c5fd; font-weight: 700; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem;" title="Guest account">
-                  👤 GUEST
+                  ðŸ‘¤ GUEST
               </span>
           ` : '';
 
           const resetBadgeHtml = hasPendingReset ? `
               <span class="badge-status badge-reset" style="background: rgba(243, 156, 18, 0.2); border: 1px solid #f39c12; color: #f39c12; font-weight: 700; padding: 2px 7px; border-radius: 4px; font-size: 0.72rem;" title="User has requested a password reset. Token active.">
-                  🔑 RESET REQUESTED
+                  ðŸ”‘ RESET REQUESTED
               </span>
           ` : '';
 
@@ -902,7 +902,7 @@
           card.innerHTML = `
               <div class="user-card-head">
                   <div style="font-weight: 700; color: var(--gold-primary); font-size: 0.95rem;">
-                      #${user.id} — <span id="user_display_${user.id}">${escapeHtml(user.email || user.username)}</span>
+                      #${user.id} â€” <span id="user_display_${user.id}">${escapeHtml(user.email || user.username)}</span>
                   </div>
                   <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
                       ${guestBadgeHtml}
@@ -915,11 +915,11 @@
               ${hasPendingReset ? `
               <div style="margin: 4px 0 6px 0; padding: 7px 11px; background: rgba(243, 156, 18, 0.12); border-left: 3px solid #f39c12; border-radius: 4px; font-size: 0.78rem; color: #fed7aa; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                   <div>
-                      <strong>🔑 Password Reset Request Pending:</strong> Active token expires at <em>${escapeHtml(resetExp || '1 hour')}</em>.
+                      <strong>ðŸ”‘ Password Reset Request Pending:</strong> Active token expires at <em>${escapeHtml(resetExp || '1 hour')}</em>.
                   </div>
                   <div style="display: flex; gap: 6px;">
                       <button type="button" class="btn btn-sm" style="background: #f39c12; color: #1a1000; font-weight: 700; padding: 2px 8px; font-size: 0.72rem;" onclick="copyUserResetLink('${escapeHtml(user.email || user.username)}', ${resetTokenId || 0})">
-                          📋 Copy Reset URL
+                          ðŸ“‹ Copy Reset URL
                       </button>
                   </div>
               </div>
@@ -986,7 +986,7 @@
           });
 
           if (data && data.success) {
-              showUserAdminAlert(`✔ User ${email} created successfully with $${bank} bankroll!`, true);
+              showUserAdminAlert(`âœ” User ${email} created successfully with $${bank} bankroll!`, true);
               document.getElementById('new_user_email').value = '';
               document.getElementById('new_user_pwd').value = '';
               document.getElementById('new_user_bank').value = '500';
@@ -1020,7 +1020,7 @@
 
           const data = await callAdminApi('update_user', payload);
           if (data && data.success) {
-              showUserAdminAlert(`✔ User #${userId} (${email}) updated successfully!`, true);
+              showUserAdminAlert(`âœ” User #${userId} (${email}) updated successfully!`, true);
               document.getElementById(`usr_pwd_${userId}`).value = '';
               fetchBlackjackUsers();
           } else {
@@ -1044,7 +1044,7 @@
           });
 
           if (data && data.success) {
-              showUserAdminAlert(`✔ User #${userId} is now ${shouldBan ? 'BANNED' : 'ACTIVE'}.`, true);
+              showUserAdminAlert(`âœ” User #${userId} is now ${shouldBan ? 'BANNED' : 'ACTIVE'}.`, true);
               fetchBlackjackUsers();
           } else {
               showUserAdminAlert(data.message || 'Action failed.', false);
@@ -1088,7 +1088,7 @@
           });
 
           if (data && data.success) {
-              showUserAdminAlert(`✔ User #${userId} (${userEmail}) permanently PURGED. Financial ledger pseudonymized for 7-year audit retention.`, true);
+              showUserAdminAlert(`âœ” User #${userId} (${userEmail}) permanently PURGED. Financial ledger pseudonymized for 7-year audit retention.`, true);
               fetchBlackjackUsers();
               fetchAccountDeletionRequests();
           } else {
@@ -1113,7 +1113,7 @@
           });
 
           if (data && data.success) {
-              showUserAdminAlert(`✔ User #${userId} deleted. Financial records pseudonymized for 7-year audit retention.`, true);
+              showUserAdminAlert(`âœ” User #${userId} deleted. Financial records pseudonymized for 7-year audit retention.`, true);
               fetchBlackjackUsers();
               fetchAccountDeletionRequests();
           } else {
@@ -1288,13 +1288,13 @@
           androidBadge.textContent = isAndroidSim ? 'Simulated Credit Purchases' : 'Live: Google Play Billing';
       }
       if (androidCheckLabel) {
-          androidCheckLabel.textContent = isAndroidSim ? '[✔] Simulated Active' : '[  ] Live Google Play';
+          androidCheckLabel.textContent = isAndroidSim ? '[âœ”] Simulated Active' : '[  ] Live Google Play';
           androidCheckLabel.style.color = isAndroidSim ? 'var(--success-green)' : 'var(--gold-primary)';
       }
       if (androidExplanation) {
           androidExplanation.innerHTML = isAndroidSim 
-              ? 'Simulated Mode Active — Android in-app credit purchases use <strong>Instant Free Refills</strong> (<code>android_simulation_mode = 1</code>).'
-              : 'Live Billing Active — Android in-app purchases use official <strong>Google Play In-App Billing</strong> (<code>android_simulation_mode = 0</code>).';
+              ? 'Simulated Mode Active â€” Android in-app credit purchases use <strong>Instant Free Refills</strong> (<code>android_simulation_mode = 1</code>).'
+              : 'Live Billing Active â€” Android in-app purchases use official <strong>Google Play In-App Billing</strong> (<code>android_simulation_mode = 0</code>).';
       }
 
       const desktopBadge = document.getElementById('desktopSimBadge');
@@ -1305,13 +1305,13 @@
           desktopBadge.textContent = isDesktopSim ? 'Simulated Checkout Active' : 'Live: PayPal Gateway';
       }
       if (desktopCheckLabel) {
-          desktopCheckLabel.textContent = isDesktopSim ? '[✔] Simulated Active' : '[  ] Live PayPal';
+          desktopCheckLabel.textContent = isDesktopSim ? '[âœ”] Simulated Active' : '[  ] Live PayPal';
           desktopCheckLabel.style.color = isDesktopSim ? 'var(--success-green)' : 'var(--gold-primary)';
       }
       if (desktopExplanation) {
           desktopExplanation.innerHTML = isDesktopSim
-              ? 'Simulated Mode Active — Desktop players receive instant simulated credits without charging PayPal (<code>desktop_simulation_mode = 1</code>).'
-              : 'Live Billing Active — Desktop players purchase chips through <strong>PayPal Orders v2</strong> (<code>desktop_simulation_mode = 0</code>).';
+              ? 'Simulated Mode Active â€” Desktop players receive instant simulated credits without charging PayPal (<code>desktop_simulation_mode = 1</code>).'
+              : 'Live Billing Active â€” Desktop players purchase chips through <strong>PayPal Orders v2</strong> (<code>desktop_simulation_mode = 0</code>).';
       }
 
       const guestBadge = document.getElementById('guestAccessBadge');
@@ -1322,7 +1322,7 @@
           guestBadge.textContent = isGuest ? 'Guest Allowed' : 'Registration Required';
       }
       if (guestCheckLabel) {
-          guestCheckLabel.textContent = isGuest ? '[✔] Allowed' : '[  ] Disabled';
+          guestCheckLabel.textContent = isGuest ? '[âœ”] Allowed' : '[  ] Disabled';
           guestCheckLabel.style.color = isGuest ? 'var(--success-green)' : 'var(--error-red)';
       }
       if (guestExplanation) {
@@ -1341,7 +1341,7 @@
           geminiBadge.textContent = isGemini ? 'gemini-3.8-flash (Active)' : 'Gemini AI (Disabled)';
       }
       if (geminiCheckLabel) {
-          geminiCheckLabel.textContent = isGemini ? '[✔] Active' : '[  ] Disabled';
+          geminiCheckLabel.textContent = isGemini ? '[âœ”] Active' : '[  ] Disabled';
           geminiCheckLabel.style.color = isGemini ? '#93c5fd' : 'var(--text-muted)';
       }
       if (geminiExplanation) {
@@ -1442,7 +1442,7 @@
               const androidLabel = isAndroidSim ? 'SIMULATED' : 'LIVE (Google Play)';
               const desktopLabel = isDesktopSim ? 'SIMULATED' : 'LIVE (PayPal)';
               const geminiLabel = isGemini ? 'ACTIVE (gemini-3.8-flash)' : 'DISABLED';
-              showStoreAlert(`✔ Database updated successfully!\nAndroid: [${androidLabel}] | Desktop: [${desktopLabel}] | Gemini AI: [${geminiLabel}]`, true);
+              showStoreAlert(`âœ” Database updated successfully!\nAndroid: [${androidLabel}] | Desktop: [${desktopLabel}] | Gemini AI: [${geminiLabel}]`, true);
           } else {
               showStoreAlert((data && data.message) ? data.message : 'Error updating database settings.', false);
           }
@@ -1499,7 +1499,7 @@
               allowed_ip: newIp
           });
           if (data && data.success) {
-              showStoreAlert(`✔ Admin access restricted to: ${newIp}`, true);
+              showStoreAlert(`âœ” Admin access restricted to: ${newIp}`, true);
               const badge = document.getElementById('adminIpBadge');
               if (badge) badge.textContent = newIp === '*' ? 'Public (*)' : newIp;
           } else {
@@ -1796,7 +1796,7 @@
       if (!text) return;
       navigator.clipboard.writeText(text).then(() => {
           const orig = btnElement.textContent;
-          btnElement.textContent = 'Copied! ✔';
+          btnElement.textContent = 'Copied! âœ”';
           btnElement.style.background = 'var(--success-green)';
           btnElement.style.color = '#000';
           setTimeout(() => {
@@ -1950,20 +1950,20 @@
                   <button class="btn btn-sm" style="background: #475569; color: #fff; padding: 5px 8px;" onclick="processDeletionRequest(${r.id}, 'cancel')" title="Cancel this request">Dismiss</button>
               `;
           } else if (isCompleted) {
-              actionButtons = '<span style="color: #2ecc71; font-size: 0.82rem; font-weight: bold;">✓ Purged (7-Yr Financial Ledger Preserved)</span>';
+              actionButtons = '<span style="color: #2ecc71; font-size: 0.82rem; font-weight: bold;">âœ“ Purged (7-Yr Financial Ledger Preserved)</span>';
           } else {
               actionButtons = '<span style="color: #94a3b8; font-size: 0.82rem;">Dismissed</span>';
           }
 
-          const submittedDate = r.created_at ? r.created_at.replace('T', ' ').substring(0, 19) : '—';
+          const submittedDate = r.created_at ? r.created_at.replace('T', ' ').substring(0, 19) : 'â€”';
 
           html += `
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
                   <td style="padding: 10px 12px; font-weight: bold; color: var(--gold-primary);">${r.id}</td>
-                  <td style="padding: 10px 12px; font-weight: 600; color: #fff;">${escapeHtml(r.identifier || '—')}</td>
+                  <td style="padding: 10px 12px; font-weight: 600; color: #fff;">${escapeHtml(r.identifier || 'â€”')}</td>
                   <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${submittedDate}</td>
                   <td style="padding: 10px 12px;">${statusBadge}</td>
-                  <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.85rem;" title="${escapeHtml(r.reason || '')}">${escapeHtml(r.reason || '—')}</td>
+                  <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.85rem;" title="${escapeHtml(r.reason || '')}">${escapeHtml(r.reason || 'â€”')}</td>
                   <td style="padding: 10px 12px; font-size: 0.78rem; color: #fca5a5;">Credentials, Passwords, Bankroll</td>
                   <td style="padding: 10px 12px; font-size: 0.78rem; color: #fcd34d; font-weight: 600;">7-Yr Purchases Ledger</td>
                   <td style="padding: 10px 12px; text-align: center;">${actionButtons}</td>
@@ -2149,24 +2149,24 @@
                   <button class="btn btn-sm" style="background: #475569; color: #fff; padding: 3px 8px; font-size: 0.74rem;" onclick="cancelPasswordReset(${r.id})" title="Cancel this reset token">Revoke</button>
               `;
           } else if (status === 'USED') {
-              actionButtons = '<span style="color: #2ecc71; font-size: 0.8rem; font-weight: 700;">✓ Consumed</span>';
+              actionButtons = '<span style="color: #2ecc71; font-size: 0.8rem; font-weight: 700;">âœ“ Consumed</span>';
           } else {
               actionButtons = '<span style="color: #94a3b8; font-size: 0.8rem;">Inactive</span>';
           }
 
-          const createdDate = r.created_at ? r.created_at.replace('T', ' ').substring(0, 19) : '—';
-          const expiresDate = r.expires_at ? r.expires_at.replace('T', ' ').substring(0, 19) : '—';
+          const createdDate = r.created_at ? r.created_at.replace('T', ' ').substring(0, 19) : 'â€”';
+          const expiresDate = r.expires_at ? r.expires_at.replace('T', ' ').substring(0, 19) : 'â€”';
           const authMethod = r.verification_type || 'Email Response';
 
           html += `
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
                   <td style="padding: 10px 12px; font-weight: bold; color: var(--gold-primary);">${r.id}</td>
-                  <td style="padding: 10px 12px; font-weight: 600; color: #fff;">${escapeHtml(r.identifier || '—')}</td>
+                  <td style="padding: 10px 12px; font-weight: 600; color: #fff;">${escapeHtml(r.identifier || 'â€”')}</td>
                   <td style="padding: 10px 12px; font-size: 0.82rem; color: #55efc4; font-weight: 600;">${escapeHtml(authMethod)}</td>
                   <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${createdDate}</td>
                   <td style="padding: 10px 12px; color: var(--text-muted); font-size: 0.82rem;">${expiresDate}</td>
                   <td style="padding: 10px 12px;">${statusBadge}</td>
-                  <td style="padding: 10px 12px; font-family: monospace; font-size: 0.8rem; color: #94a3b8;">${escapeHtml(r.ip_address || '—')}</td>
+                  <td style="padding: 10px 12px; font-family: monospace; font-size: 0.8rem; color: #94a3b8;">${escapeHtml(r.ip_address || 'â€”')}</td>
                   <td style="padding: 10px 12px; text-align: center;">${actionButtons}</td>
               </tr>
           `;
@@ -2446,12 +2446,12 @@
 
           const safeName = escapeHtml(app.attendee_name || 'Anonymous');
           const safeEmail = escapeHtml(app.attendee_email || 'No email');
-          const safePhone = escapeHtml(app.attendee_phone || '—');
-          const safeDate = escapeHtml(app.appointment_date || '—');
-          const safeTime = escapeHtml(app.appointment_time || '—');
+          const safePhone = escapeHtml(app.attendee_phone || 'â€”');
+          const safeDate = escapeHtml(app.appointment_date || 'â€”');
+          const safeTime = escapeHtml(app.appointment_time || 'â€”');
           const safeTz = escapeHtml(app.timezone || 'EST');
           const safeTopic = escapeHtml(app.topic || 'Consultation');
-          const safeNotes = escapeHtml(app.notes || '—');
+          const safeNotes = escapeHtml(app.notes || 'â€”');
 
           return `
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
@@ -2460,16 +2460,16 @@
                       <strong style="color:#fff; font-size:0.95rem;">${safeName}</strong>
                   </td>
                   <td style="padding: 10px 12px; font-size:0.85rem;">
-                      <div><a href="mailto:${safeEmail}" style="color:var(--accent-blue); text-decoration:none;">✉️ ${safeEmail}</a></div>
-                      ${app.attendee_phone ? `<div><a href="tel:${safePhone}" style="color:#94a3b8; text-decoration:none;">📞 ${safePhone}</a></div>` : ''}
+                      <div><a href="mailto:${safeEmail}" style="color:var(--accent-blue); text-decoration:none;">âœ‰ï¸ ${safeEmail}</a></div>
+                      ${app.attendee_phone ? `<div><a href="tel:${safePhone}" style="color:#94a3b8; text-decoration:none;">ðŸ“ž ${safePhone}</a></div>` : ''}
                   </td>
                   <td style="padding: 10px 12px; font-size:0.86rem; color:#cbd5e1;">
-                      <div style="font-weight:700; color:#fff;">📅 ${safeDate}</div>
-                      <div style="color:var(--gold-primary);">⏰ ${safeTime} <span style="font-size:0.75rem; color:#94a3b8;">(${safeTz})</span></div>
+                      <div style="font-weight:700; color:#fff;">ðŸ“… ${safeDate}</div>
+                      <div style="color:var(--gold-primary);">â° ${safeTime} <span style="font-size:0.75rem; color:#94a3b8;">(${safeTz})</span></div>
                   </td>
                   <td style="padding: 10px 12px; font-size:0.85rem;">
                       <div style="font-weight:600; color:#cbd5e1;">${safeTopic}</div>
-                      ${app.notes ? `<div style="color:#94a3b8; font-style:italic; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${safeNotes}">📝 ${safeNotes}</div>` : ''}
+                      ${app.notes ? `<div style="color:#94a3b8; font-style:italic; max-width:240px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${safeNotes}">ðŸ“ ${safeNotes}</div>` : ''}
                   </td>
                   <td style="padding: 10px 12px;">
                       <select onchange="updateAppointmentStatus(${app.id}, this.value)" style="${badgeStyle} border-radius:4px; padding:3px 8px; font-size:0.82rem; font-weight:700; cursor:pointer;">
@@ -2601,7 +2601,7 @@
           const safeEmail = escapeHtml(msg.sender_email || '');
           const safeSubject = escapeHtml(msg.subject || '(No Subject)');
           const safeMsg = escapeHtml(msg.message || '');
-          const dateStr = msg.created_at ? msg.created_at.slice(0, 16).replace('T', ' ') : '—';
+          const dateStr = msg.created_at ? msg.created_at.slice(0, 16).replace('T', ' ') : 'â€”';
 
           return `
               <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);">
@@ -2612,7 +2612,7 @@
                   <td style="padding: 10px 12px; font-size:0.82rem; color:#94a3b8;">${dateStr}</td>
                   <td style="padding: 10px 12px;">
                       <div style="font-weight:700; color:#fff;">${safeSender}</div>
-                      <div><a href="mailto:${safeEmail}?subject=Re:%20${encodeURIComponent(msg.subject || 'Calm Chess Consultation')}" style="color:var(--accent-blue); text-decoration:none; font-size:0.82rem;">✉️ ${safeEmail}</a></div>
+                      <div><a href="mailto:${safeEmail}?subject=Re:%20${encodeURIComponent(msg.subject || 'Calm Chess Consultation')}" style="color:var(--accent-blue); text-decoration:none; font-size:0.82rem;">âœ‰ï¸ ${safeEmail}</a></div>
                   </td>
                   <td style="padding: 10px 12px; font-weight:600; color:#fed7aa; font-size:0.88rem;">${safeSubject}</td>
                   <td style="padding: 10px 12px; font-size:0.84rem; color:#cbd5e1; max-width:260px;">
@@ -2628,11 +2628,11 @@
                   </td>
                   <td style="padding: 10px 12px; text-align:center;">
                       <div style="display:flex; gap:4px; justify-content:center; flex-wrap:wrap;">
-                          <button class="btn btn-sm btn-gold" style="padding:3px 7px; font-size:0.75rem;" onclick="copyContactMessage(${msg.id})" title="Copy message text to clipboard">📋 Copy</button>
-                          <button class="btn btn-sm" style="background:#3b82f6; color:#fff; padding:3px 7px; font-size:0.75rem; border:none; border-radius:4px; cursor:pointer;" onclick="openReplyMessageModal(${msg.id})" title="Reply to message and notify Brian">✉️ Reply</button>
-                          <button class="btn btn-sm" style="background:#f59e0b; color:#1a1000; font-weight:700; padding:3px 7px; font-size:0.75rem; border:none; border-radius:4px; cursor:pointer;" onclick="openModifyMessageModal(${msg.id})" title="Modify message content & sender info">✏️ Modify</button>
-                          <button class="btn btn-sm" style="background:#8b5cf6; color:#fff; padding:3px 7px; font-size:0.75rem; border:none; border-radius:4px; cursor:pointer;" onclick="sendContactNotification(${msg.id})" title="Send notification to bberry@calmchessgames.com">🔔 Notify</button>
-                          <button class="btn btn-sm" style="background:#ef4444; color:#fff; padding:3px 7px; font-size:0.75rem; border:none; border-radius:4px; cursor:pointer;" onclick="deleteContactMessage(${msg.id})" title="Delete message">🗑️ Del</button>
+                          <button class="btn btn-sm btn-gold" style="padding:3px 7px; font-size:0.75rem;" onclick="copyContactMessage(${msg.id})" title="Copy message text to clipboard">ðŸ“‹ Copy</button>
+                          <button class="btn btn-sm" style="background:#3b82f6; color:#fff; padding:3px 7px; font-size:0.75rem; border:none; border-radius:4px; cursor:pointer;" onclick="openReplyMessageModal(${msg.id})" title="Reply to message and notify Brian">âœ‰ï¸ Reply</button>
+                          <button class="btn btn-sm" style="background:#f59e0b; color:#1a1000; font-weight:700; padding:3px 7px; font-size:0.75rem; border:none; border-radius:4px; cursor:pointer;" onclick="openModifyMessageModal(${msg.id})" title="Modify message content & sender info">âœï¸ Modify</button>
+                          <button class="btn btn-sm" style="background:#8b5cf6; color:#fff; padding:3px 7px; font-size:0.75rem; border:none; border-radius:4px; cursor:pointer;" onclick="sendContactNotification(${msg.id})" title="Send notification to bberry@calmchessgames.com">ðŸ”” Notify</button>
+                          <button class="btn btn-sm" style="background:#ef4444; color:#fff; padding:3px 7px; font-size:0.75rem; border:none; border-radius:4px; cursor:pointer;" onclick="deleteContactMessage(${msg.id})" title="Delete message">ðŸ—‘ï¸ Del</button>
                       </div>
                   </td>
               </tr>
@@ -2652,7 +2652,7 @@ Message:
 ${msg.message}`;
       if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text).then(() => {
-              alert(`✔ Message #${id} copied to clipboard!`);
+              alert(`âœ” Message #${id} copied to clipboard!`);
           }).catch(() => {
               fallbackCopyText(text, id);
           });
@@ -2670,7 +2670,7 @@ ${msg.message}`;
       ta.select();
       try {
           document.execCommand('copy');
-          alert(`✔ Message #${id} copied to clipboard!`);
+          alert(`âœ” Message #${id} copied to clipboard!`);
       } catch (e) {
           alert(`Message #${id} text:
 
@@ -2693,7 +2693,7 @@ ${text}`);
       const statusInput = document.getElementById('modMsgStatus');
       const textInput = document.getElementById('modMsgText');
 
-      if (title) title.textContent = `✏️ Modify Contact Message (#${msg.id})`;
+      if (title) title.textContent = `âœï¸ Modify Contact Message (#${msg.id})`;
       if (idInput) idInput.value = msg.id;
       if (nameInput) nameInput.value = msg.sender_name || '';
       if (emailInput) emailInput.value = msg.sender_email || '';
@@ -2745,7 +2745,7 @@ ${text}`);
           });
 
           if (res && res.success) {
-              alert('✔ Message successfully modified and updated in database!');
+              alert('âœ” Message successfully modified and updated in database!');
               closeModifyMessageModal();
               // Update local object
               const target = allContactMessages.find(m => Number(m.id) === Number(id));
@@ -2763,7 +2763,7 @@ ${text}`);
       } catch (err) {
           alert('Error modifying message: ' + err.message);
       } finally {
-          if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 Save Changes to Database'; }
+          if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'ðŸ’¾ Save Changes to Database'; }
       }
   }
 
@@ -2780,7 +2780,7 @@ ${text}`);
       const origMsgPreview = document.getElementById('replyOrigMsgPreview');
       const replyText = document.getElementById('replyMsgText');
 
-      if (title) title.textContent = `✉️ Reply to Message #${msg.id} from ${msg.sender_name}`;
+      if (title) title.textContent = `âœ‰ï¸ Reply to Message #${msg.id} from ${msg.sender_name}`;
       if (idInput) idInput.value = msg.id;
       if (recipDisplay) recipDisplay.textContent = `${msg.sender_name} <${msg.sender_email}>`;
       if (origSubjDisplay) origSubjDisplay.textContent = msg.subject || '(No Subject)';
@@ -2824,7 +2824,7 @@ Thank you for reaching out to Calm Chess Games. `;
           });
 
           if (res && res.success) {
-              alert('✔ Reply dispatched successfully! A copy of this reply has been sent to bberry@calmchessgames.com and the message marked as Replied.');
+              alert('âœ” Reply dispatched successfully! A copy of this reply has been sent to bberry@calmchessgames.com and the message marked as Replied.');
               closeReplyMessageModal();
               // Update local status
               const target = allContactMessages.find(m => Number(m.id) === Number(id));
@@ -2838,7 +2838,7 @@ Thank you for reaching out to Calm Chess Games. `;
       } catch (err) {
           alert('Error sending reply: ' + err.message);
       } finally {
-          if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = '🚀 Send Reply & Notify Brian'; }
+          if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = 'ðŸš€ Send Reply & Notify Brian'; }
       }
   }
 
@@ -2852,7 +2852,7 @@ Thank you for reaching out to Calm Chess Games. `;
               id: id
           });
           if (res && res.success) {
-              alert(`✔ Notification for Message #${id} sent to bberry@calmchessgames.com!`);
+              alert(`âœ” Notification for Message #${id} sent to bberry@calmchessgames.com!`);
           } else {
               alert('Failed to send notification: ' + (res && res.message ? res.message : 'Unknown error'));
           }
@@ -2974,7 +2974,7 @@ Thank you for reaching out to Calm Chess Games. `;
       const tzInput = document.getElementById('appModalTimezone');
       const notesInput = document.getElementById('appModalNotes');
 
-      if (title) title.textContent = '📅 Schedule Consultation Appointment';
+      if (title) title.textContent = 'ðŸ“… Schedule Consultation Appointment';
       if (idInput) idInput.value = '';
       if (nameInput) nameInput.value = '';
       if (emailInput) emailInput.value = '';
@@ -3010,7 +3010,7 @@ Thank you for reaching out to Calm Chess Games. `;
       const tzInput = document.getElementById('appModalTimezone');
       const notesInput = document.getElementById('appModalNotes');
 
-      if (title) title.textContent = `✏️ Edit Appointment #${app.id}`;
+      if (title) title.textContent = `âœï¸ Edit Appointment #${app.id}`;
       if (idInput) idInput.value = app.id;
       if (nameInput) nameInput.value = app.attendee_name || '';
       if (emailInput) emailInput.value = app.attendee_email || '';
@@ -3142,33 +3142,84 @@ Thank you for reaching out to Calm Chess Games. `;
 
   async function callAdminWormholeApi(action, method = 'GET', body = null) {
       const pass = getActiveAdminKey();
-      const urls = [
-          `admin_api.php?action=${action}`,
-          `${API_BASE}/admin_api.php?action=${action}`,
-          `${API_BASE}/admin/admin_api.php?action=${action}`,
-          `../admin_api.php?action=${action}`
+      const t = Date.now();
+
+      // Dual-endpoint candidate cascade: checks both wormhole_device_api.php and admin_api.php across relative and base origins
+      const endpoints = [
+          `wormhole_device_api.php?action=${action}&_t=${t}`,
+          `admin_api.php?action=${action}&_t=${t}`,
+          `./wormhole_device_api.php?action=${action}&_t=${t}`,
+          `./admin_api.php?action=${action}&_t=${t}`,
+          `${API_BASE}/admin/wormhole_device_api.php?action=${action}&_t=${t}`,
+          `${API_BASE}/admin/admin_api.php?action=${action}&_t=${t}`,
+          `${API_BASE}/wormhole_device_api.php?action=${action}&_t=${t}`,
+          `${API_BASE}/admin_api.php?action=${action}&_t=${t}`,
+          `../admin/wormhole_device_api.php?action=${action}&_t=${t}`,
+          `../admin/admin_api.php?action=${action}&_t=${t}`,
+          `../wormhole_device_api.php?action=${action}&_t=${t}`,
+          `../admin_api.php?action=${action}&_t=${t}`
       ];
+      const uniqueUrls = [...new Set(endpoints)];
+
+      const requestHeaders = {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+      };
+      if (pass) {
+          requestHeaders['Authorization'] = `Bearer ${pass}`;
+          requestHeaders['X-Admin-Token'] = pass;
+          requestHeaders['X-API-Key'] = pass;
+          requestHeaders['X-Auth-Token'] = pass;
+      }
+
+      let payload = (body && typeof body === 'object' && !Array.isArray(body))
+          ? Object.assign({}, body)
+          : (body !== null ? body : {});
+      if (pass && typeof payload === 'object' && !Array.isArray(payload)) {
+          if (!payload.admin_key) payload.admin_key = pass;
+          if (!payload.api_token) payload.api_token = pass;
+          if (!payload.token) payload.token = pass;
+          if (!payload.admin_password) payload.admin_password = pass;
+      }
 
       let lastError = null;
-      for (const u of urls) {
+      for (const u of uniqueUrls) {
           try {
               let reqUrl = u;
-              const options = {
-                  method: method,
-                  headers: { 'Accept': 'application/json' }
-              };
-              if (method === 'GET') {
+              if (method === 'GET' && pass) {
                   const sep = reqUrl.includes('?') ? '&' : '?';
-                  reqUrl += `${sep}admin_key=${encodeURIComponent(pass)}`;
-              } else if (body) {
-                  options.headers['Content-Type'] = 'application/json';
-                  const payload = Object.assign({}, body, { admin_key: pass });
-                  options.body = JSON.stringify(payload);
+                  reqUrl += `${sep}admin_key=${encodeURIComponent(pass)}&api_token=${encodeURIComponent(pass)}&token=${encodeURIComponent(pass)}`;
               }
-              const res = await fetch(reqUrl, options);
-              if (res.ok) {
-                  const data = await res.json();
+
+              const fetchOptions = {
+                  method: method,
+                  headers: requestHeaders,
+                  credentials: 'include'
+              };
+
+              if (method !== 'GET' && payload !== null) {
+                  fetchOptions.body = JSON.stringify(payload);
+              }
+
+              const fetchFn = (typeof CryptoTransport !== 'undefined' && CryptoTransport.secureFetch) 
+                  ? CryptoTransport.secureFetch 
+                  : fetch;
+
+              const res = await fetchFn(reqUrl, fetchOptions);
+              const text = await res.text();
+              let data = null;
+              try {
+                  data = JSON.parse(text);
+              } catch (e) {}
+
+              if (res.ok && data && data.success !== false) {
                   return data;
+              } else if (data && data.success === true) {
+                  return data;
+              } else if (data && data.message) {
+                  lastError = new Error(data.message);
+              } else if (!res.ok) {
+                  lastError = new Error(`HTTP ${res.status}: ${res.statusText}`);
               }
           } catch (e) {
               lastError = e;
@@ -3222,7 +3273,7 @@ Thank you for reaching out to Calm Chess Games. `;
       if (!tbody) return;
 
       if (!devices || devices.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="9" style="padding: 24px; text-align: center; color: var(--text-muted);">No hardware devices currently registered in database. Click <strong>[🌱 Seed Certified XR Devices]</strong> or <strong>[+ Add Device]</strong> to populate.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="9" style="padding: 24px; text-align: center; color: var(--text-muted);">No hardware devices currently registered in database. Click <strong>[ðŸŒ± Seed Certified XR Devices]</strong> or <strong>[+ Add Device]</strong> to populate.</td></tr>';
           return;
       }
 
@@ -3230,8 +3281,8 @@ Thank you for reaching out to Calm Chess Games. `;
       devices.forEach(d => {
           const isSupp = parseInt(d.is_supported, 10) === 1;
           const statusBadge = isSupp
-              ? '<span style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: bold;">✓ SUPPORTED</span>'
-              : '<span style="background: rgba(239, 68, 111, 0.2); color: #ef476f; border: 1px solid #ef476f; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: bold;">✗ BLOCKED</span>';
+              ? '<span style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: bold;">âœ“ SUPPORTED</span>'
+              : '<span style="background: rgba(239, 68, 111, 0.2); color: #ef476f; border: 1px solid #ef476f; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: bold;">âœ— BLOCKED</span>';
 
           const typePill = `<span style="background: rgba(0, 240, 255, 0.1); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.3); padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; text-transform: uppercase;">${escapeHtml(d.device_type || 'unknown')}</span>`;
 
@@ -3344,7 +3395,7 @@ Thank you for reaching out to Calm Chess Games. `;
           if (document.getElementById('newDevGpu')) document.getElementById('newDevGpu').value = '';
           if (document.getElementById('newDevNotes')) document.getElementById('newDevNotes').value = '';
           fetchWormholeDevices();
-          alert('✓ Device registered successfully into hardware whitelist!');
+          alert('âœ“ Device registered successfully into hardware whitelist!');
       })
       .catch(err => {
           alert('Error: ' + err.message);
@@ -3393,7 +3444,7 @@ Thank you for reaching out to Calm Chess Games. `;
               return;
           }
           fetchWormholeDevices();
-          alert('✓ Successfully populated ' + (res.seeded_count || 14) + ' certified Open-Source XR/ARCore devices!');
+          alert('âœ“ Successfully populated ' + (res.seeded_count || 14) + ' certified Open-Source XR/ARCore devices!');
       })
       .catch(err => alert('Error: ' + err.message));
   }

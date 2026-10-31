@@ -1,8 +1,8 @@
 /**
  * Wormhole XR - Stage 1: The Distant Neon Cyan Wormhole
- * Multi-Platform XR Experience with Collapsible Auto-Hide HUD,
- * Mode Switcher (Desktop XR, Desktop VR, Mobile XR, Mobile AR),
- * Game Controller Support, and Touch Controls.
+ * Multi-Platform XR Experience with Hardware Validation Telemetry,
+ * Closeable Incompatibility Badge, Mode Switcher, Game Controller Support,
+ * and Collapsible Left-Hand Objectives Drawer.
  * 
  * Calm Chess Games / Brian Berry (C) 2026
  */
@@ -48,11 +48,11 @@ const state = {
   hudVisible: true,
   postProcessingEnabled: true,
   
-  // Drawer / Sidebar state
+  // Drawer state
   isDrawerPinned: false,
   isDrawerAutoHide: true,
   
-  // Player Position & Flight Dynamics
+  // Player Position & Dynamics
   position: new THREE.Vector3(0, 2.5, CONFIG.wormholeDistance),
   velocity: new THREE.Vector3(0, 0, 0),
   pitch: 0,
@@ -79,11 +79,24 @@ const state = {
   isInRange: false,
   isWarpReady: false,
   isHyperWarping: false,
-  warpJumpTimer: 0.0
+  warpJumpTimer: 0.0,
+
+  // Hardware Diagnostics & Mode Recommendation
+  pendingRecommendedMode: 'desktop-xr'
 };
 
-// Keyboard input state
 const keys = {};
+
+// Hardware Diagnostics Cache
+const detectedHardware = {
+  name: 'Desktop PC / Mac',
+  type: 'desktop',
+  os: 'Windows 11',
+  browser: 'Google Chrome',
+  gpu: 'Generic Hardware Accelerator',
+  vrSupported: false,
+  arSupported: false
+};
 
 // =============================================================================
 // THREE.JS CORE SCENE INITIALIZATION
@@ -98,7 +111,7 @@ camera.position.copy(state.position);
 const renderer = new THREE.WebGLRenderer({
   powerPreference: 'high-performance',
   antialias: false,
-  alpha: true, // Alpha enabled for AR passthrough
+  alpha: true,
   stencil: false,
   depth: true
 });
@@ -126,7 +139,7 @@ renderer.xr.addEventListener('sessionend', () => {
   console.log('[Wormhole XR] WebXR session exited.');
 });
 
-// XR Controllers
+// XR Hand Controllers
 const controllerModelFactory = new XRControllerModelFactory();
 const controllers = [];
 for (let i = 0; i < 2; i++) {
@@ -295,7 +308,6 @@ const accretionDiskMesh = new THREE.Mesh(diskGeom, accretionDiskMaterial);
 accretionDiskMesh.rotation.x = Math.PI / 2.3;
 scene.add(accretionDiskMesh);
 
-// Secondary counter-rotating lensing disk
 const diskGeomSecondary = new THREE.RingGeometry(
   CONFIG.eventHorizonRadius * 0.9,
   CONFIG.accretionDiskRadius * 0.85,
@@ -310,7 +322,7 @@ accretionDiskMesh2.rotation.x = -Math.PI / 2.7;
 accretionDiskMesh2.rotation.y = Math.PI / 6;
 scene.add(accretionDiskMesh2);
 
-// Event Horizon Core
+// Event Horizon Singularity Core
 const horizonGeom = new THREE.SphereGeometry(CONFIG.eventHorizonRadius, 64, 64);
 const horizonMat = new THREE.MeshBasicMaterial({
   color: 0x000000,
@@ -896,20 +908,148 @@ if (chkAutoHide) {
   chkAutoHide.addEventListener('change', (e) => {
     state.isDrawerAutoHide = e.target.checked;
     if (!state.isDrawerAutoHide) {
-      // Pin open when auto-hide is turned off
       state.isDrawerPinned = true;
       if (leftDrawer) leftDrawer.classList.add('pinned');
     }
   });
 }
 
-// Global key shortcut to toggle drawer (Tab or M)
 window.addEventListener('keydown', (e) => {
   if (e.code === 'Tab' || e.code === 'KeyM') {
     e.preventDefault();
     toggleDrawerPin();
   }
 });
+
+// =============================================================================
+// HARDWARE DETECTION & UNSUPPORTED DEVICE MODAL / BADGE
+// =============================================================================
+const modalOverlay = document.getElementById('unsupported-device-modal');
+const modalModeName = document.getElementById('modal-mode-name');
+const modalSupportFlag = document.getElementById('modal-support-flag');
+const modalReasonText = document.getElementById('modal-reason-text');
+const specDevName = document.getElementById('spec-device-name');
+const specOs = document.getElementById('spec-os-platform');
+const specBrowser = document.getElementById('spec-browser');
+const specGpu = document.getElementById('spec-gpu');
+const specVrStatus = document.getElementById('spec-vr-status');
+const specArStatus = document.getElementById('spec-ar-status');
+const modalRecText = document.getElementById('modal-recommendation-text');
+
+const btnCloseModal = document.getElementById('btn-close-device-modal');
+const btnDismissModal = document.getElementById('btn-dismiss-modal');
+const btnSwitchRec = document.getElementById('btn-switch-recommended');
+const btnForceContinue = document.getElementById('btn-force-continue');
+
+async function detectHardwareDiagnostics() {
+  try {
+    const gl = renderer.getContext();
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    if (dbg) {
+      detectedHardware.gpu = gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL);
+    }
+
+    const ua = navigator.userAgent;
+    if (/Quest|Oculus/i.test(ua)) {
+      detectedHardware.type = 'vr_hmd';
+      detectedHardware.name = 'Meta Quest VR Headset';
+      detectedHardware.os = 'Meta Horizon OS';
+    } else if (/Vision/i.test(ua)) {
+      detectedHardware.type = 'vr_hmd';
+      detectedHardware.name = 'Apple Vision Pro';
+      detectedHardware.os = 'visionOS';
+    } else if (/Mobi|Android/i.test(ua)) {
+      detectedHardware.type = 'mobile';
+      detectedHardware.name = 'Android Smartphone';
+      detectedHardware.os = 'Android';
+      if (/Pixel/i.test(ua)) detectedHardware.name = 'Google Pixel';
+      else if (/Samsung|SM-/i.test(ua)) detectedHardware.name = 'Samsung Galaxy';
+    } else if (/iPhone|iPad/i.test(ua)) {
+      detectedHardware.type = /iPad/i.test(ua) ? 'tablet' : 'mobile';
+      detectedHardware.name = /iPad/i.test(ua) ? 'Apple iPad' : 'Apple iPhone';
+      detectedHardware.os = 'iOS';
+    } else {
+      detectedHardware.type = 'desktop';
+      detectedHardware.name = 'Desktop PC / Workstation';
+      if (/Windows/i.test(ua)) detectedHardware.os = 'Windows 10/11';
+      else if (/Macintosh/i.test(ua)) detectedHardware.os = 'macOS';
+      else if (/Linux/i.test(ua)) detectedHardware.os = 'Linux';
+    }
+
+    if (/Chrome/i.test(ua) && !/Edg/i.test(ua) && !/OPR/i.test(ua)) detectedHardware.browser = 'Google Chrome';
+    else if (/Edg/i.test(ua)) detectedHardware.browser = 'Microsoft Edge';
+    else if (/Safari/i.test(ua) && !/Chrome/i.test(ua)) detectedHardware.browser = 'Apple Safari';
+    else if (/Firefox/i.test(ua)) detectedHardware.browser = 'Mozilla Firefox';
+
+    if (navigator.xr && typeof navigator.xr.isSessionSupported === 'function') {
+      detectedHardware.vrSupported = await navigator.xr.isSessionSupported('immersive-vr').catch(() => false);
+      detectedHardware.arSupported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+    }
+  } catch (err) {
+    console.warn('[Hardware Detection] Detection warning:', err);
+  }
+}
+
+function showUnsupportedBadge(mode, reason, recommendedMode = 'desktop-xr') {
+  state.pendingRecommendedMode = recommendedMode;
+
+  const modeTitles = {
+    'desktop-xr': 'DESKTOP XR (6-DOF FLIGHT)',
+    'desktop-vr': 'DESKTOP VR (PCVR / HMD)',
+    'mobile-xr': 'MOBILE XR (WebXR / VR VIEWER)',
+    'mobile-ar': 'MOBILE AR (ARCore CAMERA PASSTHROUGH)'
+  };
+
+  if (modalModeName) modalModeName.textContent = modeTitles[mode] || mode.toUpperCase();
+  if (modalSupportFlag) modalSupportFlag.textContent = 'INCOMPATIBLE / NOT SUPPORTED';
+  if (modalReasonText) modalReasonText.textContent = reason || 'Hardware or browser capabilities do not meet the minimum requirements for this operating mode.';
+
+  if (specDevName) specDevName.textContent = detectedHardware.name;
+  if (specOs) specOs.textContent = detectedHardware.os;
+  if (specBrowser) specBrowser.textContent = detectedHardware.browser;
+  if (specGpu) specGpu.textContent = detectedHardware.gpu;
+  if (specVrStatus) {
+    specVrStatus.textContent = detectedHardware.vrSupported ? '✓ SUPPORTED' : '✗ UNSUPPORTED';
+    specVrStatus.style.color = detectedHardware.vrSupported ? 'var(--accent-green)' : 'var(--accent-alert)';
+  }
+  if (specArStatus) {
+    specArStatus.textContent = detectedHardware.arSupported ? '✓ SUPPORTED' : '✗ UNSUPPORTED';
+    specArStatus.style.color = detectedHardware.arSupported ? 'var(--accent-green)' : 'var(--accent-alert)';
+  }
+
+  if (modalRecText) {
+    const recName = modeTitles[recommendedMode] || recommendedMode.toUpperCase();
+    modalRecText.textContent = `Switch to ${recName}. This mode is fully accelerated and validated for your hardware profile.`;
+  }
+
+  if (modalOverlay) modalOverlay.style.display = 'flex';
+}
+
+function hideUnsupportedBadge() {
+  if (modalOverlay) modalOverlay.style.display = 'none';
+}
+
+if (btnCloseModal) btnCloseModal.addEventListener('click', hideUnsupportedBadge);
+if (btnDismissModal) btnDismissModal.addEventListener('click', hideUnsupportedBadge);
+
+if (btnSwitchRec) {
+  btnSwitchRec.addEventListener('click', () => {
+    hideUnsupportedBadge();
+    const sel = document.getElementById('select-mode');
+    if (sel) {
+      sel.value = state.pendingRecommendedMode;
+      handleModeChange(state.pendingRecommendedMode, true);
+    }
+  });
+}
+
+if (btnForceContinue) {
+  btnForceContinue.addEventListener('click', () => {
+    hideUnsupportedBadge();
+    activateModeParameters(state.xrMode);
+    showToast(`FORCING MODE: ${state.xrMode.toUpperCase()}`);
+  });
+}
 
 // =============================================================================
 // MULTI-PLATFORM & XR MODE SWITCHER
@@ -922,8 +1062,70 @@ if (selectModeEl) {
   });
 }
 
-function handleModeChange(mode) {
-  console.log(`[Wormhole XR] Operating mode changed to: ${mode}`);
+async function handleModeChange(mode, bypassCheck = false) {
+  console.log(`[Wormhole XR] Testing device compatibility for: ${mode}`);
+  await detectHardwareDiagnostics();
+
+  if (!bypassCheck) {
+    const payload = {
+      mode: mode,
+      device_name: detectedHardware.name,
+      device_type: detectedHardware.type,
+      os_platform: detectedHardware.os,
+      browser: detectedHardware.browser,
+      gpu_renderer: detectedHardware.gpu,
+      immersive_vr: detectedHardware.vrSupported,
+      immersive_ar: detectedHardware.arSupported,
+      has_touch: ('ontouchstart' in window) || navigator.maxTouchPoints > 0,
+      has_gamepad: (typeof navigator.getGamepads === 'function')
+    };
+
+    let checkResult = null;
+    try {
+      let r = await fetch('wormhole_device_api.php?action=check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(() => null);
+
+      if (!r || !r.ok) {
+        r = await fetch('../wormhole_device_api.php?action=check', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload)
+        }).catch(() => null);
+      }
+
+      if (r && r.ok) {
+        checkResult = await r.json().catch(() => null);
+      }
+    } catch (e) {
+      console.warn('[WormholeXR] Remote check fetch error:', e);
+    }
+
+    if (checkResult && checkResult.supported === false) {
+      showUnsupportedBadge(mode, checkResult.reason, checkResult.recommended_mode || 'desktop-xr');
+      return;
+    } else if (checkResult && checkResult.supported === true) {
+      hideUnsupportedBadge();
+    } else {
+      // Local hardware capability check fallback when API is offline
+      if (mode === 'desktop-vr' && !detectedHardware.vrSupported) {
+        showUnsupportedBadge(mode, "Hardware / Browser does not support WebXR 'immersive-vr' session. Connect an OpenXR/PCVR headset.", 'desktop-xr');
+        return;
+      } else if (mode === 'mobile-ar' && !detectedHardware.arSupported) {
+        showUnsupportedBadge(mode, "Hardware / Browser does not support WebXR 'immersive-ar' (ARCore / ARKit session).", 'desktop-xr');
+        return;
+      } else {
+        hideUnsupportedBadge();
+      }
+    }
+  }
+
+  activateModeParameters(mode);
+}
+
+function activateModeParameters(mode) {
   if (mode === 'desktop-xr') {
     state.postProcessingEnabled = true;
     scene.background = null;
@@ -937,12 +1139,11 @@ function handleModeChange(mode) {
     showToast('MODE: MOBILE XR (ROTATE LANDSCAPE FOR DUAL-STICK TOUCH)');
   } else if (mode === 'mobile-ar') {
     state.postProcessingEnabled = false;
-    scene.background = null; // Transparent for camera passthrough
+    scene.background = null;
     showToast('MODE: MOBILE AR (ARCORE PASSTHROUGH ACTIVE)');
   }
 }
 
-// Accelerometer / DeviceOrientation permission helper (iOS / Mobile)
 function requestDeviceOrientation() {
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
     DeviceOrientationEvent.requestPermission()
@@ -960,7 +1161,6 @@ function requestDeviceOrientation() {
 function handleOrientation(e) {
   if (state.isXR || state.xrMode !== 'mobile-xr') return;
   if (e.gamma !== null && e.beta !== null) {
-    // Landscape orientation adjustments
     state.yaw = THREE.MathUtils.degToRad(-e.alpha || 0);
     state.pitch = THREE.MathUtils.degToRad(e.gamma || 0);
   }
@@ -1027,11 +1227,8 @@ function pollGamepad(delta) {
     const pad = gamepads[i];
     if (!pad) continue;
 
-    // Left Stick: Axes 0 (X), 1 (Y) -> Movement
     const lx = Math.abs(pad.axes[0]) > CONFIG.gamepadDeadzone ? pad.axes[0] : 0;
     const ly = Math.abs(pad.axes[1]) > CONFIG.gamepadDeadzone ? pad.axes[1] : 0;
-
-    // Right Stick: Axes 2 (X), 3 (Y) -> Pitch & Yaw Look
     const rx = Math.abs(pad.axes[2]) > CONFIG.gamepadDeadzone ? pad.axes[2] : 0;
     const ry = Math.abs(pad.axes[3]) > CONFIG.gamepadDeadzone ? pad.axes[3] : 0;
 
@@ -1039,27 +1236,22 @@ function pollGamepad(delta) {
     state.pitch -= ry * CONFIG.pitchSpeed * 22.0;
     state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
 
-    // Flight translation via Left Stick
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
 
     if (ly !== 0) state.velocity.addScaledVector(forward, -ly * CONFIG.flightSpeed * delta * 4.0);
     if (lx !== 0) state.velocity.addScaledVector(right, lx * CONFIG.flightSpeed * delta * 4.0);
 
-    // Triggers: R2 (Button 7) Forward Boost, L2 (Button 6) Retro Brake
     const r2 = pad.buttons[7] ? pad.buttons[7].value : 0;
     const l2 = pad.buttons[6] ? pad.buttons[6].value : 0;
     if (r2 > 0.1) state.velocity.addScaledVector(forward, r2 * CONFIG.flightSpeed * CONFIG.boostMultiplier * delta * 3.5);
     if (l2 > 0.1) state.velocity.multiplyScalar(0.85);
 
-    // Face Buttons
-    // Button 0 (A / Cross): Scan
     if (pad.buttons[0] && pad.buttons[0].pressed && !state.lastPadButtons[0]) {
       const btnScan = document.getElementById('btn-do-scan');
       if (btnScan) btnScan.click();
       vibratePad(pad, 150);
     }
-    // Button 2 (X / Square): Calibrate Next Coil
     if (pad.buttons[2] && pad.buttons[2].pressed && !state.lastPadButtons[2]) {
       const uncalibrated = state.coils.findIndex(c => !c);
       if (uncalibrated !== -1) {
@@ -1068,7 +1260,6 @@ function pollGamepad(delta) {
         vibratePad(pad, 200);
       }
     }
-    // Button 3 (Y / Triangle): Engage Warp Jump
     if (pad.buttons[3] && pad.buttons[3].pressed && !state.lastPadButtons[3]) {
       triggerWarpJump();
       vibratePad(pad, 400);
@@ -1080,7 +1271,7 @@ function pollGamepad(delta) {
       3: pad.buttons[3] ? pad.buttons[3].pressed : false
     };
 
-    break; // Target primary active gamepad
+    break;
   }
 }
 
@@ -1501,7 +1692,6 @@ function updateFlight(delta) {
   const accel = new THREE.Vector3(0, 0, 0);
   const speed = CONFIG.flightSpeed * (keys['ShiftLeft'] || keys['ShiftRight'] ? CONFIG.boostMultiplier : 1.0);
 
-  // Keyboard controls
   if (keys['KeyW'] || keys['ArrowUp']) accel.add(forward);
   if (keys['KeyS'] || keys['ArrowDown']) accel.sub(forward);
   if (keys['KeyD'] || keys['ArrowRight']) accel.add(right);
@@ -1512,13 +1702,11 @@ function updateFlight(delta) {
   if (keys['KeyQ']) state.yaw += 0.02;
   if (keys['KeyE']) state.yaw -= 0.02;
 
-  // Mobile Touch Virtual Joystick translation
   if (state.touchActive) {
     accel.addScaledVector(forward, -state.touchMove.y);
     accel.addScaledVector(right, state.touchMove.x);
   }
 
-  // Poll Gamepad Controller
   pollGamepad(delta);
 
   if (state.isHyperWarping) {
@@ -1642,4 +1830,9 @@ window.addEventListener('resize', () => {
 
   blurShader.uniforms.uResolution.value.set(w * 0.5, h * 0.5);
   compositeShader.uniforms.uAspect.value = w / h;
+});
+
+// Initial startup hardware detection
+detectHardwareDiagnostics().then(() => {
+  console.log('[Wormhole XR] Hardware profile detected:', detectedHardware);
 });

@@ -584,6 +584,7 @@
                 <button class="admin-tab-btn" id="tabBtnDeletions" onclick="switchAdminTab('purge')" title="Purge user accounts and data (preserves 7-year financial transactions)">Data Purge <span id="delBadge" style="display:none; background:#e74c3c; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
                 <button class="admin-tab-btn" id="tabBtnResets" onclick="switchAdminTab('resets')">Password Resets <span id="resetBadge" style="display:none; background:#f39c12; color:#1a1000; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
                 <button class="admin-tab-btn" id="tabBtnAppointments" onclick="switchAdminTab('appointments')">Appointments <span id="appBadge" style="display:none; background:#3498db; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
+                <button class="admin-tab-btn" id="tabBtnWormholeDevices" onclick="switchAdminTab('wormhole_devices')" title="Wormhole XR Device Telemetry & Whitelist Management">🌌 Wormhole Devices <span id="wormholeDeviceBadge" style="display:none; background:#00f0ff; color:#01050a; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
                 <button class="admin-tab-btn" id="tabBtnMessages" onclick="switchAdminTab('messages')">Sent Messages <span id="msgTabBadge" style="display:none; background:#9b59b6; color:#fff; border-radius:10px; padding:1px 6px; font-size:0.75rem; margin-left:4px; font-weight:800;">0</span></button>
                 <a href="https://calmchessgames.com/index.html" id="linkMainRingsTab" class="admin-tab-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Back to Main Website">← Main Rings</a>
             </div>
@@ -1252,7 +1253,79 @@
         </div>
 
 
-        <!-- MODIFY MESSAGE MODAL -->
+        
+            <!-- TAB 8: WORMHOLE XR DEVICES & TELEMETRY -->
+            <div id="tabContentWormholeDevices" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin: 12px 0 16px 0; flex-wrap: wrap; gap: 8px;">
+                    <div>
+                        <h3 style="color: #00f0ff; font-size: 1.15rem; margin-bottom: 2px;">🌌 Wormhole XR Hardware & Telemetry Registry</h3>
+                        <span style="font-size: 0.82rem; color: var(--text-muted);">Manage validated hardware whitelist/blacklist for Desktop XR, PCVR, Mobile XR, and ARCore</span>
+                    </div>
+                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button class="admin-tab-btn" style="background: rgba(0, 240, 255, 0.15); border-color: #00f0ff; color: #00f0ff;" onclick="openAddWormholeDeviceModal()">+ Add Device</button>
+                        <button class="admin-tab-btn" style="background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #10b981;" onclick="seedOpenSourceWormholeDevices()">🌱 Seed Certified XR Devices</button>
+                        <button class="admin-tab-btn" style="background: rgba(255, 255, 255, 0.08);" onclick="fetchWormholeDevices()">🔄 Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Metrics Dashboard Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px;">
+                    <div style="background: rgba(0, 20, 35, 0.6); border: 1px solid rgba(0, 240, 255, 0.3); border-radius: 8px; padding: 12px 14px;">
+                        <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Total Devices</div>
+                        <div id="metricTotalDevices" style="font-size: 1.5rem; font-weight: bold; color: #00f0ff; font-family: monospace;">0</div>
+                    </div>
+                    <div style="background: rgba(0, 30, 20, 0.6); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 12px 14px;">
+                        <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Supported / Whitelisted</div>
+                        <div id="metricSupportedDevices" style="font-size: 1.5rem; font-weight: bold; color: #10b981; font-family: monospace;">0</div>
+                    </div>
+                    <div style="background: rgba(40, 10, 15, 0.6); border: 1px solid rgba(239, 68, 111, 0.3); border-radius: 8px; padding: 12px 14px;">
+                        <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Unsupported / Flagged</div>
+                        <div id="metricUnsupportedDevices" style="font-size: 1.5rem; font-weight: bold; color: #ef476f; font-family: monospace;">0</div>
+                    </div>
+                    <div style="background: rgba(30, 20, 45, 0.6); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 8px; padding: 12px 14px;">
+                        <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">VR / AR Hardware</div>
+                        <div id="metricVrDevices" style="font-size: 1.5rem; font-weight: bold; color: #a855f7; font-family: monospace;">0</div>
+                    </div>
+                </div>
+
+                <!-- Search & Filters -->
+                <div style="display: flex; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; align-items: center;">
+                    <input type="text" id="wormholeDeviceSearchInput" placeholder="🔍 Search by device model, OS, or GPU..." oninput="filterWormholeDevices()" style="flex: 1; min-width: 220px; padding: 8px 12px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff; font-size: 0.85rem;">
+                    <select id="wormholeDeviceFilterSelect" onchange="filterWormholeDevices()" style="padding: 8px 12px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #00f0ff; font-size: 0.85rem;">
+                        <option value="all">All Devices</option>
+                        <option value="supported">Supported Only</option>
+                        <option value="unsupported">Unsupported Only</option>
+                        <option value="vr_hmd">VR HMDs</option>
+                        <option value="mobile">Mobile / ARCore</option>
+                        <option value="desktop">Desktop</option>
+                    </select>
+                </div>
+
+                <!-- Devices Data Table -->
+                <div class="table-scroll-container">
+                    <table class="store-ledger-table" style="min-width: 1100px;">
+                        <thead>
+                            <tr style="background: rgba(0, 240, 255, 0.1); border-bottom: 2px solid rgba(0, 240, 255, 0.3); color: #00f0ff;">
+                                <th style="padding: 10px 12px; text-align: left; width: 50px;">ID</th>
+                                <th style="padding: 10px 12px; text-align: left; min-width: 180px;">Device Model & Signature</th>
+                                <th style="padding: 10px 12px; text-align: left; width: 100px;">Type</th>
+                                <th style="padding: 10px 12px; text-align: left; min-width: 140px;">OS / Browser</th>
+                                <th style="padding: 10px 12px; text-align: left; min-width: 180px;">GPU Architecture</th>
+                                <th style="padding: 10px 12px; text-align: left; min-width: 160px;">Supported Modes</th>
+                                <th style="padding: 10px 12px; text-align: center; width: 120px;">Status</th>
+                                <th style="padding: 10px 12px; text-align: center; width: 80px;">Reports</th>
+                                <th style="padding: 10px 12px; text-align: center; width: 180px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminWormholeDevicesBody">
+                            <tr><td colspan="9" style="padding: 16px; text-align: center; color: var(--text-muted);">Loading registered hardware devices...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+<!-- MODIFY MESSAGE MODAL -->
         <div id="modifyMessageModal" class="modal-overlay" style="display: none; z-index: 10003;">
             <div class="modal-box" style="max-width: 580px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,215,0,0.3); padding-bottom: 10px; margin-bottom: 14px;">
@@ -1422,5 +1495,73 @@
     <script src="js/admin.js"></script>
     <script>if (typeof window.switchAdminTab === 'undefined') { document.write('<script src="../js/admin.js"><\/script>'); }</script>
     <script>if (typeof window.switchAdminTab === 'undefined') { document.write('<script src="admin.js"><\/script>'); }</script>
+
+        <!-- ADD WORMHOLE DEVICE MODAL -->
+        <div id="addWormholeDeviceModal" class="modal-overlay" style="display: none; z-index: 10005;">
+            <div class="modal-box" style="max-width: 620px; background: #07121f; border: 1px solid #00f0ff;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,240,255,0.3); padding-bottom: 10px; margin-bottom: 14px;">
+                    <h3 style="color: #00f0ff; font-size: 1.15rem; margin: 0;">🌌 Register Hardware Device</h3>
+                    <button style="background: none; border: none; color: #fff; font-size: 1.5rem; cursor: pointer;" onclick="closeAddWormholeDeviceModal()">&times;</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 0.85rem;">
+                    <div>
+                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Device Name / Model <span style="color:#ff6b6b;">*</span></label>
+                        <input type="text" id="newDevName" placeholder="e.g. Meta Quest 3, Samsung Galaxy S24 Ultra" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Device Type</label>
+                            <select id="newDevType" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                                <option value="desktop">Desktop PC / Mac</option>
+                                <option value="vr_hmd">VR Headset (HMD)</option>
+                                <option value="mobile">Mobile Smartphone</option>
+                                <option value="tablet">Tablet</option>
+                                <option value="ar_glasses">AR Smart Glasses</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Support Status</label>
+                            <select id="newDevSupported" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                                <option value="1">✓ Supported (Whitelisted)</option>
+                                <option value="0">✗ Unsupported / Blocked</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div>
+                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">OS / Platform</label>
+                            <input type="text" id="newDevOs" placeholder="e.g. Meta Horizon OS, Android 14, Windows 11" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                        </div>
+                        <div>
+                            <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Browser</label>
+                            <input type="text" id="newDevBrowser" placeholder="e.g. OculusBrowser, Chrome 126, Safari" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">GPU Architecture / Unmasked Renderer</label>
+                        <input type="text" id="newDevGpu" placeholder="e.g. Snapdragon XR2 Gen 2 / Adreno 740, Apple M2, RTX 4080" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Supported Modes</label>
+                        <div style="display: flex; gap: 14px; flex-wrap: wrap; background: #0b0f19; padding: 8px 12px; border-radius: 6px; border: 1px solid #334155;">
+                            <label><input type="checkbox" id="chkModeDesktopXr" checked> Desktop XR</label>
+                            <label><input type="checkbox" id="chkModeDesktopVr" checked> Desktop VR (PCVR)</label>
+                            <label><input type="checkbox" id="chkModeMobileXr"> Mobile XR (VR/Gyro)</label>
+                            <label><input type="checkbox" id="chkModeMobileAr"> Mobile AR (ARCore)</label>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Notes / Hardware Constraints</label>
+                        <textarea id="newDevNotes" rows="2" placeholder="e.g. Tested on OculusBrowser 32.0; 90fps native." style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff;"></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                        <button style="padding: 8px 16px; background: rgba(255,255,255,0.08); border: 1px solid #475569; border-radius: 6px; color: #fff; cursor: pointer;" onclick="closeAddWormholeDeviceModal()">Cancel</button>
+                        <button style="padding: 8px 20px; background: #00f0ff; border: none; border-radius: 6px; color: #01050a; font-weight: bold; cursor: pointer;" onclick="saveManualWormholeDevice()">Save Device</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 </body>
 </html>

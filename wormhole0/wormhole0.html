@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#01050a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="Multi-stage Sci-Fi WebXR experience - Stage 1: Distant Neon Cyan Wormhole with Desktop XR, Desktop VR/AR, Mobile XR/VR/AR, Game Controller, and Collapsible HUD.">
+  <meta name="description" content="Multi-stage Sci-Fi WebXR experience - Stage 1: Distant Neon Cyan Wormhole with Hardware Support Verification, Telemetry, and Collapsible HUD.">
   <title>Wormhole XR - Stage 1: Distant Neon Cyan Singularity</title>
 
   <!-- Favicon and App Icons -->
@@ -224,7 +224,6 @@
 
     /* ==========================================================================
        COLLAPSIBLE LEFT-HAND MISSION & CONTROLS SLIDE-OUT DRAWER
-       Hides off the left screen edge; reveals on strip hover or button click.
        ========================================================================== */
     #left-drawer-container {
       pointer-events: auto;
@@ -239,7 +238,6 @@
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Auto-reveal on hover when auto-hide is active, or stay open when pinned */
     #left-drawer-container:hover,
     #left-drawer-container.pinned,
     #left-drawer-container.hover-active {
@@ -261,7 +259,6 @@
       font-size: 0.74rem;
     }
 
-    /* Vertical Holographic Pull Strip */
     .drawer-strip-handle {
       width: 30px;
       height: 140px;
@@ -306,7 +303,6 @@
       transform: rotate(180deg);
     }
 
-    /* Auto-Hide Toggle Checkbox */
     .drawer-top-bar {
       display: flex;
       justify-content: space-between;
@@ -772,6 +768,163 @@
       line-height: 1.45;
     }
 
+    /* ==========================================================================
+       CLOSEABLE FULL-SCREEN UNSUPPORTED HARDWARE MODAL & BADGE
+       ========================================================================== */
+    .device-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(1, 5, 10, 0.92);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      z-index: 10000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    }
+
+    .device-modal-box {
+      position: relative;
+      background: rgba(2, 16, 28, 0.94);
+      border: 1px solid var(--accent-alert);
+      box-shadow: 0 0 35px rgba(239, 68, 111, 0.4), inset 0 0 20px rgba(239, 68, 111, 0.1);
+      border-radius: 12px;
+      padding: clamp(16px, 3vmin, 26px);
+      max-width: 620px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      font-size: 0.85rem;
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.8rem;
+      cursor: pointer;
+      line-height: 1;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .modal-close-btn:hover {
+      opacity: 1.0;
+      color: var(--cyan-neon);
+    }
+
+    .modal-alert-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .alert-pulse-orb {
+      font-size: 2rem;
+      animation: alertPulse 1.2s infinite alternate;
+    }
+    @keyframes alertPulse {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      100% { transform: scale(1.15); opacity: 1.0; }
+    }
+
+    .alert-title {
+      font-size: clamp(0.95rem, 1.8vmin, 1.15rem);
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: var(--accent-alert);
+      text-transform: uppercase;
+      text-shadow: 0 0 10px rgba(239, 68, 111, 0.5);
+    }
+
+    .alert-subtitle {
+      font-size: 0.76rem;
+      color: var(--cyan-neon);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .unsupported-status-banner {
+      background: rgba(239, 68, 111, 0.15);
+      border-left: 4px solid var(--accent-alert);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .unsupported-highlight {
+      color: var(--accent-alert);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .unsupported-reason-text {
+      color: #cbd5e1;
+      font-size: 0.82rem;
+      line-height: 1.45;
+      margin-bottom: 14px;
+    }
+
+    .device-specs-card {
+      background: rgba(0, 20, 35, 0.65);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 0.76rem;
+    }
+
+    .specs-card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+      padding-bottom: 4px;
+    }
+
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      color: var(--text-dim);
+    }
+    .spec-val {
+      font-family: 'Courier New', Courier, monospace;
+      color: #e0f9ff;
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .recommended-action-box {
+      background: rgba(6, 214, 160, 0.12);
+      border: 1px solid var(--accent-green);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+    }
+
+    .modal-action-footer {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
     @media screen and (orientation: portrait) and (max-width: 900px) {
       #landscape-rotate-prompt {
         display: flex !important;
@@ -782,14 +935,12 @@
       }
     }
 
-    /* Hide HUD in XR presentation mode */
     body.in-xr-session #hud-layer,
     body.in-xr-session #left-drawer-container,
     body.in-xr-session #mobile-touch-controls {
       display: none !important;
     }
 
-    /* Responsive adjustments */
     @media (max-width: 900px) {
       .flight-sidebar {
         display: none;
@@ -824,6 +975,79 @@
     <div class="rotate-title">ROTATE TO LANDSCAPE</div>
     <div class="rotate-desc">
       Wormhole XR requires horizontal landscape orientation for stereoscopic XR projection and tactile dual-stick cockpit flight.
+    </div>
+  </div>
+
+  <!-- Closeable Full-Screen Holographic Incompatibility Badge / Modal -->
+  <div id="unsupported-device-modal" class="device-modal-overlay">
+    <div class="device-modal-box">
+      <button class="modal-close-btn" id="btn-close-device-modal" title="Dismiss modal">&times;</button>
+
+      <div class="modal-alert-header">
+        <div class="alert-pulse-orb">⚠️</div>
+        <div>
+          <div class="alert-title">HARDWARE / MODE INCOMPATIBILITY DETECTED</div>
+          <div class="alert-subtitle" id="modal-mode-name">DESKTOP VR (PCVR / HMD)</div>
+        </div>
+      </div>
+
+      <div class="unsupported-status-banner">
+        <span>DEVICE STATUS:</span> <span class="unsupported-highlight" id="modal-support-flag">NOT VALIDATED FOR THIS MODE</span>
+      </div>
+
+      <div class="unsupported-reason-text" id="modal-reason-text">
+        WebXR 'immersive-vr' session is not supported on this browser or no VR headset (HMD) is currently connected and active.
+      </div>
+
+      <!-- Detected Device Diagnostics Card -->
+      <div class="device-specs-card">
+        <div class="specs-card-title">DETECTED HARDWARE SIGNATURE</div>
+        <div class="spec-row">
+          <span class="spec-label">Device Name / Model:</span>
+          <span class="spec-val" id="spec-device-name">Meta Quest 3 (or Windows PC)</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">Operating Platform:</span>
+          <span class="spec-val" id="spec-os-platform">Windows 11 / Horizon OS</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">Browser Engine:</span>
+          <span class="spec-val" id="spec-browser">Google Chrome 126</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">GPU Architecture:</span>
+          <span class="spec-val" id="spec-gpu">NVIDIA GeForce RTX 4080 / Adreno 740</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">WebXR Immersive VR:</span>
+          <span class="spec-val" id="spec-vr-status">UNSUPPORTED</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">WebXR Immersive AR (ARCore):</span>
+          <span class="spec-val" id="spec-ar-status">UNSUPPORTED</span>
+        </div>
+      </div>
+
+      <!-- Recommended Action Box -->
+      <div class="recommended-action-box">
+        <div style="font-weight: bold; color: var(--accent-green); margin-bottom: 4px;">RECOMMENDED ACTION:</div>
+        <div id="modal-recommendation-text" style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.4;">
+          Switch to Desktop XR (6-DOF Mouse & Keyboard) which is 100% hardware-accelerated with custom bloom & gravitational lensing shaders.
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="modal-action-footer">
+        <button id="btn-switch-recommended" class="hud-btn btn-ready">
+          🚀 Switch to Recommended Mode
+        </button>
+        <button id="btn-force-continue" class="hud-btn">
+          ⚠️ Force Continue Anyway
+        </button>
+        <button id="btn-dismiss-modal" class="hud-btn" style="background: rgba(255,255,255,0.06);">
+          Close Badge
+        </button>
+      </div>
     </div>
   </div>
 

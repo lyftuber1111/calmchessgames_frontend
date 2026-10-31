@@ -249,6 +249,8 @@
           targetTab = 'appointments';
       } else if (normalized === 'messages' || normalized === 'message' || normalized === 'contact' || normalized === 'inquiries' || normalized === 'sent' || normalized === 'sent-messages') {
           targetTab = 'messages';
+      } else if (normalized === 'wormhole_devices' || normalized === 'wormhole' || normalized === 'devices' || normalized === 'xr') {
+          targetTab = 'wormhole_devices';
       } else {
           targetTab = 'segments';
       }
@@ -261,6 +263,7 @@
       const tabBtnResets = document.getElementById('tabBtnResets');
       const tabBtnAppointments = document.getElementById('tabBtnAppointments');
       const tabBtnMessages = document.getElementById('tabBtnMessages');
+      const tabBtnWormholeDevices = document.getElementById('tabBtnWormholeDevices');
 
       const contentSegments = document.getElementById('tabContentSegments');
       const contentUsers = document.getElementById('tabContentUsers');
@@ -269,6 +272,7 @@
       const contentResets = document.getElementById('tabContentResets');
       const contentAppointments = document.getElementById('tabContentAppointments');
       const contentMessages = document.getElementById('tabContentMessages');
+      const contentWormholeDevices = document.getElementById('tabContentWormholeDevices');
 
       if (tabBtnSegments) tabBtnSegments.classList.toggle('active', targetTab === 'segments');
       if (tabBtnUsers) tabBtnUsers.classList.toggle('active', targetTab === 'users');
@@ -277,6 +281,7 @@
       if (tabBtnResets) tabBtnResets.classList.toggle('active', targetTab === 'resets');
       if (tabBtnAppointments) tabBtnAppointments.classList.toggle('active', targetTab === 'appointments');
       if (tabBtnMessages) tabBtnMessages.classList.toggle('active', targetTab === 'messages');
+      if (tabBtnWormholeDevices) tabBtnWormholeDevices.classList.toggle('active', targetTab === 'wormhole_devices');
 
       if (contentSegments) contentSegments.style.display = (targetTab === 'segments') ? 'block' : 'none';
       if (contentUsers) contentUsers.style.display = (targetTab === 'users') ? 'block' : 'none';
@@ -285,6 +290,7 @@
       if (contentResets) contentResets.style.display = (targetTab === 'resets') ? 'block' : 'none';
       if (contentAppointments) contentAppointments.style.display = (targetTab === 'appointments') ? 'block' : 'none';
       if (contentMessages) contentMessages.style.display = (targetTab === 'messages') ? 'block' : 'none';
+      if (contentWormholeDevices) contentWormholeDevices.style.display = (targetTab === 'wormhole_devices') ? 'block' : 'none';
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -3121,3 +3127,259 @@ Thank you for reaching out to Calm Chess Games. `;
   });
 
 })(window);
+
+  // =========================================================================
+  // WORMHOLE XR HARDWARE & TELEMETRY REGISTRY
+  // =========================================================================
+  let cachedWormholeDevices = [];
+
+  function fetchWormholeDevices() {
+      const tbody = document.getElementById('adminWormholeDevicesBody');
+      if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="9" style="padding: 16px; text-align: center; color: var(--text-muted);">Querying hardware telemetry database...</td></tr>';
+      }
+
+      const pass = getActiveAdminKey();
+      fetch('admin_api.php?action=get_wormhole_devices&admin_key=' + encodeURIComponent(pass), {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+      })
+      .then(r => r.json())
+      .then(res => {
+          if (!res.success) {
+              if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="padding: 16px; text-align: center; color: #ef476f;">Error: ${res.message || 'Failed to load devices'}</td></tr>`;
+              return;
+          }
+
+          cachedWormholeDevices = res.devices || [];
+
+          // Update metrics
+          const mTotal = document.getElementById('metricTotalDevices');
+          const mSupp = document.getElementById('metricSupportedDevices');
+          const mUnsupp = document.getElementById('metricUnsupportedDevices');
+          const mVr = document.getElementById('metricVrDevices');
+          const badge = document.getElementById('wormholeDeviceBadge');
+
+          if (mTotal) mTotal.textContent = res.total || 0;
+          if (mSupp) mSupp.textContent = res.supported || 0;
+          if (mUnsupp) mUnsupp.textContent = res.unsupported || 0;
+          if (mVr) mVr.textContent = (res.vr_count || 0) + (res.mobile_count || 0);
+
+          if (badge) {
+              badge.textContent = res.total || 0;
+              badge.style.display = (res.total > 0) ? 'inline-block' : 'none';
+          }
+
+          renderWormholeDevices(cachedWormholeDevices);
+      })
+      .catch(err => {
+          console.error('[Admin] Wormhole device fetch error:', err);
+          if (tbody) tbody.innerHTML = `<tr><td colspan="9" style="padding: 16px; text-align: center; color: #ef476f;">Network or Server Error: ${err.message}</td></tr>`;
+      });
+  }
+
+  function renderWormholeDevices(devices) {
+      const tbody = document.getElementById('adminWormholeDevicesBody');
+      if (!tbody) return;
+
+      if (!devices || devices.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="9" style="padding: 24px; text-align: center; color: var(--text-muted);">No hardware devices currently registered in database. Click <strong>[🌱 Seed Certified XR Devices]</strong> or <strong>[+ Add Device]</strong> to populate.</td></tr>';
+          return;
+      }
+
+      let html = '';
+      devices.forEach(d => {
+          const isSupp = parseInt(d.is_supported, 10) === 1;
+          const statusBadge = isSupp
+              ? '<span style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: bold;">✓ SUPPORTED</span>'
+              : '<span style="background: rgba(239, 68, 111, 0.2); color: #ef476f; border: 1px solid #ef476f; padding: 2px 8px; border-radius: 12px; font-size: 0.72rem; font-weight: bold;">✗ BLOCKED</span>';
+
+          const typePill = `<span style="background: rgba(0, 240, 255, 0.1); color: #00f0ff; border: 1px solid rgba(0, 240, 255, 0.3); padding: 1px 6px; border-radius: 4px; font-size: 0.72rem; text-transform: uppercase;">${escapeHtml(d.device_type || 'unknown')}</span>`;
+
+          const modes = (d.supported_modes || '').split(',').map(m => `<span style="background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; font-size: 0.7rem; margin-right: 3px;">${escapeHtml(m.trim())}</span>`).join('');
+
+          html += `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(0, 240, 255, 0.05)'" onmouseout="this.style.background='transparent'">
+              <td style="padding: 10px 12px; font-family: monospace; color: var(--text-muted);">${d.id}</td>
+              <td style="padding: 10px 12px; font-weight: bold; color: #fff;">
+                  ${escapeHtml(d.device_name)}
+                  ${d.notes ? `<div style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal; margin-top: 2px;">${escapeHtml(d.notes)}</div>` : ''}
+              </td>
+              <td style="padding: 10px 12px;">${typePill}</td>
+              <td style="padding: 10px 12px; font-size: 0.78rem;">
+                  <div style="color: #e0f9ff;">${escapeHtml(d.os_platform || '-')}</div>
+                  <div style="color: var(--text-muted); font-size: 0.72rem;">${escapeHtml(d.browser || '-')}</div>
+              </td>
+              <td style="padding: 10px 12px; font-size: 0.75rem; color: var(--text-dim); max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(d.gpu_renderer || '')}">
+                  ${escapeHtml(d.gpu_renderer || '-')}
+              </td>
+              <td style="padding: 10px 12px;">${modes || '<span style="color:#ef476f;">None</span>'}</td>
+              <td style="padding: 10px 12px; text-align: center;">${statusBadge}</td>
+              <td style="padding: 10px 12px; text-align: center; font-family: monospace; font-weight: bold; color: #00f0ff;">${d.reported_count || 1}</td>
+              <td style="padding: 10px 12px; text-align: center; white-space: nowrap;">
+                  <button onclick="toggleWormholeDeviceSupport(${d.id}, ${isSupp ? 1 : 0})" class="admin-tab-btn" style="padding: 3px 8px; font-size: 0.7rem; background: rgba(255,255,255,0.06); border-color: ${isSupp ? '#ef476f' : '#10b981'}; color: ${isSupp ? '#ef476f' : '#10b981'};" title="Toggle Support State">
+                      ${isSupp ? 'Block' : 'Whitelist'}
+                  </button>
+                  <button onclick="deleteWormholeDevice(${d.id}, '${escapeHtml(d.device_name)}')" class="admin-tab-btn" style="padding: 3px 8px; font-size: 0.7rem; background: rgba(239, 68, 111, 0.15); border-color: #ef476f; color: #ef476f; margin-left: 4px;" title="Delete Device Record">
+                      Delete
+                  </button>
+              </td>
+          </tr>
+          `;
+      });
+
+      tbody.innerHTML = html;
+  }
+
+  function filterWormholeDevices() {
+      const q = (document.getElementById('wormholeDeviceSearchInput')?.value || '').toLowerCase().trim();
+      const filter = document.getElementById('wormholeDeviceFilterSelect')?.value || 'all';
+
+      const filtered = cachedWormholeDevices.filter(d => {
+          const matchQuery = !q || (d.device_name || '').toLowerCase().includes(q) || (d.gpu_renderer || '').toLowerCase().includes(q) || (d.os_platform || '').toLowerCase().includes(q);
+          if (!matchQuery) return false;
+
+          if (filter === 'supported') return parseInt(d.is_supported, 10) === 1;
+          if (filter === 'unsupported') return parseInt(d.is_supported, 10) === 0;
+          if (filter === 'vr_hmd') return d.device_type === 'vr_hmd';
+          if (filter === 'mobile') return d.device_type === 'mobile' || d.device_type === 'tablet';
+          if (filter === 'desktop') return d.device_type === 'desktop';
+          return true;
+      });
+
+      renderWormholeDevices(filtered);
+  }
+
+  function openAddWormholeDeviceModal() {
+      const m = document.getElementById('addWormholeDeviceModal');
+      if (m) m.style.display = 'flex';
+  }
+
+  function closeAddWormholeDeviceModal() {
+      const m = document.getElementById('addWormholeDeviceModal');
+      if (m) m.style.display = 'none';
+  }
+
+  function saveManualWormholeDevice() {
+      const name = document.getElementById('newDevName')?.value.trim();
+      const type = document.getElementById('newDevType')?.value || 'unknown';
+      const supp = document.getElementById('newDevSupported')?.value || '1';
+      const os = document.getElementById('newDevOs')?.value.trim();
+      const browser = document.getElementById('newDevBrowser')?.value.trim();
+      const gpu = document.getElementById('newDevGpu')?.value.trim();
+      const notes = document.getElementById('newDevNotes')?.value.trim();
+
+      const modes = [];
+      if (document.getElementById('chkModeDesktopXr')?.checked) modes.push('desktop-xr');
+      if (document.getElementById('chkModeDesktopVr')?.checked) modes.push('desktop-vr');
+      if (document.getElementById('chkModeMobileXr')?.checked) modes.push('mobile-xr');
+      if (document.getElementById('chkModeMobileAr')?.checked) modes.push('mobile-ar');
+
+      if (!name) {
+          alert('Please enter a device name or model.');
+          return;
+      }
+
+      const pass = getActiveAdminKey();
+      const payload = {
+          device_name: name,
+          device_type: type,
+          is_supported: supp,
+          os_platform: os,
+          browser: browser,
+          gpu_renderer: gpu,
+          supported_modes: modes.join(','),
+          notes: notes,
+          admin_key: pass
+      };
+
+      fetch('admin_api.php?action=add_wormhole_device', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(payload)
+      })
+      .then(r => r.json())
+      .then(res => {
+          if (!res.success) {
+              alert('Failed to register device: ' + (res.message || 'Unknown error'));
+              return;
+          }
+          closeAddWormholeDeviceModal();
+          // Reset form
+          if (document.getElementById('newDevName')) document.getElementById('newDevName').value = '';
+          if (document.getElementById('newDevOs')) document.getElementById('newDevOs').value = '';
+          if (document.getElementById('newDevBrowser')) document.getElementById('newDevBrowser').value = '';
+          if (document.getElementById('newDevGpu')) document.getElementById('newDevGpu').value = '';
+          if (document.getElementById('newDevNotes')) document.getElementById('newDevNotes').value = '';
+          fetchWormholeDevices();
+          alert('✓ Device registered successfully into hardware whitelist!');
+      })
+      .catch(err => {
+          alert('Error: ' + err.message);
+      });
+  }
+
+  function toggleWormholeDeviceSupport(id, currentStatus) {
+      const newStatus = (currentStatus === 1) ? 0 : 1;
+      const pass = getActiveAdminKey();
+
+      fetch('admin_api.php?action=update_wormhole_device', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ id: id, is_supported: newStatus, admin_key: pass })
+      })
+      .then(r => r.json())
+      .then(res => {
+          if (!res.success) {
+              alert('Failed to update support status: ' + (res.message || 'Unknown error'));
+              return;
+          }
+          fetchWormholeDevices();
+      })
+      .catch(err => alert('Error: ' + err.message));
+  }
+
+  function deleteWormholeDevice(id, name) {
+      if (!confirm(`Are you sure you want to permanently delete hardware record #${id} ("${name}")?`)) {
+          return;
+      }
+      const pass = getActiveAdminKey();
+
+      fetch('admin_api.php?action=delete_wormhole_device', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ id: id, admin_key: pass })
+      })
+      .then(r => r.json())
+      .then(res => {
+          if (!res.success) {
+              alert('Failed to delete device: ' + (res.message || 'Unknown error'));
+              return;
+          }
+          fetchWormholeDevices();
+      })
+      .catch(err => alert('Error: ' + err.message));
+  }
+
+  function seedOpenSourceWormholeDevices() {
+      if (!confirm('Populate the certified open-source list of WebXR & ARCore devices into the database?')) {
+          return;
+      }
+      const pass = getActiveAdminKey();
+
+      fetch('admin_api.php?action=seed_wormhole_devices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ admin_key: pass })
+      })
+      .then(r => r.json())
+      .then(res => {
+          if (!res.success) {
+              alert('Seeding failed: ' + (res.message || 'Unknown error'));
+              return;
+          }
+          fetchWormholeDevices();
+          alert('✓ Successfully populated ' + (res.seeded_count || 14) + ' certified Open-Source XR/ARCore devices!');
+      })
+      .catch(err => alert('Error: ' + err.message));
+  }

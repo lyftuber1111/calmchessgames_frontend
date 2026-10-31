@@ -852,92 +852,6 @@
       box-shadow: 0 0 15px var(--accent-green);
     }
 
-    /* 3D Holographic Wormhole Nav Marker & Off-Screen Compass */
-    .wormhole-nav-marker {
-      position: fixed;
-      top: 0;
-      left: 0;
-      transform: translate(-50%, -50%);
-      pointer-events: auto;
-      cursor: pointer;
-      z-index: 55;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.2s ease;
-      will-change: transform, left, top;
-    }
-
-    .nav-marker-box {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 8px;
-      background: rgba(0, 25, 45, 0.78);
-      border: 1px solid var(--cyan-neon);
-      border-radius: 4px;
-      box-shadow: 0 0 14px rgba(0, 240, 255, 0.45);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-      pointer-events: auto;
-    }
-
-    .nav-marker-reticle {
-      width: 14px;
-      height: 14px;
-      border: 2px solid #ffffff;
-      border-radius: 50%;
-      box-shadow: 0 0 8px var(--cyan-neon);
-      animation: pulse-ring 1.8s infinite alternate;
-    }
-
-    .nav-marker-content {
-      display: flex;
-      flex-direction: column;
-      line-height: 1.1;
-    }
-
-    .nav-marker-title {
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: var(--cyan-neon);
-      text-shadow: 0 0 6px var(--cyan-neon);
-      white-space: nowrap;
-    }
-
-    .nav-marker-dist {
-      font-size: 0.62rem;
-      font-family: monospace;
-      color: #fff;
-      font-weight: bold;
-    }
-
-    .nav-marker-arrow {
-      font-size: 1.15rem;
-      color: var(--cyan-neon);
-      text-shadow: 0 0 10px var(--cyan-neon), 0 0 18px rgba(0,240,255,0.8);
-      transform-origin: center center;
-      transition: transform 0.1s linear;
-      margin-top: 2px;
-      display: none;
-    }
-
-    .wormhole-nav-marker.off-screen .nav-marker-arrow {
-      display: block;
-    }
-
-    .wormhole-nav-marker.off-screen .nav-marker-box {
-      border-color: #ffaa00;
-      box-shadow: 0 0 12px rgba(255, 170, 0, 0.6);
-    }
-
-    .wormhole-nav-marker.off-screen .nav-marker-title {
-      color: #ffaa00;
-      text-shadow: 0 0 6px #ffaa00;
-    }
-
     /* Notification Banner */
     #toast-msg {
       position: absolute;
@@ -991,18 +905,45 @@
       transition: left 0.3s ease, right 0.3s ease, top 0.3s ease, bottom 0.3s ease;
     }
 
-    /* Left Flight Joystick (Standard: Bottom-Left) */
-    #touch-stick-zone {
-      bottom: 25px;
-      left: clamp(16px, 3vw, 36px);
+    /* Bottom-Left: Crosshair Aim Joystick (Standard Layout) */
+    .aim-stick-zone {
+      background: rgba(0, 30, 50, 0.45);
+      border: 2px dashed rgba(0, 240, 255, 0.5);
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.18);
+      cursor: crosshair;
+      bottom: clamp(28px, 6vh, 48px);
+      left: clamp(24px, 5vw, 48px);
       right: auto;
       top: auto;
+    }
+
+    .aim-stick-zone::after {
+      content: 'AIM RETICLE';
+      position: absolute;
+      top: -20px;
+      bottom: auto;
+      font-size: 0.62rem;
+      color: var(--cyan-neon);
+      letter-spacing: 1px;
+      font-weight: 700;
+      white-space: nowrap;
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.7);
+      pointer-events: none;
+    }
+
+    /* Upper-Right: Fire / Flight Navigation Joystick (Standard Layout) */
+    #touch-stick-zone {
+      top: clamp(30px, 6vh, 50px);
+      right: clamp(24px, 5vw, 48px);
+      left: auto;
+      bottom: auto;
     }
 
     .virtual-stick-zone::after {
       content: 'TAP: FIRE / FLIGHT';
       position: absolute;
-      top: -18px;
+      bottom: -20px;
+      top: auto;
       font-size: 0.62rem;
       color: var(--cyan-neon);
       letter-spacing: 1px;
@@ -1031,32 +972,6 @@
       align-items: center;
       justify-content: center;
       font-size: 0.85rem;
-    }
-
-    /* Right Thumb Aim Joystick (Moved to Upper Right Corner) */
-    .aim-stick-zone {
-      background: rgba(0, 30, 50, 0.45);
-      border: 2px dashed rgba(0, 240, 255, 0.5);
-      box-shadow: 0 0 18px rgba(0, 240, 255, 0.18);
-      cursor: crosshair;
-      top: clamp(20px, 4vh, 35px);
-      right: clamp(16px, 3vw, 36px);
-      left: auto;
-      bottom: auto;
-    }
-
-    .aim-stick-zone::after {
-      content: 'AIM RETICLE';
-      position: absolute;
-      bottom: -18px;
-      top: auto;
-      font-size: 0.62rem;
-      color: var(--cyan-neon);
-      letter-spacing: 1px;
-      font-weight: 700;
-      white-space: nowrap;
-      text-shadow: 0 0 6px rgba(0, 240, 255, 0.7);
-      pointer-events: none;
     }
 
     .aim-stick-knob {
@@ -1106,19 +1021,19 @@
     }
 
     /* Left-Handed Touch Control Layout: Flip joystick locations */
-    body.left-handed-controls #touch-stick-zone,
-    #mobile-touch-controls.left-handed #touch-stick-zone {
+    body.left-handed-controls .aim-stick-zone,
+    #mobile-touch-controls.left-handed .aim-stick-zone {
       left: auto;
-      right: clamp(16px, 3vw, 36px);
-      bottom: 25px;
+      right: clamp(24px, 5vw, 48px);
+      bottom: clamp(28px, 6vh, 48px);
       top: auto;
     }
 
-    body.left-handed-controls #aim-stick-zone,
-    #mobile-touch-controls.left-handed #aim-stick-zone {
+    body.left-handed-controls #touch-stick-zone,
+    #mobile-touch-controls.left-handed #touch-stick-zone {
       right: auto;
-      left: clamp(16px, 3vw, 36px);
-      top: clamp(20px, 4vh, 35px);
+      left: clamp(24px, 5vw, 48px);
+      top: clamp(30px, 6vh, 50px);
       bottom: auto;
     }
 
@@ -1355,6 +1270,38 @@
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 8px;
+    }
+
+    .btn-splash-start {
+      width: 100%;
+      padding: 12px 24px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      border-radius: 28px;
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      background: rgba(0, 30, 50, 0.75);
+      color: rgba(255, 255, 255, 0.4);
+      cursor: not-allowed;
+      transition: all 0.3s ease;
+      font-family: inherit;
+      text-transform: uppercase;
+      box-shadow: none;
+    }
+
+    .btn-splash-start:not(:disabled) {
+      cursor: pointer;
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.95), rgba(0, 140, 255, 0.95));
+      color: #010b14;
+      border-color: #ffffff;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.8), 0 0 10px #00f0ff;
+    }
+
+    .btn-splash-start:not(:disabled):hover {
+      background: #ffffff;
+      color: #000000;
+      box-shadow: 0 0 35px #00f0ff, 0 0 15px #ffffff;
+      transform: scale(1.02);
     }
     .splash-mode-cell {
       background: rgba(0, 25, 45, 0.6);
@@ -1727,6 +1674,17 @@
             <span>🌐 MOBILE AR</span>
             <span class="splash-mode-pill pill-checking" id="state-badge-ar">CHECKING</span>
           </div>
+          <div class="splash-mode-cell" id="splash-controller-cell" style="grid-column: span 2;">
+            <span>🎮 GAMEPAD CONTROLLER</span>
+            <span class="splash-mode-pill pill-checking" id="state-badge-controller">DETECTING...</span>
+          </div>
+        </div>
+
+        <!-- Start Mission / Launch Game Button -->
+        <div class="splash-action-row" style="margin-top: 14px; display: flex; justify-content: center;">
+          <button id="btn-splash-start" class="btn-splash-start" disabled title="Device check in progress...">
+            ⏳ RUNNING DEVICE CHECK...
+          </button>
         </div>
       </div>
     </div>
@@ -2095,18 +2053,6 @@
       <div class="crosshair-circle"></div>
     </div>
     <div id="vector-alignment-ring"></div>
-
-    <!-- 3D Holographic Wormhole Nav Marker & Off-Screen Compass Arrow -->
-    <div id="wormhole-nav-marker" class="wormhole-nav-marker" title="Wormhole Singularity Nav Beacon - Click/Tap to Auto-Align">
-      <div class="nav-marker-box">
-        <div class="nav-marker-reticle"></div>
-        <div class="nav-marker-content">
-          <div class="nav-marker-title">⦿ WORMHOLE SINGULARITY</div>
-          <div class="nav-marker-dist" id="nav-marker-dist">92,400 KM</div>
-        </div>
-      </div>
-      <div class="nav-marker-arrow" id="nav-marker-arrow">▲</div>
-    </div>
 
     <!-- Notification Toast Banner -->
     <div id="toast-msg"></div>

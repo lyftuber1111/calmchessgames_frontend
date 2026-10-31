@@ -385,7 +385,7 @@ const diskGeom = new THREE.RingGeometry(
   16
 );
 const accretionDiskMesh = new THREE.Mesh(diskGeom, accretionDiskMaterial);
-accretionDiskMesh.rotation.x = Math.PI / 2.3;
+accretionDiskMesh.rotation.x = Math.PI / 3.4;
 scene.add(accretionDiskMesh);
 
 const diskGeomSecondary = new THREE.RingGeometry(
@@ -398,7 +398,7 @@ const secondaryDiskMaterial = accretionDiskMaterial.clone();
 secondaryDiskMaterial.uniforms.uSpeed = { value: -CONFIG.rotationSpeed * 0.6 };
 secondaryDiskMaterial.uniforms.uColorEdge = { value: new THREE.Color(0x001f3f) };
 const accretionDiskMesh2 = new THREE.Mesh(diskGeomSecondary, secondaryDiskMaterial);
-accretionDiskMesh2.rotation.x = -Math.PI / 2.7;
+accretionDiskMesh2.rotation.x = -Math.PI / 3.8;
 accretionDiskMesh2.rotation.y = Math.PI / 6;
 scene.add(accretionDiskMesh2);
 
@@ -714,7 +714,7 @@ function createWormholeDistantCorona() {
     depthWrite: false
   });
   const sprite = new THREE.Sprite(mat);
-  sprite.scale.set(85, 85, 1);
+  sprite.scale.set(160, 160, 1);
   sprite.position.set(0, 0, 0);
   return sprite;
 }
@@ -2438,18 +2438,38 @@ window.addEventListener('mouseup', () => {
   state.isMouseDown = false;
 });
 
-// Auto-Align View to Wormhole Singularity
+// Auto-Align View to Wormhole Singularity (Smooth shortest-arc alignment with zero swinging)
 function alignToWormhole() {
   if (!camera) return;
-  const toWormhole = new THREE.Vector3(0, 0, 0).sub(camera.position);
-  if (toWormhole.length() < 0.1) return;
-  toWormhole.normalize();
 
-  // Desired yaw and pitch towards (0, 0, 0)
-  state.targetYaw = Math.atan2(-toWormhole.x, -toWormhole.z);
-  state.targetPitch = Math.asin(Math.max(-0.95, Math.min(0.95, toWormhole.y)));
+  // If inside or dangerously close to event horizon, place safely at observation distance
+  if (camera.position.length() < 15.0) {
+    camera.position.set(0, 2.5, CONFIG.wormholeDistance);
+    state.position.copy(camera.position);
+  }
+
+  // Dampen translation drift so view stabilization doesn't fight centrifugal motion
+  state.velocity.multiplyScalar(0.25);
+
+  const toWormhole = new THREE.Vector3(0, 0, 0).sub(camera.position);
+  if (toWormhole.lengthSq() < 0.001) {
+    toWormhole.set(0, 0, -1);
+  } else {
+    toWormhole.normalize();
+  }
+
+  const rawTargetYaw = Math.atan2(-toWormhole.x, -toWormhole.z);
+  const rawTargetPitch = Math.asin(Math.max(-0.95, Math.min(0.95, toWormhole.y)));
+
+  // Calculate shortest angular path from current state.yaw (avoids 360-degree swing / modulo glitches)
+  let diff = (rawTargetYaw - state.yaw) % (Math.PI * 2);
+  while (diff < -Math.PI) diff += Math.PI * 2;
+  while (diff > Math.PI) diff -= Math.PI * 2;
+
+  state.targetYaw = state.yaw + diff;
+  state.targetPitch = rawTargetPitch;
   state.isAligningToWormhole = true;
-  showToast('🧭 NAV LOCK: ALIGNING VIEW TO WORMHOLE');
+  showToast('🧭 ALIGNING VIEW WITH WORMHOLE SINGULARITY');
 }
 
 // Mobile Touch Drag Camera Look / Rotate Controls
@@ -2856,18 +2876,17 @@ function renderPostProcessing() {
 
 function updateFlight(delta) {
   if (state.isAligningToWormhole) {
-    let yawDiff = (state.targetYaw - state.yaw) % (Math.PI * 2);
-    if (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
-    if (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
-    
-    state.yaw += yawDiff * Math.min(1.0, delta * 6.0);
-    state.pitch += (state.targetPitch - state.pitch) * Math.min(1.0, delta * 6.0);
-    
-    if (Math.abs(yawDiff) < 0.01 && Math.abs(state.targetPitch - state.pitch) < 0.01) {
+    const yawStep = state.targetYaw - state.yaw;
+    const pitchStep = state.targetPitch - state.pitch;
+    const factor = Math.min(1.0, delta * 7.5);
+    state.yaw += yawStep * factor;
+    state.pitch += pitchStep * factor;
+
+    if (Math.abs(yawStep) < 0.005 && Math.abs(pitchStep) < 0.005) {
       state.yaw = state.targetYaw;
       state.pitch = state.targetPitch;
       state.isAligningToWormhole = false;
-      showToast('🎯 WORMHOLE SINGULARITY LOCKED IN SIGHT');
+      showToast('🎯 WORMHOLE SINGULARITY CENTERED IN SIGHT');
     }
   }
 
@@ -2947,6 +2966,15 @@ function updateFlight(delta) {
     }
     state.velocity.multiplyScalar(0.92);
     camera.position.addScaledVector(state.velocity, delta);
+
+    // Sublight navigation: allow flying right up to the accretion disk and event horizon
+    // Hold safe standoff radius outside event horizon so the player can orbit and look around
+    const distToCenter = camera.position.length();
+    const minSafeDist = CONFIG.eventHorizonRadius * 1.35;
+    if (distToCenter < minSafeDist) {
+      camera.position.normalize().multiplyScalar(minSafeDist);
+      state.velocity.multiplyScalar(0.5);
+    }
   }
 
   state.position.copy(camera.position);
@@ -2989,81 +3017,6 @@ function updateFlight(delta) {
   audioMgr.updateProximity(distKm);
 }
 
-// 3D Holographic Wormhole Nav Marker & Off-Screen Compass Arrow
-function updateWormholeNavMarker() {
-  const marker = document.getElementById('wormhole-nav-marker');
-  if (!marker || !camera) return;
-
-  const distLength = state.position.length();
-  const distKm = Math.round(distLength * 420);
-  const distTextEl = document.getElementById('nav-marker-dist');
-  if (distTextEl) distTextEl.textContent = `${distKm.toLocaleString()} KM`;
-
-  const wormholePos = new THREE.Vector3(0, 0, 0);
-  const toWormhole = wormholePos.clone().sub(camera.position);
-  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-  const isBehind = forward.dot(toWormhole.clone().normalize()) <= 0;
-
-  // Project (0, 0, 0) onto camera screen space [-1, 1]
-  const projected = wormholePos.clone().project(camera);
-
-  let ndcX = projected.x;
-  let ndcY = projected.y;
-
-  if (isBehind) {
-    ndcX = -ndcX;
-    ndcY = -ndcY;
-    if (Math.abs(ndcX) < 0.0001 && Math.abs(ndcY) < 0.0001) {
-      ndcY = -1;
-    }
-  }
-
-  let sx = (ndcX * 0.5 + 0.5) * window.innerWidth;
-  let sy = (-ndcY * 0.5 + 0.5) * window.innerHeight;
-
-  const padX = 70;
-  const padY = 70;
-  const minX = padX;
-  const maxX = window.innerWidth - padX;
-  const minY = padY;
-  const maxY = window.innerHeight - padY;
-
-  const inView = !isBehind && sx >= minX && sx <= maxX && sy >= minY && sy <= maxY;
-  const arrowEl = document.getElementById('nav-marker-arrow');
-
-  if (inView) {
-    marker.classList.remove('off-screen');
-    marker.style.left = `${sx}px`;
-    marker.style.top = `${sy}px`;
-    if (arrowEl) arrowEl.style.display = 'none';
-  } else {
-    marker.classList.add('off-screen');
-    if (arrowEl) arrowEl.style.display = 'block';
-
-    const cx = window.innerWidth / 2;
-    const cy = window.innerHeight / 2;
-    const dx = sx - cx;
-    const dy = sy - cy;
-    const angle = Math.atan2(dy, dx);
-
-    const halfW = (window.innerWidth / 2) - padX;
-    const halfH = (window.innerHeight / 2) - padY;
-
-    let tX = (dx !== 0) ? Math.abs(halfW / dx) : Infinity;
-    let tY = (dy !== 0) ? Math.abs(halfH / dy) : Infinity;
-    let t = Math.min(tX, tY);
-
-    const clampedX = cx + dx * t;
-    const clampedY = cy + dy * t;
-
-    marker.style.left = `${clampedX}px`;
-    marker.style.top = `${clampedY}px`;
-
-    const arrowAngleDeg = (angle * 180 / Math.PI) - 90;
-    if (arrowEl) arrowEl.style.transform = `rotate(${arrowAngleDeg}deg)`;
-  }
-}
-
 // Nav Lock and Align Button Wiring
 const btnAlignWormhole = document.getElementById('btn-align-wormhole');
 if (btnAlignWormhole) {
@@ -3075,13 +3028,6 @@ if (btnAlignWormhole) {
 const btnDrawerAlign = document.getElementById('btn-drawer-align');
 if (btnDrawerAlign) {
   btnDrawerAlign.addEventListener('click', (e) => {
-    e.preventDefault();
-    alignToWormhole();
-  });
-}
-const wormholeNavMarkerEl = document.getElementById('wormhole-nav-marker');
-if (wormholeNavMarkerEl) {
-  wormholeNavMarkerEl.addEventListener('click', (e) => {
     e.preventDefault();
     alignToWormhole();
   });
@@ -3106,7 +3052,6 @@ if (renderer) {
     updateFlight(delta);
   }
 
-  updateWormholeNavMarker();
   updateCrosshairPosition(delta);
   updateLaserBolts(delta);
 
@@ -3167,6 +3112,37 @@ window.addEventListener('resize', () => {
 });
 
 // Splash Screen & Multi-Platform Runtime Verification Runner
+// Physical Gamepad Detection for Splash Screen & HUD
+function updateSplashGamepadStatus() {
+  const badge = document.getElementById('state-badge-controller');
+  if (!badge) return;
+  const gamepads = (typeof navigator.getGamepads === 'function') ? navigator.getGamepads() : [];
+  let foundPad = null;
+  for (let i = 0; i < gamepads.length; i++) {
+    if (gamepads[i] && gamepads[i].connected) {
+      foundPad = gamepads[i];
+      break;
+    }
+  }
+  if (foundPad) {
+    const padName = foundPad.id.length > 16 ? foundPad.id.slice(0, 16) + '...' : foundPad.id;
+    badge.textContent = `✓ ${padName} DETECTED`;
+    badge.className = 'splash-mode-pill pill-supported';
+    const cell = document.getElementById('splash-controller-cell');
+    if (cell) cell.style.borderColor = 'rgba(6, 214, 160, 0.6)';
+  } else {
+    badge.textContent = 'STANDBY (TOUCH / KB)';
+    badge.className = 'splash-mode-pill pill-checking';
+  }
+}
+window.addEventListener('gamepadconnected', (e) => {
+  updateSplashGamepadStatus();
+  showToast(`🎮 GAMEPAD CONNECTED: ${e.gamepad.id.slice(0, 18)}`);
+});
+window.addEventListener('gamepaddisconnected', () => {
+  updateSplashGamepadStatus();
+});
+
 async function runStartupDiagnosticsAndSplashScreen() {
   const splashEl = document.getElementById('wormhole-splash-screen');
   const splashStatus = document.getElementById('splash-status-text');
@@ -3300,22 +3276,41 @@ async function runStartupDiagnosticsAndSplashScreen() {
       return false;
     }
 
-    // 5. Device is RUNNABLE! Launch appropriate flight mode
-    if (splashStatus) splashStatus.textContent = 'SYSTEMS NOMINAL - ENGAGING FLIGHT COCKPIT...';
+    // 5. Device is RUNNABLE! Enable Start Game Button
+    updateSplashGamepadStatus();
+    if (splashStatus) splashStatus.textContent = 'SYSTEMS NOMINAL - READY TO ENTER COCKPIT';
 
-    // Auto-select runnable mode
     state.xrMode = initialMode;
     const selectModeEl = document.getElementById('select-mode');
     if (selectModeEl) selectModeEl.value = initialMode;
     activateModeParameters(state.xrMode);
 
-    setTimeout(() => {
-      if (splashEl) {
-        splashEl.classList.add('splash-fade-out');
-        setTimeout(() => splashEl.remove(), 750);
-      }
-      showToast(`✓ READY: ${descriptiveName}`);
-    }, 650);
+    const startBtn = document.getElementById('btn-splash-start');
+    if (startBtn) {
+      startBtn.disabled = false;
+      startBtn.innerHTML = '🚀 START MISSION / ENTER COCKPIT';
+      startBtn.title = 'Click or press Enter/Space to launch mission';
+      startBtn.classList.add('btn-ready');
+
+      const launchGame = () => {
+        if (startBtn.dataset.launched) return;
+        startBtn.dataset.launched = 'true';
+        if (!audioMgr.isInitialized) audioMgr.init();
+        lockLandscape();
+        if (splashEl) {
+          splashEl.classList.add('splash-fade-out');
+          setTimeout(() => splashEl.remove(), 750);
+        }
+        showToast(`✓ FLIGHT ACTIVE: ${descriptiveName}`);
+      };
+
+      startBtn.addEventListener('click', launchGame);
+      window.addEventListener('keydown', (e) => {
+        if ((e.code === 'Enter' || e.code === 'Space') && splashEl && splashEl.parentNode) {
+          launchGame();
+        }
+      });
+    }
 
     return true;
   } catch (err) {
@@ -3337,8 +3332,8 @@ if (typeof window !== 'undefined') {
   window.isFlightControlLocked = () => performance.now() < state.flightLockoutUntil;
   window.updateCrosshairSpeedMultiplier = updateCrosshairSpeedMultiplier;
   window.alignToWormhole = alignToWormhole;
-  window.updateWormholeNavMarker = updateWormholeNavMarker;
   window.setLeftHandedMode = setLeftHandedMode;
+  window.updateSplashGamepadStatus = updateSplashGamepadStatus;
 }
 
 runStartupDiagnosticsAndSplashScreen();

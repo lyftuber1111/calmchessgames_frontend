@@ -1165,6 +1165,23 @@
           <option value="mobile-ar">🌐 MOBILE AR (ARCore)</option>
         </select>
 
+        <!-- Specific Hardware Device Selector -->
+        <select id="select-device" class="hud-select" title="Target Hardware Device Profile">
+          <option value="auto" selected>⚡ Auto-Detect Device</option>
+          <option value="desktop-pc">🖥️ Desktop PC (No VR HMD)</option>
+          <option value="desktop-vr-hmd">🥽 PCVR Headset (SteamVR / Quest Link)</option>
+          <option value="meta-quest">🥽 Meta Quest 2 / 3 / Pro (Horizon OS)</option>
+          <option value="apple-vision-pro">🥽 Apple Vision Pro (visionOS)</option>
+          <option value="android-arcore">📱 Android Phone (ARCore Certified)</option>
+          <option value="android-basic">📱 Android Phone (No ARCore / Basic)</option>
+          <option value="iphone-arkit">📱 Apple iPhone Pro (LiDAR ARKit)</option>
+          <option value="tablet">📟 Tablet (iPad / Android)</option>
+        </select>
+
+        <button id="btn-inspect-device" class="hud-btn" style="padding: 5px 12px; font-size: 0.75rem; border-color: #00f0ff; color: #00f0ff; background: rgba(0,240,255,0.12);" title="Inspect Hardware & Test Compatibility">
+          🔍 Test Device
+        </button>
+
         <!-- Gamepad Connection Indicator -->
         <div id="gamepad-status-pill" class="gamepad-pill" title="HTML5 Gamepad API Controller Status">
           <span class="gamepad-dot"></span>

@@ -138,10 +138,12 @@ try {
     webglInitError = new Error(probe.reason);
   } else {
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x01050a, 0.0016);
+    scene.fog = new THREE.FogExp2(0x01050a, 0.0006);
 
     camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2500);
     camera.position.copy(state.position);
+    window.camera = camera;
+    window.scene = scene;
 
     renderer = new THREE.WebGLRenderer({
       powerPreference: 'high-performance',
@@ -157,11 +159,14 @@ try {
     renderer.xr.enabled = true;
     if (container) container.appendChild(renderer.domElement);
 
-    // WebXR Button
+    // WebXR Button - Never show 'VR NOT SUPPORTED' badge during game play
     try {
       vrBtn = VRButton.createButton(renderer);
       vrBtn.id = 'xr-enter-btn';
-      document.body.appendChild(vrBtn);
+      vrBtn.style.display = 'none';
+      if (vrBtn && vrBtn.textContent && !vrBtn.textContent.includes('NOT SUPPORTED')) {
+        document.body.appendChild(vrBtn);
+      }
     } catch (e) {}
 
     renderer.xr.addEventListener('sessionstart', () => {
@@ -346,7 +351,8 @@ const accretionDiskMaterial = new THREE.ShaderMaterial({
   transparent: true,
   side: THREE.DoubleSide,
   blending: THREE.AdditiveBlending,
-  depthWrite: false
+  depthWrite: false,
+  fog: false
 });
 
 const diskGeom = new THREE.RingGeometry(
@@ -431,7 +437,8 @@ const photonRingMaterial = new THREE.ShaderMaterial({
   transparent: true,
   blending: THREE.AdditiveBlending,
   side: THREE.BackSide,
-  depthWrite: false
+  depthWrite: false,
+  fog: false
 });
 
 const photonSphere = new THREE.Mesh(
@@ -579,51 +586,117 @@ const particleMaterial = new THREE.ShaderMaterial({
 const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
 scene.add(particleSystem);
 
-// Starfield & Interstellar Dust
+// Full-Screen Starfield & Celestial Singularity Glow
+function createStarTexture() {
+  const c = document.createElement('canvas');
+  c.width = 32;
+  c.height = 32;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  g.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+  g.addColorStop(0.25, 'rgba(215, 245, 255, 0.95)');
+  g.addColorStop(0.55, 'rgba(0, 210, 255, 0.45)');
+  g.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 32, 32);
+  const tex = new THREE.CanvasTexture(c);
+  return tex;
+}
+
 function createStarfield() {
   const starGeom = new THREE.BufferGeometry();
-  const starPositions = new Float32Array(CONFIG.starCount * 3);
-  const starColors = new Float32Array(CONFIG.starCount * 3);
+  const starCount = 12000;
+  const starPositions = new Float32Array(starCount * 3);
+  const starColors = new Float32Array(starCount * 3);
 
   const starPalette = [
-    new THREE.Color(0xaae7ff),
-    new THREE.Color(0xffffff),
-    new THREE.Color(0x76b6ff),
-    new THREE.Color(0xd0eaff)
+    new THREE.Color(0xffffff), // Pure white
+    new THREE.Color(0xaae7ff), // Cyan shimmer
+    new THREE.Color(0x76b6ff), // Deep celestial blue
+    new THREE.Color(0xd0eaff), // Soft blue-white
+    new THREE.Color(0xffe2a0), // Warm amber star
+    new THREE.Color(0x00f0ff)  // Neon cyan
   ];
 
-  for (let i = 0; i < CONFIG.starCount; i++) {
+  for (let i = 0; i < starCount; i++) {
     const u = Math.random();
     const v = Math.random();
     const theta = u * 2.0 * Math.PI;
     const phi = Math.acos(2.0 * v - 1.0);
-    const r = 900 + Math.random() * 400;
+    
+    // Distribute in concentric volume shells: near, mid, and distant celestial sphere
+    let r;
+    const roll = Math.random();
+    if (roll < 0.25) {
+      r = 50 + Math.random() * 250; // Near ambient space around flight path
+    } else if (roll < 0.65) {
+      r = 300 + Math.random() * 500; // Mid celestial volume
+    } else {
+      r = 800 + Math.random() * 1200; // Deep cosmos background
+    }
 
     starPositions[i * 3 + 0] = r * Math.sin(phi) * Math.cos(theta);
     starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
     starPositions[i * 3 + 2] = r * Math.cos(phi);
 
-    const color = starPalette[Math.floor(Math.random() * starPalette.length)];
-    starColors[i * 3 + 0] = color.r;
-    starColors[i * 3 + 1] = color.g;
-    starColors[i * 3 + 2] = color.b;
+    const baseColor = starPalette[Math.floor(Math.random() * starPalette.length)];
+    const lum = 0.6 + Math.random() * 0.7;
+    starColors[i * 3 + 0] = Math.min(1.0, baseColor.r * lum);
+    starColors[i * 3 + 1] = Math.min(1.0, baseColor.g * lum);
+    starColors[i * 3 + 2] = Math.min(1.0, baseColor.b * lum);
   }
 
   starGeom.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
   starGeom.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
 
   const starMat = new THREE.PointsMaterial({
-    size: 2.2,
+    size: 4.2,
+    map: createStarTexture(),
     vertexColors: true,
     transparent: true,
-    opacity: 0.85,
-    sizeAttenuation: true
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    sizeAttenuation: true,
+    fog: false // Crucial: ensures stars fill the entire screen brilliantly without fog dimming
   });
 
   return new THREE.Points(starGeom, starMat);
 }
 const starfield = createStarfield();
 scene.add(starfield);
+
+// Distant Wormhole Singularity Corona & Celestial Beacon
+function createWormholeDistantCorona() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
+  grad.addColorStop(0.12, 'rgba(0, 240, 255, 0.95)');
+  grad.addColorStop(0.35, 'rgba(0, 160, 255, 0.65)');
+  grad.addColorStop(0.65, 'rgba(0, 80, 220, 0.25)');
+  grad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+
+  const tex = new THREE.CanvasTexture(canvas);
+  const mat = new THREE.SpriteMaterial({
+    map: tex,
+    color: 0x00f0ff,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
+    fog: false,
+    depthWrite: false
+  });
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(85, 85, 1);
+  sprite.position.set(0, 0, 0);
+  return sprite;
+}
+const wormholeCorona = createWormholeDistantCorona();
+scene.add(wormholeCorona);
 
 function createFloatingDust() {
   const dustGeom = new THREE.BufferGeometry();
@@ -1529,8 +1602,7 @@ async function evaluateSpecificDeviceCompatibility(mode, bypassCheck = false, fo
     // If database marked it unsupported OR local capability check failed
     if ((checkResult && checkResult.supported === false) || !localSupported) {
       const finalReason = (checkResult && checkResult.reason) ? checkResult.reason : localReason;
-      const finalRecMode = (checkResult && checkResult.recommended_mode) ? checkResult.recommended_mode : localRecMode;
-      showUnsupportedBadge(mode, finalReason, finalRecMode);
+      showToast(`⚠️ ${mode.toUpperCase()} NOT SUPPORTED: ${finalReason}`);
       return;
     }
   }
@@ -2236,7 +2308,9 @@ function updateFlight(delta) {
   if (keys['KeyE']) state.yaw -= 0.02;
 
   if (state.touchActive) {
+    // Top of stick (touchMove.y < 0): move forward AND move down in 3D space
     accel.addScaledVector(forward, -state.touchMove.y);
+    accel.addScaledVector(up, state.touchMove.y); // Negative when at top -> dives/moves down
     accel.addScaledVector(right, state.touchMove.x);
   }
 
@@ -2333,6 +2407,10 @@ if (renderer) {
 
   starfield.rotation.y = state.time * 0.0025;
   floatingDust.rotation.y = state.time * 0.006;
+  if (wormholeCorona) {
+    const pulseScale = 82.0 + Math.sin(state.time * 2.2) * 6.0;
+    wormholeCorona.scale.set(pulseScale, pulseScale, 1.0);
+  }
 
   if (hudFluxEl) {
     const flux = (14.2 + Math.sin(state.time * 4.0) * 1.8 + (state.isHyperWarping ? 18.0 : 0)).toFixed(1);

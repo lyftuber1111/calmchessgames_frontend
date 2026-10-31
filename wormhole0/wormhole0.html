@@ -751,8 +751,9 @@
       box-shadow: 0 0 8px var(--cyan-neon);
     }
 
-    /* WebXR Native Button Styling Override */
+    /* WebXR Native Button Styling Override - Hidden by default to prevent VR NOT SUPPORTED badge */
     #xr-enter-btn {
+      display: none !important;
       position: fixed !important;
       bottom: 20px !important;
       left: 50% !important;
@@ -1631,7 +1632,7 @@
           <span>🕹️ FLIGHT / CONTROLLER</span>
           <span style="font-size:0.65rem; color:var(--cyan-neon);">6-DOF FLIGHT</span>
         </div>
-        <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">Left Stick</span></div>
+        <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">Stick (Top: Fwd+Down)</span></div>
         <div class="key-row"><span>Strafe Left / Right:</span> <span class="kbd">A / D</span> or <span class="kbd">L-Stick X</span></div>
         <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse</span> or <span class="kbd">Right Stick</span></div>
         <div class="key-row"><span>Elevate / Dive:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">R2 / L2</span></div>

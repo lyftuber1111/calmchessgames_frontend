@@ -797,8 +797,228 @@
       line-height: 1.45;
     }
 
+        /* ==========================================================================
+       COSMIC FULLSCREEN SPLASH SCREEN & RUNTIME VERIFICATION
+       ========================================================================== */
+    #wormhole-splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at 50% 45%, #021a2f 0%, #010810 50%, #000307 100%);
+      z-index: 100000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(14px, 3vmin, 28px);
+      box-sizing: border-box;
+      transition: opacity 0.75s ease-out, visibility 0.75s ease-out;
+      overflow: hidden;
+    }
+
+    #wormhole-splash-screen.splash-fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-content {
+      position: relative;
+      z-index: 2;
+      max-width: 580px;
+      width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .splash-brand {
+      font-size: clamp(0.7rem, 1.4vmin, 0.85rem);
+      letter-spacing: 4px;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      opacity: 0.95;
+      font-weight: 700;
+      text-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .splash-orb-container {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .splash-singularity {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #000;
+      box-shadow: 0 0 25px #00f0ff, 0 0 50px rgba(0, 240, 255, 0.6), inset 0 0 15px rgba(0, 240, 255, 0.8);
+      position: relative;
+      z-index: 3;
+      animation: singularityPulse 2.4s infinite ease-in-out;
+    }
+
+    @keyframes singularityPulse {
+      0%, 100% { transform: scale(0.92); box-shadow: 0 0 20px #00f0ff, 0 0 45px rgba(0, 240, 255, 0.5); }
+      50% { transform: scale(1.08); box-shadow: 0 0 35px #00f0ff, 0 0 70px rgba(0, 240, 255, 0.85); }
+    }
+
+    .splash-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid var(--cyan-neon);
+      opacity: 0.45;
+    }
+    .splash-ring-1 {
+      width: 70px;
+      height: 70px;
+      border-style: dashed;
+      animation: spinRing 6s linear infinite;
+    }
+    .splash-ring-2 {
+      width: 95px;
+      height: 95px;
+      border-top-color: transparent;
+      border-bottom-color: transparent;
+      animation: spinRingRev 9s linear infinite;
+    }
+    .splash-ring-3 {
+      width: 120px;
+      height: 120px;
+      border-left-color: transparent;
+      border-right-color: transparent;
+      opacity: 0.25;
+      animation: spinRing 14s linear infinite;
+    }
+
+    @keyframes spinRing {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes spinRingRev {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    .splash-game-title {
+      font-size: clamp(1.4rem, 3.8vmin, 2.3rem);
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px var(--cyan-neon), 0 0 35px rgba(0, 240, 255, 0.5);
+      margin-bottom: 6px;
+    }
+
+    .splash-game-sub {
+      font-size: clamp(0.7rem, 1.4vmin, 0.84rem);
+      color: var(--text-dim);
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+
+    .splash-card {
+      width: 100%;
+      background: rgba(2, 16, 28, 0.88);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 240, 255, 0.08);
+      margin-bottom: 12px;
+    }
+
+    .splash-status-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+    .splash-status-title {
+      color: var(--cyan-neon);
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .splash-status-desc {
+      color: #cbe7ff;
+      font-family: monospace;
+      font-size: 0.74rem;
+    }
+
+    .splash-progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(0, 240, 255, 0.12);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid rgba(0, 240, 255, 0.25);
+    }
+    .splash-progress-fill {
+      height: 100%;
+      width: 20%;
+      background: linear-gradient(90deg, #0077aa, #00f0ff);
+      box-shadow: 0 0 10px var(--cyan-neon);
+      border-radius: 4px;
+      transition: width 0.35s ease;
+    }
+
+    .splash-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .splash-mode-cell {
+      background: rgba(0, 25, 45, 0.6);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+    }
+    .splash-mode-cell span:first-child {
+      color: #b0d8e8;
+      font-weight: 600;
+    }
+    .splash-mode-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .pill-checking {
+      background: rgba(255, 209, 102, 0.15);
+      color: var(--accent-gold);
+      border: 1px solid rgba(255, 209, 102, 0.3);
+    }
+    .pill-supported {
+      background: rgba(6, 214, 160, 0.15);
+      color: var(--accent-green);
+      border: 1px solid rgba(6, 214, 160, 0.4);
+    }
+    .pill-unsupported {
+      background: rgba(239, 68, 111, 0.15);
+      color: var(--accent-alert);
+      border: 1px solid rgba(239, 68, 111, 0.4);
+    }
+
     /* ==========================================================================
-       CLOSEABLE FULL-SCREEN UNSUPPORTED HARDWARE MODAL & BADGE
+       CLOSEABLE FULL-SCREEN UNSUPPORTED DEVICE BADGE
        ========================================================================== */
     .device-modal-overlay {
       display: none;
@@ -807,28 +1027,35 @@
       left: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(1, 5, 10, 0.92);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      z-index: 10000;
+      background: rgba(1, 5, 10, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 1000000;
       align-items: center;
       justify-content: center;
-      padding: 16px;
+      padding: clamp(14px, 3vmin, 26px);
       box-sizing: border-box;
+      overflow-y: auto;
     }
 
     .device-modal-box {
       position: relative;
-      background: rgba(2, 16, 28, 0.94);
-      border: 1px solid var(--accent-alert);
-      box-shadow: 0 0 35px rgba(239, 68, 111, 0.4), inset 0 0 20px rgba(239, 68, 111, 0.1);
-      border-radius: 12px;
-      padding: clamp(16px, 3vmin, 26px);
-      max-width: 620px;
+      background: rgba(3, 18, 32, 0.97);
+      border: 2px solid var(--accent-alert);
+      box-shadow: 0 0 50px rgba(239, 68, 111, 0.5), inset 0 0 30px rgba(239, 68, 111, 0.15);
+      border-radius: 14px;
+      padding: clamp(18px, 3.5vmin, 32px);
+      max-width: 650px;
       width: 100%;
-      max-height: 90vh;
+      max-height: 94vh;
       overflow-y: auto;
-      font-size: 0.85rem;
+      font-size: 0.88rem;
+      animation: badgePopIn 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    @keyframes badgePopIn {
+      0% { transform: scale(0.92); opacity: 0; }
+      100% { transform: scale(1.0); opacity: 1; }
     }
 
     .modal-close-btn {
@@ -838,47 +1065,57 @@
       background: none;
       border: none;
       color: #fff;
-      font-size: 1.8rem;
+      font-size: 2rem;
       cursor: pointer;
       line-height: 1;
-      opacity: 0.7;
-      transition: opacity 0.2s;
+      opacity: 0.75;
+      text-decoration: none;
+      transition: opacity 0.2s, color 0.2s;
     }
     .modal-close-btn:hover {
       opacity: 1.0;
       color: var(--cyan-neon);
     }
 
-    .modal-alert-header {
+    /* Big Prominent UNSUPPORTED DEVICE Hero Banner */
+    .unsupported-badge-hero {
+      background: linear-gradient(135deg, rgba(239, 68, 111, 0.25), rgba(150, 20, 50, 0.35));
+      border: 1px solid var(--accent-alert);
+      border-radius: 8px;
+      padding: 12px 16px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 14px;
+      gap: 14px;
+      margin-bottom: 18px;
     }
 
-    .alert-pulse-orb {
-      font-size: 2rem;
-      animation: alertPulse 1.2s infinite alternate;
+    .unsupported-hero-icon {
+      font-size: 2.4rem;
+      line-height: 1;
+      animation: alertGlow 1.2s infinite alternate;
     }
-    @keyframes alertPulse {
-      0% { transform: scale(0.9); opacity: 0.8; }
-      100% { transform: scale(1.15); opacity: 1.0; }
+    @keyframes alertGlow {
+      0% { transform: scale(0.95); filter: drop-shadow(0 0 5px rgba(239, 68, 111, 0.6)); }
+      100% { transform: scale(1.1); filter: drop-shadow(0 0 16px rgba(239, 68, 111, 1.0)); }
     }
 
-    .alert-title {
-      font-size: clamp(0.95rem, 1.8vmin, 1.15rem);
-      font-weight: 800;
-      letter-spacing: 1.5px;
-      color: var(--accent-alert);
+    .unsupported-hero-text h2 {
+      font-size: clamp(1.1rem, 2.4vmin, 1.45rem);
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 2px;
       text-transform: uppercase;
-      text-shadow: 0 0 10px rgba(239, 68, 111, 0.5);
+      text-shadow: 0 0 12px rgba(239, 68, 111, 0.8);
+      margin: 0 0 4px 0;
     }
 
-    .alert-subtitle {
-      font-size: 0.76rem;
-      color: var(--cyan-neon);
+    .unsupported-hero-text p {
+      font-size: 0.78rem;
+      color: #fbcfe8;
       letter-spacing: 1px;
       text-transform: uppercase;
+      margin: 0;
+      font-weight: 700;
     }
 
     .unsupported-status-banner {
@@ -901,10 +1138,14 @@
     }
 
     .unsupported-reason-text {
-      color: #cbd5e1;
-      font-size: 0.82rem;
-      line-height: 1.45;
+      color: #f1f5f9;
+      font-size: 0.84rem;
+      line-height: 1.5;
       margin-bottom: 14px;
+      background: rgba(239, 68, 111, 0.1);
+      border-left: 4px solid var(--accent-alert);
+      padding: 10px 14px;
+      border-radius: 4px;
     }
 
     .device-specs-card {
@@ -947,20 +1188,99 @@
       margin-bottom: 16px;
     }
 
+    .database-telemetry-notice {
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px dashed rgba(0, 240, 255, 0.3);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
     .modal-action-footer {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       justify-content: flex-end;
+      align-items: center;
+    }
+
+    .btn-return-calmchess {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #0077aa, #00f0ff);
+      color: #01050a !important;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4);
+      transition: all 0.25s ease;
+      cursor: pointer;
+      border: none;
+      font-size: clamp(0.82rem, 1.6vmin, 0.95rem);
+    }
+    .btn-return-calmchess:hover {
+      background: linear-gradient(135deg, #00a0dc, #33f3ff);
+      box-shadow: 0 6px 28px rgba(0, 240, 255, 0.65);
+      transform: translateY(-2px);
+    }
+
+    /* Mobile Orientation Responsive Layout - Playable in Portrait & Landscape */
+    #landscape-rotate-prompt {
+      display: none;
+      position: fixed;
+      top: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(2, 16, 28, 0.92);
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      padding: 6px 14px;
+      z-index: 999;
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.25);
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      color: var(--text-main);
+      max-width: 90%;
+      pointer-events: auto;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    .rotate-icon-mini {
+      font-size: 1rem;
+      line-height: 1;
+    }
+    .btn-dismiss-rotate {
+      background: none;
+      border: none;
+      color: var(--cyan-neon);
+      cursor: pointer;
+      font-size: 1.2rem;
+      line-height: 1;
+      padding: 0 2px;
+      opacity: 0.8;
+    }
+    .btn-dismiss-rotate:hover {
+      opacity: 1.0;
     }
 
     @media screen and (orientation: portrait) and (max-width: 900px) {
       #landscape-rotate-prompt {
+        display: flex;
+      }
+      #hud-layer {
         display: flex !important;
       }
-      #hud-layer,
-      #left-drawer-container {
-        display: none !important;
+      #mobile-touch-controls {
+        display: flex !important;
       }
     }
 
@@ -984,68 +1304,111 @@
         display: flex;
       }
     }
+
   </style>
 </head>
 <body>
 
-  <!-- WebGL 3D Canvas Mount Point -->
-  <div id="webgl-container"></div>
+    <!-- Interactive Cosmic Splash Screen & Hardware Verification Gateway -->
+  <div id="wormhole-splash-screen" class="splash-screen-overlay">
+    <div class="splash-content">
+      <div class="splash-brand">CALM CHESS GAMES &bull; WORMHOLE XR</div>
+      <div class="splash-orb-container">
+        <div class="splash-singularity"></div>
+        <div class="splash-ring splash-ring-1"></div>
+        <div class="splash-ring splash-ring-2"></div>
+        <div class="splash-ring splash-ring-3"></div>
+      </div>
+      <h1 class="splash-game-title">WORMHOLE XR</h1>
+      <p class="splash-game-sub">STAGE 1: DISTANT NEON CYAN SINGULARITY</p>
 
-  <!-- Mobile Landscape Warning Prompt -->
-  <div id="landscape-rotate-prompt">
-    <div class="rotate-icon-wrap">
-      <svg viewBox="0 0 64 64" fill="none" stroke="#00f0ff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:100%; height:100%;">
-        <rect x="18" y="10" width="28" height="44" rx="4"></rect>
-        <circle cx="32" cy="46" r="2"></circle>
-        <path d="M48 24l6-6-6-6"></path>
-        <path d="M54 18A24 24 0 0 0 32 6"></path>
-      </svg>
-    </div>
-    <div class="rotate-title">ROTATE TO LANDSCAPE</div>
-    <div class="rotate-desc">
-      Wormhole XR requires horizontal landscape orientation for stereoscopic XR projection and tactile dual-stick cockpit flight.
+      <div class="splash-card">
+        <div class="splash-status-line">
+          <span class="splash-status-title">SYSTEM DIAGNOSTICS</span>
+          <span class="splash-status-desc" id="splash-status-text">INITIALIZING QUANTUM SENSORS...</span>
+        </div>
+
+        <div class="splash-progress-track">
+          <div class="splash-progress-fill" id="splash-progress-bar"></div>
+        </div>
+
+        <div class="splash-grid">
+          <div class="splash-mode-cell">
+            <span>🖥️ DESKTOP XR</span>
+            <span class="splash-mode-pill pill-checking" id="state-badge-desktop">CHECKING</span>
+          </div>
+          <div class="splash-mode-cell">
+            <span>📱 MOBILE XR</span>
+            <span class="splash-mode-pill pill-checking" id="state-badge-mobile">CHECKING</span>
+          </div>
+          <div class="splash-mode-cell">
+            <span>🥽 DESKTOP VR</span>
+            <span class="splash-mode-pill pill-checking" id="state-badge-vr">CHECKING</span>
+          </div>
+          <div class="splash-mode-cell">
+            <span>🌐 MOBILE AR</span>
+            <span class="splash-mode-pill pill-checking" id="state-badge-ar">CHECKING</span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- Closeable Full-Screen Holographic Incompatibility Badge / Modal -->
+  <!-- WebGL 3D Canvas Mount Point -->
+  <div id="webgl-container"></div>
+
+  <!-- Mobile Landscape Advisory Banner (Non-Blocking & Dismissible) -->
+  <div id="landscape-rotate-prompt">
+    <span class="rotate-icon-mini">🔄</span>
+    <span>Tip: Rotate to landscape for widescreen cockpit view</span>
+    <button class="btn-dismiss-rotate" id="btn-dismiss-rotate" title="Dismiss tip">&times;</button>
+  </div>
+
+  <!-- Closeable Full-Screen Holographic Unsupported Device Badge -->
   <div id="unsupported-device-modal" class="device-modal-overlay">
     <div class="device-modal-box">
-      <button class="modal-close-btn" id="btn-close-device-modal" title="Dismiss modal">&times;</button>
+      <!-- Close 'X' Button that returns to calmchessgames.com -->
+      <a href="https://calmchessgames.com" class="modal-close-btn" id="btn-close-device-modal" title="Return to calmchessgames.com">&times;</a>
 
-      <div class="modal-alert-header">
-        <div class="alert-pulse-orb">⚠️</div>
-        <div>
-          <div class="alert-title">HARDWARE / MODE INCOMPATIBILITY DETECTED</div>
-          <div class="alert-subtitle" id="modal-mode-name">DESKTOP VR (PCVR / HMD)</div>
+      <!-- Prominent UNSUPPORTED DEVICE Hero Banner -->
+      <div class="unsupported-badge-hero">
+        <div class="unsupported-hero-icon">🚫</div>
+        <div class="unsupported-hero-text">
+          <h2>UNSUPPORTED DEVICE</h2>
+          <p id="modal-mode-name">HARDWARE CHECK FAILED</p>
         </div>
       </div>
 
       <div class="unsupported-status-banner">
-        <span>DEVICE STATUS:</span> <span class="unsupported-highlight" id="modal-support-flag">NOT VALIDATED FOR THIS MODE</span>
+        <span>STATUS:</span> <span class="unsupported-highlight" id="modal-support-flag">DEVICE CANNOT RUN WORMHOLE XR</span>
       </div>
 
       <div class="unsupported-reason-text" id="modal-reason-text">
-        WebXR 'immersive-vr' session is not supported on this browser or no VR headset (HMD) is currently connected and active.
+        This device does not meet the minimum hardware acceleration or WebGL requirements to execute the relativistic physics engine and 3D gravitational lensing simulation.
       </div>
 
       <!-- Detected Device Diagnostics Card -->
       <div class="device-specs-card">
-        <div class="specs-card-title">DETECTED HARDWARE SIGNATURE</div>
+        <div class="specs-card-title">DETECTED DEVICE TELEMETRY</div>
         <div class="spec-row">
           <span class="spec-label">Device Name / Model:</span>
-          <span class="spec-val" id="spec-device-name">Meta Quest 3 (or Windows PC)</span>
+          <span class="spec-val" id="spec-device-name">Detecting...</span>
         </div>
         <div class="spec-row">
           <span class="spec-label">Operating Platform:</span>
-          <span class="spec-val" id="spec-os-platform">Windows 11 / Horizon OS</span>
+          <span class="spec-val" id="spec-os-platform">Detecting...</span>
         </div>
         <div class="spec-row">
           <span class="spec-label">Browser Engine:</span>
-          <span class="spec-val" id="spec-browser">Google Chrome 126</span>
+          <span class="spec-val" id="spec-browser">Detecting...</span>
         </div>
         <div class="spec-row">
           <span class="spec-label">GPU Architecture:</span>
-          <span class="spec-val" id="spec-gpu">NVIDIA GeForce RTX 4080 / Adreno 740</span>
+          <span class="spec-val" id="spec-gpu">Detecting...</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">WebGL Acceleration:</span>
+          <span class="spec-val" id="spec-webgl-status">CHECKING</span>
         </div>
         <div class="spec-row">
           <span class="spec-label">WebXR Immersive VR:</span>
@@ -1057,24 +1420,21 @@
         </div>
       </div>
 
-      <!-- Recommended Action Box -->
-      <div class="recommended-action-box">
-        <div style="font-weight: bold; color: var(--accent-green); margin-bottom: 4px;">RECOMMENDED ACTION:</div>
-        <div id="modal-recommendation-text" style="font-size: 0.78rem; color: var(--text-dim); line-height: 1.4;">
-          Switch to Desktop XR (6-DOF Mouse & Keyboard) which is 100% hardware-accelerated with custom bloom & gravitational lensing shaders.
-        </div>
+      <!-- Database Telemetry Notice -->
+      <div class="database-telemetry-notice" id="db-registration-notice">
+        📡 Device registered in Wormhole Device Database as <strong>Unsupported Device</strong>.
       </div>
 
-      <!-- Action Buttons -->
+      <!-- Action Buttons with Close Button that says 'Return to calmchessgames.com' -->
       <div class="modal-action-footer">
-        <button id="btn-switch-recommended" class="hud-btn btn-ready">
+        <a href="https://calmchessgames.com" id="btn-return-calmchess" class="hud-btn btn-return-calmchess">
+          ⬅️ Return to calmchessgames.com
+        </a>
+        <button id="btn-switch-recommended" class="hud-btn btn-ready" style="display:none;">
           🚀 Switch to Recommended Mode
         </button>
-        <button id="btn-force-continue" class="hud-btn">
+        <button id="btn-force-continue" class="hud-btn" style="display:none;">
           ⚠️ Force Continue Anyway
-        </button>
-        <button id="btn-dismiss-modal" class="hud-btn" style="background: rgba(255,255,255,0.06);">
-          Close Badge
         </button>
       </div>
     </div>

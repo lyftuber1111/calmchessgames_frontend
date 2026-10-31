@@ -603,20 +603,35 @@ scene.add(floatingDust);
 let renderTargetA, renderTargetB, sceneRenderTarget;
 
 function initPostProcessing() {
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  const dpr = Math.min(window.devicePixelRatio, 2.0);
+  try {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
 
-  const rtOptions = {
-    minFilter: THREE.LinearFilter,
-    magFilter: THREE.LinearFilter,
-    format: THREE.RGBAFormat,
-    type: THREE.HalfFloatType
-  };
+    let rtType = THREE.UnsignedByteType;
+    try {
+      const gl = renderer.getContext();
+      if (renderer.capabilities.isWebGL2 || gl.getExtension('OES_texture_half_float')) {
+        rtType = THREE.HalfFloatType;
+      }
+    } catch (e) {
+      rtType = THREE.UnsignedByteType;
+    }
 
-  sceneRenderTarget = new THREE.WebGLRenderTarget(w * dpr, h * dpr, rtOptions);
-  renderTargetA = new THREE.WebGLRenderTarget(w * 0.5, h * 0.5, rtOptions);
-  renderTargetB = new THREE.WebGLRenderTarget(w * 0.5, h * 0.5, rtOptions);
+    const rtOptions = {
+      minFilter: THREE.LinearFilter,
+      magFilter: THREE.LinearFilter,
+      format: THREE.RGBAFormat,
+      type: rtType
+    };
+
+    sceneRenderTarget = new THREE.WebGLRenderTarget(w * dpr, h * dpr, rtOptions);
+    renderTargetA = new THREE.WebGLRenderTarget(Math.max(128, w * 0.5), Math.max(128, h * 0.5), rtOptions);
+    renderTargetB = new THREE.WebGLRenderTarget(Math.max(128, w * 0.5), Math.max(128, h * 0.5), rtOptions);
+  } catch (err) {
+    console.warn('[Wormhole XR] Post-processing initialization failed, falling back to direct render:', err);
+    state.postProcessingEnabled = false;
+  }
 }
 initPostProcessing();
 
@@ -964,6 +979,115 @@ const btnDismissModal = document.getElementById('btn-dismiss-modal');
 const btnSwitchRec = document.getElementById('btn-switch-recommended');
 const btnForceContinue = document.getElementById('btn-force-continue');
 
+function checkWebGLSupport() {
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+    if (!gl) {
+      return { supported: false, reason: 'WebGL is disabled or unsupported on this device/browser.' };
+    }
+    const vs = gl.createShader(gl.VERTEX_SHADER);
+    gl.shaderSource(vs, 'void main(){gl_Position=vec4(0.0,0.0,0.0,1.0);}');
+    gl.compileShader(vs);
+    if (!gl.getShaderParameter(vs, gl.COMPILE_STATUS)) {
+      return { supported: false, reason: 'Shader compilation failed on this graphics hardware.' };
+    }
+    return { supported: true, gl };
+  } catch (err) {
+    return { supported: false, reason: 'WebGL initialization failed: ' + (err.message || 'unknown error') };
+  }
+}
+
+function getDescriptiveDeviceName() {
+  const ua = navigator.userAgent;
+  let model = '';
+  let os = '';
+
+  if (/Android/i.test(ua)) {
+    const m = ua.match(/Android\s+([0-9.]+)/i);
+    os = m ? `Android ${m[1]}` : 'Android';
+    if (/Pixel\s+([0-9a-zA-Z\s]+)/i.test(ua)) {
+      const pm = ua.match(/Pixel\s+([0-9a-zA-Z\s]+)/i);
+      model = `Google Pixel ${pm[1].trim()}`;
+    } else if (/SM-([A-Z0-9]+)/i.test(ua)) {
+      const sm = ua.match(/SM-([A-Z0-9]+)/i);
+      model = `Samsung Galaxy (SM-${sm[1]})`;
+    } else if (/(Moto[^\s;)]+|Motorola[^\s;)]+)/i.test(ua)) {
+      const mm = ua.match(/(Moto[^\s;)]+|Motorola[^\s;)]+)/i);
+      model = mm[1];
+    } else if (/(Redmi[^\s;)]+|Xiaomi[^\s;)]+)/i.test(ua)) {
+      const xm = ua.match(/(Redmi[^\s;)]+|Xiaomi[^\s;)]+)/i);
+      model = xm[1];
+    } else if (/OnePlus[^\s;)]*/i.test(ua)) {
+      model = 'OnePlus Device';
+    } else {
+      const am = ua.match(/Android[^;]+;\s*([^;)]+)\s*(?:Build|\))/i);
+      if (am && am[1] && !/K/i.test(am[1].trim())) {
+        model = am[1].trim();
+      } else {
+        model = 'Android Smartphone';
+      }
+    }
+  } else if (/iPhone/i.test(ua)) {
+    const im = ua.match(/OS\s+([0-9_]+)/i);
+    os = im ? `iOS ${im[1].replace(/_/g, '.')}` : 'iOS';
+    model = 'Apple iPhone';
+  } else if (/iPad/i.test(ua)) {
+    const im = ua.match(/OS\s+([0-9_]+)/i);
+    os = im ? `iPadOS ${im[1].replace(/_/g, '.')}` : 'iPadOS';
+    model = 'Apple iPad';
+  } else if (/Quest|Oculus/i.test(ua)) {
+    if (/Quest\s*3/i.test(ua)) model = 'Meta Quest 3';
+    else if (/Quest\s*Pro/i.test(ua)) model = 'Meta Quest Pro';
+    else if (/Quest\s*2/i.test(ua)) model = 'Meta Quest 2';
+    else model = 'Meta Quest VR Headset';
+    os = 'Meta Horizon OS';
+  } else if (/Vision/i.test(ua)) {
+    model = 'Apple Vision Pro';
+    os = 'visionOS';
+  } else if (/Windows/i.test(ua)) {
+    model = 'Windows PC';
+    os = 'Windows 10/11';
+  } else if (/Macintosh|Mac OS X/i.test(ua)) {
+    model = 'Apple Mac';
+    os = 'macOS';
+  } else if (/Linux/i.test(ua)) {
+    model = 'Linux Desktop';
+    os = 'Linux';
+  } else {
+    model = (detectedHardware.type === 'mobile') ? 'Mobile Device' : 'Desktop PC';
+    os = detectedHardware.os || 'Unknown OS';
+  }
+
+  let gpu = detectedHardware.gpu || '';
+  let gpuShort = '';
+  if (gpu) {
+    if (/Adreno\s*(?:\(TM\))?\s*([0-9]+)/i.test(gpu)) {
+      gpuShort = 'Adreno ' + gpu.match(/Adreno\s*(?:\(TM\))?\s*([0-9]+)/i)[1];
+    } else if (/Mali-([A-Z0-9]+)/i.test(gpu)) {
+      gpuShort = 'Mali-' + gpu.match(/Mali-([A-Z0-9]+)/i)[1];
+    } else if (/Apple\s*GPU/i.test(gpu)) {
+      gpuShort = 'Apple GPU';
+    } else if (/RTX\s*([0-9]+)/i.test(gpu)) {
+      gpuShort = 'GeForce RTX ' + gpu.match(/RTX\s*([0-9]+)/i)[1];
+    } else if (/GTX\s*([0-9]+)/i.test(gpu)) {
+      gpuShort = 'GeForce GTX ' + gpu.match(/GTX\s*([0-9]+)/i)[1];
+    } else if (/Radeon/i.test(gpu)) {
+      gpuShort = 'AMD Radeon';
+    } else if (/Intel/i.test(gpu)) {
+      gpuShort = 'Intel Graphics';
+    }
+  }
+
+  const details = [];
+  if (os) details.push(os);
+  if (gpuShort) details.push(gpuShort);
+  if (details.length > 0) {
+    return `${model} (${details.join(', ')})`;
+  }
+  return model;
+}
+
 async function detectHardwareDiagnostics() {
   try {
     const gl = renderer.getContext();
@@ -1008,12 +1132,54 @@ async function detectHardwareDiagnostics() {
       detectedHardware.vrSupported = await navigator.xr.isSessionSupported('immersive-vr').catch(() => false);
       detectedHardware.arSupported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
     }
+
+    detectedHardware.descriptiveName = getDescriptiveDeviceName();
   } catch (err) {
     console.warn('[Hardware Detection] Detection warning:', err);
   }
 }
 
-function showUnsupportedBadge(mode, reason, recommendedMode = 'desktop-xr') {
+async function reportUnsupportedDeviceTelemetry(descriptiveName, reason) {
+  const payload = {
+    action: 'report_unsupported',
+    device_name: descriptiveName,
+    device_type: detectedHardware.type,
+    os_platform: detectedHardware.os,
+    browser: detectedHardware.browser,
+    gpu_renderer: detectedHardware.gpu,
+    is_supported: 0,
+    reason: reason,
+    immersive_vr: detectedHardware.vrSupported,
+    immersive_ar: detectedHardware.arSupported,
+    has_touch: ('ontouchstart' in window) || navigator.maxTouchPoints > 0
+  };
+
+  const endpoints = [
+    'https://api.calmchessgames.com/wormhole_device_api.php?action=report_unsupported',
+    'https://api.calmchessgames.com/admin/wormhole_device_api.php?action=report_unsupported',
+    'wormhole_device_api.php?action=report_unsupported',
+    '../wormhole_device_api.php?action=report_unsupported',
+    '../admin/wormhole_device_api.php?action=report_unsupported',
+    'admin/wormhole_device_api.php?action=report_unsupported',
+    '/wormhole_device_api.php?action=report_unsupported'
+  ];
+
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(ep, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res && res.ok) {
+        console.log('[Wormhole XR] Successfully recorded unsupported device in database:', descriptiveName);
+        break;
+      }
+    } catch (e) {}
+  }
+}
+
+function showUnsupportedBadge(mode, reason, recommendedMode = 'desktop-xr', isFatal = false) {
   state.pendingRecommendedMode = recommendedMode;
 
   const modeTitles = {
@@ -1023,31 +1189,52 @@ function showUnsupportedBadge(mode, reason, recommendedMode = 'desktop-xr') {
     'mobile-ar': 'MOBILE AR (ARCore CAMERA PASSTHROUGH)'
   };
 
-  if (modalModeName) modalModeName.textContent = modeTitles[mode] || mode.toUpperCase();
-  if (modalSupportFlag) modalSupportFlag.textContent = 'INCOMPATIBLE / NOT SUPPORTED';
-  if (modalReasonText) modalReasonText.textContent = reason || 'Hardware or browser capabilities do not meet the minimum requirements for this operating mode.';
+  if (modalModeName) {
+    modalModeName.textContent = isFatal ? 'UNSUPPORTED HARDWARE' : (modeTitles[mode] || mode.toUpperCase());
+  }
+  if (modalSupportFlag) {
+    modalSupportFlag.textContent = isFatal ? 'DEVICE CANNOT RUN WORMHOLE XR' : 'INCOMPATIBLE / NOT SUPPORTED';
+  }
+  if (modalReasonText) {
+    modalReasonText.textContent = reason || 'Hardware or browser capabilities do not meet the minimum requirements for this operating mode.';
+  }
 
-  const devDisplayName = detectedHardware.activeDeviceName || detectedHardware.name;
+  const devDisplayName = detectedHardware.descriptiveName || detectedHardware.activeDeviceName || detectedHardware.name;
   if (specDevName) specDevName.textContent = devDisplayName;
   if (specOs) specOs.textContent = detectedHardware.os;
   if (specBrowser) specBrowser.textContent = detectedHardware.browser;
   if (specGpu) specGpu.textContent = detectedHardware.gpu;
-  
+
+  const specWebglStatus = document.getElementById('spec-webgl-status');
+  if (specWebglStatus) {
+    const glOk = checkWebGLSupport().supported;
+    specWebglStatus.textContent = glOk ? '✓ ACCELERATED' : '✗ DISABLED / UNAVAILABLE';
+    specWebglStatus.style.color = glOk ? 'var(--accent-green)' : 'var(--accent-alert)';
+  }
+
   const vrReady = (detectedHardware.activeDeviceType === 'vr_hmd') || detectedHardware.vrSupported;
   const arReady = (detectedHardware.activeDeviceType === 'vr_hmd' || detectedHardware.activeDeviceName?.includes('ARCore') || detectedHardware.activeDeviceName?.includes('ARKit')) || detectedHardware.arSupported;
 
   if (specVrStatus) {
-    specVrStatus.textContent = vrReady ? 'âœ“ READY / SUPPORTED' : 'âœ— NOT CONNECTED / UNSUPPORTED';
+    specVrStatus.textContent = vrReady ? '✓ READY / SUPPORTED' : '✗ NOT CONNECTED / UNSUPPORTED';
     specVrStatus.style.color = vrReady ? 'var(--accent-green)' : 'var(--accent-alert)';
   }
   if (specArStatus) {
-    specArStatus.textContent = arReady ? 'âœ“ PASSTHROUGH CERTIFIED' : 'âœ— ARCore NOT AVAILABLE';
+    specArStatus.textContent = arReady ? '✓ PASSTHROUGH CERTIFIED' : '✗ ARCore NOT AVAILABLE';
     specArStatus.style.color = arReady ? 'var(--accent-green)' : 'var(--accent-alert)';
   }
 
   if (modalRecText) {
     const recName = modeTitles[recommendedMode] || recommendedMode.toUpperCase();
     modalRecText.textContent = `Switch to ${recName}. This mode is fully accelerated and validated for your hardware profile.`;
+  }
+
+  if (btnSwitchRec) btnSwitchRec.style.display = isFatal ? 'none' : 'inline-flex';
+  if (btnForceContinue) btnForceContinue.style.display = isFatal ? 'none' : 'inline-flex';
+
+  const btnReturnCalmChess = document.getElementById('btn-return-calmchess');
+  if (btnReturnCalmChess) {
+    btnReturnCalmChess.style.display = 'inline-flex';
   }
 
   if (modalOverlay) modalOverlay.style.display = 'flex';
@@ -1057,18 +1244,34 @@ function hideUnsupportedBadge() {
   if (modalOverlay) modalOverlay.style.display = 'none';
 }
 
-if (btnCloseModal) btnCloseModal.addEventListener('click', hideUnsupportedBadge);
+if (btnCloseModal) {
+  btnCloseModal.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.location.href = 'https://calmchessgames.com';
+  });
+}
 if (btnDismissModal) btnDismissModal.addEventListener('click', hideUnsupportedBadge);
+
+// Dismiss rotate advisory prompt
+const btnDismissRotate = document.getElementById('btn-dismiss-rotate');
+const landscapePrompt = document.getElementById('landscape-rotate-prompt');
+if (btnDismissRotate && landscapePrompt) {
+  btnDismissRotate.addEventListener('click', () => {
+    landscapePrompt.style.display = 'none';
+  });
+}
 
 // Close on backdrop overlay click or ESC key
 if (modalOverlay) {
   modalOverlay.addEventListener('click', (e) => {
-    if (e.target === modalOverlay) hideUnsupportedBadge();
+    if (e.target === modalOverlay) {
+      window.location.href = 'https://calmchessgames.com';
+    }
   });
 }
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && modalOverlay && modalOverlay.style.display === 'flex') {
-    hideUnsupportedBadge();
+    window.location.href = 'https://calmchessgames.com';
   }
 });
 
@@ -1090,7 +1293,6 @@ if (btnForceContinue) {
     showToast(`FORCING MODE: ${state.xrMode.toUpperCase()}`);
   });
 }
-
 // =============================================================================
 // MULTI-PLATFORM & XR MODE SWITCHER
 // =============================================================================
@@ -1835,50 +2037,61 @@ const tempVec = new THREE.Vector3();
 const wormholeScreenVec = new THREE.Vector3();
 
 function renderPostProcessing() {
-  tempVec.set(0, 0, 0);
-  tempVec.project(camera);
+  if (!state.postProcessingEnabled || !sceneRenderTarget) {
+    renderer.render(scene, camera);
+    return;
+  }
+  try {
+    tempVec.set(0, 0, 0);
+    tempVec.project(camera);
 
-  const isBehind = tempVec.z > 1.0 ? 1.0 : 0.0;
-  wormholeScreenVec.x = (tempVec.x * 0.5) + 0.5;
-  wormholeScreenVec.y = (tempVec.y * 0.5) + 0.5;
+    const isBehind = tempVec.z > 1.0 ? 1.0 : 0.0;
+    wormholeScreenVec.x = (tempVec.x * 0.5) + 0.5;
+    wormholeScreenVec.y = (tempVec.y * 0.5) + 0.5;
 
-  compositeShader.uniforms.uWormholeScreenPos.value.copy(wormholeScreenVec);
-  compositeShader.uniforms.uIsBehind.value = isBehind;
-  compositeShader.uniforms.uAspect.value = window.innerWidth / window.innerHeight;
+    compositeShader.uniforms.uWormholeScreenPos.value.copy(wormholeScreenVec);
+    compositeShader.uniforms.uIsBehind.value = isBehind;
+    compositeShader.uniforms.uAspect.value = window.innerWidth / window.innerHeight;
 
-  renderer.setRenderTarget(sceneRenderTarget);
-  renderer.render(scene, camera);
+    renderer.setRenderTarget(sceneRenderTarget);
+    renderer.render(scene, camera);
 
-  highPassMaterial.uniforms.tDiffuse.value = sceneRenderTarget.texture;
-  highPassMaterial.uniforms.uThreshold.value = CONFIG.bloomThreshold;
-  postScene.clear();
-  postScene.add(highPassQuad);
-  renderer.setRenderTarget(renderTargetA);
-  renderer.render(postScene, postCamera);
+    highPassMaterial.uniforms.tDiffuse.value = sceneRenderTarget.texture;
+    highPassMaterial.uniforms.uThreshold.value = CONFIG.bloomThreshold;
+    postScene.clear();
+    postScene.add(highPassQuad);
+    renderer.setRenderTarget(renderTargetA);
+    renderer.render(postScene, postCamera);
 
-  blurMaterial.uniforms.tDiffuse.value = renderTargetA.texture;
-  blurMaterial.uniforms.uDirection.value.set(1.0, 0.0);
-  blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
-  postScene.clear();
-  postScene.add(blurQuad);
-  renderer.setRenderTarget(renderTargetB);
-  renderer.render(postScene, postCamera);
+    blurMaterial.uniforms.tDiffuse.value = renderTargetA.texture;
+    blurMaterial.uniforms.uDirection.value.set(1.0, 0.0);
+    blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
+    postScene.clear();
+    postScene.add(blurQuad);
+    renderer.setRenderTarget(renderTargetB);
+    renderer.render(postScene, postCamera);
 
-  blurMaterial.uniforms.tDiffuse.value = renderTargetB.texture;
-  blurMaterial.uniforms.uDirection.value.set(0.0, 1.0);
-  blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
-  renderer.setRenderTarget(renderTargetA);
-  renderer.render(postScene, postCamera);
+    blurMaterial.uniforms.tDiffuse.value = renderTargetB.texture;
+    blurMaterial.uniforms.uDirection.value.set(0.0, 1.0);
+    blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
+    renderer.setRenderTarget(renderTargetA);
+    renderer.render(postScene, postCamera);
 
-  compositeMaterial.uniforms.tScene.value = sceneRenderTarget.texture;
-  compositeMaterial.uniforms.tBloom.value = renderTargetA.texture;
-  compositeMaterial.uniforms.uBloomStrength.value = CONFIG.bloomStrength;
-  compositeMaterial.uniforms.uLensingStrength.value = CONFIG.lensingStrength;
-  compositeMaterial.uniforms.uChromaticAberration.value = CONFIG.chromaticAberration;
-  postScene.clear();
-  postScene.add(compositeQuad);
-  renderer.setRenderTarget(null);
-  renderer.render(postScene, postCamera);
+    compositeMaterial.uniforms.tScene.value = sceneRenderTarget.texture;
+    compositeMaterial.uniforms.tBloom.value = renderTargetA.texture;
+    compositeMaterial.uniforms.uBloomStrength.value = CONFIG.bloomStrength;
+    compositeMaterial.uniforms.uLensingStrength.value = CONFIG.lensingStrength;
+    compositeMaterial.uniforms.uChromaticAberration.value = CONFIG.chromaticAberration;
+    postScene.clear();
+    postScene.add(compositeQuad);
+    renderer.setRenderTarget(null);
+    renderer.render(postScene, postCamera);
+  } catch (err) {
+    console.warn('[Wormhole XR] Post-processing render failed, disabling:', err);
+    state.postProcessingEnabled = false;
+    renderer.setRenderTarget(null);
+    renderer.render(scene, camera);
+  }
 }
 
 function updateFlight(delta) {
@@ -2033,8 +2246,166 @@ window.addEventListener('resize', () => {
   compositeShader.uniforms.uAspect.value = w / h;
 });
 
-// Initial startup hardware detection & device compatibility verification
-detectHardwareDiagnostics().then(() => {
-  console.log('[Wormhole XR] Hardware profile detected:', detectedHardware);
-  evaluateSpecificDeviceCompatibility(state.xrMode, false, false);
-});
+// Splash Screen & Multi-Platform Runtime Verification Runner
+async function runStartupDiagnosticsAndSplashScreen() {
+  const splashEl = document.getElementById('wormhole-splash-screen');
+  const splashStatus = document.getElementById('splash-status-text');
+  const splashBar = document.getElementById('splash-progress-bar');
+  const stateDesktop = document.getElementById('state-badge-desktop');
+  const stateMobile = document.getElementById('state-badge-mobile');
+  const stateVr = document.getElementById('state-badge-vr');
+  const stateAr = document.getElementById('state-badge-ar');
+
+  try {
+    if (splashStatus) splashStatus.textContent = 'PROBING GRAPHICS HARDWARE ACCELERATION...';
+    if (splashBar) splashBar.style.width = '25%';
+
+    // 1. Test WebGL Runnable Capability
+    const webglCheck = checkWebGLSupport();
+    const isWebglRunnable = webglCheck.supported;
+
+    // 2. Hardware profile detection
+    await detectHardwareDiagnostics();
+    const descriptiveName = detectedHardware.descriptiveName || getDescriptiveDeviceName();
+    detectedHardware.descriptiveName = descriptiveName;
+
+    if (splashBar) splashBar.style.width = '50%';
+    if (splashStatus) splashStatus.textContent = 'TESTING RUNTIME CAPABILITIES (MOBILE, DESKTOP, VR, ARCORE)...';
+
+    const isVrSupported = detectedHardware.vrSupported;
+    const isArSupported = detectedHardware.arSupported;
+    const isMobileDevice = detectedHardware.type === 'mobile' || detectedHardware.type === 'tablet';
+    const isDesktopDevice = detectedHardware.type === 'desktop';
+
+    // Update Splash Capability Badges
+    if (stateDesktop) {
+      if (isDesktopDevice && isWebglRunnable) {
+        stateDesktop.textContent = 'READY';
+        stateDesktop.className = 'splash-mode-pill pill-supported';
+      } else {
+        stateDesktop.textContent = isWebglRunnable ? 'COMPATIBLE' : 'UNSUPPORTED';
+        stateDesktop.className = `splash-mode-pill ${isWebglRunnable ? 'pill-checking' : 'pill-unsupported'}`;
+      }
+    }
+
+    if (stateMobile) {
+      if (isMobileDevice && isWebglRunnable) {
+        stateMobile.textContent = 'READY';
+        stateMobile.className = 'splash-mode-pill pill-supported';
+      } else {
+        stateMobile.textContent = isWebglRunnable ? 'STANDBY' : 'UNSUPPORTED';
+        stateMobile.className = `splash-mode-pill ${isWebglRunnable ? 'pill-checking' : 'pill-unsupported'}`;
+      }
+    }
+
+    if (stateVr) {
+      stateVr.textContent = isVrSupported ? 'READY' : 'UNAVAILABLE';
+      stateVr.className = `splash-mode-pill ${isVrSupported ? 'pill-supported' : 'pill-unsupported'}`;
+    }
+
+    if (stateAr) {
+      stateAr.textContent = isArSupported ? 'ARCore READY' : 'UNAVAILABLE';
+      stateAr.className = `splash-mode-pill ${isArSupported ? 'pill-supported' : 'pill-unsupported'}`;
+    }
+
+    if (splashBar) splashBar.style.width = '75%';
+    if (splashStatus) splashStatus.textContent = 'SYNCING WORMHOLE DEVICE DATABASE REGISTRY...';
+
+    // 3. Remote Telemetry Check with database
+    const initialMode = isMobileDevice ? 'mobile-xr' : (detectedHardware.type === 'vr_hmd' ? 'desktop-vr' : 'desktop-xr');
+    const dbPayload = {
+      action: 'check',
+      mode: initialMode,
+      device_name: descriptiveName,
+      device_type: detectedHardware.type,
+      os_platform: detectedHardware.os,
+      browser: detectedHardware.browser,
+      gpu_renderer: detectedHardware.gpu,
+      immersive_vr: isVrSupported,
+      immersive_ar: isArSupported,
+      has_touch: ('ontouchstart' in window) || navigator.maxTouchPoints > 0,
+      has_gamepad: (typeof navigator.getGamepads === 'function'),
+      is_supported: isWebglRunnable ? 1 : 0,
+      reason: isWebglRunnable ? '' : webglCheck.reason
+    };
+
+    let dbResult = null;
+    const endpoints = [
+      'https://api.calmchessgames.com/wormhole_device_api.php?action=check',
+      'https://api.calmchessgames.com/admin/wormhole_device_api.php?action=check',
+      'wormhole_device_api.php?action=check',
+      '../wormhole_device_api.php?action=check',
+      '../admin/wormhole_device_api.php?action=check',
+      'admin/wormhole_device_api.php?action=check',
+      '/wormhole_device_api.php?action=check'
+    ];
+
+    for (const ep of endpoints) {
+      try {
+        const res = await fetch(ep, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify(dbPayload)
+        });
+        if (res && res.ok) {
+          dbResult = await res.json().catch(() => null);
+          if (dbResult) break;
+        }
+      } catch (e) {}
+    }
+
+    if (splashBar) splashBar.style.width = '100%';
+
+    // 4. Verify whether device is runnable on current mobile, desktop, vr, or arcore
+    const isBlacklisted = (dbResult && dbResult.supported === false && dbResult.reason && dbResult.reason.includes('incompatible'));
+    const isRunnable = isWebglRunnable && !isBlacklisted;
+
+    if (!isRunnable) {
+      const failureReason = !isWebglRunnable 
+        ? (webglCheck.reason || 'Hardware graphics acceleration (WebGL) is unavailable on this device.')
+        : (dbResult && dbResult.reason ? dbResult.reason : 'Device flagged as unsupported in system database.');
+
+      if (splashStatus) splashStatus.textContent = 'HARDWARE INCOMPATIBLE - DISPLAYING UNSUPPORTED BADGE';
+
+      // Record device as unsupported in database
+      await reportUnsupportedDeviceTelemetry(descriptiveName, failureReason);
+
+      setTimeout(() => {
+        if (splashEl) {
+          splashEl.classList.add('splash-fade-out');
+          setTimeout(() => splashEl.remove(), 750);
+        }
+        showUnsupportedBadge(initialMode, failureReason, 'desktop-xr', true);
+      }, 500);
+      return false;
+    }
+
+    // 5. Device is RUNNABLE! Launch appropriate flight mode
+    if (splashStatus) splashStatus.textContent = 'SYSTEMS NOMINAL - ENGAGING FLIGHT COCKPIT...';
+
+    // Auto-select runnable mode
+    state.xrMode = initialMode;
+    const selectModeEl = document.getElementById('select-mode');
+    if (selectModeEl) selectModeEl.value = initialMode;
+    activateModeParameters(state.xrMode);
+
+    setTimeout(() => {
+      if (splashEl) {
+        splashEl.classList.add('splash-fade-out');
+        setTimeout(() => splashEl.remove(), 750);
+      }
+      showToast(`✓ READY: ${descriptiveName}`);
+    }, 650);
+
+    return true;
+  } catch (err) {
+    console.error('[Wormhole XR] Startup verification exception:', err);
+    const descriptiveName = getDescriptiveDeviceName();
+    await reportUnsupportedDeviceTelemetry(descriptiveName, 'Startup runtime error: ' + err.message);
+    showUnsupportedBadge('mobile-xr', 'Hardware error during startup: ' + err.message, 'desktop-xr', true);
+    if (splashEl) splashEl.remove();
+    return false;
+  }
+}
+
+runStartupDiagnosticsAndSplashScreen();

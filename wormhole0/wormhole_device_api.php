@@ -97,6 +97,82 @@ function ensureWormholeTable(PDO $pdo) {
     }
 }
 
+// Generate descriptive hardware signature from User-Agent and GPU telemetry
+function inferDescriptiveDeviceName(string $ua, string $gpu, string $os, string $type): string {
+    $model = '';
+    
+    if (preg_match('/Quest\s*3/i', $ua)) {
+        $model = 'Meta Quest 3';
+    } elseif (preg_match('/Quest\s*Pro/i', $ua)) {
+        $model = 'Meta Quest Pro';
+    } elseif (preg_match('/Quest\s*2/i', $ua)) {
+        $model = 'Meta Quest 2';
+    } elseif (preg_match('/Quest|Oculus/i', $ua)) {
+        $model = 'Meta Quest VR Headset';
+    } elseif (preg_match('/Vision/i', $ua)) {
+        $model = 'Apple Vision Pro';
+    } elseif (preg_match('/Pico/i', $ua)) {
+        $model = 'Pico VR Headset';
+    } elseif (preg_match('/Vive/i', $ua)) {
+        $model = 'HTC Vive Headset';
+    } elseif (preg_match('/Android/i', $ua)) {
+        if (preg_match('/Pixel\s+([0-9a-zA-Z\s]+)/i', $ua, $m)) {
+            $model = 'Google Pixel ' . trim($m[1]);
+        } elseif (preg_match('/SM-([A-Z0-9]+)/i', $ua, $m)) {
+            $model = 'Samsung Galaxy (SM-' . $m[1] . ')';
+        } elseif (preg_match('/(Moto[^\s;)]+|Motorola[^\s;)]+)/i', $ua, $m)) {
+            $model = trim($m[1]);
+        } elseif (preg_match('/(Redmi[^\s;)]+|Xiaomi[^\s;)]+)/i', $ua, $m)) {
+            $model = trim($m[1]);
+        } elseif (preg_match('/OnePlus[^\s;)]*/i', $ua, $m)) {
+            $model = 'OnePlus Device';
+        } elseif (preg_match('/Android[^;]+;\s*([^;)]+)\s*(?:Build|\))/i', $ua, $m)) {
+            $rawModel = trim($m[1]);
+            $model = (!empty($rawModel) && !preg_match('/^K$/i', $rawModel)) ? $rawModel : 'Android Smartphone';
+        } else {
+            $model = 'Android Smartphone';
+        }
+    } elseif (preg_match('/iPhone/i', $ua)) {
+        $model = 'Apple iPhone';
+    } elseif (preg_match('/iPad/i', $ua)) {
+        $model = 'Apple iPad';
+    } elseif (preg_match('/Windows/i', $ua)) {
+        $model = 'Windows PC';
+    } elseif (preg_match('/Macintosh|Mac OS X/i', $ua)) {
+        $model = 'Apple Mac';
+    } elseif (preg_match('/Linux/i', $ua)) {
+        $model = 'Linux Desktop';
+    } else {
+        $model = ($type === 'mobile') ? 'Mobile Device' : 'Desktop Device';
+    }
+
+    $details = [];
+    if (!empty($os)) $details[] = $os;
+    
+    if (!empty($gpu)) {
+        if (preg_match('/Adreno\s*(?:\(TM\))?\s*([0-9]+)/i', $gpu, $gm)) {
+            $details[] = 'Adreno ' . $gm[1];
+        } elseif (preg_match('/Mali-([A-Z0-9]+)/i', $gpu, $gm)) {
+            $details[] = 'Mali-' . $gm[1];
+        } elseif (preg_match('/Apple\s*GPU/i', $gpu)) {
+            $details[] = 'Apple GPU';
+        } elseif (preg_match('/RTX\s*([0-9]+)/i', $gpu, $gm)) {
+            $details[] = 'RTX ' . $gm[1];
+        } elseif (preg_match('/GTX\s*([0-9]+)/i', $gpu, $gm)) {
+            $details[] = 'GTX ' . $gm[1];
+        } elseif (preg_match('/Radeon/i', $gpu)) {
+            $details[] = 'AMD Radeon';
+        } elseif (preg_match('/Intel/i', $gpu)) {
+            $details[] = 'Intel Graphics';
+        }
+    }
+
+    if (!empty($details)) {
+        return $model . ' (' . implode(', ', $details) . ')';
+    }
+    return $model;
+}
+
 // Parse request payload
 $action = $_GET['action'] ?? '';
 $rawInput = file_get_contents('php://input');
@@ -110,11 +186,12 @@ try {
     ensureWormholeTable($pdo);
 
     // =========================================================================
-    // ACTION: CHECK DEVICE SUPPORT & RECORD TELEMETRY
+    // ACTION: CHECK DEVICE SUPPORT & RECORD TELEMETRY / REPORT UNSUPPORTED
     // =========================================================================
-    if ($action === 'check' || $action === 'check_device') {
+    if ($action === 'check' || $action === 'check_device' || $action === 'report_unsupported') {
+        $isExplicitReportUnsupported = ($action === 'report_unsupported');
         $mode = trim($input['mode'] ?? 'desktop-xr');
-        $deviceName = trim($input['device_name'] ?? 'Unknown Device');
+        $deviceName = trim($input['device_name'] ?? '');
         $deviceType = trim($input['device_type'] ?? 'unknown');
         $osPlatform = trim($input['os_platform'] ?? '');
         $browser = trim($input['browser'] ?? '');
@@ -124,8 +201,17 @@ try {
         $hasTouch = !empty($input['has_touch']);
         $hasGamepad = !empty($input['has_gamepad']);
         $clientSupported = isset($input['is_supported']) ? ((int)$input['is_supported'] === 1) : true;
+        if ($isExplicitReportUnsupported) {
+            $clientSupported = false;
+        }
         $clientReason = trim($input['reason'] ?? '');
         $rawUa = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+        // Infer descriptive hardware name if not provided
+        if (empty($deviceName) || $deviceName === 'Unknown Device' || $deviceName === 'Auto-Detected System') {
+            $deviceName = inferDescriptiveDeviceName($rawUa, $gpuRenderer, $osPlatform, $deviceType);
+        }
+
         $uaHash = hash('sha256', $rawUa . $deviceName);
 
         // Sanitize string inputs for security
@@ -146,8 +232,8 @@ try {
             $existing = $stmt->fetch(PDO::FETCH_ASSOC);
         }
 
-        $isSupported = true;
-        $reason = '';
+        $isSupported = $clientSupported;
+        $reason = $clientReason;
         $recommendedMode = 'desktop-xr';
 
         if ($existing) {
@@ -155,6 +241,14 @@ try {
             if ((int)$existing['is_supported'] === 0) {
                 $isSupported = false;
                 $reason = !empty($existing['notes']) ? $existing['notes'] : "This device model ({$existing['device_name']}) has been marked as incompatible in the system hardware register.";
+            } elseif (!$clientSupported) {
+                // Client explicitly reported unsupported (or runtime capability test failed)
+                $isSupported = false;
+                if (empty($reason)) $reason = "Device flagged as unsupported during runtime diagnostics.";
+                
+                // Update database record to mark unsupported
+                $upStmt = $pdo->prepare('UPDATE `wormhole_devices` SET `is_supported` = 0, `notes` = :notes, `reported_count` = `reported_count` + 1, `updated_at` = NOW() WHERE `id` = :id');
+                $upStmt->execute(['notes' => substr($reason, 0, 255), 'id' => $existing['id']]);
             } else {
                 // Check if specific requested mode is permitted
                 $modesAllowed = array_map('trim', explode(',', strtolower($existing['supported_modes'])));
@@ -162,22 +256,16 @@ try {
                     $isSupported = false;
                     $reason = "Mode '{$mode}' is not validated for {$existing['device_name']}. Permitted modes: " . implode(', ', $modesAllowed);
                 }
-            }
 
-            // Factor in client hardware capability failure if client reported false
-            if (!$clientSupported && !empty($clientReason)) {
-                $isSupported = false;
-                if (empty($reason)) $reason = $clientReason;
+                // Increment report count & refresh timestamp
+                $upStmt = $pdo->prepare('UPDATE `wormhole_devices` SET `reported_count` = `reported_count` + 1, `updated_at` = NOW() WHERE `id` = :id');
+                $upStmt->execute(['id' => $existing['id']]);
             }
-
-            // Increment report count & refresh timestamp
-            $upStmt = $pdo->prepare('UPDATE `wormhole_devices` SET `reported_count` = `reported_count` + 1, `updated_at` = NOW() WHERE `id` = :id');
-            $upStmt->execute(['id' => $existing['id']]);
         } else {
             // Dynamic capability heuristics for unlisted hardware
-            if (!$clientSupported && !empty($clientReason)) {
+            if (!$clientSupported) {
                 $isSupported = false;
-                $reason = $clientReason;
+                if (empty($reason)) $reason = 'Device failed runtime hardware compatibility checks.';
             } elseif ($mode === 'desktop-vr') {
                 if (!$immersiveVr) {
                     $isSupported = false;
@@ -210,6 +298,8 @@ try {
                     VALUES
                     (:name, :type, :os, :browser, :gpu, :modes, :supported, 'telemetry', 1, :notes, :hash)
                     ON DUPLICATE KEY UPDATE
+                      `is_supported` = VALUES(`is_supported`),
+                      `notes` = VALUES(`notes`),
                       `reported_count` = `reported_count` + 1,
                       `updated_at` = NOW()
                 ");

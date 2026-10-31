@@ -77,8 +77,13 @@ const state = {
   // Left Joystick Flight Lockout Timer (3s on touch, 1s resetting on fire tap)
   flightLockoutUntil: 0,
 
-  // Crosshair Aim speed multiplier (default 1.764, ~2% slower than original 1.8)
-  crosshairSpeedMultiplier: 1.764,
+  // Crosshair Aim speed multiplier (default 2.90)
+  crosshairSpeedMultiplier: 2.90,
+
+  // Wormhole Nav Lock State
+  isAligningToWormhole: false,
+  targetYaw: 0,
+  targetPitch: 0,
   
   // Gamepad State
   gamepadIndex: null,
@@ -1910,11 +1915,13 @@ const maxStickRadius = 38;
 
 let flightTouchId = null;
 let aimTouchId = null;
+let flightTouchStartX = 0;
+let flightTouchStartY = 0;
 let flightTapStartTime = 0;
-let flightTotalMove = 0;
 let isMouseFlight = false;
+let mouseFlightStartX = 0;
+let mouseFlightStartY = 0;
 let mouseFlightStartTime = 0;
-let mouseFlightMove = 0;
 
 // 1. LEFT THUMB JOYSTICK (TAP TO FIRE LASER / HOLD FOR FLIGHT)
 if (touchStickZone) {
@@ -1927,11 +1934,12 @@ if (touchStickZone) {
       const touch = e.changedTouches[i];
       if (touch.target === touchStickZone || touchStickZone.contains(touch.target)) {
         flightTouchId = touch.identifier;
-        state.touchActive = true;
+        flightTouchStartX = touch.clientX;
+        flightTouchStartY = touch.clientY;
         flightTapStartTime = performance.now();
+        state.touchActive = true;
         // Lock out joystick from activating as flight control for 3 seconds when touched
         state.flightLockoutUntil = flightTapStartTime + 3000;
-        flightTotalMove = 0;
         updateStickPos(touch.clientX, touch.clientY);
         handleFlightActivity(); // Closes panels if open
         break;
@@ -1950,6 +1958,16 @@ if (touchStickZone) {
         if (touch.identifier === flightTouchId || touch.target === touchStickZone || touchStickZone.contains(touch.target)) {
           updateStickPos(touch.clientX, touch.clientY);
           handleFlightActivity();
+
+          // Active flight steering check: if user deflects stick > 0.25 and holds > 350ms,
+          // release initial touch lockout immediately so flight navigation engages!
+          const stickDeflection = Math.hypot(state.touchMove.x, state.touchMove.y);
+          const holdDuration = performance.now() - flightTapStartTime;
+          if (stickDeflection > 0.25 && holdDuration > 350) {
+            if (state.flightLockoutUntil > performance.now()) {
+              state.flightLockoutUntil = 0;
+            }
+          }
           break;
         }
       }
@@ -1959,10 +1977,15 @@ if (touchStickZone) {
   const endFlightTouch = (e) => {
     if (!state.touchActive) return;
     let ended = false;
+    let endClientX = flightTouchStartX;
+    let endClientY = flightTouchStartY;
+
     if (e.changedTouches) {
       for (let i = 0; i < e.changedTouches.length; i++) {
-        if (e.changedTouches[i].identifier === flightTouchId || e.touches.length === 0) {
+        if (e.changedTouches[i].identifier === flightTouchId || (e.touches && e.touches.length === 0)) {
           ended = true;
+          endClientX = e.changedTouches[i].clientX;
+          endClientY = e.changedTouches[i].clientY;
           break;
         }
       }
@@ -1972,7 +1995,9 @@ if (touchStickZone) {
 
     if (ended) {
       const duration = performance.now() - flightTapStartTime;
-      const wasTap = (duration < 380 && flightTotalMove < 28);
+      const dragDelta = Math.hypot(endClientX - flightTouchStartX, endClientY - flightTouchStartY);
+      const wasTap = (duration < 550 && dragDelta < 35);
+
       state.touchActive = false;
       flightTouchId = null;
       state.touchMove.x = 0;
@@ -1998,10 +2023,11 @@ if (touchStickZone) {
     stickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     isMouseFlight = true;
     state.touchActive = true;
+    mouseFlightStartX = e.clientX;
+    mouseFlightStartY = e.clientY;
     mouseFlightStartTime = performance.now();
     // Lock out for 3 seconds when touched
     state.flightLockoutUntil = mouseFlightStartTime + 3000;
-    mouseFlightMove = 0;
     updateStickPos(e.clientX, e.clientY);
     handleFlightActivity();
   });
@@ -2010,13 +2036,22 @@ if (touchStickZone) {
     if (isMouseFlight) {
       updateStickPos(e.clientX, e.clientY);
       handleFlightActivity();
+
+      const stickDeflection = Math.hypot(state.touchMove.x, state.touchMove.y);
+      const holdDuration = performance.now() - mouseFlightStartTime;
+      if (stickDeflection > 0.25 && holdDuration > 350) {
+        if (state.flightLockoutUntil > performance.now()) {
+          state.flightLockoutUntil = 0;
+        }
+      }
     }
   });
 
-  window.addEventListener('mouseup', () => {
+  window.addEventListener('mouseup', (e) => {
     if (isMouseFlight) {
       const duration = performance.now() - mouseFlightStartTime;
-      const wasTap = (duration < 380 && mouseFlightMove < 28);
+      const dragDelta = Math.hypot(e.clientX - mouseFlightStartX, e.clientY - mouseFlightStartY);
+      const wasTap = (duration < 550 && dragDelta < 30);
       isMouseFlight = false;
       state.touchActive = false;
       state.touchMove.x = 0;
@@ -2042,8 +2077,6 @@ function updateStickPos(clientX, clientY) {
   const dx = clientX - stickCenter.x;
   const dy = clientY - stickCenter.y;
   const dist = Math.hypot(dx, dy);
-  flightTotalMove += dist;
-  if (isMouseFlight) mouseFlightMove += dist;
   const angle = Math.atan2(dy, dx);
   const clampedDist = Math.min(dist, maxStickRadius);
 
@@ -2054,8 +2087,14 @@ function updateStickPos(clientX, clientY) {
     touchStickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
   }
 
-  state.touchMove.x = knobX / maxStickRadius;
-  state.touchMove.y = knobY / maxStickRadius;
+  // Dead zone
+  if (clampedDist < 8) {
+    state.touchMove.x = 0;
+    state.touchMove.y = 0;
+  } else {
+    state.touchMove.x = (knobX / maxStickRadius);
+    state.touchMove.y = (knobY / maxStickRadius);
+  }
 }
 
 // 2. RIGHT THUMB AIM JOYSTICK (RAPIDLY MOVES CROSSHAIR RETICLE)
@@ -2292,7 +2331,7 @@ function updateCrosshairPosition(delta) {
   // Move crosshair quickly when aim stick is tilted (speed scaled by slider multiplier)
   if (state.aimActive && (state.aimMove.x !== 0 || state.aimMove.y !== 0)) {
     const baseSpeed = Math.max(window.innerWidth, window.innerHeight);
-    const speed = baseSpeed * (state.crosshairSpeedMultiplier || 1.764);
+    const speed = baseSpeed * (state.crosshairSpeedMultiplier || 2.90);
     state.crosshair.x += state.aimMove.x * speed * delta;
     state.crosshair.y += state.aimMove.y * speed * delta;
 
@@ -2351,6 +2390,12 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'KeyX') {
     fireLaserBeam();
   }
+  if (e.code === 'KeyZ' || e.code === 'KeyN') {
+    alignToWormhole();
+  }
+  if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE'].includes(e.code)) {
+    state.isAligningToWormhole = false;
+  }
 });
 
 window.addEventListener('keyup', (e) => {
@@ -2389,6 +2434,79 @@ container.addEventListener('mousedown', (e) => {
 window.addEventListener('mouseup', () => {
   state.isMouseDown = false;
 });
+
+// Auto-Align View to Wormhole Singularity
+function alignToWormhole() {
+  if (!camera) return;
+  const toWormhole = new THREE.Vector3(0, 0, 0).sub(camera.position);
+  if (toWormhole.length() < 0.1) return;
+  toWormhole.normalize();
+
+  // Desired yaw and pitch towards (0, 0, 0)
+  state.targetYaw = Math.atan2(-toWormhole.x, -toWormhole.z);
+  state.targetPitch = Math.asin(Math.max(-0.95, Math.min(0.95, toWormhole.y)));
+  state.isAligningToWormhole = true;
+  showToast('🧭 NAV LOCK: ALIGNING VIEW TO WORMHOLE');
+}
+
+// Mobile Touch Drag Camera Look / Rotate Controls
+let touchLookId = null;
+let touchLookLastX = 0;
+let touchLookLastY = 0;
+
+window.addEventListener('touchstart', (e) => {
+  if (state.isXR) return;
+  for (let i = 0; i < e.changedTouches.length; i++) {
+    const t = e.changedTouches[i];
+    // Ignore touches starting inside interactive controls, joysticks, drawer panels, or buttons
+    if (t.target.closest('#mobile-touch-controls, .virtual-stick-zone, .drawer-panel, .drawer-tab-handle, .top-strip-handle, .bottom-strip-handle, .hud-btn, button, input, select, .center-crosshair')) {
+      continue;
+    }
+    if (touchLookId === null) {
+      touchLookId = t.identifier;
+      touchLookLastX = t.clientX;
+      touchLookLastY = t.clientY;
+      state.isAligningToWormhole = false;
+      break;
+    }
+  }
+}, { passive: true });
+
+window.addEventListener('touchmove', (e) => {
+  if (touchLookId === null) return;
+  const touchList = (e.touches && e.touches.length > 0) ? e.touches : e.changedTouches;
+  if (!touchList) return;
+  for (let i = 0; i < touchList.length; i++) {
+    const t = touchList[i];
+    if (t.identifier === touchLookId) {
+      const deltaX = t.clientX - touchLookLastX;
+      const deltaY = t.clientY - touchLookLastY;
+      touchLookLastX = t.clientX;
+      touchLookLastY = t.clientY;
+      state.yaw -= deltaX * CONFIG.yawSpeed * 1.6;
+      state.pitch -= deltaY * CONFIG.pitchSpeed * 1.6;
+      state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
+      state.isAligningToWormhole = false;
+      break;
+    }
+  }
+}, { passive: true });
+
+const endTouchLook = (e) => {
+  if (touchLookId === null) return;
+  if (e.changedTouches) {
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      if (e.changedTouches[i].identifier === touchLookId || (e.touches && e.touches.length === 0)) {
+        touchLookId = null;
+        break;
+      }
+    }
+  } else {
+    touchLookId = null;
+  }
+};
+window.addEventListener('touchend', endTouchLook);
+window.addEventListener('touchcancel', endTouchLook);
 
 window.addEventListener('mousemove', (e) => {
   if (state.isPointerLocked) {
@@ -2695,6 +2813,22 @@ function renderPostProcessing() {
 }
 
 function updateFlight(delta) {
+  if (state.isAligningToWormhole) {
+    let yawDiff = (state.targetYaw - state.yaw) % (Math.PI * 2);
+    if (yawDiff > Math.PI) yawDiff -= Math.PI * 2;
+    if (yawDiff < -Math.PI) yawDiff += Math.PI * 2;
+    
+    state.yaw += yawDiff * Math.min(1.0, delta * 6.0);
+    state.pitch += (state.targetPitch - state.pitch) * Math.min(1.0, delta * 6.0);
+    
+    if (Math.abs(yawDiff) < 0.01 && Math.abs(state.targetPitch - state.pitch) < 0.01) {
+      state.yaw = state.targetYaw;
+      state.pitch = state.targetPitch;
+      state.isAligningToWormhole = false;
+      showToast('🎯 WORMHOLE SINGULARITY LOCKED IN SIGHT');
+    }
+  }
+
   camera.rotation.order = 'YXZ';
   camera.rotation.y = state.yaw;
   camera.rotation.x = state.pitch;
@@ -2715,6 +2849,18 @@ function updateFlight(delta) {
 
   if (keys['KeyQ']) state.yaw += 0.02;
   if (keys['KeyE']) state.yaw -= 0.02;
+
+  // Active flight steering check: if user deflects stick > 0.25 and holds > 350ms,
+  // release initial touch lockout immediately so flight navigation engages!
+  if (state.touchActive) {
+    const stickDeflection = Math.hypot(state.touchMove.x, state.touchMove.y);
+    const holdDuration = performance.now() - (isMouseFlight ? mouseFlightStartTime : flightTapStartTime);
+    if (stickDeflection > 0.25 && holdDuration > 350) {
+      if (state.flightLockoutUntil > performance.now()) {
+        state.flightLockoutUntil = 0;
+      }
+    }
+  }
 
   // Left joystick flight control lockout check (3s on initial touch, 1s resetting on fire tap)
   const isFlightLockedOut = performance.now() < state.flightLockoutUntil;
@@ -2744,8 +2890,13 @@ function updateFlight(delta) {
     camera.updateProjectionMatrix();
 
     if (camera.position.length() < CONFIG.eventHorizonRadius * 1.2) {
-      camera.position.set(0, 0, 0);
-      showToast('WORMHOLE TRANSIT COMPLETE - STAGE 2 UNLOCKED');
+      showToast('⚡ SINGULARITY TRANSIT ACHIEVED - STAGE 2 UNLOCKED');
+      state.position.set(0, 2.5, CONFIG.wormholeDistance);
+      camera.position.copy(state.position);
+      state.velocity.set(0, 0, 0);
+      state.yaw = 0;
+      state.pitch = 0;
+      state.isHyperWarping = false;
     }
   } else {
     if (accel.lengthSq() > 0) {
@@ -2758,14 +2909,17 @@ function updateFlight(delta) {
 
   state.position.copy(camera.position);
 
-  const distKm = Math.round(state.position.length() * 420);
+  const distLength = state.position.length();
+  const distKm = Math.round(distLength * 420);
   if (hudDistEl) hudDistEl.textContent = `${distKm.toLocaleString()} KM`;
 
-  const toWormhole = new THREE.Vector3(0, 0, 0).sub(state.position).normalize();
+  const toWormhole = distLength > 0.01
+    ? new THREE.Vector3(0, 0, 0).sub(state.position).normalize()
+    : new THREE.Vector3(0, 0, -1);
   const forwardDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
   const angleDeg = THREE.MathUtils.radToDeg(forwardDir.angleTo(toWormhole));
 
-  if (hudVectorEl) hudVectorEl.textContent = `${angleDeg.toFixed(1)}Â°`;
+  if (hudVectorEl) hudVectorEl.textContent = `${angleDeg.toFixed(1)}°`;
 
   state.isVectorAligned = (angleDeg < 7.0);
   state.isInRange = (distKm < 50000);
@@ -2785,12 +2939,110 @@ function updateFlight(delta) {
     if (vectorRingEl) vectorRingEl.classList.add('locked');
   } else {
     if (objVector) objVector.classList.remove('completed');
-    if (statusVector) statusVector.textContent = `${angleDeg.toFixed(1)}Â° / ${distKm.toLocaleString()} KM`;
+    if (statusVector) statusVector.textContent = `${angleDeg.toFixed(1)}° / ${distKm.toLocaleString()} KM`;
     if (vectorRingEl) vectorRingEl.classList.remove('locked');
   }
 
   checkObjectives();
   audioMgr.updateProximity(distKm);
+}
+
+// 3D Holographic Wormhole Nav Marker & Off-Screen Compass Arrow
+function updateWormholeNavMarker() {
+  const marker = document.getElementById('wormhole-nav-marker');
+  if (!marker || !camera) return;
+
+  const distLength = state.position.length();
+  const distKm = Math.round(distLength * 420);
+  const distTextEl = document.getElementById('nav-marker-dist');
+  if (distTextEl) distTextEl.textContent = `${distKm.toLocaleString()} KM`;
+
+  const wormholePos = new THREE.Vector3(0, 0, 0);
+  const toWormhole = wormholePos.clone().sub(camera.position);
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  const isBehind = forward.dot(toWormhole.clone().normalize()) <= 0;
+
+  // Project (0, 0, 0) onto camera screen space [-1, 1]
+  const projected = wormholePos.clone().project(camera);
+
+  let ndcX = projected.x;
+  let ndcY = projected.y;
+
+  if (isBehind) {
+    ndcX = -ndcX;
+    ndcY = -ndcY;
+    if (Math.abs(ndcX) < 0.0001 && Math.abs(ndcY) < 0.0001) {
+      ndcY = -1;
+    }
+  }
+
+  let sx = (ndcX * 0.5 + 0.5) * window.innerWidth;
+  let sy = (-ndcY * 0.5 + 0.5) * window.innerHeight;
+
+  const padX = 70;
+  const padY = 70;
+  const minX = padX;
+  const maxX = window.innerWidth - padX;
+  const minY = padY;
+  const maxY = window.innerHeight - padY;
+
+  const inView = !isBehind && sx >= minX && sx <= maxX && sy >= minY && sy <= maxY;
+  const arrowEl = document.getElementById('nav-marker-arrow');
+
+  if (inView) {
+    marker.classList.remove('off-screen');
+    marker.style.left = `${sx}px`;
+    marker.style.top = `${sy}px`;
+    if (arrowEl) arrowEl.style.display = 'none';
+  } else {
+    marker.classList.add('off-screen');
+    if (arrowEl) arrowEl.style.display = 'block';
+
+    const cx = window.innerWidth / 2;
+    const cy = window.innerHeight / 2;
+    const dx = sx - cx;
+    const dy = sy - cy;
+    const angle = Math.atan2(dy, dx);
+
+    const halfW = (window.innerWidth / 2) - padX;
+    const halfH = (window.innerHeight / 2) - padY;
+
+    let tX = (dx !== 0) ? Math.abs(halfW / dx) : Infinity;
+    let tY = (dy !== 0) ? Math.abs(halfH / dy) : Infinity;
+    let t = Math.min(tX, tY);
+
+    const clampedX = cx + dx * t;
+    const clampedY = cy + dy * t;
+
+    marker.style.left = `${clampedX}px`;
+    marker.style.top = `${clampedY}px`;
+
+    const arrowAngleDeg = (angle * 180 / Math.PI) - 90;
+    if (arrowEl) arrowEl.style.transform = `rotate(${arrowAngleDeg}deg)`;
+  }
+}
+
+// Nav Lock and Align Button Wiring
+const btnAlignWormhole = document.getElementById('btn-align-wormhole');
+if (btnAlignWormhole) {
+  btnAlignWormhole.addEventListener('click', (e) => {
+    e.preventDefault();
+    alignToWormhole();
+  });
+}
+const btnDrawerAlign = document.getElementById('btn-drawer-align');
+if (btnDrawerAlign) {
+  btnDrawerAlign.addEventListener('click', (e) => {
+    e.preventDefault();
+    alignToWormhole();
+  });
+}
+const wormholeNavMarkerEl = document.getElementById('wormhole-nav-marker');
+if (wormholeNavMarkerEl) {
+  wormholeNavMarkerEl.addEventListener('click', (e) => {
+    e.preventDefault();
+    alignToWormhole();
+  });
 }
 
 // Main Animation Loop
@@ -2812,6 +3064,7 @@ if (renderer) {
     updateFlight(delta);
   }
 
+  updateWormholeNavMarker();
   updateCrosshairPosition(delta);
   updateLaserBolts(delta);
 
@@ -3041,6 +3294,8 @@ if (typeof window !== 'undefined') {
   window.updateCrosshairPosition = updateCrosshairPosition;
   window.isFlightControlLocked = () => performance.now() < state.flightLockoutUntil;
   window.updateCrosshairSpeedMultiplier = updateCrosshairSpeedMultiplier;
+  window.alignToWormhole = alignToWormhole;
+  window.updateWormholeNavMarker = updateWormholeNavMarker;
 }
 
 runStartupDiagnosticsAndSplashScreen();

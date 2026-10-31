@@ -852,6 +852,92 @@
       box-shadow: 0 0 15px var(--accent-green);
     }
 
+    /* 3D Holographic Wormhole Nav Marker & Off-Screen Compass */
+    .wormhole-nav-marker {
+      position: fixed;
+      top: 0;
+      left: 0;
+      transform: translate(-50%, -50%);
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 55;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.2s ease;
+      will-change: transform, left, top;
+    }
+
+    .nav-marker-box {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      background: rgba(0, 25, 45, 0.78);
+      border: 1px solid var(--cyan-neon);
+      border-radius: 4px;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.45);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      pointer-events: auto;
+    }
+
+    .nav-marker-reticle {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--cyan-neon);
+      animation: pulse-ring 1.8s infinite alternate;
+    }
+
+    .nav-marker-content {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.1;
+    }
+
+    .nav-marker-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      color: var(--cyan-neon);
+      text-shadow: 0 0 6px var(--cyan-neon);
+      white-space: nowrap;
+    }
+
+    .nav-marker-dist {
+      font-size: 0.62rem;
+      font-family: monospace;
+      color: #fff;
+      font-weight: bold;
+    }
+
+    .nav-marker-arrow {
+      font-size: 1.15rem;
+      color: var(--cyan-neon);
+      text-shadow: 0 0 10px var(--cyan-neon), 0 0 18px rgba(0,240,255,0.8);
+      transform-origin: center center;
+      transition: transform 0.1s linear;
+      margin-top: 2px;
+      display: none;
+    }
+
+    .wormhole-nav-marker.off-screen .nav-marker-arrow {
+      display: block;
+    }
+
+    .wormhole-nav-marker.off-screen .nav-marker-box {
+      border-color: #ffaa00;
+      box-shadow: 0 0 12px rgba(255, 170, 0, 0.6);
+    }
+
+    .wormhole-nav-marker.off-screen .nav-marker-title {
+      color: #ffaa00;
+      text-shadow: 0 0 6px #ffaa00;
+    }
+
     /* Notification Banner */
     #toast-msg {
       position: absolute;
@@ -1732,12 +1818,18 @@
         <div class="key-row">
           <span style="color:var(--cyan-neon);">Toggle Bottom Panel:</span> <span class="kbd">B</span>
         </div>
+        <div class="key-row">
+          <span style="color:var(--cyan-neon);">Auto-Align Wormhole:</span> <span class="kbd">Z</span> / <span class="kbd">N</span>
+        </div>
+        <button id="btn-drawer-align" class="hud-btn" style="width: 100%; margin-top: 6px; padding: 6px; font-size: 0.75rem; border-color: var(--cyan-neon); background: rgba(0,240,255,0.12);" title="Automatically align ship view directly towards the Wormhole Singularity">
+          🧭 Align View to Wormhole
+        </button>
 
         <!-- Crosshair Speed Slider in Flight Control Panel -->
         <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;">
           <label for="slider-crosshair-speed" style="font-size: 0.72rem; color: var(--cyan-neon); font-weight: 700;">CROSSHAIR SPEED</label>
-          <input id="slider-crosshair-speed" type="range" min="0.4" max="3.5" step="0.05" value="1.76" style="width: 100px; cursor: pointer;">
-          <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">1.76x</span>
+          <input id="slider-crosshair-speed" type="range" min="0.4" max="3.5" step="0.05" value="2.90" style="width: 100px; cursor: pointer;">
+          <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">2.90x</span>
         </div>
       </div>
 
@@ -1919,6 +2011,9 @@
         <button id="btn-mouse-lock" class="hud-btn" title="Toggle flight crosshair mouse capture">
           🎯 Flight Mouse
         </button>
+        <button id="btn-align-wormhole" class="hud-btn" title="Automatically align ship view directly towards the Wormhole Singularity (Hotkey: Z / N)">
+          🧭 Nav Lock
+        </button>
       </div>
 
       <div class="control-cluster">
@@ -1934,8 +2029,8 @@
         </div>
         <div class="hud-slider-group">
           <label for="slider-crosshair-speed-bottom">AIM SPEED</label>
-          <input id="slider-crosshair-speed-bottom" type="range" min="0.4" max="3.5" step="0.05" value="1.76">
-          <span id="val-crosshair-speed-bottom" class="badge-val">1.76x</span>
+          <input id="slider-crosshair-speed-bottom" type="range" min="0.4" max="3.5" step="0.05" value="2.90">
+          <span id="val-crosshair-speed-bottom" class="badge-val">2.90x</span>
         </div>
         <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
           <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto close
@@ -1960,6 +2055,18 @@
       <div class="crosshair-circle"></div>
     </div>
     <div id="vector-alignment-ring"></div>
+
+    <!-- 3D Holographic Wormhole Nav Marker & Off-Screen Compass Arrow -->
+    <div id="wormhole-nav-marker" class="wormhole-nav-marker" title="Wormhole Singularity Nav Beacon - Click/Tap to Auto-Align">
+      <div class="nav-marker-box">
+        <div class="nav-marker-reticle"></div>
+        <div class="nav-marker-content">
+          <div class="nav-marker-title">⦿ WORMHOLE SINGULARITY</div>
+          <div class="nav-marker-dist" id="nav-marker-dist">92,400 KM</div>
+        </div>
+      </div>
+      <div class="nav-marker-arrow" id="nav-marker-arrow">▲</div>
+    </div>
 
     <!-- Notification Toast Banner -->
     <div id="toast-msg"></div>

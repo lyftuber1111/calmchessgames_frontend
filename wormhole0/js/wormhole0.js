@@ -84,6 +84,9 @@ const state = {
   isAligningToWormhole: false,
   targetYaw: 0,
   targetPitch: 0,
+
+  // Left-Handed Touch Control Layout
+  leftHandedMode: false,
   
   // Gamepad State
   gamepadIndex: null,
@@ -2715,6 +2718,45 @@ if (crosshairSpeedSliderBottom) {
   });
 }
 
+// Left-Handed Mode (Flip On-Screen Touch Controls)
+function setLeftHandedMode(enabled) {
+  state.leftHandedMode = !!enabled;
+  document.body.classList.toggle('left-handed-controls', state.leftHandedMode);
+  const touchControls = document.getElementById('mobile-touch-controls');
+  if (touchControls) {
+    touchControls.classList.toggle('left-handed', state.leftHandedMode);
+  }
+  const chkLeft = document.getElementById('chk-left-handed');
+  if (chkLeft) chkLeft.checked = state.leftHandedMode;
+  const chkLeftBottom = document.getElementById('chk-left-handed-bottom');
+  if (chkLeftBottom) chkLeftBottom.checked = state.leftHandedMode;
+
+  try {
+    localStorage.setItem('wormhole_left_handed', state.leftHandedMode ? '1' : '0');
+  } catch (e) {}
+
+  showToast(state.leftHandedMode ? 'LEFT-HANDED LAYOUT ACTIVATED' : 'STANDARD LAYOUT ACTIVATED');
+}
+
+const chkLeftHanded = document.getElementById('chk-left-handed');
+if (chkLeftHanded) {
+  chkLeftHanded.addEventListener('change', (e) => {
+    setLeftHandedMode(e.target.checked);
+  });
+}
+const chkLeftHandedBottom = document.getElementById('chk-left-handed-bottom');
+if (chkLeftHandedBottom) {
+  chkLeftHandedBottom.addEventListener('change', (e) => {
+    setLeftHandedMode(e.target.checked);
+  });
+}
+
+try {
+  if (localStorage.getItem('wormhole_left_handed') === '1') {
+    setLeftHandedMode(true);
+  }
+} catch (e) {}
+
 const toggleAudioBtn = document.getElementById('btn-toggle-audio');
 if (toggleAudioBtn) {
   toggleAudioBtn.addEventListener('click', () => {
@@ -3296,6 +3338,7 @@ if (typeof window !== 'undefined') {
   window.updateCrosshairSpeedMultiplier = updateCrosshairSpeedMultiplier;
   window.alignToWormhole = alignToWormhole;
   window.updateWormholeNavMarker = updateWormholeNavMarker;
+  window.setLeftHandedMode = setLeftHandedMode;
 }
 
 runStartupDiagnosticsAndSplashScreen();

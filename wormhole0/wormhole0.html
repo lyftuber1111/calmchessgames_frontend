@@ -965,16 +965,12 @@
     #mobile-touch-controls {
       display: none;
       position: fixed;
-      bottom: 25px;
-      left: 0;
-      width: 100%;
-      height: 140px;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
       pointer-events: none;
       z-index: 60;
-      padding: 0 clamp(16px, 3vw, 36px);
       box-sizing: border-box;
-      justify-content: space-between;
-      align-items: flex-end;
     }
 
     .virtual-stick-zone {
@@ -984,7 +980,7 @@
       border-radius: 50%;
       background: rgba(0, 35, 55, 0.45);
       border: 2px dashed rgba(0, 240, 255, 0.4);
-      position: relative;
+      position: absolute;
       touch-action: none;
       display: flex;
       align-items: center;
@@ -992,6 +988,15 @@
       box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
       user-select: none;
       -webkit-user-select: none;
+      transition: left 0.3s ease, right 0.3s ease, top 0.3s ease, bottom 0.3s ease;
+    }
+
+    /* Left Flight Joystick (Standard: Bottom-Left) */
+    #touch-stick-zone {
+      bottom: 25px;
+      left: clamp(16px, 3vw, 36px);
+      right: auto;
+      top: auto;
     }
 
     .virtual-stick-zone::after {
@@ -1028,18 +1033,23 @@
       font-size: 0.85rem;
     }
 
-    /* Right Thumb Aim Joystick */
+    /* Right Thumb Aim Joystick (Moved to Upper Right Corner) */
     .aim-stick-zone {
       background: rgba(0, 30, 50, 0.45);
       border: 2px dashed rgba(0, 240, 255, 0.5);
       box-shadow: 0 0 18px rgba(0, 240, 255, 0.18);
       cursor: crosshair;
+      top: clamp(20px, 4vh, 35px);
+      right: clamp(16px, 3vw, 36px);
+      left: auto;
+      bottom: auto;
     }
 
     .aim-stick-zone::after {
       content: 'AIM RETICLE';
       position: absolute;
-      top: -18px;
+      bottom: -18px;
+      top: auto;
       font-size: 0.62rem;
       color: var(--cyan-neon);
       letter-spacing: 1px;
@@ -1063,6 +1073,10 @@
     .mobile-touch-actions {
       pointer-events: auto;
       display: flex;
+      position: absolute;
+      bottom: 25px;
+      left: 50%;
+      transform: translateX(-50%);
       flex-direction: row;
       gap: 14px;
       margin-bottom: 8px;
@@ -1090,6 +1104,24 @@
       color: #000;
       transform: scale(0.95);
     }
+
+    /* Left-Handed Touch Control Layout: Flip joystick locations */
+    body.left-handed-controls #touch-stick-zone,
+    #mobile-touch-controls.left-handed #touch-stick-zone {
+      left: auto;
+      right: clamp(16px, 3vw, 36px);
+      bottom: 25px;
+      top: auto;
+    }
+
+    body.left-handed-controls #aim-stick-zone,
+    #mobile-touch-controls.left-handed #aim-stick-zone {
+      right: auto;
+      left: clamp(16px, 3vw, 36px);
+      top: clamp(20px, 4vh, 35px);
+      bottom: auto;
+    }
+
 
     /* ==========================================================================
        MOBILE LANDSCAPE ORIENTATION ENFORCEMENT OVERLAY
@@ -1624,7 +1656,7 @@
         display: flex !important;
       }
       #mobile-touch-controls {
-        display: flex !important;
+        display: block !important;
       }
     }
 
@@ -1647,7 +1679,7 @@
         display: none;
       }
       #mobile-touch-controls {
-        display: flex;
+        display: block !important;
       }
     }
 
@@ -1831,6 +1863,15 @@
           <input id="slider-crosshair-speed" type="range" min="0.4" max="3.5" step="0.05" value="2.90" style="width: 100px; cursor: pointer;">
           <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">2.90x</span>
         </div>
+
+        <!-- Left-Handed Mode Toggle Checkmark -->
+        <div class="hud-slider-group flight-slider-row" style="margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(0,240,255,0.15); display: flex; align-items: center; justify-content: space-between;">
+          <label for="chk-left-handed" style="font-size: 0.72rem; color: var(--cyan-neon); font-weight: 700; cursor: pointer;">LEFT-HANDED LAYOUT</label>
+          <label class="autohide-toggle" style="cursor: pointer;" title="Flip joystick button positions: Flight stick on bottom-right, Aim stick on upper-left">
+            <input type="checkbox" id="chk-left-handed" class="chk-left-handed">
+            <span style="font-size: 0.7rem; color: #fff;">Flip Controls</span>
+          </label>
+        </div>
       </div>
 
       <!-- Section 2: Stage 1 Objectives & Systems Calibration -->
@@ -1950,10 +1991,6 @@
 
       <div class="telemetry-badges">
         <div class="badge">
-          <span>SINGULARITY RANGE</span>
-          <span id="hud-distance" class="badge-val">92,400 KM</span>
-        </div>
-        <div class="badge">
           <span>VECTOR DEVIATION</span>
           <span id="hud-vector" class="badge-val">12.4°</span>
         </div>
@@ -2032,6 +2069,9 @@
           <input id="slider-crosshair-speed-bottom" type="range" min="0.4" max="3.5" step="0.05" value="2.90">
           <span id="val-crosshair-speed-bottom" class="badge-val">2.90x</span>
         </div>
+        <label class="autohide-toggle" title="Flip joystick locations for left-handed players">
+          <input type="checkbox" id="chk-left-handed-bottom" class="chk-left-handed"> Left-handed
+        </label>
         <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
           <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto close
         </label>

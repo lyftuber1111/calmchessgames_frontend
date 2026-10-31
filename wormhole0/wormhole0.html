@@ -788,10 +788,12 @@
       width: 44px;
       height: 44px;
       pointer-events: none;
-      opacity: 0.5;
+      opacity: 0.85;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: transform 0.08s ease-out;
+      z-index: 50;
     }
 
     .center-crosshair::before,
@@ -799,15 +801,35 @@
       content: '';
       position: absolute;
       background: var(--cyan-neon);
+      transition: background 0.15s ease, box-shadow 0.15s ease;
     }
-    .center-crosshair::before { width: 100%; height: 1px; }
-    .center-crosshair::after { height: 100%; width: 1px; }
+    .center-crosshair::before { width: 100%; height: 2px; }
+    .center-crosshair::after { height: 100%; width: 2px; }
     
     .crosshair-circle {
-      width: 18px;
-      height: 18px;
-      border: 1px dashed var(--cyan-neon);
+      width: 20px;
+      height: 20px;
+      border: 2px dashed var(--cyan-neon);
       border-radius: 50%;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    }
+
+    /* Laser Firing Reticle Pulse */
+    .center-crosshair.laser-firing {
+      transform: translate(-50%, -50%) scale(1.35) !important;
+    }
+
+    .center-crosshair.laser-firing::before,
+    .center-crosshair.laser-firing::after {
+      background: #ff0044 !important;
+      box-shadow: 0 0 14px #ff0044, 0 0 24px rgba(255, 0, 68, 0.8) !important;
+    }
+
+    .center-crosshair.laser-firing .crosshair-circle {
+      border-color: #ff0044 !important;
+      border-style: solid !important;
+      box-shadow: 0 0 16px #ff0044, inset 0 0 10px rgba(255, 0, 68, 0.6) !important;
+      transform: scale(1.2);
     }
 
     /* Vector Lock Indicator */
@@ -818,10 +840,11 @@
       transform: translate(-50%, -50%);
       width: 70px;
       height: 70px;
-      border: 2px solid rgba(0, 240, 255, 0.3);
+      border: 2px solid rgba(0, 240, 255, 0.35);
       border-radius: 50%;
       pointer-events: none;
-      transition: all 0.25s ease;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+      z-index: 49;
     }
 
     #vector-alignment-ring.locked {
@@ -856,13 +879,13 @@
     #mobile-touch-controls {
       display: none;
       position: fixed;
-      bottom: 35px;
+      bottom: 25px;
       left: 0;
       width: 100%;
-      height: 130px;
+      height: 140px;
       pointer-events: none;
       z-index: 60;
-      padding: 0 20px;
+      padding: 0 clamp(16px, 3vw, 36px);
       box-sizing: border-box;
       justify-content: space-between;
       align-items: flex-end;
@@ -880,6 +903,22 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .virtual-stick-zone::after {
+      content: 'FLIGHT';
+      position: absolute;
+      top: -18px;
+      font-size: 0.62rem;
+      color: var(--cyan-neon);
+      letter-spacing: 1px;
+      font-weight: 700;
+      white-space: nowrap;
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
+      pointer-events: none;
     }
 
     .virtual-stick-knob {
@@ -887,33 +926,67 @@
       height: 44px;
       border-radius: 50%;
       background: var(--cyan-neon);
-      box-shadow: 0 0 12px var(--cyan-neon);
+      box-shadow: 0 0 14px var(--cyan-neon);
       position: absolute;
       pointer-events: none;
       transform: translate(0px, 0px);
     }
 
+    /* Right Thumb Aim / Laser Joystick */
+    .aim-stick-zone {
+      background: rgba(55, 5, 20, 0.45);
+      border: 2px dashed rgba(255, 25, 75, 0.6);
+      box-shadow: 0 0 18px rgba(255, 0, 60, 0.22);
+      cursor: crosshair;
+    }
+
+    .aim-stick-zone::after {
+      content: 'AIM / TAP FIRE';
+      position: absolute;
+      top: -18px;
+      font-size: 0.62rem;
+      color: #ff3366;
+      letter-spacing: 1px;
+      font-weight: 700;
+      white-space: nowrap;
+      text-shadow: 0 0 8px #ff0044;
+      pointer-events: none;
+    }
+
+    .aim-stick-knob {
+      background: #ff1144;
+      box-shadow: 0 0 16px #ff1144, 0 0 26px rgba(255, 17, 68, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 0.85rem;
+    }
+
     .mobile-touch-actions {
       pointer-events: auto;
       display: flex;
-      flex-direction: column;
-      gap: 10px;
+      flex-direction: row;
+      gap: 14px;
+      margin-bottom: 8px;
     }
 
     .touch-btn {
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       background: rgba(0, 48, 75, 0.85);
       border: 2px solid var(--cyan-neon);
       color: var(--cyan-neon);
-      font-size: 0.72rem;
+      font-size: 0.75rem;
       font-weight: 700;
       display: flex;
       align-items: center;
       justify-content: center;
       box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
       cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
     }
     .touch-btn:active {
       background: var(--cyan-neon);
@@ -1859,7 +1932,7 @@
     <div class="hud-reticle reticle-br"></div>
 
     <!-- Center Crosshairs & Vector Alignment Marker -->
-    <div class="center-crosshair">
+    <div class="center-crosshair" id="center-crosshair">
       <div class="crosshair-circle"></div>
     </div>
     <div id="vector-alignment-ring"></div>
@@ -1871,14 +1944,19 @@
   <!-- Mobile Touch On-Screen Controls (Landscape) -->
   <div id="mobile-touch-controls">
     <!-- Left Virtual Joystick Zone (Movement) -->
-    <div class="virtual-stick-zone" id="touch-stick-zone">
+    <div class="virtual-stick-zone" id="touch-stick-zone" title="Flight Thruster Control">
       <div class="virtual-stick-knob" id="touch-stick-knob"></div>
     </div>
 
-    <!-- Right Touch Action Cluster -->
+    <!-- Center Touch Action Cluster -->
     <div class="mobile-touch-actions">
       <div class="touch-btn" id="touch-btn-scan" title="Scan Singularity">📡</div>
       <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
+    </div>
+
+    <!-- Right Virtual Joystick Zone (Aim & Laser Cannon) -->
+    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Aim Reticle / Tap to Fire Laser">
+      <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob">🔴</div>
     </div>
   </div>
 

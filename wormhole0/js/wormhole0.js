@@ -61,9 +61,18 @@ const state = {
   lastMouseX: 0,
   lastMouseY: 0,
   
-  // Virtual Touch Joystick input
+  // Virtual Touch Joystick input (Left Thumb Flight)
   touchMove: { x: 0, y: 0 },
   touchActive: false,
+  
+  // Virtual Aim Joystick input & Crosshair Reticle (Right Thumb Aim & Laser)
+  aimMove: { x: 0, y: 0 },
+  aimActive: false,
+  crosshair: {
+    x: typeof window !== 'undefined' ? window.innerWidth / 2 : 400,
+    y: typeof window !== 'undefined' ? window.innerHeight / 2 : 300
+  },
+  lastLaserShotTime: 0,
   
   // Gamepad State
   gamepadIndex: null,
@@ -1008,6 +1017,38 @@ class AudioManager {
     }
   }
 
+  playLaser() {
+    if (CONFIG.audioMuted) return;
+    if (!this.ctx) {
+      this.init();
+    }
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+
+      // Punchy sci-fi laser blast frequency drop
+      osc.frequency.setValueAtTime(1100, now);
+      osc.frequency.exponentialRampToValueAtTime(115, now + 0.16);
+
+      gain.gain.setValueAtTime(0.42, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.18);
+    } catch (e) {
+      console.warn('[Audio] Laser sound error:', e);
+    }
+  }
+
   updateProximity(distKm) {
     if (!this.droneAudio || CONFIG.audioMuted) return;
     const norm = Math.max(0.0, Math.min(1.0, 1.0 - (distKm / 90000)));
@@ -1848,24 +1889,41 @@ function vibratePad(pad, durationMs) {
 }
 
 // =============================================================================
-// MOBILE TOUCH VIRTUAL JOYSTICK & TOUCH BUTTONS
+// MOBILE TOUCH VIRTUAL JOYSTICKS (LEFT: FLIGHT, RIGHT: AIM & LASER CANNON)
 // =============================================================================
 const touchStickZone = document.getElementById('touch-stick-zone');
 const touchStickKnob = document.getElementById('touch-stick-knob');
+const aimStickZone = document.getElementById('aim-stick-zone');
+const aimStickKnob = document.getElementById('aim-stick-knob');
 const touchBtnScan = document.getElementById('touch-btn-scan');
 const touchBtnWarp = document.getElementById('touch-btn-warp');
 
 let stickCenter = { x: 0, y: 0 };
+let aimStickCenter = { x: 0, y: 0 };
 const maxStickRadius = 38;
 
+let flightTouchId = null;
+let aimTouchId = null;
+let aimTapStartTime = 0;
+let aimTotalMove = 0;
+
+// 1. LEFT THUMB FLIGHT JOYSTICK
 if (touchStickZone) {
   touchStickZone.addEventListener('touchstart', (e) => {
     e.preventDefault();
     const rect = touchStickZone.getBoundingClientRect();
     stickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-    state.touchActive = true;
-    updateStickPos(e.touches[0].clientX, e.touches[0].clientY);
-    handleFlightActivity();
+
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      if (touch.target === touchStickZone || touchStickZone.contains(touch.target)) {
+        flightTouchId = touch.identifier;
+        state.touchActive = true;
+        updateStickPos(touch.clientX, touch.clientY);
+        handleFlightActivity(); // Closes panels if open
+        break;
+      }
+    }
     if (!audioMgr.isInitialized) audioMgr.init();
     lockLandscape();
   }, { passive: false });
@@ -1874,7 +1932,7 @@ if (touchStickZone) {
     if (!state.touchActive) return;
     for (let i = 0; i < e.touches.length; i++) {
       const touch = e.touches[i];
-      if (touch.target === touchStickZone || touchStickZone.contains(touch.target)) {
+      if (touch.identifier === flightTouchId) {
         updateStickPos(touch.clientX, touch.clientY);
         handleFlightActivity();
         break;
@@ -1882,32 +1940,51 @@ if (touchStickZone) {
     }
   }, { passive: true });
 
-  window.addEventListener('touchend', () => {
-    if (state.touchActive) {
+  const endFlightTouch = (e) => {
+    if (!state.touchActive) return;
+    if (e.changedTouches) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === flightTouchId || e.touches.length === 0) {
+          state.touchActive = false;
+          flightTouchId = null;
+          state.touchMove.x = 0;
+          state.touchMove.y = 0;
+          if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
+          break;
+        }
+      }
+    } else {
       state.touchActive = false;
+      flightTouchId = null;
       state.touchMove.x = 0;
       state.touchMove.y = 0;
       if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
     }
-  });
+  };
 
-  // Mouse interaction for on-screen stick
+  window.addEventListener('touchend', endFlightTouch);
+  window.addEventListener('touchcancel', endFlightTouch);
+
+  // Mouse interaction for flight joystick
+  let isMouseFlight = false;
   touchStickZone.addEventListener('mousedown', (e) => {
     e.preventDefault();
     const rect = touchStickZone.getBoundingClientRect();
     stickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    isMouseFlight = true;
     state.touchActive = true;
     updateStickPos(e.clientX, e.clientY);
     handleFlightActivity();
   });
   window.addEventListener('mousemove', (e) => {
-    if (state.touchActive) {
+    if (isMouseFlight) {
       updateStickPos(e.clientX, e.clientY);
       handleFlightActivity();
     }
   });
   window.addEventListener('mouseup', () => {
-    if (state.touchActive) {
+    if (isMouseFlight) {
+      isMouseFlight = false;
       state.touchActive = false;
       state.touchMove.x = 0;
       state.touchMove.y = 0;
@@ -1932,6 +2009,274 @@ function updateStickPos(clientX, clientY) {
 
   state.touchMove.x = knobX / maxStickRadius;
   state.touchMove.y = knobY / maxStickRadius;
+}
+
+// 2. RIGHT THUMB AIM & NEON RED LASER JOYSTICK
+if (aimStickZone) {
+  aimStickZone.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    const rect = aimStickZone.getBoundingClientRect();
+    aimStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const touch = e.changedTouches[i];
+      if (touch.target === aimStickZone || aimStickZone.contains(touch.target)) {
+        aimTouchId = touch.identifier;
+        state.aimActive = true;
+        aimTapStartTime = performance.now();
+        aimTotalMove = 0;
+        updateAimStickPos(touch.clientX, touch.clientY);
+        handleFlightActivity(); // Closes all panels if open!
+        break;
+      }
+    }
+    if (!audioMgr.isInitialized) audioMgr.init();
+    lockLandscape();
+  }, { passive: false });
+
+  window.addEventListener('touchmove', (e) => {
+    if (!state.aimActive) return;
+    for (let i = 0; i < e.touches.length; i++) {
+      const touch = e.touches[i];
+      if (touch.identifier === aimTouchId) {
+        updateAimStickPos(touch.clientX, touch.clientY);
+        handleFlightActivity(); // Closes all panels if open!
+        break;
+      }
+    }
+  }, { passive: true });
+
+  const endAimTouch = (e) => {
+    if (!state.aimActive) return;
+    if (e.changedTouches) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === aimTouchId || e.touches.length === 0) {
+          const duration = performance.now() - aimTapStartTime;
+          const wasTap = (duration < 380 && aimTotalMove < 28);
+          state.aimActive = false;
+          aimTouchId = null;
+          state.aimMove.x = 0;
+          state.aimMove.y = 0;
+          if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
+          if (wasTap) {
+            fireLaserBeam();
+          }
+          break;
+        }
+      }
+    } else {
+      state.aimActive = false;
+      aimTouchId = null;
+      state.aimMove.x = 0;
+      state.aimMove.y = 0;
+      if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
+    }
+  };
+
+  window.addEventListener('touchend', endAimTouch);
+  window.addEventListener('touchcancel', endAimTouch);
+
+  // Mouse interaction for Aim stick (desktop testing and click-to-fire)
+  let isMouseAim = false;
+  aimStickZone.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    const rect = aimStickZone.getBoundingClientRect();
+    aimStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+    isMouseAim = true;
+    state.aimActive = true;
+    aimTapStartTime = performance.now();
+    aimTotalMove = 0;
+    updateAimStickPos(e.clientX, e.clientY);
+    handleFlightActivity(); // Closes all panels if open!
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (isMouseAim) {
+      updateAimStickPos(e.clientX, e.clientY);
+      handleFlightActivity(); // Closes all panels if open!
+    }
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (isMouseAim) {
+      const duration = performance.now() - aimTapStartTime;
+      const wasTap = (duration < 380 && aimTotalMove < 28);
+      isMouseAim = false;
+      state.aimActive = false;
+      state.aimMove.x = 0;
+      state.aimMove.y = 0;
+      if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
+      if (wasTap) {
+        fireLaserBeam();
+      }
+    }
+  });
+
+  // Direct tap click backup on right stick
+  aimStickZone.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleFlightActivity();
+    fireLaserBeam();
+  });
+}
+
+function updateAimStickPos(clientX, clientY) {
+  const dx = clientX - aimStickCenter.x;
+  const dy = clientY - aimStickCenter.y;
+  const dist = Math.hypot(dx, dy);
+  aimTotalMove += dist;
+  const angle = Math.atan2(dy, dx);
+  const clampedDist = Math.min(dist, maxStickRadius);
+
+  const knobX = Math.cos(angle) * clampedDist;
+  const knobY = Math.sin(angle) * clampedDist;
+
+  if (aimStickKnob) {
+    aimStickKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+  }
+
+  // Velocity factor: -1.0 to 1.0
+  state.aimMove.x = knobX / maxStickRadius;
+  state.aimMove.y = knobY / maxStickRadius;
+}
+
+// 3. NEON RED LASER CANNON SYSTEM & CROSSHAIR RETICLE TRACKER
+const laserBolts = [];
+
+function fireLaserBeam() {
+  if (!scene || !camera) return;
+  const now = performance.now();
+  if (now - state.lastLaserShotTime < 110) return; // Shot rate throttling
+  state.lastLaserShotTime = now;
+
+  // Sound synthesis
+  if (!audioMgr.isInitialized) audioMgr.init();
+  audioMgr.playLaser();
+
+  // Crosshair visual blast animation
+  const crosshairEl = document.getElementById('center-crosshair');
+  if (crosshairEl) {
+    crosshairEl.classList.remove('laser-firing');
+    void crosshairEl.offsetWidth; // Reflow
+    crosshairEl.classList.add('laser-firing');
+    setTimeout(() => {
+      crosshairEl.classList.remove('laser-firing');
+    }, 180);
+  }
+
+  // 3D Direction raycast from dynamic crosshair screen coordinates
+  const ndcX = (state.crosshair.x / window.innerWidth) * 2 - 1;
+  const ndcY = -(state.crosshair.y / window.innerHeight) * 2 + 1;
+  const raycaster = new THREE.Raycaster();
+  raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
+
+  // Target point 1200 units deep into cosmos
+  const targetPoint = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(1200));
+
+  // Ship blaster cannons (alternating left / right wingtips)
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+
+  if (typeof fireLaserBeam.cannonSide === 'undefined') fireLaserBeam.cannonSide = 1;
+  fireLaserBeam.cannonSide = -fireLaserBeam.cannonSide;
+  const sideOffset = fireLaserBeam.cannonSide * 0.45;
+
+  const spawnOrigin = camera.position.clone()
+    .addScaledVector(forward, 0.8)
+    .addScaledVector(right, sideOffset)
+    .addScaledVector(up, -0.25);
+
+  const direction = new THREE.Vector3().subVectors(targetPoint, spawnOrigin).normalize();
+
+  // Glowing Neon Red Laser Beam Geometry
+  const boltLength = 7.5;
+  const boltRadius = 0.14;
+  const geometry = new THREE.CylinderGeometry(boltRadius * 0.35, boltRadius, boltLength, 8);
+  geometry.rotateX(Math.PI / 2);
+
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xff0033,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.copy(spawnOrigin);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+
+  // White-hot plasma core
+  const coreGeom = new THREE.CylinderGeometry(boltRadius * 0.15, boltRadius * 0.35, boltLength * 0.92, 6);
+  coreGeom.rotateX(Math.PI / 2);
+  const coreMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.95
+  });
+  const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+  mesh.add(coreMesh);
+
+  // Dynamic laser point light glow
+  const light = new THREE.PointLight(0xff0033, 3.5, 35);
+  light.position.set(0, 0, 0);
+  mesh.add(light);
+
+  scene.add(mesh);
+
+  laserBolts.push({
+    mesh,
+    geometry,
+    material,
+    coreGeom,
+    coreMat,
+    light,
+    direction,
+    speed: 550, // units per second
+    spawnTime: now,
+    lifetime: 2.2 // seconds
+  });
+}
+
+function updateLaserBolts(delta) {
+  const now = performance.now();
+  for (let i = laserBolts.length - 1; i >= 0; i--) {
+    const bolt = laserBolts[i];
+    bolt.mesh.position.addScaledVector(bolt.direction, bolt.speed * delta);
+    if ((now - bolt.spawnTime) * 0.001 > bolt.lifetime) {
+      scene.remove(bolt.mesh);
+      bolt.geometry.dispose();
+      bolt.material.dispose();
+      bolt.coreGeom.dispose();
+      bolt.coreMat.dispose();
+      if (bolt.light) bolt.mesh.remove(bolt.light);
+      laserBolts.splice(i, 1);
+    }
+  }
+}
+
+function updateCrosshairPosition(delta) {
+  // Move crosshair quickly when aim stick is tilted
+  if (state.aimActive && (state.aimMove.x !== 0 || state.aimMove.y !== 0)) {
+    const speed = Math.max(window.innerWidth, window.innerHeight) * 1.8;
+    state.crosshair.x += state.aimMove.x * speed * delta;
+    state.crosshair.y += state.aimMove.y * speed * delta;
+
+    const margin = 20;
+    state.crosshair.x = Math.max(margin, Math.min(window.innerWidth - margin, state.crosshair.x));
+    state.crosshair.y = Math.max(margin, Math.min(window.innerHeight - margin, state.crosshair.y));
+  }
+
+  const crosshairEl = document.getElementById('center-crosshair');
+  if (crosshairEl) {
+    crosshairEl.style.left = `${state.crosshair.x}px`;
+    crosshairEl.style.top = `${state.crosshair.y}px`;
+  }
+  const vectorRing = document.getElementById('vector-alignment-ring');
+  if (vectorRing) {
+    vectorRing.style.left = `${state.crosshair.x}px`;
+    vectorRing.style.top = `${state.crosshair.y}px`;
+  }
 }
 
 if (touchBtnScan) {
@@ -1968,6 +2313,9 @@ window.addEventListener('keydown', (e) => {
 
   if (e.code === 'KeyF') {
     triggerWarpJump();
+  }
+  if (e.code === 'KeyX') {
+    fireLaserBeam();
   }
 });
 
@@ -2393,6 +2741,9 @@ if (renderer) {
     updateFlight(delta);
   }
 
+  updateCrosshairPosition(delta);
+  updateLaserBolts(delta);
+
   accretionUniforms.uTime.value = state.time;
   secondaryDiskMaterial.uniforms.uTime.value = state.time;
   photonRingUniforms.uTime.value = state.time;
@@ -2444,6 +2795,9 @@ window.addEventListener('resize', () => {
 
   blurShader.uniforms.uResolution.value.set(w * 0.5, h * 0.5);
   compositeShader.uniforms.uAspect.value = w / h;
+
+  state.crosshair.x = Math.max(20, Math.min(w - 20, state.crosshair.x));
+  state.crosshair.y = Math.max(20, Math.min(h - 20, state.crosshair.y));
 });
 
 // Splash Screen & Multi-Platform Runtime Verification Runner
@@ -2606,6 +2960,14 @@ async function runStartupDiagnosticsAndSplashScreen() {
     if (splashEl) splashEl.remove();
     return false;
   }
+}
+
+// Window exports for verification & diagnostics
+if (typeof window !== 'undefined') {
+  window.state = state;
+  window.laserBolts = laserBolts;
+  window.fireLaserBeam = fireLaserBeam;
+  window.updateCrosshairPosition = updateCrosshairPosition;
 }
 
 runStartupDiagnosticsAndSplashScreen();

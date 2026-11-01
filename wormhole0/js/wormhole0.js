@@ -89,6 +89,7 @@ const state = {
   // Custom Cruise Throttle Slider State (-1.0 reverse to +1.0 forward, default 0 in center)
   throttleValue: 0,
   throttleLocked: false,
+  throttleLockoutUntil: 0,
 
   // Automated Thruster Rotation State (180° and 360°)
   isExecuting360Turn: false,
@@ -2184,21 +2185,23 @@ const btnThrottleRev = document.getElementById('btn-throttle-rev');
 const btnThrottleFwd = document.getElementById('btn-throttle-fwd');
 
 function setThrottleLockout(locked) {
-  state.throttleLocked = !!locked;
+  const isTimeLocked = performance.now() < state.throttleLockoutUntil;
+  const shouldBeLocked = !!locked || isTimeLocked;
+  state.throttleLocked = shouldBeLocked;
   if (customThrottleSlider) {
-    customThrottleSlider.disabled = state.throttleLocked;
+    customThrottleSlider.disabled = shouldBeLocked;
   }
   if (btnThrottleRev) {
-    btnThrottleRev.disabled = state.throttleLocked;
+    btnThrottleRev.disabled = shouldBeLocked;
   }
   if (btnThrottleFwd) {
-    btnThrottleFwd.disabled = state.throttleLocked;
+    btnThrottleFwd.disabled = shouldBeLocked;
   }
   if (btnThrottleStop) {
-    btnThrottleStop.disabled = state.throttleLocked;
+    btnThrottleStop.disabled = shouldBeLocked;
   }
   if (throttleSliderContainer) {
-    throttleSliderContainer.classList.toggle('throttle-locked', state.throttleLocked);
+    throttleSliderContainer.classList.toggle('throttle-locked', shouldBeLocked);
   }
 }
 
@@ -2520,7 +2523,7 @@ function updateAimStickPos(clientX, clientY) {
 // CUSTOM CRUISE THROTTLE SLIDER & REVERSE TOGGLE
 // =============================================================================
 function updateThrottleFromSlider(rawVal) {
-  if (state.throttleLocked) return;
+  if (state.throttleLocked || performance.now() < state.throttleLockoutUntil) return;
   const val = parseFloat(rawVal) || 0;
   // Maps -100..100 to -1.0 (reverse) to +1.0 (forward)
   state.throttleValue = val / 100;
@@ -2549,7 +2552,7 @@ function updateThrottleFromSlider(rawVal) {
 }
 
 function setSliderFromPointerX(clientX) {
-  if (!customThrottleSlider) return;
+  if (state.throttleLocked || performance.now() < state.throttleLockoutUntil || !customThrottleSlider) return;
   const rect = customThrottleSlider.getBoundingClientRect();
   if (rect.width <= 0) return;
   const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
@@ -2561,7 +2564,7 @@ function setSliderFromPointerX(clientX) {
 }
 
 function toggleReverseThrottle() {
-  if (state.throttleLocked) return;
+  if (state.throttleLocked || performance.now() < state.throttleLockoutUntil) return;
   // If moving forward, invert to reverse at the same speed
   if (state.throttleValue > 0.005) {
     const targetVal = -Math.round(state.throttleValue * 100);
@@ -2584,7 +2587,7 @@ function toggleReverseThrottle() {
 }
 
 function toggleForwardThrottle() {
-  if (state.throttleLocked) return;
+  if (state.throttleLocked || performance.now() < state.throttleLockoutUntil) return;
   if (state.throttleValue < -0.005) {
     const targetVal = Math.abs(Math.round(state.throttleValue * 100));
     if (customThrottleSlider) customThrottleSlider.value = targetVal;
@@ -2607,13 +2610,18 @@ let sliderInteracting = false;
 let touchTriggeredStop = false;
 
 function onSliderTouchOrPointerDown(e) {
-  if (state.throttleLocked) return;
+  if (state.throttleLocked || performance.now() < state.throttleLockoutUntil) {
+    if (e.cancelable) e.preventDefault();
+    return;
+  }
   e.stopPropagation();
 
-  // If engine is actively thrusting, touching the slider immediately stops all thrust!
+  // If engine is actively thrusting, touching the slider immediately stops all thrust and locks out / delays for 0.3 seconds!
   const isCurrentlyThrusting = Math.abs(state.throttleValue) > 0.005;
   if (isCurrentlyThrusting) {
     stopThrottle('CRUISE ENGINES STOPPED (0%)');
+    state.throttleLockoutUntil = performance.now() + 300; // 0.3-second lockout / delay
+    setThrottleLockout(true);
     touchTriggeredStop = true;
     sliderInteracting = true;
     if (e.cancelable) e.preventDefault();
@@ -2630,7 +2638,7 @@ function onSliderTouchOrPointerDown(e) {
 }
 
 function onSliderTouchOrPointerMove(e) {
-  if (!sliderInteracting || state.throttleLocked) return;
+  if (!sliderInteracting || state.throttleLocked || performance.now() < state.throttleLockoutUntil) return;
   e.stopPropagation();
 
   // If this touch initiated an emergency stop while thrusting, ignore dragging on the same touch

@@ -1998,22 +1998,8 @@ function pollGamepad(delta) {
     const rx = Math.abs(pad.axes[2]) > CONFIG.gamepadDeadzone ? pad.axes[2] : 0;
     const ry = Math.abs(pad.axes[3]) > CONFIG.gamepadDeadzone ? pad.axes[3] : 0;
 
-    // Crosshair joystick (Right stick): ONLY controls crosshair - NO flight control
-    if (rx !== 0 || ry !== 0) {
-      const baseSpeed = Math.max(window.innerWidth, window.innerHeight);
-      const speed = baseSpeed * (state.crosshairSpeedMultiplier || 2.90);
-      state.crosshair.x += rx * speed * delta;
-      state.crosshair.y += ry * speed * delta;
-      const margin = 20;
-      state.crosshair.x = Math.max(margin, Math.min(window.innerWidth - margin, state.crosshair.x));
-      state.crosshair.y = Math.max(margin, Math.min(window.innerHeight - margin, state.crosshair.y));
-    }
-
-    // D-Pad flight steering (Pitch & Yaw)
-    if (pad.buttons[14] && pad.buttons[14].pressed) state.yaw += CONFIG.yawSpeed * 22.0 * delta * 60;
-    if (pad.buttons[15] && pad.buttons[15].pressed) state.yaw -= CONFIG.yawSpeed * 22.0 * delta * 60;
-    if (pad.buttons[12] && pad.buttons[12].pressed) state.pitch += CONFIG.pitchSpeed * 22.0 * delta * 60;
-    if (pad.buttons[13] && pad.buttons[13].pressed) state.pitch -= CONFIG.pitchSpeed * 22.0 * delta * 60;
+    state.yaw -= rx * CONFIG.yawSpeed * 22.0;
+    state.pitch -= ry * CONFIG.pitchSpeed * 22.0;
     state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
 
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
@@ -2032,12 +2018,6 @@ function pollGamepad(delta) {
       if (btnScan) btnScan.click();
       vibratePad(pad, 150);
     }
-    // Fire laser with RB (Button 5) or B (Button 1)
-    if ((pad.buttons[5] && pad.buttons[5].pressed && !state.lastPadButtons[5]) ||
-        (pad.buttons[1] && pad.buttons[1].pressed && !state.lastPadButtons[1])) {
-      fireLaserBeam();
-      vibratePad(pad, 120);
-    }
     if (pad.buttons[2] && pad.buttons[2].pressed && !state.lastPadButtons[2]) {
       const uncalibrated = state.coils.findIndex(c => !c);
       if (uncalibrated !== -1) {
@@ -2053,10 +2033,8 @@ function pollGamepad(delta) {
 
     state.lastPadButtons = {
       0: pad.buttons[0] ? pad.buttons[0].pressed : false,
-      1: pad.buttons[1] ? pad.buttons[1].pressed : false,
       2: pad.buttons[2] ? pad.buttons[2].pressed : false,
-      3: pad.buttons[3] ? pad.buttons[3].pressed : false,
-      5: pad.buttons[5] ? pad.buttons[5].pressed : false
+      3: pad.buttons[3] ? pad.buttons[3].pressed : false
     };
 
     break;
@@ -2272,12 +2250,10 @@ function updateStickPos(clientX, clientY) {
   }
 }
 
-// 2. RIGHT THUMB AIM JOYSTICK (RAPIDLY MOVES CROSSHAIR RETICLE - NO FLIGHT CONTROL)
-let isMouseAim = false;
+// 2. RIGHT THUMB AIM JOYSTICK (RAPIDLY MOVES CROSSHAIR RETICLE)
 if (aimStickZone) {
   aimStickZone.addEventListener('touchstart', (e) => {
     e.preventDefault();
-    e.stopPropagation();
     const rect = aimStickZone.getBoundingClientRect();
     aimStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 
@@ -2335,11 +2311,10 @@ if (aimStickZone) {
   window.addEventListener('touchend', endAimTouch);
   window.addEventListener('touchcancel', endAimTouch);
 
-  // Mouse interaction for Aim stick (desktop testing and dragging crosshair aim - NO flight control)
+  // Mouse interaction for Aim stick (desktop testing and dragging aim)
+  let isMouseAim = false;
   aimStickZone.addEventListener('mousedown', (e) => {
     e.preventDefault();
-    e.stopPropagation();
-    state.isMouseDown = false;
     const rect = aimStickZone.getBoundingClientRect();
     aimStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     isMouseAim = true;
@@ -2350,7 +2325,6 @@ if (aimStickZone) {
 
   window.addEventListener('mousemove', (e) => {
     if (isMouseAim) {
-      state.isMouseDown = false;
       updateAimStickPos(e.clientX, e.clientY);
       handleFlightActivity(); // Closes all panels if open!
     }
@@ -2368,7 +2342,6 @@ if (aimStickZone) {
 
   aimStickZone.addEventListener('click', (e) => {
     e.preventDefault();
-    e.stopPropagation();
     handleFlightActivity();
   });
 }
@@ -2681,7 +2654,7 @@ window.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 window.addEventListener('touchmove', (e) => {
-  if (touchLookId === null || touchLookId === aimTouchId) return;
+  if (touchLookId === null) return;
   const touchList = (e.touches && e.touches.length > 0) ? e.touches : e.changedTouches;
   if (!touchList) return;
   for (let i = 0; i < touchList.length; i++) {
@@ -2727,7 +2700,7 @@ window.addEventListener('mousemove', (e) => {
     state.yaw = lastGyroYaw + touchLookYaw;
     state.pitch = lastGyroPitch + touchLookPitch;
     state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
-  } else if (state.isMouseDown && !isMouseAim) {
+  } else if (state.isMouseDown) {
     const deltaX = e.clientX - state.lastMouseX;
     const deltaY = e.clientY - state.lastMouseY;
     state.lastMouseX = e.clientX;

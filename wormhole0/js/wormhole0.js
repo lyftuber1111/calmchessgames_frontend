@@ -88,6 +88,9 @@ const state = {
 
   // Left-Handed Touch Control Layout
   leftHandedMode: false,
+
+  // Mobile Invisible Full-Screen Targeting Snap Grid
+  showTargetGrid: false,
   
   // Gamepad State
   gamepadIndex: null,
@@ -1064,6 +1067,29 @@ class AudioManager {
     }
   }
 
+  playSnap() {
+    if (CONFIG.audioMuted) return;
+    if (!this.ctx) this.init();
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1200, now);
+      osc.frequency.exponentialRampToValueAtTime(450, now + 0.03);
+      gain.gain.setValueAtTime(0.04, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.03);
+    } catch (e) {}
+  }
+
   updateProximity(distKm) {
     if (!this.droneAudio || CONFIG.audioMuted) return;
     const norm = Math.max(0.0, Math.min(1.0, 1.0 - (distKm / 90000)));
@@ -1843,6 +1869,17 @@ function centerWormholeOnScreen(immediate = true) {
 
   state.crosshair.x = window.innerWidth / 2;
   state.crosshair.y = window.innerHeight / 2;
+  if (typeof snapGrid !== 'undefined' && snapGrid.cellWidth > 0 && snapGrid.cellHeight > 0) {
+    snapGrid.currentCol = Math.floor(snapGrid.cols / 2);
+    snapGrid.currentRow = Math.floor(snapGrid.rows / 2);
+    snapGrid.virtualX = (snapGrid.currentCol + 0.5) * snapGrid.cellWidth;
+    snapGrid.virtualY = (snapGrid.currentRow + 0.5) * snapGrid.cellHeight;
+    state.crosshair.x = snapGrid.virtualX;
+    state.crosshair.y = snapGrid.virtualY;
+    if (typeof highlightActiveGridBox === 'function') {
+      highlightActiveGridBox(snapGrid.currentCol, snapGrid.currentRow);
+    }
+  }
   const centerCrosshairEl = document.getElementById('center-crosshair');
   if (centerCrosshairEl) {
     centerCrosshairEl.style.left = '50%';
@@ -2055,13 +2092,17 @@ function pollGamepad(delta) {
 
     // Crosshair joystick (Left stick): ONLY controls crosshair - NO flight control
     if (lx !== 0 || ly !== 0) {
-      const baseSpeed = Math.max(window.innerWidth, window.innerHeight);
-      const speed = baseSpeed * (state.crosshairSpeedMultiplier || 2.90);
-      state.crosshair.x += lx * speed * delta;
-      state.crosshair.y += ly * speed * delta;
-      const margin = 20;
-      state.crosshair.x = Math.max(margin, Math.min(window.innerWidth - margin, state.crosshair.x));
-      state.crosshair.y = Math.max(margin, Math.min(window.innerHeight - margin, state.crosshair.y));
+      if (!aimTouchId && !isMouseAim) {
+        state.aimMove.x = lx;
+        state.aimMove.y = ly;
+        state.aimActive = true;
+      }
+    } else if (!aimTouchId && !isMouseAim) {
+      if (state.aimActive) {
+        state.aimActive = false;
+        state.aimMove.x = 0;
+        state.aimMove.y = 0;
+      }
     }
 
     // Right stick (rx, ry): Pitch & Yaw Look
@@ -2366,6 +2407,7 @@ if (aimStickZone) {
           state.aimMove.x = 0;
           state.aimMove.y = 0;
           if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
+          snapCrosshairToCurrentGridCenter();
           break;
         }
       }
@@ -2375,6 +2417,7 @@ if (aimStickZone) {
       state.aimMove.x = 0;
       state.aimMove.y = 0;
       if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
+      snapCrosshairToCurrentGridCenter();
     }
   };
 
@@ -2407,6 +2450,7 @@ if (aimStickZone) {
       state.aimMove.x = 0;
       state.aimMove.y = 0;
       if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
+      snapCrosshairToCurrentGridCenter();
     }
   });
 
@@ -2550,17 +2594,207 @@ function updateLaserBolts(delta) {
   }
 }
 
-function updateCrosshairPosition(delta) {
-  // Move crosshair quickly when aim stick is tilted (speed scaled by slider multiplier)
-  if (state.aimActive && (state.aimMove.x !== 0 || state.aimMove.y !== 0)) {
-    const baseSpeed = Math.max(window.innerWidth, window.innerHeight);
-    const speed = baseSpeed * (state.crosshairSpeedMultiplier || 2.90);
-    state.crosshair.x += state.aimMove.x * speed * delta;
-    state.crosshair.y += state.aimMove.y * speed * delta;
+// =============================================================================
+// MOBILE INVISIBLE FULL-SCREEN SNAP GRID SYSTEM
+// =============================================================================
+const snapGrid = {
+  cols: 15,
+  rows: 7,
+  cellWidth: 0,
+  cellHeight: 0,
+  currentCol: -1,
+  currentRow: -1,
+  snapLockUntil: 0,
+  virtualX: 0,
+  virtualY: 0,
+  initialized: false
+};
 
-    const margin = 20;
-    state.crosshair.x = Math.max(margin, Math.min(window.innerWidth - margin, state.crosshair.x));
-    state.crosshair.y = Math.max(margin, Math.min(window.innerHeight - margin, state.crosshair.y));
+function updateMobileSnapGrid() {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  // Compute odd number of columns & rows around 55px - 65px per box
+  let cols = Math.round(w / 60);
+  if (cols % 2 === 0) cols += 1; // Ensure odd count for exact screen-center alignment
+  if (cols < 3) cols = 3;
+
+  let rows = Math.round(h / 60);
+  if (rows % 2 === 0) rows += 1; // Ensure odd count for exact screen-center alignment
+  if (rows < 3) rows = 3;
+
+  snapGrid.cols = cols;
+  snapGrid.rows = rows;
+  snapGrid.cellWidth = w / cols;
+  snapGrid.cellHeight = h / rows;
+
+  const gridEl = document.getElementById('mobile-fullscreen-grid');
+  if (gridEl) {
+    gridEl.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+    gridEl.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+
+    // Only rebuild DOM grid boxes if count changed
+    if (gridEl.children.length !== cols * rows) {
+      gridEl.innerHTML = '';
+      const fragment = document.createDocumentFragment();
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const box = document.createElement('div');
+          box.className = 'grid-box';
+          box.dataset.col = String(c);
+          box.dataset.row = String(r);
+          fragment.appendChild(box);
+        }
+      }
+      gridEl.appendChild(fragment);
+    }
+  }
+
+  // If not initialized, initialize center box and virtual position
+  if (!snapGrid.initialized) {
+    snapGrid.currentCol = Math.floor(cols / 2);
+    snapGrid.currentRow = Math.floor(rows / 2);
+    snapGrid.virtualX = (snapGrid.currentCol + 0.5) * snapGrid.cellWidth;
+    snapGrid.virtualY = (snapGrid.currentRow + 0.5) * snapGrid.cellHeight;
+    state.crosshair.x = snapGrid.virtualX;
+    state.crosshair.y = snapGrid.virtualY;
+    snapGrid.initialized = true;
+    highlightActiveGridBox(snapGrid.currentCol, snapGrid.currentRow);
+  } else {
+    // Keep col/row within bounds on resize and align
+    snapGrid.currentCol = Math.min(cols - 1, Math.max(0, snapGrid.currentCol));
+    snapGrid.currentRow = Math.min(rows - 1, Math.max(0, snapGrid.currentRow));
+    const boxCenterX = (snapGrid.currentCol + 0.5) * snapGrid.cellWidth;
+    const boxCenterY = (snapGrid.currentRow + 0.5) * snapGrid.cellHeight;
+    snapGrid.virtualX = boxCenterX;
+    snapGrid.virtualY = boxCenterY;
+    state.crosshair.x = boxCenterX;
+    state.crosshair.y = boxCenterY;
+    highlightActiveGridBox(snapGrid.currentCol, snapGrid.currentRow);
+  }
+}
+
+function highlightActiveGridBox(col, row) {
+  const gridEl = document.getElementById('mobile-fullscreen-grid');
+  if (!gridEl) return;
+  const prevActive = gridEl.querySelector('.grid-box.active-snap');
+  if (prevActive) prevActive.classList.remove('active-snap');
+  const targetIndex = row * snapGrid.cols + col;
+  if (gridEl.children[targetIndex]) {
+    gridEl.children[targetIndex].classList.add('active-snap');
+  }
+}
+
+function triggerCrosshairSnapEffect() {
+  const crosshairEl = document.getElementById('center-crosshair');
+  if (crosshairEl) {
+    crosshairEl.classList.remove('grid-snapped');
+    void crosshairEl.offsetWidth; // Reflow
+    crosshairEl.classList.add('grid-snapped');
+    setTimeout(() => {
+      crosshairEl.classList.remove('grid-snapped');
+    }, 120);
+  }
+  if (audioMgr && typeof audioMgr.playSnap === 'function') {
+    audioMgr.playSnap();
+  }
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try { navigator.vibrate(6); } catch (e) {}
+  }
+}
+
+function snapCrosshairToCurrentGridCenter() {
+  if (snapGrid.cellWidth > 0 && snapGrid.cellHeight > 0) {
+    if (snapGrid.currentCol >= 0 && snapGrid.currentRow >= 0) {
+      const boxCenterX = (snapGrid.currentCol + 0.5) * snapGrid.cellWidth;
+      const boxCenterY = (snapGrid.currentRow + 0.5) * snapGrid.cellHeight;
+      state.crosshair.x = boxCenterX;
+      state.crosshair.y = boxCenterY;
+      snapGrid.virtualX = boxCenterX;
+      snapGrid.virtualY = boxCenterY;
+      highlightActiveGridBox(snapGrid.currentCol, snapGrid.currentRow);
+    }
+  }
+}
+
+function setShowTargetGrid(val) {
+  state.showTargetGrid = !!val;
+  const gridEl = document.getElementById('mobile-fullscreen-grid');
+  if (gridEl) {
+    gridEl.classList.toggle('show-debug-grid', state.showTargetGrid);
+  }
+  document.querySelectorAll('.chk-show-grid').forEach(chk => {
+    chk.checked = state.showTargetGrid;
+  });
+}
+
+function updateCrosshairPosition(delta) {
+  const now = performance.now();
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+
+  if (snapGrid.cellWidth === 0 || snapGrid.cellHeight === 0) {
+    updateMobileSnapGrid();
+  }
+
+  // Move crosshair when aim stick or gamepad is tilted
+  if (state.aimActive && (state.aimMove.x !== 0 || state.aimMove.y !== 0)) {
+    const stickDist = Math.hypot(state.aimMove.x, state.aimMove.y);
+    const inDwell = (now < snapGrid.snapLockUntil && stickDist < 0.85);
+
+    if (!inDwell) {
+      const baseSpeed = Math.max(w, h);
+      const speed = baseSpeed * (state.crosshairSpeedMultiplier || 2.90);
+
+      // Move virtual coordinate across the screen
+      snapGrid.virtualX += state.aimMove.x * speed * delta;
+      snapGrid.virtualY += state.aimMove.y * speed * delta;
+
+      const margin = 10;
+      snapGrid.virtualX = Math.max(margin, Math.min(w - margin, snapGrid.virtualX));
+      snapGrid.virtualY = Math.max(margin, Math.min(h - margin, snapGrid.virtualY));
+
+      // Calculate which box of the grid the center is entering
+      const newCol = Math.min(snapGrid.cols - 1, Math.max(0, Math.floor(snapGrid.virtualX / snapGrid.cellWidth)));
+      const newRow = Math.min(snapGrid.rows - 1, Math.max(0, Math.floor(snapGrid.virtualY / snapGrid.cellHeight)));
+
+      // When the center of the crosshair crosses into each box of the grid:
+      // The crosshair snaps to the center of the grid box
+      if (newCol !== snapGrid.currentCol || newRow !== snapGrid.currentRow) {
+        snapGrid.currentCol = newCol;
+        snapGrid.currentRow = newRow;
+
+        const boxCenterX = (newCol + 0.5) * snapGrid.cellWidth;
+        const boxCenterY = (newRow + 0.5) * snapGrid.cellHeight;
+
+        state.crosshair.x = boxCenterX;
+        state.crosshair.y = boxCenterY;
+
+        // Sync virtual coordinate to snapped box center
+        snapGrid.virtualX = boxCenterX;
+        snapGrid.virtualY = boxCenterY;
+
+        // Brief tactile dwell so the snap to center is distinct and clear
+        snapGrid.snapLockUntil = now + 65;
+
+        highlightActiveGridBox(newCol, newRow);
+        triggerCrosshairSnapEffect();
+      } else {
+        state.crosshair.x = snapGrid.virtualX;
+        state.crosshair.y = snapGrid.virtualY;
+      }
+    }
+  } else if (!state.aimActive && snapGrid.currentCol >= 0 && snapGrid.currentRow >= 0) {
+    // When aim stick is released, ensure crosshair is snapped at the center of the grid box
+    const boxCenterX = (snapGrid.currentCol + 0.5) * snapGrid.cellWidth;
+    const boxCenterY = (snapGrid.currentRow + 0.5) * snapGrid.cellHeight;
+    if (Math.abs(state.crosshair.x - boxCenterX) > 0.5 || Math.abs(state.crosshair.y - boxCenterY) > 0.5) {
+      state.crosshair.x = boxCenterX;
+      state.crosshair.y = boxCenterY;
+      snapGrid.virtualX = boxCenterX;
+      snapGrid.virtualY = boxCenterY;
+      highlightActiveGridBox(snapGrid.currentCol, snapGrid.currentRow);
+    }
   }
 
   const crosshairEl = document.getElementById('center-crosshair');
@@ -2982,6 +3216,19 @@ if (chkLeftHandedBottom) {
   });
 }
 
+// Target Grid Visibility Toggle
+const chkShowGridBottom = document.getElementById('chk-show-grid-bottom');
+if (chkShowGridBottom) {
+  chkShowGridBottom.addEventListener('change', (e) => {
+    setShowTargetGrid(e.target.checked);
+  });
+}
+document.querySelectorAll('.chk-show-grid').forEach(chk => {
+  chk.addEventListener('change', (e) => {
+    setShowTargetGrid(e.target.checked);
+  });
+});
+
 try {
   if (localStorage.getItem('wormhole_left_handed') === '1') {
     setLeftHandedMode(true);
@@ -3324,6 +3571,8 @@ window.addEventListener('resize', () => {
   blurShader.uniforms.uResolution.value.set(w * 0.5, h * 0.5);
   compositeShader.uniforms.uAspect.value = w / h;
 
+  updateMobileSnapGrid();
+
   const isLandscape = (w > h);
   if (isLandscape && state.hasStarted) {
     centerWormholeOnScreen();
@@ -3562,6 +3811,13 @@ if (typeof window !== 'undefined') {
   window.handleOrientation = handleOrientation;
   window.setLeftHandedMode = setLeftHandedMode;
   window.updateSplashGamepadStatus = updateSplashGamepadStatus;
+  window.snapGrid = snapGrid;
+  window.updateMobileSnapGrid = updateMobileSnapGrid;
+  window.setShowTargetGrid = setShowTargetGrid;
+  window.triggerCrosshairSnapEffect = triggerCrosshairSnapEffect;
 }
+
+// Initial mobile snap grid calculation
+updateMobileSnapGrid();
 
 runStartupDiagnosticsAndSplashScreen();

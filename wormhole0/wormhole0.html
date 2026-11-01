@@ -848,6 +848,58 @@
       transform: scale(1.2);
     }
 
+    /* Mobile Crosshair Grid Snap Feedback */
+    .center-crosshair.grid-snapped {
+      transform: translate(-50%, -50%) scale(1.18) !important;
+    }
+
+    .center-crosshair.grid-snapped::before,
+    .center-crosshair.grid-snapped::after {
+      background: #00f0ff !important;
+      box-shadow: 0 0 12px #00f0ff !important;
+    }
+
+    .center-crosshair.grid-snapped .crosshair-circle {
+      border-color: #00f0ff !important;
+      border-style: solid !important;
+      box-shadow: 0 0 14px #00f0ff, inset 0 0 8px rgba(0, 240, 255, 0.8) !important;
+    }
+
+    /* Mobile Invisible Full-Screen Targeting Snap Grid */
+    .mobile-fullscreen-grid {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      width: 100dvw;
+      height: 100dvh;
+      display: grid;
+      pointer-events: none;
+      z-index: 45;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .mobile-fullscreen-grid.show-debug-grid {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    .mobile-fullscreen-grid .grid-box {
+      box-sizing: border-box;
+      border: 1px dashed rgba(0, 240, 255, 0.14);
+      pointer-events: none;
+      position: relative;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .mobile-fullscreen-grid .grid-box.active-snap {
+      background-color: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.18);
+    }
+
     /* Vector Lock Indicator */
     #vector-alignment-ring {
       position: absolute;
@@ -2207,6 +2259,9 @@
         <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
           <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto close
         </label>
+        <label class="autohide-toggle" title="Toggle visibility of the full screen mobile targeting snap grid">
+          <input type="checkbox" id="chk-show-grid-bottom" class="chk-show-grid"> Target Grid
+        </label>
         <button id="btn-toggle-hud" class="hud-btn" title="Toggle interface overlay visibility">
           👁 HUD
         </button>
@@ -2216,6 +2271,9 @@
 
   <!-- Holographic Sci-Fi Telemetry & Cockpit HUD -->
   <div id="hud-layer">
+    <!-- Mobile Full-Screen Invisible Snap Grid -->
+    <div id="mobile-fullscreen-grid" class="mobile-fullscreen-grid" aria-hidden="true"></div>
+
     <!-- Corner Boundary Reticles -->
     <div class="hud-reticle reticle-tl"></div>
     <div class="hud-reticle reticle-tr"></div>

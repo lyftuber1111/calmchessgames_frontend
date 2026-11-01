@@ -90,6 +90,11 @@ const state = {
   throttleValue: 0,
   throttleLocked: false,
 
+  // 360-Degree Automated Thruster Rotation State
+  isExecuting360Turn: false,
+  turn360Accumulated: 0,
+  turn360Target: Math.PI * 2,
+
   // Left-Handed Touch Control Layout
   leftHandedMode: false,
 
@@ -2534,6 +2539,59 @@ if (btnThrottleStop) {
   }, { passive: false });
 }
 
+// =============================================================================
+// AUTOMATED 360-DEGREE THRUSTER ROTATION
+// =============================================================================
+const touchBtnSpin360 = document.getElementById('touch-btn-spin-360');
+const btnSpin360 = document.getElementById('btn-spin-360');
+
+function execute360Turn() {
+  if (state.isExecuting360Turn) {
+    cancel360Turn();
+    return;
+  }
+  state.isExecuting360Turn = true;
+  state.turn360Accumulated = 0;
+  state.turn360Target = Math.PI * 2; // Full 360 degrees
+
+  if (touchBtnSpin360) touchBtnSpin360.classList.add('active-spin');
+  if (btnSpin360) btnSpin360.classList.add('active');
+
+  showToast('🔄 360° THRUSTER ROTATION ENGAGED');
+  if (!audioMgr.isInitialized) audioMgr.init();
+  audioMgr.playCoil();
+  handleFlightActivity();
+}
+
+function cancel360Turn() {
+  if (!state.isExecuting360Turn) return;
+  state.isExecuting360Turn = false;
+  if (touchBtnSpin360) touchBtnSpin360.classList.remove('active-spin');
+  if (btnSpin360) btnSpin360.classList.remove('active');
+  showToast('🔄 360° ROTATION STOPPED');
+}
+
+if (touchBtnSpin360) {
+  touchBtnSpin360.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    execute360Turn();
+  });
+  touchBtnSpin360.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    execute360Turn();
+  }, { passive: false });
+}
+
+if (btnSpin360) {
+  btnSpin360.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    execute360Turn();
+  });
+}
+
 // 3. NEON RED LASER CANNON SYSTEM & CROSSHAIR RETICLE TRACKER
 const laserBolts = [];
 
@@ -2891,6 +2949,10 @@ window.addEventListener('keydown', (e) => {
 
   if (e.code === 'KeyF') {
     triggerWarpJump();
+  }
+  if (e.code === 'KeyR') {
+    e.preventDefault();
+    execute360Turn();
   }
   if (e.code === 'KeyX') {
     fireLaserBeam();
@@ -3507,6 +3569,36 @@ function updateFlight(delta) {
     }
     // Lateral strafe thrusters
     accel.addScaledVector(right, state.touchMove.x * 0.5);
+
+    // Manual joystick movement overrides automated 360 rotation
+    if (state.isExecuting360Turn && (Math.abs(state.touchMove.x) > 0.1 || Math.abs(state.touchMove.y) > 0.1)) {
+      cancel360Turn();
+    }
+  }
+
+  // 3. Automated 360-Degree Thruster Rotation
+  if (state.isExecuting360Turn) {
+    // Rotates a complete 360 degrees in ~2.8 seconds
+    const turnRate = (Math.PI * 2) / 2.8;
+    const step = turnRate * delta;
+    const remaining = state.turn360Target - state.turn360Accumulated;
+    const actualStep = Math.min(step, remaining);
+
+    touchLookYaw -= actualStep;
+    state.yaw = lastGyroYaw + touchLookYaw;
+    state.turn360Accumulated += actualStep;
+
+    // Thruster stabilizer impulse while rotating
+    accel.addScaledVector(right, 0.2);
+
+    if (state.turn360Accumulated >= state.turn360Target - 0.001) {
+      state.isExecuting360Turn = false;
+      const spinBtn = document.getElementById('touch-btn-spin-360');
+      if (spinBtn) spinBtn.classList.remove('active-spin');
+      const deskSpinBtn = document.getElementById('btn-spin-360');
+      if (deskSpinBtn) deskSpinBtn.classList.remove('active');
+      showToast('🔄 360° ROTATION COMPLETE');
+    }
   }
 
   pollGamepad(delta);
@@ -3920,6 +4012,8 @@ if (typeof window !== 'undefined') {
   window.snapGrid = snapGrid;
   window.updateMobileSnapGrid = updateMobileSnapGrid;
   window.setShowTargetGrid = setShowTargetGrid;
+  window.execute360Turn = execute360Turn;
+  window.cancel360Turn = cancel360Turn;
 }
 
 // Initial mobile snap grid calculation

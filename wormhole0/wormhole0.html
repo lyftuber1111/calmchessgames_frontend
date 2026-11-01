@@ -1079,6 +1079,29 @@
       transform: scale(0.95);
     }
 
+    #touch-btn-spin-360 {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      line-height: 1.15;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #touch-btn-spin-360.active-spin,
+    #btn-spin-360.active {
+      background: var(--cyan-neon) !important;
+      color: #01050a !important;
+      box-shadow: 0 0 16px var(--cyan-neon), 0 0 28px rgba(0, 240, 255, 0.7) !important;
+      animation: spinPulse 0.8s infinite alternate ease-in-out;
+    }
+    @keyframes spinPulse {
+      0% { transform: scale(0.96); }
+      100% { transform: scale(1.08); }
+    }
+
     /* ==========================================================================
        CUSTOM CRUISE THROTTLE SLIDER & STOP BUTTON
        Default: Center (0). Slide right -> increase forward speed.
@@ -2245,6 +2268,9 @@
         <div class="key-row">
           <span style="color:var(--cyan-neon);">Auto-Align Wormhole:</span> <span class="kbd">Z</span> / <span class="kbd">N</span>
         </div>
+        <div class="key-row">
+          <span style="color:var(--cyan-neon);">360° Thruster Turn:</span> <span class="kbd">R</span>
+        </div>
 
         <!-- Crosshair Speed Slider in Flight Hub Panel -->
         <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;" title="Adjust crosshair movement speed (Default: 2.9x)">
@@ -2430,6 +2456,9 @@
         <button id="btn-toggle-controller" class="hud-btn" title="Toggle Gamepad Controller Polling">
           🎮 Controller: AUTO
         </button>
+        <button id="btn-spin-360" class="hud-btn" title="Fire thrusters until ship rotates 360 degrees (Hotkey: R)">
+          🔄 360° Turn
+        </button>
         <button id="btn-mouse-lock" class="hud-btn" title="Toggle flight crosshair mouse capture">
           🎯 Flight Mouse
         </button>
@@ -2500,6 +2529,7 @@
 
     <!-- Center Touch Action Cluster -->
     <div class="mobile-touch-actions">
+      <div class="touch-btn" id="touch-btn-spin-360" title="Fire thrusters until ship rotates 360 degrees">🔄 360°</div>
       <div class="touch-btn" id="touch-btn-scan" title="Scan Singularity">📡</div>
       <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
     </div>

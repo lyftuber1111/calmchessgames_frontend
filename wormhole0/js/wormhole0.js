@@ -47,12 +47,13 @@ const state = {
   xrMode: 'desktop-xr', // 'desktop-xr', 'desktop-vr', 'mobile-xr', 'mobile-ar'
   hudVisible: true,
   postProcessingEnabled: true,
+  hasStarted: false,
   
   // Panel state
   autoClose: true,
   
   // Player Position & Dynamics
-  position: new THREE.Vector3(0, 2.5, CONFIG.wormholeDistance),
+  position: new THREE.Vector3(0, 0, CONFIG.wormholeDistance),
   velocity: new THREE.Vector3(0, 0, 0),
   pitch: 0,
   yaw: 0,
@@ -1490,6 +1491,9 @@ function handleOrientationPromptUpdate() {
   if (isLandscape) {
     if (landscapePrompt) landscapePrompt.classList.remove('dismissed');
     document.body.classList.remove('portrait-dismissed');
+    if (state.hasStarted) {
+      centerWormholeOnScreen();
+    }
   }
 }
 
@@ -1784,25 +1788,147 @@ function activateModeParameters(mode) {
   }
 }
 
+let baseAlpha = null;
+let lastDeviceAlpha = null;
+let lastGyroYaw = 0;
+let lastGyroPitch = 0;
+let touchLookYaw = 0;
+let touchLookPitch = 0;
+
 function requestDeviceOrientation() {
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
     DeviceOrientationEvent.requestPermission()
       .then(res => {
         if (res === 'granted') {
+          window.removeEventListener('deviceorientation', handleOrientation);
           window.addEventListener('deviceorientation', handleOrientation);
         }
       })
       .catch(console.warn);
-  } else {
+  } else if (typeof window !== 'undefined') {
+    window.removeEventListener('deviceorientation', handleOrientation);
     window.addEventListener('deviceorientation', handleOrientation);
   }
 }
 
+// Calibrates and centers the wormhole directly in the viewport
+function centerWormholeOnScreen(immediate = true) {
+  if (!camera) return;
+
+  camera.position.set(0, 0, CONFIG.wormholeDistance);
+  state.position.copy(camera.position);
+  state.velocity.set(0, 0, 0);
+
+  if (lastDeviceAlpha !== null) {
+    baseAlpha = lastDeviceAlpha;
+  } else {
+    baseAlpha = null;
+  }
+  touchLookYaw = 0;
+  touchLookPitch = 0;
+  lastGyroYaw = 0;
+  lastGyroPitch = 0;
+
+  state.yaw = 0;
+  state.pitch = 0;
+  state.targetYaw = 0;
+  state.targetPitch = 0;
+  state.isAligningToWormhole = false;
+
+  camera.rotation.order = 'YXZ';
+  camera.rotation.set(0, 0, 0);
+  camera.quaternion.identity();
+
+  state.crosshair.x = window.innerWidth / 2;
+  state.crosshair.y = window.innerHeight / 2;
+  const centerCrosshairEl = document.getElementById('center-crosshair');
+  if (centerCrosshairEl) {
+    centerCrosshairEl.style.left = '50%';
+    centerCrosshairEl.style.top = '50%';
+    centerCrosshairEl.style.transform = 'translate(-50%, -50%)';
+  }
+  const vectorRing = document.getElementById('vector-alignment-ring');
+  if (vectorRing) {
+    vectorRing.style.left = '50%';
+    vectorRing.style.top = '50%';
+    vectorRing.style.transform = 'translate(-50%, -50%)';
+  }
+}
+
+// Device Orientation Handler calibrated for landscape mode held vertically
 function handleOrientation(e) {
-  if (state.isXR || state.xrMode !== 'mobile-xr') return;
-  if (e.gamma !== null && e.beta !== null) {
-    state.yaw = THREE.MathUtils.degToRad(-e.alpha || 0);
-    state.pitch = THREE.MathUtils.degToRad(e.gamma || 0);
+  if (state.isXR) return;
+  if (e.beta === null || e.gamma === null) return;
+
+  if (e.alpha !== null && e.alpha !== undefined) {
+    lastDeviceAlpha = e.alpha;
+    if (baseAlpha === null) {
+      baseAlpha = e.alpha;
+    }
+  }
+
+  // Determine current screen orientation angle (0, 90, 180, 270)
+  let screenAngle = 0;
+  if (screen.orientation && typeof screen.orientation.angle === 'number') {
+    screenAngle = screen.orientation.angle;
+  } else if (typeof window.orientation === 'number') {
+    screenAngle = window.orientation;
+  }
+
+  // If viewport is landscape (width > height) but reporting 0 deg, default to landscape 90 deg
+  const isLandscape = (window.innerWidth > window.innerHeight);
+  if (isLandscape && screenAngle === 0) {
+    screenAngle = 90;
+  }
+
+  // Device orientation angles in radians
+  const b = THREE.MathUtils.degToRad(e.beta || 0);
+  const g = THREE.MathUtils.degToRad(e.gamma || 0);
+
+  // Up/Gravity vector in device coordinate frame
+  const dx = Math.cos(b) * Math.sin(g);
+  const dy = -Math.sin(b);
+  const dz = Math.cos(b) * Math.cos(g);
+
+  // Map device axes into screen frame according to screen orientation
+  let sy, sz;
+  if (screenAngle === 90) {
+    sy = dx;
+    sz = dz;
+  } else if (screenAngle === 270 || screenAngle === -90) {
+    sy = -dx;
+    sz = dz;
+  } else if (screenAngle === 180) {
+    sy = -dy;
+    sz = dz;
+  } else {
+    // 0 deg: portrait
+    sy = dy;
+    sz = dz;
+  }
+
+  // When device is held vertically (screen normal horizontal to ground), sy ≈ -1 and sz ≈ 0.
+  // Pitch angle Math.atan2(sz, -sy) -> EXACTLY 0.0 when held vertically!
+  let gyroPitch = Math.atan2(sz, -sy);
+  gyroPitch = Math.max(-Math.PI * 0.47, Math.min(Math.PI * 0.47, gyroPitch));
+
+  // Yaw relative to calibrated reference heading
+  let gyroYaw = 0;
+  if (baseAlpha !== null && e.alpha !== null && e.alpha !== undefined) {
+    let deltaAlpha = e.alpha - baseAlpha;
+    while (deltaAlpha < -180) deltaAlpha += 360;
+    while (deltaAlpha > 180) deltaAlpha -= 360;
+    gyroYaw = THREE.MathUtils.degToRad(deltaAlpha);
+  }
+
+  lastGyroYaw = gyroYaw;
+  lastGyroPitch = gyroPitch;
+
+  // Apply to camera view when not animating in alignToWormhole
+  if (!state.isAligningToWormhole) {
+    state.pitch = gyroPitch + touchLookPitch;
+    state.yaw = gyroYaw + touchLookYaw;
+    state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
   }
 }
 
@@ -2468,7 +2594,7 @@ function alignToWormhole() {
 
   // If inside or dangerously close to event horizon, place safely at observation distance
   if (camera.position.length() < 15.0) {
-    camera.position.set(0, 2.5, CONFIG.wormholeDistance);
+    camera.position.set(0, 0, CONFIG.wormholeDistance);
     state.position.copy(camera.position);
   }
 
@@ -2493,6 +2619,14 @@ function alignToWormhole() {
   state.targetYaw = state.yaw + diff;
   state.targetPitch = rawTargetPitch;
   state.isAligningToWormhole = true;
+
+  // Recalibrate orientation reference so current phone pose locks onto the wormhole
+  if (lastDeviceAlpha !== null) {
+    baseAlpha = lastDeviceAlpha;
+  }
+  touchLookYaw = 0;
+  touchLookPitch = 0;
+
   showToast('🧭 ALIGNING VIEW WITH WORMHOLE SINGULARITY');
 }
 
@@ -2530,8 +2664,11 @@ window.addEventListener('touchmove', (e) => {
       const deltaY = t.clientY - touchLookLastY;
       touchLookLastX = t.clientX;
       touchLookLastY = t.clientY;
-      state.yaw -= deltaX * CONFIG.yawSpeed * 1.6;
-      state.pitch -= deltaY * CONFIG.pitchSpeed * 1.6;
+      touchLookYaw -= deltaX * CONFIG.yawSpeed * 1.6;
+      touchLookPitch -= deltaY * CONFIG.pitchSpeed * 1.6;
+      touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
+      state.yaw = lastGyroYaw + touchLookYaw;
+      state.pitch = lastGyroPitch + touchLookPitch;
       state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
       state.isAligningToWormhole = false;
       break;
@@ -2557,8 +2694,11 @@ window.addEventListener('touchcancel', endTouchLook);
 
 window.addEventListener('mousemove', (e) => {
   if (state.isPointerLocked) {
-    state.yaw   -= e.movementX * CONFIG.yawSpeed;
-    state.pitch -= e.movementY * CONFIG.pitchSpeed;
+    touchLookYaw -= e.movementX * CONFIG.yawSpeed;
+    touchLookPitch -= e.movementY * CONFIG.pitchSpeed;
+    touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
+    state.yaw = lastGyroYaw + touchLookYaw;
+    state.pitch = lastGyroPitch + touchLookPitch;
     state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
   } else if (state.isMouseDown) {
     const deltaX = e.clientX - state.lastMouseX;
@@ -2566,8 +2706,11 @@ window.addEventListener('mousemove', (e) => {
     state.lastMouseX = e.clientX;
     state.lastMouseY = e.clientY;
 
-    state.yaw   -= deltaX * CONFIG.yawSpeed;
-    state.pitch -= deltaY * CONFIG.pitchSpeed;
+    touchLookYaw -= deltaX * CONFIG.yawSpeed;
+    touchLookPitch -= deltaY * CONFIG.pitchSpeed;
+    touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
+    state.yaw = lastGyroYaw + touchLookYaw;
+    state.pitch = lastGyroPitch + touchLookPitch;
     state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
   }
 });
@@ -2986,7 +3129,7 @@ function updateFlight(delta) {
 
     if (camera.position.length() < CONFIG.eventHorizonRadius * 1.2) {
       showToast('⚡ SINGULARITY TRANSIT ACHIEVED - STAGE 2 UNLOCKED');
-      state.position.set(0, 2.5, CONFIG.wormholeDistance);
+      state.position.set(0, 0, CONFIG.wormholeDistance);
       camera.position.copy(state.position);
       state.velocity.set(0, 0, 0);
       state.yaw = 0;
@@ -3141,8 +3284,13 @@ window.addEventListener('resize', () => {
   blurShader.uniforms.uResolution.value.set(w * 0.5, h * 0.5);
   compositeShader.uniforms.uAspect.value = w / h;
 
-  state.crosshair.x = Math.max(20, Math.min(w - 20, state.crosshair.x));
-  state.crosshair.y = Math.max(20, Math.min(h - 20, state.crosshair.y));
+  const isLandscape = (w > h);
+  if (isLandscape && state.hasStarted) {
+    centerWormholeOnScreen();
+  } else {
+    state.crosshair.x = Math.max(20, Math.min(w - 20, state.crosshair.x));
+    state.crosshair.y = Math.max(20, Math.min(h - 20, state.crosshair.y));
+  }
 });
 
 // Splash Screen & Multi-Platform Runtime Verification Runner
@@ -3329,8 +3477,11 @@ async function runStartupDiagnosticsAndSplashScreen() {
       const launchGame = () => {
         if (startBtn.dataset.launched) return;
         startBtn.dataset.launched = 'true';
+        state.hasStarted = true;
         if (!audioMgr.isInitialized) audioMgr.init();
         lockLandscape();
+        requestDeviceOrientation();
+        centerWormholeOnScreen();
         if (splashEl) {
           splashEl.classList.add('splash-fade-out');
           setTimeout(() => splashEl.remove(), 750);
@@ -3346,6 +3497,7 @@ async function runStartupDiagnosticsAndSplashScreen() {
       });
     }
 
+    centerWormholeOnScreen();
     return true;
   } catch (err) {
     console.error('[Wormhole XR] Startup verification exception:', err);
@@ -3366,6 +3518,8 @@ if (typeof window !== 'undefined') {
   window.isFlightControlLocked = () => performance.now() < state.flightLockoutUntil;
   window.updateCrosshairSpeedMultiplier = updateCrosshairSpeedMultiplier;
   window.alignToWormhole = alignToWormhole;
+  window.centerWormholeOnScreen = centerWormholeOnScreen;
+  window.handleOrientation = handleOrientation;
   window.setLeftHandedMode = setLeftHandedMode;
   window.updateSplashGamepadStatus = updateSplashGamepadStatus;
 }

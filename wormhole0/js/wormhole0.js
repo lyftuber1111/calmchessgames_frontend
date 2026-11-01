@@ -2176,14 +2176,26 @@ const aimStickKnob = document.getElementById('aim-stick-knob');
 const touchBtnScan = document.getElementById('touch-btn-scan');
 const touchBtnWarp = document.getElementById('touch-btn-warp');
 const throttleSliderContainer = document.getElementById('throttle-slider-container');
+const throttleSliderWrapper = document.getElementById('throttle-slider-wrapper');
 const customThrottleSlider = document.getElementById('custom-throttle-slider');
 const throttleValueBadge = document.getElementById('throttle-value-badge');
 const btnThrottleStop = document.getElementById('btn-throttle-stop');
+const btnThrottleRev = document.getElementById('btn-throttle-rev');
+const btnThrottleFwd = document.getElementById('btn-throttle-fwd');
 
 function setThrottleLockout(locked) {
   state.throttleLocked = !!locked;
   if (customThrottleSlider) {
     customThrottleSlider.disabled = state.throttleLocked;
+  }
+  if (btnThrottleRev) {
+    btnThrottleRev.disabled = state.throttleLocked;
+  }
+  if (btnThrottleFwd) {
+    btnThrottleFwd.disabled = state.throttleLocked;
+  }
+  if (btnThrottleStop) {
+    btnThrottleStop.disabled = state.throttleLocked;
   }
   if (throttleSliderContainer) {
     throttleSliderContainer.classList.toggle('throttle-locked', state.throttleLocked);
@@ -2200,6 +2212,8 @@ function stopThrottle(reason = null) {
     throttleValueBadge.classList.remove('forward', 'reverse');
     throttleValueBadge.textContent = '0% [STOP]';
   }
+  if (btnThrottleRev) btnThrottleRev.classList.remove('active');
+  if (btnThrottleFwd) btnThrottleFwd.classList.remove('active');
   if (reason) {
     showToast(`🛑 ${reason}`);
   }
@@ -2503,7 +2517,7 @@ function updateAimStickPos(clientX, clientY) {
 }
 
 // =============================================================================
-// CUSTOM CRUISE THROTTLE SLIDER
+// CUSTOM CRUISE THROTTLE SLIDER & REVERSE TOGGLE
 // =============================================================================
 function updateThrottleFromSlider(rawVal) {
   if (state.throttleLocked) return;
@@ -2516,12 +2530,17 @@ function updateThrottleFromSlider(rawVal) {
 
   if (throttleValueBadge) {
     throttleValueBadge.classList.remove('forward', 'reverse');
+    if (btnThrottleRev) btnThrottleRev.classList.remove('active');
+    if (btnThrottleFwd) btnThrottleFwd.classList.remove('active');
+
     if (val > 0) {
       throttleValueBadge.textContent = `+${Math.round(val)}% FWD`;
       throttleValueBadge.classList.add('forward');
+      if (btnThrottleFwd) btnThrottleFwd.classList.add('active');
     } else if (val < 0) {
       throttleValueBadge.textContent = `${Math.round(val)}% REV`;
       throttleValueBadge.classList.add('reverse');
+      if (btnThrottleRev) btnThrottleRev.classList.add('active');
     } else {
       throttleValueBadge.textContent = '0% [STOP]';
     }
@@ -2529,13 +2548,159 @@ function updateThrottleFromSlider(rawVal) {
   handleFlightActivity();
 }
 
+function setSliderFromPointerX(clientX) {
+  if (!customThrottleSlider) return;
+  const rect = customThrottleSlider.getBoundingClientRect();
+  if (rect.width <= 0) return;
+  const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  // Maps 0..1 to -100..100
+  let val = Math.round((ratio - 0.5) * 200);
+  if (Math.abs(val) < 6) val = 0; // Snap to center Neutral/Stop
+  customThrottleSlider.value = val;
+  updateThrottleFromSlider(val);
+}
+
+function toggleReverseThrottle() {
+  if (state.throttleLocked) return;
+  // If moving forward, invert to reverse at the same speed
+  if (state.throttleValue > 0.005) {
+    const targetVal = -Math.round(state.throttleValue * 100);
+    if (customThrottleSlider) customThrottleSlider.value = targetVal;
+    updateThrottleFromSlider(targetVal);
+    showToast(`↩️ TOGGLED TO REVERSE (${targetVal}%)`);
+  } else if (state.throttleValue < -0.005) {
+    // If already in reverse, toggle back to forward
+    const targetVal = Math.abs(Math.round(state.throttleValue * 100));
+    if (customThrottleSlider) customThrottleSlider.value = targetVal;
+    updateThrottleFromSlider(targetVal);
+    showToast(`🚀 TOGGLED TO FORWARD (+${targetVal}%)`);
+  } else {
+    // If currently stopped, engage reverse cruise at -50%
+    const targetVal = -50;
+    if (customThrottleSlider) customThrottleSlider.value = targetVal;
+    updateThrottleFromSlider(targetVal);
+    showToast('↩️ REVERSE CRUISE ENGAGED (-50%)');
+  }
+}
+
+function toggleForwardThrottle() {
+  if (state.throttleLocked) return;
+  if (state.throttleValue < -0.005) {
+    const targetVal = Math.abs(Math.round(state.throttleValue * 100));
+    if (customThrottleSlider) customThrottleSlider.value = targetVal;
+    updateThrottleFromSlider(targetVal);
+    showToast(`🚀 TOGGLED TO FORWARD (+${targetVal}%)`);
+  } else if (state.throttleValue > 0.005) {
+    const targetVal = 100;
+    if (customThrottleSlider) customThrottleSlider.value = targetVal;
+    updateThrottleFromSlider(targetVal);
+    showToast('🚀 FULL FORWARD CRUISE (+100%)');
+  } else {
+    const targetVal = 50;
+    if (customThrottleSlider) customThrottleSlider.value = targetVal;
+    updateThrottleFromSlider(targetVal);
+    showToast('🚀 FORWARD CRUISE ENGAGED (+50%)');
+  }
+}
+
+let sliderInteracting = false;
+let touchTriggeredStop = false;
+
+function onSliderTouchOrPointerDown(e) {
+  if (state.throttleLocked) return;
+  e.stopPropagation();
+
+  // If engine is actively thrusting, touching the slider immediately stops all thrust!
+  const isCurrentlyThrusting = Math.abs(state.throttleValue) > 0.005;
+  if (isCurrentlyThrusting) {
+    stopThrottle('CRUISE ENGINES STOPPED (0%)');
+    touchTriggeredStop = true;
+    sliderInteracting = true;
+    if (e.cancelable) e.preventDefault();
+    return;
+  }
+
+  touchTriggeredStop = false;
+  sliderInteracting = true;
+  const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+  if (clientX !== undefined) {
+    setSliderFromPointerX(clientX);
+  }
+  if (e.cancelable) e.preventDefault();
+}
+
+function onSliderTouchOrPointerMove(e) {
+  if (!sliderInteracting || state.throttleLocked) return;
+  e.stopPropagation();
+
+  // If this touch initiated an emergency stop while thrusting, ignore dragging on the same touch
+  if (touchTriggeredStop) {
+    if (e.cancelable) e.preventDefault();
+    return;
+  }
+
+  const clientX = (e.touches && e.touches.length > 0) ? e.touches[0].clientX : e.clientX;
+  if (clientX !== undefined) {
+    setSliderFromPointerX(clientX);
+  }
+  if (e.cancelable) e.preventDefault();
+}
+
+function onSliderTouchOrPointerUp(e) {
+  if (sliderInteracting) {
+    sliderInteracting = false;
+    touchTriggeredStop = false;
+  }
+}
+
+if (throttleSliderWrapper) {
+  throttleSliderWrapper.addEventListener('pointerdown', onSliderTouchOrPointerDown);
+  throttleSliderWrapper.addEventListener('touchstart', onSliderTouchOrPointerDown, { passive: false });
+}
+
 if (customThrottleSlider) {
+  customThrottleSlider.addEventListener('pointerdown', onSliderTouchOrPointerDown);
+  customThrottleSlider.addEventListener('touchstart', onSliderTouchOrPointerDown, { passive: false });
   customThrottleSlider.addEventListener('input', (e) => {
     updateThrottleFromSlider(e.target.value);
   });
   customThrottleSlider.addEventListener('change', (e) => {
     updateThrottleFromSlider(e.target.value);
   });
+}
+
+window.addEventListener('pointermove', onSliderTouchOrPointerMove);
+window.addEventListener('pointerup', onSliderTouchOrPointerUp);
+window.addEventListener('pointercancel', onSliderTouchOrPointerUp);
+
+window.addEventListener('touchmove', onSliderTouchOrPointerMove, { passive: false });
+window.addEventListener('touchend', onSliderTouchOrPointerUp, { passive: false });
+window.addEventListener('touchcancel', onSliderTouchOrPointerUp, { passive: false });
+
+if (btnThrottleRev) {
+  btnThrottleRev.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleReverseThrottle();
+  });
+  btnThrottleRev.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleReverseThrottle();
+  }, { passive: false });
+}
+
+if (btnThrottleFwd) {
+  btnThrottleFwd.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleForwardThrottle();
+  });
+  btnThrottleFwd.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleForwardThrottle();
+  }, { passive: false });
 }
 
 if (btnThrottleStop) {
@@ -3206,7 +3371,7 @@ function alignToWormhole() {
 
 // Prevent browser viewport scrolling/bouncing unless inside a dedicated scrollable panel
 window.addEventListener('touchmove', (e) => {
-  if (!e.target.closest('.drawer-content, .hud-header, .hud-footer, #landscape-rotate-prompt')) {
+  if (!e.target.closest('.drawer-content, .hud-header, .hud-footer, #landscape-rotate-prompt, .throttle-slider-container')) {
     if (e.cancelable) e.preventDefault();
   }
 }, { passive: false });
@@ -3731,8 +3896,9 @@ function updateFlight(delta) {
     }
   } else {
     if (accel.lengthSq() > 0) {
+      const mag = Math.min(1.0, accel.length());
       accel.normalize();
-      state.velocity.addScaledVector(accel, speed * delta * 4.0);
+      state.velocity.addScaledVector(accel, speed * delta * 4.0 * mag);
     }
     state.velocity.multiplyScalar(0.92);
     camera.position.addScaledVector(state.velocity, delta);

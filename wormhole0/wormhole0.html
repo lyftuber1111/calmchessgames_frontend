@@ -1124,7 +1124,7 @@
       position: absolute;
       pointer-events: auto;
       z-index: 70;
-      width: clamp(180px, 25vw, 225px);
+      width: clamp(185px, 26vw, 240px);
       background: rgba(2, 14, 26, 0.92);
       border: 1px solid rgba(0, 240, 255, 0.45);
       border-radius: 8px;
@@ -1230,18 +1230,49 @@
     .throttle-track-row {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       width: 100%;
     }
 
     .throttle-label-dir {
       font-size: 0.58rem;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: 0.5px;
       white-space: nowrap;
+      padding: 3px 5px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.15s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      line-height: 1;
     }
-    .rev-label { color: #ff6b8b; }
-    .fwd-label { color: var(--cyan-neon); }
+    .rev-label {
+      color: #ff6b8b;
+      background: rgba(239, 71, 111, 0.15);
+      border-color: rgba(239, 71, 111, 0.4);
+    }
+    .rev-label:hover, .rev-label:active, .rev-label.active {
+      background: rgba(239, 71, 111, 0.45);
+      border-color: #ef476f;
+      color: #fff;
+      box-shadow: 0 0 8px rgba(239, 71, 111, 0.6);
+      transform: scale(1.05);
+    }
+    .fwd-label {
+      color: var(--cyan-neon);
+      background: rgba(0, 240, 255, 0.15);
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+    .fwd-label:hover, .fwd-label:active, .fwd-label.active {
+      background: rgba(0, 240, 255, 0.45);
+      border-color: var(--cyan-neon);
+      color: #fff;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+      transform: scale(1.05);
+    }
 
     .throttle-slider-wrapper {
       position: relative;
@@ -1249,6 +1280,8 @@
       display: flex;
       align-items: center;
       height: 24px;
+      touch-action: none;
+      cursor: pointer;
     }
 
     .throttle-slider-wrapper input[type="range"] {
@@ -1263,6 +1296,7 @@
       cursor: pointer;
       margin: 0;
       padding: 0;
+      touch-action: none;
     }
 
     .throttle-slider-wrapper input[type="range"]::-webkit-slider-thumb {
@@ -2558,12 +2592,12 @@
         <span id="throttle-value-badge" class="throttle-badge">0% [STOP]</span>
       </div>
       <div class="throttle-track-row">
-        <span class="throttle-label-dir rev-label">◀ REV</span>
-        <div class="throttle-slider-wrapper">
-          <input type="range" id="custom-throttle-slider" min="-100" max="100" step="1" value="0" title="Slide right for Forward cruise, slide left for Backward/Reverse cruise">
+        <button type="button" id="btn-throttle-rev" class="throttle-label-dir rev-label" title="Toggle Reverse Thrust cruise (Hotkeys: S or Tap)">◀ REV</button>
+        <div class="throttle-slider-wrapper" id="throttle-slider-wrapper" title="Slide or tap to adjust cruise speed (Touch while thrusting to Stop immediately)">
+          <input type="range" id="custom-throttle-slider" min="-100" max="100" step="1" value="0" title="Slide right for Forward cruise, slide left for Backward/Reverse cruise (Touch to Stop while thrusting)">
           <div class="throttle-center-notch" title="Neutral (0% Stop)"></div>
         </div>
-        <span class="throttle-label-dir fwd-label">FWD ▶</span>
+        <button type="button" id="btn-throttle-fwd" class="throttle-label-dir fwd-label" title="Toggle Forward Thrust cruise (Hotkeys: W or Tap)">FWD ▶</button>
         <button type="button" id="btn-throttle-stop" class="btn-throttle-stop" title="Emergency Stop & Center Throttle Slider">STOP</button>
       </div>
     </div>
@@ -2575,7 +2609,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261101_v5"></script>
+  <script type="module" src="js/wormhole0.js?v=20261101_v6"></script>
 
 </body>
 </html>

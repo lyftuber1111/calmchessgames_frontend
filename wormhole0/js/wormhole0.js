@@ -1067,29 +1067,6 @@ class AudioManager {
     }
   }
 
-  playSnap() {
-    if (CONFIG.audioMuted) return;
-    if (!this.ctx) this.init();
-    if (!this.ctx) return;
-    try {
-      if (this.ctx.state === 'suspended') {
-        this.ctx.resume().catch(() => {});
-      }
-      const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(1200, now);
-      osc.frequency.exponentialRampToValueAtTime(450, now + 0.03);
-      gain.gain.setValueAtTime(0.04, now);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.03);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.03);
-    } catch (e) {}
-  }
-
   updateProximity(distKm) {
     if (!this.droneAudio || CONFIG.audioMuted) return;
     const norm = Math.max(0.0, Math.min(1.0, 1.0 - (distKm / 90000)));
@@ -2685,24 +2662,6 @@ function highlightActiveGridBox(col, row) {
   }
 }
 
-function triggerCrosshairSnapEffect() {
-  const crosshairEl = document.getElementById('center-crosshair');
-  if (crosshairEl) {
-    crosshairEl.classList.remove('grid-snapped');
-    void crosshairEl.offsetWidth; // Reflow
-    crosshairEl.classList.add('grid-snapped');
-    setTimeout(() => {
-      crosshairEl.classList.remove('grid-snapped');
-    }, 120);
-  }
-  if (audioMgr && typeof audioMgr.playSnap === 'function') {
-    audioMgr.playSnap();
-  }
-  if (typeof navigator !== 'undefined' && navigator.vibrate) {
-    try { navigator.vibrate(6); } catch (e) {}
-  }
-}
-
 function snapCrosshairToCurrentGridCenter() {
   if (snapGrid.cellWidth > 0 && snapGrid.cellHeight > 0) {
     if (snapGrid.currentCol >= 0 && snapGrid.currentRow >= 0) {
@@ -2778,7 +2737,6 @@ function updateCrosshairPosition(delta) {
         snapGrid.snapLockUntil = now + 65;
 
         highlightActiveGridBox(newCol, newRow);
-        triggerCrosshairSnapEffect();
       } else {
         state.crosshair.x = snapGrid.virtualX;
         state.crosshair.y = snapGrid.virtualY;
@@ -3814,7 +3772,6 @@ if (typeof window !== 'undefined') {
   window.snapGrid = snapGrid;
   window.updateMobileSnapGrid = updateMobileSnapGrid;
   window.setShowTargetGrid = setShowTargetGrid;
-  window.triggerCrosshairSnapEffect = triggerCrosshairSnapEffect;
 }
 
 // Initial mobile snap grid calculation

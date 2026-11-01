@@ -972,13 +972,13 @@ class AudioManager {
 
       this.synthOsc = this.ctx.createOscillator();
       this.synthGain = this.ctx.createGain();
-      this.synthOsc.type = 'sawtooth';
+      this.synthOsc.type = 'sine';
       this.synthOsc.frequency.setValueAtTime(55, this.ctx.currentTime);
       this.synthGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
 
       const filter = this.ctx.createBiquadFilter();
       filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(140, this.ctx.currentTime);
+      filter.frequency.setValueAtTime(110, this.ctx.currentTime);
 
       this.synthOsc.connect(filter);
       filter.connect(this.synthGain);
@@ -1044,14 +1044,14 @@ class AudioManager {
       const now = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
-      osc.type = 'sawtooth';
+      osc.type = 'sine';
 
-      // Punchy sci-fi laser blast frequency drop
-      osc.frequency.setValueAtTime(1100, now);
-      osc.frequency.exponentialRampToValueAtTime(115, now + 0.16);
+      // Punchy sci-fi laser blast frequency drop (clean sine sweep, no harsh static)
+      osc.frequency.setValueAtTime(980, now);
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.16);
 
-      gain.gain.setValueAtTime(0.42, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      gain.gain.setValueAtTime(0.38, now);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
 
       osc.connect(gain);
       gain.connect(this.ctx.destination);

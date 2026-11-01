@@ -1794,6 +1794,7 @@ let lastGyroYaw = 0;
 let lastGyroPitch = 0;
 let touchLookYaw = 0;
 let touchLookPitch = 0;
+let startCalibrationFrames = 0;
 
 function requestDeviceOrientation() {
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
@@ -1824,6 +1825,7 @@ function centerWormholeOnScreen(immediate = true) {
   } else {
     baseAlpha = null;
   }
+  startCalibrationFrames = 5;
   touchLookYaw = 0;
   touchLookPitch = 0;
   lastGyroYaw = 0;
@@ -1855,15 +1857,16 @@ function centerWormholeOnScreen(immediate = true) {
   }
 }
 
-// Device Orientation Handler calibrated for landscape mode held vertically
+// Device Orientation Handler calibrated for landscape mode held vertically between 35 and 0 degrees
 function handleOrientation(e) {
   if (state.isXR) return;
   if (e.beta === null || e.gamma === null) return;
 
   if (e.alpha !== null && e.alpha !== undefined) {
     lastDeviceAlpha = e.alpha;
-    if (baseAlpha === null) {
+    if (baseAlpha === null || startCalibrationFrames > 0) {
       baseAlpha = e.alpha;
+      if (startCalibrationFrames > 0) startCalibrationFrames--;
     }
   }
 
@@ -1875,8 +1878,11 @@ function handleOrientation(e) {
     screenAngle = window.orientation;
   }
 
+  const isLandscape = (window.innerWidth > window.innerHeight) ||
+                      (screen.orientation && screen.orientation.type && screen.orientation.type.includes('landscape')) ||
+                      (Math.abs(screenAngle) === 90 || Math.abs(screenAngle) === 270);
+
   // If viewport is landscape (width > height) but reporting 0 deg, default to landscape 90 deg
-  const isLandscape = (window.innerWidth > window.innerHeight);
   if (isLandscape && screenAngle === 0) {
     screenAngle = 90;
   }
@@ -1885,31 +1891,57 @@ function handleOrientation(e) {
   const b = THREE.MathUtils.degToRad(e.beta || 0);
   const g = THREE.MathUtils.degToRad(e.gamma || 0);
 
-  // Up/Gravity vector in device coordinate frame
-  const dx = Math.cos(b) * Math.sin(g);
+  // Up/Gravity vector in device coordinate frame:
+  // Derived from W3C Euler angles: R = Rz(alpha) * Rx(beta) * Ry(gamma)
+  // Up vector (0, 0, 1) rotated into device coordinate frame gives:
+  const dx = -Math.sin(g) * Math.cos(b);
   const dy = -Math.sin(b);
-  const dz = Math.cos(b) * Math.cos(g);
+  const dz = Math.cos(g) * Math.cos(b);
 
   // Map device axes into screen frame according to screen orientation
-  let sy, sz;
+  let screenUpX, screenUpY, screenUpZ = dz;
   if (screenAngle === 90) {
-    sy = dx;
-    sz = dz;
+    screenUpX = -dy;
+    screenUpY = dx;
   } else if (screenAngle === 270 || screenAngle === -90) {
-    sy = -dx;
-    sz = dz;
+    screenUpX = dy;
+    screenUpY = -dx;
   } else if (screenAngle === 180) {
-    sy = -dy;
-    sz = dz;
+    screenUpX = -dx;
+    screenUpY = -dy;
   } else {
     // 0 deg: portrait
-    sy = dy;
-    sz = dz;
+    screenUpX = dx;
+    screenUpY = -dy;
   }
 
-  // When device is held vertically (screen normal horizontal to ground), sy ≈ -1 and sz ≈ 0.
-  // Pitch angle Math.atan2(sz, -sy) -> EXACTLY 0.0 when held vertically!
-  let gyroPitch = Math.atan2(sz, -sy);
+  // Calculate tilt angle from vertical in screen frame
+  // When device is held vertically upright, screenUpY > 0 and screenUpZ = 0.
+  // Tilt is positive when tilted back towards player's face (screenUpZ > 0).
+  const rawTiltRad = Math.atan2(screenUpZ, screenUpY);
+  const rawTiltDeg = THREE.MathUtils.radToDeg(rawTiltRad);
+
+  let gyroPitch = 0;
+  if (isLandscape) {
+    // In landscape mode, when held vertically between 35 and 0 degrees (0° <= tilt <= 35°):
+    // The wormhole is directly in the center of the screen (gyroPitch = 0).
+    const MIN_VERTICAL_TILT = 0;
+    const MAX_VERTICAL_TILT = 35;
+    const TILT_EPSILON = 1.0; // 1 degree tolerance to absorb sensor noise at boundaries
+
+    if (rawTiltDeg >= (MIN_VERTICAL_TILT - TILT_EPSILON) && rawTiltDeg <= (MAX_VERTICAL_TILT + TILT_EPSILON)) {
+      gyroPitch = 0;
+    } else if (rawTiltDeg > (MAX_VERTICAL_TILT + TILT_EPSILON)) {
+      // Tilting back past 35 degrees smoothly pitches the view upward
+      gyroPitch = THREE.MathUtils.degToRad(rawTiltDeg - (MAX_VERTICAL_TILT + TILT_EPSILON));
+    } else {
+      // Tilting forward past 0 degrees smoothly pitches the view downward
+      gyroPitch = THREE.MathUtils.degToRad(rawTiltDeg - (MIN_VERTICAL_TILT - TILT_EPSILON));
+    }
+  } else {
+    // Portrait mode fallback
+    gyroPitch = rawTiltRad;
+  }
   gyroPitch = Math.max(-Math.PI * 0.47, Math.min(Math.PI * 0.47, gyroPitch));
 
   // Yaw relative to calibrated reference heading

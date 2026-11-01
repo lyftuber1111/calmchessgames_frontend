@@ -86,6 +86,11 @@ const state = {
   targetYaw: 0,
   targetPitch: 0,
 
+  // Custom Cruise Throttle Slider State (-1.0 reverse to +1.0 forward, default 0 in center)
+  throttleValue: 0,
+  throttleLocked: false,
+  verticalThrust: 0, // -1 dive, +1 climb, 0 neutral
+
   // Left-Handed Touch Control Layout
   leftHandedMode: false,
 
@@ -2159,6 +2164,34 @@ const aimStickZone = document.getElementById('aim-stick-zone');
 const aimStickKnob = document.getElementById('aim-stick-knob');
 const touchBtnScan = document.getElementById('touch-btn-scan');
 const touchBtnWarp = document.getElementById('touch-btn-warp');
+const throttleSliderContainer = document.getElementById('throttle-slider-container');
+const customThrottleSlider = document.getElementById('custom-throttle-slider');
+const throttleValueBadge = document.getElementById('throttle-value-badge');
+const btnThrottleStop = document.getElementById('btn-throttle-stop');
+
+function setThrottleLockout(locked) {
+  state.throttleLocked = !!locked;
+  if (customThrottleSlider) {
+    customThrottleSlider.disabled = state.throttleLocked;
+  }
+  if (throttleSliderContainer) {
+    throttleSliderContainer.classList.toggle('throttle-locked', state.throttleLocked);
+  }
+}
+
+function stopThrottle(reason = 'ALL ENGINES STOP (0%)') {
+  if (customThrottleSlider) {
+    customThrottleSlider.value = 0;
+  }
+  state.throttleValue = 0;
+  state.velocity.set(0, 0, 0); // Immediate all stop
+  if (throttleValueBadge) {
+    throttleValueBadge.classList.remove('forward', 'reverse');
+    throttleValueBadge.textContent = '0% [STOP]';
+  }
+  showToast(`🛑 ${reason}`);
+  handleFlightActivity();
+}
 
 let stickCenter = { x: 0, y: 0 };
 let aimStickCenter = { x: 0, y: 0 };
@@ -2192,6 +2225,7 @@ if (touchStickZone) {
         flightTouchStartY = touch.clientY;
         flightTapStartTime = performance.now();
         state.touchActive = true;
+        setThrottleLockout(true);
         // Disable flight navigation for 1 second before navigating
         state.flightLockoutUntil = performance.now() + 1000;
         updateStickPos(touch.clientX, touch.clientY);
@@ -2243,6 +2277,7 @@ if (touchStickZone) {
       const wasTap = (duration < 550 && dragDelta < 35);
 
       state.touchActive = false;
+      setThrottleLockout(false);
       flightTouchId = null;
       state.touchMove.x = 0;
       state.touchMove.y = 0;
@@ -2269,6 +2304,7 @@ if (touchStickZone) {
     stickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     isMouseFlight = true;
     state.touchActive = true;
+    setThrottleLockout(true);
     mouseFlightStartX = e.clientX;
     mouseFlightStartY = e.clientY;
     mouseFlightStartTime = performance.now();
@@ -2292,6 +2328,7 @@ if (touchStickZone) {
       const wasTap = (duration < 550 && dragDelta < 30);
       isMouseFlight = false;
       state.touchActive = false;
+      setThrottleLockout(false);
       state.touchMove.x = 0;
       state.touchMove.y = 0;
       if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
@@ -2456,6 +2493,96 @@ function updateAimStickPos(clientX, clientY) {
   state.aimMove.y = knobY / maxStickRadius;
 }
 
+// =============================================================================
+// CUSTOM CRUISE THROTTLE SLIDER & ALTITUDE CONTROLS
+// =============================================================================
+const touchBtnUp = document.getElementById('touch-btn-up');
+const touchBtnDown = document.getElementById('touch-btn-down');
+
+function updateThrottleFromSlider(rawVal) {
+  if (state.throttleLocked) return;
+  const val = parseFloat(rawVal) || 0;
+  // Maps -100..100 to -1.0 (reverse) to +1.0 (forward)
+  state.throttleValue = val / 100;
+
+  if (throttleValueBadge) {
+    throttleValueBadge.classList.remove('forward', 'reverse');
+    if (val > 0) {
+      throttleValueBadge.textContent = `+${Math.round(val)}% FWD`;
+      throttleValueBadge.classList.add('forward');
+    } else if (val < 0) {
+      throttleValueBadge.textContent = `${Math.round(val)}% REV`;
+      throttleValueBadge.classList.add('reverse');
+    } else {
+      throttleValueBadge.textContent = '0% [STOP]';
+    }
+  }
+  handleFlightActivity();
+}
+
+if (customThrottleSlider) {
+  customThrottleSlider.addEventListener('input', (e) => {
+    updateThrottleFromSlider(e.target.value);
+  });
+  customThrottleSlider.addEventListener('change', (e) => {
+    updateThrottleFromSlider(e.target.value);
+  });
+}
+
+if (btnThrottleStop) {
+  btnThrottleStop.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    stopThrottle();
+  });
+  btnThrottleStop.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    stopThrottle();
+  }, { passive: false });
+}
+
+// Dedicated Vertical Altitude Thruster Buttons (▲ UP / ▼ DN)
+if (touchBtnUp) {
+  const startUp = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    state.verticalThrust = 1.0;
+    handleFlightActivity();
+    if (!audioMgr.isInitialized) audioMgr.init();
+  };
+  const endUp = (e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    state.verticalThrust = 0;
+  };
+  touchBtnUp.addEventListener('touchstart', startUp, { passive: false });
+  touchBtnUp.addEventListener('touchend', endUp);
+  touchBtnUp.addEventListener('touchcancel', endUp);
+  touchBtnUp.addEventListener('mousedown', startUp);
+  touchBtnUp.addEventListener('mouseup', endUp);
+  touchBtnUp.addEventListener('mouseleave', endUp);
+}
+
+if (touchBtnDown) {
+  const startDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    state.verticalThrust = -1.0;
+    handleFlightActivity();
+    if (!audioMgr.isInitialized) audioMgr.init();
+  };
+  const endDown = (e) => {
+    if (e) { e.preventDefault(); e.stopPropagation(); }
+    state.verticalThrust = 0;
+  };
+  touchBtnDown.addEventListener('touchstart', startDown, { passive: false });
+  touchBtnDown.addEventListener('touchend', endDown);
+  touchBtnDown.addEventListener('touchcancel', endDown);
+  touchBtnDown.addEventListener('mousedown', startDown);
+  touchBtnDown.addEventListener('mouseup', endDown);
+  touchBtnDown.addEventListener('mouseleave', endDown);
+}
+
 // 3. NEON RED LASER CANNON SYSTEM & CROSSHAIR RETICLE TRACKER
 const laserBolts = [];
 
@@ -2464,6 +2591,9 @@ function fireLaserBeam() {
   const now = performance.now();
   if (now - state.lastLaserShotTime < 110) return; // Shot rate throttling
   state.lastLaserShotTime = now;
+
+  // Automatically stop throttle & reset slider to center on laser fire
+  stopThrottle('LASER FIRED: ENGINES ALL STOP (0%)');
 
   // Sound synthesis
   if (!audioMgr.isInitialized) audioMgr.init();
@@ -2857,6 +2987,65 @@ container.addEventListener('mousedown', (e) => {
 window.addEventListener('mouseup', () => {
   state.isMouseDown = false;
 });
+
+// Full 360-degree Touch Screen Swipe Look on Background Canvas
+let canvasLookTouchId = null;
+let lastCanvasTouchX = 0;
+let lastCanvasTouchY = 0;
+
+if (container) {
+  container.addEventListener('touchstart', (e) => {
+    if (!audioMgr.isInitialized) audioMgr.init();
+    if (canvasLookTouchId !== null) return;
+    for (let i = 0; i < e.changedTouches.length; i++) {
+      const t = e.changedTouches[i];
+      const targetEl = document.elementFromPoint(t.clientX, t.clientY);
+      if (!targetEl || targetEl === container || targetEl.id === 'hud-layer' || targetEl.tagName === 'CANVAS') {
+        canvasLookTouchId = t.identifier;
+        lastCanvasTouchX = t.clientX;
+        lastCanvasTouchY = t.clientY;
+        break;
+      }
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchmove', (e) => {
+    if (canvasLookTouchId === null) return;
+    for (let i = 0; i < e.touches.length; i++) {
+      const t = e.touches[i];
+      if (t.identifier === canvasLookTouchId) {
+        const dx = t.clientX - lastCanvasTouchX;
+        const dy = t.clientY - lastCanvasTouchY;
+        lastCanvasTouchX = t.clientX;
+        lastCanvasTouchY = t.clientY;
+
+        touchLookYaw -= dx * CONFIG.yawSpeed * 1.6;
+        touchLookPitch -= dy * CONFIG.pitchSpeed * 1.6;
+        touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
+        state.yaw = lastGyroYaw + touchLookYaw;
+        state.pitch = lastGyroPitch + touchLookPitch;
+        state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
+        break;
+      }
+    }
+  }, { passive: true });
+
+  const endCanvasLookTouch = (e) => {
+    if (canvasLookTouchId === null) return;
+    if (e.changedTouches) {
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === canvasLookTouchId) {
+          canvasLookTouchId = null;
+          break;
+        }
+      }
+    } else {
+      canvasLookTouchId = null;
+    }
+  };
+  window.addEventListener('touchend', endCanvasLookTouch, { passive: true });
+  window.addEventListener('touchcancel', endCanvasLookTouch, { passive: true });
+}
 
 // Auto-Align View to Wormhole Singularity (Smooth shortest-arc alignment with zero swinging)
 function alignToWormhole() {
@@ -3343,29 +3532,32 @@ function updateFlight(delta) {
     }
   }
 
+  // Lock out throttle slider whenever right-hand flight joystick is active
+  setThrottleLockout(state.touchActive);
+
+  // 1. Custom Cruise Throttle Slider (Slide right > 0 for forward cruise, slide left < 0 for reverse)
+  if (Math.abs(state.throttleValue) > 0.005) {
+    accel.addScaledVector(forward, state.throttleValue);
+  }
+
+  // 2. Dedicated Vertical Altitude Thrusters (▲ UP / ▼ DN buttons)
+  if (state.verticalThrust !== 0) {
+    accel.addScaledVector(up, state.verticalThrust);
+  }
+
+  // 3. Right Joystick Flight Thrusters & 360-degree Yaw Steering
   if (state.touchActive && !isFlightLockedOut) {
-    // 1. Forward / Reverse thrusters:
-    // Pushing stick up (-y): thrust forward towards the wormhole
+    // Pushing stick up (-y): flies pure forward towards the wormhole (zero unwanted climb or nose pitch!)
     // Pulling stick down (+y): reverse thrusters / slow down
     accel.addScaledVector(forward, -state.touchMove.y);
 
-    // 2. Vertical pitch / climb / dive flight navigation:
-    accel.addScaledVector(up, -state.touchMove.y * 0.4);
-    if (Math.abs(state.touchMove.y) > 0.08) {
-      touchLookPitch -= state.touchMove.y * CONFIG.pitchSpeed * 1.5 * (delta * 60);
-      touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
-      state.pitch = lastGyroPitch + touchLookPitch;
-      state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
-    }
-
-    // 3. Horizontal yaw steering & lateral strafe flight navigation:
-    // Deflecting stick left/right smoothly steers flight heading towards target
-    if (Math.abs(state.touchMove.x) > 0.08) {
-      touchLookYaw -= state.touchMove.x * CONFIG.yawSpeed * 2.4 * (delta * 60);
+    // Deflecting stick left/right: smooth 360-degree horizontal yaw steering
+    if (Math.abs(state.touchMove.x) > 0.06) {
+      touchLookYaw -= state.touchMove.x * CONFIG.yawSpeed * 2.8 * (delta * 60);
       state.yaw = lastGyroYaw + touchLookYaw;
     }
     // Lateral strafe thrusters
-    accel.addScaledVector(right, state.touchMove.x * 0.7);
+    accel.addScaledVector(right, state.touchMove.x * 0.5);
   }
 
   pollGamepad(delta);
@@ -3383,6 +3575,7 @@ function updateFlight(delta) {
       state.position.set(0, 0, CONFIG.wormholeDistance);
       camera.position.copy(state.position);
       state.velocity.set(0, 0, 0);
+      stopThrottle();
       state.yaw = 0;
       state.pitch = 0;
       state.isHyperWarping = false;

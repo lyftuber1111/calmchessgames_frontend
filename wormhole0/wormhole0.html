@@ -1046,12 +1046,12 @@
       pointer-events: auto;
       display: flex;
       position: absolute;
-      right: calc(clamp(24px, 5vw, 48px) + env(safe-area-inset-right, 0px));
-      bottom: calc(clamp(40px, 9vh, 65px) + env(safe-area-inset-bottom, 0px));
+      right: calc(clamp(18px, 4.5vw, 42px) + env(safe-area-inset-right, 0px));
+      bottom: calc(clamp(18px, 4vh, 35px) + env(safe-area-inset-bottom, 0px));
       left: auto;
       transform: none;
       flex-direction: row;
-      gap: 14px;
+      gap: 10px;
       margin-bottom: 0;
       z-index: 65;
     }
@@ -1079,13 +1079,237 @@
       transform: scale(0.95);
     }
 
-    /* Left-Handed Touch Control Layout: Flip joystick locations */
+    .touch-btn.touch-btn-alt {
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      background: rgba(0, 36, 60, 0.9);
+      border-color: rgba(0, 240, 255, 0.65);
+      color: var(--cyan-neon);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+    }
+    .touch-btn.touch-btn-alt:active {
+      background: var(--cyan-neon);
+      color: #01050a;
+      box-shadow: 0 0 16px var(--cyan-neon);
+    }
+
+    /* ==========================================================================
+       CUSTOM CRUISE THROTTLE SLIDER & STOP BUTTON
+       Default: Center (0). Slide right -> increase forward speed.
+       Slide left -> increase backward speed.
+       STOP button -> stops ship & resets slider to middle.
+       Positioned above left-hand joystick & flips when Left-Handed is checked.
+       ========================================================================== */
+    .throttle-slider-container {
+      position: absolute;
+      pointer-events: auto;
+      z-index: 70;
+      width: clamp(180px, 25vw, 225px);
+      background: rgba(2, 14, 26, 0.92);
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      border-radius: 8px;
+      padding: 6px 10px;
+      box-shadow: 0 4px 18px rgba(0, 240, 255, 0.22), inset 0 0 12px rgba(0, 240, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      top: calc(clamp(30px, 6vh, 50px) + 128px + env(safe-area-inset-top, 0px));
+      right: calc(clamp(18px, 4.5vw, 42px) + env(safe-area-inset-right, 0px));
+      bottom: auto;
+      left: auto;
+      transition: left 0.3s ease, right 0.3s ease, top 0.3s ease, bottom 0.3s ease, opacity 0.2s ease;
+    }
+
+    /* Lockout when right-hand flight joystick is active */
+    .throttle-slider-container.throttle-locked {
+      opacity: 0.42;
+      pointer-events: none !important;
+      border-color: rgba(255, 170, 0, 0.45);
+      box-shadow: 0 0 10px rgba(255, 170, 0, 0.15);
+    }
+    .throttle-slider-container.throttle-locked input[type="range"] {
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .throttle-slider-container.throttle-locked .throttle-title::after {
+      content: ' [LOCKED]';
+      color: #ffaa00;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    /* Left-Handed Touch Control Layout: Flip joystick & throttle slider locations */
     body.left-handed-controls .aim-stick-zone,
     #mobile-touch-controls.left-handed .aim-stick-zone {
       left: auto;
       right: calc(clamp(32px, 6vw, 55px) + env(safe-area-inset-right, 0px));
       bottom: calc(clamp(45px, 10vh, 70px) + env(safe-area-inset-bottom, 0px));
       top: auto;
+    }
+
+    /* Throttle slider flips to the left side below the flipped right-hand joystick */
+    body.left-handed-controls .throttle-slider-container,
+    #mobile-touch-controls.left-handed .throttle-slider-container {
+      left: calc(clamp(18px, 4.5vw, 42px) + env(safe-area-inset-left, 0px));
+      right: auto;
+      top: calc(clamp(30px, 6vh, 50px) + 128px + env(safe-area-inset-top, 0px));
+      bottom: auto;
+    }
+
+    .throttle-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+    }
+
+    .throttle-title {
+      color: var(--cyan-neon);
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .throttle-badge {
+      font-family: monospace;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(0, 240, 255, 0.15);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      color: var(--text-main);
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .throttle-badge.forward {
+      color: #06d6a0;
+      border-color: #06d6a0;
+      background: rgba(6, 214, 160, 0.2);
+      text-shadow: 0 0 6px rgba(6, 214, 160, 0.7);
+    }
+
+    .throttle-badge.reverse {
+      color: #ef476f;
+      border-color: #ef476f;
+      background: rgba(239, 71, 111, 0.2);
+      text-shadow: 0 0 6px rgba(239, 71, 111, 0.7);
+    }
+
+    .throttle-track-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .throttle-label-dir {
+      font-size: 0.58rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .rev-label { color: #ff6b8b; }
+    .fwd-label { color: var(--cyan-neon); }
+
+    .throttle-slider-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      height: 24px;
+    }
+
+    .throttle-slider-wrapper input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, rgba(239,71,111,0.7) 0%, rgba(0,55,77,0.85) 48%, rgba(0,240,255,0.4) 52%, rgba(0,240,255,0.85) 100%);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+      margin: 0;
+      padding: 0;
+    }
+
+    .throttle-slider-wrapper input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 25%, #00f0ff 65%, #0077aa 100%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 10px #00f0ff, 0 0 4px #fff;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .throttle-slider-wrapper input[type="range"]::-webkit-slider-thumb:hover,
+    .throttle-slider-wrapper input[type="range"]::-webkit-slider-thumb:active {
+      transform: scale(1.18);
+      box-shadow: 0 0 15px #00f0ff, 0 0 8px #fff;
+    }
+
+    .throttle-slider-wrapper input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 25%, #00f0ff 65%, #0077aa 100%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 10px #00f0ff, 0 0 4px #fff;
+      cursor: pointer;
+    }
+
+    .throttle-center-notch {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 12px;
+      background: #ffd166;
+      border-radius: 1px;
+      box-shadow: 0 0 5px #ffd166;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .btn-throttle-stop {
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      background: rgba(239, 71, 111, 0.3);
+      color: #ffffff;
+      border: 1px solid #ef476f;
+      border-radius: 4px;
+      padding: 4px 7px;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(239, 71, 111, 0.4);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-throttle-stop:hover,
+    .btn-throttle-stop:active {
+      background: #ef476f;
+      color: #01050a;
+      box-shadow: 0 0 14px #ef476f;
+      transform: scale(0.96);
     }
 
     body.left-handed-controls #touch-stick-zone,
@@ -1757,7 +1981,7 @@
       display: none !important;
     }
 
-    @media (max-width: 900px) {
+    @media (max-width: 1024px), (pointer: coarse), (hover: none) {
       .flight-sidebar {
         display: none;
       }
@@ -1774,6 +1998,10 @@
       #mobile-touch-controls {
         display: block !important;
       }
+    }
+
+    body.show-touch-controls #mobile-touch-controls {
+      display: block !important;
     }
 
   </style>
@@ -2039,6 +2267,11 @@
           <input id="slider-crosshair-speed" type="range" min="0.4" max="4.0" step="0.05" value="2.90" style="width: 100px; cursor: pointer;">
           <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">2.90x</span>
         </div>
+        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; flex-direction: column; gap: 4px;">
+          <label class="autohide-toggle" title="Flip joystick and throttle slider positions for left-handed controls">
+            <input type="checkbox" id="chk-left-handed" class="chk-left-handed"> Left-Handed Flip Controls
+          </label>
+        </div>
       </div>
 
       <!-- Section 2: Stage 1 Objectives & Systems Calibration -->
@@ -2282,8 +2515,27 @@
 
     <!-- Center Touch Action Cluster -->
     <div class="mobile-touch-actions">
+      <div class="touch-btn touch-btn-alt" id="touch-btn-up" title="Fly Up (Climb / Ascend)">▲ UP</div>
+      <div class="touch-btn touch-btn-alt" id="touch-btn-down" title="Fly Down (Dive / Descend)">▼ DN</div>
       <div class="touch-btn" id="touch-btn-scan" title="Scan Singularity">📡</div>
       <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
+    </div>
+
+    <!-- Custom Cruise Throttle Slider Container (Placed below right-hand joystick; flips when Left-Handed is checked) -->
+    <div id="throttle-slider-container" class="throttle-slider-container">
+      <div class="throttle-header">
+        <span class="throttle-title">🚀 SPEED THROTTLE</span>
+        <span id="throttle-value-badge" class="throttle-badge">0% [STOP]</span>
+      </div>
+      <div class="throttle-track-row">
+        <span class="throttle-label-dir rev-label">◀ REV</span>
+        <div class="throttle-slider-wrapper">
+          <input type="range" id="custom-throttle-slider" min="-100" max="100" step="1" value="0" title="Slide right for Forward cruise, slide left for Backward/Reverse cruise">
+          <div class="throttle-center-notch" title="Neutral (0% Stop)"></div>
+        </div>
+        <span class="throttle-label-dir fwd-label">FWD ▶</span>
+        <button type="button" id="btn-throttle-stop" class="btn-throttle-stop" title="Emergency Stop & Center Throttle Slider">STOP</button>
+      </div>
     </div>
 
     <!-- Left Virtual Joystick Zone (Crosshair Aim Only - No Flight Control) -->

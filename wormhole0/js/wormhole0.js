@@ -1857,7 +1857,7 @@ function centerWormholeOnScreen(immediate = true) {
   }
 }
 
-// Device Orientation Handler calibrated for landscape mode held vertically between -45 and 0 degrees
+// Device Orientation Handler calibrated for landscape mode held vertically (0-25 deg or 90-120 deg)
 function handleOrientation(e) {
   if (state.isXR) return;
   if (e.beta === null || e.gamma === null) return;
@@ -1921,29 +1921,44 @@ function handleOrientation(e) {
   const rawTiltRad = Math.atan2(screenUpZ, screenUpY);
   let tiltDeg = THREE.MathUtils.radToDeg(rawTiltRad);
 
+  const TILT_EPSILON = 1.0; // 1 degree tolerance to absorb sensor noise at boundaries
+
+  // Check second conditional: if phone is between 90-120 degrees
+  const isBetween90And120 = (
+    (tiltDeg >= (90 - TILT_EPSILON) && tiltDeg <= (120 + TILT_EPSILON)) ||
+    (rawTiltDeg >= (90 - TILT_EPSILON) && rawTiltDeg <= (120 + TILT_EPSILON)) ||
+    (Math.abs(e.gamma) >= (90 - TILT_EPSILON) && Math.abs(e.gamma) <= (120 + TILT_EPSILON)) ||
+    (Math.abs(e.beta) >= (90 - TILT_EPSILON) && Math.abs(e.beta) <= (120 + TILT_EPSILON))
+  );
+
   // Gimbal lock / quadrant check for landscape mode:
   // When held in landscape, the front-to-back tilt is fundamentally (90 - |gamma|)
   if (isLandscape) {
-    if (Math.abs(tiltDeg - 180) < 45 || Math.abs(tiltDeg) > 85) {
+    if (!isBetween90And120 && (Math.abs(tiltDeg - 180) < 45 || Math.abs(tiltDeg) > 85)) {
       tiltDeg = 90 - Math.abs(e.gamma);
     }
   }
 
   let gyroPitch = 0;
   if (isLandscape) {
-    // In landscape mode, when held vertically between -45 and 0 degrees (-45° <= tilt <= 0°):
-    // The wormhole is directly in the center of the screen (gyroPitch = 0).
-    const MIN_VERTICAL_TILT = -45;
-    const MAX_VERTICAL_TILT = 0;
-    const TILT_EPSILON = 1.0; // 1 degree tolerance to absorb sensor noise at boundaries
+    // Conditional 1: Primary vertical holding between 0 and 25 degrees (reverted last change)
+    const MIN_VERTICAL_TILT = 0;
+    const MAX_VERTICAL_TILT = 25;
+    const isPrimaryTiltCentered = (tiltDeg >= (MIN_VERTICAL_TILT - TILT_EPSILON) && tiltDeg <= (MAX_VERTICAL_TILT + TILT_EPSILON));
 
-    if (tiltDeg >= (MIN_VERTICAL_TILT - TILT_EPSILON) && tiltDeg <= (MAX_VERTICAL_TILT + TILT_EPSILON)) {
+    // Conditional 2: If phone is between 90-120 degrees, the wormhole is in the center of the screen
+    const isSecondaryTiltCentered = isBetween90And120;
+
+    if (isPrimaryTiltCentered || isSecondaryTiltCentered) {
       gyroPitch = 0;
-    } else if (tiltDeg > (MAX_VERTICAL_TILT + TILT_EPSILON)) {
-      // Tilting back past 0 degrees smoothly pitches the view upward
+    } else if (tiltDeg > (120 + TILT_EPSILON)) {
+      // Tilting past 120 degrees pitches upward
+      gyroPitch = THREE.MathUtils.degToRad(tiltDeg - (120 + TILT_EPSILON));
+    } else if (tiltDeg > (MAX_VERTICAL_TILT + TILT_EPSILON) && tiltDeg < (90 - TILT_EPSILON)) {
+      // Tilting back past 25 degrees smoothly pitches the view upward
       gyroPitch = THREE.MathUtils.degToRad(tiltDeg - (MAX_VERTICAL_TILT + TILT_EPSILON));
-    } else {
-      // Tilting forward past -45 degrees smoothly pitches the view downward
+    } else if (tiltDeg < (MIN_VERTICAL_TILT - TILT_EPSILON)) {
+      // Tilting forward past 0 degrees smoothly pitches the view downward
       gyroPitch = THREE.MathUtils.degToRad(tiltDeg - (MIN_VERTICAL_TILT - TILT_EPSILON));
     }
   } else {

@@ -1857,7 +1857,7 @@ function centerWormholeOnScreen(immediate = true) {
   }
 }
 
-// Device Orientation Handler calibrated for landscape mode held vertically between 25 and 0 degrees
+// Device Orientation Handler calibrated for landscape mode held vertically between -45 and 0 degrees
 function handleOrientation(e) {
   if (state.isXR) return;
   if (e.beta === null || e.gamma === null) return;
@@ -1931,19 +1931,19 @@ function handleOrientation(e) {
 
   let gyroPitch = 0;
   if (isLandscape) {
-    // In landscape mode, when held vertically between 25 and 0 degrees (0° <= tilt <= 25°):
+    // In landscape mode, when held vertically between -45 and 0 degrees (-45° <= tilt <= 0°):
     // The wormhole is directly in the center of the screen (gyroPitch = 0).
-    const MIN_VERTICAL_TILT = 0;
-    const MAX_VERTICAL_TILT = 25;
+    const MIN_VERTICAL_TILT = -45;
+    const MAX_VERTICAL_TILT = 0;
     const TILT_EPSILON = 1.0; // 1 degree tolerance to absorb sensor noise at boundaries
 
     if (tiltDeg >= (MIN_VERTICAL_TILT - TILT_EPSILON) && tiltDeg <= (MAX_VERTICAL_TILT + TILT_EPSILON)) {
       gyroPitch = 0;
     } else if (tiltDeg > (MAX_VERTICAL_TILT + TILT_EPSILON)) {
-      // Tilting back past 25 degrees smoothly pitches the view upward
+      // Tilting back past 0 degrees smoothly pitches the view upward
       gyroPitch = THREE.MathUtils.degToRad(tiltDeg - (MAX_VERTICAL_TILT + TILT_EPSILON));
     } else {
-      // Tilting forward past 0 degrees smoothly pitches the view downward
+      // Tilting forward past -45 degrees smoothly pitches the view downward
       gyroPitch = THREE.MathUtils.degToRad(tiltDeg - (MIN_VERTICAL_TILT - TILT_EPSILON));
     }
   } else {

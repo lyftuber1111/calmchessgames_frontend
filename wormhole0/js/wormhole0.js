@@ -1857,7 +1857,7 @@ function centerWormholeOnScreen(immediate = true) {
   }
 }
 
-// Device Orientation Handler calibrated for landscape mode held vertically between 35 and 0 degrees
+// Device Orientation Handler calibrated for landscape mode held vertically between 25 and 0 degrees
 function handleOrientation(e) {
   if (state.isXR) return;
   if (e.beta === null || e.gamma === null) return;
@@ -1882,9 +1882,9 @@ function handleOrientation(e) {
                       (screen.orientation && screen.orientation.type && screen.orientation.type.includes('landscape')) ||
                       (Math.abs(screenAngle) === 90 || Math.abs(screenAngle) === 270);
 
-  // If viewport is landscape (width > height) but reporting 0 deg, default to landscape 90 deg
+  // If viewport is landscape (width > height) but reporting 0 deg, infer from gamma
   if (isLandscape && screenAngle === 0) {
-    screenAngle = 90;
+    screenAngle = (e.gamma < 0) ? 270 : 90;
   }
 
   // Device orientation angles in radians
@@ -1892,9 +1892,9 @@ function handleOrientation(e) {
   const g = THREE.MathUtils.degToRad(e.gamma || 0);
 
   // Up/Gravity vector in device coordinate frame:
-  // Derived from W3C Euler angles: R = Rz(alpha) * Rx(beta) * Ry(gamma)
-  // Up vector (0, 0, 1) rotated into device coordinate frame gives:
-  const dx = -Math.sin(g) * Math.cos(b);
+  // In portrait, +Y is up, +X is right, +Z is out of screen.
+  // In landscape 90 (rotated CCW), +X is up, -Y is right.
+  const dx = Math.sin(g) * Math.cos(b);
   const dy = -Math.sin(b);
   const dz = Math.cos(g) * Math.cos(b);
 
@@ -1919,24 +1919,32 @@ function handleOrientation(e) {
   // When device is held vertically upright, screenUpY > 0 and screenUpZ = 0.
   // Tilt is positive when tilted back towards player's face (screenUpZ > 0).
   const rawTiltRad = Math.atan2(screenUpZ, screenUpY);
-  const rawTiltDeg = THREE.MathUtils.radToDeg(rawTiltRad);
+  let tiltDeg = THREE.MathUtils.radToDeg(rawTiltRad);
+
+  // Gimbal lock / quadrant check for landscape mode:
+  // When held in landscape, the front-to-back tilt is fundamentally (90 - |gamma|)
+  if (isLandscape) {
+    if (Math.abs(tiltDeg - 180) < 45 || Math.abs(tiltDeg) > 85) {
+      tiltDeg = 90 - Math.abs(e.gamma);
+    }
+  }
 
   let gyroPitch = 0;
   if (isLandscape) {
-    // In landscape mode, when held vertically between 35 and 0 degrees (0° <= tilt <= 35°):
+    // In landscape mode, when held vertically between 25 and 0 degrees (0° <= tilt <= 25°):
     // The wormhole is directly in the center of the screen (gyroPitch = 0).
     const MIN_VERTICAL_TILT = 0;
-    const MAX_VERTICAL_TILT = 35;
+    const MAX_VERTICAL_TILT = 25;
     const TILT_EPSILON = 1.0; // 1 degree tolerance to absorb sensor noise at boundaries
 
-    if (rawTiltDeg >= (MIN_VERTICAL_TILT - TILT_EPSILON) && rawTiltDeg <= (MAX_VERTICAL_TILT + TILT_EPSILON)) {
+    if (tiltDeg >= (MIN_VERTICAL_TILT - TILT_EPSILON) && tiltDeg <= (MAX_VERTICAL_TILT + TILT_EPSILON)) {
       gyroPitch = 0;
-    } else if (rawTiltDeg > (MAX_VERTICAL_TILT + TILT_EPSILON)) {
-      // Tilting back past 35 degrees smoothly pitches the view upward
-      gyroPitch = THREE.MathUtils.degToRad(rawTiltDeg - (MAX_VERTICAL_TILT + TILT_EPSILON));
+    } else if (tiltDeg > (MAX_VERTICAL_TILT + TILT_EPSILON)) {
+      // Tilting back past 25 degrees smoothly pitches the view upward
+      gyroPitch = THREE.MathUtils.degToRad(tiltDeg - (MAX_VERTICAL_TILT + TILT_EPSILON));
     } else {
       // Tilting forward past 0 degrees smoothly pitches the view downward
-      gyroPitch = THREE.MathUtils.degToRad(rawTiltDeg - (MIN_VERTICAL_TILT - TILT_EPSILON));
+      gyroPitch = THREE.MathUtils.degToRad(tiltDeg - (MIN_VERTICAL_TILT - TILT_EPSILON));
     }
   } else {
     // Portrait mode fallback

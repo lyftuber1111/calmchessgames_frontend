@@ -90,10 +90,14 @@ const state = {
   throttleValue: 0,
   throttleLocked: false,
 
-  // 360-Degree Automated Thruster Rotation State
+  // Automated Thruster Rotation State (180° and 360°)
   isExecuting360Turn: false,
+  isExecuting180Turn: false,
+  activeTurnType: null, // '180' or '360'
   turn360Accumulated: 0,
   turn360Target: Math.PI * 2,
+  turnRotationAccumulated: 0,
+  turnRotationTarget: Math.PI * 2,
 
   // Left-Handed Touch Control Layout
   leftHandedMode: false,
@@ -2540,19 +2544,51 @@ if (btnThrottleStop) {
 }
 
 // =============================================================================
-// AUTOMATED 360-DEGREE THRUSTER ROTATION
+// AUTOMATED 180-DEGREE & 360-DEGREE THRUSTER ROTATION
 // =============================================================================
+const touchBtnSpin180 = document.getElementById('touch-btn-spin-180');
+const btnSpin180 = document.getElementById('btn-spin-180');
 const touchBtnSpin360 = document.getElementById('touch-btn-spin-360');
 const btnSpin360 = document.getElementById('btn-spin-360');
 
-function execute360Turn() {
-  if (state.isExecuting360Turn) {
-    cancel360Turn();
+function execute180Turn() {
+  if (state.isExecuting180Turn || state.activeTurnType === '180') {
+    cancelTurn();
     return;
   }
+  if (state.isExecuting360Turn || state.activeTurnType === '360') {
+    cancelTurn();
+  }
+  state.isExecuting180Turn = true;
+  state.isExecuting360Turn = false;
+  state.activeTurnType = '180';
+  state.turnRotationAccumulated = 0;
+  state.turnRotationTarget = Math.PI; // 180 degrees (π radians)
+
+  if (touchBtnSpin180) touchBtnSpin180.classList.add('active-spin');
+  if (btnSpin180) btnSpin180.classList.add('active');
+
+  showToast('↩️ 180° THRUSTER ROTATION ENGAGED');
+  if (!audioMgr.isInitialized) audioMgr.init();
+  audioMgr.playCoil();
+  handleFlightActivity();
+}
+
+function execute360Turn() {
+  if (state.isExecuting360Turn || state.activeTurnType === '360') {
+    cancelTurn();
+    return;
+  }
+  if (state.isExecuting180Turn || state.activeTurnType === '180') {
+    cancelTurn();
+  }
   state.isExecuting360Turn = true;
+  state.isExecuting180Turn = false;
+  state.activeTurnType = '360';
+  state.turnRotationAccumulated = 0;
+  state.turnRotationTarget = Math.PI * 2; // Full 360 degrees (2π radians)
   state.turn360Accumulated = 0;
-  state.turn360Target = Math.PI * 2; // Full 360 degrees
+  state.turn360Target = Math.PI * 2;
 
   if (touchBtnSpin360) touchBtnSpin360.classList.add('active-spin');
   if (btnSpin360) btnSpin360.classList.add('active');
@@ -2563,12 +2599,51 @@ function execute360Turn() {
   handleFlightActivity();
 }
 
-function cancel360Turn() {
-  if (!state.isExecuting360Turn) return;
+function cancelTurn() {
+  const previousType = state.activeTurnType || (state.isExecuting180Turn ? '180' : (state.isExecuting360Turn ? '360' : null));
   state.isExecuting360Turn = false;
+  state.isExecuting180Turn = false;
+  state.activeTurnType = null;
+  state.turnRotationAccumulated = 0;
+  state.turn360Accumulated = 0;
+
+  if (touchBtnSpin180) touchBtnSpin180.classList.remove('active-spin');
+  if (btnSpin180) btnSpin180.classList.remove('active');
   if (touchBtnSpin360) touchBtnSpin360.classList.remove('active-spin');
   if (btnSpin360) btnSpin360.classList.remove('active');
-  showToast('🔄 360° ROTATION STOPPED');
+
+  if (previousType) {
+    showToast(previousType === '180' ? '↩️ 180° ROTATION STOPPED' : '🔄 360° ROTATION STOPPED');
+  }
+}
+
+function cancel360Turn() {
+  cancelTurn();
+}
+
+function cancel180Turn() {
+  cancelTurn();
+}
+
+if (touchBtnSpin180) {
+  touchBtnSpin180.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    execute180Turn();
+  });
+  touchBtnSpin180.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    execute180Turn();
+  }, { passive: false });
+}
+
+if (btnSpin180) {
+  btnSpin180.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    execute180Turn();
+  });
 }
 
 if (touchBtnSpin360) {
@@ -2606,6 +2681,9 @@ function fireLaserBeam() {
 
   // Automatically stop throttle & reset slider to center on laser fire
   stopThrottle('LASER FIRED: ENGINES ALL STOP (0%)');
+  if (state.activeTurnType || state.isExecuting360Turn || state.isExecuting180Turn) {
+    cancelTurn();
+  }
 
   // Sound synthesis
   if (!audioMgr.isInitialized) audioMgr.init();
@@ -2949,6 +3027,10 @@ window.addEventListener('keydown', (e) => {
 
   if (e.code === 'KeyF') {
     triggerWarpJump();
+  }
+  if (e.code === 'KeyT') {
+    e.preventDefault();
+    execute180Turn();
   }
   if (e.code === 'KeyR') {
     e.preventDefault();
@@ -3570,34 +3652,42 @@ function updateFlight(delta) {
     // Lateral strafe thrusters
     accel.addScaledVector(right, state.touchMove.x * 0.5);
 
-    // Manual joystick movement overrides automated 360 rotation
-    if (state.isExecuting360Turn && (Math.abs(state.touchMove.x) > 0.1 || Math.abs(state.touchMove.y) > 0.1)) {
-      cancel360Turn();
+    // Manual joystick movement overrides automated rotation
+    if ((state.activeTurnType || state.isExecuting360Turn || state.isExecuting180Turn) && (Math.abs(state.touchMove.x) > 0.1 || Math.abs(state.touchMove.y) > 0.1)) {
+      cancelTurn();
     }
   }
 
-  // 3. Automated 360-Degree Thruster Rotation
-  if (state.isExecuting360Turn) {
-    // Rotates a complete 360 degrees in ~2.8 seconds
+  // 3. Automated Thruster Rotation (180° or 360°)
+  if (state.activeTurnType || state.isExecuting360Turn || state.isExecuting180Turn) {
+    // Uniform angular velocity: 360° in ~2.8s, 180° in ~1.4s
     const turnRate = (Math.PI * 2) / 2.8;
     const step = turnRate * delta;
-    const remaining = state.turn360Target - state.turn360Accumulated;
+    const remaining = state.turnRotationTarget - state.turnRotationAccumulated;
     const actualStep = Math.min(step, remaining);
 
     touchLookYaw -= actualStep;
     state.yaw = lastGyroYaw + touchLookYaw;
-    state.turn360Accumulated += actualStep;
+    state.turnRotationAccumulated += actualStep;
+    state.turn360Accumulated = state.turnRotationAccumulated;
 
     // Thruster stabilizer impulse while rotating
     accel.addScaledVector(right, 0.2);
 
-    if (state.turn360Accumulated >= state.turn360Target - 0.001) {
+    if (state.turnRotationAccumulated >= state.turnRotationTarget - 0.001) {
+      const completedType = state.activeTurnType || (state.isExecuting180Turn ? '180' : '360');
       state.isExecuting360Turn = false;
-      const spinBtn = document.getElementById('touch-btn-spin-360');
-      if (spinBtn) spinBtn.classList.remove('active-spin');
-      const deskSpinBtn = document.getElementById('btn-spin-360');
-      if (deskSpinBtn) deskSpinBtn.classList.remove('active');
-      showToast('🔄 360° ROTATION COMPLETE');
+      state.isExecuting180Turn = false;
+      state.activeTurnType = null;
+      state.turnRotationAccumulated = 0;
+      state.turn360Accumulated = 0;
+
+      if (touchBtnSpin180) touchBtnSpin180.classList.remove('active-spin');
+      if (btnSpin180) btnSpin180.classList.remove('active');
+      if (touchBtnSpin360) touchBtnSpin360.classList.remove('active-spin');
+      if (btnSpin360) btnSpin360.classList.remove('active');
+
+      showToast(completedType === '180' ? '↩️ 180° ROTATION COMPLETE' : '🔄 360° ROTATION COMPLETE');
     }
   }
 
@@ -4012,8 +4102,11 @@ if (typeof window !== 'undefined') {
   window.snapGrid = snapGrid;
   window.updateMobileSnapGrid = updateMobileSnapGrid;
   window.setShowTargetGrid = setShowTargetGrid;
+  window.execute180Turn = execute180Turn;
+  window.cancel180Turn = cancel180Turn;
   window.execute360Turn = execute360Turn;
   window.cancel360Turn = cancel360Turn;
+  window.cancelTurn = cancelTurn;
 }
 
 // Initial mobile snap grid calculation

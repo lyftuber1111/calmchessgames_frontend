@@ -1079,6 +1079,7 @@
       transform: scale(0.95);
     }
 
+    #touch-btn-spin-180,
     #touch-btn-spin-360 {
       font-size: 0.62rem;
       font-weight: 800;
@@ -1090,6 +1091,8 @@
       align-items: center;
       justify-content: center;
     }
+    #touch-btn-spin-180.active-spin,
+    #btn-spin-180.active,
     #touch-btn-spin-360.active-spin,
     #btn-spin-360.active {
       background: var(--cyan-neon) !important;
@@ -2269,6 +2272,9 @@
           <span style="color:var(--cyan-neon);">Auto-Align Wormhole:</span> <span class="kbd">Z</span> / <span class="kbd">N</span>
         </div>
         <div class="key-row">
+          <span style="color:var(--cyan-neon);">180° Thruster Turn:</span> <span class="kbd">T</span>
+        </div>
+        <div class="key-row">
           <span style="color:var(--cyan-neon);">360° Thruster Turn:</span> <span class="kbd">R</span>
         </div>
 
@@ -2456,6 +2462,9 @@
         <button id="btn-toggle-controller" class="hud-btn" title="Toggle Gamepad Controller Polling">
           🎮 Controller: AUTO
         </button>
+        <button id="btn-spin-180" class="hud-btn" title="Fire thrusters until ship rotates 180 degrees (Hotkey: T)">
+          ↩️ 180° Turn
+        </button>
         <button id="btn-spin-360" class="hud-btn" title="Fire thrusters until ship rotates 360 degrees (Hotkey: R)">
           🔄 360° Turn
         </button>
@@ -2529,7 +2538,14 @@
 
     <!-- Center Touch Action Cluster -->
     <div class="mobile-touch-actions">
-      <div class="touch-btn" id="touch-btn-spin-360" title="Fire thrusters until ship rotates 360 degrees">🔄 360°</div>
+      <div class="touch-btn" id="touch-btn-spin-180" title="Fire thrusters until ship rotates 180 degrees (Hotkey: T)">
+        <span style="font-size:0.85rem; line-height:1;">↩️</span>
+        <span style="font-size:0.58rem; line-height:1; margin-top:1px;">180°</span>
+      </div>
+      <div class="touch-btn" id="touch-btn-spin-360" title="Fire thrusters until ship rotates 360 degrees (Hotkey: R)">
+        <span style="font-size:0.85rem; line-height:1;">🔄</span>
+        <span style="font-size:0.58rem; line-height:1; margin-top:1px;">360°</span>
+      </div>
       <div class="touch-btn" id="touch-btn-scan" title="Scan Singularity">📡</div>
       <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
     </div>

@@ -2582,7 +2582,7 @@ const snapGrid = {
   currentCol: -1,
   currentRow: -1,
   pauseUntil: 0,
-  pauseDuration: 500, // 0.5 seconds short pause on snap
+  pauseDuration: 300, // 0.3 seconds short pause on snap
   virtualX: 0,
   virtualY: 0,
   initialized: false
@@ -2739,8 +2739,8 @@ function updateCrosshairPosition(delta) {
         snapGrid.virtualX = boxCenterX;
         snapGrid.virtualY = boxCenterY;
 
-        // Short pause (0.5 seconds) every time the crosshair snaps to a grid box
-        snapGrid.pauseUntil = now + (snapGrid.pauseDuration || 500);
+        // Short pause (0.3 seconds) every time the crosshair snaps to a grid box
+        snapGrid.pauseUntil = now + (snapGrid.pauseDuration || 300);
 
         highlightActiveGridBox(newCol, newRow);
       } else {

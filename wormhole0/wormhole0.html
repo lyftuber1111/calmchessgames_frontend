@@ -809,8 +809,9 @@
     .crosshair-circle {
       width: 20px;
       height: 20px;
-      border: 2px dashed var(--cyan-neon);
+      border: 2px solid var(--cyan-neon);
       border-radius: 50%;
+      box-shadow: 0 0 10px var(--cyan-neon), inset 0 0 6px rgba(0, 240, 255, 0.4);
       transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
     }
 
@@ -2228,8 +2229,8 @@
       <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
     </div>
 
-    <!-- Right Virtual Joystick Zone (Aim Reticle Across Screen) -->
-    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Aim Reticle Across Screen">
+    <!-- Right Virtual Joystick Zone (Crosshair Aim Only - No Flight Control) -->
+    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Crosshair Aim Joystick (Controls Crosshair Only - No Flight Control)">
       <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob">🎯</div>
     </div>
   </div>

@@ -1998,8 +1998,22 @@ function pollGamepad(delta) {
     const rx = Math.abs(pad.axes[2]) > CONFIG.gamepadDeadzone ? pad.axes[2] : 0;
     const ry = Math.abs(pad.axes[3]) > CONFIG.gamepadDeadzone ? pad.axes[3] : 0;
 
-    state.yaw -= rx * CONFIG.yawSpeed * 22.0;
-    state.pitch -= ry * CONFIG.pitchSpeed * 22.0;
+    // Crosshair joystick (Right stick): ONLY controls crosshair - NO flight control
+    if (rx !== 0 || ry !== 0) {
+      const baseSpeed = Math.max(window.innerWidth, window.innerHeight);
+      const speed = baseSpeed * (state.crosshairSpeedMultiplier || 2.90);
+      state.crosshair.x += rx * speed * delta;
+      state.crosshair.y += ry * speed * delta;
+      const margin = 20;
+      state.crosshair.x = Math.max(margin, Math.min(window.innerWidth - margin, state.crosshair.x));
+      state.crosshair.y = Math.max(margin, Math.min(window.innerHeight - margin, state.crosshair.y));
+    }
+
+    // D-Pad flight steering (Pitch & Yaw)
+    if (pad.buttons[14] && pad.buttons[14].pressed) state.yaw += CONFIG.yawSpeed * 22.0 * delta * 60;
+    if (pad.buttons[15] && pad.buttons[15].pressed) state.yaw -= CONFIG.yawSpeed * 22.0 * delta * 60;
+    if (pad.buttons[12] && pad.buttons[12].pressed) state.pitch += CONFIG.pitchSpeed * 22.0 * delta * 60;
+    if (pad.buttons[13] && pad.buttons[13].pressed) state.pitch -= CONFIG.pitchSpeed * 22.0 * delta * 60;
     state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
 
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
@@ -2018,6 +2032,12 @@ function pollGamepad(delta) {
       if (btnScan) btnScan.click();
       vibratePad(pad, 150);
     }
+    // Fire laser with RB (Button 5) or B (Button 1)
+    if ((pad.buttons[5] && pad.buttons[5].pressed && !state.lastPadButtons[5]) ||
+        (pad.buttons[1] && pad.buttons[1].pressed && !state.lastPadButtons[1])) {
+      fireLaserBeam();
+      vibratePad(pad, 120);
+    }
     if (pad.buttons[2] && pad.buttons[2].pressed && !state.lastPadButtons[2]) {
       const uncalibrated = state.coils.findIndex(c => !c);
       if (uncalibrated !== -1) {
@@ -2033,8 +2053,10 @@ function pollGamepad(delta) {
 
     state.lastPadButtons = {
       0: pad.buttons[0] ? pad.buttons[0].pressed : false,
+      1: pad.buttons[1] ? pad.buttons[1].pressed : false,
       2: pad.buttons[2] ? pad.buttons[2].pressed : false,
-      3: pad.buttons[3] ? pad.buttons[3].pressed : false
+      3: pad.buttons[3] ? pad.buttons[3].pressed : false,
+      5: pad.buttons[5] ? pad.buttons[5].pressed : false
     };
 
     break;

@@ -1976,25 +1976,6 @@
         <div class="key-row">
           <span style="color:var(--cyan-neon);">Auto-Align Wormhole:</span> <span class="kbd">Z</span> / <span class="kbd">N</span>
         </div>
-        <button id="btn-drawer-align" class="hud-btn" style="width: 100%; margin-top: 6px; padding: 6px; font-size: 0.75rem; border-color: var(--cyan-neon); background: rgba(0,240,255,0.12);" title="Automatically align ship view directly towards the Wormhole Singularity">
-          🧭 Align View to Wormhole
-        </button>
-
-        <!-- Crosshair Speed Slider in Flight Control Panel -->
-        <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;">
-          <label for="slider-crosshair-speed" style="font-size: 0.72rem; color: var(--cyan-neon); font-weight: 700;">CROSSHAIR SPEED</label>
-          <input id="slider-crosshair-speed" type="range" min="0.4" max="3.5" step="0.05" value="2.90" style="width: 100px; cursor: pointer;">
-          <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">2.90x</span>
-        </div>
-
-        <!-- Left-Handed Mode Toggle Checkmark -->
-        <div class="hud-slider-group flight-slider-row" style="margin-top: 6px; padding-top: 5px; border-top: 1px solid rgba(0,240,255,0.15); display: flex; align-items: center; justify-content: space-between;">
-          <label for="chk-left-handed" style="font-size: 0.72rem; color: var(--cyan-neon); font-weight: 700; cursor: pointer;">LEFT-HANDED LAYOUT</label>
-          <label class="autohide-toggle" style="cursor: pointer;" title="Flip joystick button positions: Flight stick on bottom-right, Aim stick on upper-left">
-            <input type="checkbox" id="chk-left-handed" class="chk-left-handed">
-            <span style="font-size: 0.7rem; color: #fff;">Flip Controls</span>
-          </label>
-        </div>
       </div>
 
       <!-- Section 2: Stage 1 Objectives & Systems Calibration -->
@@ -2172,7 +2153,7 @@
           🎯 Flight Mouse
         </button>
         <button id="btn-align-wormhole" class="hud-btn" title="Automatically align ship view directly towards the Wormhole Singularity (Hotkey: Z / N)">
-          🧭 Nav Lock
+          🧭 Align View
         </button>
       </div>
 
@@ -2188,12 +2169,15 @@
           <span id="val-lensing" class="badge-val">1.0</span>
         </div>
         <div class="hud-slider-group">
-          <label for="slider-crosshair-speed-bottom">AIM SPEED</label>
+          <label for="slider-crosshair-speed-bottom">CROSSHAIR SPEED</label>
           <input id="slider-crosshair-speed-bottom" type="range" min="0.4" max="3.5" step="0.05" value="2.90">
           <span id="val-crosshair-speed-bottom" class="badge-val">2.90x</span>
         </div>
-        <label class="autohide-toggle" title="Flip joystick locations for left-handed players">
-          <input type="checkbox" id="chk-left-handed-bottom" class="chk-left-handed"> Left-handed
+        <label class="autohide-toggle" title="Toggle fast crosshair aim speed (2.90x) or precision standard speed (1.00x)">
+          <input type="checkbox" id="chk-crosshair-fast" class="chk-crosshair-fast" checked> Fast Aim
+        </label>
+        <label class="autohide-toggle" title="Flip joystick button positions: Flight stick on bottom-right, Aim stick on upper-left">
+          <input type="checkbox" id="chk-left-handed-bottom" class="chk-left-handed"> Left-Handed Flip Controls
         </label>
         <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
           <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto close

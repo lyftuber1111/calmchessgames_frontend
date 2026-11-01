@@ -2740,6 +2740,7 @@ const crosshairSpeedSlider = document.getElementById('slider-crosshair-speed');
 const crosshairSpeedValDisplay = document.getElementById('val-crosshair-speed');
 const crosshairSpeedSliderBottom = document.getElementById('slider-crosshair-speed-bottom');
 const crosshairSpeedValDisplayBottom = document.getElementById('val-crosshair-speed-bottom');
+const chkCrosshairFast = document.getElementById('chk-crosshair-fast');
 
 function updateCrosshairSpeedMultiplier(val) {
   const num = parseFloat(val);
@@ -2749,6 +2750,7 @@ function updateCrosshairSpeedMultiplier(val) {
   if (crosshairSpeedValDisplay) crosshairSpeedValDisplay.textContent = formatted;
   if (crosshairSpeedSliderBottom) crosshairSpeedSliderBottom.value = num;
   if (crosshairSpeedValDisplayBottom) crosshairSpeedValDisplayBottom.textContent = formatted;
+  if (chkCrosshairFast) chkCrosshairFast.checked = (num >= 2.0);
 }
 
 if (crosshairSpeedSlider) {
@@ -2759,6 +2761,13 @@ if (crosshairSpeedSlider) {
 if (crosshairSpeedSliderBottom) {
   crosshairSpeedSliderBottom.addEventListener('input', (e) => {
     updateCrosshairSpeedMultiplier(e.target.value);
+  });
+}
+if (chkCrosshairFast) {
+  chkCrosshairFast.addEventListener('change', (e) => {
+    const targetSpeed = e.target.checked ? 2.90 : 1.0;
+    updateCrosshairSpeedMultiplier(targetSpeed);
+    showToast(e.target.checked ? 'CROSSHAIR SPEED: FAST (2.90x)' : 'CROSSHAIR SPEED: NORMAL (1.00x)');
   });
 }
 

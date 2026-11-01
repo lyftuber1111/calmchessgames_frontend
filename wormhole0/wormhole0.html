@@ -925,7 +925,7 @@
     }
 
     .aim-stick-zone::after {
-      content: 'AIM RETICLE';
+      content: 'CROSSHAIR AIM (NO FLIGHT)';
       position: absolute;
       top: -20px;
       bottom: auto;
@@ -982,13 +982,14 @@
     }
 
     .aim-stick-knob {
-      background: rgba(0, 50, 80, 0.9);
+      background: var(--cyan-neon);
+      background-color: #00f0ff;
       border: 2px solid var(--cyan-neon);
-      box-shadow: 0 0 14px var(--cyan-neon);
+      box-shadow: 0 0 16px var(--cyan-neon), 0 0 26px rgba(0, 240, 255, 0.7);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--cyan-neon);
+      color: transparent;
       font-size: 0.85rem;
     }
 
@@ -1963,11 +1964,11 @@
           <span>🕹️ FLIGHT / CONTROLLER</span>
           <span style="font-size:0.65rem; color:var(--cyan-neon);">6-DOF FLIGHT</span>
         </div>
-        <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">Stick (Top: Fwd+Down)</span></div>
-        <div class="key-row"><span>Strafe Left / Right:</span> <span class="kbd">A / D</span> or <span class="kbd">L-Stick X</span></div>
-        <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse</span> or <span class="kbd">Right Stick</span></div>
+        <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">R-Stick (Hold) / R2</span></div>
+        <div class="key-row"><span>Crosshair Aim:</span> <span class="kbd">Left Stick (Crosshair Only)</span></div>
+        <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse</span> or <span class="kbd">Right Stick / D-Pad</span></div>
         <div class="key-row"><span>Elevate / Dive:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">R2 / L2</span></div>
-        <div class="key-row"><span>Fire Laser Cannon:</span> <span class="kbd">L-Stick Tap / X</span></div>
+        <div class="key-row"><span>Fire Laser Cannon:</span> <span class="kbd">R-Stick Tap / RB / B</span></div>
         <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">A / X Button</span></div>
         <div class="key-row"><span>Warp Jump Trigger:</span> <span class="kbd">F</span> or <span class="kbd">Y Button</span></div>
         <div class="key-row" style="margin-top:5px; border-top:1px solid rgba(0,240,255,0.2); padding-top:4px;">
@@ -2219,7 +2220,7 @@
 
   <!-- Mobile Touch On-Screen Controls (Landscape) -->
   <div id="mobile-touch-controls">
-    <!-- Left Virtual Joystick Zone (Tap: Fire Laser / Hold: Flight Thruster) -->
+    <!-- Right Virtual Joystick Zone (Tap: Fire Laser / Hold: Flight Thruster) -->
     <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Hold: Flight Thrusters">
       <div class="virtual-stick-knob" id="touch-stick-knob">🔴</div>
     </div>
@@ -2230,9 +2231,9 @@
       <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
     </div>
 
-    <!-- Right Virtual Joystick Zone (Aim Reticle Across Screen) -->
-    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Aim Reticle Across Screen">
-      <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob">🎯</div>
+    <!-- Left Virtual Joystick Zone (Crosshair Aim Only - No Flight Control) -->
+    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Crosshair Aim Joystick (Controls Crosshair Only - No Flight Control)">
+      <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob"></div>
     </div>
   </div>
 

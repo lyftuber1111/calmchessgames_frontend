@@ -2735,7 +2735,7 @@ if (lensingSlider) {
   });
 }
 
-// Fast Aim Slider (Adjusts Crosshair Aim Speed, Default 2.90x)
+// Crosshair Speed Slider (Adjusts Crosshair Aim Speed, Default 2.90x)
 const crosshairSpeedSlider = document.getElementById('slider-crosshair-speed');
 const crosshairSpeedValDisplay = document.getElementById('val-crosshair-speed');
 const crosshairSpeedSliderBottom = document.getElementById('slider-crosshair-speed-bottom');
@@ -2743,11 +2743,12 @@ const crosshairSpeedValDisplayBottom = document.getElementById('val-crosshair-sp
 
 function updateCrosshairSpeedMultiplier(val) {
   const num = parseFloat(val);
+  if (isNaN(num)) return;
   state.crosshairSpeedMultiplier = num;
   const formatted = num.toFixed(2) + 'x';
-  if (crosshairSpeedSlider) crosshairSpeedSlider.value = num;
+  if (crosshairSpeedSlider && crosshairSpeedSlider.value !== String(num)) crosshairSpeedSlider.value = num;
   if (crosshairSpeedValDisplay) crosshairSpeedValDisplay.textContent = formatted;
-  if (crosshairSpeedSliderBottom) crosshairSpeedSliderBottom.value = num;
+  if (crosshairSpeedSliderBottom && crosshairSpeedSliderBottom.value !== String(num)) crosshairSpeedSliderBottom.value = num;
   if (crosshairSpeedValDisplayBottom) crosshairSpeedValDisplayBottom.textContent = formatted;
 }
 
@@ -2755,12 +2756,21 @@ if (crosshairSpeedSlider) {
   crosshairSpeedSlider.addEventListener('input', (e) => {
     updateCrosshairSpeedMultiplier(e.target.value);
   });
+  crosshairSpeedSlider.addEventListener('change', (e) => {
+    updateCrosshairSpeedMultiplier(e.target.value);
+  });
 }
 if (crosshairSpeedSliderBottom) {
   crosshairSpeedSliderBottom.addEventListener('input', (e) => {
     updateCrosshairSpeedMultiplier(e.target.value);
   });
+  crosshairSpeedSliderBottom.addEventListener('change', (e) => {
+    updateCrosshairSpeedMultiplier(e.target.value);
+  });
 }
+
+// Initialize crosshair speed sliders
+updateCrosshairSpeedMultiplier(state.crosshairSpeedMultiplier || 2.90);
 
 // Left-Handed Mode (Flip On-Screen Touch Controls)
 function setLeftHandedMode(enabled) {

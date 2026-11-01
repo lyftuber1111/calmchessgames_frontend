@@ -78,8 +78,8 @@ const state = {
   // Right Joystick Flight Lockout Timer (1s on touch before navigating, 1s resetting on fire tap)
   flightLockoutUntil: 0,
 
-  // Crosshair Aim speed multiplier (default 2.90)
-  crosshairSpeedMultiplier: 2.90,
+  // Crosshair Aim speed multiplier (default 4.00, max 10.00)
+  crosshairSpeedMultiplier: 4.00,
 
   // Wormhole Nav Lock State
   isAligningToWormhole: false,
@@ -2984,6 +2984,21 @@ function updateLaserBolts(delta) {
 // =============================================================================
 // MOBILE INVISIBLE FULL-SCREEN SNAP GRID SYSTEM
 // =============================================================================
+// Calculates snap pause duration based on crosshair speed multiplier.
+// At speeds above 4.0x, the delay lowers progressively so the crosshair transitions between grid boxes more quickly.
+function calculateSnapPauseDuration(speedMult) {
+  const mult = typeof speedMult === 'number' ? speedMult : (state.crosshairSpeedMultiplier || 4.00);
+  if (mult <= 4.00) {
+    // Scales smoothly from ~280ms at lowest speed down to 180ms at default 4.0x
+    const factor = Math.max(0, Math.min(1, (mult - 0.4) / (4.0 - 0.4)));
+    return Math.round(280 - factor * (280 - 180));
+  } else {
+    // Progressively lowers the pause delay at speeds above 4.0x down to 50ms at 10.0x
+    const factor = Math.max(0, Math.min(1, (mult - 4.0) / (10.0 - 4.0)));
+    return Math.round(180 - factor * (180 - 50));
+  }
+}
+
 const snapGrid = {
   cols: 15,
   rows: 7,
@@ -2992,7 +3007,7 @@ const snapGrid = {
   currentCol: -1,
   currentRow: -1,
   pauseUntil: 0,
-  pauseDuration: 300, // 0.3 seconds short pause on snap
+  pauseDuration: 180, // dynamically scaled based on crosshairSpeedMultiplier (180ms at default 4.0x)
   virtualX: 0,
   virtualY: 0,
   initialized: false
@@ -3119,7 +3134,7 @@ function updateCrosshairPosition(delta) {
       }
     } else {
       const baseSpeed = Math.max(w, h);
-      const speed = baseSpeed * (state.crosshairSpeedMultiplier || 2.90);
+      const speed = baseSpeed * (state.crosshairSpeedMultiplier || 4.00);
 
       // Move virtual coordinate across the screen
       snapGrid.virtualX += state.aimMove.x * speed * delta;
@@ -3149,8 +3164,9 @@ function updateCrosshairPosition(delta) {
         snapGrid.virtualX = boxCenterX;
         snapGrid.virtualY = boxCenterY;
 
-        // Short pause (0.3 seconds) every time the crosshair snaps to a grid box
-        snapGrid.pauseUntil = now + (snapGrid.pauseDuration || 300);
+        // Pause duration scales with speed: lowered delay at speeds above 4.0x allows rapid box transitions
+        const snapPause = typeof snapGrid.pauseDuration === 'number' ? snapGrid.pauseDuration : calculateSnapPauseDuration(state.crosshairSpeedMultiplier);
+        snapGrid.pauseUntil = now + snapPause;
 
         highlightActiveGridBox(newCol, newRow);
       } else {
@@ -3587,7 +3603,7 @@ if (lensingSlider) {
   });
 }
 
-// Crosshair Speed Slider (Adjusts Crosshair Aim Speed, Default 2.90x)
+// Crosshair Speed Slider (Adjusts Crosshair Aim Speed, Default 4.0x, Max 10.0x)
 const crosshairSpeedSlider = document.getElementById('slider-crosshair-speed');
 const crosshairSpeedValDisplay = document.getElementById('val-crosshair-speed');
 const crosshairSpeedSliderBottom = document.getElementById('slider-crosshair-speed-bottom');
@@ -3597,7 +3613,10 @@ function updateCrosshairSpeedMultiplier(val) {
   const num = parseFloat(val);
   if (isNaN(num)) return;
   state.crosshairSpeedMultiplier = num;
-  const formatted = num.toFixed(2) + 'x';
+  if (typeof snapGrid !== 'undefined') {
+    snapGrid.pauseDuration = calculateSnapPauseDuration(num);
+  }
+  const formatted = num.toFixed(1) + 'x';
   if (crosshairSpeedSlider && crosshairSpeedSlider.value !== String(num)) crosshairSpeedSlider.value = num;
   if (crosshairSpeedValDisplay) crosshairSpeedValDisplay.textContent = formatted;
   if (crosshairSpeedSliderBottom && crosshairSpeedSliderBottom.value !== String(num)) crosshairSpeedSliderBottom.value = num;
@@ -3622,7 +3641,7 @@ if (crosshairSpeedSliderBottom) {
 }
 
 // Initialize crosshair speed sliders
-updateCrosshairSpeedMultiplier(state.crosshairSpeedMultiplier || 2.90);
+updateCrosshairSpeedMultiplier(state.crosshairSpeedMultiplier || 4.00);
 
 // Left-Handed Mode (Flip On-Screen Touch Controls)
 function setLeftHandedMode(enabled) {

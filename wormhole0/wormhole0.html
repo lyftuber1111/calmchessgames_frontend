@@ -2321,10 +2321,10 @@
         </div>
 
         <!-- Crosshair Speed Slider in Flight Hub Panel -->
-        <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;" title="Adjust crosshair movement speed (Default: 2.9x)">
+        <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;" title="Adjust crosshair movement speed (Default: 4.0x, Max: 10.0x)">
           <label for="slider-crosshair-speed" style="font-size: 0.72rem; color: var(--cyan-neon); font-weight: 700;">CROSSHAIR SPEED</label>
-          <input id="slider-crosshair-speed" type="range" min="0.4" max="4.0" step="0.05" value="2.90" style="width: 100px; cursor: pointer;">
-          <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">2.90x</span>
+          <input id="slider-crosshair-speed" type="range" min="0.4" max="10.0" step="0.1" value="4.0" style="width: 100px; cursor: pointer;">
+          <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">4.0x</span>
         </div>
         <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; flex-direction: column; gap: 4px;">
           <label class="autohide-toggle" title="Flip joystick and throttle slider positions for left-handed controls">
@@ -2529,10 +2529,10 @@
           <input id="slider-lensing" type="range" min="0.0" max="2.0" step="0.1" value="1.0">
           <span id="val-lensing" class="badge-val">1.0</span>
         </div>
-        <div class="hud-slider-group" title="Adjust crosshair movement speed (Default: 2.9x)">
+        <div class="hud-slider-group" title="Adjust crosshair movement speed (Default: 4.0x, Max: 10.0x)">
           <label for="slider-crosshair-speed-bottom">CROSSHAIR SPEED</label>
-          <input id="slider-crosshair-speed-bottom" type="range" min="0.4" max="4.0" step="0.05" value="2.90">
-          <span id="val-crosshair-speed-bottom" class="badge-val">2.90x</span>
+          <input id="slider-crosshair-speed-bottom" type="range" min="0.4" max="10.0" step="0.1" value="4.0">
+          <span id="val-crosshair-speed-bottom" class="badge-val">4.0x</span>
         </div>
         <label class="autohide-toggle" title="Flip joystick button positions: Flight stick on bottom-right, Aim stick on upper-left">
           <input type="checkbox" id="chk-left-handed-bottom" class="chk-left-handed"> Left-Handed Flip Controls

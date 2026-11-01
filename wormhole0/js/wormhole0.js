@@ -2581,7 +2581,8 @@ const snapGrid = {
   cellHeight: 0,
   currentCol: -1,
   currentRow: -1,
-  snapLockUntil: 0,
+  pauseUntil: 0,
+  pauseDuration: 500, // 0.5 seconds short pause on snap
   virtualX: 0,
   virtualY: 0,
   initialized: false
@@ -2698,10 +2699,15 @@ function updateCrosshairPosition(delta) {
 
   // Move crosshair when aim stick or gamepad is tilted
   if (state.aimActive && (state.aimMove.x !== 0 || state.aimMove.y !== 0)) {
-    const stickDist = Math.hypot(state.aimMove.x, state.aimMove.y);
-    const inDwell = (now < snapGrid.snapLockUntil && stickDist < 0.85);
-
-    if (!inDwell) {
+    // Hold at center during the short snap pause (0.5 seconds)
+    if (now < snapGrid.pauseUntil) {
+      if (snapGrid.currentCol >= 0 && snapGrid.currentRow >= 0) {
+        state.crosshair.x = (snapGrid.currentCol + 0.5) * snapGrid.cellWidth;
+        state.crosshair.y = (snapGrid.currentRow + 0.5) * snapGrid.cellHeight;
+        snapGrid.virtualX = state.crosshair.x;
+        snapGrid.virtualY = state.crosshair.y;
+      }
+    } else {
       const baseSpeed = Math.max(w, h);
       const speed = baseSpeed * (state.crosshairSpeedMultiplier || 2.90);
 
@@ -2718,7 +2724,7 @@ function updateCrosshairPosition(delta) {
       const newRow = Math.min(snapGrid.rows - 1, Math.max(0, Math.floor(snapGrid.virtualY / snapGrid.cellHeight)));
 
       // When the center of the crosshair crosses into each box of the grid:
-      // The crosshair snaps to the center of the grid box
+      // The crosshair snaps to the center of the grid box and pauses
       if (newCol !== snapGrid.currentCol || newRow !== snapGrid.currentRow) {
         snapGrid.currentCol = newCol;
         snapGrid.currentRow = newRow;
@@ -2733,8 +2739,8 @@ function updateCrosshairPosition(delta) {
         snapGrid.virtualX = boxCenterX;
         snapGrid.virtualY = boxCenterY;
 
-        // Brief tactile dwell so the snap to center is distinct and clear
-        snapGrid.snapLockUntil = now + 65;
+        // Short pause (0.5 seconds) every time the crosshair snaps to a grid box
+        snapGrid.pauseUntil = now + (snapGrid.pauseDuration || 500);
 
         highlightActiveGridBox(newCol, newRow);
       } else {

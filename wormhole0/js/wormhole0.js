@@ -99,6 +99,9 @@ const state = {
   turnRotationAccumulated: 0,
   turnRotationTarget: Math.PI * 2,
 
+  // Laser Engine Halt Notification State
+  laserEngineHaltNotified: false,
+
   // Left-Handed Touch Control Layout
   leftHandedMode: false,
 
@@ -2187,7 +2190,7 @@ function setThrottleLockout(locked) {
   }
 }
 
-function stopThrottle(reason = 'ALL ENGINES STOP (0%)') {
+function stopThrottle(reason = null) {
   if (customThrottleSlider) {
     customThrottleSlider.value = 0;
   }
@@ -2197,7 +2200,9 @@ function stopThrottle(reason = 'ALL ENGINES STOP (0%)') {
     throttleValueBadge.classList.remove('forward', 'reverse');
     throttleValueBadge.textContent = '0% [STOP]';
   }
-  showToast(`🛑 ${reason}`);
+  if (reason) {
+    showToast(`🛑 ${reason}`);
+  }
   handleFlightActivity();
 }
 
@@ -2505,6 +2510,9 @@ function updateThrottleFromSlider(rawVal) {
   const val = parseFloat(rawVal) || 0;
   // Maps -100..100 to -1.0 (reverse) to +1.0 (forward)
   state.throttleValue = val / 100;
+  if (Math.abs(state.throttleValue) > 0.005) {
+    state.laserEngineHaltNotified = false; // Engines are actively thrusting again
+  }
 
   if (throttleValueBadge) {
     throttleValueBadge.classList.remove('forward', 'reverse');
@@ -2534,12 +2542,12 @@ if (btnThrottleStop) {
   btnThrottleStop.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    stopThrottle();
+    stopThrottle('CRUISE ENGINES STOPPED (0%)');
   });
   btnThrottleStop.addEventListener('touchstart', (e) => {
     e.preventDefault();
     e.stopPropagation();
-    stopThrottle();
+    stopThrottle('CRUISE ENGINES STOPPED (0%)');
   }, { passive: false });
 }
 
@@ -2679,8 +2687,17 @@ function fireLaserBeam() {
   // Lock out right-hand flight for 1 second when fire is triggered
   state.flightLockoutUntil = now + 1000;
 
-  // Automatically stop throttle & reset slider to center on laser fire
-  stopThrottle('LASER FIRED: ENGINES ALL STOP (0%)');
+  // If cruise engine is actively thrusting, halt engine and show notification once.
+  // Do not show again on subsequent shots until the engine starts thrusting again.
+  const isEngineThrusting = Math.abs(state.throttleValue) > 0.005;
+  if (isEngineThrusting && !state.laserEngineHaltNotified) {
+    state.laserEngineHaltNotified = true;
+    stopThrottle('LASER FIRED: ENGINES ALL STOP (0%)');
+  } else {
+    stopThrottle(null);
+  }
+
+  // Cancel any active automated turns on laser fire
   if (state.activeTurnType || state.isExecuting360Turn || state.isExecuting180Turn) {
     cancelTurn();
   }
@@ -3636,6 +3653,7 @@ function updateFlight(delta) {
   // 1. Custom Cruise Throttle Slider (Forward / Reverse speed cruise)
   if (Math.abs(state.throttleValue) > 0.005) {
     accel.addScaledVector(forward, state.throttleValue);
+    state.laserEngineHaltNotified = false; // Engines are actively thrusting
   }
 
   // 2. Right Joystick Flight: Up & Down Elevation + 360-degree Yaw Steering

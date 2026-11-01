@@ -7,6 +7,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="description" content="Multi-stage Sci-Fi WebXR experience - Stage 1: Distant Neon Cyan Wormhole with Hardware Support Verification, Telemetry, and Collapsible HUD.">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Wormhole XR - Stage 1: Distant Neon Cyan Singularity</title>
 
   <!-- ES Module Import Map for Three.js & WebXR Addons -->
@@ -1045,20 +1048,25 @@
     .mobile-touch-actions {
       pointer-events: auto;
       display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 10px;
       position: absolute;
       right: calc(clamp(18px, 4.5vw, 42px) + env(safe-area-inset-right, 0px));
       bottom: calc(clamp(18px, 4vh, 35px) + env(safe-area-inset-bottom, 0px));
       left: auto;
       transform: none;
-      flex-direction: row;
-      gap: 10px;
       margin-bottom: 0;
-      z-index: 65;
+      z-index: 85;
     }
 
     .touch-btn {
       width: 48px;
       height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      flex-shrink: 0;
       border-radius: 50%;
       background: rgba(0, 48, 75, 0.85);
       border: 2px solid var(--cyan-neon);
@@ -1081,7 +1089,7 @@
 
     #touch-btn-spin-180,
     #touch-btn-spin-360 {
-      font-size: 0.62rem;
+      font-size: 0.64rem;
       font-weight: 800;
       letter-spacing: 0.3px;
       line-height: 1.15;
@@ -2538,15 +2546,8 @@
 
     <!-- Center Touch Action Cluster -->
     <div class="mobile-touch-actions">
-      <div class="touch-btn" id="touch-btn-spin-180" title="Fire thrusters until ship rotates 180 degrees (Hotkey: T)">
-        <span style="font-size:0.85rem; line-height:1;">↩️</span>
-        <span style="font-size:0.58rem; line-height:1; margin-top:1px;">180°</span>
-      </div>
-      <div class="touch-btn" id="touch-btn-spin-360" title="Fire thrusters until ship rotates 360 degrees (Hotkey: R)">
-        <span style="font-size:0.85rem; line-height:1;">🔄</span>
-        <span style="font-size:0.58rem; line-height:1; margin-top:1px;">360°</span>
-      </div>
-      <div class="touch-btn" id="touch-btn-scan" title="Scan Singularity">📡</div>
+      <div class="touch-btn" id="touch-btn-spin-180" title="Fire thrusters until ship rotates 180 degrees (Hotkey: T)">🔄 180°</div>
+      <div class="touch-btn" id="touch-btn-spin-360" title="Fire thrusters until ship rotates 360 degrees (Hotkey: R)">🔄 360°</div>
       <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
     </div>
 
@@ -2574,7 +2575,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js"></script>
+  <script type="module" src="js/wormhole0.js?v=20261101_v5"></script>
 
 </body>
 </html>

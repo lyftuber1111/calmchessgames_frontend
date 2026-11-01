@@ -89,7 +89,6 @@ const state = {
   // Custom Cruise Throttle Slider State (-1.0 reverse to +1.0 forward, default 0 in center)
   throttleValue: 0,
   throttleLocked: false,
-  verticalThrust: 0, // -1 dive, +1 climb, 0 neutral
 
   // Left-Handed Touch Control Layout
   leftHandedMode: false,
@@ -2226,8 +2225,6 @@ if (touchStickZone) {
         flightTapStartTime = performance.now();
         state.touchActive = true;
         setThrottleLockout(true);
-        // Disable flight navigation for 1 second before navigating
-        state.flightLockoutUntil = performance.now() + 1000;
         updateStickPos(touch.clientX, touch.clientY);
         handleFlightActivity(); // Closes panels if open
         break;
@@ -2308,8 +2305,6 @@ if (touchStickZone) {
     mouseFlightStartX = e.clientX;
     mouseFlightStartY = e.clientY;
     mouseFlightStartTime = performance.now();
-    // Disable flight navigation for 1 second before navigating
-    state.flightLockoutUntil = performance.now() + 1000;
     updateStickPos(e.clientX, e.clientY);
     handleFlightActivity();
   });
@@ -2494,11 +2489,8 @@ function updateAimStickPos(clientX, clientY) {
 }
 
 // =============================================================================
-// CUSTOM CRUISE THROTTLE SLIDER & ALTITUDE CONTROLS
+// CUSTOM CRUISE THROTTLE SLIDER
 // =============================================================================
-const touchBtnUp = document.getElementById('touch-btn-up');
-const touchBtnDown = document.getElementById('touch-btn-down');
-
 function updateThrottleFromSlider(rawVal) {
   if (state.throttleLocked) return;
   const val = parseFloat(rawVal) || 0;
@@ -2542,47 +2534,6 @@ if (btnThrottleStop) {
   }, { passive: false });
 }
 
-// Dedicated Vertical Altitude Thruster Buttons (▲ UP / ▼ DN)
-if (touchBtnUp) {
-  const startUp = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    state.verticalThrust = 1.0;
-    handleFlightActivity();
-    if (!audioMgr.isInitialized) audioMgr.init();
-  };
-  const endUp = (e) => {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    state.verticalThrust = 0;
-  };
-  touchBtnUp.addEventListener('touchstart', startUp, { passive: false });
-  touchBtnUp.addEventListener('touchend', endUp);
-  touchBtnUp.addEventListener('touchcancel', endUp);
-  touchBtnUp.addEventListener('mousedown', startUp);
-  touchBtnUp.addEventListener('mouseup', endUp);
-  touchBtnUp.addEventListener('mouseleave', endUp);
-}
-
-if (touchBtnDown) {
-  const startDown = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    state.verticalThrust = -1.0;
-    handleFlightActivity();
-    if (!audioMgr.isInitialized) audioMgr.init();
-  };
-  const endDown = (e) => {
-    if (e) { e.preventDefault(); e.stopPropagation(); }
-    state.verticalThrust = 0;
-  };
-  touchBtnDown.addEventListener('touchstart', startDown, { passive: false });
-  touchBtnDown.addEventListener('touchend', endDown);
-  touchBtnDown.addEventListener('touchcancel', endDown);
-  touchBtnDown.addEventListener('mousedown', startDown);
-  touchBtnDown.addEventListener('mouseup', endDown);
-  touchBtnDown.addEventListener('mouseleave', endDown);
-}
-
 // 3. NEON RED LASER CANNON SYSTEM & CROSSHAIR RETICLE TRACKER
 const laserBolts = [];
 
@@ -2591,6 +2542,9 @@ function fireLaserBeam() {
   const now = performance.now();
   if (now - state.lastLaserShotTime < 110) return; // Shot rate throttling
   state.lastLaserShotTime = now;
+
+  // Lock out right-hand flight for 1 second when fire is triggered
+  state.flightLockoutUntil = now + 1000;
 
   // Automatically stop throttle & reset slider to center on laser fire
   stopThrottle('LASER FIRED: ENGINES ALL STOP (0%)');
@@ -3535,21 +3489,16 @@ function updateFlight(delta) {
   // Lock out throttle slider whenever right-hand flight joystick is active
   setThrottleLockout(state.touchActive);
 
-  // 1. Custom Cruise Throttle Slider (Slide right > 0 for forward cruise, slide left < 0 for reverse)
+  // 1. Custom Cruise Throttle Slider (Forward / Reverse speed cruise)
   if (Math.abs(state.throttleValue) > 0.005) {
     accel.addScaledVector(forward, state.throttleValue);
   }
 
-  // 2. Dedicated Vertical Altitude Thrusters (▲ UP / ▼ DN buttons)
-  if (state.verticalThrust !== 0) {
-    accel.addScaledVector(up, state.verticalThrust);
-  }
-
-  // 3. Right Joystick Flight Thrusters & 360-degree Yaw Steering
+  // 2. Right Joystick Flight: Up & Down Elevation + 360-degree Yaw Steering
   if (state.touchActive && !isFlightLockedOut) {
-    // Pushing stick up (-y): flies pure forward towards the wormhole (zero unwanted climb or nose pitch!)
-    // Pulling stick down (+y): reverse thrusters / slow down
-    accel.addScaledVector(forward, -state.touchMove.y);
+    // Pushing stick up (-y): flies ship UP (ascend / climb)
+    // Pulling stick down (+y): flies ship DOWN (descend / dive)
+    accel.addScaledVector(up, -state.touchMove.y);
 
     // Deflecting stick left/right: smooth 360-degree horizontal yaw steering
     if (Math.abs(state.touchMove.x) > 0.06) {

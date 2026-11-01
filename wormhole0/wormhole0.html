@@ -996,7 +996,7 @@
     }
 
     .virtual-stick-zone::after {
-      content: 'TAP: FIRE / FLIGHT';
+      content: 'TAP: FIRE / ↕UP-DN ↔TURN';
       position: absolute;
       bottom: -20px;
       top: auto;
@@ -1077,21 +1077,6 @@
       background: var(--cyan-neon);
       color: #000;
       transform: scale(0.95);
-    }
-
-    .touch-btn.touch-btn-alt {
-      font-size: 0.65rem;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      background: rgba(0, 36, 60, 0.9);
-      border-color: rgba(0, 240, 255, 0.65);
-      color: var(--cyan-neon);
-      box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
-    }
-    .touch-btn.touch-btn-alt:active {
-      background: var(--cyan-neon);
-      color: #01050a;
-      box-shadow: 0 0 16px var(--cyan-neon);
     }
 
     /* ==========================================================================
@@ -2508,15 +2493,13 @@
 
   <!-- Mobile Touch On-Screen Controls (Landscape) -->
   <div id="mobile-touch-controls">
-    <!-- Right Virtual Joystick Zone (Tap: Fire Laser / Hold: Flight Thruster) -->
-    <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Hold: Flight Thrusters">
+    <!-- Right Virtual Joystick Zone (Tap: Fire Laser / Move: Up, Down & 360° Turn) -->
+    <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Move: Up, Down & 360° Turn">
       <div class="virtual-stick-knob" id="touch-stick-knob">🔴</div>
     </div>
 
     <!-- Center Touch Action Cluster -->
     <div class="mobile-touch-actions">
-      <div class="touch-btn touch-btn-alt" id="touch-btn-up" title="Fly Up (Climb / Ascend)">▲ UP</div>
-      <div class="touch-btn touch-btn-alt" id="touch-btn-down" title="Fly Down (Dive / Descend)">▼ DN</div>
       <div class="touch-btn" id="touch-btn-scan" title="Scan Singularity">📡</div>
       <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
     </div>

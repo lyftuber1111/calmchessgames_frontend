@@ -75,7 +75,7 @@ const state = {
   },
   lastLaserShotTime: 0,
 
-  // Left Joystick Flight Lockout Timer (3s on touch, 1s resetting on fire tap)
+  // Right Joystick Flight Lockout Timer (1s on touch before navigating, 1s resetting on fire tap)
   flightLockoutUntil: 0,
 
   // Crosshair Aim speed multiplier (default 2.90)
@@ -2093,6 +2093,7 @@ function pollGamepad(delta) {
     if ((pad.buttons[5] && pad.buttons[5].pressed && !state.lastPadButtons[5]) ||
         (pad.buttons[1] && pad.buttons[1].pressed && !state.lastPadButtons[1])) {
       fireLaserBeam();
+      state.flightLockoutUntil = performance.now() + 1000;
       vibratePad(pad, 120);
     }
     if (pad.buttons[2] && pad.buttons[2].pressed && !state.lastPadButtons[2]) {
@@ -2155,6 +2156,7 @@ let mouseFlightStartX = 0;
 let mouseFlightStartY = 0;
 let mouseFlightStartTime = 0;
 let isMouseAim = false;
+let lastFireTapTime = 0;
 
 // 1. RIGHT THUMB JOYSTICK (TAP TO FIRE LASER / HOLD FOR FLIGHT NAVIGATION)
 if (touchStickZone) {
@@ -2172,8 +2174,8 @@ if (touchStickZone) {
         flightTouchStartY = touch.clientY;
         flightTapStartTime = performance.now();
         state.touchActive = true;
-        // Lock out joystick from activating as flight control for 3 seconds when touched
-        state.flightLockoutUntil = flightTapStartTime + 3000;
+        // Disable flight navigation for 1 second before navigating
+        state.flightLockoutUntil = performance.now() + 1000;
         updateStickPos(touch.clientX, touch.clientY);
         handleFlightActivity(); // Closes panels if open
         break;
@@ -2192,16 +2194,6 @@ if (touchStickZone) {
         if (touch.identifier === flightTouchId || touch.target === touchStickZone || touchStickZone.contains(touch.target)) {
           updateStickPos(touch.clientX, touch.clientY);
           handleFlightActivity();
-
-          // Active flight steering check: if user deflects stick > 0.25 and holds > 350ms,
-          // release initial touch lockout immediately so flight navigation engages!
-          const stickDeflection = Math.hypot(state.touchMove.x, state.touchMove.y);
-          const holdDuration = performance.now() - flightTapStartTime;
-          if (stickDeflection > 0.25 && holdDuration > 350) {
-            if (state.flightLockoutUntil > performance.now()) {
-              state.flightLockoutUntil = 0;
-            }
-          }
           break;
         }
       }
@@ -2239,8 +2231,9 @@ if (touchStickZone) {
       if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
 
       // Switched fire button to right hand joystick:
-      // If fire is being tapped, lockout flight control for 1 second resetting each time fire tapped
+      // Each time fire button is tapped, fire laser and reset the 1 second lockout timer
       if (wasTap) {
+        lastFireTapTime = performance.now();
         fireLaserBeam();
         state.flightLockoutUntil = performance.now() + 1000;
       }
@@ -2261,8 +2254,8 @@ if (touchStickZone) {
     mouseFlightStartX = e.clientX;
     mouseFlightStartY = e.clientY;
     mouseFlightStartTime = performance.now();
-    // Lock out for 3 seconds when touched
-    state.flightLockoutUntil = mouseFlightStartTime + 3000;
+    // Disable flight navigation for 1 second before navigating
+    state.flightLockoutUntil = performance.now() + 1000;
     updateStickPos(e.clientX, e.clientY);
     handleFlightActivity();
   });
@@ -2271,14 +2264,6 @@ if (touchStickZone) {
     if (isMouseFlight) {
       updateStickPos(e.clientX, e.clientY);
       handleFlightActivity();
-
-      const stickDeflection = Math.hypot(state.touchMove.x, state.touchMove.y);
-      const holdDuration = performance.now() - mouseFlightStartTime;
-      if (stickDeflection > 0.25 && holdDuration > 350) {
-        if (state.flightLockoutUntil > performance.now()) {
-          state.flightLockoutUntil = 0;
-        }
-      }
     }
   });
 
@@ -2293,6 +2278,7 @@ if (touchStickZone) {
       state.touchMove.y = 0;
       if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
       if (wasTap) {
+        lastFireTapTime = performance.now();
         fireLaserBeam();
         state.flightLockoutUntil = performance.now() + 1000;
       }
@@ -2303,6 +2289,8 @@ if (touchStickZone) {
   touchStickZone.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (performance.now() - lastFireTapTime < 250) return;
+    lastFireTapTime = performance.now();
     handleFlightActivity();
     fireLaserBeam();
     state.flightLockoutUntil = performance.now() + 1000;
@@ -2624,6 +2612,7 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.code === 'KeyX') {
     fireLaserBeam();
+    state.flightLockoutUntil = performance.now() + 1000;
   }
   if (e.code === 'KeyZ' || e.code === 'KeyN') {
     alignToWormhole();
@@ -3133,19 +3122,7 @@ function updateFlight(delta) {
   if (keys['KeyQ']) state.yaw += 0.02;
   if (keys['KeyE']) state.yaw -= 0.02;
 
-  // Active flight steering check: if user deflects stick > 0.25 and holds > 350ms,
-  // release initial touch lockout immediately so flight navigation engages!
-  if (state.touchActive) {
-    const stickDeflection = Math.hypot(state.touchMove.x, state.touchMove.y);
-    const holdDuration = performance.now() - (isMouseFlight ? mouseFlightStartTime : flightTapStartTime);
-    if (stickDeflection > 0.25 && holdDuration > 350) {
-      if (state.flightLockoutUntil > performance.now()) {
-        state.flightLockoutUntil = 0;
-      }
-    }
-  }
-
-  // Right joystick flight control lockout check (3s on initial touch, 1s resetting on fire tap)
+  // Right joystick flight control lockout check (disabled for 1s after tapping fire or before navigating)
   const isFlightLockedOut = performance.now() < state.flightLockoutUntil;
   if (touchStickZone) {
     if (isFlightLockedOut && state.touchActive) {

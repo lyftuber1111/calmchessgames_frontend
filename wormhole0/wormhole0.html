@@ -809,10 +809,12 @@
     .crosshair-circle {
       width: 20px;
       height: 20px;
+      background: var(--cyan-neon);
+      background-color: #00f0ff;
       border: 2px solid var(--cyan-neon);
       border-radius: 50%;
-      box-shadow: 0 0 10px var(--cyan-neon), inset 0 0 6px rgba(0, 240, 255, 0.4);
-      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+      box-shadow: 0 0 12px var(--cyan-neon), 0 0 22px var(--cyan-neon);
+      transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
     }
 
     /* Laser Firing Reticle Pulse */
@@ -828,8 +830,10 @@
 
     .center-crosshair.laser-firing .crosshair-circle {
       border-color: #ff0044 !important;
+      background: #ff0044 !important;
+      background-color: #ff0044 !important;
       border-style: solid !important;
-      box-shadow: 0 0 16px #ff0044, inset 0 0 10px rgba(255, 0, 68, 0.6) !important;
+      box-shadow: 0 0 16px #ff0044, 0 0 24px rgba(255, 0, 68, 0.8) !important;
       transform: scale(1.2);
     }
 
@@ -924,7 +928,7 @@
     }
 
     .aim-stick-zone::after {
-      content: 'AIM RETICLE';
+      content: 'CROSSHAIR AIM (NO FLIGHT)';
       position: absolute;
       top: -20px;
       bottom: auto;
@@ -1964,7 +1968,8 @@
         </div>
         <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">Stick (Top: Fwd+Down)</span></div>
         <div class="key-row"><span>Strafe Left / Right:</span> <span class="kbd">A / D</span> or <span class="kbd">L-Stick X</span></div>
-        <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse</span> or <span class="kbd">Right Stick</span></div>
+        <div class="key-row"><span>Crosshair Aim:</span> <span class="kbd">Crosshair Stick (No Flight)</span></div>
+        <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse / D-Pad</span></div>
         <div class="key-row"><span>Elevate / Dive:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">R2 / L2</span></div>
         <div class="key-row"><span>Fire Laser Cannon:</span> <span class="kbd">L-Stick Tap / X</span></div>
         <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">A / X Button</span></div>

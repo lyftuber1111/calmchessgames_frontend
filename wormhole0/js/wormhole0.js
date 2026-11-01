@@ -2272,10 +2272,12 @@ function updateStickPos(clientX, clientY) {
   }
 }
 
-// 2. RIGHT THUMB AIM JOYSTICK (RAPIDLY MOVES CROSSHAIR RETICLE)
+// 2. RIGHT THUMB AIM JOYSTICK (RAPIDLY MOVES CROSSHAIR RETICLE - NO FLIGHT CONTROL)
+let isMouseAim = false;
 if (aimStickZone) {
   aimStickZone.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     const rect = aimStickZone.getBoundingClientRect();
     aimStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 
@@ -2333,10 +2335,11 @@ if (aimStickZone) {
   window.addEventListener('touchend', endAimTouch);
   window.addEventListener('touchcancel', endAimTouch);
 
-  // Mouse interaction for Aim stick (desktop testing and dragging aim)
-  let isMouseAim = false;
+  // Mouse interaction for Aim stick (desktop testing and dragging crosshair aim - NO flight control)
   aimStickZone.addEventListener('mousedown', (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    state.isMouseDown = false;
     const rect = aimStickZone.getBoundingClientRect();
     aimStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     isMouseAim = true;
@@ -2347,6 +2350,7 @@ if (aimStickZone) {
 
   window.addEventListener('mousemove', (e) => {
     if (isMouseAim) {
+      state.isMouseDown = false;
       updateAimStickPos(e.clientX, e.clientY);
       handleFlightActivity(); // Closes all panels if open!
     }
@@ -2364,6 +2368,7 @@ if (aimStickZone) {
 
   aimStickZone.addEventListener('click', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     handleFlightActivity();
   });
 }
@@ -2676,7 +2681,7 @@ window.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 window.addEventListener('touchmove', (e) => {
-  if (touchLookId === null) return;
+  if (touchLookId === null || touchLookId === aimTouchId) return;
   const touchList = (e.touches && e.touches.length > 0) ? e.touches : e.changedTouches;
   if (!touchList) return;
   for (let i = 0; i < touchList.length; i++) {
@@ -2722,7 +2727,7 @@ window.addEventListener('mousemove', (e) => {
     state.yaw = lastGyroYaw + touchLookYaw;
     state.pitch = lastGyroPitch + touchLookPitch;
     state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
-  } else if (state.isMouseDown) {
+  } else if (state.isMouseDown && !isMouseAim) {
     const deltaX = e.clientX - state.lastMouseX;
     const deltaY = e.clientY - state.lastMouseY;
     state.lastMouseX = e.clientX;

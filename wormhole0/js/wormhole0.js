@@ -2156,7 +2156,7 @@ let mouseFlightStartY = 0;
 let mouseFlightStartTime = 0;
 let isMouseAim = false;
 
-// 1. RIGHT THUMB JOYSTICK: FLIGHT NAVIGATION
+// 1. RIGHT THUMB JOYSTICK (TAP TO FIRE LASER / HOLD FOR FLIGHT NAVIGATION)
 if (touchStickZone) {
   touchStickZone.addEventListener('touchstart', (e) => {
     e.preventDefault();
@@ -2172,9 +2172,10 @@ if (touchStickZone) {
         flightTouchStartY = touch.clientY;
         flightTapStartTime = performance.now();
         state.touchActive = true;
-        state.flightLockoutUntil = 0;
+        // Lock out joystick from activating as flight control for 3 seconds when touched
+        state.flightLockoutUntil = flightTapStartTime + 3000;
         updateStickPos(touch.clientX, touch.clientY);
-        handleFlightActivity(); // Closes panels if auto-close is enabled
+        handleFlightActivity(); // Closes panels if open
         break;
       }
     }
@@ -2191,6 +2192,16 @@ if (touchStickZone) {
         if (touch.identifier === flightTouchId || touch.target === touchStickZone || touchStickZone.contains(touch.target)) {
           updateStickPos(touch.clientX, touch.clientY);
           handleFlightActivity();
+
+          // Active flight steering check: if user deflects stick > 0.25 and holds > 350ms,
+          // release initial touch lockout immediately so flight navigation engages!
+          const stickDeflection = Math.hypot(state.touchMove.x, state.touchMove.y);
+          const holdDuration = performance.now() - flightTapStartTime;
+          if (stickDeflection > 0.25 && holdDuration > 350) {
+            if (state.flightLockoutUntil > performance.now()) {
+              state.flightLockoutUntil = 0;
+            }
+          }
           break;
         }
       }
@@ -2200,10 +2211,15 @@ if (touchStickZone) {
   const endFlightTouch = (e) => {
     if (!state.touchActive) return;
     let ended = false;
+    let endClientX = flightTouchStartX;
+    let endClientY = flightTouchStartY;
+
     if (e.changedTouches) {
       for (let i = 0; i < e.changedTouches.length; i++) {
         if (e.changedTouches[i].identifier === flightTouchId || (e.touches && e.touches.length === 0)) {
           ended = true;
+          endClientX = e.changedTouches[i].clientX;
+          endClientY = e.changedTouches[i].clientY;
           break;
         }
       }
@@ -2212,18 +2228,29 @@ if (touchStickZone) {
     }
 
     if (ended) {
+      const duration = performance.now() - flightTapStartTime;
+      const dragDelta = Math.hypot(endClientX - flightTouchStartX, endClientY - flightTouchStartY);
+      const wasTap = (duration < 550 && dragDelta < 35);
+
       state.touchActive = false;
       flightTouchId = null;
       state.touchMove.x = 0;
       state.touchMove.y = 0;
       if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
+
+      // Switched fire button to right hand joystick:
+      // If fire is being tapped, lockout flight control for 1 second resetting each time fire tapped
+      if (wasTap) {
+        fireLaserBeam();
+        state.flightLockoutUntil = performance.now() + 1000;
+      }
     }
   };
 
   window.addEventListener('touchend', endFlightTouch);
   window.addEventListener('touchcancel', endFlightTouch);
 
-  // Mouse interaction for desktop testing
+  // Mouse interaction for right joystick
   touchStickZone.addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2231,10 +2258,11 @@ if (touchStickZone) {
     stickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     isMouseFlight = true;
     state.touchActive = true;
-    state.flightLockoutUntil = 0;
     mouseFlightStartX = e.clientX;
     mouseFlightStartY = e.clientY;
     mouseFlightStartTime = performance.now();
+    // Lock out for 3 seconds when touched
+    state.flightLockoutUntil = mouseFlightStartTime + 3000;
     updateStickPos(e.clientX, e.clientY);
     handleFlightActivity();
   });
@@ -2243,17 +2271,41 @@ if (touchStickZone) {
     if (isMouseFlight) {
       updateStickPos(e.clientX, e.clientY);
       handleFlightActivity();
+
+      const stickDeflection = Math.hypot(state.touchMove.x, state.touchMove.y);
+      const holdDuration = performance.now() - mouseFlightStartTime;
+      if (stickDeflection > 0.25 && holdDuration > 350) {
+        if (state.flightLockoutUntil > performance.now()) {
+          state.flightLockoutUntil = 0;
+        }
+      }
     }
   });
 
-  window.addEventListener('mouseup', () => {
+  window.addEventListener('mouseup', (e) => {
     if (isMouseFlight) {
+      const duration = performance.now() - mouseFlightStartTime;
+      const dragDelta = Math.hypot(e.clientX - mouseFlightStartX, e.clientY - mouseFlightStartY);
+      const wasTap = (duration < 550 && dragDelta < 30);
       isMouseFlight = false;
       state.touchActive = false;
       state.touchMove.x = 0;
       state.touchMove.y = 0;
       if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
+      if (wasTap) {
+        fireLaserBeam();
+        state.flightLockoutUntil = performance.now() + 1000;
+      }
     }
+  });
+
+  // Direct click / tap backup on right stick to fire laser and lockout for 1s
+  touchStickZone.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleFlightActivity();
+    fireLaserBeam();
+    state.flightLockoutUntil = performance.now() + 1000;
   });
 }
 
@@ -3081,8 +3133,29 @@ function updateFlight(delta) {
   if (keys['KeyQ']) state.yaw += 0.02;
   if (keys['KeyE']) state.yaw -= 0.02;
 
-  // Right virtual joystick: dedicated flight navigation control
+  // Active flight steering check: if user deflects stick > 0.25 and holds > 350ms,
+  // release initial touch lockout immediately so flight navigation engages!
   if (state.touchActive) {
+    const stickDeflection = Math.hypot(state.touchMove.x, state.touchMove.y);
+    const holdDuration = performance.now() - (isMouseFlight ? mouseFlightStartTime : flightTapStartTime);
+    if (stickDeflection > 0.25 && holdDuration > 350) {
+      if (state.flightLockoutUntil > performance.now()) {
+        state.flightLockoutUntil = 0;
+      }
+    }
+  }
+
+  // Right joystick flight control lockout check (3s on initial touch, 1s resetting on fire tap)
+  const isFlightLockedOut = performance.now() < state.flightLockoutUntil;
+  if (touchStickZone) {
+    if (isFlightLockedOut && state.touchActive) {
+      touchStickZone.classList.add('flight-locked');
+    } else {
+      touchStickZone.classList.remove('flight-locked');
+    }
+  }
+
+  if (state.touchActive && !isFlightLockedOut) {
     // 1. Forward / Reverse thrusters:
     // Pushing stick up (-y): thrust forward towards the wormhole
     // Pulling stick down (+y): reverse thrusters / slow down

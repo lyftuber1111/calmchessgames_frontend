@@ -952,7 +952,7 @@
       pointer-events: none;
     }
 
-    /* Upper-Right: Flight Navigation Joystick (Standard Layout) */
+    /* Upper-Right: Fire / Flight Navigation Joystick (Standard Layout) */
     #touch-stick-zone {
       top: calc(clamp(30px, 6vh, 50px) + env(safe-area-inset-top, 0px));
       right: calc(clamp(24px, 5vw, 48px) + env(safe-area-inset-right, 0px));
@@ -960,8 +960,8 @@
       bottom: auto;
     }
 
-    #touch-stick-zone::after {
-      content: 'FLIGHT NAVIGATION';
+    .virtual-stick-zone::after {
+      content: 'TAP: FIRE / FLIGHT';
       position: absolute;
       bottom: -20px;
       top: auto;
@@ -972,6 +972,12 @@
       white-space: nowrap;
       text-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
       pointer-events: none;
+    }
+
+    .virtual-stick-zone.flight-locked::after {
+      content: 'FIRE (FLIGHT LOCK)';
+      color: #ffaa00;
+      text-shadow: 0 0 8px rgba(255, 170, 0, 0.8);
     }
 
     .virtual-stick-knob {
@@ -2228,8 +2234,8 @@
 
   <!-- Mobile Touch On-Screen Controls (Landscape) -->
   <div id="mobile-touch-controls">
-    <!-- Right Virtual Joystick Zone (Flight Navigation Only) -->
-    <div class="virtual-stick-zone" id="touch-stick-zone" title="Flight Navigation Joystick (Steering & Thrusters)">
+    <!-- Right Virtual Joystick Zone (Tap: Fire Laser / Hold: Flight Thruster) -->
+    <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Hold: Flight Thrusters">
       <div class="virtual-stick-knob" id="touch-stick-knob">🔴</div>
     </div>
 

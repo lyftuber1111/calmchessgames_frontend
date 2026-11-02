@@ -311,7 +311,9 @@
       } else if (targetTab === 'messages') {
           fetchAppointments();
       } else if (targetTab === 'game_manager') {
+          fetchGameStages();
           fetchGameWeapons();
+          fetchGameEnemies();
           fetchWormholeDevices();
       }
 
@@ -3491,6 +3493,708 @@ Thank you for reaching out to Calm Chess Games. `;
   }
 
   // =========================================================================
+  // =========================================================================
+  // GAME MANAGER SUB-TABS NAVIGATION & STAGES PROGRESSION
+  // =========================================================================
+  let activeGameManagerSubTab = 'stages';
+  let cachedGameStages = [];
+  let cachedGameEnemies = [];
+
+  function switchGameManagerSubTab(subTab) {
+      activeGameManagerSubTab = subTab;
+      const btnStages = document.getElementById('gmSubTabBtnStages');
+      const btnWeapons = document.getElementById('gmSubTabBtnWeapons');
+      const btnEnemies = document.getElementById('gmSubTabBtnEnemies');
+
+      const panelStages = document.getElementById('gmSubTabPanelStages');
+      const panelWeapons = document.getElementById('gmSubTabPanelWeapons');
+      const panelEnemies = document.getElementById('gmSubTabPanelEnemies');
+
+      if (btnStages) btnStages.classList.toggle('active', subTab === 'stages');
+      if (btnWeapons) btnWeapons.classList.toggle('active', subTab === 'weapons');
+      if (btnEnemies) btnEnemies.classList.toggle('active', subTab === 'enemies');
+
+      if (panelStages) panelStages.style.display = (subTab === 'stages') ? 'block' : 'none';
+      if (panelWeapons) panelWeapons.style.display = (subTab === 'weapons') ? 'block' : 'none';
+      if (panelEnemies) panelEnemies.style.display = (subTab === 'enemies') ? 'block' : 'none';
+
+      if (subTab === 'stages') {
+          fetchGameStages();
+      } else if (subTab === 'weapons') {
+          fetchGameWeapons();
+      } else if (subTab === 'enemies') {
+          fetchGameEnemies();
+      }
+  }
+
+  // =========================================================================
+  // SUB-TAB 1: WORMHOLE GAME STAGES & LEVEL PROGRESSION
+  // =========================================================================
+  async function fetchGameStages() {
+      const tbody = document.getElementById('adminGameStagesBody');
+      if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">Querying stages and level progression...</td></tr>';
+      }
+
+      try {
+          const res = await callAdminWormholeApi('get_game_stages', 'GET');
+          cachedGameStages = (res && res.stages) ? res.stages : [];
+
+          // If empty, use sensible defaults
+          if (!cachedGameStages || cachedGameStages.length === 0) {
+              cachedGameStages = [
+                  { id: 1, stage_level: 1, stage_name: 'Warp Origin', environment_theme: 'Warp Cyan Corridor', events_within_level: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert', end_level_event: 'Warp Horizon Jump Gate Initialized', description: 'Initial entry vector into unstable hyperspace corridor.', par_score: 5000, is_enabled: 1 },
+                  { id: 2, stage_level: 2, stage_name: 'Event Horizon', environment_theme: 'Event Horizon Amber', events_within_level: 'Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert', end_level_event: 'Singularity Perimeter Breach', description: 'High-velocity relativistic light-horizon boundary with intense magnetic shear.', par_score: 12000, is_enabled: 1 },
+                  { id: 3, stage_level: 3, stage_name: 'Singularity Core', environment_theme: 'Singularity Void Violet', events_within_level: 'Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening', end_level_event: 'Core Collapse Breakthrough', description: 'Extreme gravitational distortion sector surrounding the black hole collapse boundary.', par_score: 25000, is_enabled: 1 },
+                  { id: 4, stage_level: 4, stage_name: 'Quantum Realm', environment_theme: 'Quantum Phasor Magenta', events_within_level: 'Phase-Shift Anomalies, Multi-Dimensional Phasing, Antimatter Vortex, Quantum Dreadnought Confrontation', end_level_event: 'Quantum Conduit Realignment & Safe Extraction', description: 'Deepest reaches beyond physical spacetime.', par_score: 50000, is_enabled: 1 }
+              ];
+          }
+
+          // Update stage metrics
+          const metricTotalStages = document.getElementById('metricTotalStages');
+          if (metricTotalStages) metricTotalStages.textContent = cachedGameStages.length;
+
+          const badgeStages = document.getElementById('badgeStageCount');
+          if (badgeStages) badgeStages.textContent = cachedGameStages.length;
+
+          let totalEvents = 0;
+          cachedGameStages.forEach(s => {
+              if (s.events_within_level) {
+                  const evs = s.events_within_level.split(',').filter(e => e.trim().length > 0);
+                  totalEvents += evs.length;
+              }
+          });
+          const metricEvents = document.getElementById('metricTotalStageEvents');
+          if (metricEvents) metricEvents.textContent = totalEvents;
+
+          const metricEndTriggers = document.getElementById('metricEndLevelTriggers');
+          if (metricEndTriggers) metricEndTriggers.textContent = cachedGameStages.filter(s => !!s.end_level_event).length;
+
+          const metricActive = document.getElementById('metricActiveStagesCount');
+          if (metricActive) metricActive.textContent = cachedGameStages.filter(s => parseInt(s.is_enabled) === 1).length;
+
+          renderGameStages(cachedGameStages);
+      } catch (err) {
+          console.error('[Admin] Game stages fetch error:', err);
+          if (tbody) {
+              tbody.innerHTML = `<tr><td colspan="8" style="padding: 16px; text-align: center; color: #ef476f;">Error loading stages: ${escapeHtml(err.message)}</td></tr>`;
+          }
+      }
+  }
+
+  function renderGameStages(stages) {
+      const tbody = document.getElementById('adminGameStagesBody');
+      if (!tbody) return;
+
+      if (!stages || stages.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="padding: 16px; text-align: center; color: var(--text-muted);">No stages found. Click "+ Add Stage" or "🌱 Reset Default Stages" to initialize.</td></tr>';
+          return;
+      }
+
+      tbody.innerHTML = stages.map(s => {
+          const isActive = parseInt(s.is_enabled) === 1;
+          const stageNum = parseInt(s.stage_level || 1);
+          const stageName = escapeHtml(s.stage_name || `Stage ${stageNum}`);
+          const theme = escapeHtml(s.environment_theme || 'Warp Cyan Corridor');
+          const endEvent = escapeHtml(s.end_level_event || 'Level Complete Trigger');
+          const parScore = s.par_score ? parseInt(s.par_score).toLocaleString() : '5,000';
+
+          // Split events into stylish pills
+          const eventsList = (s.events_within_level || '')
+              .split(',')
+              .map(e => e.trim())
+              .filter(e => e.length > 0);
+
+          const eventsHtml = eventsList.length > 0
+              ? eventsList.map(e => `<span class="event-tag-pill" title="In-Level Event">${escapeHtml(e)}</span>`).join('')
+              : '<span style="color:var(--text-muted);font-size:0.78rem;">No events configured</span>';
+
+          const statusBtn = isActive
+              ? `<span style="padding:3px 8px;border-radius:4px;background:rgba(16,185,129,0.2);border:1px solid #10b981;color:#10b981;font-size:0.75rem;font-weight:bold;">✓ Active</span>`
+              : `<span style="padding:3px 8px;border-radius:4px;background:rgba(239,68,111,0.2);border:1px solid #ef476f;color:#ef476f;font-size:0.75rem;">Inactive</span>`;
+
+          return `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.15s ease;">
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <span class="admin-tab-btn" style="padding: 3px 10px; font-size: 0.82rem; background: rgba(0,240,255,0.15); border-color: #00f0ff; color: #00f0ff; font-weight: bold;">Stage ${stageNum}</span>
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <div style="font-weight: bold; color: #fff; font-size: 0.95rem; display: flex; align-items: center; gap: 6px;">
+                          <span>${stageName}</span>
+                          <button onclick="openEditGameStageModal(${s.id})" title="Edit stage name and configuration" style="background:none;border:none;color:#00f0ff;cursor:pointer;font-size:0.8rem;padding:0;">✏️</button>
+                      </div>
+                      ${s.description ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">${escapeHtml(s.description)}</div>` : ''}
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <span style="font-size: 0.8rem; color: #a7f3d0; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); padding: 3px 8px; border-radius: 6px;">${theme}</span>
+                  </td>
+                  <td style="padding: 10px 12px; max-width: 380px;">
+                      <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                          ${eventsHtml}
+                      </div>
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <div class="end-event-pill" title="Event that ends this level">
+                          <span>🏁</span>
+                          <span>${endEvent}</span>
+                      </div>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <span style="color: #f59e0b; font-weight: bold; font-family: monospace; font-size: 0.88rem;">${parScore}</span>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      ${statusBtn}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <div style="display: flex; gap: 6px; justify-content: center;">
+                          <button onclick="openEditGameStageModal(${s.id})" class="admin-tab-btn" style="padding: 4px 10px; font-size: 0.78rem; background: rgba(0,240,255,0.15); border-color: #00f0ff; color: #00f0ff; cursor: pointer;">✏️ Edit</button>
+                          <button onclick="deleteGameStage(${s.id}, '${stageName}')" class="admin-tab-btn" style="padding: 4px 8px; font-size: 0.78rem; background: rgba(239,68,111,0.15); border-color: #ef476f; color: #ef476f; cursor: pointer;" title="Delete stage">🗑️</button>
+                      </div>
+                  </td>
+              </tr>
+          `;
+      }).join('');
+  }
+
+  function filterGameStages() {
+      const q = (document.getElementById('gameStageSearchInput')?.value || '').toLowerCase().trim();
+      const filtered = cachedGameStages.filter(s => {
+          if (!q) return true;
+          return (s.stage_name && s.stage_name.toLowerCase().includes(q)) ||
+                 (s.events_within_level && s.events_within_level.toLowerCase().includes(q)) ||
+                 (s.end_level_event && s.end_level_event.toLowerCase().includes(q)) ||
+                 (s.environment_theme && s.environment_theme.toLowerCase().includes(q)) ||
+                 (s.description && s.description.toLowerCase().includes(q));
+      });
+      renderGameStages(filtered);
+  }
+
+  function openAddGameStageModal() {
+      const title = document.getElementById('stageModalTitle');
+      if (title) title.innerHTML = '<span>🗺️ Add Stage & Level Events</span>';
+
+      document.getElementById('stageRecordId').value = '0';
+      const nextLevel = cachedGameStages.length > 0 ? Math.max(...cachedGameStages.map(s => parseInt(s.stage_level || 0))) + 1 : 1;
+      document.getElementById('stageLevelNumber').value = nextLevel;
+      document.getElementById('stageNameInput').value = '';
+      document.getElementById('stageThemeInput').value = 'Warp Cyan Corridor';
+      document.getElementById('stageParScoreInput').value = '5000';
+      document.getElementById('stageEventsWithinInput').value = '';
+      document.getElementById('stageEndLevelEventInput').value = '';
+      document.getElementById('stageDescriptionInput').value = '';
+      document.getElementById('stageIsEnabledInput').checked = true;
+
+      const modal = document.getElementById('editGameStageModal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function openEditGameStageModal(id) {
+      const stage = cachedGameStages.find(s => parseInt(s.id) === parseInt(id));
+      if (!stage) {
+          alert('Stage not found in cache');
+          return;
+      }
+
+      const title = document.getElementById('stageModalTitle');
+      if (title) title.innerHTML = `<span>🗺️ Edit Stage ${stage.stage_level}: ${escapeHtml(stage.stage_name)}</span>`;
+
+      document.getElementById('stageRecordId').value = stage.id;
+      document.getElementById('stageLevelNumber').value = stage.stage_level || 1;
+      document.getElementById('stageNameInput').value = stage.stage_name || '';
+      document.getElementById('stageThemeInput').value = stage.environment_theme || 'Warp Cyan Corridor';
+      document.getElementById('stageParScoreInput').value = stage.par_score || 5000;
+      document.getElementById('stageEventsWithinInput').value = stage.events_within_level || '';
+      document.getElementById('stageEndLevelEventInput').value = stage.end_level_event || '';
+      document.getElementById('stageDescriptionInput').value = stage.description || '';
+      document.getElementById('stageIsEnabledInput').checked = parseInt(stage.is_enabled) === 1;
+
+      const modal = document.getElementById('editGameStageModal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function closeEditGameStageModal() {
+      const modal = document.getElementById('editGameStageModal');
+      if (modal) modal.style.display = 'none';
+  }
+
+  async function saveGameStage() {
+      const id = parseInt(document.getElementById('stageRecordId').value || 0);
+      const stageLevel = parseInt(document.getElementById('stageLevelNumber').value || 1);
+      const stageName = (document.getElementById('stageNameInput').value || '').trim();
+      const theme = (document.getElementById('stageThemeInput').value || '').trim();
+      const parScore = parseInt(document.getElementById('stageParScoreInput').value || 5000);
+      const eventsWithin = (document.getElementById('stageEventsWithinInput').value || '').trim();
+      const endEvent = (document.getElementById('stageEndLevelEventInput').value || '').trim();
+      const desc = (document.getElementById('stageDescriptionInput').value || '').trim();
+      const isEnabled = document.getElementById('stageIsEnabledInput').checked ? 1 : 0;
+
+      if (!stageName) {
+          alert('Stage / Level Name is required!');
+          return;
+      }
+      if (!eventsWithin) {
+          alert('Please enter at least one event that occurs within this level.');
+          return;
+      }
+      if (!endEvent) {
+          alert('Please enter the event that ends the level.');
+          return;
+      }
+
+      const payload = {
+          id: id,
+          stage_level: stageLevel,
+          stage_name: stageName,
+          environment_theme: theme,
+          events_within_level: eventsWithin,
+          end_level_event: endEvent,
+          description: desc,
+          par_score: parScore,
+          is_enabled: isEnabled
+      };
+
+      try {
+          const res = await callAdminWormholeApi('save_game_stage', 'POST', payload);
+          alert(res.message || 'Stage saved successfully!');
+          closeEditGameStageModal();
+          fetchGameStages();
+      } catch (err) {
+          console.error('[Admin] Save stage error:', err);
+          alert('Failed to save stage: ' + err.message);
+      }
+  }
+
+  async function deleteGameStage(id, name) {
+      if (!confirm(`Are you sure you want to delete Stage '${name}'?`)) {
+          return;
+      }
+
+      try {
+          const res = await callAdminWormholeApi('delete_game_stage', 'POST', { id: id });
+          alert(res.message || 'Stage deleted successfully');
+          fetchGameStages();
+      } catch (err) {
+          console.error('[Admin] Delete stage error:', err);
+          alert('Failed to delete stage: ' + err.message);
+      }
+  }
+
+  async function seedDefaultGameStages() {
+      if (!confirm('Re-seed / Reset default stages (Warp Origin, Event Horizon, Singularity Core, Quantum Realm)?')) {
+          return;
+      }
+
+      try {
+          const res = await callAdminWormholeApi('seed_game_stages', 'POST', {});
+          alert(res.message || 'Default stages initialized successfully!');
+          fetchGameStages();
+      } catch (err) {
+          console.error('[Admin] Seed stages error:', err);
+          alert('Failed to seed default stages: ' + err.message);
+      }
+  }
+
+  // =========================================================================
+  // SUB-TAB 3: WORMHOLE GAME ENEMIES & THREAT REGISTRY
+  // =========================================================================
+  async function fetchGameEnemies() {
+      const tbody = document.getElementById('adminGameEnemiesBody');
+      if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted);">Querying enemies threat registry...</td></tr>';
+      }
+
+      try {
+          const res = await callAdminWormholeApi('get_game_enemies', 'GET');
+          cachedGameEnemies = (res && res.enemies) ? res.enemies : [];
+
+          // Sensible default fallback if DB table not yet populated
+          if (!cachedGameEnemies || cachedGameEnemies.length === 0) {
+              cachedGameEnemies = [
+                  { id: 1, enemy_id: 'void_recon_drone', enemy_name: 'Void Recon Drone', enemy_class: 'Scout Drone', icon: '🛸', color_hex: '#00f0ff', stage_level: 1, hits_to_destroy: 2, piercing_weapon_id: 'any', armor_strength: 10, has_force_field: 0, shield_capacity_hits: 0, movement_speed: 320, attack_damage: 5, fire_rate_seconds: 2.5, score_value: 100, threat_level: 'Low', description: 'Light autonomous scout probe sent to map entry corridor geometry.', is_enabled: 1 },
+                  { id: 2, enemy_id: 'phase_interceptor', enemy_name: 'Phase Interceptor', enemy_class: 'Fast Interceptor', icon: '🚀', color_hex: '#38bdf8', stage_level: 1, hits_to_destroy: 4, piercing_weapon_id: 'red_laser', armor_strength: 25, has_force_field: 1, shield_capacity_hits: 2, movement_speed: 420, attack_damage: 10, fire_rate_seconds: 1.8, score_value: 250, threat_level: 'Medium', description: 'High-agility skirmisher equipped with a polarized light shield. Pierced by Neon Red Laser.', is_enabled: 1 },
+                  { id: 3, enemy_id: 'tachyon_cruiser', enemy_name: 'Horizon Tachyon Cruiser', enemy_class: 'Heavy Cruiser', icon: '🛰️', color_hex: '#ffd166', stage_level: 2, hits_to_destroy: 8, piercing_weapon_id: 'tachyon_lance', armor_strength: 50, has_force_field: 1, shield_capacity_hits: 4, movement_speed: 200, attack_damage: 20, fire_rate_seconds: 3.0, score_value: 500, threat_level: 'High', description: 'Reinforced hull traversing relativistic space. Shields pierced by Tachyon Lance.', is_enabled: 1 },
+                  { id: 4, enemy_id: 'void_guardian', enemy_name: 'Singularity Void Guardian', enemy_class: 'Guardian Frigate', icon: '👾', color_hex: '#a855f7', stage_level: 3, hits_to_destroy: 15, piercing_weapon_id: 'plasma_torpedo', armor_strength: 70, has_force_field: 1, shield_capacity_hits: 6, movement_speed: 150, attack_damage: 35, fire_rate_seconds: 2.2, score_value: 1000, threat_level: 'High', description: 'Ancient automaton defending singularity core. Dense armor broken by Quantum Plasma Torpedoes.', is_enabled: 1 },
+                  { id: 5, enemy_id: 'quantum_dreadnought', enemy_name: 'Quantum Omega Dreadnought', enemy_class: 'Boss Dreadnought', icon: '💀', color_hex: '#ef476f', stage_level: 4, hits_to_destroy: 35, piercing_weapon_id: 'quantum_phaser', armor_strength: 90, has_force_field: 1, shield_capacity_hits: 15, movement_speed: 90, attack_damage: 60, fire_rate_seconds: 1.2, score_value: 5000, threat_level: 'Extreme', description: 'Colossal multi-phase flagship commanding deep realm forces. Impervious nanite armor.', is_enabled: 1 }
+              ];
+          }
+
+          // Update metrics
+          const metricTotal = document.getElementById('metricTotalEnemies');
+          if (metricTotal) metricTotal.textContent = cachedGameEnemies.length;
+
+          const badgeEnemies = document.getElementById('badgeEnemyCount');
+          if (badgeEnemies) badgeEnemies.textContent = cachedGameEnemies.length;
+
+          const forceFieldCount = cachedGameEnemies.filter(e => parseInt(e.has_force_field) === 1).length;
+          const metricShield = document.getElementById('metricForceFieldEnemies');
+          if (metricShield) metricShield.textContent = forceFieldCount;
+
+          const heavyArmorCount = cachedGameEnemies.filter(e => parseInt(e.armor_strength || 0) >= 50).length;
+          const metricHeavy = document.getElementById('metricHeavyArmorEnemies');
+          if (metricHeavy) metricHeavy.textContent = heavyArmorCount;
+
+          const bossCount = cachedGameEnemies.filter(e => (e.threat_level || '').toLowerCase().includes('extreme') || (e.threat_level || '').toLowerCase().includes('boss')).length;
+          const metricBoss = document.getElementById('metricBossThreats');
+          if (metricBoss) metricBoss.textContent = bossCount;
+
+          populateEnemyPiercingWeaponDropdown();
+          renderGameEnemies(cachedGameEnemies);
+      } catch (err) {
+          console.error('[Admin] Game enemies fetch error:', err);
+          if (tbody) {
+              tbody.innerHTML = `<tr><td colspan="10" style="padding: 16px; text-align: center; color: #ef476f;">Error loading enemies: ${escapeHtml(err.message)}</td></tr>`;
+          }
+      }
+  }
+
+  function getWeaponDisplayName(weaponId) {
+      if (!weaponId || weaponId === 'any') return '✨ Any Weapon';
+      if (cachedGameWeapons && cachedGameWeapons.length > 0) {
+          const match = cachedGameWeapons.find(w => w.weapon_id === weaponId);
+          if (match) return `${match.icon || '⚡'} ${match.weapon_name}`;
+      }
+      const known = {
+          'red_laser': '🔴 Neon Red Laser',
+          'blue_laser': '🔵 Cobalt Blue Laser',
+          'tachyon_lance': '⚡ Tachyon Lance',
+          'plasma_torpedo': '💣 Quantum Plasma Torpedo',
+          'quantum_phaser': '✨ Quantum Phaser Cannon'
+      };
+      return known[weaponId] || `🔫 ${weaponId}`;
+  }
+
+  function renderGameEnemies(enemies) {
+      const tbody = document.getElementById('adminGameEnemiesBody');
+      if (!tbody) return;
+
+      if (!enemies || enemies.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted);">No enemies registered. Click "+ Add Enemy" or "🌱 Reset Default Enemies" to initialize.</td></tr>';
+          return;
+      }
+
+      tbody.innerHTML = enemies.map(e => {
+          const icon = escapeHtml(e.icon || '🛸');
+          const color = escapeHtml(e.color_hex || '#ef476f');
+          const hits = parseInt(e.hits_to_destroy || 1);
+          const armor = parseInt(e.armor_strength || 0);
+          const hasField = parseInt(e.has_force_field) === 1;
+          const shieldHits = parseInt(e.shield_capacity_hits || 0);
+          const pierceDisplay = escapeHtml(getWeaponDisplayName(e.piercing_weapon_id));
+          const threat = escapeHtml(e.threat_level || 'Low');
+          const speed = parseInt(e.movement_speed || 250);
+          const score = parseInt(e.score_value || 100).toLocaleString();
+
+          // Threat badge color
+          let threatColor = '#10b981';
+          if (threat.toLowerCase().includes('medium')) threatColor = '#f59e0b';
+          else if (threat.toLowerCase().includes('high')) threatColor = '#ff6b6b';
+          else if (threat.toLowerCase().includes('extreme') || threat.toLowerCase().includes('boss')) threatColor = '#a855f7';
+
+          // Force Field Button / Status
+          const fieldBtn = hasField
+              ? `<button onclick="toggleEnemyForceField(${e.id}, 1)" class="admin-tab-btn" style="background:rgba(0,240,255,0.18);border-color:#00f0ff;color:#00f0ff;font-size:0.75rem;padding:3px 8px;cursor:pointer;" title="Click to disable force field">⚡ Yes (${shieldHits} hit shield)</button>`
+              : `<button onclick="toggleEnemyForceField(${e.id}, 0)" class="admin-tab-btn" style="background:rgba(255,255,255,0.05);border-color:#475569;color:var(--text-muted);font-size:0.75rem;padding:3px 8px;cursor:pointer;" title="Click to enable force field">❌ No Force Field</button>`;
+
+          return `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.15s ease;">
+                  <td style="padding: 10px 12px; text-align: center; font-size: 1.35rem;">
+                      <span>${icon}</span>
+                      <span style="display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: ${color}; margin-left: 3px; box-shadow: 0 0 6px ${color};"></span>
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <div style="font-weight: bold; color: #fff; font-size: 0.92rem;">${escapeHtml(e.enemy_name)}</div>
+                      <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+                          <span style="font-size: 0.73rem; color: #ff4d6d; font-family: monospace;">${escapeHtml(e.enemy_id)}</span>
+                          <span style="font-size: 0.7rem; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px;">${escapeHtml(e.enemy_class || 'Drone')}</span>
+                      </div>
+                      ${e.description ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">${escapeHtml(e.description)}</div>` : ''}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <span class="admin-tab-btn" style="padding: 2px 8px; font-size: 0.78rem; background: rgba(0,240,255,0.1); border-color: #00f0ff; color: #00f0ff;">Stage ${e.stage_level}</span>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <span style="color: #00f0ff; font-weight: bold; font-size: 0.98rem; text-shadow: 0 0 8px rgba(0,240,255,0.35);">💥 ${hits} Hit${hits > 1 ? 's' : ''}</span>
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <div style="font-size: 0.82rem; font-weight: bold; color: #fff;">${pierceDisplay}</div>
+                      <div style="font-size: 0.7rem; color: var(--text-muted);">Required to pierce armor</div>
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 3px;">
+                          <span style="color: #f59e0b; font-weight: bold;">🛡️ ${armor}%</span>
+                          <span style="color: var(--text-muted); font-size: 0.72rem;">${armor >= 70 ? 'Reinforced' : (armor >= 30 ? 'Medium' : 'Light')}</span>
+                      </div>
+                      <div style="width: 100%; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden;">
+                          <div style="width: ${Math.min(100, armor)}%; height: 100%; background: ${armor >= 70 ? '#ef476f' : (armor >= 30 ? '#f59e0b' : '#10b981')};"></div>
+                      </div>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      ${fieldBtn}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <div style="color: ${threatColor}; font-weight: bold; font-size: 0.82rem;">⚠️ ${threat}</div>
+                      <div style="color: var(--text-muted); font-size: 0.73rem;">🏃 ${speed} px/s</div>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <span style="color: #10b981; font-weight: bold; font-family: monospace; font-size: 0.92rem;">🏆 ${score}</span>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <div style="display: flex; gap: 6px; justify-content: center;">
+                          <button onclick="openEditGameEnemyModal(${e.id})" class="admin-tab-btn" style="padding: 4px 10px; font-size: 0.78rem; background: rgba(239,68,111,0.15); border-color: #ef476f; color: #ff4d6d; cursor: pointer;">✏️ Edit</button>
+                          <button onclick="deleteGameEnemy(${e.id}, '${escapeHtml(e.enemy_name)}')" class="admin-tab-btn" style="padding: 4px 8px; font-size: 0.78rem; background: rgba(239,68,111,0.15); border-color: #ef476f; color: #ef476f; cursor: pointer;" title="Delete enemy">🗑️</button>
+                      </div>
+                  </td>
+              </tr>
+          `;
+      }).join('');
+  }
+
+  function filterGameEnemies() {
+      const q = (document.getElementById('gameEnemySearchInput')?.value || '').toLowerCase().trim();
+      const stageFilter = document.getElementById('gameEnemyStageFilter')?.value || 'all';
+      const shieldFilter = document.getElementById('gameEnemyForceFieldFilter')?.value || 'all';
+      const armorFilter = document.getElementById('gameEnemyArmorFilter')?.value || 'all';
+
+      const filtered = cachedGameEnemies.filter(e => {
+          if (stageFilter !== 'all' && String(e.stage_level) !== String(stageFilter)) {
+              return false;
+          }
+          if (shieldFilter === 'shielded' && parseInt(e.has_force_field) !== 1) {
+              return false;
+          }
+          if (shieldFilter === 'unshielded' && parseInt(e.has_force_field) === 1) {
+              return false;
+          }
+          const arm = parseInt(e.armor_strength || 0);
+          if (armorFilter === 'light' && arm >= 25) return false;
+          if (armorFilter === 'medium' && (arm < 25 || arm > 50)) return false;
+          if (armorFilter === 'heavy' && arm <= 50) return false;
+
+          if (!q) return true;
+          return (e.enemy_name && e.enemy_name.toLowerCase().includes(q)) ||
+                 (e.enemy_id && e.enemy_id.toLowerCase().includes(q)) ||
+                 (e.enemy_class && e.enemy_class.toLowerCase().includes(q)) ||
+                 (e.piercing_weapon_id && e.piercing_weapon_id.toLowerCase().includes(q)) ||
+                 (e.description && e.description.toLowerCase().includes(q));
+      });
+
+      renderGameEnemies(filtered);
+  }
+
+  function populateEnemyPiercingWeaponDropdown() {
+      const select = document.getElementById('enemyPiercingWeaponInput');
+      if (!select) return;
+
+      const currentVal = select.value || 'any';
+      let optionsHtml = '<option value="any">✨ Any Weapon (No specific resistance)</option>';
+
+      if (cachedGameWeapons && cachedGameWeapons.length > 0) {
+          optionsHtml += cachedGameWeapons.map(w => {
+              return `<option value="${escapeHtml(w.weapon_id)}">${escapeHtml(w.icon || '⚡')} ${escapeHtml(w.weapon_name)} (Stage ${w.stage_level})</option>`;
+          }).join('');
+      } else {
+          optionsHtml += `
+              <option value="red_laser">🔴 Neon Red Laser</option>
+              <option value="blue_laser">🔵 Cobalt Blue Laser</option>
+              <option value="tachyon_lance">⚡ Tachyon Lance</option>
+              <option value="plasma_torpedo">💣 Quantum Plasma Torpedo</option>
+              <option value="quantum_phaser">✨ Quantum Phaser Cannon</option>
+          `;
+      }
+      select.innerHTML = optionsHtml;
+      select.value = currentVal;
+  }
+
+  function toggleEnemyShieldCapacityInput() {
+      const fieldSelect = document.getElementById('enemyHasForceFieldInput');
+      const shieldInput = document.getElementById('enemyShieldHitsInput');
+      if (fieldSelect && shieldInput) {
+          if (parseInt(fieldSelect.value) === 1) {
+              if (parseInt(shieldInput.value || 0) <= 0) shieldInput.value = '2';
+              shieldInput.disabled = false;
+          } else {
+              shieldInput.value = '0';
+              shieldInput.disabled = true;
+          }
+      }
+  }
+
+  function openAddGameEnemyModal() {
+      const title = document.getElementById('enemyModalTitle');
+      if (title) title.innerHTML = '<span>👾 Register New Enemy Threat</span>';
+
+      document.getElementById('enemyRecordId').value = '0';
+      document.getElementById('enemyCodeInput').value = '';
+      document.getElementById('enemyCodeInput').disabled = false;
+      document.getElementById('enemyNameInput').value = '';
+      document.getElementById('enemyClassInput').value = 'Scout Drone';
+      document.getElementById('enemyIconInput').value = '🛸';
+      document.getElementById('enemyColorInput').value = '#ef476f';
+      document.getElementById('enemyStageLevelInput').value = '1';
+      document.getElementById('enemyHitsToDestroyInput').value = '4';
+      document.getElementById('enemyArmorStrengthInput').value = '25';
+      document.getElementById('enemyHasForceFieldInput').value = '0';
+      document.getElementById('enemyShieldHitsInput').value = '0';
+      document.getElementById('enemySpeedInput').value = '250';
+      document.getElementById('enemyDamageInput').value = '10';
+      document.getElementById('enemyFireRateInput').value = '2.0';
+      document.getElementById('enemyScoreInput').value = '250';
+      document.getElementById('enemyThreatLevelInput').value = 'Medium';
+      document.getElementById('enemyDescriptionInput').value = '';
+
+      populateEnemyPiercingWeaponDropdown();
+      document.getElementById('enemyPiercingWeaponInput').value = 'any';
+      toggleEnemyShieldCapacityInput();
+
+      const modal = document.getElementById('editGameEnemyModal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function openEditGameEnemyModal(id) {
+      const enemy = cachedGameEnemies.find(e => parseInt(e.id) === parseInt(id));
+      if (!enemy) {
+          alert('Enemy not found in cache');
+          return;
+      }
+
+      const title = document.getElementById('enemyModalTitle');
+      if (title) title.innerHTML = `<span>👾 Edit Threat: ${escapeHtml(enemy.enemy_name)}</span>`;
+
+      document.getElementById('enemyRecordId').value = enemy.id;
+      document.getElementById('enemyCodeInput').value = enemy.enemy_id || '';
+      document.getElementById('enemyCodeInput').disabled = true;
+      document.getElementById('enemyNameInput').value = enemy.enemy_name || '';
+      document.getElementById('enemyClassInput').value = enemy.enemy_class || 'Scout Drone';
+      document.getElementById('enemyIconInput').value = enemy.icon || '🛸';
+      document.getElementById('enemyColorInput').value = enemy.color_hex || '#ef476f';
+      document.getElementById('enemyStageLevelInput').value = enemy.stage_level || 1;
+      document.getElementById('enemyHitsToDestroyInput').value = enemy.hits_to_destroy || 2;
+      document.getElementById('enemyArmorStrengthInput').value = enemy.armor_strength || 10;
+      document.getElementById('enemyHasForceFieldInput').value = parseInt(enemy.has_force_field) === 1 ? '1' : '0';
+      document.getElementById('enemyShieldHitsInput').value = enemy.shield_capacity_hits || 0;
+      document.getElementById('enemySpeedInput').value = enemy.movement_speed || 250;
+      document.getElementById('enemyDamageInput').value = enemy.attack_damage || 5;
+      document.getElementById('enemyFireRateInput').value = enemy.fire_rate_seconds || 2.0;
+      document.getElementById('enemyScoreInput').value = enemy.score_value || 100;
+      document.getElementById('enemyThreatLevelInput').value = enemy.threat_level || 'Low';
+      document.getElementById('enemyDescriptionInput').value = enemy.description || '';
+
+      populateEnemyPiercingWeaponDropdown();
+      document.getElementById('enemyPiercingWeaponInput').value = enemy.piercing_weapon_id || 'any';
+      toggleEnemyShieldCapacityInput();
+
+      const modal = document.getElementById('editGameEnemyModal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function closeEditGameEnemyModal() {
+      const modal = document.getElementById('editGameEnemyModal');
+      if (modal) modal.style.display = 'none';
+  }
+
+  async function saveGameEnemy() {
+      const id = parseInt(document.getElementById('enemyRecordId').value || 0);
+      const code = (document.getElementById('enemyCodeInput').value || '').trim();
+      const name = (document.getElementById('enemyNameInput').value || '').trim();
+      const enemyClass = (document.getElementById('enemyClassInput').value || 'Scout Drone').trim();
+      const icon = (document.getElementById('enemyIconInput').value || '🛸').trim();
+      const color = (document.getElementById('enemyColorInput').value || '#ef476f').trim();
+      const stage = parseInt(document.getElementById('enemyStageLevelInput').value || 1);
+      const hits = parseInt(document.getElementById('enemyHitsToDestroyInput').value || 1);
+      const pierce = (document.getElementById('enemyPiercingWeaponInput').value || 'any').trim();
+      const armor = parseInt(document.getElementById('enemyArmorStrengthInput').value || 0);
+      const hasField = parseInt(document.getElementById('enemyHasForceFieldInput').value || 0);
+      const shieldHits = parseInt(document.getElementById('enemyShieldHitsInput').value || 0);
+      const speed = parseInt(document.getElementById('enemySpeedInput').value || 250);
+      const damage = parseInt(document.getElementById('enemyDamageInput').value || 5);
+      const fireRate = parseFloat(document.getElementById('enemyFireRateInput').value || 2.0);
+      const score = parseInt(document.getElementById('enemyScoreInput').value || 100);
+      const threat = (document.getElementById('enemyThreatLevelInput').value || 'Low').trim();
+      const desc = (document.getElementById('enemyDescriptionInput').value || '').trim();
+
+      if (!code || !name) {
+          alert('Enemy Identifier (Code) and Display Name are required!');
+          return;
+      }
+      if (hits < 1) {
+          alert('Hits to destroy must be at least 1 hit.');
+          return;
+      }
+
+      const payload = {
+          id: id,
+          enemy_id: code,
+          enemy_name: name,
+          enemy_class: enemyClass,
+          icon: icon,
+          color_hex: color,
+          stage_level: stage,
+          hits_to_destroy: hits,
+          piercing_weapon_id: pierce,
+          armor_strength: armor,
+          has_force_field: hasField,
+          shield_capacity_hits: shieldHits,
+          movement_speed: speed,
+          attack_damage: damage,
+          fire_rate_seconds: fireRate,
+          score_value: score,
+          threat_level: threat,
+          description: desc,
+          is_enabled: 1
+      };
+
+      try {
+          const res = await callAdminWormholeApi('save_game_enemy', 'POST', payload);
+          alert(res.message || 'Enemy saved successfully!');
+          closeEditGameEnemyModal();
+          fetchGameEnemies();
+      } catch (err) {
+          console.error('[Admin] Save enemy error:', err);
+          alert('Failed to save enemy: ' + err.message);
+      }
+  }
+
+  async function deleteGameEnemy(id, name) {
+      if (!confirm(`Are you sure you want to delete enemy threat '${name}'?`)) {
+          return;
+      }
+
+      try {
+          const res = await callAdminWormholeApi('delete_game_enemy', 'POST', { id: id });
+          alert(res.message || 'Enemy deleted successfully');
+          fetchGameEnemies();
+      } catch (err) {
+          console.error('[Admin] Delete enemy error:', err);
+          alert('Failed to delete enemy: ' + err.message);
+      }
+  }
+
+  async function toggleEnemyForceField(id, currentStatus) {
+      try {
+          await callAdminWormholeApi('toggle_game_enemy_field', 'POST', { id: id, field: 'has_force_field' });
+          fetchGameEnemies();
+      } catch (err) {
+          console.error('[Admin] Toggle force field error:', err);
+          alert('Failed to update force field: ' + err.message);
+      }
+  }
+
+  async function seedDefaultGameEnemies() {
+      if (!confirm('Re-seed / Reset default enemies (Void Recon Drone, Phase Interceptor, Tachyon Cruiser, Singularity Void Guardian, Quantum Dreadnought)?')) {
+          return;
+      }
+
+      try {
+          const res = await callAdminWormholeApi('seed_game_enemies', 'POST', {});
+          alert(res.message || 'Default enemies successfully initialized!');
+          fetchGameEnemies();
+      } catch (err) {
+          console.error('[Admin] Seed enemies error:', err);
+          alert('Failed to seed default enemies: ' + err.message);
+      }
+  }
+
+
   // 30. WORMHOLE GAME MANAGER & STAGE ARSENAL WEAPONS
   // =========================================================================
   let cachedGameWeapons = [];
@@ -3526,6 +4230,11 @@ Thank you for reaching out to Calm Chess Games. `;
               badge.textContent = cachedGameWeapons.length;
               badge.style.display = cachedGameWeapons.length > 0 ? 'inline-block' : 'none';
           }
+          const subBadgeWeapon = document.getElementById('badgeWeaponCount');
+          if (subBadgeWeapon) {
+              subBadgeWeapon.textContent = cachedGameWeapons.length;
+          }
+          populateEnemyPiercingWeaponDropdown();
 
           renderGameWeapons(cachedGameWeapons);
       } catch (err) {
@@ -3801,6 +4510,29 @@ Thank you for reaching out to Calm Chess Games. `;
       }
   }
 
+  global.switchGameManagerSubTab = switchGameManagerSubTab;
+  global.fetchGameStages = fetchGameStages;
+  global.renderGameStages = renderGameStages;
+  global.filterGameStages = filterGameStages;
+  global.openAddGameStageModal = openAddGameStageModal;
+  global.openEditGameStageModal = openEditGameStageModal;
+  global.closeEditGameStageModal = closeEditGameStageModal;
+  global.saveGameStage = saveGameStage;
+  global.deleteGameStage = deleteGameStage;
+  global.seedDefaultGameStages = seedDefaultGameStages;
+
+  global.fetchGameEnemies = fetchGameEnemies;
+  global.renderGameEnemies = renderGameEnemies;
+  global.filterGameEnemies = filterGameEnemies;
+  global.openAddGameEnemyModal = openAddGameEnemyModal;
+  global.openEditGameEnemyModal = openEditGameEnemyModal;
+  global.closeEditGameEnemyModal = closeEditGameEnemyModal;
+  global.saveGameEnemy = saveGameEnemy;
+  global.deleteGameEnemy = deleteGameEnemy;
+  global.toggleEnemyForceField = toggleEnemyForceField;
+  global.toggleEnemyShieldCapacityInput = toggleEnemyShieldCapacityInput;
+  global.seedDefaultGameEnemies = seedDefaultGameEnemies;
+  global.populateEnemyPiercingWeaponDropdown = populateEnemyPiercingWeaponDropdown;
   global.fetchGameWeapons = fetchGameWeapons;
   global.renderGameWeapons = renderGameWeapons;
   global.filterGameWeapons = filterGameWeapons;

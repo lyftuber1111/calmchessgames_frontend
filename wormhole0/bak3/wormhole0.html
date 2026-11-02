@@ -964,6 +964,15 @@
       transition: left 0.3s ease, right 0.3s ease, top 0.3s ease, bottom 0.3s ease;
     }
 
+    .virtual-stick-zone:focus,
+    .virtual-stick-zone:focus-visible,
+    .virtual-stick-knob:focus,
+    .virtual-stick-knob:focus-visible {
+      outline: none;
+      border-color: var(--cyan-neon);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.45);
+    }
+
     /* Bottom-Left: Crosshair Aim Joystick (Standard Layout) */
     .aim-stick-zone {
       background: rgba(0, 30, 50, 0.45);
@@ -1125,13 +1134,13 @@
       pointer-events: auto;
       z-index: 70;
       width: clamp(189px, 26.5vw, 245px);
-      background: rgba(2, 14, 26, 0.92);
+      background: rgba(2, 14, 26, 0.18);
       border: 1px solid rgba(0, 240, 255, 0.45);
       border-radius: 8px;
       padding: 6.2px 10.2px;
-      box-shadow: 0 4px 18px rgba(0, 240, 255, 0.22), inset 0 0 12px rgba(0, 240, 255, 0.08);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 14px rgba(0, 240, 255, 0.15), inset 0 0 8px rgba(0, 240, 255, 0.05);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
       display: flex;
       flex-direction: column;
       gap: 5.2px;
@@ -2283,8 +2292,8 @@
     <div class="drawer-content" id="mission-panel">
       <div class="drawer-top-bar">
         <span class="panel-heading">COCKPIT CONTROLS & MISSIONS</span>
-        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
-          <input type="checkbox" id="chk-auto-close-left" class="chk-auto-close" checked> Auto close
+        <label class="autohide-toggle" title="When checked, only one panel is open at a time and all open panels automatically close when the joystick or flight controls are used">
+          <input type="checkbox" id="chk-auto-close-left" class="chk-auto-close" checked> Auto hide
         </label>
       </div>
 
@@ -2321,10 +2330,10 @@
         </div>
 
         <!-- Crosshair Speed Slider in Flight Hub Panel -->
-        <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;" title="Adjust crosshair movement speed (Default: 2.9x)">
+        <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;" title="Adjust crosshair movement speed (Default: 4.0x, Max: 10.0x)">
           <label for="slider-crosshair-speed" style="font-size: 0.72rem; color: var(--cyan-neon); font-weight: 700;">CROSSHAIR SPEED</label>
-          <input id="slider-crosshair-speed" type="range" min="0.4" max="4.0" step="0.05" value="2.90" style="width: 100px; cursor: pointer;">
-          <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">2.90x</span>
+          <input id="slider-crosshair-speed" type="range" min="0.4" max="10.0" step="0.1" value="4.0" style="width: 100px; cursor: pointer;">
+          <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">4.0x</span>
         </div>
         <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; flex-direction: column; gap: 4px;">
           <label class="autohide-toggle" title="Flip joystick and throttle slider positions for left-handed controls">
@@ -2464,8 +2473,8 @@
       </div>
 
       <div style="display:flex; align-items:center; gap:8px;">
-        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
-          <input type="checkbox" id="chk-auto-close-top" class="chk-auto-close" checked> Auto close
+        <label class="autohide-toggle" title="When checked, only one panel is open at a time and all open panels automatically close when the joystick or flight controls are used">
+          <input type="checkbox" id="chk-auto-close-top" class="chk-auto-close" checked> Auto hide
         </label>
       </div>
     </header>
@@ -2529,16 +2538,16 @@
           <input id="slider-lensing" type="range" min="0.0" max="2.0" step="0.1" value="1.0">
           <span id="val-lensing" class="badge-val">1.0</span>
         </div>
-        <div class="hud-slider-group" title="Adjust crosshair movement speed (Default: 2.9x)">
+        <div class="hud-slider-group" title="Adjust crosshair movement speed (Default: 4.0x, Max: 10.0x)">
           <label for="slider-crosshair-speed-bottom">CROSSHAIR SPEED</label>
-          <input id="slider-crosshair-speed-bottom" type="range" min="0.4" max="4.0" step="0.05" value="2.90">
-          <span id="val-crosshair-speed-bottom" class="badge-val">2.90x</span>
+          <input id="slider-crosshair-speed-bottom" type="range" min="0.4" max="10.0" step="0.1" value="4.0">
+          <span id="val-crosshair-speed-bottom" class="badge-val">4.0x</span>
         </div>
         <label class="autohide-toggle" title="Flip joystick button positions: Flight stick on bottom-right, Aim stick on upper-left">
           <input type="checkbox" id="chk-left-handed-bottom" class="chk-left-handed"> Left-Handed Flip Controls
         </label>
-        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
-          <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto close
+        <label class="autohide-toggle" title="When checked, only one panel is open at a time and all open panels automatically close when the joystick or flight controls are used">
+          <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto hide
         </label>
         <label class="autohide-toggle" title="Toggle visibility of the full screen mobile targeting snap grid">
           <input type="checkbox" id="chk-show-grid-bottom" class="chk-show-grid"> Target Grid
@@ -2574,8 +2583,8 @@
   <!-- Mobile Touch On-Screen Controls (Landscape) -->
   <div id="mobile-touch-controls">
     <!-- Right Virtual Joystick Zone (Tap: Fire Laser / Move: Up, Down & 360° Turn) -->
-    <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Move: Up, Down & 360° Turn">
-      <div class="virtual-stick-knob" id="touch-stick-knob">🔴</div>
+    <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Move: Up, Down & 360° Turn (Flight Joystick)" tabindex="0">
+      <div class="virtual-stick-knob" id="touch-stick-knob" tabindex="0">🔴</div>
     </div>
 
     <!-- Center Touch Action Cluster -->
@@ -2603,13 +2612,13 @@
     </div>
 
     <!-- Left Virtual Joystick Zone (Crosshair Aim Only - No Flight Control) -->
-    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Crosshair Aim Joystick (Controls Crosshair Only - No Flight Control)">
-      <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob"></div>
+    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Crosshair Aim Joystick (Left Hand Joystick - Controls Crosshair Only)" tabindex="0">
+      <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob" tabindex="0"></div>
     </div>
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261101_v8"></script>
+  <script type="module" src="js/wormhole0.js?v=20261101_v11"></script>
 
 </body>
 </html>

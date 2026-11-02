@@ -260,7 +260,7 @@
     }
 
     .drawer-content {
-      width: clamp(270px, 24vw, 320px);
+      width: clamp(280px, 25vw, 340px);
       max-height: 100%;
       overflow-y: auto;
       overflow-x: hidden;
@@ -356,7 +356,73 @@
       align-items: center;
       border-bottom: 1px solid rgba(0, 240, 255, 0.25);
       padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+
+    /* Cockpit Controls & Missions Panel Two Tabs Bar */
+    .drawer-tabs-bar {
+      display: flex;
+      gap: 6px;
       margin-bottom: 10px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.25);
+      padding-bottom: 6px;
+    }
+
+    .drawer-tab-btn {
+      flex: 1;
+      background: rgba(0, 24, 40, 0.65);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      color: var(--text-dim);
+      padding: 6px 8px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .drawer-tab-btn:hover {
+      background: rgba(0, 60, 95, 0.8);
+      border-color: var(--cyan-neon);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.35);
+    }
+
+    .drawer-tab-btn.active {
+      background: linear-gradient(135deg, rgba(0, 110, 160, 0.8), rgba(0, 240, 255, 0.3));
+      border-color: var(--cyan-neon);
+      color: #ffffff;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.45), inset 0 0 8px rgba(0, 240, 255, 0.25);
+      text-shadow: 0 0 6px var(--cyan-neon);
+    }
+
+    .drawer-tab-btn:focus-visible {
+      outline: 2px solid var(--cyan-neon);
+      outline-offset: 1px;
+    }
+
+    .drawer-tab-pane {
+      display: none;
+      animation: fadeInTab 0.2s ease-in-out;
+    }
+
+    .drawer-tab-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeInTab {
+      from { opacity: 0; transform: translateY(2px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .autohide-toggle {
@@ -2297,110 +2363,162 @@
         </label>
       </div>
 
-      <!-- Section 1: Flight & Controller Controls (Slides off left side unless hovered) -->
-      <div class="drawer-controls-box" id="flight-panel">
-        <div class="section-subheading">
-          <span>🕹️ FLIGHT / CONTROLLER</span>
-          <span style="font-size:0.65rem; color:var(--cyan-neon);">6-DOF FLIGHT</span>
-        </div>
-        <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">R-Stick (Hold) / R2</span></div>
-        <div class="key-row"><span>Crosshair Aim:</span> <span class="kbd">Left Stick (Crosshair Only)</span></div>
-        <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse</span> or <span class="kbd">Right Stick / D-Pad</span></div>
-        <div class="key-row"><span>Elevate / Dive:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">R2 / L2</span></div>
-        <div class="key-row"><span>Fire Laser Cannon:</span> <span class="kbd">R-Stick Tap / RB / B</span></div>
-        <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">A / X Button</span></div>
-        <div class="key-row"><span>Warp Jump Trigger:</span> <span class="kbd">F</span> or <span class="kbd">Y Button</span></div>
-        <div class="key-row" style="margin-top:5px; border-top:1px solid rgba(0,240,255,0.2); padding-top:4px;">
-          <span style="color:var(--cyan-neon);">Toggle Left Panel:</span> <span class="kbd">Tab</span> / <span class="kbd">M</span>
-        </div>
-        <div class="key-row">
-          <span style="color:var(--cyan-neon);">Toggle Top Header:</span> <span class="kbd">H</span>
-        </div>
-        <div class="key-row">
-          <span style="color:var(--cyan-neon);">Toggle Bottom Panel:</span> <span class="kbd">B</span>
-        </div>
-        <div class="key-row">
-          <span style="color:var(--cyan-neon);">Auto-Align Wormhole:</span> <span class="kbd">Z</span> / <span class="kbd">N</span>
-        </div>
-        <div class="key-row">
-          <span style="color:var(--cyan-neon);">180° Thruster Turn:</span> <span class="kbd">T</span>
-        </div>
-        <div class="key-row">
-          <span style="color:var(--cyan-neon);">360° Thruster Turn:</span> <span class="kbd">R</span>
+      <!-- Two Tabs Navigation Bar: Info (Left) & Missions (Right - Default Open) -->
+      <div class="drawer-tabs-bar" role="tablist" aria-label="Cockpit Controls and Missions Tabs">
+        <button type="button" class="drawer-tab-btn" id="tab-btn-info" role="tab" aria-selected="false" aria-controls="tab-pane-info" tabindex="0">
+          <span>ℹ️</span> INFO
+        </button>
+        <button type="button" class="drawer-tab-btn active" id="tab-btn-missions" role="tab" aria-selected="true" aria-controls="tab-pane-missions" tabindex="0">
+          <span>🎯</span> MISSIONS
+        </button>
+      </div>
+
+      <!-- Tab 1: Info Tab (Buttons & Joysticks Function Info) -->
+      <div class="drawer-tab-pane" id="tab-pane-info" role="tabpanel" aria-labelledby="tab-btn-info">
+        <!-- Joysticks Function Info -->
+        <div class="drawer-controls-box" id="flight-panel">
+          <div class="section-subheading">
+            <span>🕹️ JOYSTICKS FUNCTION INFO</span>
+            <span style="font-size:0.65rem; color:var(--cyan-neon);">6-DOF FLIGHT</span>
+          </div>
+          <div class="key-row">
+            <span>Aim Joystick (Left):</span>
+            <span class="kbd">Crosshair Aim Only</span>
+          </div>
+          <div style="font-size:0.64rem; color:var(--text-dim); margin:2px 0 6px 2px;">
+            Targeting reticle aim joystick; moves crosshair independently with no ship flight roll.
+          </div>
+          <div class="key-row">
+            <span>Flight Joystick (Right):</span>
+            <span class="kbd">↕ Elevate/Dive  ↔ Turn</span>
+          </div>
+          <div class="key-row">
+            <span>Laser Fire Knob:</span>
+            <span class="kbd">Tap Flight Knob (🔴)</span>
+          </div>
+          <div style="font-size:0.64rem; color:var(--text-dim); margin:2px 0 6px 2px;">
+            Controls 360° yaw rotation & pitch elevation; tap center knob to rapid-fire laser cannons.
+          </div>
+          <div class="key-row">
+            <span>Throttle Slider:</span>
+            <span class="kbd">0% - 100% / Rev Lock</span>
+          </div>
+          <div style="font-size:0.64rem; color:var(--text-dim); margin:2px 0 6px 2px;">
+            Slide up for sub-light propulsion; pull past middle detent for reverse thrusters.
+          </div>
+          <div class="key-row">
+            <span>Gamepad Controller Sticks:</span>
+            <span class="kbd">L: Steer | R: Thrust</span>
+          </div>
         </div>
 
-        <!-- Crosshair Speed Slider in Flight Hub Panel -->
-        <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;" title="Adjust crosshair movement speed (Default: 4.0x, Max: 10.0x)">
-          <label for="slider-crosshair-speed" style="font-size: 0.72rem; color: var(--cyan-neon); font-weight: 700;">CROSSHAIR SPEED</label>
-          <input id="slider-crosshair-speed" type="range" min="0.4" max="10.0" step="0.1" value="4.0" style="width: 100px; cursor: pointer;">
-          <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">4.0x</span>
-        </div>
-        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; flex-direction: column; gap: 4px;">
-          <label class="autohide-toggle" title="Flip joystick and throttle slider positions for left-handed controls">
-            <input type="checkbox" id="chk-left-handed" class="chk-left-handed"> Left-Handed Flip Controls
-          </label>
+        <!-- Cockpit Buttons & Hotkeys Function Info -->
+        <div class="drawer-controls-box">
+          <div class="section-subheading">
+            <span>🎛️ BUTTONS FUNCTION INFO</span>
+            <span style="font-size:0.65rem; color:var(--cyan-neon);">CONTROLS</span>
+          </div>
+          <div class="key-row"><span>Fire Laser Cannon:</span> <span class="kbd">R-Stick Tap</span> / <span class="kbd">RB</span> / <span class="kbd">B</span> / <span class="kbd">Click</span></div>
+          <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">R-Stick (Hold) / R2</span></div>
+          <div class="key-row"><span>Crosshair Aim:</span> <span class="kbd">Left Stick / Mouse</span></div>
+          <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Right Stick / D-Pad</span></div>
+          <div class="key-row"><span>Elevate / Dive:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">R2 / L2</span></div>
+          <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">A / X Button</span></div>
+          <div class="key-row"><span>Warp Jump Trigger:</span> <span class="kbd">F</span> or <span class="kbd">Y Button</span></div>
+          <div class="key-row" style="margin-top:5px; border-top:1px solid rgba(0,240,255,0.2); padding-top:4px;">
+            <span style="color:var(--cyan-neon);">Toggle Left Panel:</span> <span class="kbd">Tab</span> / <span class="kbd">M</span>
+          </div>
+          <div class="key-row">
+            <span style="color:var(--cyan-neon);">Toggle Top Header:</span> <span class="kbd">H</span>
+          </div>
+          <div class="key-row">
+            <span style="color:var(--cyan-neon);">Toggle Bottom Panel:</span> <span class="kbd">B</span>
+          </div>
+          <div class="key-row">
+            <span style="color:var(--cyan-neon);">Auto-Align Wormhole:</span> <span class="kbd">Z</span> / <span class="kbd">N</span>
+          </div>
+          <div class="key-row">
+            <span style="color:var(--cyan-neon);">180° Thruster Turn:</span> <span class="kbd">T</span>
+          </div>
+          <div class="key-row">
+            <span style="color:var(--cyan-neon);">360° Thruster Turn:</span> <span class="kbd">R</span>
+          </div>
+
+          <!-- Crosshair Speed Slider in Flight Hub Panel -->
+          <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;" title="Adjust crosshair movement speed (Default: 4.0x, Max: 10.0x)">
+            <label for="slider-crosshair-speed" style="font-size: 0.72rem; color: var(--cyan-neon); font-weight: 700;">CROSSHAIR SPEED</label>
+            <input id="slider-crosshair-speed" type="range" min="0.4" max="10.0" step="0.1" value="4.0" style="width: 100px; cursor: pointer;">
+            <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">4.0x</span>
+          </div>
+          <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; flex-direction: column; gap: 4px;">
+            <label class="autohide-toggle" title="Flip joystick and throttle slider positions for left-handed controls">
+              <input type="checkbox" id="chk-left-handed" class="chk-left-handed"> Left-Handed Flip Controls
+            </label>
+          </div>
         </div>
       </div>
 
-      <!-- Section 2: Stage 1 Objectives & Systems Calibration -->
-      <div class="drawer-controls-box" style="margin-top: 6px;">
-        <div class="section-subheading">
-          <span>🎯 STAGE 1 OBJECTIVES</span>
-          <span id="obj-total-progress" style="font-size:0.68rem; color:var(--cyan-neon); font-weight:bold;">0/4 COMPLETE</span>
-        </div>
+      <!-- Tab 2: Missions Tab (Stage/Level Objectives - Default Open Tab, to the Right of Info) -->
+      <div class="drawer-tab-pane active" id="tab-pane-missions" role="tabpanel" aria-labelledby="tab-btn-missions">
+        <div class="drawer-controls-box">
+          <div class="section-subheading">
+            <span>🎯 STAGE 1 OBJECTIVES</span>
+            <span id="obj-total-progress" style="font-size:0.68rem; color:var(--cyan-neon); font-weight:bold;">0/4 COMPLETE</span>
+          </div>
 
-        <!-- Objective 1: Resonance Scanner -->
-        <div class="objective-item" id="obj-scan">
-          <div class="obj-header">
-            <span>1. Resonance Scanner</span>
-            <span class="obj-status" id="status-scan">PENDING</span>
+          <!-- Objective 1: Resonance Scanner -->
+          <div class="objective-item" id="obj-scan">
+            <div class="obj-header">
+              <span>1. Resonance Scanner</span>
+              <span class="obj-status" id="status-scan">PENDING</span>
+            </div>
+            <div class="obj-bar-wrap">
+              <div class="obj-bar" id="bar-scan"></div>
+            </div>
+            <div class="obj-actions">
+              <button class="btn-action" id="btn-do-scan">📡 Scan Singularity</button>
+            </div>
           </div>
-          <div class="obj-bar-wrap">
-            <div class="obj-bar" id="bar-scan"></div>
-          </div>
-          <div class="obj-actions">
-            <button class="btn-action" id="btn-do-scan">📡 Scan Singularity</button>
-          </div>
-        </div>
 
-        <!-- Objective 2: Warp Coil Calibration -->
-        <div class="objective-item" id="obj-coils">
-          <div class="obj-header">
-            <span>2. Warp Coils (Tachyon Sync)</span>
-            <span class="obj-status" id="status-coils">0/3 CALIBRATED</span>
+          <!-- Objective 2: Warp Coil Calibration -->
+          <div class="objective-item" id="obj-coils">
+            <div class="obj-header">
+              <span>2. Warp Coils (Tachyon Sync)</span>
+              <span class="obj-status" id="status-coils">0/3 CALIBRATED</span>
+            </div>
+            <div class="obj-bar-wrap">
+              <div class="obj-bar" id="bar-coils"></div>
+            </div>
+            <div class="obj-actions">
+              <button class="btn-action" id="btn-coil-1">Coil α</button>
+              <button class="btn-action" id="btn-coil-2">Coil β</button>
+              <button class="btn-action" id="btn-coil-3">Coil γ</button>
+            </div>
           </div>
-          <div class="obj-bar-wrap">
-            <div class="obj-bar" id="bar-coils"></div>
-          </div>
-          <div class="obj-actions">
-            <button class="btn-action" id="btn-coil-1">Coil α</button>
-            <button class="btn-action" id="btn-coil-2">Coil β</button>
-            <button class="btn-action" id="btn-coil-3">Coil γ</button>
-          </div>
-        </div>
 
-        <!-- Objective 3: Vector & Proximity -->
-        <div class="objective-item" id="obj-vector">
-          <div class="obj-header">
-            <span>3. Alignment & Range</span>
-            <span class="obj-status" id="status-vector">ALIGN WITH CORE</span>
+          <!-- Objective 3: Alignment & Range -->
+          <div class="objective-item" id="obj-vector">
+            <div class="obj-header">
+              <span>3. Alignment & Range</span>
+              <span class="obj-status" id="status-vector">ALIGN WITH CORE</span>
+            </div>
+            <div class="obj-bar-wrap">
+              <div class="obj-bar" id="bar-vector"></div>
+            </div>
+            <div style="font-size:0.65rem; color:var(--text-dim); margin-top:2px;">
+              Fly toward cyan wormhole core &lt; 50,000 KM (<span class="kbd">WASD</span> / Stick / Pad).
+            </div>
           </div>
-          <div class="obj-bar-wrap">
-            <div class="obj-bar" id="bar-vector"></div>
-          </div>
-          <div style="font-size:0.65rem; color:var(--text-dim); margin-top:2px;">
-            Fly toward cyan wormhole core &lt; 50,000 KM (<span class="kbd">WASD</span> / Stick / Pad).
-          </div>
-        </div>
 
-        <!-- Objective 4: Engage Warp Jump -->
-        <div class="objective-item" id="obj-jump">
-          <div class="obj-header">
-            <span>4. Warp Horizon Jump</span>
-            <span class="obj-status" id="status-jump">LOCKED</span>
-          </div>
-          <div class="obj-bar-wrap">
-            <div class="obj-bar" id="bar-jump"></div>
+          <!-- Objective 4: Engage Warp Jump -->
+          <div class="objective-item" id="obj-jump">
+            <div class="obj-header">
+              <span>4. Warp Horizon Jump</span>
+              <span class="obj-status" id="status-jump">LOCKED</span>
+            </div>
+            <div class="obj-bar-wrap">
+              <div class="obj-bar" id="bar-jump"></div>
+            </div>
           </div>
         </div>
       </div>

@@ -1194,6 +1194,62 @@ if (btnToggleDrawer) {
   btnToggleDrawer.addEventListener('click', toggleLeftPanel);
 }
 
+// =============================================================================
+// COCKPIT CONTROLS & MISSIONS PANEL TAB SWITCHER
+// Two tabs: Info (left, buttons & joysticks info) & Missions (right, default open)
+// =============================================================================
+const tabBtnInfo = document.getElementById('tab-btn-info');
+const tabBtnMissions = document.getElementById('tab-btn-missions');
+const tabPaneInfo = document.getElementById('tab-pane-info');
+const tabPaneMissions = document.getElementById('tab-pane-missions');
+
+function setCockpitTab(tabName) {
+  const isInfo = (tabName === 'info');
+  if (tabBtnInfo) {
+    tabBtnInfo.classList.toggle('active', isInfo);
+    tabBtnInfo.setAttribute('aria-selected', isInfo ? 'true' : 'false');
+  }
+  if (tabBtnMissions) {
+    tabBtnMissions.classList.toggle('active', !isInfo);
+    tabBtnMissions.setAttribute('aria-selected', !isInfo ? 'true' : 'false');
+  }
+  if (tabPaneInfo) {
+    tabPaneInfo.classList.toggle('active', isInfo);
+  }
+  if (tabPaneMissions) {
+    tabPaneMissions.classList.toggle('active', !isInfo);
+  }
+}
+
+if (tabBtnInfo) {
+  tabBtnInfo.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setCockpitTab('info');
+  });
+}
+if (tabBtnMissions) {
+  tabBtnMissions.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setCockpitTab('missions');
+  });
+}
+
+// Support keyboard navigation between tabs (Left / Right arrow, Home, End)
+[tabBtnInfo, tabBtnMissions].forEach((btn) => {
+  if (!btn) return;
+  btn.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      setCockpitTab('missions');
+      if (tabBtnMissions) tabBtnMissions.focus();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      setCockpitTab('info');
+      if (tabBtnInfo) tabBtnInfo.focus();
+    }
+  });
+});
+
 if (topDrawerTab) {
   topDrawerTab.addEventListener('click', toggleTopPanel);
 }

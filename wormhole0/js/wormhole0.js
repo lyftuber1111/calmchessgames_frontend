@@ -218,7 +218,6 @@ try {
       state.isXR = true;
       document.body.classList.add('in-xr-session');
       console.log('[Wormhole XR] WebXR session started.');
-      showToast('XR IMMERSIVE SESSION ACTIVE');
     });
     renderer.xr.addEventListener('sessionend', () => {
       state.isXR = false;
@@ -1243,7 +1242,6 @@ class WeaponsSystem {
       this.weapons[id].isAvailable = true;
       this.weapons[id].acquired = true;
       this.notify();
-      showToast(`🔓 WEAPON UNLOCKED: ${this.weapons[id].name.toUpperCase()}`);
     }
   }
 
@@ -1253,7 +1251,6 @@ class WeaponsSystem {
 
   selectWeapon(id) {
     if (state.isPaused) {
-      showToast('⚠️ CONTROLS LOCKED OUT — GAME PAUSED');
       return false;
     }
     const target = this.weapons[id];
@@ -1262,11 +1259,10 @@ class WeaponsSystem {
       return false;
     }
     if (!target.isAvailable || !target.acquired) {
-      showToast(`🔒 ${target.name.toUpperCase()} IS LOCKED (STAGE / MISSION REQUIREMENT)`);
+      showToast(`🔒 ${target.name.toUpperCase()} LOCKED: COMPLETE STAGE TASK TO UNLOCK`);
       return false;
     }
     this.activeWeaponId = id;
-    showToast(`⚡ EQUIPPED: ${target.icon} ${target.name.toUpperCase()}`);
     if (audioMgr && audioMgr.playWeaponSwitch) {
       audioMgr.playWeaponSwitch();
     }
@@ -1276,7 +1272,6 @@ class WeaponsSystem {
 
   cycleWeapon() {
     if (state.isPaused) {
-      showToast('⚠️ CONTROLS LOCKED OUT — GAME PAUSED');
       return false;
     }
     const available = Object.values(this.weapons).filter(w => w.isAvailable && w.acquired);
@@ -1312,7 +1307,6 @@ class WeaponsSystem {
       w.energy = 0;
       w.isOverheated = true;
       w.overheatRemainingMs = w.cooldownDurationSec * 1000;
-      showToast(`🔥 ${w.shortName} OVERHEATED! COOLING OFF (${w.cooldownDurationSec}s)`);
       if (audioMgr && audioMgr.playOverheatAlert) {
         audioMgr.playOverheatAlert();
       }
@@ -1332,7 +1326,6 @@ class WeaponsSystem {
           w.overheatRemainingMs = 0;
           w.isOverheated = false;
           w.energy = 100; // Cooled off and restored to 100%
-          showToast(`❄️ ${w.shortName} COOLED OFF — WEAPON READY (100%)`);
           changed = true;
         } else {
           changed = true;
@@ -1597,7 +1590,6 @@ function toggleLeftPanel(e) {
   leftDrawer.classList.toggle('open', willOpen);
   if (btnToggleDrawer) btnToggleDrawer.classList.toggle('active', willOpen);
   updateLockoutHighlights();
-  showToast(willOpen ? 'COCKPIT & WEAPONS PANEL OPEN' : 'COCKPIT & WEAPONS PANEL CLOSED');
 }
 
 function toggleTopPanel(e) {
@@ -1610,11 +1602,6 @@ function toggleTopPanel(e) {
   topDrawer.classList.toggle('open', willOpen);
   if (btnToggleHeader) btnToggleHeader.classList.toggle('active', willOpen);
   updateLockoutHighlights();
-  if (state.isPaused && willOpen) {
-    showToast('⚠️ TELEMETRY LOCKED OUT — SIMULATION PAUSED');
-  } else {
-    showToast(willOpen ? 'TELEMETRY HEADER OPEN' : 'TELEMETRY HEADER CLOSED');
-  }
 }
 
 function toggleBottomPanel(e) {
@@ -1626,11 +1613,6 @@ function toggleBottomPanel(e) {
   }
   bottomDrawer.classList.toggle('open', willOpen);
   updateLockoutHighlights();
-  if (state.isPaused && willOpen) {
-    showToast('⚠️ TACTICAL HUD LOCKED OUT — SIMULATION PAUSED');
-  } else {
-    showToast(willOpen ? 'TACTICAL CONTROLS OPEN' : 'TACTICAL CONTROLS CLOSED');
-  }
 }
 
 // Panel tab handles toggle open and closed when selected
@@ -1670,9 +1652,6 @@ function setCockpitTab(tabName) {
   });
 
   updateLockoutHighlights();
-  if (state.isPaused) {
-    showToast('⚠️ CONTROLS LOCKED OUT — SIMULATION PAUSED');
-  }
 }
 
 // Attach Tab Click Listeners
@@ -1721,7 +1700,6 @@ function isControlLockedOut() {
 }
 function assertNotPaused(controlName = 'Control') {
   if (state.isPaused) {
-    showToast(`⚠️ ${controlName.toUpperCase()} LOCKED OUT — GAME PAUSED`);
     return false;
   }
   return true;
@@ -1873,7 +1851,6 @@ function setGamePaused(paused) {
     }
 
     updateLockoutHighlights();
-    showToast('⏸️ SIMULATION PAUSED — CONTROLS LOCKED OUT');
   } else {
     document.body.classList.remove('game-paused');
 
@@ -1887,8 +1864,6 @@ function setGamePaused(paused) {
     if (!CONFIG.audioMuted && audioMgr && audioMgr.droneAudio) {
       try { audioMgr.droneAudio.play(); } catch(e) {}
     }
-
-    showToast('▶️ SIMULATION RESUMED — CONTROLS ACTIVE');
   }
 }
 
@@ -1983,7 +1958,6 @@ function setAutoClose(val) {
       }
     }
   }
-  showToast(val ? 'AUTO HIDE: ON (ONE PANEL AT A TIME / CLOSES ON JOYSTICK FOCUS)' : 'AUTO HIDE: OFF (PANELS REMAIN OPEN)');
 }
 
 document.querySelectorAll('.chk-auto-close').forEach(chk => {
@@ -2360,7 +2334,6 @@ if (btnForceContinue) {
   btnForceContinue.addEventListener('click', () => {
     hideUnsupportedBadge();
     activateModeParameters(state.xrMode);
-    showToast(`FORCING MODE: ${state.xrMode.toUpperCase()}`);
   });
 }
 // =============================================================================
@@ -2512,8 +2485,6 @@ async function evaluateSpecificDeviceCompatibility(mode, bypassCheck = false, fo
 
     // If database marked it unsupported OR local capability check failed
     if ((checkResult && checkResult.supported === false) || !localSupported) {
-      const finalReason = (checkResult && checkResult.reason) ? checkResult.reason : localReason;
-      showToast(`⚠️ ${mode.toUpperCase()} NOT SUPPORTED: ${finalReason}`);
       return;
     }
   }
@@ -2523,8 +2494,6 @@ async function evaluateSpecificDeviceCompatibility(mode, bypassCheck = false, fo
 
   // If user explicitly ran "Test Device" or validation succeeded, show positive notification
   if (forceShowValidation || mode === 'desktop-xr') {
-    const gpuInfo = detectedHardware.gpu ? ` [${detectedHardware.gpu.split('/')[0].trim()}]` : '';
-    showToast(`âœ“ HARDWARE VALIDATED: ${effDevName}${gpuInfo} ready for ${mode.toUpperCase()}`);
     if (audioMgr && audioMgr.playScan) audioMgr.playScan();
   }
 
@@ -2601,18 +2570,14 @@ function activateModeParameters(mode) {
   if (mode === 'desktop-xr') {
     state.postProcessingEnabled = true;
     scene.background = null;
-    showToast('MODE: DESKTOP XR (6-DOF FLIGHT & CUSTOM SHADERS)');
   } else if (mode === 'desktop-vr') {
     state.postProcessingEnabled = false;
-    showToast('MODE: DESKTOP VR (CLICK ENTER VR FOR HMD)');
   } else if (mode === 'mobile-xr') {
     state.postProcessingEnabled = false;
     requestDeviceOrientation();
-    showToast('MODE: MOBILE XR (ROTATE LANDSCAPE FOR DUAL-STICK TOUCH)');
   } else if (mode === 'mobile-ar') {
     state.postProcessingEnabled = false;
     scene.background = null;
-    showToast('MODE: MOBILE AR (ARCORE PASSTHROUGH ACTIVE)');
   }
 }
 
@@ -2839,8 +2804,7 @@ if (btnToggleController) {
     else if (state.gamepadMode === 'enabled') state.gamepadMode = 'disabled';
     else state.gamepadMode = 'auto';
 
-    btnToggleController.textContent = `ðŸŽ® Controller: ${state.gamepadMode.toUpperCase()}`;
-    showToast(`GAMEPAD POLLING: ${state.gamepadMode.toUpperCase()}`);
+    btnToggleController.textContent = `🎮 Controller: ${state.gamepadMode.toUpperCase()}`;
     updateGamepadUI();
   });
 }
@@ -2849,7 +2813,6 @@ window.addEventListener('gamepadconnected', (e) => {
   console.log('[Gamepad] Controller connected:', e.gamepad.id);
   state.gamepadIndex = e.gamepad.index;
   updateGamepadUI(e.gamepad);
-  showToast(`CONTROLLER CONNECTED: ${e.gamepad.id.slice(0, 24)}...`);
   if (!audioMgr.isInitialized) audioMgr.init();
 });
 
@@ -2859,7 +2822,6 @@ window.addEventListener('gamepaddisconnected', (e) => {
     state.gamepadIndex = null;
   }
   updateGamepadUI(null);
-  showToast('CONTROLLER DISCONNECTED');
 });
 
 function updateGamepadUI(pad = null) {
@@ -3059,9 +3021,6 @@ function stopThrottle(reason = null) {
   }
   if (btnThrottleRev) btnThrottleRev.classList.remove('active');
   if (btnThrottleFwd) btnThrottleFwd.classList.remove('active');
-  if (reason) {
-    showToast(`🛑 ${reason}`);
-  }
   handleFlightActivity();
 }
 
@@ -3446,19 +3405,16 @@ function toggleReverseThrottle() {
     const targetVal = -Math.round(state.throttleValue * 100);
     if (customThrottleSlider) customThrottleSlider.value = targetVal;
     updateThrottleFromSlider(targetVal);
-    showToast(`↩️ TOGGLED TO REVERSE (${targetVal}%)`);
   } else if (state.throttleValue < -0.005) {
     // If already in reverse, toggle back to forward
     const targetVal = Math.abs(Math.round(state.throttleValue * 100));
     if (customThrottleSlider) customThrottleSlider.value = targetVal;
     updateThrottleFromSlider(targetVal);
-    showToast(`🚀 TOGGLED TO FORWARD (+${targetVal}%)`);
   } else {
     // If currently stopped, engage reverse cruise at -50%
     const targetVal = -50;
     if (customThrottleSlider) customThrottleSlider.value = targetVal;
     updateThrottleFromSlider(targetVal);
-    showToast('↩️ REVERSE CRUISE ENGAGED (-50%)');
   }
 }
 
@@ -3468,17 +3424,14 @@ function toggleForwardThrottle() {
     const targetVal = Math.abs(Math.round(state.throttleValue * 100));
     if (customThrottleSlider) customThrottleSlider.value = targetVal;
     updateThrottleFromSlider(targetVal);
-    showToast(`🚀 TOGGLED TO FORWARD (+${targetVal}%)`);
   } else if (state.throttleValue > 0.005) {
     const targetVal = 100;
     if (customThrottleSlider) customThrottleSlider.value = targetVal;
     updateThrottleFromSlider(targetVal);
-    showToast('🚀 FULL FORWARD CRUISE (+100%)');
   } else {
     const targetVal = 50;
     if (customThrottleSlider) customThrottleSlider.value = targetVal;
     updateThrottleFromSlider(targetVal);
-    showToast('🚀 FORWARD CRUISE ENGAGED (+50%)');
   }
 }
 
@@ -3627,7 +3580,6 @@ function execute180Turn() {
   if (touchBtnSpin180) touchBtnSpin180.classList.add('active-spin');
   if (btnSpin180) btnSpin180.classList.add('active');
 
-  showToast('↩️ 180° THRUSTER ROTATION ENGAGED');
   if (!audioMgr.isInitialized) audioMgr.init();
   audioMgr.playCoil();
   handleFlightActivity();
@@ -3653,7 +3605,6 @@ function execute360Turn() {
   if (touchBtnSpin360) touchBtnSpin360.classList.add('active-spin');
   if (btnSpin360) btnSpin360.classList.add('active');
 
-  showToast('🔄 360° THRUSTER ROTATION ENGAGED');
   if (!audioMgr.isInitialized) audioMgr.init();
   audioMgr.playCoil();
   handleFlightActivity();
@@ -3671,10 +3622,6 @@ function cancelTurn() {
   if (btnSpin180) btnSpin180.classList.remove('active');
   if (touchBtnSpin360) touchBtnSpin360.classList.remove('active-spin');
   if (btnSpin360) btnSpin360.classList.remove('active');
-
-  if (previousType) {
-    showToast(previousType === '180' ? '↩️ 180° ROTATION STOPPED' : '🔄 360° ROTATION STOPPED');
-  }
 }
 
 function cancel360Turn() {
@@ -3737,7 +3684,6 @@ function fireLaserBeam() {
   const activeWpn = weaponsSystem.getActiveWeapon();
   if (!weaponsSystem.canFire()) {
     if (activeWpn && activeWpn.isOverheated) {
-      showToast(`⚠️ ${activeWpn.shortName} OVERHEATED — COOLING OFF (${(activeWpn.overheatRemainingMs / 1000).toFixed(1)}s)`);
       if (audioMgr && audioMgr.playOverheatAlert) audioMgr.playOverheatAlert();
     }
     return;
@@ -4301,8 +4247,6 @@ function alignToWormhole() {
   }
   touchLookYaw = 0;
   touchLookPitch = 0;
-
-  showToast('🧭 ALIGNING VIEW WITH WORMHOLE SINGULARITY');
 }
 
 // Prevent browser viewport scrolling/bouncing unless inside a dedicated scrollable panel
@@ -4364,12 +4308,15 @@ const vectorRingEl = document.getElementById('vector-alignment-ring');
 const warpBtn = document.getElementById('btn-warp');
 const objTotalProgressEl = document.getElementById('obj-total-progress');
 
+let toastTimer = null;
 function showToast(msg, duration = 3200) {
   if (!toastEl) return;
+  if (toastTimer) clearTimeout(toastTimer);
   toastEl.textContent = msg;
   toastEl.style.display = 'block';
-  setTimeout(() => {
+  toastTimer = setTimeout(() => {
     toastEl.style.display = 'none';
+    toastTimer = null;
   }, duration);
 }
 
@@ -4400,8 +4347,7 @@ if (btnScan) {
         state.isScanning = false;
         objScan.classList.add('completed');
         statusScan.textContent = 'LOCKED (432.8 THz)';
-        btnScan.textContent = 'âœ“ Scanned';
-        showToast('OBJECTIVE 1: RESONANCE SCAN COMPLETE');
+        btnScan.textContent = '✓ Scanned';
         checkObjectives();
       }
     }, 120);
@@ -4436,7 +4382,6 @@ coilBtns.forEach((btn, idx) => {
     if (calibratedCount === 3) {
       objCoils.classList.add('completed');
       statusCoils.textContent = '3/3 SYNCHRONIZED';
-      showToast('OBJECTIVE 2: ALL WARP COILS SYNCHRONIZED');
     }
     checkObjectives();
   });
@@ -4462,9 +4407,8 @@ function checkObjectives() {
 
     if (warpBtn) {
       warpBtn.classList.add('btn-ready');
-      warpBtn.innerHTML = 'âš¡ ENGAGE WARP JUMP [F]';
+      warpBtn.innerHTML = '⚡ ENGAGE WARP JUMP [F]';
     }
-    showToast('ALL SYSTEMS GREEN: WARP HORIZON JUMP AUTHORIZED');
   }
 }
 
@@ -4474,13 +4418,24 @@ function triggerWarpJump() {
   audioMgr.init();
 
   if (!state.isWarpReady) {
-    showToast('WARNING: COMPLETE SCAN & COIL CALIBRATION FIRST!');
+    const missingTasks = [];
+    if (state.scanProgress < 1.0) {
+      missingTasks.push(`RESONANCE SCAN (${Math.round(state.scanProgress * 100)}%)`);
+    }
+    const calCount = state.coils.filter(c => c).length;
+    if (calCount < 3) {
+      missingTasks.push(`WARP COILS CALIBRATION (${calCount}/3)`);
+    }
+    if (!state.isVectorAligned || !state.isInRange) {
+      missingTasks.push('SINGULARITY VECTOR ALIGNMENT');
+    }
+    const missingStr = missingTasks.length > 0 ? missingTasks.join(', ') : 'STAGE 1 TASKS';
+    showToast(`⚠️ WARPING NOT POSSIBLE YET: COMPLETE ${missingStr} FIRST!`);
     return;
   }
 
   state.isHyperWarping = true;
   audioMgr.playWarp();
-  showToast('WARP JUMP INITIATED: PLUNGING THROUGH SINGULARITY...');
 
   const objJump = document.getElementById('obj-jump');
   const barJump = document.getElementById('bar-jump');
@@ -4572,8 +4527,6 @@ function setLeftHandedMode(enabled) {
   try {
     localStorage.setItem('wormhole_left_handed', state.leftHandedMode ? '1' : '0');
   } catch (e) {}
-
-  showToast(state.leftHandedMode ? 'LEFT-HANDED LAYOUT ACTIVATED' : 'STANDARD LAYOUT ACTIVATED');
 }
 
 const chkLeftHanded = document.getElementById('chk-left-handed');
@@ -4634,9 +4587,6 @@ if (toggleHudBtn) {
     if (hudLayer) hudLayer.style.display = state.hudVisible ? 'block' : 'none';
     if (!state.hudVisible) {
       closeAllPanels();
-      showToast('HUD DISPLAY: MINIMIZED');
-    } else {
-      showToast('HUD DISPLAY: ON');
     }
   });
 }
@@ -4718,7 +4668,6 @@ function updateFlight(delta) {
       state.yaw = state.targetYaw;
       state.pitch = state.targetPitch;
       state.isAligningToWormhole = false;
-      showToast('🎯 WORMHOLE SINGULARITY CENTERED IN SIGHT');
     }
   }
 
@@ -4810,8 +4759,6 @@ function updateFlight(delta) {
       if (btnSpin180) btnSpin180.classList.remove('active');
       if (touchBtnSpin360) touchBtnSpin360.classList.remove('active-spin');
       if (btnSpin360) btnSpin360.classList.remove('active');
-
-      showToast(completedType === '180' ? '↩️ 180° ROTATION COMPLETE' : '🔄 360° ROTATION COMPLETE');
     }
   }
 
@@ -4826,7 +4773,6 @@ function updateFlight(delta) {
     camera.updateProjectionMatrix();
 
     if (camera.position.length() < CONFIG.eventHorizonRadius * 1.2) {
-      showToast('⚡ SINGULARITY TRANSIT ACHIEVED - STAGE 2 UNLOCKED');
       state.position.set(0, 0, CONFIG.wormholeDistance);
       camera.position.copy(state.position);
       state.velocity.set(0, 0, 0);
@@ -5032,7 +4978,6 @@ function updateSplashGamepadStatus() {
 }
 window.addEventListener('gamepadconnected', (e) => {
   updateSplashGamepadStatus();
-  showToast(`🎮 GAMEPAD CONNECTED: ${e.gamepad.id.slice(0, 18)}`);
 });
 window.addEventListener('gamepaddisconnected', () => {
   updateSplashGamepadStatus();
@@ -5199,7 +5144,6 @@ async function runStartupDiagnosticsAndSplashScreen() {
           splashEl.classList.add('splash-fade-out');
           setTimeout(() => splashEl.remove(), 750);
         }
-        showToast(`✓ FLIGHT ACTIVE: ${descriptiveName}`);
       };
 
       startBtn.addEventListener('click', launchGame);

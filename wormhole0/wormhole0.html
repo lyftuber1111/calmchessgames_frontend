@@ -425,6 +425,190 @@
       to { opacity: 1; transform: translateY(0); }
     }
 
+    /* ==========================================================================
+       PAUSE / UN-PAUSE HUD BUTTONS & LOCKOUT STYLES
+       ========================================================================== */
+    /* Small pause icon in upper left hand corner (saves gameplay space) */
+    .hud-pause-icon-btn,
+    .hud-quick-pause-btn {
+      pointer-events: auto;
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 60;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 24, 40, 0.88);
+      border: 1px solid var(--cyan-neon);
+      border-radius: 6px;
+      color: var(--cyan-neon);
+      font-size: 0.95rem;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.35);
+      transition: all 0.2s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .hud-pause-icon-btn:hover,
+    .hud-quick-pause-btn:hover {
+      background: rgba(0, 75, 120, 0.95);
+      color: #fff;
+      border-color: #fff;
+      box-shadow: 0 0 16px var(--cyan-neon);
+      transform: scale(1.06);
+    }
+
+    .hud-pause-icon-btn.is-paused,
+    .hud-quick-pause-btn.is-paused {
+      background: rgba(239, 71, 111, 0.95);
+      border-color: #ff85a1;
+      color: #ffffff;
+      box-shadow: 0 0 18px rgba(239, 71, 111, 0.9);
+      animation: pauseIconPulse 1.6s infinite ease-in-out;
+    }
+
+    @keyframes pauseIconPulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(239, 71, 111, 0.6); transform: scale(1); }
+      50% { box-shadow: 0 0 20px rgba(239, 71, 111, 1); transform: scale(1.08); }
+    }
+
+    .drawer-pause-btn {
+      background: rgba(0, 40, 65, 0.85);
+      border: 1px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .drawer-pause-btn:hover {
+      background: rgba(0, 75, 120, 0.95);
+      color: #fff;
+      border-color: #fff;
+    }
+
+    .drawer-pause-btn.is-paused {
+      background: rgba(239, 71, 111, 0.95);
+      border-color: #ff85a1;
+      color: #fff;
+      box-shadow: 0 0 14px rgba(239, 71, 111, 0.85);
+      animation: pausePillPulse 1.6s infinite ease-in-out;
+    }
+
+    #btn-toggle-pause.is-paused {
+      background: rgba(239, 71, 111, 0.85);
+      border-color: #ff85a1;
+      color: #fff;
+      box-shadow: 0 0 16px rgba(239, 71, 111, 0.85);
+      animation: pausePillPulse 1.6s infinite ease-in-out;
+    }
+
+    /* Red highlight when another tab or panel is opened during pause */
+    .locked-out-red {
+      border: 1px solid var(--accent-alert, #ef476f) !important;
+      background: rgba(45, 8, 18, 0.75) !important;
+      box-shadow: 0 0 20px rgba(239, 71, 111, 0.6), inset 0 0 14px rgba(239, 71, 111, 0.3) !important;
+      border-radius: 6px;
+      padding: 6px;
+      position: relative;
+    }
+
+    .locked-out-red .drawer-controls-box {
+      border-color: rgba(239, 71, 111, 0.5) !important;
+      background: rgba(30, 5, 12, 0.75) !important;
+    }
+
+    .locked-out-red .section-subheading {
+      color: #ff758f !important;
+      border-bottom-color: rgba(239, 71, 111, 0.4) !important;
+    }
+
+    .locked-out-red .btn-action {
+      border-color: #ef476f !important;
+      color: #ff85a1 !important;
+      opacity: 0.55 !important;
+      cursor: not-allowed !important;
+      pointer-events: none !important;
+      box-shadow: none !important;
+    }
+
+    .locked-out-banner {
+      display: none;
+      background: rgba(239, 71, 111, 0.25);
+      border: 1px solid #ef476f;
+      color: #ff85a1;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      padding: 5px 8px;
+      margin-bottom: 8px;
+      border-radius: 4px;
+      text-align: center;
+      text-transform: uppercase;
+      box-shadow: 0 0 12px rgba(239, 71, 111, 0.5);
+      animation: alertPulse 2s infinite ease-in-out;
+    }
+
+    .locked-out-red .locked-out-banner {
+      display: block !important;
+    }
+
+    @keyframes alertPulse {
+      0%, 100% { opacity: 0.85; }
+      50% { opacity: 1; }
+    }
+
+    /* Red highlight for top & bottom panels opened during pause */
+    .panel-locked-red {
+      border-color: var(--accent-alert, #ef476f) !important;
+      box-shadow: 0 0 24px rgba(239, 71, 111, 0.7), inset 0 0 15px rgba(239, 71, 111, 0.25) !important;
+      background: rgba(28, 5, 12, 0.92) !important;
+    }
+
+    .panel-locked-red .hud-select,
+    .panel-locked-red .hud-btn:not(#btn-toggle-pause),
+    .panel-locked-red .touch-btn {
+      border-color: rgba(239, 71, 111, 0.6) !important;
+      color: #ff85a1 !important;
+      pointer-events: none !important;
+      cursor: not-allowed !important;
+      opacity: 0.6 !important;
+    }
+
+    .panel-locked-red .top-strip-text,
+    .panel-locked-red .bottom-strip-text,
+    .panel-locked-red .top-strip-chevron,
+    .panel-locked-red .bottom-strip-chevron {
+      color: #ef476f !important;
+      text-shadow: 0 0 10px #ef476f !important;
+    }
+
+    /* Lock out virtual controls during pause */
+    body.game-paused #mobile-touch-controls .virtual-stick-zone,
+    body.game-paused #mobile-touch-controls .throttle-slider-container,
+    body.game-paused #mobile-touch-controls .mobile-touch-actions {
+      pointer-events: none !important;
+      opacity: 0.35 !important;
+      filter: grayscale(0.8);
+      cursor: not-allowed !important;
+    }
+
     .autohide-toggle {
       display: inline-flex;
       align-items: center;
@@ -2358,9 +2542,14 @@
     <div class="drawer-content" id="mission-panel">
       <div class="drawer-top-bar">
         <span class="panel-heading">COCKPIT CONTROLS & MISSIONS</span>
-        <label class="autohide-toggle" title="When checked, only one panel is open at a time and all open panels automatically close when the joystick or flight controls are used">
-          <input type="checkbox" id="chk-auto-close-left" class="chk-auto-close" checked> Auto hide
-        </label>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <button type="button" id="btn-drawer-pause" class="drawer-pause-btn" title="Toggle Pause / Un-pause flight simulation (Hotkey: P / Esc)">
+            <span class="pause-icon">⏸️</span> <span class="pause-text">PAUSE</span>
+          </button>
+          <label class="autohide-toggle" title="When checked, only one panel is open at a time and all open panels automatically close when the joystick or flight controls are used">
+            <input type="checkbox" id="chk-auto-close-left" class="chk-auto-close" checked> Auto hide
+          </label>
+        </div>
       </div>
 
       <!-- Two Tabs Navigation Bar: Info (Left) & Missions (Right - Default Open) -->
@@ -2460,6 +2649,9 @@
 
       <!-- Tab 2: Missions Tab (Stage/Level Objectives - Default Open Tab, to the Right of Info) -->
       <div class="drawer-tab-pane active" id="tab-pane-missions" role="tabpanel" aria-labelledby="tab-btn-missions">
+        <div class="locked-out-banner" id="missions-locked-banner">
+          🔒 MISSIONS LOCKED OUT &mdash; GAME PAUSED
+        </div>
         <div class="drawer-controls-box">
           <div class="section-subheading">
             <span>🎯 STAGE 1 OBJECTIVES</span>
@@ -2534,6 +2726,9 @@
   <!-- Collapsible Top Telemetry & Header Slide-Out Drawer -->
   <div id="top-drawer-container">
     <header class="hud-header">
+      <div class="locked-out-banner" id="top-locked-banner" style="width: 100%; margin-bottom: 8px;">
+        🔒 TELEMETRY &amp; MODES LOCKED OUT &mdash; GAME PAUSED
+      </div>
       <div class="title-group">
         <div class="pulsing-orb"></div>
         <div>
@@ -2622,6 +2817,9 @@
         <button id="btn-toggle-drawer" class="hud-btn" title="Toggle left-hand Controls & Objectives Panel">
           📋 Objectives
         </button>
+        <button id="btn-toggle-pause" class="hud-btn" title="Pause or Un-pause flight simulation and open Cockpit Controls (Hotkey: P / Escape)">
+          <span class="pause-icon">⏸️</span> <span class="pause-text">Pause</span>
+        </button>
         <button id="btn-toggle-header" class="hud-btn" title="Toggle top Telemetry & Modes Header">
           📡 Telemetry
         </button>
@@ -2679,6 +2877,10 @@
 
   <!-- Holographic Sci-Fi Telemetry & Cockpit HUD -->
   <div id="hud-layer">
+    <!-- Small Pause Icon in Upper Left-Hand Corner (Conserves Gameplay Space) -->
+    <button id="btn-quick-pause" class="hud-pause-icon-btn" title="Pause / Un-pause (Hotkey: P / Esc)" aria-label="Pause or Resume game">
+      <span class="pause-icon">⏸</span>
+    </button>
     <!-- Mobile Full-Screen Invisible Snap Grid -->
     <div id="mobile-fullscreen-grid" class="mobile-fullscreen-grid" aria-hidden="true"></div>
 

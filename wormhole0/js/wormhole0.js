@@ -48,6 +48,7 @@ const state = {
   hudVisible: true,
   postProcessingEnabled: true,
   hasStarted: false,
+  isPaused: false,
   
   // Panel state
   autoClose: true,
@@ -1135,6 +1136,7 @@ function closeOtherPanels(exceptPanel) {
 }
 
 function handleFlightActivity() {
+  if (state.isPaused) return;
   if (state.autoClose) {
     const wasAnyOpen = (leftDrawer && leftDrawer.classList.contains('open')) ||
                        (topDrawer && topDrawer.classList.contains('open')) ||
@@ -1155,11 +1157,12 @@ function toggleLeftPanel(e) {
   if (e) e.stopPropagation();
   if (!leftDrawer) return;
   const willOpen = !leftDrawer.classList.contains('open');
-  if (willOpen && state.autoClose) {
+  if (willOpen && state.autoClose && !state.isPaused) {
     closeOtherPanels('left');
   }
   leftDrawer.classList.toggle('open', willOpen);
   if (btnToggleDrawer) btnToggleDrawer.classList.toggle('active', willOpen);
+  updateLockoutHighlights();
   showToast(willOpen ? 'OBJECTIVES PANEL OPEN' : 'OBJECTIVES PANEL CLOSED');
 }
 
@@ -1167,23 +1170,33 @@ function toggleTopPanel(e) {
   if (e) e.stopPropagation();
   if (!topDrawer) return;
   const willOpen = !topDrawer.classList.contains('open');
-  if (willOpen && state.autoClose) {
+  if (willOpen && state.autoClose && !state.isPaused) {
     closeOtherPanels('top');
   }
   topDrawer.classList.toggle('open', willOpen);
   if (btnToggleHeader) btnToggleHeader.classList.toggle('active', willOpen);
-  showToast(willOpen ? 'TELEMETRY HEADER OPEN' : 'TELEMETRY HEADER CLOSED');
+  updateLockoutHighlights();
+  if (state.isPaused && willOpen) {
+    showToast('⚠️ TELEMETRY LOCKED OUT — SIMULATION PAUSED');
+  } else {
+    showToast(willOpen ? 'TELEMETRY HEADER OPEN' : 'TELEMETRY HEADER CLOSED');
+  }
 }
 
 function toggleBottomPanel(e) {
   if (e) e.stopPropagation();
   if (!bottomDrawer) return;
   const willOpen = !bottomDrawer.classList.contains('open');
-  if (willOpen && state.autoClose) {
+  if (willOpen && state.autoClose && !state.isPaused) {
     closeOtherPanels('bottom');
   }
   bottomDrawer.classList.toggle('open', willOpen);
-  showToast(willOpen ? 'TACTICAL CONTROLS OPEN' : 'TACTICAL CONTROLS CLOSED');
+  updateLockoutHighlights();
+  if (state.isPaused && willOpen) {
+    showToast('⚠️ TACTICAL HUD LOCKED OUT — SIMULATION PAUSED');
+  } else {
+    showToast(willOpen ? 'TACTICAL CONTROLS OPEN' : 'TACTICAL CONTROLS CLOSED');
+  }
 }
 
 // Panel tab handles toggle open and closed when selected
@@ -1219,6 +1232,10 @@ function setCockpitTab(tabName) {
   if (tabPaneMissions) {
     tabPaneMissions.classList.toggle('active', !isInfo);
   }
+  updateLockoutHighlights();
+  if (state.isPaused && !isInfo) {
+    showToast('⚠️ MISSIONS LOCKED OUT — SIMULATION PAUSED');
+  }
 }
 
 if (tabBtnInfo) {
@@ -1248,6 +1265,136 @@ if (tabBtnMissions) {
       if (tabBtnInfo) tabBtnInfo.focus();
     }
   });
+});
+
+// =============================================================================
+// PAUSE / UN-PAUSE SIMULATION & LOCKOUT CONTROLLER
+// Small pause icon in upper left corner, pauses whole game animations,
+// opens Cockpit Controls & Missions panel in Info tab, locks out gameplay controls,
+// highlights any other open tab (Missions) or panel (Top / Bottom) in red to show
+// it is locked out, and returns all controls to normal when unpaused.
+// =============================================================================
+const btnQuickPause = document.getElementById('btn-quick-pause');
+const btnDrawerPause = document.getElementById('btn-drawer-pause');
+const btnTogglePause = document.getElementById('btn-toggle-pause');
+const missionsLockedBanner = document.getElementById('missions-locked-banner');
+const topLockedBanner = document.getElementById('top-locked-banner');
+
+function updateLockoutHighlights() {
+  const isPaused = !!state.isPaused;
+  
+  // Tab lockout: if paused and Missions tab is open, highlight it red
+  const isMissionsActive = tabPaneMissions && tabPaneMissions.classList.contains('active');
+  if (tabPaneMissions) {
+    tabPaneMissions.classList.toggle('locked-out-red', isPaused && isMissionsActive);
+    const missionActionBtns = tabPaneMissions.querySelectorAll('.btn-action');
+    missionActionBtns.forEach(btn => {
+      btn.disabled = (isPaused && isMissionsActive);
+    });
+  }
+  if (missionsLockedBanner) {
+    missionsLockedBanner.style.display = (isPaused && isMissionsActive) ? 'block' : 'none';
+  }
+  
+  // Panel lockout: if Top Drawer is open while paused, highlight it red
+  const isTopOpen = topDrawer && topDrawer.classList.contains('open');
+  const topHeader = topDrawer ? topDrawer.querySelector('.hud-header') : null;
+  if (topHeader) {
+    topHeader.classList.toggle('panel-locked-red', isPaused && isTopOpen);
+  }
+  if (topDrawerTab) {
+    topDrawerTab.classList.toggle('panel-locked-red', isPaused && isTopOpen);
+  }
+  if (topLockedBanner) {
+    topLockedBanner.style.display = (isPaused && isTopOpen) ? 'block' : 'none';
+  }
+  
+  // Panel lockout: if Bottom Drawer is open while paused, highlight it red
+  const isBottomOpen = bottomDrawer && bottomDrawer.classList.contains('open');
+  const bottomFooter = bottomDrawer ? bottomDrawer.querySelector('#hud-panel') : null;
+  if (bottomFooter) {
+    bottomFooter.classList.toggle('panel-locked-red', isPaused && isBottomOpen);
+  }
+  if (bottomDrawerTab) {
+    bottomDrawerTab.classList.toggle('panel-locked-red', isPaused && isBottomOpen);
+  }
+}
+
+function setGamePaused(paused) {
+  state.isPaused = !!paused;
+  
+  const pauseBtns = [btnQuickPause, btnDrawerPause, btnTogglePause];
+  pauseBtns.forEach(btn => {
+    if (!btn) return;
+    btn.classList.toggle('is-paused', state.isPaused);
+    const iconEl = btn.querySelector('.pause-icon');
+    const textEl = btn.querySelector('.pause-text');
+    if (iconEl) iconEl.textContent = state.isPaused ? '▶' : '⏸';
+    if (textEl) {
+      if (btn.id === 'btn-toggle-pause') {
+        textEl.textContent = state.isPaused ? 'Resume' : 'Pause';
+      } else {
+        textEl.textContent = state.isPaused ? 'RESUME' : 'PAUSE';
+      }
+    }
+  });
+  
+  if (state.isPaused) {
+    document.body.classList.add('game-paused');
+    
+    // Release pointer lock if active
+    if (document.pointerLockElement) {
+      try { document.exitPointerLock(); } catch(e) {}
+    }
+    state.isPointerLocked = false;
+    state.isMouseDown = false;
+    
+    // Clear any held movement keys
+    Object.keys(keys).forEach(k => { keys[k] = false; });
+    state.velocity.set(0, 0, 0);
+    
+    // Open Cockpit Controls & Missions panel with Info tab selected
+    if (leftDrawer) {
+      leftDrawer.classList.add('open');
+    }
+    if (btnToggleDrawer) {
+      btnToggleDrawer.classList.add('active');
+    }
+    setCockpitTab('info');
+    
+    // Suspend audio drone while paused
+    if (audioMgr && audioMgr.droneAudio && !audioMgr.droneAudio.paused) {
+      try { audioMgr.droneAudio.pause(); } catch(e) {}
+    }
+    
+    updateLockoutHighlights();
+    showToast('⏸️ SIMULATION PAUSED — COCKPIT CONTROLS & INFO');
+  } else {
+    document.body.classList.remove('game-paused');
+    
+    // Synchronize lastFrameTime so no time delta jump occurs on unpause
+    state.lastFrameTime = performance.now();
+    
+    // Clear all red lockout highlights and re-enable controls
+    updateLockoutHighlights();
+    
+    // Resume audio drone if sound is enabled
+    if (!CONFIG.audioMuted && audioMgr && audioMgr.droneAudio) {
+      try { audioMgr.droneAudio.play(); } catch(e) {}
+    }
+    
+    showToast('▶️ SIMULATION RESUMED — CONTROLS ACTIVE');
+  }
+}
+
+// Wire Pause Button Click Handlers
+[btnQuickPause, btnDrawerPause, btnTogglePause].forEach(btn => {
+  if (btn) {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setGamePaused(!state.isPaused);
+    });
+  }
 });
 
 if (topDrawerTab) {
@@ -1290,8 +1437,13 @@ document.querySelectorAll('.chk-auto-close').forEach(chk => {
   });
 });
 
-// Keyboard shortcuts for toggling panels
+// Keyboard shortcuts for toggling panels & pause
 window.addEventListener('keydown', (e) => {
+  if (e.code === 'KeyP' || (e.code === 'Escape' && (!modalOverlay || modalOverlay.style.display !== 'flex'))) {
+    e.preventDefault();
+    setGamePaused(!state.isPaused);
+    return;
+  }
   if (e.code === 'Tab' || e.code === 'KeyM') {
     e.preventDefault();
     toggleLeftPanel();
@@ -2171,6 +2323,25 @@ function updateGamepadUI(pad = null) {
   }
 }
 
+function checkGamepadPauseOnly() {
+  if (state.gamepadMode === 'disabled') return;
+  const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+  if (!gamepads) return;
+  for (let i = 0; i < gamepads.length; i++) {
+    const pad = gamepads[i];
+    if (!pad) continue;
+    const btnStart = pad.buttons[9] ? pad.buttons[9].pressed : false;
+    const btnSelect = pad.buttons[8] ? pad.buttons[8].pressed : false;
+    if ((btnStart && !state.lastPadButtons[9]) || (btnSelect && !state.lastPadButtons[8])) {
+      setGamePaused(!state.isPaused);
+      vibratePad(pad, 100);
+    }
+    state.lastPadButtons[9] = btnStart;
+    state.lastPadButtons[8] = btnSelect;
+    break;
+  }
+}
+
 function pollGamepad(delta) {
   if (state.gamepadMode === 'disabled') return;
   const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -2179,6 +2350,20 @@ function pollGamepad(delta) {
   for (let i = 0; i < gamepads.length; i++) {
     const pad = gamepads[i];
     if (!pad) continue;
+
+    // Start / Select button: Toggle pause
+    const btnStart = pad.buttons[9] ? pad.buttons[9].pressed : false;
+    const btnSelect = pad.buttons[8] ? pad.buttons[8].pressed : false;
+    if ((btnStart && !state.lastPadButtons[9]) || (btnSelect && !state.lastPadButtons[8])) {
+      setGamePaused(!state.isPaused);
+      vibratePad(pad, 100);
+    }
+    state.lastPadButtons[9] = btnStart;
+    state.lastPadButtons[8] = btnSelect;
+
+    if (state.isPaused) {
+      break; // Lock out analog flight sticks & combat buttons while paused
+    }
 
     const lx = Math.abs(pad.axes[0]) > CONFIG.gamepadDeadzone ? pad.axes[0] : 0;
     const ly = Math.abs(pad.axes[1]) > CONFIG.gamepadDeadzone ? pad.axes[1] : 0;
@@ -2746,6 +2931,7 @@ let sliderInteracting = false;
 let touchTriggeredStop = false;
 
 function onSliderTouchOrPointerDown(e) {
+  if (state.isPaused) return;
   if (state.throttleLocked || performance.now() < state.throttleLockoutUntil) {
     if (e.cancelable) e.preventDefault();
     return;
@@ -2869,6 +3055,7 @@ const touchBtnSpin360 = document.getElementById('touch-btn-spin-360');
 const btnSpin360 = document.getElementById('btn-spin-360');
 
 function execute180Turn() {
+  if (state.isPaused) return;
   if (state.isExecuting180Turn || state.activeTurnType === '180') {
     cancelTurn();
     return;
@@ -2892,6 +3079,7 @@ function execute180Turn() {
 }
 
 function execute360Turn() {
+  if (state.isPaused) return;
   if (state.isExecuting360Turn || state.activeTurnType === '360') {
     cancelTurn();
     return;
@@ -2988,6 +3176,7 @@ if (btnSpin360) {
 const laserBolts = [];
 
 function fireLaserBeam() {
+  if (state.isPaused) return;
   if (!scene || !camera) return;
   const now = performance.now();
   if (now - state.lastLaserShotTime < 110) return; // Shot rate throttling
@@ -3489,6 +3678,7 @@ if (container) {
 
 // Auto-Align View to Wormhole Singularity (Smooth shortest-arc alignment with zero swinging)
 function alignToWormhole() {
+  if (state.isPaused) return;
   if (!camera) return;
 
   // If inside or dangerously close to event horizon, place safely at observation distance
@@ -3693,6 +3883,7 @@ function checkObjectives() {
 }
 
 function triggerWarpJump() {
+  if (state.isPaused) return;
   if (state.isHyperWarping) return;
   audioMgr.init();
 
@@ -3929,6 +4120,7 @@ function renderPostProcessing() {
 }
 
 function updateFlight(delta) {
+  if (state.isPaused) return;
   if (state.isAligningToWormhole) {
     const yawStep = state.targetYaw - state.yaw;
     const pitchStep = state.targetPitch - state.pitch;
@@ -4135,9 +4327,19 @@ if (btnDrawerAlign) {
 // Main Animation Loop
 if (renderer) {
   renderer.setAnimationLoop((timestamp) => {
-  const delta = (timestamp - state.lastFrameTime) * 0.001;
-  state.lastFrameTime = timestamp;
-  state.time += delta;
+    if (state.isPaused) {
+      state.lastFrameTime = timestamp;
+      checkGamepadPauseOnly();
+      if (state.isXR || !state.postProcessingEnabled) {
+        renderer.render(scene, camera);
+      } else {
+        renderPostProcessing();
+      }
+      return;
+    }
+    const delta = (timestamp - state.lastFrameTime) * 0.001;
+    state.lastFrameTime = timestamp;
+    state.time += delta;
 
   state.frameCount++;
   if (timestamp - state.lastFpsUpdate >= 500) {

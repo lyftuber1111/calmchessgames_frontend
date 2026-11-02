@@ -1095,7 +1095,20 @@ class AudioManager {
         this.ctx.resume().catch(() => {});
       }
       const now = this.ctx.currentTime;
-      if (weaponType === 'blue_laser') {
+      if (weaponType === 'tachyon_lance') {
+        // Piercing tachyon singularity lance: high resonant sweep
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1650, now);
+        osc.frequency.exponentialRampToValueAtTime(240, now + 0.25);
+        gain.gain.setValueAtTime(0.45, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.27);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.27);
+      } else if (weaponType === 'blue_laser') {
         // High-energy quantum blue laser: dual resonant sweep with heavy snap
         const osc1 = this.ctx.createOscillator();
         const osc2 = this.ctx.createOscillator();
@@ -1191,10 +1204,32 @@ const audioMgr = new AudioManager();
 class WeaponsSystem {
   constructor() {
     this.weapons = {};
-    this.activeWeaponId = 'red_laser';
+    this.activeWeaponId = 'tachyon_lance';
     this.listeners = [];
 
-    // Initial Level Weapons
+    // Stage 2 Initial Weapon: Tachyon Lance
+    this.registerWeapon({
+      id: 'tachyon_lance',
+      name: 'Tachyon Lance',
+      shortName: 'TACHYON LANCE',
+      icon: '⚡',
+      colorHex: 0xffd166,
+      cssColor: '#ffd166',
+      glowColor: 'rgba(255, 209, 102, 0.65)',
+      energyCost: 20,       // Loses 20% out of 100% per shot
+      cooldownDurationSec: 7, // 7 seconds cool-off on 0% overheat
+      bulletSpeed: 850,
+      boltLength: 12.0,
+      boltRadius: 0.20,
+      bulletLifetime: 2.8,
+      bulletLightIntensity: 5.0,
+      description: 'Piercing tachyon singularity lance. Initial weapon for Stage 2.',
+      stageUnlocked: 2,
+      acquired: true,
+      isAvailable: true
+    });
+
+    // Stage 1 Weapons
     this.registerWeapon({
       id: 'red_laser',
       name: 'Neon Red Laser',
@@ -1279,6 +1314,14 @@ class WeaponsSystem {
 
   acquireWeapon(id) {
     this.unlockWeapon(id);
+  }
+
+  equipWeapon(id) {
+    if (this.weapons[id]) {
+      this.weapons[id].acquired = true;
+      this.weapons[id].isAvailable = true;
+    }
+    return this.selectWeapon(id);
   }
 
   selectWeapon(id) {
@@ -1471,7 +1514,7 @@ class WeaponsSystem {
         activeEnergyVal.style.color = 'var(--cyan-neon)';
       }
       if (activeEnergyBar) {
-        activeEnergyBar.className = `wpn-energy-bar-fill ${active.id === 'blue_laser' ? 'blue-laser' : 'red-laser'}`;
+        activeEnergyBar.className = `wpn-energy-bar-fill ${active.id === 'blue_laser' ? 'blue-laser' : (active.id === 'tachyon_lance' ? 'tachyon-lance' : 'red-laser')}`;
         activeEnergyBar.style.width = `${active.energy}%`;
       }
       if (activeCooldownText) activeCooldownText.style.display = 'none';
@@ -1512,7 +1555,7 @@ class WeaponsSystem {
           const coolFraction = 1.0 - (w.overheatRemainingMs / (w.cooldownDurationSec * 1000));
           bar.style.width = `${Math.round(Math.max(0, Math.min(100, coolFraction * 100)))}%`;
         } else {
-          bar.className = `wpn-energy-bar-fill ${id === 'blue_laser' ? 'blue-laser' : 'red-laser'}`;
+          bar.className = `wpn-energy-bar-fill ${id === 'blue_laser' ? 'blue-laser' : (id === 'tachyon_lance' ? 'tachyon-lance' : 'red-laser')}`;
           bar.style.width = `${w.energy}%`;
         }
       }
@@ -1932,6 +1975,23 @@ function initWeaponsInteractions() {
       if (e.target.tagName === 'BUTTON') return;
       if (!assertNotPaused('Weapon Selection')) return;
       weaponsSystem.selectWeapon('blue_laser');
+    });
+  }
+
+  const tachyonBtn = document.getElementById('btn-select-tachyon_lance');
+  const tachyonCard = document.getElementById('card-wpn-tachyon_lance');
+  if (tachyonBtn) {
+    tachyonBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!assertNotPaused('Weapon Selection')) return;
+      weaponsSystem.selectWeapon('tachyon_lance');
+    });
+  }
+  if (tachyonCard) {
+    tachyonCard.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      if (!assertNotPaused('Weapon Selection')) return;
+      weaponsSystem.selectWeapon('tachyon_lance');
     });
   }
 
@@ -2379,7 +2439,7 @@ const STAGE_REGISTRY = {
   4: { level: 4, name: 'Quantum Realm', slug: 'quantum_realm' }
 };
 
-let currentActiveStage = 1;
+let currentActiveStage = 2;
 let currentActiveDeviceType = 'desktop';
 let activeStageModule = null;
 
@@ -2473,8 +2533,8 @@ function getEngineApi() {
   };
 }
 
-async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
-  const stage = STAGE_REGISTRY[stageLevel] || STAGE_REGISTRY[1];
+async function loadStageDeviceModule(stageLevel = 2, deviceType = 'desktop') {
+  const stage = STAGE_REGISTRY[stageLevel] || STAGE_REGISTRY[2];
   currentActiveStage = stage.level;
   currentActiveDeviceType = deviceType;
 
@@ -2532,7 +2592,7 @@ if (selectModeEl) {
 const selectStageJumpEl = document.getElementById('select-stage-jump');
 if (selectStageJumpEl) {
   selectStageJumpEl.addEventListener('change', (e) => {
-    const targetStage = parseInt(e.target.value) || 1;
+    const targetStage = parseInt(e.target.value) || 2;
     console.log(`[Wormhole XR Debug] Stage jump selected: Stage ${targetStage}`);
     loadStageDeviceModule(targetStage, currentActiveDeviceType);
   });
@@ -3912,7 +3972,7 @@ function fireLaserBeam() {
   // Crosshair visual blast animation
   const crosshairEl = document.getElementById('center-crosshair');
   if (crosshairEl) {
-    const fireClass = (activeWpn.id === 'blue_laser') ? 'laser-firing-blue' : 'laser-firing';
+    let fireClass = 'laser-firing'; if (activeWpn.id === 'blue_laser') fireClass = 'laser-firing-blue'; else if (activeWpn.id === 'tachyon_lance') fireClass = 'laser-firing-amber';
     crosshairEl.classList.remove('laser-firing', 'laser-firing-blue');
     void crosshairEl.offsetWidth; // Reflow
     crosshairEl.classList.add(fireClass);
@@ -3967,7 +4027,7 @@ function fireLaserBeam() {
   const coreGeom = new THREE.CylinderGeometry(boltRadius * 0.15, boltRadius * 0.35, boltLength * 0.92, 6);
   coreGeom.rotateX(Math.PI / 2);
   const coreMat = new THREE.MeshBasicMaterial({
-    color: activeWpn.id === 'blue_laser' ? 0xe0ffff : 0xffffff,
+    color: activeWpn.id === 'blue_laser' ? 0xe0ffff : (activeWpn.id === 'tachyon_lance' ? 0xfff4d6 : 0xffffff),
     transparent: true,
     opacity: 0.95
   });
@@ -4268,6 +4328,10 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.code === 'Digit2') {
     weaponsSystem.selectWeapon('blue_laser');
+    return;
+  }
+  if (e.code === 'Digit3') {
+    weaponsSystem.selectWeapon('tachyon_lance');
     return;
   }
   if (e.code === 'KeyQ') {
@@ -4620,7 +4684,7 @@ function triggerWarpJump() {
     if (!state.isVectorAligned || !state.isInRange) {
       missingTasks.push('SINGULARITY VECTOR ALIGNMENT');
     }
-    const missingStr = missingTasks.length > 0 ? missingTasks.join(', ') : 'STAGE 1 TASKS';
+    const missingStr = missingTasks.length > 0 ? missingTasks.join(', ') : `STAGE ${currentActiveStage} TASKS`;
     showToast(`⚠️ WARPING NOT POSSIBLE YET: COMPLETE ${missingStr} FIRST!`);
     return;
   }
@@ -5318,7 +5382,7 @@ async function runStartupDiagnosticsAndSplashScreen() {
 
     const detectedDevType = getDeviceTypeFromMode(initialMode);
     currentActiveDeviceType = detectedDevType;
-    await loadStageDeviceModule(1, detectedDevType);
+    await loadStageDeviceModule(2, detectedDevType);
 
     const startBtn = document.getElementById('btn-splash-start');
     if (startBtn) {

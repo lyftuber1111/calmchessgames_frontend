@@ -6,11 +6,11 @@
   <meta name="theme-color" content="#01050a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="description" content="Multi-stage Sci-Fi WebXR experience - Stage 2: Event Horizon Amber Singularity with Hardware Support Verification, Telemetry, and Collapsible HUD.">
+  <meta name="description" content="Multi-stage Sci-Fi WebXR experience - Stage 1: Distant Neon Cyan Wormhole with Hardware Support Verification, Telemetry, and Collapsible HUD.">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Wormhole XR - Stage 2: Event Horizon Amber Singularity</title>
+  <title>Wormhole XR - Stage 1: Distant Neon Cyan Singularity</title>
 
   <!-- ES Module Import Map for Three.js & WebXR Addons -->
   <script type="importmap">
@@ -2584,7 +2584,7 @@
         <div class="splash-ring splash-ring-3"></div>
       </div>
       <h1 class="splash-game-title">WORMHOLE XR</h1>
-      <p class="splash-game-sub">STAGE 2: EVENT HORIZON AMBER SINGULARITY</p>
+      <p class="splash-game-sub">STAGE 1: DISTANT NEON CYAN SINGULARITY</p>
 
       <div class="splash-card">
         <div class="splash-status-line">
@@ -2831,18 +2831,18 @@
             <span id="wpn-active-badge-status" style="font-size:0.65rem; color:var(--accent-green); font-weight:bold;">READY</span>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <span id="wpn-active-title" style="font-weight:bold; font-size:0.75rem; color:#fff;">⚡ TACHYON LANCE</span>
+            <span id="wpn-active-title" style="font-weight:bold; font-size:0.75rem; color:#fff;">🔴 NEON RED LASER</span>
             <span id="wpn-active-energy-val" class="badge-val" style="color:var(--cyan-neon); font-size:0.85rem;">100%</span>
           </div>
           <div class="wpn-energy-bar-wrap">
-            <div class="wpn-energy-bar-fill tachyon-lance" id="wpn-active-energy-bar" style="width: 100%;"></div>
+            <div class="wpn-energy-bar-fill red-laser" id="wpn-active-energy-bar" style="width: 100%;"></div>
           </div>
           <div id="wpn-active-cooldown-text" class="wpn-cooldown-text" style="display:none;">
             <span>STATUS: OVERHEATED</span>
-            <span id="wpn-active-cooldown-timer">COOLING OFF: 7.0s</span>
+            <span id="wpn-active-cooldown-timer">COOLING OFF: 5.0s</span>
           </div>
           <div style="font-size:0.64rem; color:var(--text-dim); margin-top:3px;" id="wpn-active-desc">
-            Directed high-energy tachyon singularity lance. Consumes 20% per shot. 7s cooldown when reaching 0%.
+            Directed neon plasma pulse. Consumes 10% per shot. 5s cooldown when reaching 0%.
           </div>
         </div>
 
@@ -2850,14 +2850,14 @@
         <div class="drawer-controls-box">
           <div class="section-subheading">
             <span>🔫 SELECTABLE ARSENAL</span>
-            <span style="font-size:0.65rem; color:var(--cyan-neon);">STAGE 2</span>
+            <span style="font-size:0.65rem; color:var(--cyan-neon);">STAGE 1</span>
           </div>
 
           <!-- Tachyon Lance Weapon Card (Stage 2 Initial) -->
-          <div class="weapon-card active-equipped" id="card-wpn-tachyon_lance" data-weapon-id="tachyon_lance">
+          <div class="weapon-card" id="card-wpn-tachyon_lance" data-weapon-id="tachyon_lance">
             <div class="wpn-header-row">
               <span class="wpn-title">⚡ TACHYON LANCE</span>
-              <span class="wpn-badge equipped" id="badge-wpn-tachyon_lance">EQUIPPED</span>
+              <span class="wpn-badge" id="badge-wpn-tachyon_lance">STANDBY</span>
             </div>
             <div class="wpn-specs-grid">
               <div class="wpn-spec-item">
@@ -2885,16 +2885,16 @@
               <span id="cd-val-tachyon_lance">7.0s</span>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
-              <span id="status-wpn-tachyon_lance" class="obj-status" style="color:var(--accent-green); font-size:0.64rem;">READY (100%)</span>
-              <button type="button" class="btn-action wpn-select-btn" id="btn-select-tachyon_lance" disabled style="opacity:0.8;">EQUIPPED</button>
+              <span id="status-wpn-tachyon_lance" class="obj-status" style="color:var(--cyan-neon); font-size:0.64rem;">READY (100%)</span>
+              <button type="button" class="btn-action wpn-select-btn" id="btn-select-tachyon_lance">EQUIP TACHYON</button>
             </div>
           </div>
 
           <!-- Red Laser Weapon Card (Standby) -->
-          <div class="weapon-card" id="card-wpn-red_laser" data-weapon-id="red_laser">
+          <div class="weapon-card active-equipped" id="card-wpn-red_laser" data-weapon-id="red_laser">
             <div class="wpn-header-row">
               <span class="wpn-title">🔴 NEON RED LASER</span>
-              <span class="wpn-badge" id="badge-wpn-red_laser">STANDBY</span>
+              <span class="wpn-badge equipped" id="badge-wpn-red_laser">EQUIPPED</span>
             </div>
             <div class="wpn-specs-grid">
               <div class="wpn-spec-item">
@@ -2922,8 +2922,8 @@
               <span id="cd-val-red_laser">5.0s</span>
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
-              <span id="status-wpn-red_laser" class="obj-status" style="color:var(--cyan-neon); font-size:0.64rem;">READY (100%)</span>
-              <button type="button" class="btn-action wpn-select-btn" id="btn-select-red_laser">EQUIP RED</button>
+              <span id="status-wpn-red_laser" class="obj-status" style="color:var(--accent-green); font-size:0.64rem;">READY (100%)</span>
+              <button type="button" class="btn-action wpn-select-btn" id="btn-select-red_laser" disabled style="opacity:0.8;">EQUIPPED</button>
             </div>
           </div>
 
@@ -3098,7 +3098,7 @@
         </div>
         <div class="drawer-controls-box">
           <div class="section-subheading">
-            <span>🎯 STAGE 2 OBJECTIVES</span>
+            <span>🎯 STAGE 1 OBJECTIVES</span>
             <span id="obj-total-progress" style="font-size:0.68rem; color:var(--cyan-neon); font-weight:bold;">0/4 COMPLETE</span>
           </div>
 
@@ -3177,7 +3177,7 @@
         <div class="pulsing-orb"></div>
         <div>
           <div class="game-title">WORMHOLE XR</div>
-          <div id="hud-status" class="game-subtitle">STAGE 2: EVENT HORIZON</div>
+          <div id="hud-status" class="game-subtitle">STAGE 1: WARP ORIGIN</div>
         </div>
       </div>
 
@@ -3192,8 +3192,8 @@
 
         <!-- Debug Stage Jump Selector -->
         <select id="select-stage-jump" class="hud-select" title="Jump to Stage/Level for Debug Purposes">
-          <option value="1">🚀 Stage 1: Warp Origin</option>
-          <option value="2" selected>🌌 Stage 2: Event Horizon</option>
+          <option value="1" selected>🚀 Stage 1: Warp Origin</option>
+          <option value="2">🌌 Stage 2: Event Horizon</option>
           <option value="3">🕳️ Stage 3: Singularity Core</option>
           <option value="4">⚛️ Stage 4: Quantum Realm</option>
         </select>
@@ -3336,14 +3336,14 @@
 
     <!-- Interactive HUD Weapon Selector & Overheat Indicator Pill -->
     <div id="hud-weapon-indicator" class="hud-weapon-pill" title="Click or tap to cycle active weapon (Hotkeys: 1/2 or Q)" role="button" tabindex="0">
-      <span id="hud-wpn-icon" class="hud-wpn-icon">⚡</span>
+      <span id="hud-wpn-icon" class="hud-wpn-icon">🔴</span>
       <div class="hud-wpn-info">
         <div class="hud-wpn-name-row">
-          <span id="hud-wpn-name" class="hud-wpn-name">TACHYON LANCE</span>
+          <span id="hud-wpn-name" class="hud-wpn-name">RED LASER</span>
           <span id="hud-wpn-energy-text" class="hud-wpn-energy-text">100%</span>
         </div>
         <div class="hud-wpn-meter-wrap">
-          <div id="hud-wpn-meter-fill" class="hud-wpn-meter-fill tachyon" style="width: 100%;"></div>
+          <div id="hud-wpn-meter-fill" class="hud-wpn-meter-fill red" style="width: 100%;"></div>
         </div>
       </div>
     </div>
@@ -3370,7 +3370,7 @@
   <div id="mobile-touch-controls">
     <!-- Right Virtual Joystick Zone (Tap: Fire Laser / Move: Up, Down & 360° Turn) -->
     <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Move: Up, Down & 360° Turn (Flight Joystick)" tabindex="0">
-      <div class="virtual-stick-knob" id="touch-stick-knob" tabindex="0">⚡</div>
+      <div class="virtual-stick-knob" id="touch-stick-knob" tabindex="0">🔴</div>
     </div>
 
     <!-- Center Touch Action Cluster -->
@@ -3404,7 +3404,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261102_stage2"></script>
+  <script type="module" src="js/wormhole0.js?v=20261102_stage1"></script>
 
 </body>
 </html>

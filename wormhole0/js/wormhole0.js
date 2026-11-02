@@ -1077,7 +1077,7 @@ class AudioManager {
       }
     } else {
       const devType = currentActiveDeviceType || 'desktop';
-      const stageSlug = (STAGE_REGISTRY[currentActiveStage] && STAGE_REGISTRY[currentActiveStage].slug) || 'event_horizon';
+      const stageSlug = (STAGE_REGISTRY[currentActiveStage] && STAGE_REGISTRY[currentActiveStage].slug) || 'warp_origin';
       const coilSrc = `${devType}/audio/${stageSlug}/coil_calibrate.wav`;
       if (!this.coilAudio) {
         this.coilAudio = new Audio(coilSrc);
@@ -1109,7 +1109,7 @@ class AudioManager {
     if (CONFIG.audioMuted || !this.spinAudioEnabled) return;
     if (!this.coilAudio) {
       const devType = currentActiveDeviceType || 'desktop';
-      const stageSlug = (STAGE_REGISTRY[currentActiveStage] && STAGE_REGISTRY[currentActiveStage].slug) || 'event_horizon';
+      const stageSlug = (STAGE_REGISTRY[currentActiveStage] && STAGE_REGISTRY[currentActiveStage].slug) || 'warp_origin';
       this.coilAudio = new Audio(`${devType}/audio/${stageSlug}/coil_calibrate.wav`);
       this.coilAudio.volume = 0.75;
     }
@@ -1239,7 +1239,7 @@ const audioMgr = new AudioManager();
 class WeaponsSystem {
   constructor() {
     this.weapons = {};
-    this.activeWeaponId = 'tachyon_lance';
+    this.activeWeaponId = 'red_laser';
     this.listeners = [];
 
     // Stage 2 Initial Weapon: Tachyon Lance
@@ -2474,7 +2474,7 @@ const STAGE_REGISTRY = {
   4: { level: 4, name: 'Quantum Realm', slug: 'quantum_realm' }
 };
 
-let currentActiveStage = 2;
+let currentActiveStage = 1;
 let currentActiveDeviceType = 'desktop';
 let activeStageModule = null;
 
@@ -2632,15 +2632,14 @@ function getEngineApi() {
   };
 }
 
-async function loadStageDeviceModule(stageLevel = 2, deviceType = 'desktop') {
-  const stage = STAGE_REGISTRY[stageLevel] || STAGE_REGISTRY[2];
+async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
+  const stage = STAGE_REGISTRY[stageLevel] || STAGE_REGISTRY[1];
   currentActiveStage = stage.level;
   currentActiveDeviceType = deviceType;
 
   // Dynamic cache-busting timestamp guarantees browser fetches & executes fresh stage JS on every switch/reload
   const timestamp = Date.now();
   const scriptRelative = `../${deviceType}/${stage.slug}_${deviceType}.js?t=${timestamp}`;
-  const scriptAlias = `../${deviceType}/stage_${stage.level}_${deviceType}.js?t=${timestamp}`;
   const directPath = `./${deviceType}/${stage.slug}_${deviceType}.js?t=${timestamp}`;
   console.log(`[Wormhole XR Engine] Dynamically loading stage device script: ${scriptRelative}`);
 
@@ -2649,11 +2648,7 @@ async function loadStageDeviceModule(stageLevel = 2, deviceType = 'desktop') {
     try {
       mod = await import(scriptRelative);
     } catch (e1) {
-      try {
-        mod = await import(scriptAlias);
-      } catch (e2) {
-        mod = await import(directPath);
-      }
+      mod = await import(directPath);
     }
     activeStageModule = mod;
     const api = getEngineApi();
@@ -2734,7 +2729,7 @@ if (selectModeEl) {
 const selectStageJumpEl = document.getElementById('select-stage-jump');
 if (selectStageJumpEl) {
   selectStageJumpEl.addEventListener('change', (e) => {
-    const targetStage = parseInt(e.target.value) || 2;
+    const targetStage = parseInt(e.target.value) || 1;
     console.log(`[Wormhole XR Debug] Stage jump selected: Stage ${targetStage}`);
     loadStageDeviceModule(targetStage, currentActiveDeviceType);
   });
@@ -5524,7 +5519,7 @@ async function runStartupDiagnosticsAndSplashScreen() {
 
     const detectedDevType = getDeviceTypeFromMode(initialMode);
     currentActiveDeviceType = detectedDevType;
-    await loadStageDeviceModule(2, detectedDevType);
+    await loadStageDeviceModule(1, detectedDevType);
 
     const startBtn = document.getElementById('btn-splash-start');
     if (startBtn) {

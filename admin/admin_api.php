@@ -2831,6 +2831,346 @@ try {
         }
     }
 
+// =========================================================================
+    // 30. WORMHOLE GAME WEAPONS & STAGE ARSENAL MANAGER
+    // =========================================================================
+    if ($action === 'get_game_weapons') {
+        requireAdminApiToken($input, 'Unauthorized: Access to Game Manager weapons requires administrative credentials');
+
+        try {
+            $pdo = getDbConnection();
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS `wormhole_game_weapons` (
+                  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  `weapon_id` VARCHAR(64) NOT NULL UNIQUE,
+                  `weapon_name` VARCHAR(100) NOT NULL,
+                  `description` VARCHAR(255) NULL,
+                  `icon` VARCHAR(32) DEFAULT '⚡',
+                  `color_hex` VARCHAR(16) DEFAULT '#ff3344',
+                  `stage_level` INT NOT NULL DEFAULT 1,
+                  `is_initial_weapon` TINYINT(1) NOT NULL DEFAULT 0,
+                  `is_acquirable` TINYINT(1) NOT NULL DEFAULT 1,
+                  `acquire_event` VARCHAR(100) NOT NULL DEFAULT 'default_start',
+                  `energy_drain_pct` DECIMAL(5,2) NOT NULL DEFAULT 10.00,
+                  `can_overheat` TINYINT(1) NOT NULL DEFAULT 1,
+                  `cooldown_seconds` DECIMAL(5,2) NOT NULL DEFAULT 5.00,
+                  `damage_per_hit` INT NOT NULL DEFAULT 1,
+                  `bullet_speed` INT NOT NULL DEFAULT 600,
+                  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                  INDEX `idx_stage_level` (`stage_level`),
+                  INDEX `idx_is_initial` (`is_initial_weapon`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            $countStmt = $pdo->query("SELECT COUNT(*) FROM `wormhole_game_weapons`");
+            if ((int)$countStmt->fetchColumn() === 0) {
+                $defaults = [
+                    ['red_laser', 'Red Laser', 'Standard high-cadence plasma emitter with twin focus beams.', '🔴', '#ff2244', 1, 1, 1, 'default_start', 10.00, 1, 5.00, 2, 550],
+                    ['blue_laser', 'Blue Laser', 'High-impact coherent photon beam with deep penetration.', '🔵', '#00d4ff', 1, 0, 1, 'default_start', 30.00, 1, 10.00, 1, 700],
+                    ['tachyon_lance', 'Tachyon Lance', 'Superluminal phase particle array unlocked after horizon traversal.', '⚡', '#a855f7', 2, 1, 1, 'warp_horizon_jump', 20.00, 1, 7.00, 3, 850],
+                    ['plasma_torpedo', 'Plasma Torpedo', 'Heavy magnetic payload causing massive kinetic shockwave without overheating.', '💣', '#f59e0b', 3, 0, 1, 'singularity_core_probe', 40.00, 0, 0.00, 5, 450],
+                    ['quantum_phaser', 'Quantum Phaser', 'Sub-atomic pulse rifle optimized for deep singularity warfare.', '✨', '#10b981', 4, 1, 1, 'deep_core_breakthrough', 15.00, 1, 6.00, 4, 950]
+                ];
+                $ins = $pdo->prepare("
+                    INSERT INTO `wormhole_game_weapons`
+                    (`weapon_id`, `weapon_name`, `description`, `icon`, `color_hex`, `stage_level`, `is_initial_weapon`, `is_acquirable`, `acquire_event`, `energy_drain_pct`, `can_overheat`, `cooldown_seconds`, `damage_per_hit`, `bullet_speed`)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                foreach ($defaults as $d) {
+                    $ins->execute($d);
+                }
+            }
+
+            $stageFilter = isset($input['stage_level']) && $input['stage_level'] !== '' ? intval($input['stage_level']) : null;
+            if ($stageFilter !== null && $stageFilter > 0) {
+                $stmt = $pdo->prepare("SELECT * FROM `wormhole_game_weapons` WHERE `stage_level` = :stage ORDER BY `is_initial_weapon` DESC, `damage_per_hit` DESC, `id` ASC");
+                $stmt->execute(['stage' => $stageFilter]);
+            } else {
+                $stmt = $pdo->query("SELECT * FROM `wormhole_game_weapons` ORDER BY `stage_level` ASC, `is_initial_weapon` DESC, `damage_per_hit` DESC, `id` ASC");
+            }
+            $weapons = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $stagesStmt = $pdo->query("SELECT DISTINCT `stage_level` FROM `wormhole_game_weapons` ORDER BY `stage_level` ASC");
+            $stages = $stagesStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            sendJsonResponse(true, 'Game weapons loaded successfully', [
+                'weapons' => $weapons,
+                'stages'  => $stages,
+                'total'   => count($weapons)
+            ]);
+        } catch (Throwable $e) {
+            sendJsonResponse(false, 'Failed to fetch game weapons: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    // SAVE / EDIT WEAPON
+    if ($action === 'save_game_weapon') {
+        requireAdminApiToken($input, 'Unauthorized: Modifying game weapons requires administrative credentials');
+
+        $weaponId = trim($input['weapon_id'] ?? '');
+        $weaponName = trim($input['weapon_name'] ?? '');
+        $stageLevel = max(1, intval($input['stage_level'] ?? 1));
+        $isInitial = (!empty($input['is_initial_weapon']) && $input['is_initial_weapon'] != '0') ? 1 : 0;
+        $isAcquirable = (!empty($input['is_acquirable']) && $input['is_acquirable'] != '0') ? 1 : 0;
+        $acquireEvent = trim($input['acquire_event'] ?? 'default_start');
+        $energyDrain = floatval($input['energy_drain_pct'] ?? 10.0);
+        $canOverheat = (isset($input['can_overheat']) && ($input['can_overheat'] == '1' || $input['can_overheat'] === true || $input['can_overheat'] === 'true')) ? 1 : 0;
+        $cooldownSec = floatval($input['cooldown_seconds'] ?? 5.0);
+        $damagePerHit = max(1, intval($input['damage_per_hit'] ?? 1));
+        $bulletSpeed = max(100, intval($input['bullet_speed'] ?? 600));
+        $icon = trim($input['icon'] ?? '⚡');
+        $colorHex = trim($input['color_hex'] ?? '#ff3344');
+        $description = trim($input['description'] ?? '');
+        $id = intval($input['id'] ?? 0);
+
+        if (empty($weaponId) || empty($weaponName)) {
+            sendJsonResponse(false, 'Weapon ID (code) and Name are required fields.', ['fields' => ['weapon_id', 'weapon_name']], 400);
+        }
+
+        $weaponId = preg_replace('/[^a-zA-Z0-9_\-]/', '_', strtolower($weaponId));
+
+        try {
+            $pdo = getDbConnection();
+
+            if ($isInitial === 1) {
+                $clearStmt = $pdo->prepare("UPDATE `wormhole_game_weapons` SET `is_initial_weapon` = 0 WHERE `stage_level` = :stage");
+                $clearStmt->execute(['stage' => $stageLevel]);
+            }
+
+            if ($id > 0) {
+                $updStmt = $pdo->prepare("
+                    UPDATE `wormhole_game_weapons` SET
+                      `weapon_id` = :wid,
+                      `weapon_name` = :wname,
+                      `description` = :desc,
+                      `icon` = :icon,
+                      `color_hex` = :color,
+                      `stage_level` = :stage,
+                      `is_initial_weapon` = :init,
+                      `is_acquirable` = :acq,
+                      `acquire_event` = :evt,
+                      `energy_drain_pct` = :drain,
+                      `can_overheat` = :heat,
+                      `cooldown_seconds` = :cool,
+                      `damage_per_hit` = :dmg,
+                      `bullet_speed` = :spd,
+                      `updated_at` = NOW()
+                    WHERE `id` = :id
+                ");
+                $updStmt->execute([
+                    'wid' => $weaponId,
+                    'wname' => $weaponName,
+                    'desc' => $description,
+                    'icon' => $icon,
+                    'color' => $colorHex,
+                    'stage' => $stageLevel,
+                    'init' => $isInitial,
+                    'acq' => $isAcquirable,
+                    'evt' => $acquireEvent,
+                    'drain' => $energyDrain,
+                    'heat' => $canOverheat,
+                    'cool' => $cooldownSec,
+                    'dmg' => $damagePerHit,
+                    'spd' => $bulletSpeed,
+                    'id' => $id
+                ]);
+                sendJsonResponse(true, "Weapon '{$weaponName}' updated successfully.", ['id' => $id, 'weapon_id' => $weaponId]);
+            } else {
+                $insStmt = $pdo->prepare("
+                    INSERT INTO `wormhole_game_weapons`
+                    (`weapon_id`, `weapon_name`, `description`, `icon`, `color_hex`, `stage_level`, `is_initial_weapon`, `is_acquirable`, `acquire_event`, `energy_drain_pct`, `can_overheat`, `cooldown_seconds`, `damage_per_hit`, `bullet_speed`)
+                    VALUES (:wid, :wname, :desc, :icon, :color, :stage, :init, :acq, :evt, :drain, :heat, :cool, :dmg, :spd)
+                    ON DUPLICATE KEY UPDATE
+                      `weapon_name` = VALUES(`weapon_name`),
+                      `description` = VALUES(`description`),
+                      `icon` = VALUES(`icon`),
+                      `color_hex` = VALUES(`color_hex`),
+                      `stage_level` = VALUES(`stage_level`),
+                      `is_initial_weapon` = VALUES(`is_initial_weapon`),
+                      `is_acquirable` = VALUES(`is_acquirable`),
+                      `acquire_event` = VALUES(`acquire_event`),
+                      `energy_drain_pct` = VALUES(`energy_drain_pct`),
+                      `can_overheat` = VALUES(`can_overheat`),
+                      `cooldown_seconds` = VALUES(`cooldown_seconds`),
+                      `damage_per_hit` = VALUES(`damage_per_hit`),
+                      `bullet_speed` = VALUES(`bullet_speed`),
+                      `updated_at` = NOW()
+                ");
+                $insStmt->execute([
+                    'wid' => $weaponId,
+                    'wname' => $weaponName,
+                    'desc' => $description,
+                    'icon' => $icon,
+                    'color' => $colorHex,
+                    'stage' => $stageLevel,
+                    'init' => $isInitial,
+                    'acq' => $isAcquirable,
+                    'evt' => $acquireEvent,
+                    'drain' => $energyDrain,
+                    'heat' => $canOverheat,
+                    'cool' => $cooldownSec,
+                    'dmg' => $damagePerHit,
+                    'spd' => $bulletSpeed
+                ]);
+                $newId = (int)$pdo->lastInsertId();
+                sendJsonResponse(true, "Weapon '{$weaponName}' added successfully.", ['id' => $newId, 'weapon_id' => $weaponId]);
+            }
+        } catch (Throwable $e) {
+            sendJsonResponse(false, 'Failed to save game weapon: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    // DELETE WEAPON
+    if ($action === 'delete_game_weapon') {
+        requireAdminApiToken($input, 'Unauthorized: Deleting game weapons requires administrative credentials');
+
+        $weaponId = trim($input['weapon_id'] ?? '');
+        $id = intval($input['id'] ?? 0);
+
+        if ($id <= 0 && empty($weaponId)) {
+            sendJsonResponse(false, 'Weapon ID or numeric record ID is required', [], 400);
+        }
+
+        try {
+            $pdo = getDbConnection();
+            if ($id > 0) {
+                $stmt = $pdo->prepare("DELETE FROM `wormhole_game_weapons` WHERE `id` = :id");
+                $stmt->execute(['id' => $id]);
+            } else {
+                $stmt = $pdo->prepare("DELETE FROM `wormhole_game_weapons` WHERE `weapon_id` = :wid");
+                $stmt->execute(['wid' => $weaponId]);
+            }
+            sendJsonResponse(true, 'Weapon deleted successfully');
+        } catch (Throwable $e) {
+            sendJsonResponse(false, 'Failed to delete weapon: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    // TOGGLE OVERHEAT
+    if ($action === 'toggle_game_weapon_overheat') {
+        requireAdminApiToken($input, 'Unauthorized: Toggling weapon overheat requires administrative credentials');
+
+        $id = intval($input['id'] ?? 0);
+        if ($id <= 0) {
+            sendJsonResponse(false, 'Valid weapon record ID is required', [], 400);
+        }
+
+        try {
+            $pdo = getDbConnection();
+            $checkStmt = $pdo->prepare("SELECT `can_overheat` FROM `wormhole_game_weapons` WHERE `id` = :id");
+            $checkStmt->execute(['id' => $id]);
+            $current = $checkStmt->fetchColumn();
+            if ($current === false) {
+                sendJsonResponse(false, 'Weapon not found', [], 404);
+            }
+
+            $newVal = ((int)$current === 1) ? 0 : 1;
+            if (isset($input['can_overheat'])) {
+                $newVal = (!empty($input['can_overheat']) && $input['can_overheat'] != '0') ? 1 : 0;
+            }
+
+            $upd = $pdo->prepare("UPDATE `wormhole_game_weapons` SET `can_overheat` = :val, `updated_at` = NOW() WHERE `id` = :id");
+            $upd->execute(['val' => $newVal, 'id' => $id]);
+
+            sendJsonResponse(true, "Weapon overheat status updated to " . ($newVal ? 'ENABLED' : 'DISABLED'), [
+                'id' => $id,
+                'can_overheat' => $newVal
+            ]);
+        } catch (Throwable $e) {
+            sendJsonResponse(false, 'Failed to toggle weapon overheat: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    // TOGGLE INITIAL WEAPON FOR STAGE
+    if ($action === 'toggle_game_weapon_initial') {
+        requireAdminApiToken($input, 'Unauthorized: Changing stage initial weapon requires administrative credentials');
+
+        $id = intval($input['id'] ?? 0);
+        if ($id <= 0) {
+            sendJsonResponse(false, 'Valid weapon record ID is required', [], 400);
+        }
+
+        try {
+            $pdo = getDbConnection();
+            $selStmt = $pdo->prepare("SELECT `id`, `stage_level`, `is_initial_weapon`, `weapon_name` FROM `wormhole_game_weapons` WHERE `id` = :id");
+            $selStmt->execute(['id' => $id]);
+            $weapon = $selStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$weapon) {
+                sendJsonResponse(false, 'Weapon not found', [], 404);
+            }
+
+            $stage = (int)$weapon['stage_level'];
+            $currentInit = (int)$weapon['is_initial_weapon'];
+            $newInit = ($currentInit === 1) ? 0 : 1;
+
+            if ($newInit === 1) {
+                $clearStmt = $pdo->prepare("UPDATE `wormhole_game_weapons` SET `is_initial_weapon` = 0 WHERE `stage_level` = :stage");
+                $clearStmt->execute(['stage' => $stage]);
+            }
+
+            $updStmt = $pdo->prepare("UPDATE `wormhole_game_weapons` SET `is_initial_weapon` = :init, `updated_at` = NOW() WHERE `id` = :id");
+            $updStmt->execute(['init' => $newInit, 'id' => $id]);
+
+            sendJsonResponse(true, "'{$weapon['weapon_name']}' is " . ($newInit ? "now the INITIAL weapon for Stage {$stage}." : "no longer initial weapon for Stage {$stage}."), [
+                'id' => $id,
+                'stage_level' => $stage,
+                'is_initial_weapon' => $newInit
+            ]);
+        } catch (Throwable $e) {
+            sendJsonResponse(false, 'Failed to update initial weapon: ' . $e->getMessage(), [], 500);
+        }
+    }
+
+    // RE-SEED DEFAULT WEAPONS
+    if ($action === 'seed_game_weapons') {
+        requireAdminApiToken($input, 'Unauthorized: Seeding default weapons requires administrative credentials');
+
+        try {
+            $pdo = getDbConnection();
+            $defaults = [
+                ['red_laser', 'Red Laser', 'Standard high-cadence plasma emitter with twin focus beams.', '🔴', '#ff2244', 1, 1, 1, 'default_start', 10.00, 1, 5.00, 2, 550],
+                ['blue_laser', 'Blue Laser', 'High-impact coherent photon beam with deep penetration.', '🔵', '#00d4ff', 1, 0, 1, 'default_start', 30.00, 1, 10.00, 1, 700],
+                ['tachyon_lance', 'Tachyon Lance', 'Superluminal phase particle array unlocked after horizon traversal.', '⚡', '#a855f7', 2, 1, 1, 'warp_horizon_jump', 20.00, 1, 7.00, 3, 850],
+                ['plasma_torpedo', 'Plasma Torpedo', 'Heavy magnetic payload causing massive kinetic shockwave without overheating.', '💣', '#f59e0b', 3, 0, 1, 'singularity_core_probe', 40.00, 0, 0.00, 5, 450],
+                ['quantum_phaser', 'Quantum Phaser', 'Sub-atomic pulse rifle optimized for deep singularity warfare.', '✨', '#10b981', 4, 1, 1, 'deep_core_breakthrough', 15.00, 1, 6.00, 4, 950]
+            ];
+
+            $ins = $pdo->prepare("
+                INSERT INTO `wormhole_game_weapons`
+                (`weapon_id`, `weapon_name`, `description`, `icon`, `color_hex`, `stage_level`, `is_initial_weapon`, `is_acquirable`, `acquire_event`, `energy_drain_pct`, `can_overheat`, `cooldown_seconds`, `damage_per_hit`, `bullet_speed`)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON DUPLICATE KEY UPDATE
+                  `weapon_name` = VALUES(`weapon_name`),
+                  `description` = VALUES(`description`),
+                  `icon` = VALUES(`icon`),
+                  `color_hex` = VALUES(`color_hex`),
+                  `stage_level` = VALUES(`stage_level`),
+                  `is_initial_weapon` = VALUES(`is_initial_weapon`),
+                  `is_acquirable` = VALUES(`is_acquirable`),
+                  `acquire_event` = VALUES(`acquire_event`),
+                  `energy_drain_pct` = VALUES(`energy_drain_pct`),
+                  `can_overheat` = VALUES(`can_overheat`),
+                  `cooldown_seconds` = VALUES(`cooldown_seconds`),
+                  `damage_per_hit` = VALUES(`damage_per_hit`),
+                  `bullet_speed` = VALUES(`bullet_speed`),
+                  `updated_at` = NOW()
+            ");
+
+            $count = 0;
+            foreach ($defaults as $d) {
+                $ins->execute($d);
+                $count++;
+            }
+
+            sendJsonResponse(true, "Successfully initialized/reset {$count} default stage weapons into database.", [
+                'count' => $count
+            ]);
+        } catch (Throwable $e) {
+            sendJsonResponse(false, 'Failed to seed weapons: ' . $e->getMessage(), [], 500);
+        }
+    }
+
 sendJsonResponse(false, 'Unknown action', array(), 400);
 
 } catch (Throwable $e) {

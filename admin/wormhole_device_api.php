@@ -557,6 +557,76 @@ try {
         ]);
     }
 
+    // =========================================================================
+    // PUBLIC / TELEMETRY: GET GAME WEAPONS ARSENAL
+    // =========================================================================
+    if ($action === 'get_game_weapons' || $action === 'get_public_game_weapons') {
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS `wormhole_game_weapons` (
+                  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                  `weapon_id` VARCHAR(64) NOT NULL UNIQUE,
+                  `weapon_name` VARCHAR(100) NOT NULL,
+                  `description` VARCHAR(255) NULL,
+                  `icon` VARCHAR(32) DEFAULT '⚡',
+                  `color_hex` VARCHAR(16) DEFAULT '#ff3344',
+                  `stage_level` INT NOT NULL DEFAULT 1,
+                  `is_initial_weapon` TINYINT(1) NOT NULL DEFAULT 0,
+                  `is_acquirable` TINYINT(1) NOT NULL DEFAULT 1,
+                  `acquire_event` VARCHAR(100) NOT NULL DEFAULT 'default_start',
+                  `energy_drain_pct` DECIMAL(5,2) NOT NULL DEFAULT 10.00,
+                  `can_overheat` TINYINT(1) NOT NULL DEFAULT 1,
+                  `cooldown_seconds` DECIMAL(5,2) NOT NULL DEFAULT 5.00,
+                  `damage_per_hit` INT NOT NULL DEFAULT 1,
+                  `bullet_speed` INT NOT NULL DEFAULT 600,
+                  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                  INDEX `idx_stage_level` (`stage_level`),
+                  INDEX `idx_is_initial` (`is_initial_weapon`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+
+            $countStmt = $pdo->query("SELECT COUNT(*) FROM `wormhole_game_weapons`");
+            if ((int)$countStmt->fetchColumn() === 0) {
+                $defaults = [
+                    ['red_laser', 'Red Laser', 'Standard high-cadence plasma emitter with twin focus beams.', '🔴', '#ff2244', 1, 1, 1, 'default_start', 10.00, 1, 5.00, 2, 550],
+                    ['blue_laser', 'Blue Laser', 'High-impact coherent photon beam with deep penetration.', '🔵', '#00d4ff', 1, 0, 1, 'default_start', 30.00, 1, 10.00, 1, 700],
+                    ['tachyon_lance', 'Tachyon Lance', 'Superluminal phase particle array unlocked after horizon traversal.', '⚡', '#a855f7', 2, 1, 1, 'warp_horizon_jump', 20.00, 1, 7.00, 3, 850],
+                    ['plasma_torpedo', 'Plasma Torpedo', 'Heavy magnetic payload causing massive kinetic shockwave without overheating.', '💣', '#f59e0b', 3, 0, 1, 'singularity_core_probe', 40.00, 0, 0.00, 5, 450],
+                    ['quantum_phaser', 'Quantum Phaser', 'Sub-atomic pulse rifle optimized for deep singularity warfare.', '✨', '#10b981', 4, 1, 1, 'deep_core_breakthrough', 15.00, 1, 6.00, 4, 950]
+                ];
+                $ins = $pdo->prepare("
+                    INSERT INTO `wormhole_game_weapons`
+                    (`weapon_id`, `weapon_name`, `description`, `icon`, `color_hex`, `stage_level`, `is_initial_weapon`, `is_acquirable`, `acquire_event`, `energy_drain_pct`, `can_overheat`, `cooldown_seconds`, `damage_per_hit`, `bullet_speed`)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                foreach ($defaults as $d) {
+                    $ins->execute($d);
+                }
+            }
+
+            $stageFilter = isset($input['stage_level']) && $input['stage_level'] !== '' ? intval($input['stage_level']) : (isset($_GET['stage_level']) ? intval($_GET['stage_level']) : null);
+            if ($stageFilter !== null && $stageFilter > 0) {
+                $stmt = $pdo->prepare("SELECT * FROM `wormhole_game_weapons` WHERE `stage_level` = :stage ORDER BY `is_initial_weapon` DESC, `damage_per_hit` DESC, `id` ASC");
+                $stmt->execute(['stage' => $stageFilter]);
+            } else {
+                $stmt = $pdo->query("SELECT * FROM `wormhole_game_weapons` ORDER BY `stage_level` ASC, `is_initial_weapon` DESC, `damage_per_hit` DESC, `id` ASC");
+            }
+            $weapons = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $stagesStmt = $pdo->query("SELECT DISTINCT `stage_level` FROM `wormhole_game_weapons` ORDER BY `stage_level` ASC");
+            $stages = $stagesStmt->fetchAll(PDO::FETCH_COLUMN);
+
+            sendDeviceResponse(true, 'Game weapons loaded successfully', [
+                'weapons' => $weapons,
+                'stages'  => $stages,
+                'total'   => count($weapons)
+            ]);
+        } catch (Throwable $e) {
+            sendDeviceResponse(false, 'Failed to fetch game weapons: ' . $e->getMessage(), [], 500);
+        }
+    }
+
     sendDeviceResponse(false, "Unrecognized action '{$action}'.", [], 400);
 
 } catch (Throwable $e) {

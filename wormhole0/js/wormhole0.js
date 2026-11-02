@@ -1053,7 +1053,7 @@ class AudioManager {
     }
   }
 
-  playLaser() {
+  playLaser(weaponType = 'red_laser') {
     if (CONFIG.audioMuted) return;
     if (!this.ctx) {
       this.init();
@@ -1064,25 +1064,85 @@ class AudioManager {
         this.ctx.resume().catch(() => {});
       }
       const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sine';
-
-      // Punchy sci-fi laser blast frequency drop (clean sine sweep, no harsh static)
-      osc.frequency.setValueAtTime(980, now);
-      osc.frequency.exponentialRampToValueAtTime(110, now + 0.16);
-
-      gain.gain.setValueAtTime(0.38, now);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
-
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-
-      osc.start(now);
-      osc.stop(now + 0.18);
+      if (weaponType === 'blue_laser') {
+        // High-energy quantum blue laser: dual resonant sweep with heavy snap
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc1.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(1380, now);
+        osc1.frequency.exponentialRampToValueAtTime(130, now + 0.22);
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(690, now);
+        osc2.frequency.exponentialRampToValueAtTime(65, now + 0.22);
+        gain.gain.setValueAtTime(0.42, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.24);
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 0.24);
+        osc2.stop(now + 0.24);
+      } else {
+        // Neon Red Laser: punchy sci-fi laser blast frequency drop
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(980, now);
+        osc.frequency.exponentialRampToValueAtTime(110, now + 0.16);
+        gain.gain.setValueAtTime(0.38, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      }
     } catch (e) {
       console.warn('[Audio] Laser sound error:', e);
     }
+  }
+
+  playOverheatAlert() {
+    if (CONFIG.audioMuted) return;
+    if (!this.ctx) this.init();
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(360, now);
+      osc.frequency.setValueAtTime(240, now + 0.08);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } catch (e) {}
+  }
+
+  playWeaponSwitch() {
+    if (CONFIG.audioMuted) return;
+    if (!this.ctx) this.init();
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(750, now);
+      osc.frequency.exponentialRampToValueAtTime(1300, now + 0.09);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.1);
+    } catch (e) {}
   }
 
   updateProximity(distKm) {
@@ -1093,6 +1153,377 @@ class AudioManager {
 }
 
 const audioMgr = new AudioManager();
+
+// =============================================================================
+// WEAPONS ARSENAL & OVERHEAT SYSTEM (STAGE 1 & FUTURE STAGE / MISSION EXTENSIBLE)
+// =============================================================================
+class WeaponsSystem {
+  constructor() {
+    this.weapons = {};
+    this.activeWeaponId = 'red_laser';
+    this.listeners = [];
+
+    // Initial Level Weapons
+    this.registerWeapon({
+      id: 'red_laser',
+      name: 'Neon Red Laser',
+      shortName: 'RED LASER',
+      icon: '🔴',
+      colorHex: 0xff0033,
+      cssColor: '#ff0033',
+      glowColor: 'rgba(255, 0, 51, 0.55)',
+      energyCost: 10,       // Loses 10% out of 100% per shot
+      cooldownDurationSec: 5, // 5 seconds cool-off on 0% overheat
+      bulletSpeed: 550,
+      boltLength: 7.5,
+      boltRadius: 0.14,
+      bulletLifetime: 2.2,
+      bulletLightIntensity: 3.5,
+      description: 'Directed neon plasma pulse. Consumes 10% energy per shot. 5-second dissipation when overheated.',
+      stageUnlocked: 1,
+      acquired: true,
+      isAvailable: true
+    });
+
+    this.registerWeapon({
+      id: 'blue_laser',
+      name: 'Cobalt Blue Laser',
+      shortName: 'BLUE LASER',
+      icon: '🔵',
+      colorHex: 0x0088ff,
+      cssColor: '#0088ff',
+      glowColor: 'rgba(0, 136, 255, 0.65)',
+      energyCost: 30,       // Loses 30% out of 100% per shot
+      cooldownDurationSec: 10, // 10 seconds cool-off on 0% overheat
+      bulletSpeed: 700,
+      boltLength: 9.0,
+      boltRadius: 0.18,
+      bulletLifetime: 2.5,
+      bulletLightIntensity: 4.5,
+      description: 'High-density quantum particle beam. Consumes 30% energy per shot. 10-second dissipation when overheated.',
+      stageUnlocked: 1,
+      acquired: true,
+      isAvailable: true
+    });
+  }
+
+  registerWeapon(config) {
+    const id = config.id;
+    this.weapons[id] = {
+      id: id,
+      name: config.name || id,
+      shortName: config.shortName || config.name || id,
+      icon: config.icon || '🔫',
+      colorHex: config.colorHex !== undefined ? config.colorHex : 0x00f0ff,
+      cssColor: config.cssColor || '#00f0ff',
+      glowColor: config.glowColor || 'rgba(0, 240, 255, 0.4)',
+      energyCost: config.energyCost !== undefined ? config.energyCost : 10,
+      cooldownDurationSec: config.cooldownDurationSec !== undefined ? config.cooldownDurationSec : 5,
+      bulletSpeed: config.bulletSpeed || 600,
+      boltLength: config.boltLength || 8,
+      boltRadius: config.boltRadius || 0.15,
+      bulletLifetime: config.bulletLifetime || 2.2,
+      bulletLightIntensity: config.bulletLightIntensity || 3.5,
+      description: config.description || '',
+      stageUnlocked: config.stageUnlocked || 1,
+      acquired: config.acquired !== undefined ? config.acquired : true,
+      isAvailable: config.isAvailable !== undefined ? config.isAvailable : true,
+
+      // Live runtime state
+      energy: 100, // 100%
+      isOverheated: false,
+      overheatRemainingMs: 0
+    };
+    this.notify();
+    return this.weapons[id];
+  }
+
+  unlockWeapon(id) {
+    if (this.weapons[id]) {
+      this.weapons[id].isAvailable = true;
+      this.weapons[id].acquired = true;
+      this.notify();
+      showToast(`🔓 WEAPON UNLOCKED: ${this.weapons[id].name.toUpperCase()}`);
+    }
+  }
+
+  acquireWeapon(id) {
+    this.unlockWeapon(id);
+  }
+
+  selectWeapon(id) {
+    if (state.isPaused) {
+      showToast('⚠️ CONTROLS LOCKED OUT — GAME PAUSED');
+      return false;
+    }
+    const target = this.weapons[id];
+    if (!target) {
+      console.warn(`[WeaponsSystem] Weapon ${id} not found.`);
+      return false;
+    }
+    if (!target.isAvailable || !target.acquired) {
+      showToast(`🔒 ${target.name.toUpperCase()} IS LOCKED (STAGE / MISSION REQUIREMENT)`);
+      return false;
+    }
+    this.activeWeaponId = id;
+    showToast(`⚡ EQUIPPED: ${target.icon} ${target.name.toUpperCase()}`);
+    if (audioMgr && audioMgr.playWeaponSwitch) {
+      audioMgr.playWeaponSwitch();
+    }
+    this.notify();
+    return true;
+  }
+
+  cycleWeapon() {
+    if (state.isPaused) {
+      showToast('⚠️ CONTROLS LOCKED OUT — GAME PAUSED');
+      return false;
+    }
+    const available = Object.values(this.weapons).filter(w => w.isAvailable && w.acquired);
+    if (available.length <= 1) return false;
+    const idx = available.findIndex(w => w.id === this.activeWeaponId);
+    const nextIdx = (idx + 1) % available.length;
+    return this.selectWeapon(available[nextIdx].id);
+  }
+
+  getActiveWeapon() {
+    return this.weapons[this.activeWeaponId] || this.weapons['red_laser'];
+  }
+
+  canFire() {
+    if (state.isPaused) return false;
+    const w = this.getActiveWeapon();
+    if (!w) return false;
+    if (w.isOverheated) {
+      return false;
+    }
+    return true;
+  }
+
+  consumeEnergyOnFire() {
+    const w = this.getActiveWeapon();
+    if (!w) return false;
+
+    // Deduct percentage (10% for red, 30% for blue)
+    w.energy = Math.max(0, w.energy - w.energyCost);
+
+    // If reaches 0%, overheat and disable until cool off
+    if (w.energy <= 0) {
+      w.energy = 0;
+      w.isOverheated = true;
+      w.overheatRemainingMs = w.cooldownDurationSec * 1000;
+      showToast(`🔥 ${w.shortName} OVERHEATED! COOLING OFF (${w.cooldownDurationSec}s)`);
+      if (audioMgr && audioMgr.playOverheatAlert) {
+        audioMgr.playOverheatAlert();
+      }
+    }
+    this.notify();
+    return true;
+  }
+
+  update(delta) {
+    if (state.isPaused) return; // Simulation paused: cooldown timers hold
+    let changed = false;
+    for (const id in this.weapons) {
+      const w = this.weapons[id];
+      if (w.isOverheated) {
+        w.overheatRemainingMs -= delta * 1000;
+        if (w.overheatRemainingMs <= 0) {
+          w.overheatRemainingMs = 0;
+          w.isOverheated = false;
+          w.energy = 100; // Cooled off and restored to 100%
+          showToast(`❄️ ${w.shortName} COOLED OFF — WEAPON READY (100%)`);
+          changed = true;
+        } else {
+          changed = true;
+        }
+      }
+    }
+    if (changed) {
+      this.notify();
+    }
+  }
+
+  notify() {
+    this.updateHUD();
+    this.updateWeaponsTabUI();
+    for (const cb of this.listeners) {
+      try { cb(this); } catch(e) { console.error(e); }
+    }
+  }
+
+  updateHUD() {
+    const active = this.getActiveWeapon();
+    if (!active) return;
+
+    // 1. Update Joystick Knob Icon & Glow
+    const knob = document.getElementById('touch-stick-knob');
+    if (knob) {
+      if (active.isOverheated) {
+        knob.textContent = '🔥';
+        knob.style.boxShadow = '0 0 18px #ef476f';
+      } else {
+        knob.textContent = active.icon;
+        knob.style.boxShadow = `0 0 14px ${active.cssColor}`;
+      }
+    }
+
+    // 2. Update HUD Weapon Pill
+    const pill = document.getElementById('hud-weapon-indicator');
+    const iconEl = document.getElementById('hud-wpn-icon');
+    const nameEl = document.getElementById('hud-wpn-name');
+    const energyEl = document.getElementById('hud-wpn-energy-text');
+    const meterFillEl = document.getElementById('hud-wpn-meter-fill');
+
+    if (pill) {
+      pill.classList.toggle('is-overheated', active.isOverheated);
+      if (iconEl) iconEl.textContent = active.isOverheated ? '🔥' : active.icon;
+      if (nameEl) nameEl.textContent = active.shortName;
+      if (energyEl) {
+        if (active.isOverheated) {
+          const remSec = (active.overheatRemainingMs / 1000).toFixed(1);
+          energyEl.textContent = `${remSec}s`;
+          energyEl.style.color = '#ff85a1';
+        } else {
+          energyEl.textContent = `${active.energy}%`;
+          energyEl.style.color = 'var(--cyan-neon)';
+        }
+      }
+      if (meterFillEl) {
+        meterFillEl.className = 'hud-wpn-meter-fill';
+        if (active.isOverheated) {
+          meterFillEl.classList.add('overheated');
+          const coolFraction = 1.0 - (active.overheatRemainingMs / (active.cooldownDurationSec * 1000));
+          meterFillEl.style.width = `${Math.round(Math.max(0, Math.min(100, coolFraction * 100)))}%`;
+        } else {
+          meterFillEl.classList.add(active.id === 'blue_laser' ? 'blue' : 'red');
+          meterFillEl.style.width = `${active.energy}%`;
+        }
+      }
+    }
+  }
+
+  updateWeaponsTabUI() {
+    const active = this.getActiveWeapon();
+    if (!active) return;
+
+    // Active weapon telemetry box
+    const activeTitle = document.getElementById('wpn-active-title');
+    const activeBadgeStatus = document.getElementById('wpn-active-badge-status');
+    const activeEnergyVal = document.getElementById('wpn-active-energy-val');
+    const activeEnergyBar = document.getElementById('wpn-active-energy-bar');
+    const activeCooldownText = document.getElementById('wpn-active-cooldown-text');
+    const activeCooldownTimer = document.getElementById('wpn-active-cooldown-timer');
+    const activeDesc = document.getElementById('wpn-active-desc');
+
+    if (activeTitle) activeTitle.textContent = `${active.icon} ${active.name.toUpperCase()}`;
+    if (activeDesc) activeDesc.textContent = active.description;
+
+    if (active.isOverheated) {
+      const remSec = (active.overheatRemainingMs / 1000).toFixed(1);
+      if (activeBadgeStatus) {
+        activeBadgeStatus.textContent = 'OVERHEATED';
+        activeBadgeStatus.style.color = '#ff85a1';
+      }
+      if (activeEnergyVal) {
+        activeEnergyVal.textContent = `0% [COOLING: ${remSec}s]`;
+        activeEnergyVal.style.color = '#ff85a1';
+      }
+      if (activeEnergyBar) {
+        activeEnergyBar.className = 'wpn-energy-bar-fill overheated';
+        const coolFraction = 1.0 - (active.overheatRemainingMs / (active.cooldownDurationSec * 1000));
+        activeEnergyBar.style.width = `${Math.round(Math.max(0, Math.min(100, coolFraction * 100)))}%`;
+      }
+      if (activeCooldownText) activeCooldownText.style.display = 'flex';
+      if (activeCooldownTimer) activeCooldownTimer.textContent = `COOLING OFF: ${remSec}s`;
+    } else {
+      if (activeBadgeStatus) {
+        activeBadgeStatus.textContent = active.energy === 100 ? 'READY' : 'CHARGING';
+        activeBadgeStatus.style.color = 'var(--accent-green)';
+      }
+      if (activeEnergyVal) {
+        activeEnergyVal.textContent = `${active.energy}%`;
+        activeEnergyVal.style.color = 'var(--cyan-neon)';
+      }
+      if (activeEnergyBar) {
+        activeEnergyBar.className = `wpn-energy-bar-fill ${active.id === 'blue_laser' ? 'blue-laser' : 'red-laser'}`;
+        activeEnergyBar.style.width = `${active.energy}%`;
+      }
+      if (activeCooldownText) activeCooldownText.style.display = 'none';
+    }
+
+    // Per-weapon card updates
+    for (const id in this.weapons) {
+      const w = this.weapons[id];
+      const card = document.getElementById(`card-wpn-${id}`);
+      const badge = document.getElementById(`badge-wpn-${id}`);
+      const bar = document.getElementById(`bar-wpn-${id}`);
+      const cdText = document.getElementById(`cd-text-${id}`);
+      const cdVal = document.getElementById(`cd-val-${id}`);
+      const status = document.getElementById(`status-wpn-${id}`);
+      const btn = document.getElementById(`btn-select-${id}`);
+
+      const isEquipped = (this.activeWeaponId === id);
+
+      if (card) {
+        card.classList.toggle('active-equipped', isEquipped);
+        card.classList.toggle('is-overheated', w.isOverheated);
+      }
+      if (badge) {
+        if (w.isOverheated) {
+          badge.className = 'wpn-badge overheated';
+          badge.textContent = 'OVERHEATED';
+        } else if (isEquipped) {
+          badge.className = 'wpn-badge equipped';
+          badge.textContent = 'EQUIPPED';
+        } else {
+          badge.className = 'wpn-badge';
+          badge.textContent = 'STANDBY';
+        }
+      }
+      if (bar) {
+        if (w.isOverheated) {
+          bar.className = 'wpn-energy-bar-fill overheated';
+          const coolFraction = 1.0 - (w.overheatRemainingMs / (w.cooldownDurationSec * 1000));
+          bar.style.width = `${Math.round(Math.max(0, Math.min(100, coolFraction * 100)))}%`;
+        } else {
+          bar.className = `wpn-energy-bar-fill ${id === 'blue_laser' ? 'blue-laser' : 'red-laser'}`;
+          bar.style.width = `${w.energy}%`;
+        }
+      }
+      if (cdText && cdVal) {
+        if (w.isOverheated) {
+          cdText.style.display = 'flex';
+          cdVal.textContent = `${(w.overheatRemainingMs / 1000).toFixed(1)}s`;
+        } else {
+          cdText.style.display = 'none';
+        }
+      }
+      if (status) {
+        if (w.isOverheated) {
+          status.textContent = `OVERHEATED (COOLING: ${(w.overheatRemainingMs / 1000).toFixed(1)}s)`;
+          status.style.color = '#ff85a1';
+        } else {
+          status.textContent = `READY (${w.energy}%)`;
+          status.style.color = isEquipped ? 'var(--accent-green)' : 'var(--cyan-neon)';
+        }
+      }
+      if (btn) {
+        if (isEquipped) {
+          btn.textContent = 'EQUIPPED';
+          btn.disabled = true;
+          btn.style.opacity = '0.85';
+        } else {
+          btn.textContent = `EQUIP ${w.shortName}`;
+          btn.disabled = false;
+          btn.style.opacity = '1.0';
+        }
+      }
+    }
+  }
+}
+
+const weaponsSystem = new WeaponsSystem();
 
 // =============================================================================
 // COLLAPSIBLE PANELS: LEFT (MISSION), TOP (TELEMETRY), BOTTOM (TACTICAL)
@@ -1157,13 +1588,16 @@ function toggleLeftPanel(e) {
   if (e) e.stopPropagation();
   if (!leftDrawer) return;
   const willOpen = !leftDrawer.classList.contains('open');
-  if (willOpen && state.autoClose && !state.isPaused) {
-    closeOtherPanels('left');
+  if (willOpen) {
+    setCockpitTab('weapons'); // Default tab when the panel opens!
+    if (state.autoClose && !state.isPaused) {
+      closeOtherPanels('left');
+    }
   }
   leftDrawer.classList.toggle('open', willOpen);
   if (btnToggleDrawer) btnToggleDrawer.classList.toggle('active', willOpen);
   updateLockoutHighlights();
-  showToast(willOpen ? 'OBJECTIVES PANEL OPEN' : 'OBJECTIVES PANEL CLOSED');
+  showToast(willOpen ? 'COCKPIT & WEAPONS PANEL OPEN' : 'COCKPIT & WEAPONS PANEL CLOSED');
 }
 
 function toggleTopPanel(e) {
@@ -1208,36 +1642,46 @@ if (btnToggleDrawer) {
 }
 
 // =============================================================================
-// COCKPIT CONTROLS & MISSIONS PANEL TAB SWITCHER
-// Two tabs: Info (left, buttons & joysticks info) & Missions (right, default open)
+// COCKPIT CONTROLS & MISSIONS PANEL TAB SWITCHER (WEAPONS DEFAULT, INFO, MISSIONS)
 // =============================================================================
+const tabBtnWeapons = document.getElementById('tab-btn-weapons');
 const tabBtnInfo = document.getElementById('tab-btn-info');
 const tabBtnMissions = document.getElementById('tab-btn-missions');
+const tabPaneWeapons = document.getElementById('tab-pane-weapons');
 const tabPaneInfo = document.getElementById('tab-pane-info');
 const tabPaneMissions = document.getElementById('tab-pane-missions');
 
+const drawerTabsList = [
+  { id: 'weapons', btn: tabBtnWeapons, pane: tabPaneWeapons },
+  { id: 'info', btn: tabBtnInfo, pane: tabPaneInfo },
+  { id: 'missions', btn: tabBtnMissions, pane: tabPaneMissions }
+];
+
 function setCockpitTab(tabName) {
-  const isInfo = (tabName === 'info');
-  if (tabBtnInfo) {
-    tabBtnInfo.classList.toggle('active', isInfo);
-    tabBtnInfo.setAttribute('aria-selected', isInfo ? 'true' : 'false');
-  }
-  if (tabBtnMissions) {
-    tabBtnMissions.classList.toggle('active', !isInfo);
-    tabBtnMissions.setAttribute('aria-selected', !isInfo ? 'true' : 'false');
-  }
-  if (tabPaneInfo) {
-    tabPaneInfo.classList.toggle('active', isInfo);
-  }
-  if (tabPaneMissions) {
-    tabPaneMissions.classList.toggle('active', !isInfo);
-  }
+  drawerTabsList.forEach(t => {
+    const isActive = (t.id === tabName);
+    if (t.btn) {
+      t.btn.classList.toggle('active', isActive);
+      t.btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    }
+    if (t.pane) {
+      t.pane.classList.toggle('active', isActive);
+    }
+  });
+
   updateLockoutHighlights();
-  if (state.isPaused && !isInfo) {
-    showToast('⚠️ MISSIONS LOCKED OUT — SIMULATION PAUSED');
+  if (state.isPaused) {
+    showToast('⚠️ CONTROLS LOCKED OUT — SIMULATION PAUSED');
   }
 }
 
+// Attach Tab Click Listeners
+if (tabBtnWeapons) {
+  tabBtnWeapons.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setCockpitTab('weapons');
+  });
+}
 if (tabBtnInfo) {
   tabBtnInfo.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1251,56 +1695,114 @@ if (tabBtnMissions) {
   });
 }
 
-// Support keyboard navigation between tabs (Left / Right arrow, Home, End)
-[tabBtnInfo, tabBtnMissions].forEach((btn) => {
-  if (!btn) return;
+// Support keyboard arrow navigation between all 3 tabs (Weapons <-> Info <-> Missions)
+const tabButtonsArray = [tabBtnWeapons, tabBtnInfo, tabBtnMissions].filter(Boolean);
+tabButtonsArray.forEach((btn, idx) => {
   btn.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
       e.preventDefault();
-      setCockpitTab('missions');
-      if (tabBtnMissions) tabBtnMissions.focus();
+      const nextIdx = (idx + 1) % tabButtonsArray.length;
+      const nextTab = drawerTabsList[nextIdx].id;
+      setCockpitTab(nextTab);
+      tabButtonsArray[nextIdx].focus();
     } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
       e.preventDefault();
-      setCockpitTab('info');
-      if (tabBtnInfo) tabBtnInfo.focus();
+      const prevIdx = (idx - 1 + tabButtonsArray.length) % tabButtonsArray.length;
+      const prevTab = drawerTabsList[prevIdx].id;
+      setCockpitTab(prevTab);
+      tabButtonsArray[prevIdx].focus();
     }
   });
 });
 
+// Centralized Control Lockout Verification Functions (for current & all future controls)
+function isControlLockedOut() {
+  return !!state.isPaused;
+}
+function assertNotPaused(controlName = 'Control') {
+  if (state.isPaused) {
+    showToast(`⚠️ ${controlName.toUpperCase()} LOCKED OUT — GAME PAUSED`);
+    return false;
+  }
+  return true;
+}
+window.isControlLockedOut = isControlLockedOut;
+window.assertNotPaused = assertNotPaused;
+
 // =============================================================================
 // PAUSE / UN-PAUSE SIMULATION & LOCKOUT CONTROLLER
-// Small pause icon in upper left corner, pauses whole game animations,
-// opens Cockpit Controls & Missions panel in Info tab, locks out gameplay controls,
-// highlights any other open tab (Missions) or panel (Top / Bottom) in red to show
-// it is locked out, and returns all controls to normal when unpaused.
+// Pauses all game animations, physics, audio drones, and weapons cooldown,
+// opens Cockpit Controls & Missions panel with WEAPONS tab selected by default,
+// locks out current and future gameplay controls with red highlight styling,
+// and returns all controls to normal when unpaused.
 // =============================================================================
 const btnQuickPause = document.getElementById('btn-quick-pause');
 const btnDrawerPause = document.getElementById('btn-drawer-pause');
 const btnTogglePause = document.getElementById('btn-toggle-pause');
+const weaponsLockedBanner = document.getElementById('weapons-locked-banner');
 const missionsLockedBanner = document.getElementById('missions-locked-banner');
+const infoLockedBanner = document.getElementById('info-locked-banner');
 const topLockedBanner = document.getElementById('top-locked-banner');
 
 function updateLockoutHighlights() {
   const isPaused = !!state.isPaused;
-  
-  // Tab lockout: if paused and Missions tab is open, highlight it red
+
+  // 1. Tab lockout: Weapons tab
+  const isWeaponsActive = tabPaneWeapons && tabPaneWeapons.classList.contains('active');
+  if (tabPaneWeapons) {
+    tabPaneWeapons.classList.toggle('locked-out-red', isPaused && isWeaponsActive);
+    tabPaneWeapons.querySelectorAll('button, .wpn-select-btn').forEach(btn => {
+      btn.disabled = (isPaused && isWeaponsActive);
+    });
+  }
+  if (weaponsLockedBanner) {
+    weaponsLockedBanner.style.display = (isPaused && isWeaponsActive) ? 'block' : 'none';
+  }
+
+  // 2. Tab lockout: Missions tab
   const isMissionsActive = tabPaneMissions && tabPaneMissions.classList.contains('active');
   if (tabPaneMissions) {
     tabPaneMissions.classList.toggle('locked-out-red', isPaused && isMissionsActive);
-    const missionActionBtns = tabPaneMissions.querySelectorAll('.btn-action');
-    missionActionBtns.forEach(btn => {
+    tabPaneMissions.querySelectorAll('.btn-action, button').forEach(btn => {
       btn.disabled = (isPaused && isMissionsActive);
     });
   }
   if (missionsLockedBanner) {
     missionsLockedBanner.style.display = (isPaused && isMissionsActive) ? 'block' : 'none';
   }
-  
-  // Panel lockout: if Top Drawer is open while paused, highlight it red
+
+  // 3. Tab lockout: Info tab
+  const isInfoActive = tabPaneInfo && tabPaneInfo.classList.contains('active');
+  if (tabPaneInfo) {
+    tabPaneInfo.classList.toggle('locked-out-red', isPaused && isInfoActive);
+    tabPaneInfo.querySelectorAll('input, button').forEach(el => {
+      el.disabled = (isPaused && isInfoActive);
+    });
+  }
+  if (infoLockedBanner) {
+    infoLockedBanner.style.display = (isPaused && isInfoActive) ? 'block' : 'none';
+  }
+
+  // 4. HUD Weapon Selector Pill lockout
+  const hudWpnPill = document.getElementById('hud-weapon-indicator');
+  if (hudWpnPill) {
+    if (isPaused) {
+      hudWpnPill.style.pointerEvents = 'none';
+      hudWpnPill.style.opacity = '0.6';
+    } else {
+      hudWpnPill.style.pointerEvents = '';
+      hudWpnPill.style.opacity = '';
+    }
+  }
+
+  // 5. Panel lockout: Top Drawer (Telemetry & Modes Header)
   const isTopOpen = topDrawer && topDrawer.classList.contains('open');
   const topHeader = topDrawer ? topDrawer.querySelector('.hud-header') : null;
   if (topHeader) {
     topHeader.classList.toggle('panel-locked-red', isPaused && isTopOpen);
+    topHeader.querySelectorAll('select, button:not(#btn-drawer-pause):not(#btn-quick-pause)').forEach(el => {
+      el.disabled = (isPaused && isTopOpen);
+    });
   }
   if (topDrawerTab) {
     topDrawerTab.classList.toggle('panel-locked-red', isPaused && isTopOpen);
@@ -1308,12 +1810,15 @@ function updateLockoutHighlights() {
   if (topLockedBanner) {
     topLockedBanner.style.display = (isPaused && isTopOpen) ? 'block' : 'none';
   }
-  
-  // Panel lockout: if Bottom Drawer is open while paused, highlight it red
+
+  // 6. Panel lockout: Bottom Drawer (Tactical Controls HUD)
   const isBottomOpen = bottomDrawer && bottomDrawer.classList.contains('open');
   const bottomFooter = bottomDrawer ? bottomDrawer.querySelector('#hud-panel') : null;
   if (bottomFooter) {
     bottomFooter.classList.toggle('panel-locked-red', isPaused && isBottomOpen);
+    bottomFooter.querySelectorAll('button:not(#btn-toggle-pause), input').forEach(el => {
+      el.disabled = (isPaused && isBottomOpen);
+    });
   }
   if (bottomDrawerTab) {
     bottomDrawerTab.classList.toggle('panel-locked-red', isPaused && isBottomOpen);
@@ -1322,7 +1827,7 @@ function updateLockoutHighlights() {
 
 function setGamePaused(paused) {
   state.isPaused = !!paused;
-  
+
   const pauseBtns = [btnQuickPause, btnDrawerPause, btnTogglePause];
   pauseBtns.forEach(btn => {
     if (!btn) return;
@@ -1338,54 +1843,104 @@ function setGamePaused(paused) {
       }
     }
   });
-  
+
   if (state.isPaused) {
     document.body.classList.add('game-paused');
-    
+
     // Release pointer lock if active
     if (document.pointerLockElement) {
       try { document.exitPointerLock(); } catch(e) {}
     }
     state.isPointerLocked = false;
     state.isMouseDown = false;
-    
+
     // Clear any held movement keys
     Object.keys(keys).forEach(k => { keys[k] = false; });
     state.velocity.set(0, 0, 0);
-    
-    // Open Cockpit Controls & Missions panel with Info tab selected
+
+    // Open Cockpit Controls & Missions panel with WEAPONS tab selected by default
     if (leftDrawer) {
       leftDrawer.classList.add('open');
     }
     if (btnToggleDrawer) {
       btnToggleDrawer.classList.add('active');
     }
-    setCockpitTab('info');
-    
+    setCockpitTab('weapons'); // Weapons is the default tab when panel opens!
+
     // Suspend audio drone while paused
     if (audioMgr && audioMgr.droneAudio && !audioMgr.droneAudio.paused) {
       try { audioMgr.droneAudio.pause(); } catch(e) {}
     }
-    
+
     updateLockoutHighlights();
-    showToast('⏸️ SIMULATION PAUSED — COCKPIT CONTROLS & INFO');
+    showToast('⏸️ SIMULATION PAUSED — CONTROLS LOCKED OUT');
   } else {
     document.body.classList.remove('game-paused');
-    
+
     // Synchronize lastFrameTime so no time delta jump occurs on unpause
     state.lastFrameTime = performance.now();
-    
+
     // Clear all red lockout highlights and re-enable controls
     updateLockoutHighlights();
-    
+
     // Resume audio drone if sound is enabled
     if (!CONFIG.audioMuted && audioMgr && audioMgr.droneAudio) {
       try { audioMgr.droneAudio.play(); } catch(e) {}
     }
-    
+
     showToast('▶️ SIMULATION RESUMED — CONTROLS ACTIVE');
   }
 }
+
+// Attach Weapon Click & Selector Event Handlers
+function initWeaponsInteractions() {
+  const redBtn = document.getElementById('btn-select-red_laser');
+  const redCard = document.getElementById('card-wpn-red_laser');
+  if (redBtn) {
+    redBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!assertNotPaused('Weapon Selection')) return;
+      weaponsSystem.selectWeapon('red_laser');
+    });
+  }
+  if (redCard) {
+    redCard.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      if (!assertNotPaused('Weapon Selection')) return;
+      weaponsSystem.selectWeapon('red_laser');
+    });
+  }
+
+  const blueBtn = document.getElementById('btn-select-blue_laser');
+  const blueCard = document.getElementById('card-wpn-blue_laser');
+  if (blueBtn) {
+    blueBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!assertNotPaused('Weapon Selection')) return;
+      weaponsSystem.selectWeapon('blue_laser');
+    });
+  }
+  if (blueCard) {
+    blueCard.addEventListener('click', (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      if (!assertNotPaused('Weapon Selection')) return;
+      weaponsSystem.selectWeapon('blue_laser');
+    });
+  }
+
+  const hudPill = document.getElementById('hud-weapon-indicator');
+  if (hudPill) {
+    hudPill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!assertNotPaused('Weapon Switch')) return;
+      weaponsSystem.cycleWeapon();
+    });
+  }
+
+  // Initial UI refresh
+  weaponsSystem.notify();
+}
+initWeaponsInteractions();
 
 // Wire Pause Button Click Handlers
 [btnQuickPause, btnDrawerPause, btnTogglePause].forEach(btn => {
@@ -3172,15 +3727,28 @@ if (btnSpin360) {
   });
 }
 
-// 3. NEON RED LASER CANNON SYSTEM & CROSSHAIR RETICLE TRACKER
+// 3. SELECTABLE LASER CANNON SYSTEM & CROSSHAIR RETICLE TRACKER
 const laserBolts = [];
 
 function fireLaserBeam() {
   if (state.isPaused) return;
   if (!scene || !camera) return;
+
+  const activeWpn = weaponsSystem.getActiveWeapon();
+  if (!weaponsSystem.canFire()) {
+    if (activeWpn && activeWpn.isOverheated) {
+      showToast(`⚠️ ${activeWpn.shortName} OVERHEATED — COOLING OFF (${(activeWpn.overheatRemainingMs / 1000).toFixed(1)}s)`);
+      if (audioMgr && audioMgr.playOverheatAlert) audioMgr.playOverheatAlert();
+    }
+    return;
+  }
+
   const now = performance.now();
   if (now - state.lastLaserShotTime < 110) return; // Shot rate throttling
   state.lastLaserShotTime = now;
+
+  // Consume weapon energy (Red laser: 10%, Blue laser: 30%; overheats at 0%)
+  weaponsSystem.consumeEnergyOnFire();
 
   // Lock out right-hand flight for 1 second when fire is triggered
   state.flightLockoutUntil = now + 1000;
@@ -3200,18 +3768,19 @@ function fireLaserBeam() {
     cancelTurn();
   }
 
-  // Sound synthesis
+  // Sound synthesis based on active weapon
   if (!audioMgr.isInitialized) audioMgr.init();
-  audioMgr.playLaser();
+  audioMgr.playLaser(activeWpn.id);
 
   // Crosshair visual blast animation
   const crosshairEl = document.getElementById('center-crosshair');
   if (crosshairEl) {
-    crosshairEl.classList.remove('laser-firing');
+    const fireClass = (activeWpn.id === 'blue_laser') ? 'laser-firing-blue' : 'laser-firing';
+    crosshairEl.classList.remove('laser-firing', 'laser-firing-blue');
     void crosshairEl.offsetWidth; // Reflow
-    crosshairEl.classList.add('laser-firing');
+    crosshairEl.classList.add(fireClass);
     setTimeout(() => {
-      crosshairEl.classList.remove('laser-firing');
+      crosshairEl.classList.remove('laser-firing', 'laser-firing-blue');
     }, 180);
   }
 
@@ -3240,14 +3809,14 @@ function fireLaserBeam() {
 
   const direction = new THREE.Vector3().subVectors(targetPoint, spawnOrigin).normalize();
 
-  // Glowing Neon Red Laser Beam Geometry
-  const boltLength = 7.5;
-  const boltRadius = 0.14;
+  // Glowing Laser Beam Geometry based on active weapon configuration
+  const boltLength = activeWpn.boltLength || 7.5;
+  const boltRadius = activeWpn.boltRadius || 0.14;
   const geometry = new THREE.CylinderGeometry(boltRadius * 0.35, boltRadius, boltLength, 8);
   geometry.rotateX(Math.PI / 2);
 
   const material = new THREE.MeshBasicMaterial({
-    color: 0xff0033,
+    color: activeWpn.colorHex,
     transparent: true,
     opacity: 0.95,
     blending: THREE.AdditiveBlending
@@ -3261,7 +3830,7 @@ function fireLaserBeam() {
   const coreGeom = new THREE.CylinderGeometry(boltRadius * 0.15, boltRadius * 0.35, boltLength * 0.92, 6);
   coreGeom.rotateX(Math.PI / 2);
   const coreMat = new THREE.MeshBasicMaterial({
-    color: 0xffffff,
+    color: activeWpn.id === 'blue_laser' ? 0xe0ffff : 0xffffff,
     transparent: true,
     opacity: 0.95
   });
@@ -3269,7 +3838,7 @@ function fireLaserBeam() {
   mesh.add(coreMesh);
 
   // Dynamic laser point light glow
-  const light = new THREE.PointLight(0xff0033, 3.5, 35);
+  const light = new THREE.PointLight(activeWpn.colorHex, activeWpn.bulletLightIntensity || 3.5, 35);
   light.position.set(0, 0, 0);
   mesh.add(light);
 
@@ -3283,9 +3852,9 @@ function fireLaserBeam() {
     coreMat,
     light,
     direction,
-    speed: 550, // units per second
+    speed: activeWpn.bulletSpeed || 550, // units per second
     spawnTime: now,
-    lifetime: 2.2 // seconds
+    lifetime: activeWpn.bulletLifetime || 2.2 // seconds
   });
 }
 
@@ -3549,8 +4118,25 @@ function lockLandscape() {
 // DESKTOP 6-DOF FLIGHT CONTROLS & POINTER LOCK
 // =============================================================================
 window.addEventListener('keydown', (e) => {
+  // If game is paused, lock out all flight, combat, and weapon controls!
+  if (state.isPaused) return;
+
   keys[e.code] = true;
   if (!audioMgr.isInitialized) audioMgr.init();
+
+  // Weapon Selection Hotkeys: 1 (Red Laser), 2 (Blue Laser), Q (Cycle Weapons)
+  if (e.code === 'Digit1') {
+    weaponsSystem.selectWeapon('red_laser');
+    return;
+  }
+  if (e.code === 'Digit2') {
+    weaponsSystem.selectWeapon('blue_laser');
+    return;
+  }
+  if (e.code === 'KeyQ') {
+    weaponsSystem.cycleWeapon();
+    return;
+  }
 
   if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'ShiftLeft', 'ShiftRight', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) {
     handleFlightActivity();
@@ -4355,6 +4941,7 @@ if (renderer) {
 
   updateCrosshairPosition(delta);
   updateLaserBolts(delta);
+  weaponsSystem.update(delta);
 
   accretionUniforms.uTime.value = state.time;
   secondaryDiskMaterial.uniforms.uTime.value = state.time;
@@ -4638,6 +5225,10 @@ async function runStartupDiagnosticsAndSplashScreen() {
 // Window exports for verification & diagnostics
 if (typeof window !== 'undefined') {
   window.state = state;
+  window.weaponsSystem = weaponsSystem;
+  window.setCockpitTab = setCockpitTab;
+  window.isControlLockedOut = isControlLockedOut;
+  window.assertNotPaused = assertNotPaused;
   window.laserBolts = laserBolts;
   window.fireLaserBeam = fireLaserBeam;
   window.updateCrosshairPosition = updateCrosshairPosition;

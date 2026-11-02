@@ -1028,6 +1028,38 @@ class AudioManager {
     if (this.synthGain && this.ctx) this.synthGain.gain.setValueAtTime(0.0, this.ctx.currentTime);
   }
 
+  setStageDeviceAudio(stageSlug, deviceType) {
+    try {
+      const droneSrc = `${deviceType}/audio/${stageSlug}/wormhole_drone.wav`;
+      const warpSrc = `${deviceType}/audio/${stageSlug}/warp_engage.wav`;
+      const scanSrc = `${deviceType}/audio/${stageSlug}/scanner_ping.wav`;
+      const coilSrc = `${deviceType}/audio/${stageSlug}/coil_calibrate.wav`;
+
+      const wasPlaying = this.droneAudio && !this.droneAudio.paused;
+      if (this.droneAudio) {
+        this.droneAudio.src = droneSrc;
+        this.droneAudio.load();
+        if (wasPlaying && !CONFIG.audioMuted) {
+          this.droneAudio.play().catch(() => {});
+        }
+      }
+      if (this.warpAudio) {
+        this.warpAudio.src = warpSrc;
+        this.warpAudio.load();
+      }
+      if (this.scanAudio) {
+        this.scanAudio.src = scanSrc;
+        this.scanAudio.load();
+      }
+      if (this.coilAudio) {
+        this.coilAudio.src = coilSrc;
+        this.coilAudio.load();
+      }
+    } catch (e) {
+      console.warn('[Audio] setStageDeviceAudio error:', e);
+    }
+  }
+
   playWarp() {
     if (CONFIG.audioMuted) return;
     if (this.warpAudio) {
@@ -2337,6 +2369,153 @@ if (btnForceContinue) {
   });
 }
 // =============================================================================
+// =============================================================================
+// STAGE & DEVICE LEVEL PROGRESSION & CUSTOMIZATION MANAGER
+// =============================================================================
+const STAGE_REGISTRY = {
+  1: { level: 1, name: 'Warp Origin', slug: 'warp_origin' },
+  2: { level: 2, name: 'Event Horizon', slug: 'event_horizon' },
+  3: { level: 3, name: 'Singularity Core', slug: 'singularity_core' },
+  4: { level: 4, name: 'Quantum Realm', slug: 'quantum_realm' }
+};
+
+let currentActiveStage = 1;
+let currentActiveDeviceType = 'desktop';
+let activeStageModule = null;
+
+function getDeviceTypeFromMode(mode) {
+  if (mode === 'desktop-vr') return 'vr';
+  if (mode === 'mobile-ar') return 'arcore';
+  if (mode === 'mobile-xr') return 'mobile';
+  return 'desktop';
+}
+
+function getEngineApi() {
+  return {
+    state,
+    CONFIG,
+    scene,
+    camera,
+    renderer,
+    audioMgr,
+    weaponsSystem,
+    showToast,
+    setHudStatus: (statusText) => {
+      const hudStatus = document.getElementById('hud-status');
+      if (hudStatus) hudStatus.textContent = statusText;
+    },
+    setThemeColors: (visual) => {
+      if (!visual) return;
+      if (visual.primaryColor) {
+        document.documentElement.style.setProperty('--cyan-neon', visual.primaryColor);
+        document.documentElement.style.setProperty('--cyan-glow', visual.glowColor || 'rgba(0, 240, 255, 0.45)');
+      }
+      if (visual.panelBg) {
+        document.documentElement.style.setProperty('--panel-bg', visual.panelBg);
+      }
+      if (visual.panelBorder) {
+        document.documentElement.style.setProperty('--panel-border', visual.panelBorder);
+      }
+      if (visual.uniforms) {
+        if (typeof accretionUniforms !== 'undefined' && accretionUniforms) {
+          if (accretionUniforms.uColorEdge && visual.uniforms.uColorEdge) {
+            accretionUniforms.uColorEdge.value.setHex(visual.uniforms.uColorEdge);
+          }
+          if (accretionUniforms.uColorCore && visual.uniforms.uColorCore) {
+            accretionUniforms.uColorCore.value.setHex(visual.uniforms.uColorCore);
+          }
+          if (accretionUniforms.uColorHot && visual.uniforms.uColorHot) {
+            accretionUniforms.uColorHot.value.setHex(visual.uniforms.uColorHot);
+          }
+        }
+        if (typeof secondaryDiskMaterial !== 'undefined' && secondaryDiskMaterial && secondaryDiskMaterial.uniforms && visual.uniforms.uColorEdge) {
+          secondaryDiskMaterial.uniforms.uColorEdge.value.setHex(visual.uniforms.uColorEdge);
+        }
+        if (typeof photonRingMaterial !== 'undefined' && photonRingMaterial && photonRingMaterial.uniforms && photonRingMaterial.uniforms.uHaloColor && visual.uniforms.uHaloColor) {
+          photonRingMaterial.uniforms.uHaloColor.value.setHex(visual.uniforms.uHaloColor);
+        }
+      }
+      if (visual.lights) {
+        if (typeof ambientLight !== 'undefined' && ambientLight && visual.lights.ambient) {
+          ambientLight.color.setHex(visual.lights.ambient);
+        }
+        if (typeof wormholeCenterLight !== 'undefined' && wormholeCenterLight && visual.lights.center) {
+          wormholeCenterLight.color.setHex(visual.lights.center);
+        }
+        if (typeof secondaryLight !== 'undefined' && secondaryLight && visual.lights.center) {
+          secondaryLight.color.setHex(visual.lights.center);
+        }
+      }
+    },
+    setFlightConfig: (flight) => {
+      if (!flight) return;
+      if (flight.speed) CONFIG.flightSpeed = flight.speed;
+      if (flight.boostMultiplier) CONFIG.boostMultiplier = flight.boostMultiplier;
+      if (flight.pitchSpeed) CONFIG.pitchSpeed = flight.pitchSpeed;
+      if (flight.yawSpeed) CONFIG.yawSpeed = flight.yawSpeed;
+    },
+    setWeapons: (weaponsConfig) => {
+      if (!weaponsConfig) return;
+      if (weaponsConfig.initial && weaponsSystem && typeof weaponsSystem.equipWeapon === 'function') {
+        weaponsSystem.equipWeapon(weaponsConfig.initial.id);
+      }
+    },
+    setEnemies: (enemiesConfig) => {
+      window.activeStageEnemies = enemiesConfig;
+    },
+    setDeviceControls: (controls) => {
+      if (!controls) return;
+      const aimStick = document.getElementById('aim-stick-zone');
+      const touchThrottle = document.getElementById('touch-throttle-zone');
+      if (aimStick) aimStick.style.display = controls.showVirtualJoysticks ? 'flex' : 'none';
+      if (touchThrottle) touchThrottle.style.display = controls.showVirtualJoysticks ? 'flex' : 'none';
+    }
+  };
+}
+
+async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
+  const stage = STAGE_REGISTRY[stageLevel] || STAGE_REGISTRY[1];
+  currentActiveStage = stage.level;
+  currentActiveDeviceType = deviceType;
+
+  const scriptRelative = `../${deviceType}/${stage.slug}_${deviceType}.js`;
+  console.log(`[Wormhole XR Engine] Loading stage device script: ${scriptRelative}`);
+
+  try {
+    let mod = null;
+    try {
+      mod = await import(scriptRelative);
+    } catch (e1) {
+      mod = await import(`./${deviceType}/${stage.slug}_${deviceType}.js`);
+    }
+    activeStageModule = mod;
+    const api = getEngineApi();
+    if (typeof mod.applyStage === 'function') {
+      mod.applyStage(api);
+    } else if (mod.default && typeof mod.default.applyStage === 'function') {
+      mod.default.applyStage(api);
+    }
+
+    const jumpSelect = document.getElementById('select-stage-jump');
+    if (jumpSelect && parseInt(jumpSelect.value) !== currentActiveStage) {
+      jumpSelect.value = currentActiveStage.toString();
+    }
+
+    if (audioMgr && typeof audioMgr.setStageDeviceAudio === 'function') {
+      audioMgr.setStageDeviceAudio(stage.slug, deviceType);
+    }
+
+    window.dispatchEvent(new CustomEvent('wormholeStageChanged', {
+      detail: { stageLevel: currentActiveStage, stageName: stage.name, deviceType, scriptPath: scriptRelative }
+    }));
+
+    return mod;
+  } catch (err) {
+    console.error(`[Wormhole XR Engine] Failed to load stage module: ${scriptRelative}`, err);
+    return null;
+  }
+}
+
 // MULTI-PLATFORM & XR MODE SWITCHER
 // =============================================================================
 const selectModeEl = document.getElementById('select-mode');
@@ -2344,6 +2523,18 @@ if (selectModeEl) {
   selectModeEl.addEventListener('change', (e) => {
     state.xrMode = e.target.value;
     handleModeChange(state.xrMode);
+    const devType = getDeviceTypeFromMode(state.xrMode);
+    loadStageDeviceModule(currentActiveStage, devType);
+  });
+}
+
+// Stage Jump Debug Selector
+const selectStageJumpEl = document.getElementById('select-stage-jump');
+if (selectStageJumpEl) {
+  selectStageJumpEl.addEventListener('change', (e) => {
+    const targetStage = parseInt(e.target.value) || 1;
+    console.log(`[Wormhole XR Debug] Stage jump selected: Stage ${targetStage}`);
+    loadStageDeviceModule(targetStage, currentActiveDeviceType);
   });
 }
 
@@ -5125,6 +5316,10 @@ async function runStartupDiagnosticsAndSplashScreen() {
     if (selectModeEl) selectModeEl.value = initialMode;
     activateModeParameters(state.xrMode);
 
+    const detectedDevType = getDeviceTypeFromMode(initialMode);
+    currentActiveDeviceType = detectedDevType;
+    await loadStageDeviceModule(1, detectedDevType);
+
     const startBtn = document.getElementById('btn-splash-start');
     if (startBtn) {
       startBtn.disabled = false;
@@ -5191,6 +5386,10 @@ if (typeof window !== 'undefined') {
   window.execute360Turn = execute360Turn;
   window.cancel360Turn = cancel360Turn;
   window.cancelTurn = cancelTurn;
+  window.jumpToStage = (level) => loadStageDeviceModule(level, currentActiveDeviceType);
+  window.loadStageDeviceModule = loadStageDeviceModule;
+  window.currentActiveStage = () => currentActiveStage;
+  window.currentActiveDeviceType = () => currentActiveDeviceType;
 }
 
 // Initial mobile snap grid calculation

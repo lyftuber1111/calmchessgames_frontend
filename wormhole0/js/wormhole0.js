@@ -1096,8 +1096,9 @@ const audioMgr = new AudioManager();
 // =============================================================================
 // COLLAPSIBLE PANELS: LEFT (MISSION), TOP (TELEMETRY), BOTTOM (TACTICAL)
 // Panels toggle open/closed ONLY when tab handle is selected (never auto-pinned).
-// All open panels automatically close when the flight controller is used,
-// unless the 'Auto close' checkbox is toggled off (unchecked).
+// All open panels automatically close when the left hand joystick or flight
+// controller is focused/used, unless the 'Auto hide' checkbox is unchecked.
+// Only one panel open at a time unless auto hide is unchecked.
 // =============================================================================
 const leftDrawer = document.getElementById('left-drawer-container');
 const drawerTab = document.getElementById('drawer-tab');
@@ -1118,6 +1119,21 @@ function closeAllPanels() {
   if (btnToggleHeader) btnToggleHeader.classList.remove('active');
 }
 
+// Close other open panels when a panel opens (enforces only one panel open unless auto hide is unchecked)
+function closeOtherPanels(exceptPanel) {
+  if (exceptPanel !== 'left' && leftDrawer && leftDrawer.classList.contains('open')) {
+    leftDrawer.classList.remove('open');
+    if (btnToggleDrawer) btnToggleDrawer.classList.remove('active');
+  }
+  if (exceptPanel !== 'top' && topDrawer && topDrawer.classList.contains('open')) {
+    topDrawer.classList.remove('open');
+    if (btnToggleHeader) btnToggleHeader.classList.remove('active');
+  }
+  if (exceptPanel !== 'bottom' && bottomDrawer && bottomDrawer.classList.contains('open')) {
+    bottomDrawer.classList.remove('open');
+  }
+}
+
 function handleFlightActivity() {
   if (state.autoClose) {
     const wasAnyOpen = (leftDrawer && leftDrawer.classList.contains('open')) ||
@@ -1129,10 +1145,19 @@ function handleFlightActivity() {
   }
 }
 
+// When the left hand joystick (or whichever joystick is focused) is focused or engaged,
+// all open panels close except when auto hide is unchecked.
+function handleLeftJoystickFocus(e) {
+  handleFlightActivity();
+}
+
 function toggleLeftPanel(e) {
   if (e) e.stopPropagation();
   if (!leftDrawer) return;
   const willOpen = !leftDrawer.classList.contains('open');
+  if (willOpen && state.autoClose) {
+    closeOtherPanels('left');
+  }
   leftDrawer.classList.toggle('open', willOpen);
   if (btnToggleDrawer) btnToggleDrawer.classList.toggle('active', willOpen);
   showToast(willOpen ? 'OBJECTIVES PANEL OPEN' : 'OBJECTIVES PANEL CLOSED');
@@ -1142,6 +1167,9 @@ function toggleTopPanel(e) {
   if (e) e.stopPropagation();
   if (!topDrawer) return;
   const willOpen = !topDrawer.classList.contains('open');
+  if (willOpen && state.autoClose) {
+    closeOtherPanels('top');
+  }
   topDrawer.classList.toggle('open', willOpen);
   if (btnToggleHeader) btnToggleHeader.classList.toggle('active', willOpen);
   showToast(willOpen ? 'TELEMETRY HEADER OPEN' : 'TELEMETRY HEADER CLOSED');
@@ -1151,6 +1179,9 @@ function toggleBottomPanel(e) {
   if (e) e.stopPropagation();
   if (!bottomDrawer) return;
   const willOpen = !bottomDrawer.classList.contains('open');
+  if (willOpen && state.autoClose) {
+    closeOtherPanels('bottom');
+  }
   bottomDrawer.classList.toggle('open', willOpen);
   showToast(willOpen ? 'TACTICAL CONTROLS OPEN' : 'TACTICAL CONTROLS CLOSED');
 }
@@ -1174,13 +1205,27 @@ if (bottomDrawerTab) {
   bottomDrawerTab.addEventListener('click', toggleBottomPanel);
 }
 
-// Synchronize all Auto Close checkboxes across panels
+// Synchronize all Auto Close / Auto Hide checkboxes across panels
 function setAutoClose(val) {
   state.autoClose = val;
   document.querySelectorAll('.chk-auto-close').forEach(chk => {
     chk.checked = val;
   });
-  showToast(val ? 'AUTO CLOSE: ON (CLOSES DURING FLIGHT)' : 'AUTO CLOSE: OFF (PANELS REMAIN OPEN)');
+  if (val) {
+    // If auto hide is checked and multiple panels are open, enforce single open panel
+    let openCount = 0;
+    if (leftDrawer && leftDrawer.classList.contains('open')) openCount++;
+    if (topDrawer && topDrawer.classList.contains('open')) openCount++;
+    if (bottomDrawer && bottomDrawer.classList.contains('open')) openCount++;
+    if (openCount > 1) {
+      if (leftDrawer && leftDrawer.classList.contains('open')) {
+        closeOtherPanels('left');
+      } else if (topDrawer && topDrawer.classList.contains('open')) {
+        closeOtherPanels('top');
+      }
+    }
+  }
+  showToast(val ? 'AUTO HIDE: ON (ONE PANEL AT A TIME / CLOSES ON JOYSTICK FOCUS)' : 'AUTO HIDE: OFF (PANELS REMAIN OPEN)');
 }
 
 document.querySelectorAll('.chk-auto-close').forEach(chk => {
@@ -2091,6 +2136,7 @@ function pollGamepad(delta) {
         state.aimMove.y = ly;
         state.aimActive = true;
       }
+      handleLeftJoystickFocus();
     } else if (!aimTouchId && !isMouseAim) {
       if (state.aimActive) {
         state.aimActive = false;
@@ -2241,6 +2287,21 @@ let lastFireTapTime = 0;
 
 // 1. RIGHT THUMB JOYSTICK (TAP TO FIRE LASER / HOLD FOR FLIGHT NAVIGATION)
 if (touchStickZone) {
+  touchStickZone.setAttribute('tabindex', '0');
+  ['focus', 'focusin', 'pointerdown'].forEach(evt => {
+    touchStickZone.addEventListener(evt, () => {
+      handleFlightActivity();
+    });
+  });
+  if (touchStickKnob) {
+    touchStickKnob.setAttribute('tabindex', '0');
+    ['focus', 'focusin', 'pointerdown'].forEach(evt => {
+      touchStickKnob.addEventListener(evt, () => {
+        handleFlightActivity();
+      });
+    });
+  }
+
   touchStickZone.addEventListener('touchstart', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -2404,9 +2465,25 @@ function updateStickPos(clientX, clientY) {
 
 // 2. LEFT THUMB AIM JOYSTICK (RAPIDLY MOVES CROSSHAIR RETICLE - NO FLIGHT CONTROL)
 if (aimStickZone) {
+  aimStickZone.setAttribute('tabindex', '0');
+  ['focus', 'focusin', 'pointerdown'].forEach(evt => {
+    aimStickZone.addEventListener(evt, (e) => {
+      handleLeftJoystickFocus(e);
+    });
+  });
+  if (aimStickKnob) {
+    aimStickKnob.setAttribute('tabindex', '0');
+    ['focus', 'focusin', 'pointerdown'].forEach(evt => {
+      aimStickKnob.addEventListener(evt, (e) => {
+        handleLeftJoystickFocus(e);
+      });
+    });
+  }
+
   aimStickZone.addEventListener('touchstart', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    handleLeftJoystickFocus(e);
     const rect = aimStickZone.getBoundingClientRect();
     aimStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
 
@@ -2430,6 +2507,7 @@ if (aimStickZone) {
       for (let i = 0; i < touchList.length; i++) {
         const touch = touchList[i];
         if (touch.identifier === aimTouchId || touch.target === aimStickZone || (aimStickZone && aimStickZone.contains(touch.target))) {
+          handleLeftJoystickFocus();
           updateAimStickPos(touch.clientX, touch.clientY);
           break;
         }
@@ -2468,6 +2546,7 @@ if (aimStickZone) {
   aimStickZone.addEventListener('mousedown', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    handleLeftJoystickFocus(e);
     state.isMouseDown = false;
     const rect = aimStickZone.getBoundingClientRect();
     aimStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
@@ -2478,6 +2557,7 @@ if (aimStickZone) {
 
   window.addEventListener('mousemove', (e) => {
     if (isMouseAim) {
+      handleLeftJoystickFocus();
       state.isMouseDown = false;
       updateAimStickPos(e.clientX, e.clientY);
     }

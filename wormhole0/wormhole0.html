@@ -964,6 +964,15 @@
       transition: left 0.3s ease, right 0.3s ease, top 0.3s ease, bottom 0.3s ease;
     }
 
+    .virtual-stick-zone:focus,
+    .virtual-stick-zone:focus-visible,
+    .virtual-stick-knob:focus,
+    .virtual-stick-knob:focus-visible {
+      outline: none;
+      border-color: var(--cyan-neon);
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.45);
+    }
+
     /* Bottom-Left: Crosshair Aim Joystick (Standard Layout) */
     .aim-stick-zone {
       background: rgba(0, 30, 50, 0.45);
@@ -2283,8 +2292,8 @@
     <div class="drawer-content" id="mission-panel">
       <div class="drawer-top-bar">
         <span class="panel-heading">COCKPIT CONTROLS & MISSIONS</span>
-        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
-          <input type="checkbox" id="chk-auto-close-left" class="chk-auto-close" checked> Auto close
+        <label class="autohide-toggle" title="When checked, only one panel is open at a time and all open panels automatically close when the joystick or flight controls are used">
+          <input type="checkbox" id="chk-auto-close-left" class="chk-auto-close" checked> Auto hide
         </label>
       </div>
 
@@ -2464,8 +2473,8 @@
       </div>
 
       <div style="display:flex; align-items:center; gap:8px;">
-        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
-          <input type="checkbox" id="chk-auto-close-top" class="chk-auto-close" checked> Auto close
+        <label class="autohide-toggle" title="When checked, only one panel is open at a time and all open panels automatically close when the joystick or flight controls are used">
+          <input type="checkbox" id="chk-auto-close-top" class="chk-auto-close" checked> Auto hide
         </label>
       </div>
     </header>
@@ -2537,8 +2546,8 @@
         <label class="autohide-toggle" title="Flip joystick button positions: Flight stick on bottom-right, Aim stick on upper-left">
           <input type="checkbox" id="chk-left-handed-bottom" class="chk-left-handed"> Left-Handed Flip Controls
         </label>
-        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
-          <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto close
+        <label class="autohide-toggle" title="When checked, only one panel is open at a time and all open panels automatically close when the joystick or flight controls are used">
+          <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto hide
         </label>
         <label class="autohide-toggle" title="Toggle visibility of the full screen mobile targeting snap grid">
           <input type="checkbox" id="chk-show-grid-bottom" class="chk-show-grid"> Target Grid
@@ -2574,8 +2583,8 @@
   <!-- Mobile Touch On-Screen Controls (Landscape) -->
   <div id="mobile-touch-controls">
     <!-- Right Virtual Joystick Zone (Tap: Fire Laser / Move: Up, Down & 360° Turn) -->
-    <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Move: Up, Down & 360° Turn">
-      <div class="virtual-stick-knob" id="touch-stick-knob">🔴</div>
+    <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Move: Up, Down & 360° Turn (Flight Joystick)" tabindex="0">
+      <div class="virtual-stick-knob" id="touch-stick-knob" tabindex="0">🔴</div>
     </div>
 
     <!-- Center Touch Action Cluster -->
@@ -2603,13 +2612,13 @@
     </div>
 
     <!-- Left Virtual Joystick Zone (Crosshair Aim Only - No Flight Control) -->
-    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Crosshair Aim Joystick (Controls Crosshair Only - No Flight Control)">
-      <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob"></div>
+    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Crosshair Aim Joystick (Left Hand Joystick - Controls Crosshair Only)" tabindex="0">
+      <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob" tabindex="0"></div>
     </div>
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261101_v10"></script>
+  <script type="module" src="js/wormhole0.js?v=20261101_v11"></script>
 
 </body>
 </html>

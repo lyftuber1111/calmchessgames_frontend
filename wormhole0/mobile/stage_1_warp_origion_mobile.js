@@ -119,7 +119,7 @@ export const stageConfig = {
     allowScreenSwipe: false,
     enableSwipeLook: false,
     preventScreenScroll: true,
-    description: 'Flight executed ONLY via thumb controllers, 180, 360, and fwd/rev slider. Screen swipe flight disabled; all tabbed panels and custom controls active.'
+    description: 'Flight executed ONLY via thumb controllers, 180, 360, and fwd/rev slider. Screen swipe flight disabled; all sliding panels, tabbed panels, and custom controls active.'
   }
 };
 
@@ -178,7 +178,6 @@ function enableTabbedPanels() {
 
     if (pane) {
       pane.style.pointerEvents = 'auto';
-      // Clean up any stale inline display style so CSS class .active governs visibility
       pane.style.display = '';
       pane.querySelectorAll('button, input, select, .wpn-select-btn, .btn-action').forEach((el) => {
         el.disabled = false;
@@ -188,7 +187,6 @@ function enableTabbedPanels() {
     }
   });
 
-  // Ensure left drawer panel content is scrollable and interactive
   const missionPanel = document.getElementById('mission-panel');
   if (missionPanel) {
     missionPanel.style.pointerEvents = 'auto';
@@ -204,41 +202,112 @@ function enableTabbedPanels() {
 }
 
 /**
+ * Ensures drawer handles on mobile touch devices slide smoothly on tap or touch.
+ */
+function setupDrawerSliding() {
+  if (typeof document === 'undefined') return;
+
+  const handleIds = ['drawer-tab', 'top-drawer-tab', 'bottom-drawer-tab'];
+  handleIds.forEach((id) => {
+    const handle = document.getElementById(id);
+    if (!handle || handle.__stage1TouchSlideBound) return;
+    handle.__stage1TouchSlideBound = true;
+
+    handle.style.pointerEvents = 'auto';
+    handle.style.cursor = 'pointer';
+
+    // Touch tap handler for mobile screens
+    handle.addEventListener('touchend', (e) => {
+      if (e.cancelable) e.preventDefault();
+      handle.click();
+    });
+    handle.addEventListener('pointerup', (e) => {
+      if (e.pointerType === 'touch') {
+        handle.click();
+      }
+    });
+  });
+}
+
+/**
  * Ensures swiping across the background 3D canvas with a finger does not execute flight.
  * Blocks touches directly on #webgl-container and its canvas, leaving all
- * tabbed panels, thumb controllers, 180/360 spin buttons, and throttle sliders 100% active.
+ * sliding drawer panels, tabbed panels, thumb controllers, 180/360 spin buttons,
+ * and throttle sliders 100% active.
  */
 function setupScreenSwipeLock(engineApi) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
-  // 1. Inject styling: lock canvas touch-action, but explicitly keep panels and controls interactive
+  // 1. Inject styling: lock canvas touch-action, keep panels sliding, and ensure high z-index
   let styleEl = document.getElementById('stage1-warp-origin-touch-lock');
   if (!styleEl) {
     styleEl = document.createElement('style');
     styleEl.id = 'stage1-warp-origin-touch-lock';
-    styleEl.textContent = `
-      #webgl-container, #webgl-container canvas {
-        touch-action: none !important;
-        overscroll-behavior: none !important;
-        user-select: none !important;
-        -webkit-user-select: none !important;
-      }
-      #left-drawer-container, .drawer-content, .drawer-tabs-bar, .drawer-tab-btn, .drawer-tab-pane,
-      #top-drawer-container, #bottom-drawer-container, #mobile-touch-controls {
-        pointer-events: auto !important;
-      }
-      .drawer-content, .drawer-tab-pane {
-        touch-action: pan-y !important;
-        -webkit-overflow-scrolling: touch !important;
-        overflow-y: auto !important;
-      }
-    `;
     document.head.appendChild(styleEl);
   }
+
+  styleEl.textContent = `
+    #webgl-container, #webgl-container canvas {
+      touch-action: none !important;
+      overscroll-behavior: none !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+    /* Ensure all 3 drawers are always visible, rendered, and able to slide in all orientations */
+    body:not(.portrait-dismissed) #left-drawer-container,
+    body:not(.portrait-dismissed) #top-drawer-container,
+    body:not(.portrait-dismissed) #bottom-drawer-container,
+    #left-drawer-container, #top-drawer-container, #bottom-drawer-container {
+      display: flex !important;
+      z-index: 120 !important;
+    }
+    #left-drawer-container {
+      pointer-events: auto !important;
+    }
+    #left-drawer-container.open {
+      transform: translateX(0) !important;
+    }
+    #top-drawer-container.open {
+      transform: translateX(-50%) translateY(0) !important;
+    }
+    #bottom-drawer-container.open {
+      transform: translateX(-50%) translateY(0) !important;
+    }
+    #drawer-tab, #top-drawer-tab, #bottom-drawer-tab {
+      pointer-events: auto !important;
+      cursor: pointer !important;
+      z-index: 125 !important;
+    }
+    /* Full-screen wrapper must not block handle taps */
+    #mobile-touch-controls {
+      pointer-events: none !important;
+    }
+    /* Explicitly keep all virtual thumb controls, slider, and buttons fully interactive */
+    #mobile-touch-controls .virtual-stick-zone,
+    #mobile-touch-controls .throttle-slider-container,
+    #mobile-touch-controls .touch-btn,
+    #mobile-touch-controls #aim-stick-zone,
+    #mobile-touch-controls #touch-stick-zone,
+    #mobile-touch-controls #custom-throttle-slider,
+    #mobile-touch-controls #touch-btn-spin-180,
+    #mobile-touch-controls #touch-btn-spin-360,
+    #mobile-touch-controls #touch-btn-warp {
+      pointer-events: auto !important;
+    }
+    .drawer-content, .drawer-tab-pane {
+      touch-action: pan-y !important;
+      -webkit-overflow-scrolling: touch !important;
+      overflow-y: auto !important;
+    }
+    #left-drawer-container, .drawer-content, .drawer-tabs-bar, .drawer-tab-btn, .drawer-tab-pane {
+      pointer-events: auto !important;
+    }
+  `;
 
   // 2. Prevent duplicate handler registrations
   if (window.__stage1WarpOriginSwipeLockInstalled) {
     enableTabbedPanels();
+    setupDrawerSliding();
     return;
   }
   window.__stage1WarpOriginSwipeLockInstalled = true;
@@ -276,14 +345,14 @@ function setupScreenSwipeLock(engineApi) {
     }
   }, { capture: true, passive: false });
 
-  // 3. Enable all tabbed panels
+  // 3. Enable all tabbed panels and sliding drawers
   enableTabbedPanels();
+  setupDrawerSliding();
 
-  // Re-enable tabs whenever drawer handle is tapped
+  // Re-enable tabs whenever left drawer is toggled
   const drawerTab = document.getElementById('drawer-tab');
   if (drawerTab) {
     drawerTab.addEventListener('click', () => setTimeout(enableTabbedPanels, 50));
-    drawerTab.addEventListener('touchend', () => setTimeout(enableTabbedPanels, 50));
   }
 }
 
@@ -313,7 +382,7 @@ export function applyStage(engineApi) {
     engineApi.showToast('📱 STAGE 1: WARP ORIGIN [MOBILE] LOADED');
   }
 
-  // Ensure background canvas swipe flight is blocked while tabbed panels remain 100% active
+  // Ensure background canvas swipe flight is blocked while sliding drawers and tabs remain active
   setupScreenSwipeLock(engineApi);
 
   return stageConfig;

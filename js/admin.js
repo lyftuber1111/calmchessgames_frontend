@@ -198,6 +198,7 @@
               fetchAccountDeletionRequests();
               fetchPasswordResets();
               fetchAppointments();
+          fetchGameWeapons();
           fetchWormholeDevices();
           } else {
               if (authMsg) {
@@ -250,8 +251,8 @@
           targetTab = 'appointments';
       } else if (normalized === 'messages' || normalized === 'message' || normalized === 'contact' || normalized === 'inquiries' || normalized === 'sent' || normalized === 'sent-messages') {
           targetTab = 'messages';
-      } else if (normalized === 'wormhole_devices' || normalized === 'wormhole' || normalized === 'devices' || normalized === 'xr') {
-          targetTab = 'wormhole_devices';
+      } else if (normalized === 'manager' || normalized === 'game_manager' || normalized === 'gamemanager' || normalized === 'game-manager' || normalized === 'gamemgr' || normalized === 'game' || normalized === 'weapons' || normalized === 'wormhole_devices' || normalized === 'wormhole' || normalized === 'devices' || normalized === 'xr') {
+          targetTab = 'game_manager';
       } else {
           targetTab = 'segments';
       }
@@ -264,7 +265,7 @@
       const tabBtnResets = document.getElementById('tabBtnResets');
       const tabBtnAppointments = document.getElementById('tabBtnAppointments');
       const tabBtnMessages = document.getElementById('tabBtnMessages');
-      const tabBtnWormholeDevices = document.getElementById('tabBtnWormholeDevices');
+      const tabBtnGameManager = document.getElementById('tabBtnGameManager') || document.getElementById('tabBtnManager') || document.getElementById('tabBtnWormholeDevices');
 
       const contentSegments = document.getElementById('tabContentSegments');
       const contentUsers = document.getElementById('tabContentUsers');
@@ -273,7 +274,7 @@
       const contentResets = document.getElementById('tabContentResets');
       const contentAppointments = document.getElementById('tabContentAppointments');
       const contentMessages = document.getElementById('tabContentMessages');
-      const contentWormholeDevices = document.getElementById('tabContentWormholeDevices');
+      const contentGameManager = document.getElementById('tabContentGameManager') || document.getElementById('tabContentManager') || document.getElementById('tabContentWormholeDevices');
 
       if (tabBtnSegments) tabBtnSegments.classList.toggle('active', targetTab === 'segments');
       if (tabBtnUsers) tabBtnUsers.classList.toggle('active', targetTab === 'users');
@@ -282,7 +283,7 @@
       if (tabBtnResets) tabBtnResets.classList.toggle('active', targetTab === 'resets');
       if (tabBtnAppointments) tabBtnAppointments.classList.toggle('active', targetTab === 'appointments');
       if (tabBtnMessages) tabBtnMessages.classList.toggle('active', targetTab === 'messages');
-      if (tabBtnWormholeDevices) tabBtnWormholeDevices.classList.toggle('active', targetTab === 'wormhole_devices');
+      if (tabBtnGameManager) tabBtnGameManager.classList.toggle('active', targetTab === 'game_manager');
 
       if (contentSegments) contentSegments.style.display = (targetTab === 'segments') ? 'block' : 'none';
       if (contentUsers) contentUsers.style.display = (targetTab === 'users') ? 'block' : 'none';
@@ -291,7 +292,7 @@
       if (contentResets) contentResets.style.display = (targetTab === 'resets') ? 'block' : 'none';
       if (contentAppointments) contentAppointments.style.display = (targetTab === 'appointments') ? 'block' : 'none';
       if (contentMessages) contentMessages.style.display = (targetTab === 'messages') ? 'block' : 'none';
-      if (contentWormholeDevices) contentWormholeDevices.style.display = (targetTab === 'wormhole_devices') ? 'block' : 'none';
+      if (contentGameManager) contentGameManager.style.display = (targetTab === 'game_manager') ? 'block' : 'none';
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -309,10 +310,20 @@
           fetchAppointments();
       } else if (targetTab === 'messages') {
           fetchAppointments();
-      } else if (targetTab === 'wormhole_devices') {
+      } else if (targetTab === 'game_manager') {
+          fetchGameWeapons();
           fetchWormholeDevices();
       }
+
+      try {
+          if (typeof window !== 'undefined' && window.location && window.history && window.history.replaceState) {
+              window.history.replaceState(null, '', '#' + targetTab);
+          }
+      } catch (e) {}
   }
+
+  // Immediately bind switchAdminTab to global window scope
+  global.switchAdminTab = switchAdminTab;
 
   /* --- TAB 1: RING NAVIGATION & SEGMENTS --- */
   async function fetchSegments() {
@@ -3109,8 +3120,8 @@ Thank you for reaching out to Calm Chess Games. `;
       }
 
       const authInput = document.getElementById('adm-pass');
-      if (authInput && !authInput.dataset.boundEnter) {
-          authInput.dataset.boundEnter = 'true';
+      if (authInput && (!authInput.dataset || !authInput.dataset.boundEnter)) {
+          if (authInput.dataset) authInput.dataset.boundEnter = 'true';
           authInput.addEventListener('keydown', (e) => {
               if (e.key === 'Enter') {
                   e.preventDefault();
@@ -3118,6 +3129,36 @@ Thank you for reaching out to Calm Chess Games. `;
               }
           });
       }
+
+      // Explicit click listener binding on Manager tab button for robust cross-browser clickability
+      const managerBtn = document.getElementById('tabBtnGameManager') || document.getElementById('tabBtnManager');
+      if (managerBtn && (!managerBtn.dataset || !managerBtn.dataset.boundClick)) {
+          if (managerBtn.dataset) managerBtn.dataset.boundClick = 'true';
+          managerBtn.style.cursor = 'pointer';
+          managerBtn.addEventListener('click', function(e) {
+              if (e) e.preventDefault();
+              switchAdminTab('game_manager');
+          });
+      }
+
+      // Check for initial URL hash (#manager, #game_manager, etc.)
+      try {
+          if (typeof window !== 'undefined' && window.location && window.location.hash) {
+              const h = window.location.hash.replace('#', '').trim();
+              if (h) {
+                  switchAdminTab(h);
+              }
+          }
+      } catch (e) {}
+  }
+
+  if (typeof window !== 'undefined') {
+      window.addEventListener('hashchange', () => {
+          const h = (window.location.hash || '').replace('#', '').trim();
+          if (h && typeof window.switchAdminTab === 'function') {
+              window.switchAdminTab(h);
+          }
+      });
   }
 
   if (document.readyState === 'loading') {
@@ -3449,6 +3490,329 @@ Thank you for reaching out to Calm Chess Games. `;
       .catch(err => alert('Error: ' + err.message));
   }
 
+  // =========================================================================
+  // 30. WORMHOLE GAME MANAGER & STAGE ARSENAL WEAPONS
+  // =========================================================================
+  let cachedGameWeapons = [];
+
+  async function fetchGameWeapons() {
+      const tbody = document.getElementById('adminGameWeaponsBody');
+      if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted);">Querying weapons database...</td></tr>';
+      }
+
+      try {
+          const res = await callAdminWormholeApi('get_game_weapons', 'GET');
+          cachedGameWeapons = res.weapons || [];
+
+          // Update metrics
+          const metricTotal = document.getElementById('metricTotalWeapons');
+          if (metricTotal) metricTotal.textContent = cachedGameWeapons.length;
+
+          const initialCount = cachedGameWeapons.filter(w => parseInt(w.is_initial_weapon) === 1).length;
+          const metricInitial = document.getElementById('metricInitialWeapons');
+          if (metricInitial) metricInitial.textContent = initialCount;
+
+          const overheatCount = cachedGameWeapons.filter(w => parseInt(w.can_overheat) === 1).length;
+          const metricOverheat = document.getElementById('metricOverheatWeapons');
+          if (metricOverheat) metricOverheat.textContent = overheatCount;
+
+          const distinctStages = new Set(cachedGameWeapons.map(w => w.stage_level));
+          const metricStages = document.getElementById('metricActiveStages');
+          if (metricStages) metricStages.textContent = distinctStages.size || (res.stages ? res.stages.length : 1);
+
+          const badge = document.getElementById('gameManagerBadge');
+          if (badge) {
+              badge.textContent = cachedGameWeapons.length;
+              badge.style.display = cachedGameWeapons.length > 0 ? 'inline-block' : 'none';
+          }
+
+          renderGameWeapons(cachedGameWeapons);
+      } catch (err) {
+          console.error('[Admin] Game weapons fetch error:', err);
+          if (tbody) {
+              tbody.innerHTML = `<tr><td colspan="10" style="padding: 16px; text-align: center; color: #ef476f;">Error loading weapons: ${escapeHtml(err.message)}</td></tr>`;
+          }
+      }
+  }
+
+  function renderGameWeapons(weapons) {
+      const tbody = document.getElementById('adminGameWeaponsBody');
+      if (!tbody) return;
+
+      if (!weapons || weapons.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted);">No stage weapons found in database. Click "+ Add Weapon" or "🌱 Reset Default Weapons" to initialize.</td></tr>';
+          return;
+      }
+
+      tbody.innerHTML = weapons.map(w => {
+          const isInitial = parseInt(w.is_initial_weapon) === 1;
+          const isAcquirable = parseInt(w.is_acquirable) === 1;
+          const canOverheat = parseInt(w.can_overheat) === 1;
+          const drain = parseFloat(w.energy_drain_pct || 10).toFixed(0);
+          const coolSec = parseFloat(w.cooldown_seconds || 5).toFixed(1);
+          const dmg = parseInt(w.damage_per_hit || 1);
+          const color = escapeHtml(w.color_hex || '#ff2244');
+          const icon = escapeHtml(w.icon || '⚡');
+
+          const initialBtn = isInitial
+              ? `<button onclick="toggleWeaponInitial(${w.id}, 1, ${w.stage_level})" class="admin-tab-btn" style="background:rgba(16,185,129,0.2);border-color:#10b981;color:#10b981;font-size:0.75rem;padding:3px 8px;cursor:pointer;" title="Click to disable initial status">⭐ Stage ${w.stage_level} Initial</button>`
+              : `<button onclick="toggleWeaponInitial(${w.id}, 0, ${w.stage_level})" class="admin-tab-btn" style="background:rgba(255,255,255,0.05);border-color:#475569;color:var(--text-muted);font-size:0.75rem;padding:3px 8px;cursor:pointer;" title="Click to make initial weapon for this stage">Set Initial</button>`;
+
+          const overheatBtn = canOverheat
+              ? `<button onclick="toggleWeaponOverheat(${w.id}, 1)" class="admin-tab-btn" style="background:rgba(239,68,111,0.2);border-color:#ef476f;color:#ef476f;font-size:0.75rem;padding:3px 8px;cursor:pointer;" title="Click to toggle overheat off">🔥 Overheats (Yes)</button>`
+              : `<button onclick="toggleWeaponOverheat(${w.id}, 0)" class="admin-tab-btn" style="background:rgba(0,240,255,0.15);border-color:#00f0ff;color:#00f0ff;font-size:0.75rem;padding:3px 8px;cursor:pointer;" title="Click to enable overheat">❄️ No Overheat</button>`;
+
+          const acquirableHtml = isAcquirable
+              ? `<div style="font-size:0.8rem;color:#10b981;">💎 Acquirable</div><div style="font-size:0.72rem;color:var(--text-muted);font-family:monospace;">${escapeHtml(w.acquire_event || 'default_start')}</div>`
+              : `<div style="font-size:0.8rem;color:#ef476f;">🔒 Locked</div>`;
+
+          return `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.15s ease;">
+                  <td style="padding: 10px 12px; text-align: center; font-size: 1.3rem;">
+                      <span title="${escapeHtml(w.weapon_name)}">${icon}</span>
+                      <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${color}; margin-left: 4px; box-shadow: 0 0 6px ${color};"></span>
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <div style="font-weight: bold; color: #fff; font-size: 0.92rem;">${escapeHtml(w.weapon_name)}</div>
+                      <div style="font-size: 0.75rem; color: #00f0ff; font-family: monospace;">${escapeHtml(w.weapon_id)}</div>
+                      ${w.description ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">${escapeHtml(w.description)}</div>` : ''}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <span class="admin-tab-btn" style="padding: 2px 8px; font-size: 0.78rem; background: rgba(0,240,255,0.1); border-color: #00f0ff; color: #00f0ff;">Stage ${w.stage_level}</span>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      ${initialBtn}
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      ${acquirableHtml}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <span style="color: #ffb703; font-weight: bold; font-size: 0.95rem;">${drain}%</span>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      ${overheatBtn}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+                      ${canOverheat ? `${coolSec}s` : '<span style="color:#64748b;">N/A</span>'}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <span style="color: #00f0ff; font-weight: bold; font-size: 1rem; text-shadow: 0 0 8px rgba(0,240,255,0.4);">💥 ${dmg} Hit${dmg > 1 ? 's' : ''}</span>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <div style="display: flex; gap: 6px; justify-content: center;">
+                          <button onclick="openEditGameWeaponModal(${w.id})" class="admin-tab-btn" style="padding: 4px 10px; font-size: 0.78rem; background: rgba(0,240,255,0.15); border-color: #00f0ff; color: #00f0ff; cursor: pointer;">✏️ Edit</button>
+                          <button onclick="deleteGameWeapon(${w.id}, '${escapeHtml(w.weapon_name)}')" class="admin-tab-btn" style="padding: 4px 8px; font-size: 0.78rem; background: rgba(239,68,111,0.15); border-color: #ef476f; color: #ef476f; cursor: pointer;" title="Delete weapon">🗑️</button>
+                      </div>
+                  </td>
+              </tr>
+          `;
+      }).join('');
+  }
+
+  function filterGameWeapons() {
+      const q = (document.getElementById('gameWeaponSearchInput')?.value || '').toLowerCase().trim();
+      const stageFilter = document.getElementById('gameWeaponStageFilter')?.value || 'all';
+
+      const filtered = cachedGameWeapons.filter(w => {
+          if (stageFilter !== 'all' && String(w.stage_level) !== String(stageFilter)) {
+              return false;
+          }
+          if (!q) return true;
+          return (w.weapon_name && w.weapon_name.toLowerCase().includes(q)) ||
+                 (w.weapon_id && w.weapon_id.toLowerCase().includes(q)) ||
+                 (w.acquire_event && w.acquire_event.toLowerCase().includes(q)) ||
+                 (w.description && w.description.toLowerCase().includes(q));
+      });
+
+      renderGameWeapons(filtered);
+  }
+
+  function openAddGameWeaponModal() {
+      const title = document.getElementById('weaponModalTitle');
+      if (title) title.textContent = '🔫 Add Stage Weapon';
+
+      document.getElementById('weaponRecordId').value = '0';
+      document.getElementById('weaponCode').value = '';
+      document.getElementById('weaponCode').disabled = false;
+      document.getElementById('weaponName').value = '';
+      document.getElementById('weaponIcon').value = '⚡';
+      document.getElementById('weaponColor').value = '#ff2244';
+      document.getElementById('weaponStageLevel').value = '1';
+      document.getElementById('weaponIsInitial').checked = false;
+      document.getElementById('weaponIsAcquirable').checked = true;
+      document.getElementById('weaponAcquireEvent').value = 'default_start';
+      document.getElementById('weaponDrainPct').value = '10';
+      document.getElementById('weaponCanOverheat').value = '1';
+      document.getElementById('weaponCooldownSec').value = '5.0';
+      document.getElementById('weaponDamagePerHit').value = '2';
+      document.getElementById('weaponBulletSpeed').value = '600';
+      document.getElementById('weaponDescription').value = '';
+
+      const modal = document.getElementById('editGameWeaponModal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function openEditGameWeaponModal(id) {
+      const weapon = cachedGameWeapons.find(w => parseInt(w.id) === parseInt(id));
+      if (!weapon) {
+          alert('Weapon not found in local cache');
+          return;
+      }
+
+      const title = document.getElementById('weaponModalTitle');
+      if (title) title.textContent = `🔫 Edit Weapon: ${weapon.weapon_name}`;
+
+      document.getElementById('weaponRecordId').value = weapon.id;
+      document.getElementById('weaponCode').value = weapon.weapon_id;
+      document.getElementById('weaponCode').disabled = true; // lock code during edit
+      document.getElementById('weaponName').value = weapon.weapon_name;
+      document.getElementById('weaponIcon').value = weapon.icon || '⚡';
+      document.getElementById('weaponColor').value = weapon.color_hex || '#ff2244';
+      document.getElementById('weaponStageLevel').value = weapon.stage_level || 1;
+      document.getElementById('weaponIsInitial').checked = parseInt(weapon.is_initial_weapon) === 1;
+      document.getElementById('weaponIsAcquirable').checked = parseInt(weapon.is_acquirable) === 1;
+      document.getElementById('weaponAcquireEvent').value = weapon.acquire_event || 'default_start';
+      document.getElementById('weaponDrainPct').value = parseFloat(weapon.energy_drain_pct || 10).toFixed(0);
+      document.getElementById('weaponCanOverheat').value = parseInt(weapon.can_overheat) === 1 ? '1' : '0';
+      document.getElementById('weaponCooldownSec').value = parseFloat(weapon.cooldown_seconds || 5).toFixed(1);
+      document.getElementById('weaponDamagePerHit').value = weapon.damage_per_hit || 1;
+      document.getElementById('weaponBulletSpeed').value = weapon.bullet_speed || 600;
+      document.getElementById('weaponDescription').value = weapon.description || '';
+
+      const modal = document.getElementById('editGameWeaponModal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function closeEditGameWeaponModal() {
+      const modal = document.getElementById('editGameWeaponModal');
+      if (modal) modal.style.display = 'none';
+  }
+
+  async function saveGameWeapon() {
+      const id = parseInt(document.getElementById('weaponRecordId').value || 0);
+      const code = (document.getElementById('weaponCode').value || '').trim();
+      const name = (document.getElementById('weaponName').value || '').trim();
+      const icon = (document.getElementById('weaponIcon').value || '⚡').trim();
+      const color = (document.getElementById('weaponColor').value || '#ff2244').trim();
+      const stage = parseInt(document.getElementById('weaponStageLevel').value || 1);
+      const isInitial = document.getElementById('weaponIsInitial').checked ? 1 : 0;
+      const isAcquirable = document.getElementById('weaponIsAcquirable').checked ? 1 : 0;
+      const acquireEvent = (document.getElementById('weaponAcquireEvent').value || 'default_start').trim();
+      const drain = parseFloat(document.getElementById('weaponDrainPct').value || 10);
+      const canOverheat = parseInt(document.getElementById('weaponCanOverheat').value || 1);
+      const coolSec = parseFloat(document.getElementById('weaponCooldownSec').value || 5);
+      const dmg = parseInt(document.getElementById('weaponDamagePerHit').value || 1);
+      const speed = parseInt(document.getElementById('weaponBulletSpeed').value || 600);
+      const desc = (document.getElementById('weaponDescription').value || '').trim();
+
+      if (!code || !name) {
+          alert('Weapon Identifier (Code) and Display Name are required!');
+          return;
+      }
+
+      if (drain <= 0 || drain > 100) {
+          alert('Energy Drain percentage must be between 1% and 100%');
+          return;
+      }
+
+      if (dmg < 1) {
+          alert('Damage number must be at least 1 hit');
+          return;
+      }
+
+      const payload = {
+          id: id,
+          weapon_id: code,
+          weapon_name: name,
+          icon: icon,
+          color_hex: color,
+          stage_level: stage,
+          is_initial_weapon: isInitial,
+          is_acquirable: isAcquirable,
+          acquire_event: acquireEvent,
+          energy_drain_pct: drain,
+          can_overheat: canOverheat,
+          cooldown_seconds: coolSec,
+          damage_per_hit: dmg,
+          bullet_speed: speed,
+          description: desc
+      };
+
+      try {
+          const res = await callAdminWormholeApi('save_game_weapon', 'POST', payload);
+          alert(res.message || 'Weapon saved successfully!');
+          closeEditGameWeaponModal();
+          fetchGameWeapons();
+      } catch (err) {
+          console.error('[Admin] Save game weapon error:', err);
+          alert('Failed to save weapon: ' + err.message);
+      }
+  }
+
+  async function deleteGameWeapon(id, name) {
+      if (!confirm(`Are you sure you want to delete the weapon '${name}' from the game arsenal?`)) {
+          return;
+      }
+
+      try {
+          const res = await callAdminWormholeApi('delete_game_weapon', 'POST', { id: id });
+          alert(res.message || 'Weapon deleted successfully');
+          fetchGameWeapons();
+      } catch (err) {
+          console.error('[Admin] Delete game weapon error:', err);
+          alert('Failed to delete weapon: ' + err.message);
+      }
+  }
+
+  async function toggleWeaponOverheat(id, currentStatus) {
+      const newStatus = currentStatus ? 0 : 1;
+      try {
+          await callAdminWormholeApi('toggle_game_weapon_overheat', 'POST', { id: id, can_overheat: newStatus });
+          fetchGameWeapons();
+      } catch (err) {
+          console.error('[Admin] Toggle overheat error:', err);
+          alert('Failed to update overheat status: ' + err.message);
+      }
+  }
+
+  async function toggleWeaponInitial(id, currentStatus, stage) {
+      try {
+          const res = await callAdminWormholeApi('toggle_game_weapon_initial', 'POST', { id: id });
+          fetchGameWeapons();
+      } catch (err) {
+          console.error('[Admin] Toggle initial weapon error:', err);
+          alert('Failed to update initial weapon: ' + err.message);
+      }
+  }
+
+  async function seedDefaultGameWeapons() {
+      if (!confirm('Re-seed / Reset default weapons (Red Laser, Blue Laser, Tachyon Lance, Plasma Torpedo, Quantum Phaser)? This will ensure default configurations exist.')) {
+          return;
+      }
+
+      try {
+          const res = await callAdminWormholeApi('seed_game_weapons', 'POST', {});
+          alert(res.message || 'Default weapons successfully initialized!');
+          fetchGameWeapons();
+      } catch (err) {
+          console.error('[Admin] Seed weapons error:', err);
+          alert('Failed to seed default weapons: ' + err.message);
+      }
+  }
+
+  global.fetchGameWeapons = fetchGameWeapons;
+  global.renderGameWeapons = renderGameWeapons;
+  global.filterGameWeapons = filterGameWeapons;
+  global.openAddGameWeaponModal = openAddGameWeaponModal;
+  global.openEditGameWeaponModal = openEditGameWeaponModal;
+  global.closeEditGameWeaponModal = closeEditGameWeaponModal;
+  global.saveGameWeapon = saveGameWeapon;
+  global.deleteGameWeapon = deleteGameWeapon;
+  global.toggleWeaponOverheat = toggleWeaponOverheat;
+  global.toggleWeaponInitial = toggleWeaponInitial;
+  global.seedDefaultGameWeapons = seedDefaultGameWeapons;
+  global.fetchWormholeDevices = fetchWormholeDevices;
   global.fetchWormholeDevices = fetchWormholeDevices;
   global.renderWormholeDevices = renderWormholeDevices;
   global.filterWormholeDevices = filterWormholeDevices;

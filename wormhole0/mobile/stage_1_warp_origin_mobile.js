@@ -120,6 +120,13 @@ export const stageConfig = {
     enableSwipeLook: false,
     preventScreenScroll: true,
     description: 'Flight executed ONLY via thumb controllers, 180, 360, and fwd/rev slider. Screen swipe flight disabled; all sliding panels, tabbed panels, and custom controls active.'
+  },
+
+  audio: {
+    spin180Sound: null,
+    spin360Sound: null,
+    enableCoilAudio: false,
+    description: 'Sound and sound file for 180° and 360° buttons removed.'
   }
 };
 
@@ -415,12 +422,12 @@ function setupScreenSwipeLock(engineApi) {
     }
   };
 
-  if (container) {
+  if (container && typeof container.addEventListener === 'function') {
     ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach((evt) => {
       container.addEventListener(evt, blockCanvasOnly, { capture: true, passive: false });
     });
   }
-  if (canvas) {
+  if (canvas && typeof canvas.addEventListener === 'function') {
     ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach((evt) => {
       canvas.addEventListener(evt, blockCanvasOnly, { capture: true, passive: false });
     });
@@ -442,6 +449,98 @@ function setupScreenSwipeLock(engineApi) {
   const drawerTab = document.getElementById('drawer-tab');
   if (drawerTab) {
     drawerTab.addEventListener('click', () => setTimeout(enableTabbedPanels, 50));
+  }
+}
+
+/**
+ * Removes and silences audio for the 180° and 360° turn buttons.
+ * Clears coil audio references, mutes coil sound output, and hooks audioMgr
+ * to prevent loading or playback of coil_calibrate.wav during automated thruster spins.
+ */
+function disableSpinAudio(engineApi) {
+  const audioMgr = (engineApi && engineApi.audioMgr) || (typeof window !== 'undefined' ? window.audioMgr : null);
+
+  const silenceCoil = (mgr) => {
+    if (!mgr) return;
+    try {
+      if (mgr.coilAudio) {
+        mgr.coilAudio.pause();
+        mgr.coilAudio.src = '';
+        mgr.coilAudio.volume = 0;
+        mgr.coilAudio = null;
+      }
+      mgr.playCoil = () => {
+        // Sound removed for 180 and 360 thruster turn buttons
+      };
+
+      if (!mgr.__stage1CoilSilenced) {
+        mgr.__stage1CoilSilenced = true;
+        const origSetAudio = typeof mgr.setStageDeviceAudio === 'function' ? mgr.setStageDeviceAudio.bind(mgr) : null;
+        if (origSetAudio) {
+          mgr.setStageDeviceAudio = function(stageSlug, deviceType) {
+            origSetAudio(stageSlug, deviceType);
+            if (this.coilAudio) {
+              this.coilAudio.pause();
+              this.coilAudio.src = '';
+              this.coilAudio.volume = 0;
+              this.coilAudio = null;
+            }
+          };
+        }
+      }
+    } catch (e) {
+      console.warn('[Stage 1 Mobile] Error silencing spin audio:', e);
+    }
+  };
+
+  silenceCoil(audioMgr);
+
+  if (typeof window !== 'undefined') {
+    if (window.audioMgr) {
+      silenceCoil(window.audioMgr);
+    } else if (!window.__stage1AudioMgrWatcherInstalled) {
+      window.__stage1AudioMgrWatcherInstalled = true;
+      let _wAudioMgr = undefined;
+      try {
+        Object.defineProperty(window, 'audioMgr', {
+          configurable: true,
+          enumerable: true,
+          get() {
+            return _wAudioMgr;
+          },
+          set(val) {
+            _wAudioMgr = val;
+            silenceCoil(_wAudioMgr);
+          }
+        });
+      } catch (err) {
+        // Fallback if property define fails
+      }
+    }
+
+    // Intercept click & touch on 180 and 360 buttons in capture phase to ensure coil sound never triggers
+    const spinBtnIds = [
+      'touch-btn-spin-180',
+      'touch-btn-spin-360',
+      'btn-spin-180',
+      'btn-spin-360'
+    ];
+
+    spinBtnIds.forEach((id) => {
+      const btn = document.getElementById(id);
+      if (!btn || btn.__stage1SpinSilenceBound) return;
+      btn.__stage1SpinSilenceBound = true;
+
+      const muteBeforeExecution = () => {
+        const mgr = (engineApi && engineApi.audioMgr) || window.audioMgr;
+        if (mgr) {
+          silenceCoil(mgr);
+        }
+      };
+
+      btn.addEventListener('click', muteBeforeExecution, { capture: true });
+      btn.addEventListener('touchstart', muteBeforeExecution, { capture: true, passive: true });
+    });
   }
 }
 
@@ -474,7 +573,15 @@ export function applyStage(engineApi) {
   // Ensure background canvas swipe flight is blocked while sliding drawers and tabs remain active
   setupScreenSwipeLock(engineApi);
 
+  // Remove sound and sound file for 180 and 360 rotation buttons
+  disableSpinAudio(engineApi);
+
   return stageConfig;
+}
+
+// Automatically silence spin audio on script load if window exists
+if (typeof window !== 'undefined') {
+  disableSpinAudio();
 }
 
 export default { stageConfig, applyStage };

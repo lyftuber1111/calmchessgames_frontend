@@ -119,88 +119,172 @@ export const stageConfig = {
     allowScreenSwipe: false,
     enableSwipeLook: false,
     preventScreenScroll: true,
-    description: 'Flight executed ONLY via thumb controllers, 180, 360, and fwd/rev slider. Screen swipe flight disabled.'
+    description: 'Flight executed ONLY via thumb controllers, 180, 360, and fwd/rev slider. Screen swipe flight disabled; all tabbed panels and custom controls active.'
   }
 };
 
 /**
- * Ensures swiping across the screen with a finger does not execute flight.
- * Flight is strictly restricted to thumb controllers (touchStickZone), 180 (touchBtnSpin180),
- * 360 (touchBtnSpin360), and Fwd/Rev slider (throttleSlider). All custom controls remain active.
+ * Ensures all tabbed panels (Weapons, Info, Missions) remain fully enabled,
+ * clickable, touchable, and scrollable on mobile devices.
+ */
+function enableTabbedPanels() {
+  if (typeof document === 'undefined') return;
+
+  const tabDefs = [
+    { id: 'weapons', btnId: 'tab-btn-weapons', paneId: 'tab-pane-weapons' },
+    { id: 'info', btnId: 'tab-btn-info', paneId: 'tab-pane-info' },
+    { id: 'missions', btnId: 'tab-btn-missions', paneId: 'tab-pane-missions' }
+  ];
+
+  tabDefs.forEach((tab) => {
+    const btn = document.getElementById(tab.btnId);
+    const pane = document.getElementById(tab.paneId);
+
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('disabled');
+      btn.style.pointerEvents = 'auto';
+      btn.style.cursor = 'pointer';
+
+      if (!btn.__stage1TabBound) {
+        btn.__stage1TabBound = true;
+        const handleTabSwitch = (e) => {
+          if (e) {
+            e.stopPropagation();
+            if (e.type === 'touchend' && e.cancelable) e.preventDefault();
+          }
+          if (typeof window.setCockpitTab === 'function') {
+            window.setCockpitTab(tab.id);
+          } else {
+            tabDefs.forEach((other) => {
+              const isSelected = (other.id === tab.id);
+              const otherBtn = document.getElementById(other.btnId);
+              const otherPane = document.getElementById(other.paneId);
+              if (otherBtn) {
+                otherBtn.classList.toggle('active', isSelected);
+                otherBtn.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+              }
+              if (otherPane) {
+                otherPane.classList.toggle('active', isSelected);
+              }
+            });
+          }
+        };
+
+        btn.addEventListener('click', handleTabSwitch);
+        btn.addEventListener('touchend', handleTabSwitch);
+      }
+    }
+
+    if (pane) {
+      pane.style.pointerEvents = 'auto';
+      // Clean up any stale inline display style so CSS class .active governs visibility
+      pane.style.display = '';
+      pane.querySelectorAll('button, input, select, .wpn-select-btn, .btn-action').forEach((el) => {
+        el.disabled = false;
+        el.removeAttribute('disabled');
+        el.style.pointerEvents = 'auto';
+      });
+    }
+  });
+
+  // Ensure left drawer panel content is scrollable and interactive
+  const missionPanel = document.getElementById('mission-panel');
+  if (missionPanel) {
+    missionPanel.style.pointerEvents = 'auto';
+    missionPanel.style.touchAction = 'pan-y';
+    missionPanel.style.overflowY = 'auto';
+    missionPanel.style.webkitOverflowScrolling = 'touch';
+  }
+
+  const leftDrawerContainer = document.getElementById('left-drawer-container');
+  if (leftDrawerContainer) {
+    leftDrawerContainer.style.pointerEvents = 'auto';
+  }
+}
+
+/**
+ * Ensures swiping across the background 3D canvas with a finger does not execute flight.
+ * Blocks touches directly on #webgl-container and its canvas, leaving all
+ * tabbed panels, thumb controllers, 180/360 spin buttons, and throttle sliders 100% active.
  */
 function setupScreenSwipeLock(engineApi) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
 
-  // 1. Inject CSS touch-action and overscroll prevention
+  // 1. Inject styling: lock canvas touch-action, but explicitly keep panels and controls interactive
   let styleEl = document.getElementById('stage1-warp-origin-touch-lock');
   if (!styleEl) {
     styleEl = document.createElement('style');
     styleEl.id = 'stage1-warp-origin-touch-lock';
     styleEl.textContent = `
-      html, body, #webgl-container, #webgl-container canvas {
+      #webgl-container, #webgl-container canvas {
         touch-action: none !important;
         overscroll-behavior: none !important;
-        -webkit-overflow-scrolling: auto !important;
-        overflow: hidden !important;
-        -webkit-user-select: none !important;
         user-select: none !important;
+        -webkit-user-select: none !important;
+      }
+      #left-drawer-container, .drawer-content, .drawer-tabs-bar, .drawer-tab-btn, .drawer-tab-pane,
+      #top-drawer-container, #bottom-drawer-container, #mobile-touch-controls {
+        pointer-events: auto !important;
+      }
+      .drawer-content, .drawer-tab-pane {
+        touch-action: pan-y !important;
+        -webkit-overflow-scrolling: touch !important;
+        overflow-y: auto !important;
       }
     `;
     document.head.appendChild(styleEl);
   }
 
   // 2. Prevent duplicate handler registrations
-  if (window.__stage1WarpOriginSwipeLockInstalled) return;
+  if (window.__stage1WarpOriginSwipeLockInstalled) {
+    enableTabbedPanels();
+    return;
+  }
   window.__stage1WarpOriginSwipeLockInstalled = true;
 
-  // Checks if a touch event landed on an interactive thumb/custom control
-  const isInteractiveControl = (target) => {
-    if (!target || !target.closest) return false;
-    return Boolean(target.closest(
-      '#aim-stick-zone, #touch-stick-zone, .virtual-stick-zone, .virtual-stick-knob, ' +
-      '#touch-btn-spin-180, #touch-btn-spin-360, #touch-btn-warp, .mobile-touch-actions, .touch-btn, ' +
-      '#throttle-slider-container, #custom-throttle-slider, #throttle-slider-wrapper, ' +
-      '#btn-throttle-rev, #btn-throttle-fwd, #btn-throttle-stop, .throttle-label-dir, .btn-throttle-stop, ' +
-      '.drawer-content, .hud-drawer, #left-drawer-tab, #mission-panel, .drawer-tab-handle, ' +
-      '.hud-header, .hud-footer, .hud-header *, .hud-footer *, ' +
-      '.hud-select, .hud-action-pill, .hud-weapon-pill, ' +
-      'button, input, select, a, textarea'
-    ));
-  };
-
-  // Intercept and stop screen swipes from triggering flight or viewport scroll
-  const blockScreenSwipe = (e) => {
-    if (!isInteractiveControl(e.target)) {
-      if (e.cancelable) e.preventDefault();
-      e.stopImmediatePropagation();
-    }
-  };
-
-  // Register capture-phase listeners on all target layers
+  // Intercept touches that land DIRECTLY on the background 3D container or canvas
   const container = document.getElementById('webgl-container');
   const canvas = (engineApi && engineApi.renderer && engineApi.renderer.domElement) ||
                  (container ? container.querySelector('canvas') : null) ||
                  document.querySelector('canvas');
-  const hudLayer = document.getElementById('hud-layer');
 
-  const elementsToHook = [window, document];
-  if (container) elementsToHook.push(container);
-  if (canvas) elementsToHook.push(canvas);
-  if (hudLayer) elementsToHook.push(hudLayer);
+  const blockCanvasOnly = (e) => {
+    // Only intercept if the touch originated directly on the 3D canvas or background container
+    if (e.target === container || e.target === canvas || (container && container.contains(e.target))) {
+      e.stopImmediatePropagation();
+      if (e.cancelable) e.preventDefault();
+    }
+  };
 
-  elementsToHook.forEach((elem) => {
+  if (container) {
     ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach((evt) => {
-      elem.addEventListener(evt, blockScreenSwipe, { capture: true, passive: false });
+      container.addEventListener(evt, blockCanvasOnly, { capture: true, passive: false });
     });
-  });
+  }
+  if (canvas) {
+    ['touchstart', 'touchmove', 'touchend', 'touchcancel'].forEach((evt) => {
+      canvas.addEventListener(evt, blockCanvasOnly, { capture: true, passive: false });
+    });
+  }
 
-  // Disallow gesture zooming or navigation swipes
-  ['gesturestart', 'gesturechange', 'gestureend'].forEach((evt) => {
-    window.addEventListener(evt, (e) => {
+  // Ensure touchmove never drags the viewport if touching canvas
+  window.addEventListener('touchmove', (e) => {
+    if (e.target === container || e.target === canvas || (container && container.contains(e.target))) {
       if (e.cancelable) e.preventDefault();
       e.stopImmediatePropagation();
-    }, { capture: true, passive: false });
-  });
+    }
+  }, { capture: true, passive: false });
+
+  // 3. Enable all tabbed panels
+  enableTabbedPanels();
+
+  // Re-enable tabs whenever drawer handle is tapped
+  const drawerTab = document.getElementById('drawer-tab');
+  if (drawerTab) {
+    drawerTab.addEventListener('click', () => setTimeout(enableTabbedPanels, 50));
+    drawerTab.addEventListener('touchend', () => setTimeout(enableTabbedPanels, 50));
+  }
 }
 
 export function applyStage(engineApi) {
@@ -229,7 +313,7 @@ export function applyStage(engineApi) {
     engineApi.showToast('📱 STAGE 1: WARP ORIGIN [MOBILE] LOADED');
   }
 
-  // Ensure flight only executes via thumb controllers, 180, 360, and throttle slider
+  // Ensure background canvas swipe flight is blocked while tabbed panels remain 100% active
   setupScreenSwipeLock(engineApi);
 
   return stageConfig;

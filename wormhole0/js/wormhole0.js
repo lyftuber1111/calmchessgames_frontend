@@ -2633,7 +2633,11 @@ function getEngineApi() {
 }
 
 async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
-  const stage = STAGE_REGISTRY[stageLevel] || STAGE_REGISTRY[1];
+  const stage = STAGE_REGISTRY[stageLevel] || {
+    level: stageLevel,
+    name: `Stage ${stageLevel}`,
+    slug: `stage_${stageLevel}`
+  };
   currentActiveStage = stage.level;
   currentActiveDeviceType = deviceType;
 

@@ -2516,8 +2516,59 @@ function getEngineApi() {
     },
     setWeapons: (weaponsConfig) => {
       if (!weaponsConfig) return;
-      if (weaponsConfig.initial && weaponsSystem && typeof weaponsSystem.equipWeapon === 'function') {
-        weaponsSystem.equipWeapon(weaponsConfig.initial.id);
+      if (weaponsConfig.initial) {
+        const initWpn = weaponsConfig.initial;
+        if (weaponsSystem && !weaponsSystem.weapons[initWpn.id]) {
+          weaponsSystem.registerWeapon({
+            id: initWpn.id,
+            name: initWpn.name,
+            shortName: (initWpn.name || initWpn.id).toUpperCase(),
+            icon: initWpn.icon || '⚡',
+            colorHex: initWpn.color ? parseInt(initWpn.color.replace('#', '0x')) : 0xffd166,
+            cssColor: initWpn.color || '#ffd166',
+            glowColor: initWpn.glowColor || 'rgba(255, 209, 102, 0.65)',
+            energyCost: initWpn.energy_drain_pct || 15,
+            cooldownDurationSec: initWpn.cooldown_seconds || 6,
+            bulletSpeed: initWpn.bullet_speed || 800,
+            boltLength: 12.0,
+            boltRadius: 0.20,
+            bulletLifetime: 2.8,
+            bulletLightIntensity: 5.0,
+            description: initWpn.description || '',
+            stageUnlocked: currentActiveStage,
+            acquired: true,
+            isAvailable: true
+          });
+        }
+        if (weaponsSystem && typeof weaponsSystem.equipWeapon === 'function') {
+          weaponsSystem.equipWeapon(initWpn.id);
+        }
+      }
+      if (Array.isArray(weaponsConfig.acquirable) && weaponsSystem) {
+        for (const acq of weaponsConfig.acquirable) {
+          if (!weaponsSystem.weapons[acq.id]) {
+            weaponsSystem.registerWeapon({
+              id: acq.id,
+              name: acq.name,
+              shortName: (acq.name || acq.id).toUpperCase(),
+              icon: acq.icon || '🔫',
+              colorHex: acq.color ? parseInt(acq.color.replace('#', '0x')) : 0x00f0ff,
+              cssColor: acq.color || '#00f0ff',
+              glowColor: acq.glowColor || 'rgba(0, 240, 255, 0.65)',
+              energyCost: acq.energy_drain_pct || 15,
+              cooldownDurationSec: acq.cooldown_seconds || 6,
+              bulletSpeed: acq.bullet_speed || 700,
+              boltLength: 10.0,
+              boltRadius: 0.18,
+              bulletLifetime: 2.5,
+              bulletLightIntensity: 4.0,
+              description: acq.description || '',
+              stageUnlocked: currentActiveStage,
+              acquired: acq.acquire_event === 'default_start',
+              isAvailable: true
+            });
+          }
+        }
       }
     },
     setEnemies: (enemiesConfig) => {
@@ -2538,15 +2589,23 @@ async function loadStageDeviceModule(stageLevel = 2, deviceType = 'desktop') {
   currentActiveStage = stage.level;
   currentActiveDeviceType = deviceType;
 
-  const scriptRelative = `../${deviceType}/${stage.slug}_${deviceType}.js`;
-  console.log(`[Wormhole XR Engine] Loading stage device script: ${scriptRelative}`);
+  // Dynamic cache-busting timestamp guarantees browser fetches & executes fresh stage JS on every switch/reload
+  const timestamp = Date.now();
+  const scriptRelative = `../${deviceType}/${stage.slug}_${deviceType}.js?t=${timestamp}`;
+  const scriptAlias = `../${deviceType}/stage_${stage.level}_${deviceType}.js?t=${timestamp}`;
+  const directPath = `./${deviceType}/${stage.slug}_${deviceType}.js?t=${timestamp}`;
+  console.log(`[Wormhole XR Engine] Dynamically loading stage device script: ${scriptRelative}`);
 
   try {
     let mod = null;
     try {
       mod = await import(scriptRelative);
     } catch (e1) {
-      mod = await import(`./${deviceType}/${stage.slug}_${deviceType}.js`);
+      try {
+        mod = await import(scriptAlias);
+      } catch (e2) {
+        mod = await import(directPath);
+      }
     }
     activeStageModule = mod;
     const api = getEngineApi();
@@ -2556,9 +2615,36 @@ async function loadStageDeviceModule(stageLevel = 2, deviceType = 'desktop') {
       mod.default.applyStage(api);
     }
 
+    // Keep DOM script tag synchronized for DevTools Elements panel inspection
+    try {
+      let stageScriptEl = document.getElementById('active-stage-script');
+      if (!stageScriptEl) {
+        stageScriptEl = document.createElement('script');
+        stageScriptEl.id = 'active-stage-script';
+        stageScriptEl.type = 'module';
+        document.head.appendChild(stageScriptEl);
+      }
+      stageScriptEl.src = `${deviceType}/${stage.slug}_${deviceType}.js?t=${timestamp}`;
+      stageScriptEl.dataset.stageLevel = stage.level;
+      stageScriptEl.dataset.deviceType = deviceType;
+    } catch (domErr) {
+      console.warn('[Wormhole XR Engine] Could not update active-stage-script tag:', domErr);
+    }
+
+    // Synchronize UI headers and selectors
     const jumpSelect = document.getElementById('select-stage-jump');
     if (jumpSelect && parseInt(jumpSelect.value) !== currentActiveStage) {
       jumpSelect.value = currentActiveStage.toString();
+    }
+
+    const splashSub = document.querySelector('.splash-game-sub');
+    if (splashSub) {
+      splashSub.textContent = `STAGE ${stage.level}: ${stage.name.toUpperCase()}`;
+    }
+
+    const missionHeading = document.querySelector('#tab-pane-missions .section-subheading span:first-child');
+    if (missionHeading) {
+      missionHeading.textContent = `🎯 STAGE ${stage.level} OBJECTIVES`;
     }
 
     if (audioMgr && typeof audioMgr.setStageDeviceAudio === 'function') {
@@ -5452,6 +5538,7 @@ if (typeof window !== 'undefined') {
   window.cancelTurn = cancelTurn;
   window.jumpToStage = (level) => loadStageDeviceModule(level, currentActiveDeviceType);
   window.loadStageDeviceModule = loadStageDeviceModule;
+  window.reloadActiveStage = () => loadStageDeviceModule(currentActiveStage, currentActiveDeviceType);
   window.currentActiveStage = () => currentActiveStage;
   window.currentActiveDeviceType = () => currentActiveDeviceType;
 }

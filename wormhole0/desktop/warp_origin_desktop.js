@@ -147,6 +147,11 @@ export function applyStage(engineApi) {
     engineApi.showToast('🚀 STAGE 1: WARP ORIGIN [DESKTOP] LOADED');
   }
 
+  // Disable 180 and 360 turn button sound in Stage 1
+  if (typeof engineApi.setSpinAudioEnabled === 'function') {
+    engineApi.setSpinAudioEnabled(false);
+  }
+
   return stageConfig;
 }
 

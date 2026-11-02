@@ -146,6 +146,11 @@ export function applyStage(engineApi) {
     engineApi.showToast('🌌 STAGE 2: EVENT HORIZON [MOBILE] LOADED');
   }
 
+  // Restore 180 and 360 turn thruster audio for Stage 2
+  if (typeof engineApi.setSpinAudioEnabled === 'function') {
+    engineApi.setSpinAudioEnabled(true);
+  }
+
   return stageConfig;
 }
 

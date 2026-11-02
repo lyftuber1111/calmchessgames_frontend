@@ -970,6 +970,7 @@ class AudioManager {
     this.isInitialized = false;
     this.synthOsc = null;
     this.synthGain = null;
+    this.spinAudioEnabled = true;
   }
 
   init() {
@@ -1051,12 +1052,40 @@ class AudioManager {
         this.scanAudio.src = scanSrc;
         this.scanAudio.load();
       }
-      if (this.coilAudio) {
-        this.coilAudio.src = coilSrc;
-        this.coilAudio.load();
+      if (this.spinAudioEnabled) {
+        if (this.coilAudio) {
+          this.coilAudio.src = coilSrc;
+          this.coilAudio.load();
+        } else {
+          this.coilAudio = new Audio(coilSrc);
+          this.coilAudio.volume = 0.75;
+        }
       }
     } catch (e) {
       console.warn('[Audio] setStageDeviceAudio error:', e);
+    }
+  }
+
+  setSpinAudioEnabled(enabled) {
+    this.spinAudioEnabled = !!enabled;
+    if (!enabled) {
+      if (this.coilAudio) {
+        try {
+          this.coilAudio.pause();
+          this.coilAudio.currentTime = 0;
+        } catch (e) {}
+      }
+    } else {
+      const devType = currentActiveDeviceType || 'desktop';
+      const stageSlug = (STAGE_REGISTRY[currentActiveStage] && STAGE_REGISTRY[currentActiveStage].slug) || 'event_horizon';
+      const coilSrc = `${devType}/audio/${stageSlug}/coil_calibrate.wav`;
+      if (!this.coilAudio) {
+        this.coilAudio = new Audio(coilSrc);
+        this.coilAudio.volume = 0.75;
+      } else {
+        this.coilAudio.src = coilSrc;
+        this.coilAudio.load();
+      }
     }
   }
 
@@ -1077,7 +1106,13 @@ class AudioManager {
   }
 
   playCoil() {
-    if (CONFIG.audioMuted) return;
+    if (CONFIG.audioMuted || !this.spinAudioEnabled) return;
+    if (!this.coilAudio) {
+      const devType = currentActiveDeviceType || 'desktop';
+      const stageSlug = (STAGE_REGISTRY[currentActiveStage] && STAGE_REGISTRY[currentActiveStage].slug) || 'event_horizon';
+      this.coilAudio = new Audio(`${devType}/audio/${stageSlug}/coil_calibrate.wav`);
+      this.coilAudio.volume = 0.75;
+    }
     if (this.coilAudio) {
       this.coilAudio.currentTime = 0;
       this.coilAudio.play().catch(e => console.warn(e));
@@ -2580,6 +2615,19 @@ function getEngineApi() {
       const touchThrottle = document.getElementById('touch-throttle-zone');
       if (aimStick) aimStick.style.display = controls.showVirtualJoysticks ? 'flex' : 'none';
       if (touchThrottle) touchThrottle.style.display = controls.showVirtualJoysticks ? 'flex' : 'none';
+    },
+    setSpinAudioEnabled: (enabled) => {
+      if (audioMgr && typeof audioMgr.setSpinAudioEnabled === 'function') {
+        audioMgr.setSpinAudioEnabled(enabled);
+      }
+    },
+    setAudioConfig: (audioConfig) => {
+      if (!audioConfig) {
+        if (audioMgr) audioMgr.setSpinAudioEnabled(true);
+        return;
+      }
+      const enabled = audioConfig.enableCoilAudio !== false && audioConfig.spin180Sound !== null;
+      if (audioMgr) audioMgr.setSpinAudioEnabled(enabled);
     }
   };
 }
@@ -2645,6 +2693,14 @@ async function loadStageDeviceModule(stageLevel = 2, deviceType = 'desktop') {
     const missionHeading = document.querySelector('#tab-pane-missions .section-subheading span:first-child');
     if (missionHeading) {
       missionHeading.textContent = `🎯 STAGE ${stage.level} OBJECTIVES`;
+    }
+
+    // Synchronize spin audio configuration: Stage 1 disables spin audio; Stage 2, 3, 4 enable it
+    const stageAudioConfig = (mod.stageConfig && mod.stageConfig.audio) || (mod.default && mod.default.stageConfig && mod.default.stageConfig.audio);
+    if (stageAudioConfig) {
+      api.setAudioConfig(stageAudioConfig);
+    } else {
+      api.setSpinAudioEnabled(stage.level !== 1);
     }
 
     if (audioMgr && typeof audioMgr.setStageDeviceAudio === 'function') {
@@ -5536,6 +5592,7 @@ if (typeof window !== 'undefined') {
   window.execute360Turn = execute360Turn;
   window.cancel360Turn = cancel360Turn;
   window.cancelTurn = cancelTurn;
+  window.audioMgr = audioMgr;
   window.jumpToStage = (level) => loadStageDeviceModule(level, currentActiveDeviceType);
   window.loadStageDeviceModule = loadStageDeviceModule;
   window.reloadActiveStage = () => loadStageDeviceModule(currentActiveStage, currentActiveDeviceType);

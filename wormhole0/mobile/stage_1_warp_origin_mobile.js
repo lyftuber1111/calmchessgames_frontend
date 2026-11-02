@@ -1,5 +1,5 @@
 /**
- * Wormhole XR - Stage 1: Warp Origin [Mobile Profile]
+ * Wormhole XR - Stage 1: Warp Origin [Mobile Profile] (stage_1_warp_origin_mobile.js)
  * Calibrated for Mobile Smartphones & Tablets (Dual Touch Joysticks, Gyroscope, Mobile Shaders)
  * Database Stage Level: 1 | Environment: Warp Cyan Corridor
  * Calm Chess Games / Brian Berry (C) 2026. All Rights Reserved.
@@ -148,11 +148,22 @@ function enableTabbedPanels() {
 
       if (!btn.__stage1TabBound) {
         btn.__stage1TabBound = true;
+        let lastTabSwitchTime = 0;
+
         const handleTabSwitch = (e) => {
+          const now = Date.now();
+          if (now - lastTabSwitchTime < 250) {
+            if (e && e.cancelable) e.preventDefault();
+            if (e) e.stopPropagation();
+            return;
+          }
+          lastTabSwitchTime = now;
+
           if (e) {
             e.stopPropagation();
             if (e.type === 'touchend' && e.cancelable) e.preventDefault();
           }
+
           if (typeof window.setCockpitTab === 'function') {
             window.setCockpitTab(tab.id);
           } else {
@@ -202,12 +213,20 @@ function enableTabbedPanels() {
 }
 
 /**
- * Ensures drawer handles on mobile touch devices slide smoothly on tap or touch.
+ * Ensures drawer handles on mobile touch devices slide smoothly on tap or touch,
+ * expanding reliably without flashing or double-toggling.
  */
 function setupDrawerSliding() {
   if (typeof document === 'undefined') return;
 
-  const handleIds = ['drawer-tab', 'top-drawer-tab', 'bottom-drawer-tab'];
+  const handleIds = [
+    'drawer-tab',
+    'top-drawer-tab',
+    'bottom-drawer-tab',
+    'btn-toggle-drawer',
+    'btn-toggle-header'
+  ];
+
   handleIds.forEach((id) => {
     const handle = document.getElementById(id);
     if (!handle || handle.__stage1TouchSlideBound) return;
@@ -216,16 +235,73 @@ function setupDrawerSliding() {
     handle.style.pointerEvents = 'auto';
     handle.style.cursor = 'pointer';
 
-    // Touch tap handler for mobile screens
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+
+    // Track touch start coordinates and isolate from background canvas
+    handle.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+      if (e.touches && e.touches.length > 0) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchStartTime = Date.now();
+      }
+    }, { passive: false });
+
+    // Touch tap handler: detect clean tap, toggle panel once, and prevent duplicate clicks
     handle.addEventListener('touchend', (e) => {
-      if (e.cancelable) e.preventDefault();
-      handle.click();
-    });
-    handle.addEventListener('pointerup', (e) => {
-      if (e.pointerType === 'touch') {
+      e.stopPropagation();
+      if (!e.changedTouches || e.changedTouches.length === 0) return;
+      const touch = e.changedTouches[0];
+      const dx = Math.abs(touch.clientX - touchStartX);
+      const dy = Math.abs(touch.clientY - touchStartY);
+      const dt = Date.now() - touchStartTime;
+
+      // Deliberate tap threshold (not a scroll or drag)
+      if (dx < 20 && dy < 20 && dt < 600) {
+        if (e.cancelable) e.preventDefault();
+
+        const now = Date.now();
+        if (now - (handle.__lastToggleTime || 0) < 350) {
+          return; // Debounce rapid spamming
+        }
+        handle.__lastToggleTime = now;
+        handle.__syntheticTouchClick = true;
+
+        // Programmatically trigger the panel toggle
         handle.click();
       }
     });
+
+    // Capture phase click listener: deduplicate synthetic vs native browser clicks
+    handle.addEventListener('click', (e) => {
+      if (handle.__syntheticTouchClick) {
+        // Our programmatic click from touchend: permit it to bubble to wormhole0.js!
+        handle.__syntheticTouchClick = false;
+        handle.__suppressNextClickUntil = Date.now() + 450;
+        return;
+      }
+
+      // If the browser generates its own native simulated click following touchend, drop it!
+      if (Date.now() < (handle.__suppressNextClickUntil || 0)) {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return;
+      }
+
+      // Genuine desktop mouse click or non-touch event
+      const now = Date.now();
+      if (now - (handle.__lastToggleTime || 0) < 350) {
+        // Debounce rapid double-clicks
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        return;
+      }
+      handle.__lastToggleTime = now;
+    }, { capture: true });
   });
 }
 
@@ -277,6 +353,19 @@ function setupScreenSwipeLock(engineApi) {
       pointer-events: auto !important;
       cursor: pointer !important;
       z-index: 125 !important;
+      touch-action: manipulation !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      -webkit-touch-callout: none !important;
+    }
+    #drawer-tab *, #top-drawer-tab *, #bottom-drawer-tab * {
+      pointer-events: none !important;
+    }
+    #top-drawer-container.open,
+    #bottom-drawer-container.open,
+    #top-drawer-container.open .hud-header,
+    #bottom-drawer-container.open .hud-footer {
+      pointer-events: auto !important;
     }
     /* Full-screen wrapper must not block handle taps */
     #mobile-touch-controls {

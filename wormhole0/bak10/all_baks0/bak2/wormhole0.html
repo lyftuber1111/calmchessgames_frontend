@@ -1,0 +1,2615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#01050a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Multi-stage Sci-Fi WebXR experience - Stage 1: Distant Neon Cyan Wormhole with Hardware Support Verification, Telemetry, and Collapsible HUD.">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Wormhole XR - Stage 1: Distant Neon Cyan Singularity</title>
+
+  <!-- ES Module Import Map for Three.js & WebXR Addons -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <!-- Favicon and App Icons -->
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="shortcut icon" href="../favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+
+  <!-- Embedded Styling (HTML + CSS in same file as requested) -->
+  <style>
+    /* ==========================================================================
+       SCIFI XR WORMHOLE COCKPIT & MULTI-PLATFORM HUD
+       Color Palette: Deep Space Void (#01050a), Neon Cyan (#00f0ff), Plasma Blue (#0077aa)
+       ========================================================================== */
+    :root {
+      --bg-space: #01050a;
+      --cyan-neon: #00f0ff;
+      --cyan-glow: rgba(0, 240, 255, 0.45);
+      --cyan-dark: #00374d;
+      --cyan-dim: #0a4f66;
+      --panel-bg: rgba(2, 14, 26, 0.86);
+      --panel-border: rgba(0, 240, 255, 0.35);
+      --text-main: #e0f9ff;
+      --text-dim: #7dc4d9;
+      --accent-gold: #ffd166;
+      --accent-green: #06d6a0;
+      --accent-alert: #ef476f;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      inset: 0;
+      overscroll-behavior: none;
+      background-color: var(--bg-space);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text-main);
+      touch-action: none;
+      -webkit-overflow-scrolling: auto;
+    }
+
+    /* WebGL 3D Canvas Mount */
+    #webgl-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      cursor: crosshair;
+    }
+
+    /* Sci-Fi Hologram Overlay HUD */
+    #hud-layer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(6px, 1.5vmin, 16px);
+    }
+
+    /* Corner Holographic Reticles */
+    .hud-reticle {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--cyan-neon);
+      opacity: 0.55;
+    }
+    .reticle-tl { top: 8px; left: 8px; border-right: none; border-bottom: none; }
+    .reticle-tr { top: 8px; right: 8px; border-left: none; border-bottom: none; }
+    .reticle-bl { bottom: 8px; left: 8px; border-right: none; border-top: none; }
+    .reticle-br { bottom: 8px; right: 8px; border-left: none; border-top: none; }
+
+    /* Top Telemetry Header */
+    .hud-header {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 8px 14px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15), inset 0 0 15px rgba(0, 240, 255, 0.05);
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pulsing-orb {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background-color: var(--cyan-neon);
+      box-shadow: 0 0 10px var(--cyan-neon), 0 0 20px var(--cyan-neon);
+      animation: pulseGlow 1.8s infinite ease-in-out;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(0.9); opacity: 0.75; }
+      50% { transform: scale(1.25); opacity: 1.0; }
+    }
+
+    .game-title {
+      font-size: clamp(0.85rem, 1.6vmin, 1.15rem);
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #fff;
+      text-shadow: 0 0 10px var(--cyan-neon);
+    }
+
+    .game-subtitle {
+      font-size: clamp(0.65rem, 1vmin, 0.76rem);
+      letter-spacing: 1.2px;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+    }
+
+    /* Mode Selector Dropdown & Controller Switch */
+    .mode-switch-cluster {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .hud-select {
+      background: rgba(0, 36, 56, 0.95);
+      border: 1px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 6px 10px;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.2);
+      letter-spacing: 0.8px;
+    }
+
+    .hud-select option {
+      background: #011422;
+      color: #e0f9ff;
+    }
+
+    .telemetry-badges {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .badge {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+    }
+
+    .badge-val {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.88rem;
+      font-weight: bold;
+      color: var(--cyan-neon);
+    }
+
+    /* Gamepad Status Pill Indicator */
+    .gamepad-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(0, 32, 50, 0.8);
+      border: 1px solid var(--panel-border);
+      padding: 4px 8px;
+      border-radius: 12px;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+    .gamepad-pill.connected {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+    .gamepad-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #666;
+    }
+    .gamepad-pill.connected .gamepad-dot {
+      background: var(--accent-green);
+      box-shadow: 0 0 6px var(--accent-green);
+    }
+
+    /* ==========================================================================
+       COLLAPSIBLE LEFT-HAND MISSION & CONTROLS SLIDE-OUT DRAWER
+       ========================================================================== */
+    #left-drawer-container {
+      pointer-events: auto;
+      position: fixed;
+      left: 0;
+      top: 36px;
+      bottom: 36px;
+      display: flex;
+      align-items: flex-start;
+      z-index: 50;
+      transform: translateX(calc(-100% + 36px));
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    #left-drawer-container.open {
+      transform: translateX(0) !important;
+    }
+
+    .drawer-content {
+      width: clamp(270px, 24vw, 320px);
+      max-height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 14px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 4px 0 24px rgba(0, 240, 255, 0.2);
+      font-size: 0.74rem;
+    }
+
+    .drawer-strip-handle {
+      width: 36px;
+      height: 160px;
+      background: rgba(0, 24, 38, 0.96);
+      border: 1px solid var(--cyan-neon);
+      border-left: none;
+      border-radius: 0 10px 10px 0;
+      margin-top: 15px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      box-shadow: 2px 0 16px rgba(0, 240, 255, 0.5);
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+      animation: stripGlow 2.5s infinite ease-in-out;
+    }
+
+    @keyframes stripGlow {
+      0%, 100% { box-shadow: 2px 0 12px rgba(0, 240, 255, 0.4); }
+      50% { box-shadow: 4px 0 24px rgba(0, 240, 255, 0.85); }
+    }
+
+    .drawer-strip-handle:hover {
+      background: rgba(0, 55, 90, 0.98);
+      box-shadow: 4px 0 28px var(--cyan-neon);
+      border-color: #fff;
+    }
+
+    .drawer-controls-box {
+      background: rgba(0, 24, 40, 0.6);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
+    }
+    .section-subheading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: bold;
+      color: var(--cyan-neon);
+      margin-bottom: 6px;
+      padding-bottom: 4px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .drawer-strip-text {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      letter-spacing: 2px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      text-shadow: 0 0 8px var(--cyan-neon);
+    }
+
+    .strip-chevron {
+      font-size: 0.75rem;
+      color: var(--cyan-neon);
+      transition: transform 0.3s ease;
+    }
+    #left-drawer-container.open .strip-chevron {
+      transform: rotate(180deg);
+    }
+
+    .drawer-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.25);
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+    }
+
+    .autohide-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      cursor: pointer;
+    }
+    .autohide-toggle input[type="checkbox"] {
+      accent-color: var(--cyan-neon);
+      cursor: pointer;
+    }
+
+    .panel-heading {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .objective-item {
+      margin-bottom: 8px;
+      padding: 6px 8px;
+      background: rgba(0, 30, 48, 0.55);
+      border-left: 3px solid var(--cyan-dark);
+      border-radius: 4px;
+      transition: all 0.3s ease;
+    }
+
+    .objective-item.active {
+      border-left-color: var(--cyan-neon);
+      background: rgba(0, 48, 75, 0.75);
+    }
+
+    .objective-item.completed {
+      border-left-color: var(--accent-green);
+      background: rgba(6, 214, 160, 0.12);
+    }
+
+    .obj-header {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+
+    .obj-status {
+      font-size: 0.68rem;
+      color: var(--accent-gold);
+    }
+    .objective-item.completed .obj-status {
+      color: var(--accent-green);
+    }
+
+    .obj-bar-wrap {
+      width: 100%;
+      height: 5px;
+      background: rgba(0, 20, 35, 0.85);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 3px 0 5px 0;
+      border: 1px solid rgba(0, 240, 255, 0.2);
+    }
+
+    .obj-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0077aa, var(--cyan-neon));
+      transition: width 0.3s ease;
+    }
+
+    .obj-actions {
+      display: flex;
+      gap: 5px;
+      margin-top: 3px;
+    }
+
+    .btn-action {
+      background: rgba(0, 48, 75, 0.9);
+      border: 1px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      font-size: 0.68rem;
+      padding: 4px 7px;
+      border-radius: 3px;
+      cursor: pointer;
+      letter-spacing: 0.6px;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover {
+      background: var(--cyan-neon);
+      color: #010810;
+      box-shadow: 0 0 10px var(--cyan-neon);
+    }
+
+    .btn-action:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: #555;
+      color: #888;
+      box-shadow: none;
+    }
+
+    /* Right Flight Navigation & Keybinding Legend */
+    .flight-sidebar {
+      pointer-events: auto;
+      align-self: flex-end;
+      position: absolute;
+      right: clamp(6px, 1.5vmin, 16px);
+      top: 68px;
+      width: clamp(230px, 20vw, 275px);
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 18px rgba(0, 240, 255, 0.12);
+      font-size: 0.72rem;
+    }
+
+    .key-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+      color: var(--text-dim);
+    }
+
+    .kbd {
+      background: rgba(0, 50, 75, 0.85);
+      border: 1px solid var(--cyan-neon);
+      color: #fff;
+      padding: 1px 5px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.68rem;
+    }
+
+    /* ==========================================================================
+       COLLAPSIBLE TOP TELEMETRY & HEADER DRAWER (SLIDES OFF TOP EDGE)
+       ========================================================================== */
+    #top-drawer-container {
+      pointer-events: none;
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(calc(-100% + 28px));
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 45;
+      width: min(1200px, calc(100vw - 20px));
+      max-width: 1200px;
+    }
+
+    #top-drawer-container.open {
+      transform: translateX(-50%) translateY(0) !important;
+    }
+
+    #top-drawer-container .hud-header {
+      pointer-events: auto;
+      width: 100%;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      max-height: 85vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .top-strip-handle {
+      pointer-events: auto;
+      height: 28px;
+      padding: 0 20px;
+      background: rgba(0, 24, 38, 0.96);
+      border: 1px solid var(--cyan-neon);
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0, 240, 255, 0.5);
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+      animation: topStripGlow 2.5s infinite ease-in-out;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    @keyframes topStripGlow {
+      0%, 100% { box-shadow: 0 2px 12px rgba(0, 240, 255, 0.4); }
+      50% { box-shadow: 0 4px 22px rgba(0, 240, 255, 0.85); }
+    }
+
+    .top-strip-handle:hover {
+      background: rgba(0, 55, 90, 0.98);
+      box-shadow: 0 4px 28px var(--cyan-neon);
+      border-color: #fff;
+    }
+
+    .top-strip-text {
+      letter-spacing: 2px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      text-shadow: 0 0 8px var(--cyan-neon);
+    }
+
+    .top-strip-chevron {
+      font-size: 0.72rem;
+      color: var(--cyan-neon);
+      transition: transform 0.3s ease;
+      display: inline-block;
+    }
+
+    #top-drawer-container.open .top-strip-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* ==========================================================================
+       COLLAPSIBLE BOTTOM TACTICAL CONTROLS DRAWER (SLIDES OFF BOTTOM EDGE)
+       ========================================================================== */
+    #bottom-drawer-container {
+      pointer-events: none;
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) translateY(calc(100% - 28px));
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      z-index: 45;
+      width: min(1200px, calc(100vw - 20px));
+      max-width: 1200px;
+    }
+
+    #bottom-drawer-container.open {
+      transform: translateX(-50%) translateY(0) !important;
+    }
+
+    #bottom-drawer-container .hud-footer {
+      pointer-events: auto;
+      width: 100%;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      max-height: 85vh;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .bottom-strip-handle {
+      pointer-events: auto;
+      height: 28px;
+      padding: 0 20px;
+      background: rgba(0, 24, 38, 0.96);
+      border: 1px solid var(--cyan-neon);
+      border-bottom: none;
+      border-radius: 10px 10px 0 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      box-shadow: 0 -4px 16px rgba(0, 240, 255, 0.5);
+      transition: all 0.25s ease;
+      flex-shrink: 0;
+      animation: bottomStripGlow 2.5s infinite ease-in-out;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    @keyframes bottomStripGlow {
+      0%, 100% { box-shadow: 0 -2px 12px rgba(0, 240, 255, 0.4); }
+      50% { box-shadow: 0 -4px 22px rgba(0, 240, 255, 0.85); }
+    }
+
+    .bottom-strip-handle:hover {
+      background: rgba(0, 55, 90, 0.98);
+      box-shadow: 0 -4px 28px var(--cyan-neon);
+      border-color: #fff;
+    }
+
+    .bottom-strip-text {
+      letter-spacing: 2px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      text-shadow: 0 0 8px var(--cyan-neon);
+    }
+
+    .bottom-strip-chevron {
+      font-size: 0.72rem;
+      color: var(--cyan-neon);
+      transition: transform 0.3s ease;
+      display: inline-block;
+    }
+
+    #bottom-drawer-container.open .bottom-strip-chevron {
+      transform: rotate(180deg);
+    }
+
+    /* Interactive Bottom Navigation & Controls */
+    .hud-footer {
+      pointer-events: auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 -4px 20px rgba(0, 240, 255, 0.12);
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .control-cluster {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .hud-btn {
+      background: rgba(0, 40, 60, 0.85);
+      border: 1px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      padding: 6px 14px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    }
+
+    .hud-btn:hover {
+      background: var(--cyan-neon);
+      color: #010b14;
+      box-shadow: 0 0 18px var(--cyan-neon);
+    }
+
+    .hud-btn.active {
+      background: #00f0ff;
+      color: #010b14;
+      box-shadow: 0 0 22px #00f0ff;
+      border-color: #fff;
+    }
+
+    .hud-btn.btn-ready {
+      background: linear-gradient(135deg, #00f0ff, #06d6a0);
+      color: #000;
+      font-weight: 800;
+      animation: readyPulse 1.2s infinite alternate;
+    }
+
+    @keyframes readyPulse {
+      0% { box-shadow: 0 0 15px var(--cyan-neon); }
+      100% { box-shadow: 0 0 32px var(--accent-green); }
+    }
+
+    .hud-slider-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+
+    .hud-slider-group input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 75px;
+      height: 4px;
+      background: var(--cyan-dark);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .hud-slider-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--cyan-neon);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--cyan-neon);
+    }
+
+    /* WebXR Native Button Styling Override - Hidden by default to prevent VR NOT SUPPORTED badge */
+    #xr-enter-btn {
+      display: none !important;
+      position: fixed !important;
+      bottom: 20px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      z-index: 100 !important;
+      background: rgba(0, 240, 255, 0.9) !important;
+      color: #010b14 !important;
+      border: 1px solid #ffffff !important;
+      font-weight: 700 !important;
+      letter-spacing: 1.5px !important;
+      padding: 10px 20px !important;
+      border-radius: 30px !important;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.8) !important;
+      cursor: pointer !important;
+      font-family: inherit !important;
+      text-transform: uppercase !important;
+      font-size: 0.85rem !important;
+    }
+
+    #xr-enter-btn:hover {
+      background: #ffffff !important;
+      color: #000000 !important;
+      box-shadow: 0 0 35px #00f0ff !important;
+    }
+
+    /* Crosshair Center Reticle */
+    .center-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 44px;
+      height: 44px;
+      pointer-events: none;
+      opacity: 0.85;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.08s ease-out;
+      z-index: 50;
+    }
+
+    .center-crosshair::before,
+    .center-crosshair::after {
+      content: '';
+      position: absolute;
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+      transition: background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .center-crosshair::before { width: 100%; height: 2px; }
+    .center-crosshair::after { height: 100%; width: 2px; }
+    
+    .crosshair-circle {
+      width: 20px;
+      height: 20px;
+      border: 2px dashed var(--accent-green);
+      box-shadow: 0 0 10px rgba(6, 214, 160, 0.45);
+      border-radius: 50%;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+    }
+
+    /* Laser Firing Reticle Pulse */
+    .center-crosshair.laser-firing {
+      transform: translate(-50%, -50%) scale(1.35) !important;
+    }
+
+    .center-crosshair.laser-firing::before,
+    .center-crosshair.laser-firing::after {
+      background: #ff0044 !important;
+      box-shadow: 0 0 14px #ff0044, 0 0 24px rgba(255, 0, 68, 0.8) !important;
+    }
+
+    .center-crosshair.laser-firing .crosshair-circle {
+      border-color: #ff0044 !important;
+      border-style: solid !important;
+      box-shadow: 0 0 16px #ff0044, inset 0 0 10px rgba(255, 0, 68, 0.6) !important;
+      transform: scale(1.2);
+    }
+
+    /* Mobile Invisible Full-Screen Targeting Snap Grid */
+    .mobile-fullscreen-grid {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      width: 100dvw;
+      height: 100dvh;
+      display: grid;
+      pointer-events: none;
+      z-index: 45;
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .mobile-fullscreen-grid.show-debug-grid {
+      opacity: 1 !important;
+      visibility: visible !important;
+    }
+
+    .mobile-fullscreen-grid .grid-box {
+      box-sizing: border-box;
+      border: 1px dashed rgba(0, 240, 255, 0.14);
+      pointer-events: none;
+      position: relative;
+      transition: background-color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .mobile-fullscreen-grid .grid-box.active-snap {
+      background-color: rgba(0, 240, 255, 0.08);
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.18);
+    }
+
+    /* Vector Lock Indicator */
+    #vector-alignment-ring {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 70px;
+      height: 70px;
+      border: 2px solid rgba(0, 240, 255, 0.35);
+      border-radius: 50%;
+      pointer-events: none;
+      transition: border-color 0.25s ease, box-shadow 0.25s ease;
+      z-index: 49;
+    }
+
+    #vector-alignment-ring.locked {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 15px var(--accent-green);
+    }
+
+    /* Notification Banner */
+    #toast-msg {
+      position: absolute;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(2, 20, 35, 0.94);
+      border: 1px solid var(--cyan-neon);
+      padding: 7px 20px;
+      border-radius: 20px;
+      font-size: 0.82rem;
+      letter-spacing: 1.2px;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
+      display: none;
+      z-index: 100;
+      text-transform: uppercase;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ==========================================================================
+       MOBILE TOUCH VIRTUAL JOYSTICK & TOUCH ACTION CONTROLS
+       ========================================================================== */
+    #mobile-touch-controls {
+      display: none;
+      position: fixed;
+      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      height: 100%;
+      height: 100dvh;
+      pointer-events: none;
+      z-index: 60;
+      box-sizing: border-box;
+    }
+
+    .virtual-stick-zone {
+      pointer-events: auto;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: rgba(0, 35, 55, 0.45);
+      border: 2px dashed rgba(0, 240, 255, 0.4);
+      position: absolute;
+      touch-action: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.15);
+      user-select: none;
+      -webkit-user-select: none;
+      transition: left 0.3s ease, right 0.3s ease, top 0.3s ease, bottom 0.3s ease;
+    }
+
+    /* Bottom-Left: Crosshair Aim Joystick (Standard Layout) */
+    .aim-stick-zone {
+      background: rgba(0, 30, 50, 0.45);
+      border: 2px dashed rgba(0, 240, 255, 0.5);
+      box-shadow: 0 0 18px rgba(0, 240, 255, 0.18);
+      cursor: crosshair;
+      bottom: calc(clamp(45px, 10vh, 70px) + env(safe-area-inset-bottom, 0px));
+      left: calc(clamp(32px, 6vw, 55px) + env(safe-area-inset-left, 0px));
+      right: auto;
+      top: auto;
+    }
+
+    .aim-stick-zone::after {
+      content: 'CROSSHAIR AIM (NO FLIGHT)';
+      position: absolute;
+      top: -20px;
+      bottom: auto;
+      font-size: 0.62rem;
+      color: var(--cyan-neon);
+      letter-spacing: 1px;
+      font-weight: 700;
+      white-space: nowrap;
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.7);
+      pointer-events: none;
+    }
+
+    /* Upper-Right: Fire / Flight Navigation Joystick (Standard Layout) */
+    #touch-stick-zone {
+      top: calc(clamp(30px, 6vh, 50px) + env(safe-area-inset-top, 0px));
+      right: calc(clamp(24px, 5vw, 48px) + env(safe-area-inset-right, 0px));
+      left: auto;
+      bottom: auto;
+    }
+
+    .virtual-stick-zone::after {
+      content: 'TAP: FIRE / ↕UP-DN ↔TURN';
+      position: absolute;
+      bottom: -20px;
+      top: auto;
+      font-size: 0.62rem;
+      color: var(--cyan-neon);
+      letter-spacing: 1px;
+      font-weight: 700;
+      white-space: nowrap;
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
+      pointer-events: none;
+    }
+
+    .virtual-stick-zone.flight-locked::after {
+      content: 'FIRE (FLIGHT LOCK)';
+      color: #ffaa00;
+      text-shadow: 0 0 8px rgba(255, 170, 0, 0.8);
+    }
+
+    .virtual-stick-knob {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ff1144 28%, var(--cyan-neon) 62%);
+      box-shadow: 0 0 14px var(--cyan-neon), 0 0 8px #ff0044;
+      position: absolute;
+      pointer-events: none;
+      transform: translate(0px, 0px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+
+    .aim-stick-knob {
+      background: var(--cyan-neon);
+      background-color: #00f0ff;
+      border: 2px solid var(--cyan-neon);
+      box-shadow: 0 0 16px var(--cyan-neon), 0 0 26px rgba(0, 240, 255, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: transparent;
+      font-size: 0.85rem;
+    }
+
+    .mobile-touch-actions {
+      pointer-events: auto;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 10px;
+      position: absolute;
+      right: calc(clamp(18px, 4.5vw, 42px) + env(safe-area-inset-right, 0px));
+      bottom: calc(clamp(18px, 4vh, 35px) + env(safe-area-inset-bottom, 0px));
+      left: auto;
+      transform: none;
+      margin-bottom: 0;
+      z-index: 85;
+    }
+
+    .touch-btn {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      flex-shrink: 0;
+      border-radius: 50%;
+      background: rgba(0, 48, 75, 0.85);
+      border: 2px solid var(--cyan-neon);
+      color: var(--cyan-neon);
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+      cursor: pointer;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .touch-btn:active {
+      background: var(--cyan-neon);
+      color: #000;
+      transform: scale(0.95);
+    }
+
+    #touch-btn-spin-180,
+    #touch-btn-spin-360 {
+      font-size: 0.64rem;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      line-height: 1.15;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    #touch-btn-spin-180.active-spin,
+    #btn-spin-180.active,
+    #touch-btn-spin-360.active-spin,
+    #btn-spin-360.active {
+      background: var(--cyan-neon) !important;
+      color: #01050a !important;
+      box-shadow: 0 0 16px var(--cyan-neon), 0 0 28px rgba(0, 240, 255, 0.7) !important;
+      animation: spinPulse 0.8s infinite alternate ease-in-out;
+    }
+    @keyframes spinPulse {
+      0% { transform: scale(0.96); }
+      100% { transform: scale(1.08); }
+    }
+
+    /* ==========================================================================
+       CUSTOM CRUISE THROTTLE SLIDER & STOP BUTTON
+       Default: Center (0). Slide right -> increase forward speed.
+       Slide left -> increase backward speed.
+       STOP button -> stops ship & resets slider to middle.
+       Positioned above left-hand joystick & flips when Left-Handed is checked.
+       ========================================================================== */
+    .throttle-slider-container {
+      position: absolute;
+      pointer-events: auto;
+      z-index: 70;
+      width: clamp(189px, 26.5vw, 245px);
+      background: rgba(2, 14, 26, 0.92);
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      border-radius: 8px;
+      padding: 6.2px 10.2px;
+      box-shadow: 0 4px 18px rgba(0, 240, 255, 0.22), inset 0 0 12px rgba(0, 240, 255, 0.08);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      display: flex;
+      flex-direction: column;
+      gap: 5.2px;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+      top: calc(clamp(30px, 6vh, 50px) + 128px + env(safe-area-inset-top, 0px));
+      right: calc(clamp(18px, 4.5vw, 42px) + env(safe-area-inset-right, 0px));
+      bottom: auto;
+      left: auto;
+      transition: left 0.3s ease, right 0.3s ease, top 0.3s ease, bottom 0.3s ease, opacity 0.2s ease;
+    }
+
+    /* Lockout when right-hand flight joystick is active */
+    .throttle-slider-container.throttle-locked {
+      opacity: 0.42;
+      pointer-events: none !important;
+      border-color: rgba(255, 170, 0, 0.45);
+      box-shadow: 0 0 10px rgba(255, 170, 0, 0.15);
+    }
+    .throttle-slider-container.throttle-locked input[type="range"] {
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    .throttle-slider-container.throttle-locked .throttle-title::after {
+      content: ' [LOCKED]';
+      color: #ffaa00;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+    }
+
+    /* Left-Handed Touch Control Layout: Flip joystick & throttle slider locations */
+    body.left-handed-controls .aim-stick-zone,
+    #mobile-touch-controls.left-handed .aim-stick-zone {
+      left: auto;
+      right: calc(clamp(32px, 6vw, 55px) + env(safe-area-inset-right, 0px));
+      bottom: calc(clamp(45px, 10vh, 70px) + env(safe-area-inset-bottom, 0px));
+      top: auto;
+    }
+
+    /* Throttle slider flips to the left side below the flipped right-hand joystick */
+    body.left-handed-controls .throttle-slider-container,
+    #mobile-touch-controls.left-handed .throttle-slider-container {
+      left: calc(clamp(18px, 4.5vw, 42px) + env(safe-area-inset-left, 0px));
+      right: auto;
+      top: calc(clamp(30px, 6vh, 50px) + 128px + env(safe-area-inset-top, 0px));
+      bottom: auto;
+    }
+
+    .throttle-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6.2px;
+      font-size: 0.665rem;
+      font-weight: 700;
+      letter-spacing: 0.8px;
+    }
+
+    .throttle-title {
+      color: var(--cyan-neon);
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
+      display: flex;
+      align-items: center;
+      gap: 4.2px;
+    }
+
+    .throttle-badge {
+      font-family: monospace;
+      font-size: 0.665rem;
+      font-weight: 700;
+      padding: 2.2px 6.2px;
+      border-radius: 4px;
+      background: rgba(0, 240, 255, 0.15);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      color: var(--text-main);
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .throttle-badge.forward {
+      color: #06d6a0;
+      border-color: #06d6a0;
+      background: rgba(6, 214, 160, 0.2);
+      text-shadow: 0 0 6px rgba(6, 214, 160, 0.7);
+    }
+
+    .throttle-badge.reverse {
+      color: #ef476f;
+      border-color: #ef476f;
+      background: rgba(239, 71, 111, 0.2);
+      text-shadow: 0 0 6px rgba(239, 71, 111, 0.7);
+    }
+
+    .throttle-track-row {
+      display: flex;
+      align-items: center;
+      gap: 5.2px;
+      width: 100%;
+    }
+
+    .throttle-label-dir {
+      font-size: 0.592rem;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      padding: 3.2px 5.2px;
+      border-radius: 4px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: all 0.15s ease;
+      user-select: none;
+      -webkit-user-select: none;
+      line-height: 1;
+    }
+    .rev-label {
+      color: #ff6b8b;
+      background: rgba(239, 71, 111, 0.15);
+      border-color: rgba(239, 71, 111, 0.4);
+    }
+    .rev-label:hover, .rev-label:active, .rev-label.active {
+      background: rgba(239, 71, 111, 0.45);
+      border-color: #ef476f;
+      color: #fff;
+      box-shadow: 0 0 8px rgba(239, 71, 111, 0.6);
+      transform: scale(1.05);
+    }
+    .fwd-label {
+      color: var(--cyan-neon);
+      background: rgba(0, 240, 255, 0.15);
+      border-color: rgba(0, 240, 255, 0.4);
+    }
+    .fwd-label:hover, .fwd-label:active, .fwd-label.active {
+      background: rgba(0, 240, 255, 0.45);
+      border-color: var(--cyan-neon);
+      color: #fff;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+      transform: scale(1.05);
+    }
+
+    .throttle-slider-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      height: 24.5px;
+      touch-action: none;
+      cursor: pointer;
+    }
+
+    .throttle-slider-wrapper input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6.2px;
+      background: linear-gradient(90deg, rgba(239,71,111,0.7) 0%, rgba(0,55,77,0.85) 48%, rgba(0,240,255,0.4) 52%, rgba(0,240,255,0.85) 100%);
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+      margin: 0;
+      padding: 0;
+      touch-action: none;
+    }
+
+    .throttle-slider-wrapper input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18.4px;
+      height: 18.4px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 25%, #00f0ff 65%, #0077aa 100%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 10px #00f0ff, 0 0 4px #fff;
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+
+    .throttle-slider-wrapper input[type="range"]::-webkit-slider-thumb:hover,
+    .throttle-slider-wrapper input[type="range"]::-webkit-slider-thumb:active {
+      transform: scale(1.18);
+      box-shadow: 0 0 15px #00f0ff, 0 0 8px #fff;
+    }
+
+    .throttle-slider-wrapper input[type="range"]::-moz-range-thumb {
+      width: 18.4px;
+      height: 18.4px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ffffff 25%, #00f0ff 65%, #0077aa 100%);
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 10px #00f0ff, 0 0 4px #fff;
+      cursor: pointer;
+    }
+
+    .throttle-center-notch {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 2px;
+      height: 12.3px;
+      background: #ffd166;
+      border-radius: 1px;
+      box-shadow: 0 0 5px #ffd166;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .btn-throttle-stop {
+      font-size: 0.633rem;
+      font-weight: 800;
+      letter-spacing: 0.6px;
+      background: rgba(239, 71, 111, 0.3);
+      color: #ffffff;
+      border: 1px solid #ef476f;
+      border-radius: 4px;
+      padding: 4.2px 7.2px;
+      cursor: pointer;
+      box-shadow: 0 0 8px rgba(239, 71, 111, 0.4);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .btn-throttle-stop:hover,
+    .btn-throttle-stop:active {
+      background: #ef476f;
+      color: #01050a;
+      box-shadow: 0 0 14px #ef476f;
+      transform: scale(0.96);
+    }
+
+    body.left-handed-controls #touch-stick-zone,
+    #mobile-touch-controls.left-handed #touch-stick-zone {
+      right: auto;
+      left: calc(clamp(24px, 5vw, 48px) + env(safe-area-inset-left, 0px));
+      top: calc(clamp(30px, 6vh, 50px) + env(safe-area-inset-top, 0px));
+      bottom: auto;
+    }
+
+    body.left-handed-controls .mobile-touch-actions,
+    #mobile-touch-controls.left-handed .mobile-touch-actions {
+      right: auto;
+      left: calc(clamp(24px, 5vw, 48px) + env(safe-area-inset-left, 0px));
+    }
+
+
+    /* ==========================================================================
+       MOBILE FULLSCREEN LANDSCAPE ORIENTATION ENFORCEMENT OVERLAY
+       ========================================================================== */
+    #landscape-rotate-prompt {
+      display: none;
+      position: fixed;
+      inset: 0;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      width: 100dvw;
+      height: 100vh;
+      height: 100dvh;
+      background: radial-gradient(circle at 50% 38%, rgba(2, 28, 52, 0.98) 0%, rgba(1, 10, 20, 0.99) 60%, #000306 100%);
+      z-index: 99999;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: clamp(20px, 4vh, 36px) clamp(16px, 4vw, 28px);
+      padding-top: calc(clamp(20px, 4vh, 36px) + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(clamp(20px, 4vh, 36px) + env(safe-area-inset-bottom, 0px));
+      padding-left: calc(clamp(16px, 4vw, 28px) + env(safe-area-inset-left, 0px));
+      padding-right: calc(clamp(16px, 4vw, 28px) + env(safe-area-inset-right, 0px));
+      box-sizing: border-box;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      pointer-events: auto;
+      touch-action: pan-y;
+      overflow-y: auto;
+    }
+
+    #landscape-rotate-prompt.dismissed {
+      display: none !important;
+    }
+
+    .rotate-modal-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      max-width: 380px;
+      width: 100%;
+      padding: clamp(24px, 5vh, 36px) clamp(18px, 4vw, 28px);
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      border-radius: 18px;
+      background: rgba(2, 16, 28, 0.92);
+      box-shadow: 0 0 45px rgba(0, 240, 255, 0.25), inset 0 0 24px rgba(0, 240, 255, 0.08);
+      box-sizing: border-box;
+    }
+
+    .btn-close-rotate-top {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      background: none;
+      border: none;
+      color: var(--cyan-neon);
+      font-size: 1.6rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 8px;
+      opacity: 0.75;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .btn-close-rotate-top:hover,
+    .btn-close-rotate-top:active {
+      opacity: 1.0;
+      transform: scale(1.1);
+    }
+
+    .rotate-badge-tag {
+      display: inline-block;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border: 1px solid rgba(0, 240, 255, 0.45);
+      border-radius: 12px;
+      background: rgba(0, 240, 255, 0.1);
+      margin-bottom: 14px;
+      text-shadow: 0 0 8px var(--cyan-neon);
+    }
+
+    /* Animated Rotating Device Illustration Picture */
+    .rotate-icon-wrap {
+      width: 130px;
+      height: 130px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .rotate-phone-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      filter: drop-shadow(0 0 12px rgba(0, 240, 255, 0.5));
+    }
+
+    @keyframes rotateDeviceAnim {
+      0%, 15% {
+        transform: rotate(0deg);
+      }
+      45%, 75% {
+        transform: rotate(-90deg);
+      }
+      90%, 100% {
+        transform: rotate(0deg);
+      }
+    }
+
+    .rotating-device-group {
+      transform-origin: 70px 70px;
+      animation: rotateDeviceAnim 2.4s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .rotate-title {
+      font-size: clamp(1.2rem, 4.8vmin, 1.45rem);
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+      text-shadow: 0 0 14px var(--cyan-neon);
+      text-transform: uppercase;
+    }
+
+    .rotate-desc {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      line-height: 1.5;
+      margin-bottom: 22px;
+      max-width: 310px;
+    }
+
+    .btn-rotate-dismiss {
+      background: rgba(0, 48, 75, 0.85);
+      border: 1.5px solid var(--cyan-neon);
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      padding: 11px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.25);
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      outline: none;
+    }
+
+    .btn-rotate-dismiss:hover,
+    .btn-rotate-dismiss:active {
+      background: var(--cyan-neon);
+      color: #010810;
+      box-shadow: 0 0 22px var(--cyan-neon);
+      transform: scale(0.98);
+    }
+
+        /* ==========================================================================
+       COSMIC FULLSCREEN SPLASH SCREEN & RUNTIME VERIFICATION
+       ========================================================================== */
+    #wormhole-splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at 50% 45%, #021a2f 0%, #010810 50%, #000307 100%);
+      z-index: 100000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(14px, 3vmin, 28px);
+      box-sizing: border-box;
+      transition: opacity 0.75s ease-out, visibility 0.75s ease-out;
+      overflow: hidden;
+    }
+
+    #wormhole-splash-screen.splash-fade-out {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .splash-content {
+      position: relative;
+      z-index: 2;
+      max-width: 580px;
+      width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .splash-brand {
+      font-size: clamp(0.7rem, 1.4vmin, 0.85rem);
+      letter-spacing: 4px;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      opacity: 0.95;
+      font-weight: 700;
+      text-shadow: 0 0 10px var(--cyan-glow);
+    }
+
+    .splash-orb-container {
+      position: relative;
+      width: 110px;
+      height: 110px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .splash-singularity {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #000;
+      box-shadow: 0 0 25px #00f0ff, 0 0 50px rgba(0, 240, 255, 0.6), inset 0 0 15px rgba(0, 240, 255, 0.8);
+      position: relative;
+      z-index: 3;
+      animation: singularityPulse 2.4s infinite ease-in-out;
+    }
+
+    @keyframes singularityPulse {
+      0%, 100% { transform: scale(0.92); box-shadow: 0 0 20px #00f0ff, 0 0 45px rgba(0, 240, 255, 0.5); }
+      50% { transform: scale(1.08); box-shadow: 0 0 35px #00f0ff, 0 0 70px rgba(0, 240, 255, 0.85); }
+    }
+
+    .splash-ring {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid var(--cyan-neon);
+      opacity: 0.45;
+    }
+    .splash-ring-1 {
+      width: 70px;
+      height: 70px;
+      border-style: dashed;
+      animation: spinRing 6s linear infinite;
+    }
+    .splash-ring-2 {
+      width: 95px;
+      height: 95px;
+      border-top-color: transparent;
+      border-bottom-color: transparent;
+      animation: spinRingRev 9s linear infinite;
+    }
+    .splash-ring-3 {
+      width: 120px;
+      height: 120px;
+      border-left-color: transparent;
+      border-right-color: transparent;
+      opacity: 0.25;
+      animation: spinRing 14s linear infinite;
+    }
+
+    @keyframes spinRing {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes spinRingRev {
+      0% { transform: rotate(360deg); }
+      100% { transform: rotate(0deg); }
+    }
+
+    .splash-game-title {
+      font-size: clamp(1.4rem, 3.8vmin, 2.3rem);
+      font-weight: 900;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      text-shadow: 0 0 18px var(--cyan-neon), 0 0 35px rgba(0, 240, 255, 0.5);
+      margin-bottom: 6px;
+    }
+
+    .splash-game-sub {
+      font-size: clamp(0.7rem, 1.4vmin, 0.84rem);
+      color: var(--text-dim);
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+
+    .splash-card {
+      width: 100%;
+      background: rgba(2, 16, 28, 0.88);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      padding: 16px 20px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 240, 255, 0.08);
+      margin-bottom: 12px;
+    }
+
+    .splash-status-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      margin-bottom: 10px;
+    }
+    .splash-status-title {
+      color: var(--cyan-neon);
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    .splash-status-desc {
+      color: #cbe7ff;
+      font-family: monospace;
+      font-size: 0.74rem;
+    }
+
+    .splash-progress-track {
+      width: 100%;
+      height: 6px;
+      background: rgba(0, 240, 255, 0.12);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid rgba(0, 240, 255, 0.25);
+    }
+    .splash-progress-fill {
+      height: 100%;
+      width: 20%;
+      background: linear-gradient(90deg, #0077aa, #00f0ff);
+      box-shadow: 0 0 10px var(--cyan-neon);
+      border-radius: 4px;
+      transition: width 0.35s ease;
+    }
+
+    .splash-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .btn-splash-start {
+      width: 100%;
+      padding: 12px 24px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      border-radius: 28px;
+      border: 1px solid rgba(0, 240, 255, 0.4);
+      background: rgba(0, 30, 50, 0.75);
+      color: rgba(255, 255, 255, 0.4);
+      cursor: not-allowed;
+      transition: all 0.3s ease;
+      font-family: inherit;
+      text-transform: uppercase;
+      box-shadow: none;
+    }
+
+    .btn-splash-start:not(:disabled) {
+      cursor: pointer;
+      background: linear-gradient(135deg, rgba(0, 240, 255, 0.95), rgba(0, 140, 255, 0.95));
+      color: #010b14;
+      border-color: #ffffff;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.8), 0 0 10px #00f0ff;
+    }
+
+    .btn-splash-start:not(:disabled):hover {
+      background: #ffffff;
+      color: #000000;
+      box-shadow: 0 0 35px #00f0ff, 0 0 15px #ffffff;
+      transform: scale(1.02);
+    }
+    .splash-mode-cell {
+      background: rgba(0, 25, 45, 0.6);
+      border: 1px solid rgba(0, 240, 255, 0.2);
+      border-radius: 6px;
+      padding: 8px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.74rem;
+    }
+    .splash-mode-cell span:first-child {
+      color: #b0d8e8;
+      font-weight: 600;
+    }
+    .splash-mode-pill {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .pill-checking {
+      background: rgba(255, 209, 102, 0.15);
+      color: var(--accent-gold);
+      border: 1px solid rgba(255, 209, 102, 0.3);
+    }
+    .pill-supported {
+      background: rgba(6, 214, 160, 0.15);
+      color: var(--accent-green);
+      border: 1px solid rgba(6, 214, 160, 0.4);
+    }
+    .pill-unsupported {
+      background: rgba(239, 68, 111, 0.15);
+      color: var(--accent-alert);
+      border: 1px solid rgba(239, 68, 111, 0.4);
+    }
+
+    /* ==========================================================================
+       CLOSEABLE FULL-SCREEN UNSUPPORTED DEVICE BADGE
+       ========================================================================== */
+    .device-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(1, 5, 10, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      z-index: 1000000;
+      align-items: center;
+      justify-content: center;
+      padding: clamp(14px, 3vmin, 26px);
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+
+    .device-modal-box {
+      position: relative;
+      background: rgba(3, 18, 32, 0.97);
+      border: 2px solid var(--accent-alert);
+      box-shadow: 0 0 50px rgba(239, 68, 111, 0.5), inset 0 0 30px rgba(239, 68, 111, 0.15);
+      border-radius: 14px;
+      padding: clamp(18px, 3.5vmin, 32px);
+      max-width: 650px;
+      width: 100%;
+      max-height: 94vh;
+      overflow-y: auto;
+      font-size: 0.88rem;
+      animation: badgePopIn 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+    }
+
+    @keyframes badgePopIn {
+      0% { transform: scale(0.92); opacity: 0; }
+      100% { transform: scale(1.0); opacity: 1; }
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 14px;
+      right: 16px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 2rem;
+      cursor: pointer;
+      line-height: 1;
+      opacity: 0.75;
+      text-decoration: none;
+      transition: opacity 0.2s, color 0.2s;
+    }
+    .modal-close-btn:hover {
+      opacity: 1.0;
+      color: var(--cyan-neon);
+    }
+
+    /* Big Prominent UNSUPPORTED DEVICE Hero Banner */
+    .unsupported-badge-hero {
+      background: linear-gradient(135deg, rgba(239, 68, 111, 0.25), rgba(150, 20, 50, 0.35));
+      border: 1px solid var(--accent-alert);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .unsupported-hero-icon {
+      font-size: 2.4rem;
+      line-height: 1;
+      animation: alertGlow 1.2s infinite alternate;
+    }
+    @keyframes alertGlow {
+      0% { transform: scale(0.95); filter: drop-shadow(0 0 5px rgba(239, 68, 111, 0.6)); }
+      100% { transform: scale(1.1); filter: drop-shadow(0 0 16px rgba(239, 68, 111, 1.0)); }
+    }
+
+    .unsupported-hero-text h2 {
+      font-size: clamp(1.1rem, 2.4vmin, 1.45rem);
+      font-weight: 900;
+      color: #ffffff;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      text-shadow: 0 0 12px rgba(239, 68, 111, 0.8);
+      margin: 0 0 4px 0;
+    }
+
+    .unsupported-hero-text p {
+      font-size: 0.78rem;
+      color: #fbcfe8;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .unsupported-status-banner {
+      background: rgba(239, 68, 111, 0.15);
+      border-left: 4px solid var(--accent-alert);
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .unsupported-highlight {
+      color: var(--accent-alert);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .unsupported-reason-text {
+      color: #f1f5f9;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      margin-bottom: 14px;
+      background: rgba(239, 68, 111, 0.1);
+      border-left: 4px solid var(--accent-alert);
+      padding: 10px 14px;
+      border-radius: 4px;
+    }
+
+    .device-specs-card {
+      background: rgba(0, 20, 35, 0.65);
+      border: 1px solid rgba(0, 240, 255, 0.25);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 14px;
+      font-size: 0.76rem;
+    }
+
+    .specs-card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      color: var(--cyan-neon);
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+      padding-bottom: 4px;
+    }
+
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      color: var(--text-dim);
+    }
+    .spec-val {
+      font-family: 'Courier New', Courier, monospace;
+      color: #e0f9ff;
+      font-weight: 600;
+      text-align: right;
+    }
+
+    .recommended-action-box {
+      background: rgba(6, 214, 160, 0.12);
+      border: 1px solid var(--accent-green);
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin-bottom: 16px;
+    }
+
+    .database-telemetry-notice {
+      background: rgba(0, 240, 255, 0.08);
+      border: 1px dashed rgba(0, 240, 255, 0.3);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .modal-action-footer {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .btn-return-calmchess {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #0077aa, #00f0ff);
+      color: #01050a !important;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      box-shadow: 0 4px 20px rgba(0, 240, 255, 0.4);
+      transition: all 0.25s ease;
+      cursor: pointer;
+      border: none;
+      font-size: clamp(0.82rem, 1.6vmin, 0.95rem);
+    }
+    .btn-return-calmchess:hover {
+      background: linear-gradient(135deg, #00a0dc, #33f3ff);
+      box-shadow: 0 6px 28px rgba(0, 240, 255, 0.65);
+      transform: translateY(-2px);
+    }
+
+    /* Mobile Orientation Media Queries: Fullscreen Rotate Overlay in Portrait */
+    @media screen and (orientation: portrait) and (max-width: 900px) {
+      #landscape-rotate-prompt:not(.dismissed) {
+        display: flex !important;
+      }
+      body:not(.portrait-dismissed) #hud-layer,
+      body:not(.portrait-dismissed) #mobile-touch-controls,
+      body:not(.portrait-dismissed) #left-drawer-container,
+      body:not(.portrait-dismissed) #top-drawer-container,
+      body:not(.portrait-dismissed) #bottom-drawer-container {
+        display: none !important;
+      }
+    }
+
+    body.in-xr-session #hud-layer,
+    body.in-xr-session #left-drawer-container,
+    body.in-xr-session #top-drawer-container,
+    body.in-xr-session #bottom-drawer-container,
+    body.in-xr-session #mobile-touch-controls,
+    body.in-xr-session #landscape-rotate-prompt {
+      display: none !important;
+    }
+
+    @media (max-width: 1024px), (pointer: coarse), (hover: none) {
+      .flight-sidebar {
+        display: none;
+      }
+      .telemetry-badges .badge:not(:first-child) {
+        display: none;
+      }
+      .hud-slider-group {
+        display: none;
+      }
+      #bottom-drawer-container .hud-slider-group,
+      #left-drawer-container .hud-slider-group {
+        display: flex !important;
+      }
+      #mobile-touch-controls {
+        display: block !important;
+      }
+    }
+
+    body.show-touch-controls #mobile-touch-controls {
+      display: block !important;
+    }
+
+  </style>
+</head>
+<body>
+
+    <!-- Interactive Cosmic Splash Screen & Hardware Verification Gateway -->
+  <div id="wormhole-splash-screen" class="splash-screen-overlay">
+    <div class="splash-content">
+      <div class="splash-brand">CALM CHESS GAMES &bull; WORMHOLE XR</div>
+      <div class="splash-orb-container">
+        <div class="splash-singularity"></div>
+        <div class="splash-ring splash-ring-1"></div>
+        <div class="splash-ring splash-ring-2"></div>
+        <div class="splash-ring splash-ring-3"></div>
+      </div>
+      <h1 class="splash-game-title">WORMHOLE XR</h1>
+      <p class="splash-game-sub">STAGE 1: DISTANT NEON CYAN SINGULARITY</p>
+
+      <div class="splash-card">
+        <div class="splash-status-line">
+          <span class="splash-status-title">SYSTEM DIAGNOSTICS</span>
+          <span class="splash-status-desc" id="splash-status-text">INITIALIZING QUANTUM SENSORS...</span>
+        </div>
+
+        <div class="splash-progress-track">
+          <div class="splash-progress-fill" id="splash-progress-bar"></div>
+        </div>
+
+        <div class="splash-grid">
+          <div class="splash-mode-cell">
+            <span>🖥️ DESKTOP XR</span>
+            <span class="splash-mode-pill pill-checking" id="state-badge-desktop">CHECKING</span>
+          </div>
+          <div class="splash-mode-cell">
+            <span>📱 MOBILE XR</span>
+            <span class="splash-mode-pill pill-checking" id="state-badge-mobile">CHECKING</span>
+          </div>
+          <div class="splash-mode-cell">
+            <span>🥽 DESKTOP VR</span>
+            <span class="splash-mode-pill pill-checking" id="state-badge-vr">CHECKING</span>
+          </div>
+          <div class="splash-mode-cell">
+            <span>🌐 MOBILE AR</span>
+            <span class="splash-mode-pill pill-checking" id="state-badge-ar">CHECKING</span>
+          </div>
+          <div class="splash-mode-cell" id="splash-controller-cell" style="grid-column: span 2;">
+            <span>🎮 GAMEPAD CONTROLLER</span>
+            <span class="splash-mode-pill pill-checking" id="state-badge-controller">DETECTING...</span>
+          </div>
+        </div>
+
+        <!-- Start Mission / Launch Game Button -->
+        <div class="splash-action-row" style="margin-top: 14px; display: flex; justify-content: center;">
+          <button id="btn-splash-start" class="btn-splash-start" disabled title="Device check in progress...">
+            ⏳ RUNNING DEVICE CHECK...
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WebGL 3D Canvas Mount Point -->
+  <div id="webgl-container"></div>
+
+  <!-- Mobile Landscape Orientation Full-Screen Overlay with Animated Rotation Illustration -->
+  <div id="landscape-rotate-prompt" class="landscape-rotate-fullscreen">
+    <div class="rotate-modal-card">
+      <!-- Close / Dismiss Top 'X' Button -->
+      <button type="button" class="btn-close-rotate-top" id="btn-close-rotate-top" title="Dismiss and continue in portrait">&times;</button>
+
+      <!-- Holographic Status Tag -->
+      <div class="rotate-badge-tag">ORIENTATION NOTICE</div>
+
+      <!-- Animated Rotating Device Illustration Picture -->
+      <div class="rotate-icon-wrap" aria-hidden="true">
+        <svg viewBox="0 0 140 140" fill="none" xmlns="http://www.w3.org/2000/svg" class="rotate-phone-svg" role="img" aria-label="Rotate device to horizontal landscape illustration">
+          <defs>
+            <!-- Glowing cyan neon filter -->
+            <filter id="neon-glow" x="-30%" y="-30%" width="160%" height="160%">
+              <feGaussianBlur stdDeviation="3.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <!-- Screen cosmic glass gradient -->
+            <radialGradient id="screen-grad" cx="50%" cy="50%" r="55%">
+              <stop offset="0%" stop-color="#004466" stop-opacity="0.85"/>
+              <stop offset="60%" stop-color="#021422" stop-opacity="0.95"/>
+              <stop offset="100%" stop-color="#010a12" stop-opacity="1.0"/>
+            </radialGradient>
+            <!-- Accretion disk gradient -->
+            <linearGradient id="disk-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#00f0ff"/>
+              <stop offset="50%" stop-color="#ff0055"/>
+              <stop offset="100%" stop-color="#ffd166"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Circular Orbit Rotation Guide Track -->
+          <path d="M 70 16 A 54 54 0 1 1 20 46" stroke="rgba(0, 240, 255, 0.28)" stroke-width="2.5" stroke-dasharray="6 4" fill="none" />
+
+          <!-- Curved Neon Rotation Guide Arrow -->
+          <path d="M 36 22 A 54 54 0 0 1 106 32" stroke="#00f0ff" stroke-width="4" stroke-linecap="round" fill="none" filter="url(#neon-glow)" />
+          <polygon points="104,18 122,34 102,46" fill="#00f0ff" filter="url(#neon-glow)" />
+
+          <!-- Animated Smartphone Body Group -->
+          <g class="rotating-device-group">
+            <!-- Outer Glow Shadow -->
+            <rect x="42" y="24" width="56" height="92" rx="10" fill="none" stroke="rgba(0, 240, 255, 0.4)" stroke-width="6" opacity="0.4" />
+            <!-- Phone Outer Bezel -->
+            <rect x="42" y="24" width="56" height="92" rx="10" fill="#020e1a" stroke="#00f0ff" stroke-width="3" filter="url(#neon-glow)" />
+            <!-- Screen Display -->
+            <rect x="47" y="34" width="46" height="72" rx="5" fill="url(#screen-grad)" stroke="rgba(0, 240, 255, 0.5)" stroke-width="1.2" />
+
+            <!-- Mini Cosmic Singularity inside Screen -->
+            <ellipse cx="70" cy="70" rx="18" ry="7" stroke="url(#disk-grad)" stroke-width="2" fill="none" transform="rotate(-15 70 70)" filter="url(#neon-glow)" />
+            <circle cx="70" cy="70" r="7.5" fill="#000000" stroke="#00f0ff" stroke-width="1.8" filter="url(#neon-glow)" />
+            <circle cx="70" cy="70" r="3.5" fill="#00f0ff" />
+
+            <!-- Stars in Screen Background -->
+            <circle cx="54" cy="44" r="1" fill="#ffffff" opacity="0.8" />
+            <circle cx="84" cy="46" r="1.2" fill="#00f0ff" opacity="0.9" />
+            <circle cx="56" cy="94" r="1" fill="#ffd166" opacity="0.8" />
+            <circle cx="82" cy="92" r="1.2" fill="#ffffff" opacity="0.8" />
+
+            <!-- Top Speaker / Dynamic Island -->
+            <rect x="61" y="28" width="18" height="3" rx="1.5" fill="#00f0ff" fill-opacity="0.8" />
+            <!-- Bottom Home Indicator Bar -->
+            <line x1="58" y1="101" x2="82" y2="101" stroke="#00f0ff" stroke-width="2.5" stroke-linecap="round" stroke-opacity="0.85" />
+          </g>
+        </svg>
+      </div>
+
+      <h2 class="rotate-title">ROTATE TO LANDSCAPE</h2>
+      <p class="rotate-desc">
+        Wormhole XR is calibrated for horizontal widescreen flight. Rotate your device to landscape for full stereoscopic FOV and tactile dual-stick cockpit controls.
+      </p>
+
+      <!-- Action Button: Continue in Portrait -->
+      <button type="button" class="btn-rotate-dismiss" id="btn-dismiss-rotate">
+        <span>Continue in Portrait</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Closeable Full-Screen Holographic Unsupported Device Badge -->
+  <div id="unsupported-device-modal" class="device-modal-overlay">
+    <div class="device-modal-box">
+      <!-- Close 'X' Button that returns to calmchessgames.com -->
+      <a href="https://calmchessgames.com" class="modal-close-btn" id="btn-close-device-modal" title="Return to calmchessgames.com">&times;</a>
+
+      <!-- Prominent UNSUPPORTED DEVICE Hero Banner -->
+      <div class="unsupported-badge-hero">
+        <div class="unsupported-hero-icon">🚫</div>
+        <div class="unsupported-hero-text">
+          <h2>UNSUPPORTED DEVICE</h2>
+          <p id="modal-mode-name">HARDWARE CHECK FAILED</p>
+        </div>
+      </div>
+
+      <div class="unsupported-status-banner">
+        <span>STATUS:</span> <span class="unsupported-highlight" id="modal-support-flag">DEVICE CANNOT RUN WORMHOLE XR</span>
+      </div>
+
+      <div class="unsupported-reason-text" id="modal-reason-text">
+        This device does not meet the minimum hardware acceleration or WebGL requirements to execute the relativistic physics engine and 3D gravitational lensing simulation.
+      </div>
+
+      <!-- Detected Device Diagnostics Card -->
+      <div class="device-specs-card">
+        <div class="specs-card-title">DETECTED DEVICE TELEMETRY</div>
+        <div class="spec-row">
+          <span class="spec-label">Device Name / Model:</span>
+          <span class="spec-val" id="spec-device-name">Detecting...</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">Operating Platform:</span>
+          <span class="spec-val" id="spec-os-platform">Detecting...</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">Browser Engine:</span>
+          <span class="spec-val" id="spec-browser">Detecting...</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">GPU Architecture:</span>
+          <span class="spec-val" id="spec-gpu">Detecting...</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">WebGL Acceleration:</span>
+          <span class="spec-val" id="spec-webgl-status">CHECKING</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">WebXR Immersive VR:</span>
+          <span class="spec-val" id="spec-vr-status">UNSUPPORTED</span>
+        </div>
+        <div class="spec-row">
+          <span class="spec-label">WebXR Immersive AR (ARCore):</span>
+          <span class="spec-val" id="spec-ar-status">UNSUPPORTED</span>
+        </div>
+      </div>
+
+      <!-- Database Telemetry Notice -->
+      <div class="database-telemetry-notice" id="db-registration-notice">
+        📡 Device registered in Wormhole Device Database as <strong>Unsupported Device</strong>.
+      </div>
+
+      <!-- Action Buttons with Close Button that says 'Return to calmchessgames.com' -->
+      <div class="modal-action-footer">
+        <a href="https://calmchessgames.com" id="btn-return-calmchess" class="hud-btn btn-return-calmchess">
+          ⬅️ Return to calmchessgames.com
+        </a>
+        <button id="btn-switch-recommended" class="hud-btn btn-ready" style="display:none;">
+          🚀 Switch to Recommended Mode
+        </button>
+        <button id="btn-force-continue" class="hud-btn" style="display:none;">
+          ⚠️ Force Continue Anyway
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collapsible Left-Hand Controls & Mission Slide-Out Drawer -->
+  <div id="left-drawer-container">
+    <div class="drawer-content" id="mission-panel">
+      <div class="drawer-top-bar">
+        <span class="panel-heading">COCKPIT CONTROLS & MISSIONS</span>
+        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
+          <input type="checkbox" id="chk-auto-close-left" class="chk-auto-close" checked> Auto close
+        </label>
+      </div>
+
+      <!-- Section 1: Flight & Controller Controls (Slides off left side unless hovered) -->
+      <div class="drawer-controls-box" id="flight-panel">
+        <div class="section-subheading">
+          <span>🕹️ FLIGHT / CONTROLLER</span>
+          <span style="font-size:0.65rem; color:var(--cyan-neon);">6-DOF FLIGHT</span>
+        </div>
+        <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">R-Stick (Hold) / R2</span></div>
+        <div class="key-row"><span>Crosshair Aim:</span> <span class="kbd">Left Stick (Crosshair Only)</span></div>
+        <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Mouse</span> or <span class="kbd">Right Stick / D-Pad</span></div>
+        <div class="key-row"><span>Elevate / Dive:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">R2 / L2</span></div>
+        <div class="key-row"><span>Fire Laser Cannon:</span> <span class="kbd">R-Stick Tap / RB / B</span></div>
+        <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">A / X Button</span></div>
+        <div class="key-row"><span>Warp Jump Trigger:</span> <span class="kbd">F</span> or <span class="kbd">Y Button</span></div>
+        <div class="key-row" style="margin-top:5px; border-top:1px solid rgba(0,240,255,0.2); padding-top:4px;">
+          <span style="color:var(--cyan-neon);">Toggle Left Panel:</span> <span class="kbd">Tab</span> / <span class="kbd">M</span>
+        </div>
+        <div class="key-row">
+          <span style="color:var(--cyan-neon);">Toggle Top Header:</span> <span class="kbd">H</span>
+        </div>
+        <div class="key-row">
+          <span style="color:var(--cyan-neon);">Toggle Bottom Panel:</span> <span class="kbd">B</span>
+        </div>
+        <div class="key-row">
+          <span style="color:var(--cyan-neon);">Auto-Align Wormhole:</span> <span class="kbd">Z</span> / <span class="kbd">N</span>
+        </div>
+        <div class="key-row">
+          <span style="color:var(--cyan-neon);">180° Thruster Turn:</span> <span class="kbd">T</span>
+        </div>
+        <div class="key-row">
+          <span style="color:var(--cyan-neon);">360° Thruster Turn:</span> <span class="kbd">R</span>
+        </div>
+
+        <!-- Crosshair Speed Slider in Flight Hub Panel -->
+        <div class="hud-slider-group flight-slider-row" style="margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; align-items: center; justify-content: space-between;" title="Adjust crosshair movement speed (Default: 2.9x)">
+          <label for="slider-crosshair-speed" style="font-size: 0.72rem; color: var(--cyan-neon); font-weight: 700;">CROSSHAIR SPEED</label>
+          <input id="slider-crosshair-speed" type="range" min="0.4" max="4.0" step="0.05" value="2.90" style="width: 100px; cursor: pointer;">
+          <span id="val-crosshair-speed" class="badge-val" style="min-width: 40px; text-align: right; color: #fff; font-family: monospace;">2.90x</span>
+        </div>
+        <div style="margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(0,240,255,0.2); display: flex; flex-direction: column; gap: 4px;">
+          <label class="autohide-toggle" title="Flip joystick and throttle slider positions for left-handed controls">
+            <input type="checkbox" id="chk-left-handed" class="chk-left-handed"> Left-Handed Flip Controls
+          </label>
+        </div>
+      </div>
+
+      <!-- Section 2: Stage 1 Objectives & Systems Calibration -->
+      <div class="drawer-controls-box" style="margin-top: 6px;">
+        <div class="section-subheading">
+          <span>🎯 STAGE 1 OBJECTIVES</span>
+          <span id="obj-total-progress" style="font-size:0.68rem; color:var(--cyan-neon); font-weight:bold;">0/4 COMPLETE</span>
+        </div>
+
+        <!-- Objective 1: Resonance Scanner -->
+        <div class="objective-item" id="obj-scan">
+          <div class="obj-header">
+            <span>1. Resonance Scanner</span>
+            <span class="obj-status" id="status-scan">PENDING</span>
+          </div>
+          <div class="obj-bar-wrap">
+            <div class="obj-bar" id="bar-scan"></div>
+          </div>
+          <div class="obj-actions">
+            <button class="btn-action" id="btn-do-scan">📡 Scan Singularity</button>
+          </div>
+        </div>
+
+        <!-- Objective 2: Warp Coil Calibration -->
+        <div class="objective-item" id="obj-coils">
+          <div class="obj-header">
+            <span>2. Warp Coils (Tachyon Sync)</span>
+            <span class="obj-status" id="status-coils">0/3 CALIBRATED</span>
+          </div>
+          <div class="obj-bar-wrap">
+            <div class="obj-bar" id="bar-coils"></div>
+          </div>
+          <div class="obj-actions">
+            <button class="btn-action" id="btn-coil-1">Coil α</button>
+            <button class="btn-action" id="btn-coil-2">Coil β</button>
+            <button class="btn-action" id="btn-coil-3">Coil γ</button>
+          </div>
+        </div>
+
+        <!-- Objective 3: Vector & Proximity -->
+        <div class="objective-item" id="obj-vector">
+          <div class="obj-header">
+            <span>3. Alignment & Range</span>
+            <span class="obj-status" id="status-vector">ALIGN WITH CORE</span>
+          </div>
+          <div class="obj-bar-wrap">
+            <div class="obj-bar" id="bar-vector"></div>
+          </div>
+          <div style="font-size:0.65rem; color:var(--text-dim); margin-top:2px;">
+            Fly toward cyan wormhole core &lt; 50,000 KM (<span class="kbd">WASD</span> / Stick / Pad).
+          </div>
+        </div>
+
+        <!-- Objective 4: Engage Warp Jump -->
+        <div class="objective-item" id="obj-jump">
+          <div class="obj-header">
+            <span>4. Warp Horizon Jump</span>
+            <span class="obj-status" id="status-jump">LOCKED</span>
+          </div>
+          <div class="obj-bar-wrap">
+            <div class="obj-bar" id="bar-jump"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vertical Holographic Pull Strip Tab (Visible on left edge; hover expands panel) -->
+    <div class="drawer-strip-handle" id="drawer-tab" title="Hover over or click to toggle Controls Panel">
+      <span class="strip-chevron">▶</span>
+      <span class="drawer-strip-text">CONTROLS</span>
+    </div>
+  </div>
+
+  <!-- Collapsible Top Telemetry & Header Slide-Out Drawer -->
+  <div id="top-drawer-container">
+    <header class="hud-header">
+      <div class="title-group">
+        <div class="pulsing-orb"></div>
+        <div>
+          <div class="game-title">WORMHOLE XR</div>
+          <div id="hud-status" class="game-subtitle">STAGE 1: GRAVITATIONAL ANOMALY</div>
+        </div>
+      </div>
+
+      <!-- Multi-Platform & XR Mode Switcher -->
+      <div class="mode-switch-cluster">
+        <select id="select-mode" class="hud-select" title="Choose rendering & XR operating mode">
+          <option value="desktop-xr" selected>🖥️ DESKTOP XR (6-DOF)</option>
+          <option value="desktop-vr">🥽 DESKTOP VR (PCVR/HMD)</option>
+          <option value="mobile-xr">📱 MOBILE XR (WebXR/VR)</option>
+          <option value="mobile-ar">🌐 MOBILE AR (ARCore)</option>
+        </select>
+
+        <!-- Specific Hardware Device Selector -->
+        <select id="select-device" class="hud-select" title="Target Hardware Device Profile">
+          <option value="auto" selected>⚡ Auto-Detect Device</option>
+          <option value="desktop-pc">🖥️ Desktop PC (No VR HMD)</option>
+          <option value="desktop-vr-hmd">🥽 PCVR Headset (SteamVR / Quest Link)</option>
+          <option value="meta-quest">🥽 Meta Quest 2 / 3 / Pro (Horizon OS)</option>
+          <option value="apple-vision-pro">🥽 Apple Vision Pro (visionOS)</option>
+          <option value="android-arcore">📱 Android Phone (ARCore Certified)</option>
+          <option value="android-basic">📱 Android Phone (No ARCore / Basic)</option>
+          <option value="iphone-arkit">📱 Apple iPhone Pro (LiDAR ARKit)</option>
+          <option value="tablet">📟 Tablet (iPad / Android)</option>
+        </select>
+
+        <button id="btn-inspect-device" class="hud-btn" style="padding: 5px 12px; font-size: 0.75rem; border-color: #00f0ff; color: #00f0ff; background: rgba(0,240,255,0.12);" title="Inspect Hardware & Test Compatibility">
+          🔍 Test Device
+        </button>
+
+        <!-- Gamepad Connection Indicator -->
+        <div id="gamepad-status-pill" class="gamepad-pill" title="HTML5 Gamepad API Controller Status">
+          <span class="gamepad-dot"></span>
+          <span id="gamepad-name-text">PAD: AUTO</span>
+        </div>
+      </div>
+
+      <div class="telemetry-badges">
+        <div class="badge">
+          <span>VECTOR DEVIATION</span>
+          <span id="hud-vector" class="badge-val">12.4°</span>
+        </div>
+        <div class="badge">
+          <span>TACHYON FLUX</span>
+          <span id="hud-flux" class="badge-val">14.8 TeV</span>
+        </div>
+        <div class="badge">
+          <span>FRAME REFRESH</span>
+          <span id="hud-fps" class="badge-val">60 FPS</span>
+        </div>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:8px;">
+        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
+          <input type="checkbox" id="chk-auto-close-top" class="chk-auto-close" checked> Auto close
+        </label>
+      </div>
+    </header>
+
+    <!-- Top Holographic Pull Strip Tab (Visible on top edge; hover/click expands header) -->
+    <div class="top-strip-handle" id="top-drawer-tab" title="Hover over or click to toggle Telemetry Header">
+      <span class="top-strip-chevron">▼</span>
+      <span class="top-strip-text">TELEMETRY &amp; MODES</span>
+      <span class="top-strip-chevron">▼</span>
+    </div>
+  </div>
+
+  <!-- Collapsible Bottom Tactical Controls Slide-Out Drawer -->
+  <div id="bottom-drawer-container">
+    <!-- Bottom Holographic Pull Strip Tab (Visible on bottom edge; hover/click expands footer) -->
+    <div class="bottom-strip-handle" id="bottom-drawer-tab" title="Hover over or click to toggle Tactical Controls">
+      <span class="bottom-strip-chevron">▲</span>
+      <span class="bottom-strip-text">TACTICAL CONTROLS &amp; FLIGHT HUD</span>
+      <span class="bottom-strip-chevron">▲</span>
+    </div>
+
+    <footer id="hud-panel" class="hud-footer">
+      <div class="control-cluster">
+        <button id="btn-warp" class="hud-btn" title="Initiate sub-light cruise or hyper-warp jump">
+          🚀 Engage Warp
+        </button>
+        <button id="btn-toggle-drawer" class="hud-btn" title="Toggle left-hand Controls & Objectives Panel">
+          📋 Objectives
+        </button>
+        <button id="btn-toggle-header" class="hud-btn" title="Toggle top Telemetry & Modes Header">
+          📡 Telemetry
+        </button>
+        <button id="btn-toggle-audio" class="hud-btn" title="Toggle audio sound effects and synth">
+          <span class="icon">🔊</span> Audio: ON (.wav)
+        </button>
+        <button id="btn-toggle-controller" class="hud-btn" title="Toggle Gamepad Controller Polling">
+          🎮 Controller: AUTO
+        </button>
+        <button id="btn-spin-180" class="hud-btn" title="Fire thrusters until ship rotates 180 degrees (Hotkey: T)">
+          ↩️ 180° Turn
+        </button>
+        <button id="btn-spin-360" class="hud-btn" title="Fire thrusters until ship rotates 360 degrees (Hotkey: R)">
+          🔄 360° Turn
+        </button>
+        <button id="btn-mouse-lock" class="hud-btn" title="Toggle flight crosshair mouse capture">
+          🎯 Flight Mouse
+        </button>
+        <button id="btn-align-wormhole" class="hud-btn" title="Automatically align ship view directly towards the Wormhole Singularity (Hotkey: Z / N)">
+          🧭 Align View
+        </button>
+      </div>
+
+      <div class="control-cluster">
+        <div class="hud-slider-group">
+          <label for="slider-bloom">BLOOM</label>
+          <input id="slider-bloom" type="range" min="0.0" max="3.5" step="0.1" value="1.85">
+          <span id="val-bloom" class="badge-val">1.85</span>
+        </div>
+        <div class="hud-slider-group">
+          <label for="slider-lensing">LENS</label>
+          <input id="slider-lensing" type="range" min="0.0" max="2.0" step="0.1" value="1.0">
+          <span id="val-lensing" class="badge-val">1.0</span>
+        </div>
+        <div class="hud-slider-group" title="Adjust crosshair movement speed (Default: 2.9x)">
+          <label for="slider-crosshair-speed-bottom">CROSSHAIR SPEED</label>
+          <input id="slider-crosshair-speed-bottom" type="range" min="0.4" max="4.0" step="0.05" value="2.90">
+          <span id="val-crosshair-speed-bottom" class="badge-val">2.90x</span>
+        </div>
+        <label class="autohide-toggle" title="Flip joystick button positions: Flight stick on bottom-right, Aim stick on upper-left">
+          <input type="checkbox" id="chk-left-handed-bottom" class="chk-left-handed"> Left-Handed Flip Controls
+        </label>
+        <label class="autohide-toggle" title="When checked, all panels automatically close when the flight controller is used">
+          <input type="checkbox" id="chk-auto-close-bottom" class="chk-auto-close" checked> Auto close
+        </label>
+        <label class="autohide-toggle" title="Toggle visibility of the full screen mobile targeting snap grid">
+          <input type="checkbox" id="chk-show-grid-bottom" class="chk-show-grid"> Target Grid
+        </label>
+        <button id="btn-toggle-hud" class="hud-btn" title="Toggle interface overlay visibility">
+          👁 HUD
+        </button>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Holographic Sci-Fi Telemetry & Cockpit HUD -->
+  <div id="hud-layer">
+    <!-- Mobile Full-Screen Invisible Snap Grid -->
+    <div id="mobile-fullscreen-grid" class="mobile-fullscreen-grid" aria-hidden="true"></div>
+
+    <!-- Corner Boundary Reticles -->
+    <div class="hud-reticle reticle-tl"></div>
+    <div class="hud-reticle reticle-tr"></div>
+    <div class="hud-reticle reticle-bl"></div>
+    <div class="hud-reticle reticle-br"></div>
+
+    <!-- Center Crosshairs & Vector Alignment Marker -->
+    <div class="center-crosshair" id="center-crosshair">
+      <div class="crosshair-circle"></div>
+    </div>
+    <div id="vector-alignment-ring"></div>
+
+    <!-- Notification Toast Banner -->
+    <div id="toast-msg"></div>
+  </div>
+
+  <!-- Mobile Touch On-Screen Controls (Landscape) -->
+  <div id="mobile-touch-controls">
+    <!-- Right Virtual Joystick Zone (Tap: Fire Laser / Move: Up, Down & 360° Turn) -->
+    <div class="virtual-stick-zone" id="touch-stick-zone" title="Tap: Fire Laser / Move: Up, Down & 360° Turn">
+      <div class="virtual-stick-knob" id="touch-stick-knob">🔴</div>
+    </div>
+
+    <!-- Center Touch Action Cluster -->
+    <div class="mobile-touch-actions">
+      <div class="touch-btn" id="touch-btn-spin-180" title="Fire thrusters until ship rotates 180 degrees (Hotkey: T)">🔄 180°</div>
+      <div class="touch-btn" id="touch-btn-spin-360" title="Fire thrusters until ship rotates 360 degrees (Hotkey: R)">🔄 360°</div>
+      <div class="touch-btn" id="touch-btn-warp" title="Engage Warp Jump">⚡</div>
+    </div>
+
+    <!-- Custom Cruise Throttle Slider Container (Placed below right-hand joystick; flips when Left-Handed is checked) -->
+    <div id="throttle-slider-container" class="throttle-slider-container">
+      <div class="throttle-header">
+        <span class="throttle-title">🚀 SPEED THROTTLE</span>
+        <span id="throttle-value-badge" class="throttle-badge">0% [STOP]</span>
+      </div>
+      <div class="throttle-track-row">
+        <button type="button" id="btn-throttle-rev" class="throttle-label-dir rev-label" title="Toggle Reverse Thrust cruise (Hotkeys: S or Tap)">◀ REV</button>
+        <div class="throttle-slider-wrapper" id="throttle-slider-wrapper" title="Slide or tap to adjust cruise speed (Touch while thrusting to Stop immediately)">
+          <input type="range" id="custom-throttle-slider" min="-100" max="100" step="1" value="0" title="Slide right for Forward cruise, slide left for Backward/Reverse cruise (Touch to Stop while thrusting)">
+          <div class="throttle-center-notch" title="Neutral (0% Stop)"></div>
+        </div>
+        <button type="button" id="btn-throttle-fwd" class="throttle-label-dir fwd-label" title="Toggle Forward Thrust cruise (Hotkeys: W or Tap)">FWD ▶</button>
+        <button type="button" id="btn-throttle-stop" class="btn-throttle-stop" title="Emergency Stop & Center Throttle Slider">STOP</button>
+      </div>
+    </div>
+
+    <!-- Left Virtual Joystick Zone (Crosshair Aim Only - No Flight Control) -->
+    <div class="virtual-stick-zone aim-stick-zone" id="aim-stick-zone" title="Crosshair Aim Joystick (Controls Crosshair Only - No Flight Control)">
+      <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob"></div>
+    </div>
+  </div>
+
+  <!-- Primary Game Module -->
+  <script type="module" src="js/wormhole0.js?v=20261101_v8"></script>
+
+</body>
+</html>

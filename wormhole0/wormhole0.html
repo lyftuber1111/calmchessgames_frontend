@@ -1088,6 +1088,104 @@
     }
 
     /* ==========================================================================
+       DISTANCE TO WORMHOLE FLOATING BADGE (ANCHORED UNDER TELEMETRY & MODES TAB)
+       ========================================================================== */
+    .wormhole-distance-badge-wrap {
+      pointer-events: auto;
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      margin-top: 5px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 46;
+      white-space: nowrap;
+    }
+
+    .wormhole-distance-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 14px;
+      background: rgba(0, 20, 32, 0.94);
+      border: 1px solid var(--cyan-neon);
+      border-radius: 20px;
+      box-shadow: 0 2px 14px rgba(0, 240, 255, 0.45), inset 0 0 10px rgba(0, 240, 255, 0.15);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+      transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease;
+      letter-spacing: 1px;
+    }
+
+    .wormhole-distance-badge:hover {
+      background: rgba(0, 42, 68, 0.98);
+      border-color: #ffffff;
+      box-shadow: 0 4px 22px rgba(0, 240, 255, 0.8), inset 0 0 14px rgba(0, 240, 255, 0.3);
+      transform: scale(1.02);
+    }
+
+    .wormhole-dist-icon {
+      font-size: 0.82rem;
+      display: inline-block;
+      animation: spinWormholeIcon 8s linear infinite;
+      filter: drop-shadow(0 0 6px var(--cyan-neon));
+    }
+
+    @keyframes spinWormholeIcon {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .wormhole-dist-label {
+      font-size: 0.64rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      text-shadow: 0 0 6px rgba(0, 240, 255, 0.3);
+    }
+
+    .wormhole-dist-val {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.86rem;
+      font-weight: 800;
+      color: var(--cyan-neon);
+      letter-spacing: 1.2px;
+      text-shadow: 0 0 10px var(--cyan-neon);
+    }
+
+    /* Close proximity alert state (< 20,000 KM) */
+    .wormhole-distance-badge.proximity-close {
+      border-color: var(--accent-gold, #ffd166);
+      box-shadow: 0 2px 18px rgba(255, 209, 102, 0.6), inset 0 0 12px rgba(255, 209, 102, 0.2);
+    }
+    .wormhole-distance-badge.proximity-close .wormhole-dist-val {
+      color: var(--accent-gold, #ffd166);
+      text-shadow: 0 0 10px rgba(255, 209, 102, 0.9);
+    }
+
+    /* Event horizon warning state (< 6,000 KM) */
+    .wormhole-distance-badge.proximity-critical {
+      border-color: var(--accent-alert, #ef476f);
+      box-shadow: 0 2px 20px rgba(239, 71, 111, 0.75), inset 0 0 14px rgba(239, 71, 111, 0.3);
+      animation: badgeCriticalPulse 1.2s infinite ease-in-out;
+    }
+    .wormhole-distance-badge.proximity-critical .wormhole-dist-val {
+      color: var(--accent-alert, #ef476f);
+      text-shadow: 0 0 12px rgba(239, 71, 111, 0.9);
+    }
+
+    @keyframes badgeCriticalPulse {
+      0%, 100% { box-shadow: 0 2px 14px rgba(239, 71, 111, 0.5); }
+      50% { box-shadow: 0 4px 26px rgba(239, 71, 111, 0.9); }
+    }
+
+    /* ==========================================================================
        COLLAPSIBLE BOTTOM TACTICAL CONTROLS DRAWER (SLIDES OFF BOTTOM EDGE)
        ========================================================================== */
     #bottom-drawer-container {
@@ -3250,6 +3348,15 @@
       <span class="top-strip-text">TELEMETRY &amp; MODES</span>
       <span class="top-strip-chevron">▼</span>
     </div>
+
+    <!-- Distance to Wormhole Floating Badge (Anchored directly under Telemetry & Modes Panel Tab) -->
+    <div class="wormhole-distance-badge-wrap" id="wormhole-dist-badge-wrap">
+      <div class="wormhole-distance-badge" id="wormhole-distance-badge" title="Live distance to wormhole singularity core (Click to toggle Telemetry &amp; Modes Panel)">
+        <span class="wormhole-dist-icon">🌀</span>
+        <span class="wormhole-dist-label">DISTANCE TO WORMHOLE:</span>
+        <span id="hud-distance" class="wormhole-dist-val">92,400 KM</span>
+      </div>
+    </div>
   </div>
 
   <!-- Collapsible Bottom Tactical Controls Slide-Out Drawer -->
@@ -3404,7 +3511,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261102_stage1"></script>
+  <script type="module" src="js/wormhole0.js?v=20261103_distbadge"></script>
 
 </body>
 </html>

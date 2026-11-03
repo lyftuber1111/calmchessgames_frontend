@@ -1641,6 +1641,7 @@ const btnToggleDrawer = document.getElementById('btn-toggle-drawer');
 
 const topDrawer = document.getElementById('top-drawer-container');
 const topDrawerTab = document.getElementById('top-drawer-tab');
+const wormholeDistBadge = document.getElementById('wormhole-distance-badge');
 const btnToggleHeader = document.getElementById('btn-toggle-header');
 
 const bottomDrawer = document.getElementById('bottom-drawer-container');
@@ -2056,6 +2057,9 @@ initWeaponsInteractions();
 
 if (topDrawerTab) {
   topDrawerTab.addEventListener('click', toggleTopPanel);
+}
+if (wormholeDistBadge) {
+  wormholeDistBadge.addEventListener('click', toggleTopPanel);
 }
 if (btnToggleHeader) {
   btnToggleHeader.addEventListener('click', toggleTopPanel);
@@ -4697,6 +4701,28 @@ window.addEventListener('mousemove', (e) => {
 // =============================================================================
 const hudDistEl = document.getElementById('hud-distance');
 const hudVectorEl = document.getElementById('hud-vector');
+
+function updateWormholeDistanceBadge(distKm) {
+  if (typeof distKm !== 'number') {
+    const curPos = (camera && camera.position) ? camera.position : state.position;
+    distKm = Math.round(curPos.length() * 420);
+  }
+  const formatted = `${distKm.toLocaleString()} KM`;
+  if (hudDistEl) hudDistEl.textContent = formatted;
+
+  if (wormholeDistBadge) {
+    if (distKm < 6000) {
+      wormholeDistBadge.classList.add('proximity-critical');
+      wormholeDistBadge.classList.remove('proximity-close');
+    } else if (distKm < 20000) {
+      wormholeDistBadge.classList.add('proximity-close');
+      wormholeDistBadge.classList.remove('proximity-critical');
+    } else {
+      wormholeDistBadge.classList.remove('proximity-close', 'proximity-critical');
+    }
+  }
+}
+updateWormholeDistanceBadge();
 const hudFluxEl = document.getElementById('hud-flux');
 const hudFpsEl = document.getElementById('hud-fps');
 const toastEl = document.getElementById('toast-msg');
@@ -5200,7 +5226,7 @@ function updateFlight(delta) {
 
   const distLength = state.position.length();
   const distKm = Math.round(distLength * 420);
-  if (hudDistEl) hudDistEl.textContent = `${distKm.toLocaleString()} KM`;
+  updateWormholeDistanceBadge(distKm);
 
   const toWormhole = distLength > 0.01
     ? new THREE.Vector3(0, 0, 0).sub(state.position).normalize()
@@ -5279,6 +5305,8 @@ if (renderer) {
 
   if (!state.isXR) {
     updateFlight(delta);
+  } else {
+    updateWormholeDistanceBadge();
   }
 
   updateCrosshairPosition(delta);

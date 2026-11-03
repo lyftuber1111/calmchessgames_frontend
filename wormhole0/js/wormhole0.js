@@ -2038,6 +2038,9 @@ function initWeaponsInteractions() {
       if (!assertNotPaused('Weapon Switch')) return;
       weaponsSystem.cycleWeapon();
     });
+    hudPill.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+    }, { passive: true });
   }
 
   // Initial UI refresh

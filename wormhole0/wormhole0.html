@@ -243,7 +243,7 @@
        COLLAPSIBLE LEFT-HAND MISSION & CONTROLS SLIDE-OUT DRAWER
        ========================================================================== */
     #left-drawer-container {
-      pointer-events: auto;
+      pointer-events: none;
       position: fixed;
       left: 0;
       top: 36px;
@@ -260,6 +260,7 @@
     }
 
     .drawer-content {
+      pointer-events: auto;
       width: clamp(280px, 25vw, 340px);
       max-height: 100%;
       overflow-y: auto;
@@ -279,6 +280,7 @@
     }
 
     .drawer-strip-handle {
+      pointer-events: auto;
       width: 36px;
       height: 160px;
       background: rgba(0, 24, 38, 0.96);
@@ -766,12 +768,27 @@
       margin-top: 2px;
     }
 
-    /* HUD Weapon Selector Pill */
+    /* ==========================================================================
+       LASER PERCENTAGE VALUE BADGE (ANCHORED TO RIGHT OF CONTROLS PANEL TAB)
+       ========================================================================== */
+    .laser-percentage-badge-wrap {
+      pointer-events: auto;
+      position: absolute;
+      left: calc(100% + 8px);
+      top: 16px;
+      z-index: 55;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+    }
+
+    /* HUD Weapon Selector Pill / Laser Percentage Badge */
     .hud-weapon-pill {
       pointer-events: auto;
-      position: fixed;
-      top: 48px;
-      left: 8px;
+      position: relative;
+      top: auto;
+      left: auto;
       z-index: 55;
       display: flex;
       align-items: center;
@@ -784,9 +801,10 @@
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
-      transition: all 0.2s ease;
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, opacity 0.2s ease;
       user-select: none;
       -webkit-user-select: none;
+      white-space: nowrap;
     }
     .hud-weapon-pill:hover {
       background: rgba(0, 60, 95, 0.95);
@@ -3263,6 +3281,22 @@
       <span class="strip-chevron">▶</span>
       <span class="drawer-strip-text">CONTROLS</span>
     </div>
+
+    <!-- Laser Percentage Value Badge (Anchored directly to right of Controls Panel Tab) -->
+    <div class="laser-percentage-badge-wrap" id="laser-pct-badge-wrap">
+      <div id="hud-weapon-indicator" class="hud-weapon-pill" title="Click or tap to cycle active weapon (Hotkeys: 1/2 or Q)" role="button" tabindex="0">
+        <span id="hud-wpn-icon" class="hud-wpn-icon">🔴</span>
+        <div class="hud-wpn-info">
+          <div class="hud-wpn-name-row">
+            <span id="hud-wpn-name" class="hud-wpn-name">RED LASER</span>
+            <span id="hud-wpn-energy-text" class="hud-wpn-energy-text">100%</span>
+          </div>
+          <div class="hud-wpn-meter-wrap">
+            <div id="hud-wpn-meter-fill" class="hud-wpn-meter-fill red" style="width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Collapsible Top Telemetry & Header Slide-Out Drawer -->
@@ -3441,19 +3475,6 @@
       <span class="pause-icon">⏸</span>
     </button>
 
-    <!-- Interactive HUD Weapon Selector & Overheat Indicator Pill -->
-    <div id="hud-weapon-indicator" class="hud-weapon-pill" title="Click or tap to cycle active weapon (Hotkeys: 1/2 or Q)" role="button" tabindex="0">
-      <span id="hud-wpn-icon" class="hud-wpn-icon">🔴</span>
-      <div class="hud-wpn-info">
-        <div class="hud-wpn-name-row">
-          <span id="hud-wpn-name" class="hud-wpn-name">RED LASER</span>
-          <span id="hud-wpn-energy-text" class="hud-wpn-energy-text">100%</span>
-        </div>
-        <div class="hud-wpn-meter-wrap">
-          <div id="hud-wpn-meter-fill" class="hud-wpn-meter-fill red" style="width: 100%;"></div>
-        </div>
-      </div>
-    </div>
     <!-- Mobile Full-Screen Invisible Snap Grid -->
     <div id="mobile-fullscreen-grid" class="mobile-fullscreen-grid" aria-hidden="true"></div>
 
@@ -3511,7 +3532,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261103_distbadge"></script>
+  <script type="module" src="js/wormhole0.js?v=20261103_laserbadge"></script>
 
 </body>
 </html>

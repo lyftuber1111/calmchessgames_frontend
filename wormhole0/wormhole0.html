@@ -611,13 +611,17 @@
       cursor: not-allowed !important;
     }
 
-    /* Lock out all weapon cards and hud weapon controls during pause */
-    body.game-paused .hud-weapon-pill {
+    /* Lock out all weapon cards and hud weapon controls during pause, but keep weapon selector button clickable */
+    body.game-paused .hud-weapon-pill:not(.hud-cycle-weapon-pill) {
       border-color: var(--accent-alert, #ef476f) !important;
       box-shadow: 0 0 16px rgba(239, 71, 111, 0.6) !important;
       opacity: 0.65 !important;
       cursor: not-allowed !important;
       pointer-events: none !important;
+    }
+    body.game-paused .hud-cycle-weapon-pill {
+      pointer-events: auto !important;
+      cursor: pointer !important;
     }
 
     body.game-paused .weapon-card,
@@ -929,21 +933,51 @@
       height: 100%;
       display: block;
     }
+    /* Suppress any translucent blue box, tap highlight, focus box or text selection on wheel & segments */
+    .weapon-wheel-overlay,
+    .weapon-wheel-overlay *,
+    .weapon-ring-wrapper,
+    svg.weapon-navigation-rings,
+    svg.weapon-navigation-rings *,
+    .ring-segment {
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+      -webkit-touch-callout: none !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      outline: none !important;
+      outline-style: none !important;
+    }
+
     .ring-segment {
       cursor: pointer;
       transition: fill 0.25s, filter 0.25s, stroke 0.25s, opacity 0.25s;
       stroke: var(--divider-red, #8b0000);
       stroke-width: 3px;
-      outline: none;
+      outline: none !important;
+      outline-style: none !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
     }
     .ring-segment:hover,
-    .ring-segment:focus-visible {
+    .ring-segment:focus-visible,
+    .ring-segment:focus {
       fill: #fff3b0 !important;
       filter: drop-shadow(0 0 12px var(--gold-glow, rgba(255, 215, 0, 0.8)));
+      outline: none !important;
+      outline-style: none !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent !important;
     }
     .ring-segment:active {
       fill: #ffffff !important;
-      filter: drop-shadow(0 0 18px #38bdf8) !important;
+      filter: drop-shadow(0 0 14px rgba(255, 215, 0, 0.85)) !important;
+      outline: none !important;
+      outline-style: none !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent !important;
       transition: none !important;
     }
     .ring-segment.is-active-wpn {
@@ -987,6 +1021,7 @@
       animation: alertPulse 1.2s infinite ease-in-out;
     }
     .weapon-center-hub {
+      display: none !important;
       position: absolute;
       width: clamp(65px, 22%, 95px);
       height: clamp(65px, 22%, 95px);
@@ -3551,9 +3586,9 @@
         </div>
       </div>
       <!-- Cycle Weapon Badge (Under the weapon overheat badge, same size) -->
-      <div id="hud-weapon-cycle-badge" class="hud-weapon-pill hud-cycle-weapon-pill" title="Toggle Weapon Selector Wheel (Hotkey: Q)" role="button" tabindex="0" aria-label="Cycle Weapon">
+      <div id="hud-weapon-cycle-badge" class="hud-weapon-pill hud-cycle-weapon-pill" title="Toggle Weapon Selector Wheel (Hotkey: Q)" role="button" tabindex="0" aria-label="Weapons">
         <span id="hud-cycle-badge-icon" class="hud-cycle-badge-icon">🔄</span>
-        <span id="hud-cycle-badge-text" class="hud-cycle-badge-text">CYCLE WEAPON</span>
+        <span id="hud-cycle-badge-text" class="hud-cycle-badge-text">Weapons</span>
       </div>
     </div>
   </div>
@@ -3766,10 +3801,6 @@
       </div>
 
       <div class="ring-wrapper weapon-ring-wrapper">
-        <div class="weapon-center-hub" id="weaponCenterHub" title="Tap to close weapon selector" role="button" tabindex="0" aria-label="Close Weapon Selector">
-          <span class="weapon-center-hub-icon">✕</span>
-          <span class="weapon-center-hub-text">CLOSE</span>
-        </div>
         <svg class="navigation-rings weapon-navigation-rings" id="weaponRingSvg" viewBox="0 0 500 500"></svg>
       </div>
 
@@ -3817,7 +3848,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261103_crosshair_fix"></script>
+  <script type="module" src="js/wormhole0.js?v=20261104_weapons_selector_fix"></script>
 
 </body>
 </html>

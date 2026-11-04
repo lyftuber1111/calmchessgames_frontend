@@ -1358,7 +1358,7 @@ class WeaponsSystem {
   }
 
   selectWeapon(id) {
-    if (state.isPaused) {
+    if (state.isPaused && typeof isWeaponWheelOpen === 'function' && !isWeaponWheelOpen()) {
       return false;
     }
     const target = this.weapons[id];
@@ -1379,7 +1379,7 @@ class WeaponsSystem {
   }
 
   cycleWeapon() {
-    if (state.isPaused) {
+    if (state.isPaused && typeof isWeaponWheelOpen === 'function' && !isWeaponWheelOpen()) {
       return false;
     }
     const available = Object.values(this.weapons).filter(w => w.isAvailable && w.acquired);
@@ -1912,7 +1912,7 @@ function updateLockoutHighlights() {
   }
 }
 
-function setGamePaused(paused) {
+function setGamePaused(paused, skipDrawer = false) {
   state.isPaused = !!paused;
 
   const pauseBtns = [btnQuickPause, btnDrawerPause, btnTogglePause];
@@ -1945,14 +1945,16 @@ function setGamePaused(paused) {
     Object.keys(keys).forEach(k => { keys[k] = false; });
     state.velocity.set(0, 0, 0);
 
-    // Open Cockpit Controls & Missions panel with WEAPONS tab selected by default
-    if (leftDrawer) {
-      leftDrawer.classList.add('open');
+    // Open Cockpit Controls & Missions panel with WEAPONS tab selected by default (unless paused by modal selector)
+    if (!skipDrawer) {
+      if (leftDrawer) {
+        leftDrawer.classList.add('open');
+      }
+      if (btnToggleDrawer) {
+        btnToggleDrawer.classList.add('active');
+      }
+      setCockpitTab('weapons'); // Weapons is the default tab when panel opens!
     }
-    if (btnToggleDrawer) {
-      btnToggleDrawer.classList.add('active');
-    }
-    setCockpitTab('weapons'); // Weapons is the default tab when panel opens!
 
     // Suspend audio drone while paused
     if (audioMgr && audioMgr.droneAudio && !audioMgr.droneAudio.paused) {
@@ -2041,12 +2043,11 @@ function initWeaponsInteractions() {
     }, { passive: true });
   }
 
-  // Wire Cycle Weapon Badge (Under the overheat badge, same size, toggles weapon wheel)
+  // Wire Weapons Selector Badge (Under the overheat badge, same size, toggles weapon wheel)
   const hudCycleBadge = document.getElementById('hud-weapon-cycle-badge');
   if (hudCycleBadge) {
     hudCycleBadge.addEventListener('click', (e) => {
       e.stopPropagation();
-      if (!assertNotPaused('Weapon Wheel')) return;
       toggleWeaponWheel();
     });
     hudCycleBadge.addEventListener('touchstart', (e) => {
@@ -2185,7 +2186,6 @@ function isWeaponWheelOpen() {
 }
 
 function openWeaponWheel() {
-  if (state.isPaused) return;
   const overlay = document.getElementById('weapon-wheel-overlay');
   const cycleBadge = document.getElementById('hud-weapon-cycle-badge');
   const cycleText = document.getElementById('hud-cycle-badge-text');
@@ -2200,6 +2200,11 @@ function openWeaponWheel() {
   if (cycleIcon) cycleIcon.textContent = '✕';
 
   playWheelSciFiLaser();
+
+  // Pause game when weapon wheel is opened
+  if (!state.isPaused) {
+    setGamePaused(true, true);
+  }
 }
 
 function closeWeaponWheel() {
@@ -2212,8 +2217,13 @@ function closeWeaponWheel() {
   overlay.style.display = 'none';
 
   if (cycleBadge) cycleBadge.classList.remove('is-open');
-  if (cycleText) cycleText.textContent = 'CYCLE WEAPON';
+  if (cycleText) cycleText.textContent = 'Weapons';
   if (cycleIcon) cycleIcon.textContent = '🔄';
+
+  // Unpause game when weapons segmented selector closes
+  if (state.isPaused) {
+    setGamePaused(false);
+  }
 }
 
 function toggleWeaponWheel() {
@@ -2276,6 +2286,8 @@ function renderWeaponWheel() {
     const onSelect = (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (path.blur) path.blur();
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       // OVERHEAT CHECK: unavailable to select when overheated!
       if (w.isOverheated) {
         if (audioMgr && audioMgr.playOverheatAlert) audioMgr.playOverheatAlert();
@@ -2288,7 +2300,9 @@ function renderWeaponWheel() {
     };
 
     path.onpointerdown = (e) => {
+      e.preventDefault();
       e.stopPropagation();
+      if (path.blur) path.blur();
       if (!w.isOverheated) playWheelSciFiLaser();
     };
     path.onclick = onSelect;
@@ -2379,10 +2393,17 @@ function renderWeaponWheel() {
     const onAction = (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (path.blur) path.blur();
+      if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       playWheelSciFiLaser();
       seg.action();
     };
-    path.onpointerdown = () => playWheelSciFiLaser();
+    path.onpointerdown = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (path.blur) path.blur();
+      playWheelSciFiLaser();
+    };
     path.onclick = onAction;
     path.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') onAction(e);

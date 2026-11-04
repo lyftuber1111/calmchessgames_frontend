@@ -2061,13 +2061,18 @@ function initWeaponsInteractions() {
       closeWeaponWheel();
     });
   }
-  const centerLogo = document.getElementById('weaponCenterLogo');
-  if (centerLogo) {
-    centerLogo.addEventListener('click', (e) => {
+  const centerHub = document.getElementById('weaponCenterHub') || document.getElementById('weaponCenterLogo');
+  if (centerHub) {
+    centerHub.addEventListener('click', (e) => {
       e.stopPropagation();
       playWheelSciFiLaser();
       closeWeaponWheel();
     });
+    centerHub.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+      playWheelSciFiLaser();
+      closeWeaponWheel();
+    }, { passive: true });
   }
   const backdrop = document.getElementById('weapon-wheel-backdrop');
   if (backdrop) {

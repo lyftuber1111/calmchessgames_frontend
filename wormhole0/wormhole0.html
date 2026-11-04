@@ -986,32 +986,44 @@
     .ring-icon-symbol.is-overheated-icon {
       animation: alertPulse 1.2s infinite ease-in-out;
     }
-    .weapon-center-logo {
+    .weapon-center-hub {
       position: absolute;
-      width: clamp(60px, 23%, 100px);
-      height: clamp(60px, 23%, 100px);
+      width: clamp(65px, 22%, 95px);
+      height: clamp(65px, 22%, 95px);
       border-radius: 50%;
       z-index: 2;
       cursor: pointer;
-      background: #000;
+      background: radial-gradient(circle, rgba(0, 35, 60, 0.96), rgba(0, 15, 25, 0.98));
       border: 3px solid var(--divider-red, #8b0000);
-      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 12px rgba(0, 240, 255, 0.2);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 2px;
       transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
-      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
     }
-    .weapon-center-logo:hover {
-      transform: scale(1.06);
-      box-shadow: 0 0 28px rgba(255, 215, 0, 0.95);
+    .weapon-center-hub:hover {
+      transform: scale(1.08);
       border-color: #ffd166;
+      box-shadow: 0 0 26px rgba(255, 215, 0, 0.85), inset 0 0 16px rgba(0, 240, 255, 0.4);
     }
-    .weapon-center-img {
-      width: 78%;
-      height: 78%;
-      object-fit: contain;
-      pointer-events: none;
+    .weapon-center-hub-icon {
+      font-size: 1.25rem;
+      line-height: 1;
+      color: #ffd166;
+      font-weight: 800;
+      text-shadow: 0 0 8px rgba(255, 209, 102, 0.85);
+    }
+    .weapon-center-hub-text {
+      font-size: 0.60rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #e0f9ff;
+      text-transform: uppercase;
+      font-family: inherit;
     }
     .weapon-wheel-footer {
       font-size: 0.65rem;
@@ -3754,8 +3766,9 @@
       </div>
 
       <div class="ring-wrapper weapon-ring-wrapper">
-        <div class="center-logo weapon-center-logo" id="weaponCenterLogo" title="Calm Chess Knight Logo (Tap to close)" role="button" tabindex="0" aria-label="Calm Chess Knight Logo">
-          <img src="knight_left0.png" alt="Calm Chess Knight" class="weapon-center-img" onerror="this.src='../knight_left0.png'">
+        <div class="weapon-center-hub" id="weaponCenterHub" title="Tap to close weapon selector" role="button" tabindex="0" aria-label="Close Weapon Selector">
+          <span class="weapon-center-hub-icon">✕</span>
+          <span class="weapon-center-hub-text">CLOSE</span>
         </div>
         <svg class="navigation-rings weapon-navigation-rings" id="weaponRingSvg" viewBox="0 0 500 500"></svg>
       </div>
@@ -3804,7 +3817,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261103_tinystars"></script>
+  <script type="module" src="js/wormhole0.js?v=20261103_wheel_v5"></script>
 
 </body>
 </html>

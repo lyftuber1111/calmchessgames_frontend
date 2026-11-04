@@ -1292,9 +1292,9 @@ class WeaponsSystem {
       name: 'Cobalt Blue Laser',
       shortName: 'BLUE LASER',
       icon: '🔵',
-      colorHex: 0x0088ff,
-      cssColor: '#0088ff',
-      glowColor: 'rgba(0, 136, 255, 0.65)',
+      colorHex: 0x00d4ff,
+      cssColor: '#00d4ff',
+      glowColor: 'rgba(0, 212, 255, 0.65)',
       energyCost: 30,       // Loses 30% out of 100% per shot
       cooldownDurationSec: 10, // 10 seconds cool-off on 0% overheat
       bulletSpeed: 700,
@@ -1377,6 +1377,7 @@ class WeaponsSystem {
     if (audioMgr && audioMgr.playWeaponSwitch) {
       audioMgr.playWeaponSwitch();
     }
+    this.updateCrosshairWeaponRing();
     this.notify();
     return true;
   }
@@ -1500,10 +1501,35 @@ class WeaponsSystem {
           const coolFraction = 1.0 - (active.overheatRemainingMs / (active.cooldownDurationSec * 1000));
           meterFillEl.style.width = `${Math.round(Math.max(0, Math.min(100, coolFraction * 100)))}%`;
         } else {
-          meterFillEl.classList.add(active.id === 'blue_laser' ? 'blue' : 'red');
+          meterFillEl.classList.add(active.id === 'blue_laser' ? 'blue' : (active.id === 'tachyon_lance' ? 'tachyon' : 'red'));
           meterFillEl.style.width = `${active.energy}%`;
         }
       }
+    }
+
+    // 3. Update Outside Ring of Crosshair to Selected Weapon Color
+    this.updateCrosshairWeaponRing();
+  }
+
+  updateCrosshairWeaponRing() {
+    const active = this.getActiveWeapon();
+    const vectorRing = document.getElementById('vector-alignment-ring');
+    if (!vectorRing || !active) return;
+
+    const ringColor = active.cssColor || '#00f0ff';
+    const glowColor = active.glowColor || ringColor;
+
+    vectorRing.style.setProperty('--weapon-ring-color', ringColor);
+    vectorRing.style.setProperty('--weapon-ring-glow', glowColor);
+
+    // Update weapon-specific CSS class on outside crosshair ring
+    vectorRing.classList.remove('wpn-ring-red_laser', 'wpn-ring-blue_laser', 'wpn-ring-tachyon_lance');
+    vectorRing.classList.add(`wpn-ring-${active.id}`);
+
+    // If not actively locked to wormhole vector, apply weapon color & glow directly
+    if (!vectorRing.classList.contains('locked')) {
+      vectorRing.style.borderColor = ringColor;
+      vectorRing.style.boxShadow = `0 0 12px ${glowColor}, inset 0 0 6px ${glowColor}`;
     }
   }
 
@@ -1628,6 +1654,7 @@ class WeaponsSystem {
 }
 
 const weaponsSystem = new WeaponsSystem();
+weaponsSystem.updateCrosshairWeaponRing();
 
 // =============================================================================
 // COLLAPSIBLE PANELS: LEFT (MISSION), TOP (TELEMETRY), BOTTOM (TACTICAL)
@@ -4727,12 +4754,14 @@ function fireLaserBeam() {
   // Crosshair visual blast animation
   const crosshairEl = document.getElementById('center-crosshair');
   if (crosshairEl) {
-    let fireClass = 'laser-firing'; if (activeWpn.id === 'blue_laser') fireClass = 'laser-firing-blue'; else if (activeWpn.id === 'tachyon_lance') fireClass = 'laser-firing-amber';
-    crosshairEl.classList.remove('laser-firing', 'laser-firing-blue');
+    let fireClass = 'laser-firing';
+    if (activeWpn.id === 'blue_laser') fireClass = 'laser-firing-blue';
+    else if (activeWpn.id === 'tachyon_lance') fireClass = 'laser-firing-amber';
+    crosshairEl.classList.remove('laser-firing', 'laser-firing-blue', 'laser-firing-amber');
     void crosshairEl.offsetWidth; // Reflow
     crosshairEl.classList.add(fireClass);
     setTimeout(() => {
-      crosshairEl.classList.remove('laser-firing', 'laser-firing-blue');
+      crosshairEl.classList.remove('laser-firing', 'laser-firing-blue', 'laser-firing-amber');
     }, 180);
   }
 
@@ -5975,11 +6004,21 @@ function updateFlight(delta) {
   if (state.isVectorAligned && state.isInRange) {
     if (objVector) objVector.classList.add('completed');
     if (statusVector) statusVector.textContent = 'VECTOR LOCKED & IN RANGE';
-    if (vectorRingEl) vectorRingEl.classList.add('locked');
+    if (vectorRingEl) {
+      vectorRingEl.classList.add('locked');
+      vectorRingEl.style.borderColor = '';
+      vectorRingEl.style.boxShadow = '';
+    }
   } else {
     if (objVector) objVector.classList.remove('completed');
     if (statusVector) statusVector.textContent = `${angleDeg.toFixed(1)}° / ${distKm.toLocaleString()} KM`;
-    if (vectorRingEl) vectorRingEl.classList.remove('locked');
+    if (vectorRingEl) {
+      const wasLocked = vectorRingEl.classList.contains('locked');
+      vectorRingEl.classList.remove('locked');
+      if (wasLocked && typeof weaponsSystem !== 'undefined' && weaponsSystem.updateCrosshairWeaponRing) {
+        weaponsSystem.updateCrosshairWeaponRing();
+      }
+    }
   }
 
   checkObjectives();

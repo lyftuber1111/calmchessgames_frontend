@@ -748,10 +748,23 @@
       background: linear-gradient(90deg, #b8860b, #ffd166);
       box-shadow: 0 0 10px rgba(255, 209, 102, 0.8);
     }
+    /* Tachyon Lance Amber Crosshair Blast Pulse (No outer square box/halo) */
     .center-crosshair.laser-firing-amber {
-      border-color: #ffd166;
-      box-shadow: 0 0 24px rgba(255, 209, 102, 0.9), inset 0 0 16px rgba(255, 209, 102, 0.6);
-      transform: translate(-50%, -50%) scale(1.35);
+      transform: translate(-50%, -50%) scale(1.35) !important;
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
+    }
+    .center-crosshair.laser-firing-amber::before,
+    .center-crosshair.laser-firing-amber::after {
+      background: #ffd166 !important;
+      box-shadow: 0 0 14px #ffd166, 0 0 24px rgba(255, 209, 102, 0.8) !important;
+    }
+    .center-crosshair.laser-firing-amber .crosshair-circle {
+      border-color: #ffd166 !important;
+      border-style: solid !important;
+      box-shadow: 0 0 16px #ffd166, inset 0 0 10px rgba(255, 209, 102, 0.6) !important;
+      transform: scale(1.2);
     }
     .wpn-energy-bar-fill.overheated {
       background: linear-gradient(90deg, #ef476f, #ffd166) !important;
@@ -1847,6 +1860,9 @@
       justify-content: center;
       transition: transform 0.08s ease-out;
       z-index: 50;
+      border: none !important;
+      box-shadow: none !important;
+      background: transparent !important;
     }
 
     .center-crosshair::before,
@@ -1922,7 +1938,7 @@
       box-shadow: inset 0 0 10px rgba(0, 240, 255, 0.18);
     }
 
-    /* Vector Lock Indicator */
+    /* Vector Lock Indicator / Outside Ring of Crosshair */
     #vector-alignment-ring {
       position: absolute;
       top: 50%;
@@ -1930,16 +1946,32 @@
       transform: translate(-50%, -50%);
       width: 70px;
       height: 70px;
-      border: 2px solid rgba(0, 240, 255, 0.35);
+      border: 2px solid var(--weapon-ring-color, #ff0033);
+      box-shadow: 0 0 12px var(--weapon-ring-glow, rgba(255, 0, 51, 0.55)), inset 0 0 6px var(--weapon-ring-glow, rgba(255, 0, 51, 0.35));
       border-radius: 50%;
       pointer-events: none;
       transition: border-color 0.25s ease, box-shadow 0.25s ease;
       z-index: 49;
     }
 
+    #vector-alignment-ring.wpn-ring-red_laser {
+      border-color: #ff0033;
+      box-shadow: 0 0 12px rgba(255, 0, 51, 0.65), inset 0 0 6px rgba(255, 0, 51, 0.4);
+    }
+
+    #vector-alignment-ring.wpn-ring-blue_laser {
+      border-color: #00d4ff;
+      box-shadow: 0 0 12px rgba(0, 212, 255, 0.65), inset 0 0 6px rgba(0, 212, 255, 0.4);
+    }
+
+    #vector-alignment-ring.wpn-ring-tachyon_lance {
+      border-color: #ffd166;
+      box-shadow: 0 0 12px rgba(255, 209, 102, 0.65), inset 0 0 6px rgba(255, 209, 102, 0.4);
+    }
+
     #vector-alignment-ring.locked {
-      border-color: var(--accent-green);
-      box-shadow: 0 0 15px var(--accent-green);
+      border-color: var(--accent-green) !important;
+      box-shadow: 0 0 18px var(--accent-green), inset 0 0 8px rgba(6, 214, 160, 0.5) !important;
     }
 
     /* Notification Banner */
@@ -3989,7 +4021,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261104_crosshair_mouse_capture"></script>
+  <script type="module" src="js/wormhole0.js?v=20261104_crosshair_weapon_ring"></script>
 
 </body>
 </html>

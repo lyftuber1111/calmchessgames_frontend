@@ -3506,9 +3506,12 @@
             <span>🎛️ WEAPONS CONTROLS</span>
             <span style="font-size:0.65rem; color:var(--cyan-neon);">HOTKEYS</span>
           </div>
-          <div class="key-row"><span>Fire Active Weapon:</span> <span class="kbd">R-Stick Tap (🔴/🔵)</span> / <span class="kbd">X</span> / <span class="kbd">RB</span></div>
+          <div class="key-row"><span>Fire Active Weapon:</span> <span class="kbd">Left Click (LMB)</span> / <span class="kbd">X</span> / <span class="kbd">R-Stick Tap</span> / <span class="kbd">RB</span></div>
+          <div class="key-row"><span>Crosshair Aim / Capture:</span> <span class="kbd">Focus / Left Click Window</span></div>
+          <div class="key-row"><span>Release Crosshair:</span> <span class="kbd">Esc</span> Key</div>
           <div class="key-row"><span>Select Red Laser:</span> <span class="kbd">1</span> Key</div>
           <div class="key-row"><span>Select Blue Laser:</span> <span class="kbd">2</span> Key</div>
+          <div class="key-row"><span>Select Tachyon Lance:</span> <span class="kbd">3</span> Key</div>
           <div class="key-row"><span>Cycle Weapons:</span> <span class="kbd">Q</span> or <span class="kbd">Gamepad LB</span></div>
           <div class="key-row"><span>HUD Weapon Switch:</span> <span class="kbd">Tap HUD Weapon Pill</span></div>
         </div>
@@ -3522,26 +3525,26 @@
         <!-- Joysticks Function Info -->
         <div class="drawer-controls-box" id="flight-panel">
           <div class="section-subheading">
-            <span>🕹️ JOYSTICKS FUNCTION INFO</span>
+            <span>🕹️ JOYSTICKS &amp; MOUSE FUNCTION INFO</span>
             <span style="font-size:0.65rem; color:var(--cyan-neon);">6-DOF FLIGHT</span>
           </div>
           <div class="key-row">
-            <span>Aim Joystick (Left):</span>
+            <span>Aim Joystick (Left) / Mouse:</span>
             <span class="kbd">Crosshair Aim Only</span>
           </div>
           <div style="font-size:0.64rem; color:var(--text-dim); margin:2px 0 6px 2px;">
-            Targeting reticle aim joystick; moves crosshair independently with no ship flight roll.
+            Targeting reticle aim joystick or captured mouse; moves crosshair independently with no ship flight roll.
           </div>
           <div class="key-row">
             <span>Flight Joystick (Right):</span>
             <span class="kbd">↕ Elevate/Dive  ↔ Turn</span>
           </div>
           <div class="key-row">
-            <span>Laser Fire Knob:</span>
-            <span class="kbd">Tap Flight Knob (🔴)</span>
+            <span>Laser Fire Knob / LMB:</span>
+            <span class="kbd">Left Mouse Click / Knob (🔴)</span>
           </div>
           <div style="font-size:0.64rem; color:var(--text-dim); margin:2px 0 6px 2px;">
-            Controls 360° yaw rotation & pitch elevation; tap center knob to rapid-fire laser cannons.
+            Left-click window or tap center knob to fire laser cannons; controls 360° yaw rotation &amp; pitch elevation.
           </div>
           <div class="key-row">
             <span>Throttle Slider:</span>
@@ -3559,14 +3562,20 @@
         <!-- Cockpit Buttons & Hotkeys Function Info -->
         <div class="drawer-controls-box">
           <div class="section-subheading">
-            <span>🎛️ BUTTONS FUNCTION INFO</span>
+            <span>🎛️ BUTTONS &amp; MOUSE FUNCTION INFO</span>
             <span style="font-size:0.65rem; color:var(--cyan-neon);">CONTROLS</span>
           </div>
-          <div class="key-row"><span>Fire Laser Cannon:</span> <span class="kbd">R-Stick Tap</span> / <span class="kbd">RB</span> / <span class="kbd">B</span> / <span class="kbd">Click</span></div>
+          <div class="key-row"><span>Fire Weapon:</span> <span class="kbd">Left Click (LMB)</span> / <span class="kbd">X</span> / <span class="kbd">RB</span> / <span class="kbd">R-Stick Tap</span></div>
+          <div class="key-row"><span>Crosshair Aim / Capture:</span> <span class="kbd">Focus / Left Click Window</span></div>
+          <div class="key-row"><span>Release Crosshair:</span> <span class="kbd">Esc</span> Key</div>
+          <div style="font-size:0.64rem; color:var(--cyan-neon); margin:2px 0 6px 2px;">
+            Focusing or clicking the game window captures the crosshair for mouse aiming. Left mouse button fires active weapon. Press Esc to release crosshair.
+          </div>
           <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">R-Stick (Hold) / R2</span></div>
-          <div class="key-row"><span>Crosshair Aim:</span> <span class="kbd">Left Stick / Mouse</span></div>
-          <div class="key-row"><span>Pitch & Yaw Look:</span> <span class="kbd">Right Stick / D-Pad</span></div>
+          <div class="key-row"><span>Lateral Strafe:</span> <span class="kbd">A / D</span></div>
+          <div class="key-row"><span>Pitch &amp; Yaw Look:</span> <span class="kbd">Right Stick / D-Pad</span></div>
           <div class="key-row"><span>Elevate / Dive:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">R2 / L2</span></div>
+          <div class="key-row"><span>Pause / Resume:</span> <span class="kbd">P</span> (or <span class="kbd">Esc</span> when released)</div>
           <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">A / X Button</span></div>
           <div class="key-row"><span>Warp Jump Trigger:</span> <span class="kbd">F</span> or <span class="kbd">Y Button</span></div>
           <div class="key-row" style="margin-top:5px; border-top:1px solid rgba(0,240,255,0.2); padding-top:4px;">
@@ -3828,8 +3837,8 @@
         <button id="btn-spin-360" class="hud-btn" title="Fire thrusters until ship rotates 360 degrees (Hotkey: R)">
           🔄 360° Turn
         </button>
-        <button id="btn-mouse-lock" class="hud-btn" title="Toggle flight crosshair mouse capture">
-          🎯 Flight Mouse
+        <button id="btn-mouse-lock" class="hud-btn" title="Toggle crosshair mouse capture (Hotkey: Focus/Click window to capture, Esc to release)">
+          🎯 Capture Crosshair
         </button>
         <button id="btn-align-wormhole" class="hud-btn" title="Automatically align ship view directly towards the Wormhole Singularity (Hotkey: Z / N)">
           🧭 Align View
@@ -3951,7 +3960,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261104_weapons_mobile_responsive"></script>
+  <script type="module" src="js/wormhole0.js?v=20261104_crosshair_mouse_capture"></script>
 
 </body>
 </html>

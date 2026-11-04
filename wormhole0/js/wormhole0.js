@@ -60,6 +60,8 @@ const state = {
   yaw: 0,
   isPointerLocked: false,
   isMouseDown: false,
+  isLeftMouseDown: false,
+  lastPointerLockExitTime: 0,
   lastMouseX: 0,
   lastMouseY: 0,
   
@@ -2496,7 +2498,36 @@ document.querySelectorAll('.chk-auto-close').forEach(chk => {
 
 // Keyboard shortcuts for toggling panels & pause
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyP' || (e.code === 'Escape' && (!modalOverlay || modalOverlay.style.display !== 'flex'))) {
+  if (e.code === 'Escape') {
+    // 1. If crosshair is captured or was just released by Esc via browser native pointerlock exit, release capture and do NOT toggle pause
+    if (state.isPointerLocked || document.pointerLockElement || (performance.now() - state.lastPointerLockExitTime < 250)) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (document.pointerLockElement) {
+        try { document.exitPointerLock(); } catch(err) {}
+      }
+      state.isPointerLocked = false;
+      state.isLeftMouseDown = false;
+      return;
+    }
+    // 2. If weapon wheel is open, close it
+    if (typeof isWeaponWheelOpen === 'function' && isWeaponWheelOpen()) {
+      e.preventDefault();
+      closeWeaponWheel();
+      return;
+    }
+    // 3. If modal overlay is open, close it
+    if (modalOverlay && modalOverlay.style.display === 'flex') {
+      e.preventDefault();
+      closeUnsupportedModal();
+      return;
+    }
+    // 4. Otherwise toggle pause
+    e.preventDefault();
+    setGamePaused(!state.isPaused);
+    return;
+  }
+  if (e.code === 'KeyP') {
     e.preventDefault();
     setGamePaused(!state.isPaused);
     return;
@@ -4807,7 +4838,7 @@ function updateCrosshairPosition(delta) {
         state.crosshair.y = snapGrid.virtualY;
       }
     }
-  } else if (!state.aimActive && snapGrid.currentCol >= 0 && snapGrid.currentRow >= 0) {
+  } else if (!state.aimActive && !state.isPointerLocked && snapGrid.currentCol >= 0 && snapGrid.currentRow >= 0) {
     // When aim stick is released, ensure crosshair is snapped at the center of the grid box
     const boxCenterX = (snapGrid.currentCol + 0.5) * snapGrid.cellWidth;
     const boxCenterY = (snapGrid.currentRow + 0.5) * snapGrid.cellHeight;
@@ -4914,35 +4945,101 @@ window.addEventListener('keyup', (e) => {
 
 const mouseLockBtn = document.getElementById('btn-mouse-lock');
 if (mouseLockBtn) {
-  mouseLockBtn.addEventListener('click', () => {
+  mouseLockBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
     if (!audioMgr.isInitialized) audioMgr.init();
     if (document.pointerLockElement === container) {
       document.exitPointerLock();
     } else {
-      container.requestPointerLock();
+      requestCrosshairCapture();
     }
   });
 }
 
 document.addEventListener('pointerlockchange', () => {
+  const wasLocked = state.isPointerLocked;
   state.isPointerLocked = (document.pointerLockElement === container);
+  if (wasLocked && !state.isPointerLocked) {
+    state.lastPointerLockExitTime = performance.now();
+    state.isLeftMouseDown = false;
+  }
   if (mouseLockBtn) {
     mouseLockBtn.classList.toggle('active', state.isPointerLocked);
-    mouseLockBtn.textContent = state.isPointerLocked ? 'ðŸŽ¯ MOUSE LOCKED (ESC)' : 'ðŸŽ¯ Flight Mouse';
+    mouseLockBtn.textContent = state.isPointerLocked ? '🎯 CROSSHAIR CAPTURED (ESC)' : '🎯 Capture Crosshair';
   }
 });
 
-container.addEventListener('mousedown', (e) => {
-  if (!audioMgr.isInitialized) audioMgr.init();
+function isInteractiveUiElement(target) {
+  if (!target) return false;
+  return !!target.closest(
+    '#left-drawer-container, #top-drawer-container, #bottom-drawer-container, ' +
+    '#mobile-touch-controls, #unsupported-device-modal, .weapon-wheel-overlay, ' +
+    '.hud-weapon-pill, .hud-btn, .drawer-pause-btn, .hud-pause-icon-btn, ' +
+    'button, input, select, textarea, a, [role="button"], [role="tab"]'
+  );
+}
+
+function requestCrosshairCapture() {
+  if (state.isPaused || !container) return;
+  if (document.pointerLockElement !== container) {
+    try {
+      const p = container.requestPointerLock();
+      if (p && p.catch) p.catch(() => {});
+    } catch (err) {}
+  }
+}
+
+// Window focus event captures crosshair when focusing into the window
+window.addEventListener('focus', () => {
+  requestCrosshairCapture();
+});
+
+// Window mouse interaction: captures crosshair and fires active weapon on left click
+window.addEventListener('mousedown', (e) => {
   if (e.pointerType === 'touch' || (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents)) return;
+
+  // If clicking on an interactive UI element, let it handle the event
+  if (isInteractiveUiElement(e.target)) return;
+
+  if (!audioMgr.isInitialized) audioMgr.init();
+
+  // If crosshair is not currently captured, capture it and snap crosshair to click
   if (!state.isPointerLocked) {
-    state.isMouseDown = true;
-    state.lastMouseX = e.clientX;
-    state.lastMouseY = e.clientY;
+    state.crosshair.x = Math.max(10, Math.min(window.innerWidth - 10, e.clientX));
+    state.crosshair.y = Math.max(10, Math.min(window.innerHeight - 10, e.clientY));
+    if (typeof snapGrid !== 'undefined' && snapGrid.cellWidth > 0 && snapGrid.cellHeight > 0) {
+      snapGrid.virtualX = state.crosshair.x;
+      snapGrid.virtualY = state.crosshair.y;
+      snapGrid.currentCol = Math.min(snapGrid.cols - 1, Math.max(0, Math.floor(state.crosshair.x / snapGrid.cellWidth)));
+      snapGrid.currentRow = Math.min(snapGrid.rows - 1, Math.max(0, Math.floor(state.crosshair.y / snapGrid.cellHeight)));
+      highlightActiveGridBox(snapGrid.currentCol, snapGrid.currentRow);
+    }
+    const crosshairEl = document.getElementById('center-crosshair');
+    if (crosshairEl) {
+      crosshairEl.style.left = `${state.crosshair.x}px`;
+      crosshairEl.style.top = `${state.crosshair.y}px`;
+    }
+    const vectorRing = document.getElementById('vector-alignment-ring');
+    if (vectorRing) {
+      vectorRing.style.left = `${state.crosshair.x}px`;
+      vectorRing.style.top = `${state.crosshair.y}px`;
+    }
+
+    requestCrosshairCapture();
+  }
+
+  // When left mouse button is pressed, fire active weapon
+  if (e.button === 0) {
+    state.isLeftMouseDown = true;
+    fireLaserBeam();
+    state.flightLockoutUntil = performance.now() + 1000;
   }
 });
 
-window.addEventListener('mouseup', () => {
+window.addEventListener('mouseup', (e) => {
+  if (e.button === 0) {
+    state.isLeftMouseDown = false;
+  }
   state.isMouseDown = false;
 });
 
@@ -5072,12 +5169,39 @@ if (leftDrawerTabHandle) {
 
 window.addEventListener('mousemove', (e) => {
   if (state.isPointerLocked) {
-    touchLookYaw -= e.movementX * CONFIG.yawSpeed;
-    touchLookPitch -= e.movementY * CONFIG.pitchSpeed;
-    touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
-    state.yaw = lastGyroYaw + touchLookYaw;
-    state.pitch = lastGyroPitch + touchLookPitch;
-    state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
+    const speedScale = (state.crosshairSpeedMultiplier || 4.00) / 4.00;
+    state.crosshair.x += e.movementX * speedScale;
+    state.crosshair.y += e.movementY * speedScale;
+
+    // Clamp crosshair to viewport bounds
+    const margin = 10;
+    state.crosshair.x = Math.max(margin, Math.min(window.innerWidth - margin, state.crosshair.x));
+    state.crosshair.y = Math.max(margin, Math.min(window.innerHeight - margin, state.crosshair.y));
+
+    // Update snap grid position and active box
+    if (typeof snapGrid !== 'undefined' && snapGrid.cellWidth > 0 && snapGrid.cellHeight > 0) {
+      snapGrid.virtualX = state.crosshair.x;
+      snapGrid.virtualY = state.crosshair.y;
+      const newCol = Math.min(snapGrid.cols - 1, Math.max(0, Math.floor(state.crosshair.x / snapGrid.cellWidth)));
+      const newRow = Math.min(snapGrid.rows - 1, Math.max(0, Math.floor(state.crosshair.y / snapGrid.cellHeight)));
+      if (newCol !== snapGrid.currentCol || newRow !== snapGrid.currentRow) {
+        snapGrid.currentCol = newCol;
+        snapGrid.currentRow = newRow;
+        highlightActiveGridBox(newCol, newRow);
+      }
+    }
+
+    // Update DOM crosshair element immediately
+    const crosshairEl = document.getElementById('center-crosshair');
+    if (crosshairEl) {
+      crosshairEl.style.left = `${state.crosshair.x}px`;
+      crosshairEl.style.top = `${state.crosshair.y}px`;
+    }
+    const vectorRing = document.getElementById('vector-alignment-ring');
+    if (vectorRing) {
+      vectorRing.style.left = `${state.crosshair.x}px`;
+      vectorRing.style.top = `${state.crosshair.y}px`;
+    }
   } else if (state.isMouseDown && !isMouseAim) {
     const deltaX = e.clientX - state.lastMouseX;
     const deltaY = e.clientY - state.lastMouseY;
@@ -5704,6 +5828,11 @@ if (renderer) {
     updateFlight(delta);
   } else {
     updateWormholeDistanceBadge();
+  }
+
+  // Continuous fire while left mouse button is held down with crosshair captured
+  if (state.isLeftMouseDown && state.isPointerLocked) {
+    fireLaserBeam();
   }
 
   updateCrosshairPosition(delta);

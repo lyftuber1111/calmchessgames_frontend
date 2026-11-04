@@ -185,7 +185,7 @@ try {
     scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x01050a, 0.0006);
 
-    camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 2500);
+    camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 8000);
     camera.position.copy(state.position);
     window.camera = camera;
     window.scene = scene;
@@ -263,7 +263,7 @@ try {
 
 // Fallback dummy scene & camera so shaders and materials instantiate safely without throwing
 if (!scene) scene = new THREE.Scene();
-if (!camera) camera = new THREE.PerspectiveCamera(65, 1.0, 0.1, 1000);
+if (!camera) camera = new THREE.PerspectiveCamera(65, 1.0, 0.1, 8000);
 
 // Lighting
 const ambientLight = new THREE.AmbientLight(0x02111c, 0.4);
@@ -636,10 +636,11 @@ function createStarTexture() {
   c.width = 32;
   c.height = 32;
   const ctx = c.getContext('2d');
-  const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 14);
   g.addColorStop(0.0, 'rgba(255, 255, 255, 1.0)');
-  g.addColorStop(0.25, 'rgba(215, 245, 255, 0.95)');
-  g.addColorStop(0.55, 'rgba(0, 210, 255, 0.45)');
+  g.addColorStop(0.2, 'rgba(230, 248, 255, 0.95)');
+  g.addColorStop(0.45, 'rgba(100, 215, 255, 0.50)');
+  g.addColorStop(0.8, 'rgba(0, 160, 255, 0.12)');
   g.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 32, 32);
@@ -668,23 +669,16 @@ function createStarfield() {
     const theta = u * 2.0 * Math.PI;
     const phi = Math.acos(2.0 * v - 1.0);
     
-    // Distribute in concentric volume shells: near, mid, and distant celestial sphere
-    let r;
-    const roll = Math.random();
-    if (roll < 0.25) {
-      r = 50 + Math.random() * 250; // Near ambient space around flight path
-    } else if (roll < 0.65) {
-      r = 300 + Math.random() * 500; // Mid celestial volume
-    } else {
-      r = 800 + Math.random() * 1200; // Deep cosmos background
-    }
+    // Distribute on deep celestial sphere far away from the ship's flight path (r = 1200 to 2400)
+    // Clearing near flight volume so stars never crowd the ship or blow up in foreground
+    const r = 1200 + Math.random() * 1200;
 
     starPositions[i * 3 + 0] = r * Math.sin(phi) * Math.cos(theta);
     starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
     starPositions[i * 3 + 2] = r * Math.cos(phi);
 
     const baseColor = starPalette[Math.floor(Math.random() * starPalette.length)];
-    const lum = 0.6 + Math.random() * 0.7;
+    const lum = 0.5 + Math.random() * 0.5;
     starColors[i * 3 + 0] = Math.min(1.0, baseColor.r * lum);
     starColors[i * 3 + 1] = Math.min(1.0, baseColor.g * lum);
     starColors[i * 3 + 2] = Math.min(1.0, baseColor.b * lum);
@@ -694,14 +688,14 @@ function createStarfield() {
   starGeom.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
 
   const starMat = new THREE.PointsMaterial({
-    size: 4.2,
+    size: 2.0,
     map: createStarTexture(),
     vertexColors: true,
     transparent: true,
     opacity: 0.95,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    sizeAttenuation: true,
+    sizeAttenuation: false, // Ensures stars remain crisp, tiny pinpoints at all distances without blowing up into large blurry blobs
     fog: false // Crucial: ensures stars fill the entire screen brilliantly without fog dimming
   });
 
@@ -755,10 +749,13 @@ function createFloatingDust() {
   dustGeom.setAttribute('position', new THREE.BufferAttribute(dustPositions, 3));
   const dustMat = new THREE.PointsMaterial({
     color: 0x00f0ff,
-    size: 1.2,
+    size: 1.0,
+    map: createStarTexture(),
     transparent: true,
-    opacity: 0.45,
-    blending: THREE.AdditiveBlending
+    opacity: 0.35,
+    sizeAttenuation: false,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
   });
   return new THREE.Points(dustGeom, dustMat);
 }
@@ -5326,6 +5323,24 @@ if (renderer) {
     let prog = sw.mesh.material.uniforms.uProgress.value + delta * sw.speed;
     if (prog > 1.0) prog = 0.22;
     sw.mesh.material.uniforms.uProgress.value = prog;
+  }
+
+  // Dynamic Celestial Starfield: Keep stars tiny and push them more distant as ship approaches the wormhole
+  const distToWormhole = camera.position.length();
+  const safeStandoff = (CONFIG.eventHorizonRadius || 7.2) * 1.35;
+  const maxApproachDist = Math.max(1.0, CONFIG.wormholeDistance - safeStandoff);
+  const approachProgress = Math.max(0.0, Math.min(1.0, (CONFIG.wormholeDistance - distToWormhole) / maxApproachDist));
+
+  // 1. Keep celestial starfield centered on camera so ship never flies into stars (skybox / infinite cosmic distance)
+  starfield.position.copy(camera.position);
+
+  // 2. Outward celestial recession: As ship flies closer to the wormhole, push the stars further out into deep cosmos
+  const starDistanceScale = 1.0 + approachProgress * 1.6;
+  starfield.scale.set(starDistanceScale, starDistanceScale, starDistanceScale);
+
+  // 3. Keep stars tiny: dynamically scale star material size so stars stay pinpoints and become even tinier near the singularity
+  if (starfield.material) {
+    starfield.material.size = Math.max(1.0, 2.0 - approachProgress * 0.8);
   }
 
   starfield.rotation.y = state.time * 0.0025;

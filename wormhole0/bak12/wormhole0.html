@@ -611,13 +611,17 @@
       cursor: not-allowed !important;
     }
 
-    /* Lock out all weapon cards and hud weapon controls during pause */
-    body.game-paused .hud-weapon-pill {
+    /* Lock out all weapon cards and hud weapon controls during pause, but keep weapon selector button clickable */
+    body.game-paused .hud-weapon-pill:not(.hud-cycle-weapon-pill) {
       border-color: var(--accent-alert, #ef476f) !important;
       box-shadow: 0 0 16px rgba(239, 71, 111, 0.6) !important;
       opacity: 0.65 !important;
       cursor: not-allowed !important;
       pointer-events: none !important;
+    }
+    body.game-paused .hud-cycle-weapon-pill {
+      pointer-events: auto !important;
+      cursor: pointer !important;
     }
 
     body.game-paused .weapon-card,
@@ -839,17 +843,29 @@
        ========================================================================== */
     .weapon-wheel-overlay {
       position: fixed;
-      inset: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
       z-index: 1000;
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       touch-action: manipulation;
+      box-sizing: border-box;
+      padding: max(6px, env(safe-area-inset-top, 6px)) max(10px, env(safe-area-inset-right, 10px)) max(6px, env(safe-area-inset-bottom, 6px)) max(10px, env(safe-area-inset-left, 10px));
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
     }
     .weapon-wheel-backdrop {
       position: absolute;
       inset: 0;
-      background: rgba(1, 5, 10, 0.82);
+      background: rgba(1, 5, 10, 0.85);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
     }
@@ -859,91 +875,149 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
-      max-width: 95vw;
-      max-height: 96vh;
+      justify-content: center;
+      gap: clamp(4px, 1.2vh, 10px);
+      width: 100%;
+      max-width: min(96vw, 450px);
+      max-height: 100%;
+      margin: auto;
+      box-sizing: border-box;
     }
     .weapon-wheel-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
       width: 100%;
-      max-width: 440px;
-      padding: 0 6px;
+      max-width: min(94vw, 440px);
+      padding: 0 4px;
+      box-sizing: border-box;
+      flex-shrink: 0;
     }
     .weapon-wheel-title-group {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: clamp(4px, 1.5vw, 8px);
+      min-width: 0;
     }
     .weapon-wheel-badge {
       background: rgba(0, 240, 255, 0.15);
       border: 1px solid var(--cyan-neon);
       border-radius: 4px;
-      padding: 2px 7px;
-      font-size: 0.65rem;
+      padding: 2px 6px;
+      font-size: clamp(0.55rem, 1.5vmin, 0.65rem);
       font-weight: 800;
       color: var(--cyan-neon);
       letter-spacing: 1px;
+      white-space: nowrap;
+      flex-shrink: 0;
     }
     .weapon-wheel-title {
-      font-size: 0.85rem;
+      font-size: clamp(0.68rem, 2vmin, 0.85rem);
       font-weight: 800;
-      letter-spacing: 1.2px;
+      letter-spacing: 1px;
       color: #fff;
       text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .weapon-wheel-close-btn {
       background: rgba(239, 71, 111, 0.25);
-      border: 1px solid #ef476f;
+      border: 1.5px solid #ef476f;
       color: #fff;
       border-radius: 50%;
-      width: 30px;
-      height: 30px;
+      width: clamp(26px, 6vmin, 32px);
+      height: clamp(26px, 6vmin, 32px);
+      min-width: clamp(26px, 6vmin, 32px);
+      min-height: clamp(26px, 6vmin, 32px);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.9rem;
+      font-size: clamp(0.78rem, 2vmin, 0.95rem);
+      font-weight: bold;
       cursor: pointer;
       transition: all 0.2s ease;
       box-shadow: 0 0 10px rgba(239, 71, 111, 0.4);
+      flex-shrink: 0;
+      padding: 0;
+      line-height: 1;
     }
     .weapon-wheel-close-btn:hover {
       background: rgba(239, 71, 111, 0.7);
-      transform: scale(1.1);
+      transform: scale(1.08);
       box-shadow: 0 0 16px rgba(239, 71, 111, 0.8);
     }
 
     /* Segmented Navigation Rings (Calm Chess Style) */
     .weapon-ring-wrapper {
       position: relative;
-      width: min(80vmin, 440px);
-      height: min(80vmin, 440px);
+      --ring-size: min(
+        420px,
+        82vmin,
+        calc(100dvh - 86px),
+        calc(100vh - 86px),
+        calc(100vw - 20px)
+      );
+      width: var(--ring-size);
+      height: var(--ring-size);
+      max-width: var(--ring-size);
+      max-height: var(--ring-size);
+      flex: 0 0 auto;
       display: flex;
       justify-content: center;
       align-items: center;
-      filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.3));
+      filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.3));
     }
     svg.weapon-navigation-rings {
       width: 100%;
       height: 100%;
       display: block;
     }
+    /* Suppress any translucent blue box, tap highlight, focus box or text selection on wheel & segments */
+    .weapon-wheel-overlay,
+    .weapon-wheel-overlay *,
+    .weapon-ring-wrapper,
+    svg.weapon-navigation-rings,
+    svg.weapon-navigation-rings *,
+    .ring-segment {
+      -webkit-tap-highlight-color: transparent !important;
+      -webkit-tap-highlight-color: rgba(0, 0, 0, 0) !important;
+      -webkit-touch-callout: none !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      outline: none !important;
+      outline-style: none !important;
+    }
+
     .ring-segment {
       cursor: pointer;
       transition: fill 0.25s, filter 0.25s, stroke 0.25s, opacity 0.25s;
       stroke: var(--divider-red, #8b0000);
       stroke-width: 3px;
-      outline: none;
+      outline: none !important;
+      outline-style: none !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
     }
     .ring-segment:hover,
-    .ring-segment:focus-visible {
+    .ring-segment:focus-visible,
+    .ring-segment:focus {
       fill: #fff3b0 !important;
       filter: drop-shadow(0 0 12px var(--gold-glow, rgba(255, 215, 0, 0.8)));
+      outline: none !important;
+      outline-style: none !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent !important;
     }
     .ring-segment:active {
       fill: #ffffff !important;
-      filter: drop-shadow(0 0 18px #38bdf8) !important;
+      filter: drop-shadow(0 0 14px rgba(255, 215, 0, 0.85)) !important;
+      outline: none !important;
+      outline-style: none !important;
+      box-shadow: none !important;
+      -webkit-tap-highlight-color: transparent !important;
       transition: none !important;
     }
     .ring-segment.is-active-wpn {
@@ -987,6 +1061,7 @@
       animation: alertPulse 1.2s infinite ease-in-out;
     }
     .weapon-center-hub {
+      display: none !important;
       position: absolute;
       width: clamp(65px, 22%, 95px);
       height: clamp(65px, 22%, 95px);
@@ -1026,12 +1101,78 @@
       font-family: inherit;
     }
     .weapon-wheel-footer {
-      font-size: 0.65rem;
-      letter-spacing: 0.8px;
+      font-size: clamp(0.52rem, 1.4vmin, 0.65rem);
+      letter-spacing: 0.6px;
       color: var(--cyan-neon);
       text-align: center;
-      padding: 2px 8px;
+      padding: 1px 6px;
       text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    /* Mobile Landscape Media Query (Height <= 540px) */
+    @media screen and (max-height: 540px) {
+      .weapon-wheel-overlay {
+        padding: max(4px, env(safe-area-inset-top, 4px)) max(8px, env(safe-area-inset-right, 8px)) max(4px, env(safe-area-inset-bottom, 4px)) max(8px, env(safe-area-inset-left, 8px));
+      }
+      .weapon-wheel-container {
+        gap: 3px;
+        max-width: min(98vw, 420px);
+      }
+      .weapon-wheel-header {
+        max-width: min(96vw, 380px);
+        padding: 0 2px;
+      }
+      .weapon-wheel-badge {
+        font-size: 0.55rem;
+        padding: 1px 4px;
+      }
+      .weapon-wheel-title {
+        font-size: 0.70rem;
+        letter-spacing: 0.8px;
+      }
+      .weapon-wheel-close-btn {
+        width: 25px;
+        height: 25px;
+        min-width: 25px;
+        min-height: 25px;
+        font-size: 0.75rem;
+      }
+      .weapon-ring-wrapper {
+        --ring-size: min(
+          calc(100dvh - 60px),
+          calc(100vh - 60px),
+          calc(100vw - 16px),
+          340px
+        );
+      }
+      .weapon-wheel-footer {
+        font-size: 0.54rem;
+        padding: 0 4px;
+      }
+    }
+
+    /* Ultra-compact screens (Height <= 390px, e.g. iPhone SE / compact Android landscape) */
+    @media screen and (max-height: 390px) {
+      .weapon-wheel-overlay {
+        padding: 2px env(safe-area-inset-right, 6px) 2px env(safe-area-inset-left, 6px);
+      }
+      .weapon-wheel-container {
+        gap: 2px;
+      }
+      .weapon-ring-wrapper {
+        --ring-size: min(
+          calc(100dvh - 52px),
+          calc(100vh - 52px),
+          calc(100vw - 12px),
+          295px
+        );
+      }
+      .weapon-wheel-footer {
+        font-size: 0.50rem;
+        letter-spacing: 0.4px;
+      }
     }
 
     /* HUD Weapon Selector Pill / Laser Percentage Badge */
@@ -3551,9 +3692,9 @@
         </div>
       </div>
       <!-- Cycle Weapon Badge (Under the weapon overheat badge, same size) -->
-      <div id="hud-weapon-cycle-badge" class="hud-weapon-pill hud-cycle-weapon-pill" title="Toggle Weapon Selector Wheel (Hotkey: Q)" role="button" tabindex="0" aria-label="Cycle Weapon">
+      <div id="hud-weapon-cycle-badge" class="hud-weapon-pill hud-cycle-weapon-pill" title="Toggle Weapon Selector Wheel (Hotkey: Q)" role="button" tabindex="0" aria-label="Weapons">
         <span id="hud-cycle-badge-icon" class="hud-cycle-badge-icon">🔄</span>
-        <span id="hud-cycle-badge-text" class="hud-cycle-badge-text">CYCLE WEAPON</span>
+        <span id="hud-cycle-badge-text" class="hud-cycle-badge-text">Weapons</span>
       </div>
     </div>
   </div>
@@ -3766,10 +3907,6 @@
       </div>
 
       <div class="ring-wrapper weapon-ring-wrapper">
-        <div class="weapon-center-hub" id="weaponCenterHub" title="Tap to close weapon selector" role="button" tabindex="0" aria-label="Close Weapon Selector">
-          <span class="weapon-center-hub-icon">✕</span>
-          <span class="weapon-center-hub-text">CLOSE</span>
-        </div>
         <svg class="navigation-rings weapon-navigation-rings" id="weaponRingSvg" viewBox="0 0 500 500"></svg>
       </div>
 
@@ -3817,7 +3954,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261104_weapons_selector_fix"></script>
+  <script type="module" src="js/wormhole0.js?v=20261104_weapons_mobile_responsive"></script>
 
 </body>
 </html>

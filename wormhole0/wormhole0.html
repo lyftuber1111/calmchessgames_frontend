@@ -778,13 +778,255 @@
       top: 16px;
       z-index: 55;
       display: inline-flex;
+      flex-direction: column;
+      gap: 6px;
+      align-items: stretch;
+      justify-content: flex-start;
+      white-space: nowrap;
+    }
+
+    /* Cycle Weapon Badge (Under the overheat badge, same size, toggles weapon wheel) */
+    .hud-cycle-weapon-pill {
+      display: flex;
       align-items: center;
       justify-content: center;
+      gap: 6px;
+      height: 32px;
+      min-height: 32px;
+      box-sizing: border-box;
+      background: rgba(0, 24, 40, 0.92);
+      border: 1px solid var(--cyan-neon);
+      border-radius: 8px;
+      padding: 5px 9px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+      transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, color 0.2s ease;
+      color: var(--cyan-neon);
+      font-size: 0.66rem;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      user-select: none;
+      -webkit-user-select: none;
       white-space: nowrap;
+    }
+    .hud-cycle-weapon-pill:hover {
+      background: rgba(0, 60, 95, 0.95);
+      border-color: #ffd166;
+      color: #ffd166;
+      box-shadow: 0 0 16px rgba(255, 209, 102, 0.6);
+      transform: scale(1.03);
+    }
+    .hud-cycle-weapon-pill.is-open {
+      background: rgba(50, 10, 20, 0.95);
+      border-color: var(--accent-alert, #ef476f);
+      color: #ff85a1;
+      box-shadow: 0 0 16px rgba(239, 71, 111, 0.75);
+    }
+    .hud-cycle-badge-icon {
+      font-size: 0.85rem;
+      line-height: 1;
+    }
+    .hud-cycle-badge-text {
+      font-family: inherit;
+      line-height: 1;
+    }
+
+    /* ==========================================================================
+       SEGMENTED CIRCLE WEAPON SELECTOR MODAL & RINGS (CALM CHESS GAMES STYLE)
+       ========================================================================== */
+    .weapon-wheel-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+    .weapon-wheel-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(1, 5, 10, 0.82);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .weapon-wheel-container {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      max-width: 95vw;
+      max-height: 96vh;
+    }
+    .weapon-wheel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 440px;
+      padding: 0 6px;
+    }
+    .weapon-wheel-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .weapon-wheel-badge {
+      background: rgba(0, 240, 255, 0.15);
+      border: 1px solid var(--cyan-neon);
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      color: var(--cyan-neon);
+      letter-spacing: 1px;
+    }
+    .weapon-wheel-title {
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: 1.2px;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+    }
+    .weapon-wheel-close-btn {
+      background: rgba(239, 71, 111, 0.25);
+      border: 1px solid #ef476f;
+      color: #fff;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 0 10px rgba(239, 71, 111, 0.4);
+    }
+    .weapon-wheel-close-btn:hover {
+      background: rgba(239, 71, 111, 0.7);
+      transform: scale(1.1);
+      box-shadow: 0 0 16px rgba(239, 71, 111, 0.8);
+    }
+
+    /* Segmented Navigation Rings (Calm Chess Style) */
+    .weapon-ring-wrapper {
+      position: relative;
+      width: min(80vmin, 440px);
+      height: min(80vmin, 440px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.3));
+    }
+    svg.weapon-navigation-rings {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .ring-segment {
+      cursor: pointer;
+      transition: fill 0.25s, filter 0.25s, stroke 0.25s, opacity 0.25s;
+      stroke: var(--divider-red, #8b0000);
+      stroke-width: 3px;
+      outline: none;
+    }
+    .ring-segment:hover,
+    .ring-segment:focus-visible {
+      fill: #fff3b0 !important;
+      filter: drop-shadow(0 0 12px var(--gold-glow, rgba(255, 215, 0, 0.8)));
+    }
+    .ring-segment:active {
+      fill: #ffffff !important;
+      filter: drop-shadow(0 0 18px #38bdf8) !important;
+      transition: none !important;
+    }
+    .ring-segment.is-active-wpn {
+      fill: #fff4bf;
+      stroke: #00f0ff;
+      stroke-width: 3.5px;
+      filter: drop-shadow(0 0 14px rgba(0, 240, 255, 0.85));
+    }
+    .ring-segment.is-overheated {
+      fill: #44111d !important;
+      stroke: var(--accent-alert, #ef476f) !important;
+      cursor: not-allowed !important;
+      filter: drop-shadow(0 0 10px rgba(239, 71, 111, 0.7));
+      opacity: 0.9;
+    }
+    .ring-segment.is-overheated:hover {
+      fill: #5a1526 !important;
+      filter: drop-shadow(0 0 16px rgba(239, 71, 111, 0.9)) !important;
+    }
+    .ring-text {
+      font-size: 13px;
+      font-weight: 800;
+      fill: #111111;
+      pointer-events: none;
+      letter-spacing: 0.8px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      text-shadow: 0 1px 2px rgba(255, 255, 255, 0.45);
+    }
+    .ring-text.is-overheated-text {
+      fill: #ff99aa !important;
+      text-shadow: 0 0 4px #000 !important;
+    }
+    .ring-icon-symbol {
+      pointer-events: none;
+      text-anchor: middle;
+      dominant-baseline: central;
+      font-size: 26px;
+      user-select: none;
+    }
+    .ring-icon-symbol.is-overheated-icon {
+      animation: alertPulse 1.2s infinite ease-in-out;
+    }
+    .weapon-center-logo {
+      position: absolute;
+      width: clamp(60px, 23%, 100px);
+      height: clamp(60px, 23%, 100px);
+      border-radius: 50%;
+      z-index: 2;
+      cursor: pointer;
+      background: #000;
+      border: 3px solid var(--divider-red, #8b0000);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      overflow: hidden;
+    }
+    .weapon-center-logo:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 28px rgba(255, 215, 0, 0.95);
+      border-color: #ffd166;
+    }
+    .weapon-center-img {
+      width: 78%;
+      height: 78%;
+      object-fit: contain;
+      pointer-events: none;
+    }
+    .weapon-wheel-footer {
+      font-size: 0.65rem;
+      letter-spacing: 0.8px;
+      color: var(--cyan-neon);
+      text-align: center;
+      padding: 2px 8px;
+      text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
     }
 
     /* HUD Weapon Selector Pill / Laser Percentage Badge */
     .hud-weapon-pill {
+      height: 32px;
+      min-height: 32px;
+      box-sizing: border-box;
       pointer-events: auto;
       position: relative;
       top: auto;
@@ -3296,6 +3538,11 @@
           </div>
         </div>
       </div>
+      <!-- Cycle Weapon Badge (Under the weapon overheat badge, same size) -->
+      <div id="hud-weapon-cycle-badge" class="hud-weapon-pill hud-cycle-weapon-pill" title="Toggle Weapon Selector Wheel (Hotkey: Q)" role="button" tabindex="0" aria-label="Cycle Weapon">
+        <span id="hud-cycle-badge-icon" class="hud-cycle-badge-icon">🔄</span>
+        <span id="hud-cycle-badge-text" class="hud-cycle-badge-text">CYCLE WEAPON</span>
+      </div>
     </div>
   </div>
 
@@ -3492,6 +3739,31 @@
 
     <!-- Notification Toast Banner -->
     <div id="toast-msg"></div>
+  </div>
+
+  <!-- Segmented Circle Weapon Selector Overlay (Calm Chess Style) -->
+  <div id="weapon-wheel-overlay" class="weapon-wheel-overlay" style="display: none;" role="dialog" aria-modal="true" aria-label="Weapon Arsenal Selector">
+    <div class="weapon-wheel-backdrop" id="weapon-wheel-backdrop"></div>
+    <div class="weapon-wheel-container">
+      <div class="weapon-wheel-header">
+        <div class="weapon-wheel-title-group">
+          <span class="weapon-wheel-badge">ARSENAL</span>
+          <span class="weapon-wheel-title">SELECT ACTIVE WEAPON</span>
+        </div>
+        <button type="button" class="weapon-wheel-close-btn" id="weapon-wheel-close-btn" title="Close Weapon Selector (Escape or Tap)">✕</button>
+      </div>
+
+      <div class="ring-wrapper weapon-ring-wrapper">
+        <div class="center-logo weapon-center-logo" id="weaponCenterLogo" title="Calm Chess Knight Logo (Tap to close)" role="button" tabindex="0" aria-label="Calm Chess Knight Logo">
+          <img src="knight_left0.png" alt="Calm Chess Knight" class="weapon-center-img" onerror="this.src='../knight_left0.png'">
+        </div>
+        <svg class="navigation-rings weapon-navigation-rings" id="weaponRingSvg" viewBox="0 0 500 500"></svg>
+      </div>
+
+      <div class="weapon-wheel-footer">
+        <div class="weapon-wheel-footer-hint">TAP A SEGMENT TO EQUIP WEAPON &bull; OVERHEATED WEAPONS CANNOT BE SELECTED</div>
+      </div>
+    </div>
   </div>
 
   <!-- Mobile Touch On-Screen Controls (Landscape) -->

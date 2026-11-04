@@ -2040,10 +2040,380 @@ function initWeaponsInteractions() {
     }, { passive: true });
   }
 
+  // Wire Cycle Weapon Badge (Under the overheat badge, same size, toggles weapon wheel)
+  const hudCycleBadge = document.getElementById('hud-weapon-cycle-badge');
+  if (hudCycleBadge) {
+    hudCycleBadge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (!assertNotPaused('Weapon Wheel')) return;
+      toggleWeaponWheel();
+    });
+    hudCycleBadge.addEventListener('touchstart', (e) => {
+      e.stopPropagation();
+    }, { passive: true });
+  }
+
+  // Wire Weapon Wheel Close Buttons & Backdrop
+  const closeBtn = document.getElementById('weapon-wheel-close-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeWeaponWheel();
+    });
+  }
+  const centerLogo = document.getElementById('weaponCenterLogo');
+  if (centerLogo) {
+    centerLogo.addEventListener('click', (e) => {
+      e.stopPropagation();
+      playWheelSciFiLaser();
+      closeWeaponWheel();
+    });
+  }
+  const backdrop = document.getElementById('weapon-wheel-backdrop');
+  if (backdrop) {
+    backdrop.addEventListener('click', (e) => {
+      e.stopPropagation();
+      closeWeaponWheel();
+    });
+  }
+
+  // Keyboard shortcut: Escape closes wheel
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isWeaponWheelOpen()) {
+      closeWeaponWheel();
+    }
+  });
+
+  // Live real-time update of Weapon Wheel on system notify (overheat ticks, weapon equip)
+  weaponsSystem.listeners.push(() => {
+    if (isWeaponWheelOpen()) {
+      renderWeaponWheel();
+    }
+  });
+
   // Initial UI refresh
   weaponsSystem.notify();
 }
 initWeaponsInteractions();
+
+// ==========================================================================
+// SEGMENTED CIRCLE WEAPON SELECTOR WHEEL (CALM CHESS GAMES STYLE)
+// ==========================================================================
+function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+  const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+  return {
+    x: centerX + (radius * Math.cos(angleInRadians)),
+    y: centerY + (radius * Math.sin(angleInRadians))
+  };
+}
+
+function describeArc(x, y, innerRadius, outerRadius, startAngle, endAngle) {
+  const startOuter = polarToCartesian(x, y, outerRadius, endAngle);
+  const endOuter = polarToCartesian(x, y, outerRadius, startAngle);
+  const startInner = polarToCartesian(x, y, innerRadius, endAngle);
+  const endInner = polarToCartesian(x, y, innerRadius, startAngle);
+  const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+  return [
+    'M', startOuter.x, startOuter.y,
+    'A', outerRadius, outerRadius, 0, largeArcFlag, 0, endOuter.x, endOuter.y,
+    'L', endInner.x, endInner.y,
+    'A', innerRadius, innerRadius, 0, largeArcFlag, 1, startInner.x, startInner.y,
+    'Z'
+  ].join(' ');
+}
+
+function describeTextPath(cx, cy, radius, startAngle, endAngle, sweepClockwise) {
+  const pStart = polarToCartesian(cx, cy, radius, sweepClockwise ? startAngle : endAngle);
+  const pEnd = polarToCartesian(cx, cy, radius, sweepClockwise ? endAngle : startAngle);
+  const largeArcFlag = Math.abs(endAngle - startAngle) <= 180 ? '0' : '1';
+  const sweepFlag = sweepClockwise ? '1' : '0';
+  return `M ${pStart.x} ${pStart.y} A ${radius} ${radius} 0 ${largeArcFlag} ${sweepFlag} ${pEnd.x} ${pEnd.y}`;
+}
+
+let wheelLaserAudioCtx = null;
+function playWheelSciFiLaser() {
+  try {
+    const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtxClass) return;
+    if (!wheelLaserAudioCtx) wheelLaserAudioCtx = new AudioCtxClass();
+    if (wheelLaserAudioCtx.state === 'suspended') wheelLaserAudioCtx.resume();
+
+    const now = wheelLaserAudioCtx.currentTime;
+    const oscPrimary = wheelLaserAudioCtx.createOscillator();
+    oscPrimary.type = 'sawtooth';
+    oscPrimary.frequency.setValueAtTime(1550, now);
+    oscPrimary.frequency.exponentialRampToValueAtTime(70, now + 0.17);
+
+    const oscSecondary = wheelLaserAudioCtx.createOscillator();
+    oscSecondary.type = 'sine';
+    oscSecondary.frequency.setValueAtTime(900, now);
+    oscSecondary.frequency.exponentialRampToValueAtTime(110, now + 0.14);
+
+    const biquadFilter = wheelLaserAudioCtx.createBiquadFilter();
+    biquadFilter.type = 'bandpass';
+    biquadFilter.Q.setValueAtTime(3.8, now);
+    biquadFilter.frequency.setValueAtTime(2400, now);
+    biquadFilter.frequency.exponentialRampToValueAtTime(240, now + 0.17);
+
+    const gainEnvelope = wheelLaserAudioCtx.createGain();
+    gainEnvelope.gain.setValueAtTime(0.35, now);
+    gainEnvelope.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+
+    oscPrimary.connect(biquadFilter);
+    oscSecondary.connect(biquadFilter);
+    biquadFilter.connect(gainEnvelope);
+    gainEnvelope.connect(wheelLaserAudioCtx.destination);
+
+    oscPrimary.start(now);
+    oscSecondary.start(now);
+    oscPrimary.stop(now + 0.2);
+    oscSecondary.stop(now + 0.2);
+  } catch (err) {
+    console.warn('Wheel laser audio synthesis error:', err);
+  }
+}
+
+function isWeaponWheelOpen() {
+  const overlay = document.getElementById('weapon-wheel-overlay');
+  return overlay && overlay.style.display !== 'none';
+}
+
+function openWeaponWheel() {
+  if (state.isPaused) return;
+  const overlay = document.getElementById('weapon-wheel-overlay');
+  const cycleBadge = document.getElementById('hud-weapon-cycle-badge');
+  const cycleText = document.getElementById('hud-cycle-badge-text');
+  const cycleIcon = document.getElementById('hud-cycle-badge-icon');
+  if (!overlay) return;
+
+  renderWeaponWheel();
+  overlay.style.display = 'flex';
+
+  if (cycleBadge) cycleBadge.classList.add('is-open');
+  if (cycleText) cycleText.textContent = 'CLOSE';
+  if (cycleIcon) cycleIcon.textContent = '✕';
+
+  playWheelSciFiLaser();
+}
+
+function closeWeaponWheel() {
+  const overlay = document.getElementById('weapon-wheel-overlay');
+  const cycleBadge = document.getElementById('hud-weapon-cycle-badge');
+  const cycleText = document.getElementById('hud-cycle-badge-text');
+  const cycleIcon = document.getElementById('hud-cycle-badge-icon');
+  if (!overlay) return;
+
+  overlay.style.display = 'none';
+
+  if (cycleBadge) cycleBadge.classList.remove('is-open');
+  if (cycleText) cycleText.textContent = 'CYCLE WEAPON';
+  if (cycleIcon) cycleIcon.textContent = '🔄';
+}
+
+function toggleWeaponWheel() {
+  if (isWeaponWheelOpen()) {
+    closeWeaponWheel();
+  } else {
+    openWeaponWheel();
+  }
+}
+
+function renderWeaponWheel() {
+  const svg = document.getElementById('weaponRingSvg');
+  if (!svg) return;
+  svg.innerHTML = '';
+  const cx = 250, cy = 250;
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  svg.appendChild(defs);
+
+  // 1. Fetch all weapons currently available or acquired for this level / event
+  let availableWeapons = Object.values(weaponsSystem.weapons).filter(w => w.isAvailable && w.acquired);
+  if (availableWeapons.length === 0) {
+    const act = weaponsSystem.getActiveWeapon();
+    if (act) availableWeapons = [act];
+  }
+
+  const numWeapons = availableWeapons.length;
+  // If only 1 weapon, draw two half arcs (180deg) to avoid SVG arc collapse at 360deg
+  const segmentsOuter = numWeapons === 1 ? [availableWeapons[0], availableWeapons[0]] : availableWeapons;
+  const numOuter = segmentsOuter.length;
+  const angleStepOuter = 360 / numOuter;
+
+  // 2. Render Outer Ring Segments
+  segmentsOuter.forEach((w, i) => {
+    const startAngle = i * angleStepOuter;
+    const endAngle = (i + 1) * angleStepOuter;
+    const midAngle = startAngle + (angleStepOuter / 2);
+    const pathData = describeArc(cx, cy, 135, 215, startAngle + 1.5, endAngle - 1.5);
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', pathData);
+
+    const isEquipped = (w.id === weaponsSystem.activeWeaponId);
+    let fill = '#ffe066';
+    if (w.isOverheated) {
+      fill = '#44111d';
+    } else if (isEquipped) {
+      fill = '#fff8cc';
+    }
+    path.setAttribute('fill', fill);
+
+    let pathClass = 'ring-segment';
+    if (isEquipped) pathClass += ' is-active-wpn';
+    if (w.isOverheated) pathClass += ' is-overheated';
+    path.setAttribute('class', pathClass);
+    path.setAttribute('role', 'button');
+    path.setAttribute('tabindex', '0');
+    path.setAttribute('aria-label', `${w.name}${w.isOverheated ? ' - OVERHEATED' : (isEquipped ? ' - ACTIVE' : '')}`);
+
+    const onSelect = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // OVERHEAT CHECK: unavailable to select when overheated!
+      if (w.isOverheated) {
+        if (audioMgr && audioMgr.playOverheatAlert) audioMgr.playOverheatAlert();
+        showToast(`⚠️ ${w.shortName} OVERHEATED: UNAVAILABLE TO SELECT (${(w.overheatRemainingMs / 1000).toFixed(1)}s)`);
+        return;
+      }
+      weaponsSystem.selectWeapon(w.id);
+      playWheelSciFiLaser();
+      closeWeaponWheel();
+    };
+
+    path.onpointerdown = (e) => {
+      e.stopPropagation();
+      if (!w.isOverheated) playWheelSciFiLaser();
+    };
+    path.onclick = onSelect;
+    path.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') onSelect(e);
+    };
+    svg.appendChild(path);
+
+    // Curved Text along outer arc
+    const sweepClockwise = !(midAngle > 100 && midAngle < 250);
+    const textPathId = `outer-wpn-textpath-${i}`;
+    const textRadius = 192;
+
+    const textArc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    textArc.setAttribute('id', textPathId);
+    textArc.setAttribute('d', describeTextPath(cx, cy, textRadius, startAngle + 2, endAngle - 2, sweepClockwise));
+    textArc.setAttribute('fill', 'none');
+    defs.appendChild(textArc);
+
+    const textEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    textEl.setAttribute('class', `ring-text ${w.isOverheated ? 'is-overheated-text' : ''}`);
+    textEl.setAttribute('dominant-baseline', 'central');
+
+    const textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
+    textPath.setAttribute('href', '#' + textPathId);
+    textPath.setAttribute('startOffset', '50%');
+    textPath.setAttribute('text-anchor', 'middle');
+
+    if (w.isOverheated) {
+      textPath.textContent = `🔥 OVERHEATED (${(w.overheatRemainingMs / 1000).toFixed(1)}s)`;
+    } else if (isEquipped) {
+      textPath.textContent = `★ ${w.shortName} [ACTIVE]`;
+    } else {
+      textPath.textContent = w.shortName;
+    }
+    textEl.appendChild(textPath);
+    svg.appendChild(textEl);
+
+    // Big Icon at center of segment arc (radius ~156)
+    // NOTE: When overheated, icon changes to 🔥 (flame) and indicates unavailable!
+    const iconPos = polarToCartesian(cx, cy, 156, midAngle);
+    const iconText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    iconText.setAttribute('x', iconPos.x);
+    iconText.setAttribute('y', iconPos.y);
+    iconText.setAttribute('class', `ring-icon-symbol ${w.isOverheated ? 'is-overheated-icon' : ''}`);
+    iconText.textContent = w.isOverheated ? '🔥' : (w.icon || '🔫');
+    svg.appendChild(iconText);
+  });
+
+  // 3. Render Inner Ring Segments (Action / Utility / Cycling)
+  const innerDefs = [
+    { id: 'cycle', title: '🔄 CYCLE NEXT', icon: '🔄', action: () => { weaponsSystem.cycleWeapon(); closeWeaponWheel(); } },
+    { id: 'close', title: '✕ CLOSE', icon: '✕', action: () => { closeWeaponWheel(); } }
+  ];
+  if (numWeapons >= 3) {
+    const act = weaponsSystem.getActiveWeapon();
+    innerDefs.push({
+      id: 'active_status',
+      title: act ? `⚡ ${act.energy}% ENERGY` : '⚡ ENERGY',
+      icon: '⚡',
+      action: () => { closeWeaponWheel(); }
+    });
+    innerDefs.push({
+      id: 'specs',
+      title: '🛡️ ARSENAL',
+      icon: '🛡️',
+      action: () => { closeWeaponWheel(); }
+    });
+  }
+
+  const numInner = innerDefs.length;
+  const angleStepInner = 360 / numInner;
+
+  innerDefs.forEach((seg, i) => {
+    const startAngle = i * angleStepInner;
+    const endAngle = (i + 1) * angleStepInner;
+    const midAngle = startAngle + (angleStepInner / 2);
+    const pathData = describeArc(cx, cy, 75, 125, startAngle + 1.5, endAngle - 1.5);
+
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', pathData);
+    path.setAttribute('fill', '#ffd700');
+    path.setAttribute('class', 'ring-segment');
+    path.setAttribute('role', 'button');
+    path.setAttribute('tabindex', '0');
+    path.setAttribute('aria-label', seg.title);
+
+    const onAction = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      playWheelSciFiLaser();
+      seg.action();
+    };
+    path.onpointerdown = () => playWheelSciFiLaser();
+    path.onclick = onAction;
+    path.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === ' ') onAction(e);
+    };
+    svg.appendChild(path);
+
+    const textRadius = 100;
+    const sweepClockwise = !(midAngle > 90 && midAngle < 270);
+    const textPathId = `inner-util-textpath-${i}`;
+
+    const textArc = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    textArc.setAttribute('id', textPathId);
+    textArc.setAttribute('d', describeTextPath(cx, cy, textRadius, startAngle + 2, endAngle - 2, sweepClockwise));
+    textArc.setAttribute('fill', 'none');
+    defs.appendChild(textArc);
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('class', 'ring-text');
+    text.setAttribute('dominant-baseline', 'central');
+
+    const textPath = document.createElementNS('http://www.w3.org/2000/svg', 'textPath');
+    textPath.setAttribute('href', '#' + textPathId);
+    textPath.setAttribute('startOffset', '50%');
+    textPath.setAttribute('text-anchor', 'middle');
+    textPath.textContent = seg.title;
+
+    text.appendChild(textPath);
+    svg.appendChild(text);
+  });
+}
+
+// Global scope bindings for debug or external callers
+window.openWeaponWheel = openWeaponWheel;
+window.closeWeaponWheel = closeWeaponWheel;
+window.toggleWeaponWheel = toggleWeaponWheel;
+window.renderWeaponWheel = renderWeaponWheel;
+
 
 // Wire Pause Button Click Handlers
 [btnQuickPause, btnDrawerPause, btnTogglePause].forEach(btn => {

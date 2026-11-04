@@ -2200,7 +2200,6 @@ function updateWheelSegmentHighlight() {
     if (seg.element) {
       if (idx === activeWheelSegmentIndex) {
         seg.element.classList.add('controller-highlighted');
-        try { seg.element.focus(); } catch (e) {}
       } else {
         seg.element.classList.remove('controller-highlighted');
       }
@@ -2233,7 +2232,12 @@ function selectHighlightedWheelSegment() {
   if (!weaponWheelSegments || weaponWheelSegments.length === 0) return;
   const cur = weaponWheelSegments[activeWheelSegmentIndex];
   if (cur && typeof cur.action === 'function') {
-    cur.action();
+    try {
+      cur.action({ preventDefault: () => {}, stopPropagation: () => {} });
+    } catch (err) {
+      console.error('[Arsenal] Error selecting segment:', err);
+      closeWeaponWheel();
+    }
   }
 }
 
@@ -2270,9 +2274,9 @@ function closeWeaponWheel() {
   const cycleBadge = document.getElementById('hud-weapon-cycle-badge');
   const cycleText = document.getElementById('hud-cycle-badge-text');
   const cycleIcon = document.getElementById('hud-cycle-badge-icon');
-  if (!overlay) return;
-
-  overlay.style.display = 'none';
+  if (overlay) {
+    overlay.style.display = 'none';
+  }
 
   if (cycleBadge) cycleBadge.classList.remove('is-open');
   if (cycleText) cycleText.textContent = 'Weapons';
@@ -2287,6 +2291,10 @@ function closeWeaponWheel() {
   const hintEl = document.querySelector('.weapon-wheel-footer-hint');
   if (hintEl) {
     hintEl.textContent = 'TAP A SEGMENT TO EQUIP WEAPON • OVERHEATED WEAPONS CANNOT BE SELECTED';
+  }
+
+  if (document.activeElement && document.activeElement.blur) {
+    try { document.activeElement.blur(); } catch (e) {}
   }
 
   // Unpause game when weapons segmented selector closes
@@ -2354,8 +2362,8 @@ function renderWeaponWheel() {
     path.setAttribute('aria-label', `${w.name}${w.isOverheated ? ' - OVERHEATED' : (isEquipped ? ' - ACTIVE' : '')}`);
 
     const onSelect = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       if (path.blur) path.blur();
       if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       // OVERHEAT CHECK: unavailable to select when overheated!
@@ -2479,8 +2487,8 @@ function renderWeaponWheel() {
     path.setAttribute('aria-label', seg.title);
 
     const onAction = (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      if (e && typeof e.stopPropagation === 'function') e.stopPropagation();
       if (path.blur) path.blur();
       if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
       playWheelSciFiLaser();
@@ -3730,6 +3738,10 @@ const gamepadNameText = document.getElementById('gamepad-name-text');
 const btnToggleController = document.getElementById('btn-toggle-controller');
 
 if (btnToggleController) {
+  btnToggleController.setAttribute('tabindex', '-1');
+  btnToggleController.addEventListener('focus', () => {
+    btnToggleController.blur();
+  });
   btnToggleController.addEventListener('click', () => {
     if (state.gamepadMode === 'auto') state.gamepadMode = 'enabled';
     else if (state.gamepadMode === 'enabled') state.gamepadMode = 'disabled';
@@ -3737,6 +3749,7 @@ if (btnToggleController) {
 
     btnToggleController.textContent = `🎮 Controller: ${state.gamepadMode.toUpperCase()}`;
     updateGamepadUI();
+    btnToggleController.blur();
   });
 }
 
@@ -3838,8 +3851,18 @@ function pollGamepad(delta) {
           9: btnStart
         };
       } else {
-        state.lastPadButtons[9] = btnStart;
-        state.lastPadButtons[8] = btnSelect;
+        state.lastPadButtons = {
+          0: pad.buttons[0] ? (pad.buttons[0].pressed || pad.buttons[0].value > 0.4) : false,
+          1: pad.buttons[1] ? pad.buttons[1].pressed : false,
+          2: pad.buttons[2] ? pad.buttons[2].pressed : false,
+          3: pad.buttons[3] ? pad.buttons[3].pressed : false,
+          4: pad.buttons[4] ? pad.buttons[4].pressed : false,
+          5: pad.buttons[5] ? pad.buttons[5].pressed : false,
+          6: pad.buttons[6] ? (pad.buttons[6].pressed || pad.buttons[6].value > 0.4) : false,
+          7: pad.buttons[7] ? (pad.buttons[7].pressed || pad.buttons[7].value > 0.4) : false,
+          8: btnSelect,
+          9: btnStart
+        };
       }
       break; // Lock out analog flight sticks & combat buttons while paused
     }

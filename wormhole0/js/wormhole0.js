@@ -61,6 +61,7 @@ const state = {
   isPointerLocked: false,
   isMouseDown: false,
   isLeftMouseDown: false,
+  isRightMouseDown: false,
   lastPointerLockExitTime: 0,
   lastMouseX: 0,
   lastMouseY: 0,
@@ -2182,9 +2183,58 @@ function playWheelSciFiLaser() {
   }
 }
 
+let weaponWheelSegments = [];
+let activeWheelSegmentIndex = 0;
+
 function isWeaponWheelOpen() {
   const overlay = document.getElementById('weapon-wheel-overlay');
   return overlay && overlay.style.display !== 'none';
+}
+
+function updateWheelSegmentHighlight() {
+  if (!weaponWheelSegments || weaponWheelSegments.length === 0) return;
+  if (activeWheelSegmentIndex < 0) activeWheelSegmentIndex = 0;
+  if (activeWheelSegmentIndex >= weaponWheelSegments.length) activeWheelSegmentIndex = 0;
+
+  weaponWheelSegments.forEach((seg, idx) => {
+    if (seg.element) {
+      if (idx === activeWheelSegmentIndex) {
+        seg.element.classList.add('controller-highlighted');
+        try { seg.element.focus(); } catch (e) {}
+      } else {
+        seg.element.classList.remove('controller-highlighted');
+      }
+    }
+  });
+
+  const cur = weaponWheelSegments[activeWheelSegmentIndex];
+  const hintEl = document.querySelector('.weapon-wheel-footer-hint');
+  if (hintEl && cur) {
+    const isWpn = cur.type === 'weapon';
+    const isOver = isWpn && cur.isOverheated && cur.isOverheated();
+    let statusText = '';
+    if (isOver) {
+      statusText = ' <span style="color:#ff3366;font-weight:bold;">[🔥 OVERHEATED]</span>';
+    } else if (isWpn && cur.isEquipped && cur.isEquipped()) {
+      statusText = ' <span style="color:#00f0ff;font-weight:bold;">[ACTIVE]</span>';
+    }
+    hintEl.innerHTML = '<span style="color:#00f0ff;font-weight:700;">[LB]</span> SELECT SEGMENT: <strong style="color:#ffd700;">' + (cur.name || cur.shortName) + '</strong>' + statusText + ' &bull; <span style="color:#00f0ff;font-weight:700;">[A]</span> ' + (isWpn ? 'EQUIP WEAPON' : 'CONFIRM');
+  }
+}
+
+function cycleWheelSegment(direction = 1) {
+  if (!weaponWheelSegments || weaponWheelSegments.length === 0) return;
+  activeWheelSegmentIndex = (activeWheelSegmentIndex + direction + weaponWheelSegments.length) % weaponWheelSegments.length;
+  updateWheelSegmentHighlight();
+  playWheelSciFiLaser();
+}
+
+function selectHighlightedWheelSegment() {
+  if (!weaponWheelSegments || weaponWheelSegments.length === 0) return;
+  const cur = weaponWheelSegments[activeWheelSegmentIndex];
+  if (cur && typeof cur.action === 'function') {
+    cur.action();
+  }
 }
 
 function openWeaponWheel() {
@@ -2200,6 +2250,12 @@ function openWeaponWheel() {
   if (cycleBadge) cycleBadge.classList.add('is-open');
   if (cycleText) cycleText.textContent = 'CLOSE';
   if (cycleIcon) cycleIcon.textContent = '✕';
+
+  // Highlight active equipped weapon or first segment initially
+  let initIdx = weaponWheelSegments.findIndex(s => s.type === 'weapon' && s.id === weaponsSystem.activeWeaponId);
+  if (initIdx === -1) initIdx = 0;
+  activeWheelSegmentIndex = initIdx;
+  updateWheelSegmentHighlight();
 
   playWheelSciFiLaser();
 
@@ -2222,6 +2278,17 @@ function closeWeaponWheel() {
   if (cycleText) cycleText.textContent = 'Weapons';
   if (cycleIcon) cycleIcon.textContent = '🔄';
 
+  if (weaponWheelSegments) {
+    weaponWheelSegments.forEach(s => {
+      if (s.element) s.element.classList.remove('controller-highlighted');
+    });
+  }
+
+  const hintEl = document.querySelector('.weapon-wheel-footer-hint');
+  if (hintEl) {
+    hintEl.textContent = 'TAP A SEGMENT TO EQUIP WEAPON • OVERHEATED WEAPONS CANNOT BE SELECTED';
+  }
+
   // Unpause game when weapons segmented selector closes
   if (state.isPaused) {
     setGamePaused(false);
@@ -2240,6 +2307,7 @@ function renderWeaponWheel() {
   const svg = document.getElementById('weaponRingSvg');
   if (!svg) return;
   svg.innerHTML = '';
+  weaponWheelSegments = [];
   const cx = 250, cy = 250;
 
   const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
@@ -2311,7 +2379,25 @@ function renderWeaponWheel() {
     path.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') onSelect(e);
     };
+    path.onmouseenter = () => {
+      const idx = weaponWheelSegments.findIndex(s => s.element === path);
+      if (idx !== -1) {
+        activeWheelSegmentIndex = idx;
+        updateWheelSegmentHighlight();
+      }
+    };
     svg.appendChild(path);
+
+    weaponWheelSegments.push({
+      type: 'weapon',
+      id: w.id,
+      name: w.name,
+      shortName: w.shortName,
+      element: path,
+      action: onSelect,
+      isOverheated: () => w.isOverheated,
+      isEquipped: () => (w.id === weaponsSystem.activeWeaponId)
+    });
 
     // Curved Text along outer arc
     const sweepClockwise = !(midAngle > 100 && midAngle < 250);
@@ -2410,7 +2496,25 @@ function renderWeaponWheel() {
     path.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === ' ') onAction(e);
     };
+    path.onmouseenter = () => {
+      const idx = weaponWheelSegments.findIndex(s => s.element === path);
+      if (idx !== -1) {
+        activeWheelSegmentIndex = idx;
+        updateWheelSegmentHighlight();
+      }
+    };
     svg.appendChild(path);
+
+    weaponWheelSegments.push({
+      type: 'action',
+      id: seg.id,
+      name: seg.title,
+      shortName: seg.title,
+      element: path,
+      action: onAction,
+      isOverheated: () => false,
+      isEquipped: () => false
+    });
 
     const textRadius = 100;
     const sweepClockwise = !(midAngle > 90 && midAngle < 270);
@@ -2442,6 +2546,8 @@ window.openWeaponWheel = openWeaponWheel;
 window.closeWeaponWheel = closeWeaponWheel;
 window.toggleWeaponWheel = toggleWeaponWheel;
 window.renderWeaponWheel = renderWeaponWheel;
+window.cycleWheelSegment = cycleWheelSegment;
+window.selectHighlightedWheelSegment = selectHighlightedWheelSegment;
 
 
 // Wire Pause Button Click Handlers
@@ -2508,6 +2614,7 @@ window.addEventListener('keydown', (e) => {
       }
       state.isPointerLocked = false;
       state.isLeftMouseDown = false;
+      state.isRightMouseDown = false;
       return;
     }
     // 2. If weapon wheel is open, close it
@@ -3665,22 +3772,7 @@ function updateGamepadUI(pad = null) {
 }
 
 function checkGamepadPauseOnly() {
-  if (state.gamepadMode === 'disabled') return;
-  const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
-  if (!gamepads) return;
-  for (let i = 0; i < gamepads.length; i++) {
-    const pad = gamepads[i];
-    if (!pad) continue;
-    const btnStart = pad.buttons[9] ? pad.buttons[9].pressed : false;
-    const btnSelect = pad.buttons[8] ? pad.buttons[8].pressed : false;
-    if ((btnStart && !state.lastPadButtons[9]) || (btnSelect && !state.lastPadButtons[8])) {
-      setGamePaused(!state.isPaused);
-      vibratePad(pad, 100);
-    }
-    state.lastPadButtons[9] = btnStart;
-    state.lastPadButtons[8] = btnSelect;
-    break;
-  }
+  pollGamepad(0);
 }
 
 function pollGamepad(delta) {
@@ -3692,17 +3784,63 @@ function pollGamepad(delta) {
     const pad = gamepads[i];
     if (!pad) continue;
 
-    // Start / Select button: Toggle pause
+    const isWheelOpen = typeof isWeaponWheelOpen === 'function' && isWeaponWheelOpen();
+
+    // Start / Select button: Toggle pause or close weapon wheel
     const btnStart = pad.buttons[9] ? pad.buttons[9].pressed : false;
     const btnSelect = pad.buttons[8] ? pad.buttons[8].pressed : false;
     if ((btnStart && !state.lastPadButtons[9]) || (btnSelect && !state.lastPadButtons[8])) {
-      setGamePaused(!state.isPaused);
+      if (isWheelOpen) {
+        closeWeaponWheel();
+      } else {
+        setGamePaused(!state.isPaused);
+      }
       vibratePad(pad, 100);
+      state.lastPadButtons[9] = btnStart;
+      state.lastPadButtons[8] = btnSelect;
+      break;
     }
-    state.lastPadButtons[9] = btnStart;
-    state.lastPadButtons[8] = btnSelect;
 
     if (state.isPaused) {
+      if (isWheelOpen) {
+        // When weapons arsenal is open:
+        // Left Button (LB - Button 4): Select segments (cycle next segment)
+        const btnLB = pad.buttons[4] ? pad.buttons[4].pressed : false;
+        if (btnLB && !state.lastPadButtons[4]) {
+          cycleWheelSegment();
+          vibratePad(pad, 70);
+        }
+
+        // A Button (Button 0): Select / Equip the highlighted segment
+        const btnA = pad.buttons[0] ? (pad.buttons[0].pressed || pad.buttons[0].value > 0.4) : false;
+        if (btnA && !state.lastPadButtons[0]) {
+          selectHighlightedWheelSegment();
+          vibratePad(pad, 120);
+        }
+
+        // B Button (Button 1): Close / Cancel Arsenal
+        const btnB = pad.buttons[1] ? pad.buttons[1].pressed : false;
+        if (btnB && !state.lastPadButtons[1]) {
+          closeWeaponWheel();
+          vibratePad(pad, 70);
+        }
+
+        state.lastPadButtons = {
+          0: btnA,
+          1: btnB,
+          2: pad.buttons[2] ? pad.buttons[2].pressed : false,
+          3: pad.buttons[3] ? pad.buttons[3].pressed : false,
+          4: btnLB,
+          5: pad.buttons[5] ? pad.buttons[5].pressed : false,
+          6: pad.buttons[6] ? (pad.buttons[6].pressed || pad.buttons[6].value > 0.4) : false,
+          7: pad.buttons[7] ? (pad.buttons[7].pressed || pad.buttons[7].value > 0.4) : false,
+          8: btnSelect,
+          9: btnStart
+        };
+      } else {
+        state.lastPadButtons[9] = btnStart;
+        state.lastPadButtons[8] = btnSelect;
+      }
       break; // Lock out analog flight sticks & combat buttons while paused
     }
 
@@ -3738,27 +3876,41 @@ function pollGamepad(delta) {
     if (pad.buttons[13] && pad.buttons[13].pressed) state.pitch -= CONFIG.pitchSpeed * 22.0 * delta * 60;
     state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
 
-    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-
-    // Left stick has ZERO flight control (ly and lx do not touch state.velocity)
-    // Flight thrust via Triggers:
-    const r2 = pad.buttons[7] ? pad.buttons[7].value : 0;
+    // Left Trigger (LT - Button 6): Sub-light brake / reverse deceleration
     const l2 = pad.buttons[6] ? pad.buttons[6].value : 0;
-    if (r2 > 0.1) state.velocity.addScaledVector(forward, r2 * CONFIG.flightSpeed * CONFIG.boostMultiplier * delta * 3.5);
     if (l2 > 0.1) state.velocity.multiplyScalar(0.85);
 
-    if (pad.buttons[0] && pad.buttons[0].pressed && !state.lastPadButtons[0]) {
-      const btnScan = document.getElementById('btn-do-scan');
-      if (btnScan) btnScan.click();
-      vibratePad(pad, 150);
-    }
-    // Fire laser with RB (Button 5) or B (Button 1)
-    if ((pad.buttons[5] && pad.buttons[5].pressed && !state.lastPadButtons[5]) ||
-        (pad.buttons[1] && pad.buttons[1].pressed && !state.lastPadButtons[1])) {
-      fireLaserBeam();
-      state.flightLockoutUntil = performance.now() + 1000;
+    // Left Button (LB - Button 4): Open The Weapons (Arsenal)
+    const btnLB = pad.buttons[4] ? pad.buttons[4].pressed : false;
+    if (btnLB && !state.lastPadButtons[4]) {
+      openWeaponWheel();
       vibratePad(pad, 120);
     }
+
+    // Right Button (RB - Button 5): Cycle the weapons
+    const btnRB = pad.buttons[5] ? pad.buttons[5].pressed : false;
+    if (btnRB && !state.lastPadButtons[5]) {
+      weaponsSystem.cycleWeapon();
+      vibratePad(pad, 80);
+    }
+
+    // Right Trigger (RT - Button 7) or A Button (Button 0): Fire weapon ONE SHOT at a time
+    const btnRT = pad.buttons[7] ? (pad.buttons[7].pressed || pad.buttons[7].value > 0.4) : false;
+    const btnA = pad.buttons[0] ? (pad.buttons[0].pressed || pad.buttons[0].value > 0.4) : false;
+
+    if ((btnRT && !state.lastPadButtons[7]) || (btnA && !state.lastPadButtons[0])) {
+      fireLaserBeam();
+      state.flightLockoutUntil = performance.now() + 1000;
+      vibratePad(pad, 100);
+    }
+
+    // B Button (Button 1): Rapid fire weapon continuously while held
+    const btnB = pad.buttons[1] ? pad.buttons[1].pressed : false;
+    if (btnB) {
+      fireLaserBeam();
+    }
+
+    // X Button (Button 2): Calibrate Warp Coils
     if (pad.buttons[2] && pad.buttons[2].pressed && !state.lastPadButtons[2]) {
       const uncalibrated = state.coils.findIndex(c => !c);
       if (uncalibrated !== -1) {
@@ -3767,17 +3919,24 @@ function pollGamepad(delta) {
         vibratePad(pad, 200);
       }
     }
+
+    // Y Button (Button 3): Warp Jump Trigger
     if (pad.buttons[3] && pad.buttons[3].pressed && !state.lastPadButtons[3]) {
       triggerWarpJump();
       vibratePad(pad, 400);
     }
 
     state.lastPadButtons = {
-      0: pad.buttons[0] ? pad.buttons[0].pressed : false,
-      1: pad.buttons[1] ? pad.buttons[1].pressed : false,
+      0: btnA,
+      1: btnB,
       2: pad.buttons[2] ? pad.buttons[2].pressed : false,
       3: pad.buttons[3] ? pad.buttons[3].pressed : false,
-      5: pad.buttons[5] ? pad.buttons[5].pressed : false
+      4: btnLB,
+      5: btnRB,
+      6: pad.buttons[6] ? (pad.buttons[6].pressed || pad.buttons[6].value > 0.4) : false,
+      7: btnRT,
+      8: btnSelect,
+      9: btnStart
     };
 
     break;
@@ -4962,6 +5121,7 @@ document.addEventListener('pointerlockchange', () => {
   if (wasLocked && !state.isPointerLocked) {
     state.lastPointerLockExitTime = performance.now();
     state.isLeftMouseDown = false;
+    state.isRightMouseDown = false;
   }
   if (mouseLockBtn) {
     mouseLockBtn.classList.toggle('active', state.isPointerLocked);
@@ -5028,9 +5188,14 @@ window.addEventListener('mousedown', (e) => {
     requestCrosshairCapture();
   }
 
-  // When left mouse button is pressed, fire active weapon
+  // When left mouse button is pressed, fire active weapon ONE SHOT at a time
   if (e.button === 0) {
     state.isLeftMouseDown = true;
+    fireLaserBeam();
+    state.flightLockoutUntil = performance.now() + 1000;
+  } else if (e.button === 2) {
+    // When right mouse button is pressed, rapid fire active weapon
+    state.isRightMouseDown = true;
     fireLaserBeam();
     state.flightLockoutUntil = performance.now() + 1000;
   }
@@ -5040,7 +5205,22 @@ window.addEventListener('mouseup', (e) => {
   if (e.button === 0) {
     state.isLeftMouseDown = false;
   }
+  if (e.button === 2) {
+    state.isRightMouseDown = false;
+  }
   state.isMouseDown = false;
+});
+
+// Prevent context menu on right click during gameplay to allow RMB rapid fire
+window.addEventListener('contextmenu', (e) => {
+  if (!isInteractiveUiElement(e.target)) {
+    e.preventDefault();
+  }
+});
+
+window.addEventListener('blur', () => {
+  state.isLeftMouseDown = false;
+  state.isRightMouseDown = false;
 });
 
 // Full 360-degree Touch Screen Swipe Look on Background Canvas
@@ -5830,8 +6010,8 @@ if (renderer) {
     updateWormholeDistanceBadge();
   }
 
-  // Continuous fire while left mouse button is held down with crosshair captured
-  if (state.isLeftMouseDown && state.isPointerLocked) {
+  // Continuous rapid fire while right mouse button is held down with crosshair captured
+  if (state.isRightMouseDown && state.isPointerLocked) {
     fireLaserBeam();
   }
 

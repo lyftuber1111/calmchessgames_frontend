@@ -1026,12 +1026,34 @@
       stroke-width: 3.5px;
       filter: drop-shadow(0 0 14px rgba(0, 240, 255, 0.85));
     }
+    @keyframes pulseSegmentHighlight {
+      0% {
+        stroke-width: 4.5px;
+        filter: drop-shadow(0 0 10px rgba(0, 240, 255, 0.9)) drop-shadow(0 0 4px #ffd700);
+      }
+      100% {
+        stroke-width: 6.5px;
+        filter: drop-shadow(0 0 24px rgba(0, 240, 255, 1)) drop-shadow(0 0 14px #ffe066);
+      }
+    }
+    .ring-segment.controller-highlighted {
+      stroke: #00f0ff !important;
+      stroke-width: 5.5px !important;
+      fill: #ffffff !important;
+      filter: drop-shadow(0 0 18px rgba(0, 240, 255, 1)) drop-shadow(0 0 10px #ffe066) !important;
+      animation: pulseSegmentHighlight 0.6s infinite alternate ease-in-out !important;
+    }
     .ring-segment.is-overheated {
       fill: #44111d !important;
       stroke: var(--accent-alert, #ef476f) !important;
       cursor: not-allowed !important;
       filter: drop-shadow(0 0 10px rgba(239, 71, 111, 0.7));
       opacity: 0.9;
+    }
+    .ring-segment.is-overheated.controller-highlighted {
+      stroke: #ff3366 !important;
+      fill: #5a1526 !important;
+      filter: drop-shadow(0 0 20px rgba(255, 51, 102, 1)) !important;
     }
     .ring-segment.is-overheated:hover {
       fill: #5a1526 !important;
@@ -3506,13 +3528,16 @@
             <span>🎛️ WEAPONS CONTROLS</span>
             <span style="font-size:0.65rem; color:var(--cyan-neon);">HOTKEYS</span>
           </div>
-          <div class="key-row"><span>Fire Active Weapon:</span> <span class="kbd">Left Click (LMB)</span> / <span class="kbd">X</span> / <span class="kbd">R-Stick Tap</span> / <span class="kbd">RB</span></div>
-          <div class="key-row"><span>Crosshair Aim / Capture:</span> <span class="kbd">Focus / Left Click Window</span></div>
+          <div class="key-row"><span>Single Shot (One at a time):</span> <span class="kbd">Left Click (LMB)</span> / <span class="kbd">RT</span> / <span class="kbd">A Button</span> / <span class="kbd">X</span></div>
+          <div class="key-row"><span>Rapid Fire:</span> <span class="kbd">Right Click (RMB)</span> / <span class="kbd">B Button (Hold)</span></div>
+          <div class="key-row"><span>Crosshair Aim / Capture:</span> <span class="kbd">Focus / Click Window</span></div>
           <div class="key-row"><span>Release Crosshair:</span> <span class="kbd">Esc</span> Key</div>
+          <div class="key-row"><span>Cycle Weapons:</span> <span class="kbd">Q</span> or <span class="kbd">Controller RB</span></div>
+          <div class="key-row"><span>Open Arsenal / Select Segments:</span> <span class="kbd">Controller LB</span></div>
+          <div class="key-row"><span>Equip Arsenal Segment:</span> <span class="kbd">Controller A Button</span> (when Arsenal open)</div>
           <div class="key-row"><span>Select Red Laser:</span> <span class="kbd">1</span> Key</div>
           <div class="key-row"><span>Select Blue Laser:</span> <span class="kbd">2</span> Key</div>
           <div class="key-row"><span>Select Tachyon Lance:</span> <span class="kbd">3</span> Key</div>
-          <div class="key-row"><span>Cycle Weapons:</span> <span class="kbd">Q</span> or <span class="kbd">Gamepad LB</span></div>
           <div class="key-row"><span>HUD Weapon Switch:</span> <span class="kbd">Tap HUD Weapon Pill</span></div>
         </div>
       </div>
@@ -3540,11 +3565,11 @@
             <span class="kbd">↕ Elevate/Dive  ↔ Turn</span>
           </div>
           <div class="key-row">
-            <span>Laser Fire Knob / LMB:</span>
-            <span class="kbd">Left Mouse Click / Knob (🔴)</span>
+            <span>Laser Fire (LMB / RT / A):</span>
+            <span class="kbd">LMB (Single Shot) / RT / A / Knob (🔴)</span>
           </div>
           <div style="font-size:0.64rem; color:var(--text-dim); margin:2px 0 6px 2px;">
-            Left-click window or tap center knob to fire laser cannons; controls 360° yaw rotation &amp; pitch elevation.
+            Left-click window or press RT / A button to fire one shot at a time; right-click window or hold B for rapid fire.
           </div>
           <div class="key-row">
             <span>Throttle Slider:</span>
@@ -3565,18 +3590,22 @@
             <span>🎛️ BUTTONS &amp; MOUSE FUNCTION INFO</span>
             <span style="font-size:0.65rem; color:var(--cyan-neon);">CONTROLS</span>
           </div>
-          <div class="key-row"><span>Fire Weapon:</span> <span class="kbd">Left Click (LMB)</span> / <span class="kbd">X</span> / <span class="kbd">RB</span> / <span class="kbd">R-Stick Tap</span></div>
+          <div class="key-row"><span>Fire Weapon (Single Shot):</span> <span class="kbd">Left Click (LMB)</span> / <span class="kbd">RT</span> / <span class="kbd">A Button</span> / <span class="kbd">X</span></div>
+          <div class="key-row"><span>Rapid Fire Weapon:</span> <span class="kbd">Right Click (RMB)</span> / <span class="kbd">B Button (Hold)</span></div>
+          <div class="key-row"><span>Cycle Weapons:</span> <span class="kbd">Q</span> or <span class="kbd">RB Button</span></div>
+          <div class="key-row"><span>Open Weapons (Arsenal):</span> <span class="kbd">LB Button</span></div>
+          <div class="key-row"><span>Arsenal Segment Select:</span> <span class="kbd">LB (Cycle Segments)</span> &bull; <span class="kbd">A (Equip)</span></div>
+          <div style="font-size:0.64rem; color:var(--cyan-neon); margin:2px 0 6px 2px;">
+            LB opens Weapons Arsenal and selects segments; A button confirms segment. When closed, A button returns to single shot fire. LMB fires single shots; RMB &amp; controller B rapid fires.
+          </div>
           <div class="key-row"><span>Crosshair Aim / Capture:</span> <span class="kbd">Focus / Left Click Window</span></div>
           <div class="key-row"><span>Release Crosshair:</span> <span class="kbd">Esc</span> Key</div>
-          <div style="font-size:0.64rem; color:var(--cyan-neon); margin:2px 0 6px 2px;">
-            Focusing or clicking the game window captures the crosshair for mouse aiming. Left mouse button fires active weapon. Press Esc to release crosshair.
-          </div>
-          <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">R-Stick (Hold) / R2</span></div>
+          <div class="key-row"><span>Forward / Reverse:</span> <span class="kbd">W / S</span> or <span class="kbd">R-Stick (Hold)</span></div>
           <div class="key-row"><span>Lateral Strafe:</span> <span class="kbd">A / D</span></div>
           <div class="key-row"><span>Pitch &amp; Yaw Look:</span> <span class="kbd">Right Stick / D-Pad</span></div>
-          <div class="key-row"><span>Elevate / Dive:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">R2 / L2</span></div>
+          <div class="key-row"><span>Elevate / Dive / Brake:</span> <span class="kbd">Space / Shift</span> or <span class="kbd">LT (Brake)</span></div>
           <div class="key-row"><span>Pause / Resume:</span> <span class="kbd">P</span> (or <span class="kbd">Esc</span> when released)</div>
-          <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">A / X Button</span></div>
+          <div class="key-row"><span>Scanner / Coil Sync:</span> <span class="kbd">X Button</span></div>
           <div class="key-row"><span>Warp Jump Trigger:</span> <span class="kbd">F</span> or <span class="kbd">Y Button</span></div>
           <div class="key-row" style="margin-top:5px; border-top:1px solid rgba(0,240,255,0.2); padding-top:4px;">
             <span style="color:var(--cyan-neon);">Toggle Left Panel:</span> <span class="kbd">Tab</span> / <span class="kbd">M</span>
@@ -3837,7 +3866,7 @@
         <button id="btn-spin-360" class="hud-btn" title="Fire thrusters until ship rotates 360 degrees (Hotkey: R)">
           🔄 360° Turn
         </button>
-        <button id="btn-mouse-lock" class="hud-btn" title="Toggle crosshair mouse capture (Hotkey: Focus/Click window to capture, Esc to release)">
+        <button id="btn-mouse-lock" class="hud-btn" title="Toggle crosshair mouse capture (Focus/Click window to capture, Esc to release; LMB: Single shot, RMB: Rapid fire)">
           🎯 Capture Crosshair
         </button>
         <button id="btn-align-wormhole" class="hud-btn" title="Automatically align ship view directly towards the Wormhole Singularity (Hotkey: Z / N)">

@@ -906,9 +906,10 @@ const compositeShader = {
         float r = length(d);
 
         float rE = 0.075 * uLensingStrength;
-        if (r > 0.008 && r < 0.45) {
+        if (r < 0.45) {
           float deflection = (rE * rE) / (r + 0.015);
-          vec2 offset = normalize(d) * deflection;
+          vec2 dir = (r > 0.0001) ? (d / r) : vec2(0.0, 1.0);
+          vec2 offset = dir * deflection;
           offset.x /= uAspect;
           lensedUv = clamp(uv - offset, 0.0, 1.0);
         }

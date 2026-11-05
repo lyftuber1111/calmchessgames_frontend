@@ -306,20 +306,26 @@ const crosshair3D = {
     if (this.mesh || !targetCamera) return;
     targetScene.add(targetCamera);
 
+    // Add dedicated camera HUD illuminator so 3D crosshair bevels and contours shine brilliantly
+    const hudLight = new THREE.PointLight(0xffffff, 2.8, 5.0);
+    hudLight.position.set(0, 0, -0.6);
+    targetCamera.add(hudLight);
+
     this.material = new THREE.MeshStandardMaterial({
       color: new THREE.Color(0x06d6a0),
       emissive: new THREE.Color(0x06d6a0),
-      emissiveIntensity: this.baseEmissiveIntensity,
+      emissiveIntensity: 2.2,
       roughness: 0.15,
-      metalness: 0.85,
+      metalness: 0.6,
+      toneMapped: false,
       transparent: true,
-      opacity: 0.95,
+      opacity: 1.0,
       depthTest: false,
       depthWrite: false
     });
 
     const loader = new GLTFLoader();
-    loader.load('3D_Cross_Hair_1.glb', (gltf) => {
+    loader.load('3D_Cross_Hair_1.glb?v=20261104_v2', (gltf) => {
       this.mesh = gltf.scene || gltf.scenes[0];
       this.mesh.traverse((child) => {
         if (child.isMesh) {

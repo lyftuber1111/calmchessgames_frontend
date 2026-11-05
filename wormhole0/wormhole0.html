@@ -3566,7 +3566,8 @@
           <div class="key-row"><span>Crosshair Aim / Capture:</span> <span class="kbd">Focus / Click Window</span></div>
           <div class="key-row"><span>Release Crosshair:</span> <span class="kbd">Esc</span> Key</div>
           <div class="key-row"><span>Cycle Weapons:</span> <span class="kbd">Q</span> or <span class="kbd">Controller RB</span></div>
-          <div class="key-row"><span>Open Arsenal / Select Segments:</span> <span class="kbd">Controller LB</span></div>
+          <div class="key-row"><span>Open Weapons Arsenal:</span> <span class="kbd">Middle Mouse Click (Wheel)</span> / <span class="kbd">Controller LB</span></div>
+          <div class="key-row"><span>Select Arsenal Segments:</span> <span class="kbd">Scroll Wheel</span> / <span class="kbd">Controller LB</span></div>
           <div class="key-row"><span>Equip Arsenal Segment:</span> <span class="kbd">Controller A Button</span> (when Arsenal open)</div>
           <div class="key-row"><span>Select Red Laser:</span> <span class="kbd">1</span> Key</div>
           <div class="key-row"><span>Select Blue Laser:</span> <span class="kbd">2</span> Key</div>
@@ -3626,10 +3627,10 @@
           <div class="key-row"><span>Fire Weapon (Single Shot):</span> <span class="kbd">Left Click (LMB)</span> / <span class="kbd">RT</span> / <span class="kbd">A Button</span> / <span class="kbd">X</span></div>
           <div class="key-row"><span>Rapid Fire Weapon:</span> <span class="kbd">Right Click (RMB)</span> / <span class="kbd">B Button (Hold)</span></div>
           <div class="key-row"><span>Cycle Weapons:</span> <span class="kbd">Q</span> or <span class="kbd">RB Button</span></div>
-          <div class="key-row"><span>Open Weapons (Arsenal):</span> <span class="kbd">LB Button</span></div>
-          <div class="key-row"><span>Arsenal Segment Select:</span> <span class="kbd">LB (Cycle Segments)</span> &bull; <span class="kbd">A (Equip)</span></div>
+          <div class="key-row"><span>Open Weapons (Arsenal):</span> <span class="kbd">Middle Mouse Click (Wheel)</span> / <span class="kbd">LB Button</span></div>
+          <div class="key-row"><span>Arsenal Segment Select:</span> <span class="kbd">Scroll Wheel</span> &bull; <span class="kbd">LB (Cycle)</span> &bull; <span class="kbd">LMB / A (Equip)</span></div>
           <div style="font-size:0.64rem; color:var(--cyan-neon); margin:2px 0 6px 2px;">
-            LB opens Weapons Arsenal and selects segments; A button confirms segment. When closed, A button returns to single shot fire. LMB fires single shots; RMB &amp; controller B rapid fires.
+            Middle mouse wheel click or LB opens Weapons Arsenal; mouse scroll wheel or LB selects segments; LMB or A button confirms segment. When closed, A button / LMB returns to single shot fire. LMB fires single shots; RMB &amp; controller B rapid fires.
           </div>
           <div class="key-row"><span>Crosshair Aim / Capture:</span> <span class="kbd">Focus / Left Click Window</span></div>
           <div class="key-row"><span>Release Crosshair:</span> <span class="kbd">Esc</span> Key</div>
@@ -3899,7 +3900,7 @@
         <button id="btn-spin-360" class="hud-btn" title="Fire thrusters until ship rotates 360 degrees (Hotkey: R)">
           🔄 360° Turn
         </button>
-        <button id="btn-mouse-lock" class="hud-btn" title="Toggle crosshair mouse capture (Focus/Click window to capture, Esc to release; LMB: Single shot, RMB: Rapid fire)">
+        <button id="btn-mouse-lock" class="hud-btn" title="Toggle crosshair mouse capture (Focus/Click window to capture, Esc to release; LMB: Single shot, RMB: Rapid fire, Middle Mouse Click: Weapons Arsenal)">
           🎯 Capture Crosshair
         </button>
         <button id="btn-align-wormhole" class="hud-btn" title="Automatically align ship view directly towards the Wormhole Singularity (Hotkey: Z / N)">
@@ -4022,7 +4023,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261104_restore_orig_crosshair"></script>
+  <script type="module" src="js/wormhole0.js?v=20261104_middle_mouse_arsenal"></script>
 
 </body>
 </html>

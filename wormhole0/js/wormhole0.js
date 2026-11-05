@@ -2114,12 +2114,32 @@ function initWeaponsInteractions() {
     });
   }
 
-  // Keyboard shortcut: Escape closes wheel
+  // Keyboard navigation & selection when Weapon Wheel is open
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isWeaponWheelOpen()) {
-      closeWeaponWheel();
+    if (isWeaponWheelOpen()) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeWeaponWheel();
+      } else if (e.key === 'Enter' || e.code === 'Space') {
+        e.preventDefault();
+        selectHighlightedWheelSegment();
+      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        cycleWheelSegment(1);
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        cycleWheelSegment(-1);
+      }
     }
   });
+
+  // Mouse wheel scroll cycles weapon wheel segments when open
+  window.addEventListener('wheel', (e) => {
+    if (isWeaponWheelOpen()) {
+      e.preventDefault();
+      cycleWheelSegment(e.deltaY > 0 ? 1 : -1);
+    }
+  }, { passive: false });
 
   // Live real-time update of Weapon Wheel on system notify (overheat ticks, weapon equip)
   weaponsSystem.listeners.push(() => {
@@ -5210,6 +5230,25 @@ window.addEventListener('focus', () => {
 window.addEventListener('mousedown', (e) => {
   if (e.pointerType === 'touch' || (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents)) return;
 
+  // Middle mouse wheel click (button 1): Open weapons arsenal
+  if (e.button === 1) {
+    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+      return;
+    }
+    const splashEl = document.getElementById('wormhole-splash-screen');
+    if (splashEl && splashEl.parentNode) {
+      return;
+    }
+    e.preventDefault();
+    if (!audioMgr.isInitialized) audioMgr.init();
+    if (typeof isWeaponWheelOpen === 'function' && isWeaponWheelOpen()) {
+      closeWeaponWheel();
+    } else if (typeof openWeaponWheel === 'function') {
+      openWeaponWheel();
+    }
+    return;
+  }
+
   // If clicking on an interactive UI element, let it handle the event
   if (isInteractiveUiElement(e.target)) return;
 
@@ -5257,10 +5296,20 @@ window.addEventListener('mouseup', (e) => {
   if (e.button === 0) {
     state.isLeftMouseDown = false;
   }
+  if (e.button === 1) {
+    e.preventDefault();
+  }
   if (e.button === 2) {
     state.isRightMouseDown = false;
   }
   state.isMouseDown = false;
+});
+
+// Prevent middle click autoscroll icon in browsers
+window.addEventListener('auxclick', (e) => {
+  if (e.button === 1) {
+    e.preventDefault();
+  }
 });
 
 // Prevent context menu on right click during gameplay to allow RMB rapid fire

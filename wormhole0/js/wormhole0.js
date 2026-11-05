@@ -10,6 +10,7 @@
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // =============================================================================
 // STATE & CONFIGURATION
@@ -279,6 +280,165 @@ scene.add(wormholeCoreLight);
 const secondaryLight = new THREE.PointLight(0x0066aa, 2.5, 300, 1.5);
 secondaryLight.position.set(0, 0, -20);
 scene.add(secondaryLight);
+
+// =============================================================================
+// 3D HOLOGRAPHIC CROSSHAIR SYSTEM (3D_Cross_Hair_1.glb)
+// Replaces 2D DOM reticles with a true 3D spatial holographic targeting sight.
+// Dynamically matches 70px outer ring / 44px inner crosshair dimensions,
+// synchronizes with active weapon energy colors, animates weapon blast pulses,
+// and indicates wormhole vector alignment locks.
+// =============================================================================
+const crosshair3D = {
+  mesh: null,
+  material: null,
+  hudDistance: 1.0, // 1.0 meter in front of camera view
+  baseModelDiameter: 0.08258, // 8.26 cm base outer diameter in GLB
+  blastScale: 1.0,
+  targetColor: new THREE.Color(0x06d6a0),
+  currentColor: new THREE.Color(0x06d6a0),
+  baseEmissiveIntensity: 1.8,
+  blastEmissiveIntensity: 3.5,
+  isFiring: false,
+  fireTimer: 0,
+  activeWeaponHex: 0xff0033,
+
+  init(targetScene, targetCamera) {
+    if (this.mesh || !targetCamera) return;
+    targetScene.add(targetCamera);
+
+    this.material = new THREE.MeshStandardMaterial({
+      color: new THREE.Color(0x06d6a0),
+      emissive: new THREE.Color(0x06d6a0),
+      emissiveIntensity: this.baseEmissiveIntensity,
+      roughness: 0.15,
+      metalness: 0.85,
+      transparent: true,
+      opacity: 0.95,
+      depthTest: false,
+      depthWrite: false
+    });
+
+    const loader = new GLTFLoader();
+    loader.load('3D_Cross_Hair_1.glb', (gltf) => {
+      this.mesh = gltf.scene || gltf.scenes[0];
+      this.mesh.traverse((child) => {
+        if (child.isMesh) {
+          child.material = this.material;
+          child.renderOrder = 9999;
+          child.frustumCulled = false;
+        }
+      });
+      this.mesh.renderOrder = 9999;
+      this.mesh.position.set(0, 0, -this.hudDistance);
+      targetCamera.add(this.mesh);
+      console.log('[Wormhole XR] 3D Crosshair installed successfully from 3D_Cross_Hair_1.glb');
+      
+      // Sync immediately with initial active weapon
+      if (typeof weaponsSystem !== 'undefined' && weaponsSystem.getActiveWeapon) {
+        this.updateWeapon(weaponsSystem.getActiveWeapon());
+      }
+    }, undefined, (err) => {
+      console.warn('[Wormhole XR] Failed to load 3D_Cross_Hair_1.glb:', err);
+    });
+  },
+
+  updateWeapon(activeWeapon) {
+    if (!activeWeapon) return;
+    const hex = (activeWeapon.colorHex !== undefined) ? activeWeapon.colorHex : 0x00f0ff;
+    this.activeWeaponHex = hex;
+    if (!state.isVectorAligned || !state.isInRange) {
+      this.targetColor.setHex(hex);
+    }
+  },
+
+  triggerFire(activeWeapon) {
+    const isBlue = (activeWeapon && activeWeapon.id === 'blue_laser');
+    this.blastScale = isBlue ? 1.40 : 1.35;
+    this.isFiring = true;
+    this.fireTimer = 0.18; // 180ms pulse
+
+    let fireHex = 0xff0044; // default red blast
+    if (activeWeapon) {
+      if (activeWeapon.id === 'blue_laser') fireHex = 0x00d4ff;
+      else if (activeWeapon.id === 'tachyon_lance') fireHex = 0xffd166;
+    }
+    this.targetColor.setHex(fireHex);
+    if (this.material) {
+      this.material.emissiveIntensity = this.blastEmissiveIntensity;
+    }
+  },
+
+  update(delta) {
+    if (!this.mesh || !camera) return;
+
+    // 1. Position tracking
+    const ndcX = (state.crosshair.x / window.innerWidth) * 2 - 1;
+    const ndcY = -(state.crosshair.y / window.innerHeight) * 2 + 1;
+    const vFovRad = (camera.fov * Math.PI) / 180;
+    const tanHalfFov = Math.tan(vFovRad / 2);
+
+    const localX = ndcX * tanHalfFov * camera.aspect * this.hudDistance;
+    const localY = ndcY * tanHalfFov * this.hudDistance;
+    this.mesh.position.set(localX, localY, -this.hudDistance);
+
+    // Subtle 3D holographic tilt along aim motion
+    this.mesh.rotation.z = -ndcX * 0.12;
+    this.mesh.rotation.x = ndcY * 0.08;
+    this.mesh.rotation.y = -ndcX * 0.08;
+
+    // 2. Responsive HUD scale (matching 70px outer ring on any display resolution)
+    let responsiveScale = 1.0;
+    if (!state.isXR && window.innerHeight > 0) {
+      const frustumHeightAtDist = 2.0 * this.hudDistance * tanHalfFov;
+      const targetMeters = frustumHeightAtDist * (70 / window.innerHeight);
+      responsiveScale = targetMeters / this.baseModelDiameter;
+    }
+
+    // 3. Firing blast scale animation
+    if (this.isFiring) {
+      this.fireTimer -= delta;
+      if (this.fireTimer <= 0) {
+        this.isFiring = false;
+        // Revert target color
+        if (state.isVectorAligned && state.isInRange) {
+          this.targetColor.setHex(0x00f0ff);
+        } else {
+          this.targetColor.setHex(this.activeWeaponHex);
+        }
+      }
+    }
+    this.blastScale += (1.0 - this.blastScale) * Math.min(1.0, delta * 14.0);
+    const finalScale = responsiveScale * this.blastScale;
+    this.mesh.scale.set(finalScale, finalScale, finalScale);
+
+    // 4. Vector Lock Pulsing & Color Modulation
+    if (!this.isFiring) {
+      if (state.isVectorAligned && state.isInRange) {
+        // Locked state: pulsating cyan neon
+        this.targetColor.setHex(0x00f0ff);
+        const lockPulse = 1.8 + Math.sin(state.time * 6.0) * 0.7;
+        if (this.material) {
+          this.material.emissiveIntensity = lockPulse;
+        }
+      } else {
+        this.targetColor.setHex(this.activeWeaponHex);
+        if (this.material) {
+          this.material.emissiveIntensity = this.baseEmissiveIntensity;
+        }
+      }
+    }
+
+    // 5. Smooth color transition
+    if (this.material) {
+      this.currentColor.lerp(this.targetColor, Math.min(1.0, delta * 12.0));
+      this.material.color.copy(this.currentColor);
+      this.material.emissive.copy(this.currentColor);
+    }
+  }
+};
+
+scene.add(camera);
+crosshair3D.init(scene, camera);
 
 // =============================================================================
 // CUSTOM GLSL SHADERS - ACCRETION DISK & EVENT HORIZON
@@ -1378,6 +1538,9 @@ class WeaponsSystem {
       audioMgr.playWeaponSwitch();
     }
     this.updateCrosshairWeaponRing();
+    if (typeof crosshair3D !== 'undefined' && crosshair3D.updateWeapon) {
+      crosshair3D.updateWeapon(target);
+    }
     this.notify();
     return true;
   }
@@ -1530,6 +1693,9 @@ class WeaponsSystem {
     if (!vectorRing.classList.contains('locked')) {
       vectorRing.style.borderColor = ringColor;
       vectorRing.style.boxShadow = `0 0 12px ${glowColor}, inset 0 0 6px ${glowColor}`;
+    }
+    if (typeof crosshair3D !== 'undefined' && crosshair3D.updateWeapon) {
+      crosshair3D.updateWeapon(active);
     }
   }
 
@@ -4764,6 +4930,9 @@ function fireLaserBeam() {
       crosshairEl.classList.remove('laser-firing', 'laser-firing-blue', 'laser-firing-amber');
     }, 180);
   }
+  if (typeof crosshair3D !== 'undefined' && crosshair3D.triggerFire) {
+    crosshair3D.triggerFire(activeWpn);
+  }
 
   // 3D Direction raycast from dynamic crosshair screen coordinates
   const ndcX = (state.crosshair.x / window.innerWidth) * 2 - 1;
@@ -6078,6 +6247,9 @@ if (renderer) {
   }
 
   updateCrosshairPosition(delta);
+  if (typeof crosshair3D !== 'undefined' && crosshair3D.update) {
+    crosshair3D.update(delta);
+  }
   updateLaserBolts(delta);
   weaponsSystem.update(delta);
 

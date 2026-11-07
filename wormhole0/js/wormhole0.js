@@ -234,15 +234,59 @@ try {
     }
     if (container) container.appendChild(renderer.domElement);
 
-    // WebXR Button - Never show 'VR NOT SUPPORTED' badge during game play
+    // WebXR Button - Configure sessionInit for XRWebGLLayer (no 'layers' projection override) + DOM Overlay
     try {
-      vrBtn = VRButton.createButton(renderer, {
-        optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'layers', 'dom-overlay'],
-        domOverlay: { root: document.body }
-      });
+      if (navigator.xr) {
+        const normalizeXrSessionInit = (mode, init) => {
+          const base = init ? Object.assign({}, init) : {};
+          const opt = Array.isArray(base.optionalFeatures)
+            ? base.optionalFeatures.filter(f => f !== 'layers')
+            : ['local-floor', 'bounded-floor', 'hand-tracking'];
+          if (!opt.includes('dom-overlay')) opt.push('dom-overlay');
+          base.optionalFeatures = opt;
+          if (!base.domOverlay && typeof document !== 'undefined' && document.body) {
+            base.domOverlay = { root: document.body };
+          }
+          return base;
+        };
+        if (typeof navigator.xr.requestSession === 'function' && !navigator.xr.__wormholePatched) {
+          const origReq = navigator.xr.requestSession.bind(navigator.xr);
+          navigator.xr.requestSession = async function (mode, init) {
+            const patchedInit = normalizeXrSessionInit(mode, init);
+            try {
+              return await origReq(mode, patchedInit);
+            } catch (err) {
+              const fallbackInit = init ? Object.assign({}, init) : {};
+              if (Array.isArray(fallbackInit.optionalFeatures)) {
+                fallbackInit.optionalFeatures = fallbackInit.optionalFeatures.filter(f => f !== 'layers' && f !== 'dom-overlay');
+              }
+              delete fallbackInit.domOverlay;
+              return await origReq(mode, fallbackInit);
+            }
+          };
+          if (typeof navigator.xr.offerSession === 'function') {
+            const origOffer = navigator.xr.offerSession.bind(navigator.xr);
+            navigator.xr.offerSession = async function (mode, init) {
+              const patchedInit = normalizeXrSessionInit(mode, init);
+              try {
+                return await origOffer(mode, patchedInit);
+              } catch (err) {
+                const fallbackInit = init ? Object.assign({}, init) : {};
+                if (Array.isArray(fallbackInit.optionalFeatures)) {
+                  fallbackInit.optionalFeatures = fallbackInit.optionalFeatures.filter(f => f !== 'layers' && f !== 'dom-overlay');
+                }
+                delete fallbackInit.domOverlay;
+                return await origOffer(mode, fallbackInit);
+              }
+            };
+          }
+          navigator.xr.__wormholePatched = true;
+        }
+      }
+      vrBtn = VRButton.createButton(renderer);
       vrBtn.id = 'xr-enter-btn';
       vrBtn.style.display = 'none';
-      if (vrBtn && vrBtn.textContent && !vrBtn.textContent.includes('NOT SUPPORTED')) {
+      if (vrBtn && (!vrBtn.textContent || !vrBtn.textContent.includes('NOT SUPPORTED'))) {
         document.body.appendChild(vrBtn);
       }
     } catch (e) {}
@@ -6611,25 +6655,101 @@ function renderPostProcessing() {
     return;
   }
   try {
-    const xrOutputTarget = (state.isXR && renderer.xr && renderer.xr.isPresenting)
-      ? renderer.getRenderTarget()
-      : null;
+    if (state.isXR && renderer.xr && renderer.xr.isPresenting) {
+      const xrOutputTarget = renderer.getRenderTarget();
+      const xrCam = renderer.xr.getCamera();
+      const subCameras = (xrCam && Array.isArray(xrCam.cameras) && xrCam.cameras.length > 0)
+        ? xrCam.cameras.filter(c => c && c.viewport && c.viewport.width > 0 && c.viewport.height > 0)
+        : [];
 
-    if (xrOutputTarget) {
-      if (sceneRenderTarget.width !== xrOutputTarget.width || sceneRenderTarget.height !== xrOutputTarget.height) {
-        sceneRenderTarget.setSize(xrOutputTarget.width, xrOutputTarget.height);
-      }
-      if (renderer.xr.cameraAutoUpdate) {
-        renderer.xr.updateCamera(camera);
+      if (xrOutputTarget && subCameras.length > 0) {
+        const prevXrEnabled = renderer.xr.enabled;
+        const prevAutoClear = renderer.autoClear;
+        renderer.xr.enabled = false;
+        try {
+          for (let i = 0; i < subCameras.length; i++) {
+            const subCam = subCameras[i];
+            subCam.matrixWorldAutoUpdate = false;
+            const vp = subCam.viewport;
+            const vpW = Math.max(1, Math.floor(vp.width));
+            const vpH = Math.max(1, Math.floor(vp.height));
+
+            if (sceneRenderTarget.width !== vpW || sceneRenderTarget.height !== vpH) {
+              sceneRenderTarget.setSize(vpW, vpH);
+              const halfW = Math.max(128, Math.floor(vpW * 0.5));
+              const halfH = Math.max(128, Math.floor(vpH * 0.5));
+              renderTargetA.setSize(halfW, halfH);
+              renderTargetB.setSize(halfW, halfH);
+              blurShader.uniforms.uResolution.value.set(halfW, halfH);
+            }
+
+            tempVec.set(0, 0, 0);
+            tempVec.project(subCam);
+            const isBehind = tempVec.z > 1.0 ? 1.0 : 0.0;
+            wormholeScreenVec.x = (tempVec.x * 0.5) + 0.5;
+            wormholeScreenVec.y = (tempVec.y * 0.5) + 0.5;
+
+            compositeShader.uniforms.uWormholeScreenPos.value.copy(wormholeScreenVec);
+            compositeShader.uniforms.uIsBehind.value = isBehind;
+            compositeShader.uniforms.uAspect.value = vpW / vpH;
+
+            renderer.autoClear = true;
+            renderer.setScissorTest(false);
+            renderer.setRenderTarget(sceneRenderTarget);
+            renderer.setViewport(0, 0, vpW, vpH);
+            renderer.render(scene, subCam);
+
+            highPassMaterial.uniforms.tDiffuse.value = sceneRenderTarget.texture;
+            highPassMaterial.uniforms.uThreshold.value = CONFIG.bloomThreshold;
+            postScene.clear();
+            postScene.add(highPassQuad);
+            renderer.setRenderTarget(renderTargetA);
+            renderer.setViewport(0, 0, renderTargetA.width, renderTargetA.height);
+            renderer.render(postScene, postCamera);
+
+            blurMaterial.uniforms.tDiffuse.value = renderTargetA.texture;
+            blurMaterial.uniforms.uDirection.value.set(1.0, 0.0);
+            blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
+            postScene.clear();
+            postScene.add(blurQuad);
+            renderer.setRenderTarget(renderTargetB);
+            renderer.setViewport(0, 0, renderTargetB.width, renderTargetB.height);
+            renderer.render(postScene, postCamera);
+
+            blurMaterial.uniforms.tDiffuse.value = renderTargetB.texture;
+            blurMaterial.uniforms.uDirection.value.set(0.0, 1.0);
+            blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
+            renderer.setRenderTarget(renderTargetA);
+            renderer.setViewport(0, 0, renderTargetA.width, renderTargetA.height);
+            renderer.render(postScene, postCamera);
+
+            compositeMaterial.uniforms.tScene.value = sceneRenderTarget.texture;
+            compositeMaterial.uniforms.tBloom.value = renderTargetA.texture;
+            compositeMaterial.uniforms.uBloomStrength.value = CONFIG.bloomStrength;
+            compositeMaterial.uniforms.uLensingStrength.value = CONFIG.lensingStrength;
+            compositeMaterial.uniforms.uChromaticAberration.value = CONFIG.chromaticAberration;
+            postScene.clear();
+            postScene.add(compositeQuad);
+
+            renderer.setRenderTarget(xrOutputTarget);
+            renderer.setViewport(vp.x, vp.y, vp.width, vp.height);
+            renderer.setScissor(vp.x, vp.y, vp.width, vp.height);
+            renderer.setScissorTest(true);
+            renderer.autoClear = (i === 0);
+            renderer.render(postScene, postCamera);
+          }
+          renderer.setScissorTest(false);
+          renderer.setViewport(0, 0, xrOutputTarget.width, xrOutputTarget.height);
+        } finally {
+          renderer.autoClear = prevAutoClear;
+          renderer.xr.enabled = prevXrEnabled;
+        }
+        return;
       }
     }
 
-    const activeProjCam = (state.isXR && renderer.xr && renderer.xr.isPresenting)
-      ? renderer.xr.getCamera()
-      : camera;
-
     tempVec.set(0, 0, 0);
-    tempVec.project(activeProjCam);
+    tempVec.project(camera);
 
     const isBehind = tempVec.z > 1.0 ? 1.0 : 0.0;
     wormholeScreenVec.x = (tempVec.x * 0.5) + 0.5;
@@ -6673,7 +6793,7 @@ function renderPostProcessing() {
       compositeMaterial.uniforms.uChromaticAberration.value = CONFIG.chromaticAberration;
       postScene.clear();
       postScene.add(compositeQuad);
-      renderer.setRenderTarget(xrOutputTarget);
+      renderer.setRenderTarget(null);
       renderer.render(postScene, postCamera);
     } finally {
       renderer.xr.enabled = prevXrEnabled;
@@ -6681,7 +6801,9 @@ function renderPostProcessing() {
   } catch (err) {
     console.warn('[Wormhole XR] Post-processing render failed, disabling:', err);
     state.postProcessingEnabled = false;
-    renderer.setRenderTarget(null);
+    if (!state.isXR) {
+      renderer.setRenderTarget(null);
+    }
     renderer.render(scene, camera);
   }
 }
@@ -6960,6 +7082,11 @@ if (renderer) {
     if (state.isPaused) {
       state.lastFrameTime = timestamp;
       checkGamepadPauseOnly();
+      if (state.isXR && typeof activeVrFrameHook === 'function') {
+        try {
+          activeVrFrameHook(0, getEngineApi());
+        } catch (e) {}
+      }
       if (!state.postProcessingEnabled) {
         renderer.render(scene, camera);
       } else {

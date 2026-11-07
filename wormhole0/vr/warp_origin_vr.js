@@ -456,8 +456,12 @@ export function configureVRSpatialAspectAndPerspective(engineApi) {
         // so that at rest pose the world camera sits at exact state.position (0, 0, 220) looking at (0, 0, 0)
         if (sp.compensateHmdHeightOffset && subCameras.length > 0) {
           const cam0Pos = subCameras[0].position;
-          if (!api.isXrBasePoseCaptured() && cam0Pos && cam0Pos.lengthSq() > 0.00001) {
-            api.xrBaseHmdPos.copy(cam0Pos);
+          if (!api.isXrBasePoseCaptured() && cam0Pos) {
+            if (subCameras.length >= 2 && subCameras[1].position) {
+              api.xrBaseHmdPos.copy(cam0Pos).add(subCameras[1].position).multiplyScalar(0.5);
+            } else {
+              api.xrBaseHmdPos.copy(cam0Pos);
+            }
             api.setXrBasePoseCaptured(true);
           }
           if (api.isXrBasePoseCaptured()) {
@@ -465,6 +469,10 @@ export function configureVRSpatialAspectAndPerspective(engineApi) {
             api.cameraRig.position.copy(api.state.position).sub(worldOffset);
             api.cameraRig.updateMatrixWorld(true);
           }
+        }
+
+        if (typeof xrMgr.updateCamera === 'function' && api.camera) {
+          xrMgr.updateCamera(api.camera);
         }
 
         // 2. Calibrate XR eye camera projection matrices to match Desktop 65° FOV and exact viewport aspect ratio
@@ -478,6 +486,7 @@ export function configureVRSpatialAspectAndPerspective(engineApi) {
           for (let i = 0; i < subCameras.length; i++) {
             const subCam = subCameras[i];
             if (!subCam || !subCam.projectionMatrix) continue;
+            subCam.matrixWorldAutoUpdate = false;
             const vp = subCam.viewport;
             const aspect = (vp && vp.width > 0 && vp.height > 0) ? (vp.width / vp.height) : fallbackAspect;
             const top = near / fY;
@@ -496,6 +505,12 @@ export function configureVRSpatialAspectAndPerspective(engineApi) {
             xrCam.projectionMatrix.copy(subCameras[0].projectionMatrix);
             if (xrCam.projectionMatrixInverse) {
               xrCam.projectionMatrixInverse.copy(xrCam.projectionMatrix).invert();
+            }
+            if (api.camera && api.camera.projectionMatrix) {
+              api.camera.projectionMatrix.copy(subCameras[0].projectionMatrix);
+              if (api.camera.projectionMatrixInverse) {
+                api.camera.projectionMatrixInverse.copy(subCameras[0].projectionMatrixInverse);
+              }
             }
           }
         }

@@ -1452,6 +1452,27 @@ class AudioManager {
     } catch (e) {}
   }
 
+  playEnemyMissile() {
+    if (CONFIG.audioMuted) return;
+    if (!this.ctx) this.init();
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(75, now + 0.38);
+      gain.gain.setValueAtTime(0.36, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.4);
+    } catch (e) {}
+  }
+
   updateProximity(distKm) {
     if (!this.droneAudio || CONFIG.audioMuted) return;
     const norm = Math.max(0.0, Math.min(1.0, 1.0 - (distKm / 90000)));
@@ -6703,7 +6724,7 @@ function create3DEnemyMesh(config) {
   return group;
 }
 
-function spawnEnemyFromWormhole() {
+function spawnEnemySwarmFromWormhole(forcedCount = null) {
   if (state.isPaused || state.isHyperWarping) return;
   if (!scene || !camera) return;
 
@@ -6726,47 +6747,90 @@ function spawnEnemyFromWormhole() {
           }
         ];
 
-  const cfg = enemyPool[Math.floor(Math.random() * enemyPool.length)];
-  const mesh = create3DEnemyMesh(cfg);
+  // Swarm size: 5 to 10 enemies per swarm
+  const swarmCount = forcedCount || (Math.floor(Math.random() * 6) + 5);
+  const swarmId = 'swarm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
 
-  // Requirement 9: Enemies travel out of the wormhole (origin 0,0,0) towards the player (z ~220)
-  // Spawn right at the throat/portal core of the wormhole
-  const spawnZ = -6.0 + (Math.random() - 0.5) * 4.0;
-  const spawnX = (Math.random() - 0.5) * 12.0;
-  const spawnY = (Math.random() - 0.5) * 9.0;
-  mesh.position.set(spawnX, spawnY, spawnZ);
+  for (let idx = 0; idx < swarmCount; idx++) {
+    const cfg = enemyPool[idx % enemyPool.length];
+    const mesh = create3DEnemyMesh(cfg);
 
-  // Requirement 9: Starting off small and getting bigger as they rush towards the player
-  mesh.scale.set(0.12, 0.12, 0.12);
+    // Emerge in formation from the mouth/throat of the wormhole (origin 0,0,0, -Z throat)
+    const angle = (idx / swarmCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.45;
+    const spawnRad = 1.8 + (idx % 3) * 2.2 + Math.random() * 1.5;
+    const spawnX = Math.cos(angle) * spawnRad;
+    const spawnY = Math.sin(angle) * (spawnRad * 0.75);
+    const spawnZ = -6.5 - (idx * 1.6) - Math.random() * 2.5;
+    mesh.position.set(spawnX, spawnY, spawnZ);
 
-  const baseScale = 1.35 + Math.random() * 0.35;
-  const rawSpeed = parseInt(cfg.movement_speed || cfg.speed || 260);
-  const speed = Math.max(26, Math.min(55, rawSpeed * 0.11)); // ~28 - 46 units/s
-  const hits = parseInt(cfg.hits_to_destroy || cfg.hits || 2);
-  const weaponDmg = parseInt(cfg.weapon_damage || cfg.attack_damage || 6);
-  const weaponSpeed = parseInt(cfg.weapon_speed || 480);
-  const weaponColor = cfg.weapon_color || '#ff0055';
-  const fireRate = parseFloat(cfg.fire_rate_seconds || cfg.fire_rate || 2.2);
+    // Fly out of wormhole starting small and scaling dynamically up as they travel
+    mesh.scale.set(0.1, 0.1, 0.1);
 
-  const enemyObj = {
-    mesh,
-    config: cfg,
-    spawnPos: new THREE.Vector3(spawnX, spawnY, spawnZ),
-    baseScale,
-    speed,
-    currentHits: hits,
-    maxHits: hits,
-    weaponDmg,
-    weaponSpeed,
-    weaponColor,
-    fireRate,
-    nextShotTime: performance.now() + 1000 + Math.random() * 1500,
-    rotSpeedX: (Math.random() - 0.5) * 1.2,
-    rotSpeedY: (Math.random() - 0.5) * 1.5
-  };
+    const isHeavy = cfg.model_3d_type === 'cruiser' || cfg.model_3d_type === 'dreadnought';
+    const baseScale = isHeavy ? (1.55 + Math.random() * 0.35) : (1.3 + Math.random() * 0.3);
+    const rawSpeed = parseInt(cfg.movement_speed || cfg.speed || 260);
+    const speed = Math.max(34, Math.min(62, rawSpeed * 0.13)); // outward corridor rush speed
 
-  scene.add(mesh);
-  active3DEnemies.push(enemyObj);
+    // Target stop distance: 10,000 KM from player (at 420 km/unit = 23.81 units, with slight tactical depth spread)
+    const targetStopDist = 23.8 + (Math.random() - 0.5) * 3.6;
+
+    // Scatter angle and spread across viewport display screen
+    const scatterAngle = (idx / swarmCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.65;
+    const scatterRadius = 8.0 + (idx % 4) * 4.2 + Math.random() * 2.8; // 8 to ~22 units screen span
+    const targetScatterX = Math.cos(scatterAngle) * scatterRadius;
+    const targetScatterY = Math.sin(scatterAngle) * (scatterRadius * 0.75);
+
+    const hits = parseInt(cfg.hits_to_destroy || cfg.hits || 2);
+    const weaponDmg = parseInt(cfg.weapon_damage || cfg.attack_damage || 6);
+    const weaponSpeed = parseInt(cfg.weapon_speed || 480);
+    const weaponColor = cfg.weapon_color || '#ff0055';
+    const fireRate = parseFloat(cfg.fire_rate_seconds || cfg.fire_rate || 2.4);
+
+    const enemyObj = {
+      mesh,
+      config: cfg,
+      swarmId,
+      swarmIndex: idx,
+      swarmCount,
+      spawnPos: new THREE.Vector3(spawnX, spawnY, spawnZ),
+      baseScale,
+      speed,
+      targetStopDist,
+      targetScatterX,
+      targetScatterY,
+      currentHits: hits,
+      maxHits: hits,
+      weaponDmg,
+      weaponSpeed,
+      weaponColor,
+      fireRate,
+      nextShotTime: performance.now() + 1200 + Math.random() * 2200,
+      evaFreqX: 1.6 + Math.random() * 1.8,
+      evaFreqY: 1.4 + Math.random() * 1.8,
+      evaFreqZ: 1.0 + Math.random() * 1.4,
+      evaAmpX: 3.2 + Math.random() * 3.2,
+      evaAmpY: 2.5 + Math.random() * 2.8,
+      evaAmpZ: 1.8 + Math.random() * 2.2,
+      evaPhaseX: Math.random() * Math.PI * 2,
+      evaPhaseY: Math.random() * Math.PI * 2,
+      evaPhaseZ: Math.random() * Math.PI * 2,
+      jukeVelocity: new THREE.Vector3(0, 0, 0),
+      nextJukeTime: performance.now() + 800 + Math.random() * 1600,
+      jukeEndTime: 0,
+      scatterRetargetTime: performance.now() + 4500 + Math.random() * 4500,
+      phase: 'RUSH_OUT',
+      stoppedTime: 0,
+      rotSpeedX: (Math.random() - 0.5) * 1.2,
+      rotSpeedY: (Math.random() - 0.5) * 1.5
+    };
+
+    scene.add(mesh);
+    active3DEnemies.push(enemyObj);
+  }
+}
+
+function spawnEnemyFromWormhole() {
+  spawnEnemySwarmFromWormhole();
 }
 
 function updateEnemiesCombat(delta) {
@@ -6774,69 +6838,166 @@ function updateEnemiesCombat(delta) {
   const now = performance.now();
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
 
-  // 1. Spawning check: maintain active hostiles until required kills fulfilled
-  if (active3DEnemies.length === 0 && state.stageKills < state.stageRequiredKills + 6) {
-    if (now > lastEnemySpawnCheckTime + 500) {
+  // 1. Spawning check: maintain active 5-10 enemy swarms until stage required kills fulfilled
+  if (active3DEnemies.length === 0 && state.stageKills < state.stageRequiredKills + 8) {
+    if (now > lastEnemySpawnCheckTime + 600) {
       lastEnemySpawnCheckTime = now;
-      spawnEnemyFromWormhole();
+      spawnEnemySwarmFromWormhole();
     }
-  } else if (now > lastEnemySpawnCheckTime + 2200) {
-    lastEnemySpawnCheckTime = now;
-    if (active3DEnemies.length < 4 && state.stageKills < state.stageRequiredKills + 6) {
-      spawnEnemyFromWormhole();
+  } else if (active3DEnemies.length <= 2 && state.stageKills < state.stageRequiredKills + 8) {
+    if (now > lastEnemySpawnCheckTime + 3800) {
+      lastEnemySpawnCheckTime = now;
+      spawnEnemySwarmFromWormhole();
     }
   }
 
   // 2. Update active 3D enemies
   for (let i = active3DEnemies.length - 1; i >= 0; i--) {
     const e = active3DEnemies[i];
+    const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
-    // Rush toward player along Z axis with slight tracking
-    e.mesh.position.z += e.speed * delta;
-    e.mesh.position.x += (playerPos.x - e.mesh.position.x) * delta * 0.35;
-    e.mesh.position.y += (playerPos.y - e.mesh.position.y) * delta * 0.35;
-
-    // Requirement 9: Scale grows dynamically from small (0.12) up to baseScale as they rush toward player
+    // Scale dynamically from small (0.1) at wormhole mouth up to baseScale as they traverse corridor
     const distTraveled = e.mesh.position.z - e.spawnPos.z;
-    const totalDist = Math.max(35, playerPos.z - e.spawnPos.z);
-    const progress = Math.max(0, Math.min(1.0, distTraveled / (totalDist * 0.85)));
-    const curScale = THREE.MathUtils.lerp(0.12, e.baseScale, progress);
+    const totalDist = Math.max(30, (playerPos.z - e.targetStopDist) - e.spawnPos.z);
+    const progress = Math.max(0, Math.min(1.0, distTraveled / totalDist));
+    const curScale = THREE.MathUtils.lerp(0.1, e.baseScale, progress);
     e.mesh.scale.set(curScale, curScale, curScale);
 
-    // Subtle bank and gyro rotation
-    e.mesh.rotation.x += e.rotSpeedX * delta;
-    e.mesh.rotation.y += e.rotSpeedY * delta;
-    if (e.mesh.userData && e.mesh.userData.spinRing) {
-      e.mesh.userData.spinRing.rotation.z += 4.5 * delta;
+    if (e.phase === 'RUSH_OUT') {
+      // Rush out from wormhole mouth along Z axis towards player
+      e.mesh.position.z += e.speed * delta;
+      e.mesh.position.x += (playerPos.x + e.targetScatterX * 0.25 - e.mesh.position.x) * delta * 0.45;
+      e.mesh.position.y += (playerPos.y + e.targetScatterY * 0.25 - e.mesh.position.y) * delta * 0.45;
+
+      // Stop condition: Stop exactly 10,000 km away from the player
+      if (distToPlayer <= e.targetStopDist || e.mesh.position.z >= (playerPos.z - e.targetStopDist)) {
+        e.phase = 'SCATTER_AND_EVADE';
+        e.stoppedTime = now;
+      }
+    } else {
+      // Phase: 'SCATTER_AND_EVADE'
+      // 1. Maintain standoff distance 10,000 km away from player along Z
+      const desiredZ = playerPos.z - e.targetStopDist;
+      e.mesh.position.z += (desiredZ - e.mesh.position.z) * delta * 2.8;
+
+      // 2. Scatter randomly all over the screen (top, bottom, left, right, quadrants)
+      const screenTargetX = playerPos.x + e.targetScatterX;
+      const screenTargetY = playerPos.y + e.targetScatterY;
+      e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.4;
+      e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.4;
+
+      // Periodically re-scatter across screen to keep combat field unpredictable
+      if (now > e.scatterRetargetTime) {
+        e.scatterRetargetTime = now + 4200 + Math.random() * 4500;
+        const newAng = Math.random() * Math.PI * 2;
+        const newRad = 7.5 + Math.random() * 16.5;
+        e.targetScatterX = Math.cos(newAng) * newRad;
+        e.targetScatterY = Math.sin(newAng) * (newRad * 0.75);
+      }
+
+      // 3. Random Evasive Maneuvers (Multi-harmonic oscillations so they can't be destroyed the instant they stop)
+      const t = (now - e.stoppedTime) * 0.001;
+      const evaVx = Math.sin(t * e.evaFreqX + e.evaPhaseX) * e.evaAmpX;
+      const evaVy = Math.cos(t * e.evaFreqY + e.evaPhaseY) * e.evaAmpY;
+      const evaVz = Math.sin(t * e.evaFreqZ + e.evaPhaseZ) * e.evaAmpZ;
+      e.mesh.position.x += evaVx * delta;
+      e.mesh.position.y += evaVy * delta;
+      e.mesh.position.z += evaVz * delta;
+
+      // 4. Sudden lateral jukes & thruster dodges
+      if (now >= e.nextJukeTime) {
+        e.nextJukeTime = now + 1200 + Math.random() * 2000;
+        e.jukeEndTime = now + 350 + Math.random() * 350;
+        e.jukeVelocity.set(
+          (Math.random() - 0.5) * 32,
+          (Math.random() - 0.5) * 24,
+          (Math.random() - 0.5) * 8
+        );
+      }
+      if (now < e.jukeEndTime) {
+        e.mesh.position.addScaledVector(e.jukeVelocity, delta);
+      } else {
+        e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
+      }
+
+      // 5. Reactive dodge against incoming player laser bolts
+      for (let li = 0; li < laserBolts.length; li++) {
+        const lbolt = laserBolts[li];
+        const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
+        if (ldist < 6.8) {
+          const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
+          dodgeDir.z = 0;
+          if (dodgeDir.lengthSq() > 0.001) {
+            dodgeDir.normalize();
+            e.mesh.position.addScaledVector(dodgeDir, 18.0 * delta);
+          }
+          break;
+        }
+      }
+
+      // 6. Dynamic Banking and Attitude Control
+      const netVx = (screenTargetX - e.mesh.position.x) * 1.2 + e.jukeVelocity.x;
+      const netVy = (screenTargetY - e.mesh.position.y) * 1.2 + e.jukeVelocity.y;
+      e.mesh.rotation.z = -THREE.MathUtils.clamp(netVx * 0.05, -0.65, 0.65);
+      e.mesh.rotation.x = THREE.MathUtils.clamp(netVy * 0.05, -0.45, 0.45);
+      e.mesh.rotation.y = THREE.MathUtils.clamp(-netVx * 0.03, -0.4, 0.4);
+      if (e.mesh.userData && e.mesh.userData.spinRing) {
+        e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
+      }
     }
 
-    // Enemy Firing: when in front of player and timer expires
-    const distToPlayer = e.mesh.position.distanceTo(playerPos);
-    if (distToPlayer > 18 && distToPlayer < 240 && now >= e.nextShotTime) {
-      e.nextShotTime = now + (e.fireRate * 1000) * (0.8 + Math.random() * 0.4);
+    // 7. Proximity Detection: Anti-collision avoidance so enemies don't run into each other
+    for (let j = 0; j < active3DEnemies.length; j++) {
+      if (j === i) continue;
+      const other = active3DEnemies[j];
+      const sepVec = new THREE.Vector3().subVectors(e.mesh.position, other.mesh.position);
+      const sepDist = sepVec.length();
+      const minSafeSep = Math.max(5.0, (e.mesh.scale.x + other.mesh.scale.x) * 2.4);
+      if (sepDist < minSafeSep && sepDist > 0.01) {
+        const overlapFactor = (minSafeSep - sepDist) / minSafeSep;
+        const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 16.0 * delta);
+        e.mesh.position.add(repulse);
+      }
+    }
+
+    // Enemy Weapon Firing: when timer expires
+    if (now >= e.nextShotTime) {
+      e.nextShotTime = now + (e.fireRate * 1000) * (0.85 + Math.random() * 0.5);
       fireEnemyWeaponBolt(e);
     }
 
-    // Despawn if rushed past player
-    if (e.mesh.position.z > playerPos.z + 20 || distToPlayer > 350) {
+    // Despawn safeguard if pushed far behind player
+    if (e.mesh.position.z > playerPos.z + 30 || distToPlayer > 400) {
       scene.remove(e.mesh);
       active3DEnemies.splice(i, 1);
     }
   }
 
-  // 3. Update Enemy Plasma Bolts & Test Player Collision
+  // 3. Update Enemy Weapon Beams and Missiles & Test Player Collision
   for (let i = enemyBolts.length - 1; i >= 0; i--) {
     const b = enemyBolts[i];
+
+    // Trajectory movement
     b.mesh.position.addScaledVector(b.direction, b.speed * delta);
+
+    // Dynamic missile weaving / spiral homing
+    if (b.type === 'missile') {
+      b.spiralTime = (b.spiralTime || 0) + delta * 8.5;
+      b.mesh.position.x += Math.sin(b.spiralTime) * 1.5 * delta;
+      b.mesh.position.y += Math.cos(b.spiralTime) * 1.5 * delta;
+    }
+    b.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), b.direction);
 
     // Test collision against player cockpit
     const distToPlayer = b.mesh.position.distanceTo(playerPos);
     if (distToPlayer < 4.8) {
-      // Direct enemy hit on player!
+      // Direct enemy weapon impact on player!
       applyDamageToPlayer(b.damage);
       scene.remove(b.mesh);
-      b.geometry.dispose();
-      b.material.dispose();
+      if (b.geometryList) b.geometryList.forEach(g => g.dispose());
+      if (b.materialList) b.materialList.forEach(m => m.dispose());
+      if (b.geometry) b.geometry.dispose();
+      if (b.material) b.material.dispose();
       enemyBolts.splice(i, 1);
       continue;
     }
@@ -6844,8 +7005,10 @@ function updateEnemiesCombat(delta) {
     // Lifetime expiration or passed far behind player
     if ((now - b.spawnTime) * 0.001 > b.lifetime || b.mesh.position.z > playerPos.z + 30) {
       scene.remove(b.mesh);
-      b.geometry.dispose();
-      b.material.dispose();
+      if (b.geometryList) b.geometryList.forEach(g => g.dispose());
+      if (b.materialList) b.materialList.forEach(m => m.dispose());
+      if (b.geometry) b.geometry.dispose();
+      if (b.material) b.material.dispose();
       enemyBolts.splice(i, 1);
     }
   }
@@ -6899,44 +7062,158 @@ function updateEnemiesCombat(delta) {
 
 function fireEnemyWeaponBolt(enemyObj) {
   if (!scene) return;
+  const cfg = enemyObj.config || {};
+  const wpnName = (cfg.weapon_name || enemyObj.weaponName || '').toLowerCase();
+  const modelType = (cfg.model_3d_type || '').toLowerCase();
+  const isMissile = /missile|torpedo|disruptor|annihilator|rocket/i.test(wpnName)
+    || modelType === 'cruiser'
+    || modelType === 'dreadnought'
+    || (modelType === 'singularity_probe' && Math.random() > 0.45);
+
   const spawnOrigin = enemyObj.mesh.position.clone();
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
   const direction = new THREE.Vector3().subVectors(playerPos, spawnOrigin).normalize();
+  const weaponBoltColor = enemyObj.weaponColor || '#ff0055';
+  const boltColorHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0xff0055;
 
-  const boltColorHex = parseInt((enemyObj.weaponColor || '#ff0055').replace('#', '0x'), 16) || 0xff0055;
-  const geometry = new THREE.CylinderGeometry(0.24, 0.42, 4.2, 6);
-  geometry.rotateX(Math.PI / 2);
+  let mesh;
+  let geometryList = [];
+  let materialList = [];
+  let boltSpeed;
+  let weaponType;
 
-  const material = new THREE.MeshBasicMaterial({
-    color: boltColorHex,
-    transparent: true,
-    opacity: 0.95,
-    blending: THREE.AdditiveBlending
-  });
+  if (isMissile) {
+    weaponType = 'missile';
+    // 3D Guided Missile / Torpedo assembly
+    const missileGroup = new THREE.Group();
 
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.copy(spawnOrigin);
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+    // Missile Fuselage
+    const bodyGeom = new THREE.CylinderGeometry(0.24, 0.4, 2.8, 8);
+    bodyGeom.rotateX(Math.PI / 2);
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0x2a2d34,
+      metalness: 0.8,
+      roughness: 0.3
+    });
+    const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
+    missileGroup.add(bodyMesh);
 
-  const light = new THREE.PointLight(boltColorHex, 2.5, 24);
-  mesh.add(light);
+    // Warhead Tip (Bright glowing plasma cone)
+    const tipGeom = new THREE.ConeGeometry(0.44, 1.1, 8);
+    tipGeom.rotateX(-Math.PI / 2);
+    tipGeom.translate(0, 0, -1.9);
+    const tipMat = new THREE.MeshBasicMaterial({
+      color: boltColorHex,
+      transparent: true,
+      opacity: 0.95
+    });
+    const tipMesh = new THREE.Mesh(tipGeom, tipMat);
+    missileGroup.add(tipMesh);
 
-  scene.add(mesh);
-  const boltSpeed = Math.max(75, Math.min(220, (enemyObj.weaponSpeed || 480) * 0.28));
+    // 4 Stabilizer / Steering Fins
+    const finGeom = new THREE.BoxGeometry(0.08, 1.4, 0.6);
+    finGeom.translate(0, 0, 0.9);
+    const finMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+    const finH = new THREE.Mesh(finGeom, finMat);
+    const finV = new THREE.Mesh(finGeom, finMat);
+    finV.rotation.z = Math.PI / 2;
+    missileGroup.add(finH, finV);
+
+    // Rocket Exhaust Thruster Plume
+    const plumeGeom = new THREE.ConeGeometry(0.34, 1.3, 8);
+    plumeGeom.rotateX(Math.PI / 2);
+    plumeGeom.translate(0, 0, 2.0);
+    const plumeMat = new THREE.MeshBasicMaterial({
+      color: 0xffaa00,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending
+    });
+    const plumeMesh = new THREE.Mesh(plumeGeom, plumeMat);
+    missileGroup.add(plumeMesh);
+
+    // Radiant point light
+    const light = new THREE.PointLight(boltColorHex, 4.0, 32);
+    light.position.set(0, 0, 0);
+    missileGroup.add(light);
+
+    missileGroup.position.copy(spawnOrigin);
+    missileGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+    scene.add(missileGroup);
+    mesh = missileGroup;
+
+    geometryList = [bodyGeom, tipGeom, finGeom, plumeGeom];
+    materialList = [bodyMat, tipMat, finMat, plumeMat];
+
+    // Visible flight speed: travels across ~24 units in ~1.0 second
+    boltSpeed = Math.max(22, Math.min(34, (enemyObj.weaponSpeed || 480) * 0.065));
+
+    if (audioMgr && typeof audioMgr.playEnemyMissile === 'function') {
+      audioMgr.playEnemyMissile();
+    } else if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
+      audioMgr.playEnemyLaser();
+    }
+  } else {
+    weaponType = 'beam';
+    // High-Intensity Dual-Layer Laser Beam
+    const beamGroup = new THREE.Group();
+
+    // Outer Glowing Plasma Sheath
+    const sheathGeom = new THREE.CylinderGeometry(0.44, 0.58, 8.2, 8);
+    sheathGeom.rotateX(Math.PI / 2);
+    const sheathMat = new THREE.MeshBasicMaterial({
+      color: boltColorHex,
+      transparent: true,
+      opacity: 0.92,
+      blending: THREE.AdditiveBlending
+    });
+    const sheathMesh = new THREE.Mesh(sheathGeom, sheathMat);
+    beamGroup.add(sheathMesh);
+
+    // Inner White-Hot Laser Core
+    const coreGeom = new THREE.CylinderGeometry(0.18, 0.28, 7.5, 8);
+    coreGeom.rotateX(Math.PI / 2);
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.96
+    });
+    const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+    beamGroup.add(coreMesh);
+
+    // Radiant point light
+    const light = new THREE.PointLight(boltColorHex, 4.0, 36);
+    light.position.set(0, 0, 0);
+    beamGroup.add(light);
+
+    beamGroup.position.copy(spawnOrigin);
+    beamGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+    scene.add(beamGroup);
+    mesh = beamGroup;
+
+    geometryList = [sheathGeom, coreGeom];
+    materialList = [sheathMat, coreMat];
+
+    // Visible flight speed: travels across ~24 units in ~0.8 second
+    boltSpeed = Math.max(28, Math.min(42, (enemyObj.weaponSpeed || 480) * 0.075));
+
+    if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
+      audioMgr.playEnemyLaser();
+    }
+  }
+
   enemyBolts.push({
     mesh,
-    geometry,
-    material,
+    geometryList,
+    materialList,
     direction,
     speed: boltSpeed,
     damage: enemyObj.weaponDmg || 6,
+    type: weaponType,
+    spiralTime: Math.random() * Math.PI * 2,
     spawnTime: performance.now(),
-    lifetime: 4.5
+    lifetime: 4.8
   });
-
-  if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
-    audioMgr.playEnemyLaser();
-  }
 }
 
 function applyDamageToPlayer(rawDamage) {
@@ -8318,6 +8595,7 @@ if (typeof window !== 'undefined') {
   window.active3DEnemies = () => active3DEnemies;
   window.enemyBolts = () => enemyBolts;
   window.spawnEnemyFromWormhole = spawnEnemyFromWormhole;
+  window.spawnEnemySwarmFromWormhole = spawnEnemySwarmFromWormhole;
   window.despawnAllActiveEnemies = despawnAllActiveEnemies;
   window.applyDamageToPlayer = applyDamageToPlayer;
   window.evaluateWarpReadiness = evaluateWarpReadiness;

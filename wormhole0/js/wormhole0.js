@@ -7247,18 +7247,18 @@ function applyDamageToPlayer(rawDamage) {
   if (!state.hasStarted || state.isHyperWarping || state.isInvulnerable) return;
   const dmg = rawDamage || 8;
 
-  // Requirement 10b: The health depletes faster than the shield!
-  // Shield absorbs dmg * 0.6; Health depletes by dmg * 1.4 (Health depletes 2.33x faster than shield)
-  const shieldLoss = dmg * 0.6;
-  const healthLoss = dmg * 1.4;
-
+  // Requirement: Shield takes more hits before being depleted than health.
+  // When shield is active (> 0), shield absorbs hit impacts (taking ~13-14 hits to deplete)
+  // with slight kinetic bleed-through (10%) to health.
+  // Once shield is depleted (= 0), unshielded direct hull hits deplete health rapidly (in ~5-6 hits).
   if (state.playerShield > 0) {
+    const shieldLoss = dmg * 0.95; // ~7.6 shield per standard hit (~13 hits to deplete 100%)
     state.playerShield = Math.max(0, state.playerShield - shieldLoss);
+    state.playerHealth = Math.max(0, state.playerHealth - dmg * 0.1); // minor kinetic bleed (~0.8 per hit)
   } else {
-    state.playerHealth = Math.max(0, state.playerHealth - shieldLoss * 0.5);
+    const directHealthLoss = dmg * 2.0; // ~16 health per standard hit (~5-6 hits to deplete unshielded)
+    state.playerHealth = Math.max(0, state.playerHealth - directHealthLoss);
   }
-
-  state.playerHealth = Math.max(0, state.playerHealth - healthLoss);
 
   // Red damage vignette hit flash
   const vignette = document.getElementById('damage-vignette');
@@ -7353,7 +7353,11 @@ function updatePlayerDefenseHUD() {
 
   const shieldFill = document.getElementById('hud-shield-fill');
   const shieldText = document.getElementById('hud-shield-text');
-  if (shieldFill) shieldFill.style.width = `${shieldPct}%`;
+  if (shieldFill) {
+    shieldFill.style.width = `${shieldPct}%`;
+    shieldFill.style.background = 'linear-gradient(90deg, #0088ff, #00f0ff)';
+    shieldFill.style.boxShadow = '0 0 8px #00f0ff';
+  }
   if (shieldText) shieldText.textContent = `${shieldPct}%`;
 
   const healthFill = document.getElementById('hud-health-fill');
@@ -7361,14 +7365,23 @@ function updatePlayerDefenseHUD() {
   const healthTitle = document.getElementById('hud-health-title');
   if (healthFill) {
     healthFill.style.width = `${healthPct}%`;
-    if (healthPct < 35) {
+    if (healthPct < 30) {
       healthFill.style.background = 'linear-gradient(90deg, #ef476f, #ff6b8b)';
       healthFill.style.boxShadow = '0 0 10px #ef476f';
-      if (healthTitle) healthTitle.textContent = 'HULL CRITICAL';
+      if (healthTitle) {
+        healthTitle.textContent = 'CRITICAL';
+        healthTitle.style.color = '#ef476f';
+      }
+      if (healthText) healthText.style.color = '#ef476f';
     } else {
-      healthFill.style.background = 'linear-gradient(90deg, #10b981, #6ee7b7)';
-      healthFill.style.boxShadow = '0 0 8px #10b981';
-      if (healthTitle) healthTitle.textContent = 'HULL HEALTH';
+      // Orange-ish yellow health indicator
+      healthFill.style.background = 'linear-gradient(90deg, #d97706, #fbbf24)';
+      healthFill.style.boxShadow = '0 0 8px rgba(245, 158, 11, 0.75)';
+      if (healthTitle) {
+        healthTitle.textContent = 'HEALTH';
+        healthTitle.style.color = '#f59e0b';
+      }
+      if (healthText) healthText.style.color = '#fbbf24';
     }
   }
   if (healthText) healthText.textContent = `${healthPct}%`;

@@ -18,7 +18,29 @@ export const stageConfig = {
   description: 'Deep inside the Einstein-Rosen bridge throat. Crushing gravitational gradients and tachyon turbulence.',
   par_score: 25000,
 
-  visual: {
+  
+  mission_objectives: 'Eliminate 20 heavy void cruisers and penetrate within < 20,000 KM of gravitational core.',
+  required_enemy_kills: 20,
+  warp_target_distance: 20000,
+  objectives: [
+      {
+          "id": "kills",
+          "type": "kills",
+          "target": 20,
+          "title": "Eliminate 20 Void Cruisers",
+          "description": "Destroy 20 heavily armored singularity combatants",
+          "requiredForWarp": true
+      },
+      {
+          "id": "distance",
+          "type": "distance",
+          "target": 20000,
+          "title": "Gravitational Core Proximity < 20,000 KM",
+          "description": "Penetrate deep gravity well to within < 20,000 KM",
+          "requiredForWarp": true
+      }
+  ],
+visual: {
     themeName: 'Singularity Violet Vortex',
     primaryColor: '#a855f7',
     glowColor: 'rgba(168, 85, 247, 0.50)',
@@ -120,38 +142,50 @@ export const stageConfig = {
   },
 
   enemies: [
-    {
-      id: 'tachyon_wraith',
-      name: 'Tachyon Wraith',
-      enemy_class: 'Phase Shifter',
-      icon: '👻',
-      color: '#a855f7',
-      hits: 12,
-      armor: 110,
-      shield: 20,
-      speed: 560,
-      attack_damage: 28,
-      fire_rate: 1.40,
-      score: 1200,
-      threat: 'High',
-      piercing: 'tachyon_lance'
-    },
-    {
-      id: 'singularity_goliath',
-      name: 'Singularity Goliath',
-      enemy_class: 'Dreadnought',
-      icon: '👾',
-      color: '#ec4899',
-      hits: 22,
-      armor: 240,
-      shield: 45,
-      speed: 210,
-      attack_damage: 40,
-      fire_rate: 0.85,
-      score: 2500,
-      threat: 'Extreme',
-      piercing: 'singularity_cannon'
-    }
+      {
+          "id": "singularity_probe",
+          "name": "Singularity Void Probe",
+          "enemy_class": "Probe Sentinel",
+          "model_3d_type": "singularity_probe",
+          "model_3d_url": "",
+          "icon": "👁️",
+          "color": "#c084fc",
+          "hits": 6,
+          "armor": 40,
+          "shield": 3,
+          "speed": 380,
+          "attack_damage": 15,
+          "weapon_name": "Graviton Beam",
+          "weapon_damage": 12,
+          "weapon_speed": 620,
+          "weapon_color": "#c084fc",
+          "fire_rate": 2,
+          "score": 450,
+          "threat": "High",
+          "piercing": "plasma_torpedo"
+      },
+      {
+          "id": "void_cruiser",
+          "name": "Void Battlecruiser",
+          "enemy_class": "Heavy Cruiser",
+          "model_3d_type": "cruiser",
+          "model_3d_url": "",
+          "icon": "🛸",
+          "color": "#a855f7",
+          "hits": 12,
+          "armor": 65,
+          "shield": 6,
+          "speed": 220,
+          "attack_damage": 25,
+          "weapon_name": "Antimatter Torpedo",
+          "weapon_damage": 18,
+          "weapon_speed": 640,
+          "weapon_color": "#a855f7",
+          "fire_rate": 2.8,
+          "score": 750,
+          "threat": "Extreme",
+          "piercing": "plasma_torpedo"
+      }
   ],
 
   controls: {
@@ -634,6 +668,9 @@ export function applyStage(engineApi) {
   }
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
+  }
+  if (typeof engineApi.setStageObjectives === 'function') {
+    engineApi.setStageObjectives(stageConfig.objectives || []);
   }
   if (typeof engineApi.setDeviceControls === 'function') {
     engineApi.setDeviceControls(stageConfig.controls);

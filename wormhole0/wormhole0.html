@@ -3812,70 +3812,30 @@
         </div>
       </div>
 
-      <!-- Tab 2: Missions Tab (Stage/Level Objectives) -->
+      <!-- Tab 2: Missions Tab (Stage/Level Objectives - Dynamically Evaluated per Stage) -->
       <div class="drawer-tab-pane" id="tab-pane-missions" role="tabpanel" aria-labelledby="tab-btn-missions">
         <div class="locked-out-banner" id="missions-locked-banner">
           🔒 MISSIONS LOCKED OUT &mdash; GAME PAUSED
         </div>
-        <div class="drawer-controls-box">
-          <div class="section-subheading">
-            <span>🎯 STAGE 1 OBJECTIVES</span>
-            <span id="obj-total-progress" style="font-size:0.68rem; color:var(--cyan-neon); font-weight:bold;">0/4 COMPLETE</span>
+        <div class="drawer-controls-box" id="stage-objectives-container">
+          <div class="section-subheading" style="margin-bottom:8px;">
+            <span id="stage-objectives-heading">🎯 STAGE 1 OBJECTIVES</span>
+            <span id="obj-total-progress" style="font-size:0.68rem; color:var(--cyan-neon); font-weight:bold;">0/2 COMPLETE</span>
           </div>
 
-          <!-- Objective 1: Resonance Scanner -->
-          <div class="objective-item" id="obj-scan">
-            <div class="obj-header">
-              <span>1. Resonance Scanner</span>
-              <span class="obj-status" id="status-scan">PENDING</span>
-            </div>
-            <div class="obj-bar-wrap">
-              <div class="obj-bar" id="bar-scan"></div>
-            </div>
-            <div class="obj-actions">
-              <button class="btn-action" id="btn-do-scan">📡 Scan Singularity</button>
-            </div>
+          <div id="stage-mission-briefing" style="font-size:0.72rem; color:var(--text-dim); line-height:1.35; margin-bottom:10px; padding:6px 10px; background:rgba(0,240,255,0.06); border-left:3px solid var(--cyan-neon); border-radius:4px;">
+            Loading mission objectives from database...
           </div>
 
-          <!-- Objective 2: Warp Coil Calibration -->
-          <div class="objective-item" id="obj-coils">
-            <div class="obj-header">
-              <span>2. Warp Coils (Tachyon Sync)</span>
-              <span class="obj-status" id="status-coils">0/3 CALIBRATED</span>
-            </div>
-            <div class="obj-bar-wrap">
-              <div class="obj-bar" id="bar-coils"></div>
-            </div>
-            <div class="obj-actions">
-              <button class="btn-action" id="btn-coil-1">Coil α</button>
-              <button class="btn-action" id="btn-coil-2">Coil β</button>
-              <button class="btn-action" id="btn-coil-3">Coil γ</button>
-            </div>
+          <!-- Dynamic Objectives List Rendered by Stage Manager -->
+          <div id="stage-objectives-list" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- Rendered dynamically -->
           </div>
 
-          <!-- Objective 3: Alignment & Range -->
-          <div class="objective-item" id="obj-vector">
-            <div class="obj-header">
-              <span>3. Alignment & Range</span>
-              <span class="obj-status" id="status-vector">ALIGN WITH CORE</span>
-            </div>
-            <div class="obj-bar-wrap">
-              <div class="obj-bar" id="bar-vector"></div>
-            </div>
-            <div style="font-size:0.65rem; color:var(--text-dim); margin-top:2px;">
-              Fly toward cyan wormhole core &lt; 50,000 KM (<span class="kbd">WASD</span> / Stick / Pad).
-            </div>
-          </div>
-
-          <!-- Objective 4: Engage Warp Jump -->
-          <div class="objective-item" id="obj-jump">
-            <div class="obj-header">
-              <span>4. Warp Horizon Jump</span>
-              <span class="obj-status" id="status-jump">LOCKED</span>
-            </div>
-            <div class="obj-bar-wrap">
-              <div class="obj-bar" id="bar-jump"></div>
-            </div>
+          <!-- Warp Gate Authorization Status Box -->
+          <div id="warp-gate-authorization-box" style="margin-top:12px; padding:8px 10px; border-radius:6px; background:rgba(239,68,111,0.12); border:1px solid rgba(239,68,111,0.4); text-align:center;">
+            <div style="font-size:0.75rem; font-weight:bold; color:#ff6b8b;" id="warp-auth-status-text">⛔ HYPER-WARP LOCKED: OBJECTIVES INCOMPLETE</div>
+            <div style="font-size:0.65rem; color:var(--text-dim); margin-top:3px;" id="warp-auth-subtext">Neutralize hostiles &amp; pilot vessel within proximity threshold before jump gate unlocks.</div>
           </div>
         </div>
       </div>
@@ -3906,6 +3866,34 @@
         <span id="hud-cycle-badge-icon" class="hud-cycle-badge-icon">🔄</span>
         <span id="hud-cycle-badge-text" class="hud-cycle-badge-text">Weapons</span>
       </div>
+
+      <!-- Player Deflector Shield Level Indicator -->
+      <div id="hud-shield-indicator" class="hud-weapon-pill" title="Deflector Shield Capacity" role="status" style="border-color:#00f0ff;">
+        <span class="hud-wpn-icon" style="font-size:0.95rem;">🛡️</span>
+        <div class="hud-wpn-info">
+          <div class="hud-wpn-name-row">
+            <span class="hud-wpn-name" style="color:#00f0ff;">SHIELD</span>
+            <span id="hud-shield-text" class="hud-wpn-energy-text" style="color:#00f0ff;">100%</span>
+          </div>
+          <div class="hud-wpn-meter-wrap">
+            <div id="hud-shield-fill" class="hud-wpn-meter-fill" style="width:100%; background:linear-gradient(90deg, #0088ff, #00f0ff); box-shadow:0 0 8px #00f0ff;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Player Hull Integrity / Health Indicator (Depletes faster than shield on enemy hit) -->
+      <div id="hud-health-indicator" class="hud-weapon-pill" title="Hull Integrity & Life Support (Health depletes faster than shield)" role="status" style="border-color:#10b981;">
+        <span class="hud-wpn-icon" style="font-size:0.95rem;">❤️</span>
+        <div class="hud-wpn-info">
+          <div class="hud-wpn-name-row">
+            <span class="hud-wpn-name" id="hud-health-title" style="color:#10b981;">HULL HEALTH</span>
+            <span id="hud-health-text" class="hud-wpn-energy-text" style="color:#10b981;">100%</span>
+          </div>
+          <div class="hud-wpn-meter-wrap">
+            <div id="hud-health-fill" class="hud-wpn-meter-fill" style="width:100%; background:linear-gradient(90deg, #10b981, #6ee7b7); box-shadow:0 0 8px #10b981;"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -3932,13 +3920,16 @@
           <option value="mobile-ar">🌐 MOBILE AR (ARCore)</option>
         </select>
 
-        <!-- Debug Stage Jump Selector -->
-        <select id="select-stage-jump" class="hud-select" title="Jump to Stage/Level for Debug Purposes">
-          <option value="1" selected>🚀 Stage 1: Warp Origin</option>
-          <option value="2">🌌 Stage 2: Event Horizon</option>
-          <option value="3">🕳️ Stage 3: Singularity Core</option>
-          <option value="4">⚛️ Stage 4: Quantum Realm</option>
-        </select>
+        <!-- Debug Stage Jump Selector & Live Sync -->
+        <div style="display:inline-flex; align-items:center; gap:4px;">
+          <select id="select-stage-jump" class="hud-select" title="Jump to Stage/Level for Debug Purposes">
+            <option value="1" selected>🚀 Stage 1: Warp Origin</option>
+            <option value="2">🌌 Stage 2: Event Horizon</option>
+            <option value="3">🕳️ Stage 3: Singularity Core</option>
+            <option value="4">⚛️ Stage 4: Quantum Realm</option>
+          </select>
+          <button type="button" id="btn-refresh-stages" class="hud-btn" style="padding:5px 8px; font-size:0.75rem; border-color:#00f0ff; color:#00f0ff; background:rgba(0,240,255,0.18);" title="Check database for newly created stages & refresh dropdown">🔄 Sync</button>
+        </div>
 
         <!-- Specific Hardware Device Selector -->
         <select id="select-device" class="hud-select" title="Target Hardware Device Profile">
@@ -3965,6 +3956,18 @@
       </div>
 
       <div class="telemetry-badges">
+        <div class="badge" title="Active Deflector Shield Absorption Matrix">
+          <span>DEFLECTOR SHIELD</span>
+          <span id="telemetry-shield-val" class="badge-val" style="color:#00f0ff;">100%</span>
+        </div>
+        <div class="badge" title="Cockpit Hull Integrity & Life Support">
+          <span>HULL HEALTH</span>
+          <span id="telemetry-health-val" class="badge-val" style="color:#10b981;">100%</span>
+        </div>
+        <div class="badge" title="Hostiles neutralized in current stage">
+          <span>STAGE KILLS</span>
+          <span id="telemetry-kills-val" class="badge-val" style="color:#f59e0b;">0 / 10</span>
+        </div>
         <div class="badge">
           <span>VECTOR DEVIATION</span>
           <span id="hud-vector" class="badge-val">12.4°</span>
@@ -4159,6 +4162,9 @@
       <div class="virtual-stick-knob aim-stick-knob" id="aim-stick-knob" tabindex="0"></div>
     </div>
   </div>
+
+  <!-- Fullscreen Player Damage Red Hit Flash Overlay -->
+  <div id="damage-vignette" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:9999; box-shadow:inset 0 0 100px rgba(239, 68, 111, 0.95); opacity:0; transition:opacity 0.12s ease-out;"></div>
 
   <!-- Primary Game Module -->
   <script type="module" src="js/wormhole0.js?v=20261107_vr_cockpit_v3"></script>

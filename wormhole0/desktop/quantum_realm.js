@@ -17,7 +17,29 @@ export const stageConfig = {
   description: 'Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.',
   par_score: 50000,
 
-  visual: {
+  
+  mission_objectives: 'Decimate 25 quantum dreadnoughts and stabilize within < 10,000 KM of quantum extraction portal.',
+  required_enemy_kills: 25,
+  warp_target_distance: 10000,
+  objectives: [
+      {
+          "id": "kills",
+          "type": "kills",
+          "target": 25,
+          "title": "Decimate 25 Quantum Dreadnoughts",
+          "description": "Annihilate 25 dimensional dreadnoughts",
+          "requiredForWarp": true
+      },
+      {
+          "id": "distance",
+          "type": "distance",
+          "target": 10000,
+          "title": "Extraction Singularity < 10,000 KM",
+          "description": "Reach the quantum extraction gateway coordinates",
+          "requiredForWarp": true
+      }
+  ],
+visual: {
     themeName: 'Quantum Phasor Magenta',
     primaryColor: '#ec4899',
     glowColor: 'rgba(236, 72, 153, 0.45)',
@@ -77,38 +99,50 @@ export const stageConfig = {
   },
 
   enemies: [
-    {
-      id: 'quantum_dreadnought',
-      name: 'Quantum Omega Dreadnought',
-      enemy_class: 'Boss Dreadnought',
-      icon: '💀',
-      color: '#ef476f',
-      hits: 35,
-      armor: 90,
-      shield: 15,
-      speed: 90,
-      attack_damage: 60,
-      fire_rate: 1.20,
-      score: 5000,
-      threat: 'Extreme',
-      piercing: 'quantum_phaser'
-    },
-    {
-      id: 'void_guardian',
-      name: 'Singularity Void Guardian',
-      enemy_class: 'Guardian Frigate',
-      icon: '👾',
-      color: '#a855f7',
-      hits: 15,
-      armor: 70,
-      shield: 6,
-      speed: 150,
-      attack_damage: 35,
-      fire_rate: 2.20,
-      score: 1000,
-      threat: 'High',
-      piercing: 'plasma_torpedo'
-    }
+      {
+          "id": "quantum_dreadnought",
+          "name": "Quantum Phased Dreadnought",
+          "enemy_class": "Capital Dreadnought",
+          "model_3d_type": "dreadnought",
+          "model_3d_url": "",
+          "icon": "🌌",
+          "color": "#f43f5e",
+          "hits": 16,
+          "armor": 75,
+          "shield": 8,
+          "speed": 260,
+          "attack_damage": 35,
+          "weapon_name": "Quantum Disruption Cannon",
+          "weapon_damage": 22,
+          "weapon_speed": 700,
+          "weapon_color": "#f43f5e",
+          "fire_rate": 2.4,
+          "score": 1200,
+          "threat": "Boss",
+          "piercing": "quantum_phaser"
+      },
+      {
+          "id": "phase_interceptor_mk4",
+          "name": "Dimensional Phantom Interceptor",
+          "enemy_class": "Stealth Interceptor",
+          "model_3d_type": "interceptor",
+          "model_3d_url": "",
+          "icon": "🚀",
+          "color": "#fb7185",
+          "hits": 8,
+          "armor": 45,
+          "shield": 4,
+          "speed": 480,
+          "attack_damage": 18,
+          "weapon_name": "Phasic Burst Array",
+          "weapon_damage": 15,
+          "weapon_speed": 680,
+          "weapon_color": "#fb7185",
+          "fire_rate": 1.5,
+          "score": 600,
+          "threat": "High",
+          "piercing": "quantum_phaser"
+      }
   ],
 
   controls: {
@@ -138,6 +172,9 @@ export function applyStage(engineApi) {
   }
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
+  }
+  if (typeof engineApi.setStageObjectives === 'function') {
+    engineApi.setStageObjectives(stageConfig.objectives || []);
   }
   if (typeof engineApi.setDeviceControls === 'function') {
     engineApi.setDeviceControls(stageConfig.controls);

@@ -130,7 +130,17 @@ const state = {
   gamepadMode: 'auto', // 'auto', 'enabled', 'disabled'
   lastPadButtons: {},
   
-  // Mission Objectives State
+  // Mission Objectives & Combat Defense State
+  playerShield: 100,
+  playerHealth: 100,
+  maxShield: 100,
+  maxHealth: 100,
+  score: 0,
+  stageKills: 0,
+  stageRequiredKills: 10,
+  stageTargetDistance: 50000,
+  stageMissionBriefing: '',
+  activeStageObjectives: [],
   scanProgress: 0.0,
   isScanning: false,
   coils: [false, false, false],
@@ -1379,6 +1389,69 @@ class AudioManager {
     } catch (e) {}
   }
 
+  playHit() {
+    if (CONFIG.audioMuted) return;
+    if (!this.ctx) this.init();
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(35, now + 0.22);
+      gain.gain.setValueAtTime(0.48, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.24);
+    } catch (e) {}
+  }
+
+  playExplosion() {
+    if (CONFIG.audioMuted) return;
+    if (!this.ctx) this.init();
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(120, now);
+      osc.frequency.exponentialRampToValueAtTime(20, now + 0.45);
+      gain.gain.setValueAtTime(0.55, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.5);
+    } catch (e) {}
+  }
+
+  playEnemyLaser() {
+    if (CONFIG.audioMuted) return;
+    if (!this.ctx) this.init();
+    if (!this.ctx) return;
+    try {
+      if (this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(700, now);
+      osc.frequency.exponentialRampToValueAtTime(160, now + 0.14);
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.16);
+    } catch (e) {}
+  }
+
   updateProximity(distKm) {
     if (!this.droneAudio || CONFIG.audioMuted) return;
     const norm = Math.max(0.0, Math.min(1.0, 1.0 - (distKm / 90000)));
@@ -2244,6 +2317,16 @@ function applyGameManagerValues(data, stageLevel = 1) {
 
     const currentStageRecord = dbStages.find(s => parseInt(s.stage_level) === currentStage);
     if (currentStageRecord) {
+      if (currentStageRecord.mission_objectives) {
+        state.stageMissionBriefing = currentStageRecord.mission_objectives;
+      }
+      if (currentStageRecord.required_enemy_kills !== undefined && currentStageRecord.required_enemy_kills !== null) {
+        state.stageRequiredKills = Math.max(1, parseInt(currentStageRecord.required_enemy_kills) || 10);
+      }
+      if (currentStageRecord.warp_target_distance !== undefined && currentStageRecord.warp_target_distance !== null) {
+        state.stageTargetDistance = Math.max(1000, parseInt(currentStageRecord.warp_target_distance) || 50000);
+      }
+
       // Update HUD status & subtitle
       const hudStatus = document.getElementById('hud-status');
       if (hudStatus) {
@@ -2254,14 +2337,11 @@ function applyGameManagerValues(data, stageLevel = 1) {
         splashSub.textContent = `STAGE ${currentStage}: ${currentStageRecord.stage_name.toUpperCase()}`;
       }
 
-      // Update Mission objectives heading
-      const missionHeading = document.querySelector('#tab-pane-missions .section-subheading span:first-child');
-      if (missionHeading) {
-        missionHeading.textContent = `🎯 STAGE ${currentStage}: ${currentStageRecord.stage_name.toUpperCase()} OBJECTIVES`;
-      }
-
-      // Update in-game events display if present
+      // Update in-game events & dynamic stage objectives
       updateMissionObjectivesUI(currentStageRecord);
+      if (typeof renderStageObjectivesUI === 'function') {
+        renderStageObjectivesUI();
+      }
     }
   }
 
@@ -2377,6 +2457,8 @@ function updateTacticalEnemiesUI(enemiesList) {
         <span style="font-size:0.65rem; padding:1px 6px; border-radius:3px; background:rgba(239,68,111,0.25); color:#ff85a1;">${e.threat_level || 'THREAT'}</span>
       </div>
       <div class="wpn-specs-grid" style="grid-template-columns: repeat(2, 1fr); gap: 4px; font-size: 0.65rem;">
+        <div><span style="color:var(--text-dim);">3D Graphic:</span> <strong style="color:var(--cyan-neon);">${(e.model_3d_type || 'scout_drone').toUpperCase()}</strong></div>
+        <div><span style="color:var(--text-dim);">Weapon:</span> <strong style="color:#ff6b8b;">${e.weapon_name || 'Plasma'} (${e.weapon_damage || 5} Dmg)</strong></div>
         <div><span style="color:var(--text-dim);">Hits to Destroy:</span> <strong style="color:#06d6a0;">${e.hits_to_destroy || e.hits || 2} HITS</strong></div>
         <div><span style="color:var(--text-dim);">Piercing:</span> <strong style="color:var(--cyan-neon);">${(e.piercing_weapon_id || e.piercing || 'any').toUpperCase()}</strong></div>
         <div><span style="color:var(--text-dim);">Armor:</span> <strong>${e.armor_strength || e.armor || 10}%</strong></div>
@@ -3997,6 +4079,12 @@ function getEngineApi() {
     setEnemies: (enemiesConfig) => {
       window.activeStageEnemies = enemiesConfig;
     },
+    setStageObjectives: (objectives) => {
+      state.activeStageObjectives = Array.isArray(objectives) ? objectives : [];
+      if (typeof renderStageObjectivesUI === 'function') {
+        renderStageObjectivesUI();
+      }
+    },
     setDeviceControls: (controls) => {
       if (!controls) return;
       const aimStick = document.getElementById('aim-stick-zone');
@@ -4106,6 +4194,23 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       audioMgr.setStageDeviceAudio(stage.slug, deviceType);
     }
 
+    // Reset stage combat counters and apply stage objectives
+    state.stageKills = 0;
+    state.isWarpReady = false;
+    if (typeof despawnAllActiveEnemies === 'function') {
+      despawnAllActiveEnemies();
+    }
+    const activeCfg = (mod && mod.stageConfig) ? mod.stageConfig : (mod && mod.default && mod.default.stageConfig) ? mod.default.stageConfig : null;
+    if (activeCfg) {
+      if (activeCfg.required_enemy_kills) state.stageRequiredKills = parseInt(activeCfg.required_enemy_kills) || 10;
+      if (activeCfg.warp_target_distance) state.stageTargetDistance = parseInt(activeCfg.warp_target_distance) || 50000;
+      if (activeCfg.mission_objectives) state.stageMissionBriefing = activeCfg.mission_objectives;
+      if (activeCfg.objectives) state.activeStageObjectives = activeCfg.objectives;
+    }
+    if (typeof renderStageObjectivesUI === 'function') {
+      renderStageObjectivesUI();
+    }
+
     window.dispatchEvent(new CustomEvent('wormholeStageChanged', {
       detail: { stageLevel: currentActiveStage, stageName: stage.name, deviceType, scriptPath: scriptRelative }
     }));
@@ -4129,13 +4234,28 @@ if (selectModeEl) {
   });
 }
 
-// Stage Jump Debug Selector
+// Stage Jump Debug Selector & Live Sync Button
 const selectStageJumpEl = document.getElementById('select-stage-jump');
 if (selectStageJumpEl) {
   selectStageJumpEl.addEventListener('change', (e) => {
     const targetStage = parseInt(e.target.value) || 1;
     console.log(`[Wormhole XR Debug] Stage jump selected: Stage ${targetStage}`);
     loadStageDeviceModule(targetStage, currentActiveDeviceType);
+  });
+  // Check for any newly created stages when dropdown is opened/focused
+  selectStageJumpEl.addEventListener('focus', () => {
+    if (typeof syncStagesDropdownFromDatabase === 'function') {
+      syncStagesDropdownFromDatabase(false);
+    }
+  });
+}
+
+const btnRefreshStagesEl = document.getElementById('btn-refresh-stages');
+if (btnRefreshStagesEl) {
+  btnRefreshStagesEl.addEventListener('click', () => {
+    if (typeof syncStagesDropdownFromDatabase === 'function') {
+      syncStagesDropdownFromDatabase(true);
+    }
   });
 }
 
@@ -6415,132 +6535,775 @@ function showToast(msg, duration = 3200) {
   }, duration);
 }
 
-// Objective 1: Resonance Scanner
-const btnScan = document.getElementById('btn-do-scan');
-const barScan = document.getElementById('bar-scan');
-const statusScan = document.getElementById('status-scan');
-const objScan = document.getElementById('obj-scan');
+// =============================================================================
+// 3D ENEMY COMBAT SYSTEM (PROCEDURAL 3D GRAPHICS, SCALING WORMHOLE RUSH, WEAPONS)
+// =============================================================================
+const active3DEnemies = [];
+const enemyBolts = [];
+let lastEnemySpawnCheckTime = 0;
 
-if (btnScan) {
-  btnScan.addEventListener('click', () => {
-    if (state.isScanning || state.scanProgress >= 1.0) return;
-    audioMgr.init();
-    audioMgr.playScan();
-    state.isScanning = true;
-    btnScan.disabled = true;
-    btnScan.textContent = 'Scanning...';
-    statusScan.textContent = 'ANALYZING HARMONICS';
-
-    let progress = 0;
-    const scanInterval = setInterval(() => {
-      progress += 0.05;
-      state.scanProgress = Math.min(1.0, progress);
-      barScan.style.width = `${Math.round(state.scanProgress * 100)}%`;
-
-      if (state.scanProgress >= 1.0) {
-        clearInterval(scanInterval);
-        state.isScanning = false;
-        objScan.classList.add('completed');
-        statusScan.textContent = 'LOCKED (432.8 THz)';
-        btnScan.textContent = '✓ Scanned';
-        triggerAcquireEvent('singularity_core_probe');
-        triggerAcquireEvent('resonance_scan_complete');
-        checkObjectives();
-      }
-    }, 120);
-  });
+function despawnAllActiveEnemies() {
+  for (let i = active3DEnemies.length - 1; i >= 0; i--) {
+    const e = active3DEnemies[i];
+    if (e.mesh && scene) scene.remove(e.mesh);
+    active3DEnemies.splice(i, 1);
+  }
+  for (let i = enemyBolts.length - 1; i >= 0; i--) {
+    const b = enemyBolts[i];
+    if (b.mesh && scene) scene.remove(b.mesh);
+    enemyBolts.splice(i, 1);
+  }
 }
 
-// Objective 2: Warp Coils
-const coilBtns = [
-  document.getElementById('btn-coil-1'),
-  document.getElementById('btn-coil-2'),
-  document.getElementById('btn-coil-3')
-];
-const barCoils = document.getElementById('bar-coils');
-const statusCoils = document.getElementById('status-coils');
-const objCoils = document.getElementById('obj-coils');
+function create3DEnemyMesh(config) {
+  const group = new THREE.Group();
+  const modelType = (config.model_3d_type || 'scout_drone').toLowerCase();
+  const rawColor = config.color_hex || config.color || '#00f0ff';
+  const colorHex = parseInt(rawColor.replace('#', '0x'), 16) || 0x00f0ff;
 
-coilBtns.forEach((btn, idx) => {
-  if (!btn) return;
-  btn.addEventListener('click', () => {
-    audioMgr.init();
-    audioMgr.playCoil();
-    state.coils[idx] = true;
-    btn.disabled = true;
-    btn.style.background = '#06d6a0';
-    btn.style.color = '#000';
-    btn.style.borderColor = '#fff';
-
-    const calibratedCount = state.coils.filter(c => c).length;
-    barCoils.style.width = `${Math.round((calibratedCount / 3) * 100)}%`;
-    statusCoils.textContent = `${calibratedCount}/3 CALIBRATED`;
-
-    if (calibratedCount === 3) {
-      objCoils.classList.add('completed');
-      statusCoils.textContent = '3/3 SYNCHRONIZED';
-    }
-    checkObjectives();
+  const hullMat = new THREE.MeshStandardMaterial({
+    color: colorHex,
+    metalness: 0.85,
+    roughness: 0.28,
+    emissive: colorHex,
+    emissiveIntensity: 0.35
   });
-});
 
-function checkObjectives() {
-  let completed = 0;
-  if (state.scanProgress >= 1.0) completed++;
-  if (state.coils.every(c => c)) completed++;
-  if (state.isVectorAligned && state.isInRange) completed++;
+  const glowMat = new THREE.MeshBasicMaterial({
+    color: colorHex,
+    transparent: true,
+    opacity: 0.88,
+    blending: THREE.AdditiveBlending
+  });
 
-  if (objTotalProgressEl) objTotalProgressEl.textContent = `${completed}/4 COMPLETE`;
+  const weaponBoltColor = config.weapon_color || '#ff0055';
+  const weaponBoltHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0xff0055;
+  const weaponGlowMat = new THREE.MeshBasicMaterial({
+    color: weaponBoltHex,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending
+  });
 
-  if (completed === 3 && !state.isWarpReady) {
-    state.isWarpReady = true;
-    const objJump = document.getElementById('obj-jump');
-    const statusJump = document.getElementById('status-jump');
-    if (objJump) objJump.classList.add('active');
-    if (statusJump) {
-      statusJump.textContent = 'READY FOR INSERTION';
-      statusJump.style.color = 'var(--cyan-neon)';
+  if (modelType === 'interceptor') {
+    // 3D Delta-Wing Fighter
+    const bodyGeom = new THREE.ConeGeometry(1.3, 3.4, 4);
+    bodyGeom.rotateX(-Math.PI / 2);
+    const body = new THREE.Mesh(bodyGeom, hullMat);
+    group.add(body);
+
+    const wingGeom = new THREE.BoxGeometry(4.2, 0.08, 1.6);
+    const wings = new THREE.Mesh(wingGeom, hullMat);
+    wings.position.set(0, 0, 0.3);
+    group.add(wings);
+
+    const engL = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.35, 0.9, 8), glowMat);
+    engL.geometry.rotateX(Math.PI / 2);
+    engL.position.set(-0.7, 0, 1.5);
+    const engR = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.35, 0.9, 8), glowMat);
+    engR.geometry.rotateX(Math.PI / 2);
+    engR.position.set(0.7, 0, 1.5);
+    group.add(engL, engR);
+
+    // Twin Wingtip Weapon Emitters
+    const gunL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 1.1, 6), weaponGlowMat);
+    gunL.geometry.rotateX(Math.PI / 2);
+    gunL.position.set(-1.8, -0.05, -0.3);
+    const gunR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 1.1, 6), weaponGlowMat);
+    gunR.geometry.rotateX(Math.PI / 2);
+    gunR.position.set(1.8, -0.05, -0.3);
+    group.add(gunL, gunR);
+  } else if (modelType === 'cruiser') {
+    // 3D Heavy Hexagonal Battlecruiser
+    const hullGeom = new THREE.CylinderGeometry(1.4, 2.0, 5.5, 6);
+    hullGeom.rotateX(-Math.PI / 2);
+    const hull = new THREE.Mesh(hullGeom, hullMat);
+    group.add(hull);
+
+    const bridgeGeom = new THREE.BoxGeometry(1.4, 0.9, 1.8);
+    const bridge = new THREE.Mesh(bridgeGeom, hullMat);
+    bridge.position.set(0, 1.0, 0.6);
+    group.add(bridge);
+
+    const coreGeom = new THREE.SphereGeometry(0.8, 12, 12);
+    const core = new THREE.Mesh(coreGeom, glowMat);
+    group.add(core);
+
+    const gunFront = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, 2.2, 8), weaponGlowMat);
+    gunFront.geometry.rotateX(Math.PI / 2);
+    gunFront.position.set(0, -0.4, -2.6);
+    group.add(gunFront);
+  } else if (modelType === 'dreadnought') {
+    // 3D Massive Capital Dreadnought
+    const citGeom = new THREE.DodecahedronGeometry(2.2);
+    const citadel = new THREE.Mesh(citGeom, hullMat);
+    group.add(citadel);
+
+    const wingGeom = new THREE.BoxGeometry(7.0, 0.18, 2.6);
+    const wings = new THREE.Mesh(wingGeom, hullMat);
+    group.add(wings);
+
+    const orbGeom = new THREE.SphereGeometry(1.2, 16, 16);
+    const orb = new THREE.Mesh(orbGeom, glowMat);
+    group.add(orb);
+
+    const turret1 = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.4, 6), weaponGlowMat);
+    turret1.geometry.rotateX(-Math.PI / 2);
+    turret1.position.set(-2.2, 0.2, -1.2);
+    const turret2 = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.4, 6), weaponGlowMat);
+    turret2.geometry.rotateX(-Math.PI / 2);
+    turret2.position.set(2.2, 0.2, -1.2);
+    group.add(turret1, turret2);
+  } else if (modelType === 'singularity_probe') {
+    // 3D Spherical Probe with Orbiting Stabilizers
+    const sphereGeom = new THREE.SphereGeometry(1.3, 16, 16);
+    const sphere = new THREE.Mesh(sphereGeom, hullMat);
+    group.add(sphere);
+
+    const eyeGeom = new THREE.SphereGeometry(0.65, 12, 12);
+    const eye = new THREE.Mesh(eyeGeom, glowMat);
+    eye.position.set(0, 0, -1.0);
+    group.add(eye);
+
+    const ringGeom = new THREE.TorusGeometry(1.9, 0.09, 8, 24);
+    const ring = new THREE.Mesh(ringGeom, glowMat);
+    group.add(ring);
+    group.userData.spinRing = ring;
+
+    const probeEmitter = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.16, 1.8, 8), weaponGlowMat);
+    probeEmitter.geometry.rotateX(Math.PI / 2);
+    probeEmitter.position.set(0, 0, -1.6);
+    group.add(probeEmitter);
+  } else {
+    // Scout Drone (Default 3D Mesh)
+    const hullGeom = new THREE.OctahedronGeometry(1.4);
+    const hull = new THREE.Mesh(hullGeom, hullMat);
+    group.add(hull);
+
+    const coreGeom = new THREE.SphereGeometry(0.55, 12, 12);
+    const core = new THREE.Mesh(coreGeom, glowMat);
+    group.add(core);
+
+    const ringGeom = new THREE.TorusGeometry(2.0, 0.08, 6, 24);
+    const ring = new THREE.Mesh(ringGeom, glowMat);
+    group.add(ring);
+    group.userData.spinRing = ring;
+
+    const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 1.3, 6), weaponGlowMat);
+    gun.geometry.rotateX(Math.PI / 2);
+    gun.position.set(0, 0, -1.2);
+    group.add(gun);
+  }
+
+  // Dynamic point light for atmospheric radiance
+  const light = new THREE.PointLight(colorHex, 2.6, 32);
+  group.add(light);
+
+  group.userData.config = config;
+  return group;
+}
+
+function spawnEnemyFromWormhole() {
+  if (state.isPaused || state.isHyperWarping) return;
+  if (!scene || !camera) return;
+
+  const enemyPool = (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.length > 0)
+    ? window.activeStageEnemies
+    : (Array.isArray(state.stageEnemies) && state.stageEnemies.length > 0)
+      ? state.stageEnemies
+      : [
+          {
+            enemy_id: 'scout_drone',
+            enemy_name: 'Void Recon Drone',
+            model_3d_type: 'scout_drone',
+            weapon_name: 'Plasma Pulse',
+            weapon_damage: 6,
+            weapon_speed: 480,
+            weapon_color: '#00f0ff',
+            hits_to_destroy: 2,
+            movement_speed: 260,
+            score_value: 100
+          }
+        ];
+
+  const cfg = enemyPool[Math.floor(Math.random() * enemyPool.length)];
+  const mesh = create3DEnemyMesh(cfg);
+
+  // Spawn deep near the wormhole mouth (-Z)
+  const spawnZ = -2400 - Math.random() * 600;
+  const spawnX = (Math.random() - 0.5) * 160;
+  const spawnY = (Math.random() - 0.5) * 120;
+  mesh.position.set(spawnX, spawnY, spawnZ);
+
+  // Requirement 9: Starting off small and getting bigger as they rush towards the player
+  mesh.scale.set(0.08, 0.08, 0.08);
+
+  const baseScale = 1.0 + Math.random() * 0.45;
+  const speed = parseInt(cfg.movement_speed || cfg.speed || 260);
+  const hits = parseInt(cfg.hits_to_destroy || cfg.hits || 2);
+  const weaponDmg = parseInt(cfg.weapon_damage || cfg.attack_damage || 6);
+  const weaponSpeed = parseInt(cfg.weapon_speed || 480);
+  const weaponColor = cfg.weapon_color || '#ff0055';
+  const fireRate = parseFloat(cfg.fire_rate_seconds || cfg.fire_rate || 2.2);
+
+  const enemyObj = {
+    mesh,
+    config: cfg,
+    spawnZ,
+    baseScale,
+    speed,
+    currentHits: hits,
+    maxHits: hits,
+    weaponDmg,
+    weaponSpeed,
+    weaponColor,
+    fireRate,
+    nextShotTime: performance.now() + 1200 + Math.random() * 1500,
+    rotSpeedX: (Math.random() - 0.5) * 1.2,
+    rotSpeedY: (Math.random() - 0.5) * 1.5
+  };
+
+  scene.add(mesh);
+  active3DEnemies.push(enemyObj);
+}
+
+function updateEnemiesCombat(delta) {
+  if (state.isPaused) return;
+  const now = performance.now();
+
+  // 1. Spawning check: maintain up to 5 concurrent hostiles until required kills fulfilled
+  if (now > lastEnemySpawnCheckTime + 2800) {
+    lastEnemySpawnCheckTime = now;
+    if (active3DEnemies.length < 5 && state.stageKills < state.stageRequiredKills + 8) {
+      spawnEnemyFromWormhole();
+    }
+  }
+
+  const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
+
+  // 2. Update active 3D enemies
+  for (let i = active3DEnemies.length - 1; i >= 0; i--) {
+    const e = active3DEnemies[i];
+
+    // Rush toward player along Z axis
+    e.mesh.position.z += e.speed * delta * 1.35;
+
+    // Requirement 9: Scale grows dynamically from 0.08 up to baseScale as they rush toward player
+    const progress = Math.max(0, Math.min(1.0, (e.mesh.position.z - e.spawnZ) / (-e.spawnZ)));
+    const curScale = THREE.MathUtils.lerp(0.08, e.baseScale, progress);
+    e.mesh.scale.set(curScale, curScale, curScale);
+
+    // Subtle bank and gyro rotation
+    e.mesh.rotation.x += e.rotSpeedX * delta;
+    e.mesh.rotation.y += e.rotSpeedY * delta;
+    if (e.mesh.userData && e.mesh.userData.spinRing) {
+      e.mesh.userData.spinRing.rotation.z += 4.5 * delta;
     }
 
-    if (warpBtn) {
+    // Enemy Firing: when within range (< 1600 units) and timer expires
+    if (e.mesh.position.z > -1600 && e.mesh.position.z < -30 && now >= e.nextShotTime) {
+      e.nextShotTime = now + (e.fireRate * 1000) * (0.8 + Math.random() * 0.4);
+      fireEnemyWeaponBolt(e);
+    }
+
+    // Despawn if rushed past player
+    if (e.mesh.position.z > 120) {
+      scene.remove(e.mesh);
+      active3DEnemies.splice(i, 1);
+    }
+  }
+
+  // 3. Update Enemy Plasma Bolts & Test Player Collision
+  for (let i = enemyBolts.length - 1; i >= 0; i--) {
+    const b = enemyBolts[i];
+    b.mesh.position.addScaledVector(b.direction, b.speed * delta);
+
+    // Test collision against player cockpit
+    const distToPlayer = b.mesh.position.distanceTo(playerPos);
+    if (distToPlayer < 4.2) {
+      // Direct enemy hit on player!
+      applyDamageToPlayer(b.damage);
+      scene.remove(b.mesh);
+      b.geometry.dispose();
+      b.material.dispose();
+      enemyBolts.splice(i, 1);
+      continue;
+    }
+
+    // Lifetime expiration
+    if ((now - b.spawnTime) * 0.001 > b.lifetime || b.mesh.position.z > 150) {
+      scene.remove(b.mesh);
+      b.geometry.dispose();
+      b.material.dispose();
+      enemyBolts.splice(i, 1);
+    }
+  }
+
+  // 4. Test Player Lasers against 3D Enemy Meshes
+  for (let bi = laserBolts.length - 1; bi >= 0; bi--) {
+    const bolt = laserBolts[bi];
+    let boltConsumed = false;
+
+    for (let ei = active3DEnemies.length - 1; ei >= 0; ei--) {
+      const e = active3DEnemies[ei];
+      const collisionRadius = Math.max(2.2, e.mesh.scale.x * 2.8);
+      const dist = bolt.mesh.position.distanceTo(e.mesh.position);
+
+      if (dist < collisionRadius) {
+        // Laser impact!
+        boltConsumed = true;
+        const activeWpn = weaponsSystem.getActiveWeapon();
+        const dmgDealt = (activeWpn && activeWpn.damagePerHit) ? activeWpn.damagePerHit : 2;
+        e.currentHits -= dmgDealt;
+
+        // Enemy Destroyed
+        if (e.currentHits <= 0) {
+          triggerEnemyExplosion(e.mesh.position, e.config);
+          scene.remove(e.mesh);
+          active3DEnemies.splice(ei, 1);
+
+          state.stageKills++;
+          const bounty = parseInt(e.config.score_value || e.config.score || 100);
+          state.score += bounty;
+
+          showToast(`💥 ENEMY DESTROYED (+${bounty} PTS) [STAGE KILLS: ${state.stageKills}/${state.stageRequiredKills}]`);
+          evaluateWarpReadiness();
+          renderStageObjectivesUI();
+        } else {
+          // Flash enemy hull white briefly
+          e.mesh.scale.multiplyScalar(1.15);
+        }
+        break;
+      }
+    }
+
+    if (boltConsumed) {
+      scene.remove(bolt.mesh);
+      bolt.geometry.dispose();
+      bolt.material.dispose();
+      laserBolts.splice(bi, 1);
+    }
+  }
+}
+
+function fireEnemyWeaponBolt(enemyObj) {
+  if (!scene) return;
+  const spawnOrigin = enemyObj.mesh.position.clone();
+  const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
+  const direction = new THREE.Vector3().subVectors(playerPos, spawnOrigin).normalize();
+
+  const boltColorHex = parseInt((enemyObj.weaponColor || '#ff0055').replace('#', '0x'), 16) || 0xff0055;
+  const geometry = new THREE.CylinderGeometry(0.22, 0.4, 4.2, 6);
+  geometry.rotateX(Math.PI / 2);
+
+  const material = new THREE.MeshBasicMaterial({
+    color: boltColorHex,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.copy(spawnOrigin);
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+
+  const light = new THREE.PointLight(boltColorHex, 2.5, 24);
+  mesh.add(light);
+
+  scene.add(mesh);
+  enemyBolts.push({
+    mesh,
+    geometry,
+    material,
+    direction,
+    speed: enemyObj.weaponSpeed || 480,
+    damage: enemyObj.weaponDmg || 6,
+    spawnTime: performance.now(),
+    lifetime: 4.0
+  });
+
+  if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
+    audioMgr.playEnemyLaser();
+  }
+}
+
+function applyDamageToPlayer(rawDamage) {
+  const dmg = rawDamage || 8;
+
+  // Requirement 10b: The health depletes faster than the shield!
+  // Shield absorbs dmg * 0.6; Health depletes by dmg * 1.4 (Health depletes 2.33x faster than shield)
+  const shieldLoss = dmg * 0.6;
+  const healthLoss = dmg * 1.4;
+
+  if (state.playerShield > 0) {
+    state.playerShield = Math.max(0, state.playerShield - shieldLoss);
+  } else {
+    state.playerHealth = Math.max(0, state.playerHealth - shieldLoss * 0.5);
+  }
+
+  state.playerHealth = Math.max(0, state.playerHealth - healthLoss);
+
+  // Red damage vignette hit flash
+  const vignette = document.getElementById('damage-vignette');
+  if (vignette) {
+    vignette.style.opacity = '0.88';
+    setTimeout(() => {
+      vignette.style.opacity = '0';
+    }, 180);
+  }
+
+  // Cockpit camera shudder
+  state.position.x += (Math.random() - 0.5) * 0.35;
+  state.position.y += (Math.random() - 0.5) * 0.35;
+
+  if (audioMgr && typeof audioMgr.playHit === 'function') {
+    audioMgr.playHit();
+  }
+
+  // Emergency reboot if health depleted (maintains end-to-end playable continuous loop)
+  if (state.playerHealth <= 0) {
+    state.playerShield = 50;
+    state.playerHealth = 40;
+    showToast('⚠️ CRITICAL HULL BREACH: EMERGENCY DEFLECTORS & REBOOT ENGAGED');
+    if (audioMgr && typeof audioMgr.playOverheatAlert === 'function') {
+      audioMgr.playOverheatAlert();
+    }
+  }
+
+  updatePlayerDefenseHUD();
+}
+
+function triggerEnemyExplosion(position, config) {
+  if (!scene) return;
+  const colorHex = parseInt((config.color_hex || config.color || '#00f0ff').replace('#', '0x'), 16) || 0x00f0ff;
+
+  const count = 40;
+  const geom = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  const velocities = [];
+
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] = position.x;
+    positions[i * 3 + 1] = position.y;
+    positions[i * 3 + 2] = position.z;
+    velocities.push(new THREE.Vector3(
+      (Math.random() - 0.5) * 45,
+      (Math.random() - 0.5) * 45,
+      (Math.random() - 0.5) * 45
+    ));
+  }
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const mat = new THREE.PointsMaterial({
+    color: colorHex,
+    size: 2.2,
+    transparent: true,
+    opacity: 1.0,
+    blending: THREE.AdditiveBlending
+  });
+
+  const points = new THREE.Points(geom, mat);
+  scene.add(points);
+
+  const startTime = performance.now();
+  const interval = setInterval(() => {
+    const elapsed = (performance.now() - startTime) * 0.001;
+    const posAttr = points.geometry.attributes.position;
+    for (let i = 0; i < count; i++) {
+      posAttr.array[i * 3] += velocities[i].x * 0.04;
+      posAttr.array[i * 3 + 1] += velocities[i].y * 0.04;
+      posAttr.array[i * 3 + 2] += velocities[i].z * 0.04;
+    }
+    posAttr.needsUpdate = true;
+    points.material.opacity = Math.max(0, 1.0 - elapsed * 1.6);
+
+    if (elapsed > 0.65) {
+      clearInterval(interval);
+      scene.remove(points);
+      geom.dispose();
+      mat.dispose();
+    }
+  }, 25);
+
+  if (audioMgr && typeof audioMgr.playExplosion === 'function') {
+    audioMgr.playExplosion();
+  }
+}
+
+function updatePlayerDefenseHUD() {
+  const shieldPct = Math.round(state.playerShield);
+  const healthPct = Math.round(state.playerHealth);
+
+  const shieldFill = document.getElementById('hud-shield-fill');
+  const shieldText = document.getElementById('hud-shield-text');
+  if (shieldFill) shieldFill.style.width = `${shieldPct}%`;
+  if (shieldText) shieldText.textContent = `${shieldPct}%`;
+
+  const healthFill = document.getElementById('hud-health-fill');
+  const healthText = document.getElementById('hud-health-text');
+  const healthTitle = document.getElementById('hud-health-title');
+  if (healthFill) {
+    healthFill.style.width = `${healthPct}%`;
+    if (healthPct < 35) {
+      healthFill.style.background = 'linear-gradient(90deg, #ef476f, #ff6b8b)';
+      healthFill.style.boxShadow = '0 0 10px #ef476f';
+      if (healthTitle) healthTitle.textContent = 'HULL CRITICAL';
+    } else {
+      healthFill.style.background = 'linear-gradient(90deg, #10b981, #6ee7b7)';
+      healthFill.style.boxShadow = '0 0 8px #10b981';
+      if (healthTitle) healthTitle.textContent = 'HULL HEALTH';
+    }
+  }
+  if (healthText) healthText.textContent = `${healthPct}%`;
+
+  const telemShield = document.getElementById('telemetry-shield-val');
+  if (telemShield) telemShield.textContent = `${shieldPct}%`;
+  const telemHealth = document.getElementById('telemetry-health-val');
+  if (telemHealth) telemHealth.textContent = `${healthPct}%`;
+  const telemKills = document.getElementById('telemetry-kills-val');
+  if (telemKills) telemKills.textContent = `${state.stageKills} / ${state.stageRequiredKills}`;
+}
+
+// =============================================================================
+// DYNAMIC DECOUPLED STAGE OBJECTIVES ENGINE
+// =============================================================================
+function renderStageObjectivesUI() {
+  const heading = document.getElementById('stage-objectives-heading');
+  const progressBadge = document.getElementById('obj-total-progress');
+  const briefingBox = document.getElementById('stage-mission-briefing');
+  const listContainer = document.getElementById('stage-objectives-list');
+  const authStatusText = document.getElementById('warp-auth-status-text');
+  const authBox = document.getElementById('warp-gate-authorization-box');
+  if (!listContainer) return;
+
+  const stageName = (STAGE_REGISTRY[currentActiveStage] && STAGE_REGISTRY[currentActiveStage].name) || `Stage ${currentActiveStage}`;
+  if (heading) heading.textContent = `🎯 STAGE ${currentActiveStage}: ${stageName.toUpperCase()} OBJECTIVES`;
+
+  const briefing = state.stageMissionBriefing || `Neutralize ${state.stageRequiredKills} hostile units and close within < ${state.stageTargetDistance.toLocaleString()} KM of wormhole singularity to authorize jump gate.`;
+  if (briefingBox) briefingBox.textContent = briefing;
+
+  const distKm = Math.round((state.position.length() / CONFIG.wormholeDistance) * 100000);
+  const killsProgress = Math.min(1.0, state.stageKills / Math.max(1, state.stageRequiredKills));
+  const distProgress = distKm <= state.stageTargetDistance ? 1.0 : Math.max(0, 1.0 - (distKm - state.stageTargetDistance) / 100000);
+
+  const killsCompleted = state.stageKills >= state.stageRequiredKills;
+  const distCompleted = distKm <= state.stageTargetDistance;
+
+  let totalObjectives = 2;
+  let completedObjectives = (killsCompleted ? 1 : 0) + (distCompleted ? 1 : 0);
+
+  let html = `
+    <!-- Objective: Neutralize Hostiles -->
+    <div class="objective-item ${killsCompleted ? 'completed' : ''}" id="obj-kills">
+      <div class="obj-header">
+        <span>1. Destroy ${state.stageRequiredKills} Hostile Units</span>
+        <span class="obj-status" style="color:${killsCompleted ? '#10b981' : '#f59e0b'}; font-weight:bold;">${killsCompleted ? '✓ COMPLETED' : `${state.stageKills} / ${state.stageRequiredKills} KILLS`}</span>
+      </div>
+      <div class="obj-bar-wrap">
+        <div class="obj-bar" style="width:${Math.round(killsProgress * 100)}%; background:${killsCompleted ? '#10b981' : '#f59e0b'};"></div>
+      </div>
+      <div style="font-size:0.64rem; color:var(--text-dim); margin-top:2px;">
+        Shoot down 3D enemies emerging from the wormhole with ship lasers.
+      </div>
+    </div>
+
+    <!-- Objective: Proximity to Wormhole -->
+    <div class="objective-item ${distCompleted ? 'completed' : ''}" id="obj-distance">
+      <div class="obj-header">
+        <span>2. Wormhole Proximity &lt; ${state.stageTargetDistance.toLocaleString()} KM</span>
+        <span class="obj-status" style="color:${distCompleted ? '#10b981' : '#00f0ff'}; font-weight:bold;">${distCompleted ? '✓ IN RANGE' : `${distKm.toLocaleString()} KM`}</span>
+      </div>
+      <div class="obj-bar-wrap">
+        <div class="obj-bar" style="width:${Math.round(distProgress * 100)}%; background:${distCompleted ? '#10b981' : '#00f0ff'};"></div>
+      </div>
+      <div style="font-size:0.64rem; color:var(--text-dim); margin-top:2px;">
+        Fly toward cyan singularity core (<span class="kbd">WASD</span> / Throttle slider).
+      </div>
+    </div>
+  `;
+
+  // Stage 1 Extra Objectives (Scan & Coils)
+  if (currentActiveStage === 1) {
+    totalObjectives += 2;
+    const scanCompleted = state.scanProgress >= 1.0;
+    const calibratedCoilsCount = state.coils.filter(c => c).length;
+    const coilsCompleted = calibratedCoilsCount === 3;
+    if (scanCompleted) completedObjectives++;
+    if (coilsCompleted) completedObjectives++;
+
+    html += `
+      <!-- Objective 3: Resonance Scanner -->
+      <div class="objective-item ${scanCompleted ? 'completed' : ''}" id="obj-scan">
+        <div class="obj-header">
+          <span>3. Singularity Harmonic Scan</span>
+          <span class="obj-status" id="status-scan" style="color:${scanCompleted ? '#10b981' : 'var(--cyan-neon)'}; font-weight:bold;">${scanCompleted ? '✓ LOCKED (432.8 THz)' : 'PENDING'}</span>
+        </div>
+        <div class="obj-bar-wrap">
+          <div class="obj-bar" id="bar-scan" style="width:${Math.round(state.scanProgress * 100)}%;"></div>
+        </div>
+        <div class="obj-actions" style="margin-top:4px;">
+          <button class="btn-action" id="btn-do-scan" ${scanCompleted ? 'disabled style="background:#10b981; color:#000;"' : ''}>${scanCompleted ? '✓ Scanned' : '📡 Scan Singularity'}</button>
+        </div>
+      </div>
+
+      <!-- Objective 4: Tachyon Warp Coils -->
+      <div class="objective-item ${coilsCompleted ? 'completed' : ''}" id="obj-coils">
+        <div class="obj-header">
+          <span>4. Tachyon Warp Coils Calibration</span>
+          <span class="obj-status" id="status-coils" style="color:${coilsCompleted ? '#10b981' : 'var(--cyan-neon)'}; font-weight:bold;">${coilsCompleted ? '✓ 3/3 SYNCHRONIZED' : `${calibratedCoilsCount}/3 CALIBRATED`}</span>
+        </div>
+        <div class="obj-bar-wrap">
+          <div class="obj-bar" id="bar-coils" style="width:${Math.round((calibratedCoilsCount / 3) * 100)}%;"></div>
+        </div>
+        <div class="obj-actions" style="margin-top:4px; display:flex; gap:4px;">
+          <button class="btn-action" id="btn-coil-1" ${state.coils[0] ? 'disabled style="background:#10b981; color:#000;"' : ''}>Coil α</button>
+          <button class="btn-action" id="btn-coil-2" ${state.coils[1] ? 'disabled style="background:#10b981; color:#000;"' : ''}>Coil β</button>
+          <button class="btn-action" id="btn-coil-3" ${state.coils[2] ? 'disabled style="background:#10b981; color:#000;"' : ''}>Coil γ</button>
+        </div>
+      </div>
+    `;
+  }
+
+  listContainer.innerHTML = html;
+  if (progressBadge) progressBadge.textContent = `${completedObjectives}/${totalObjectives} COMPLETE`;
+
+  // Attach Stage 1 scan & coil listeners dynamically if elements exist
+  const scanBtn = document.getElementById('btn-do-scan');
+  if (scanBtn && !scanBtn.dataset.bound) {
+    scanBtn.dataset.bound = 'true';
+    scanBtn.addEventListener('click', () => {
+      if (state.isScanning || state.scanProgress >= 1.0) return;
+      if (audioMgr) { audioMgr.init(); audioMgr.playScan(); }
+      state.isScanning = true;
+      scanBtn.disabled = true;
+      scanBtn.textContent = 'Scanning...';
+      let p = 0;
+      const interval = setInterval(() => {
+        p += 0.08;
+        state.scanProgress = Math.min(1.0, p);
+        const bar = document.getElementById('bar-scan');
+        if (bar) bar.style.width = `${Math.round(state.scanProgress * 100)}%`;
+        if (state.scanProgress >= 1.0) {
+          clearInterval(interval);
+          state.isScanning = false;
+          evaluateWarpReadiness();
+          renderStageObjectivesUI();
+        }
+      }, 100);
+    });
+  }
+
+  [1, 2, 3].forEach(idx => {
+    const cBtn = document.getElementById(`btn-coil-${idx}`);
+    if (cBtn && !cBtn.dataset.bound) {
+      cBtn.dataset.bound = 'true';
+      cBtn.addEventListener('click', () => {
+        if (audioMgr) { audioMgr.init(); audioMgr.playCoil(); }
+        state.coils[idx - 1] = true;
+        evaluateWarpReadiness();
+        renderStageObjectivesUI();
+      });
+    }
+  });
+
+  if (authStatusText && authBox) {
+    if (state.isWarpReady) {
+      authBox.style.background = 'rgba(16,185,129,0.18)';
+      authBox.style.borderColor = '#10b981';
+      authStatusText.style.color = '#10b981';
+      authStatusText.textContent = '✅ HYPER-WARP GATE AUTHORIZED: READY FOR JUMP!';
+    } else {
+      authBox.style.background = 'rgba(239,68,111,0.12)';
+      authBox.style.borderColor = 'rgba(239,68,111,0.4)';
+      authStatusText.style.color = '#ff6b8b';
+      authStatusText.textContent = '⛔ HYPER-WARP LOCKED: OBJECTIVES INCOMPLETE';
+    }
+  }
+}
+
+function evaluateWarpReadiness() {
+  const distKm = Math.round((state.position.length() / CONFIG.wormholeDistance) * 100000);
+  const killsMet = state.stageKills >= state.stageRequiredKills;
+  const distMet = distKm <= state.stageTargetDistance;
+  const stage1ExtraMet = (currentActiveStage !== 1) || (state.scanProgress >= 1.0 && state.coils.every(c => c));
+
+  const isReady = killsMet && distMet && stage1ExtraMet;
+  state.isWarpReady = isReady;
+
+  if (warpBtn) {
+    if (isReady) {
       warpBtn.classList.add('btn-ready');
       warpBtn.innerHTML = '⚡ ENGAGE WARP JUMP [F]';
+      warpBtn.style.boxShadow = '0 0 18px rgba(16,185,129,0.85)';
+      warpBtn.style.borderColor = '#10b981';
+    } else {
+      warpBtn.classList.remove('btn-ready');
+      warpBtn.innerHTML = '🚀 Engage Warp';
+      warpBtn.style.boxShadow = '';
+      warpBtn.style.borderColor = '';
     }
   }
 }
 
 function triggerWarpJump() {
-  if (state.isPaused) return;
-  if (state.isHyperWarping) return;
-  audioMgr.init();
+  if (state.isPaused || state.isHyperWarping) return;
+  if (audioMgr) audioMgr.init();
+
+  const distKm = Math.round((state.position.length() / CONFIG.wormholeDistance) * 100000);
+  evaluateWarpReadiness();
 
   if (!state.isWarpReady) {
-    const missingTasks = [];
-    if (state.scanProgress < 1.0) {
-      missingTasks.push(`RESONANCE SCAN (${Math.round(state.scanProgress * 100)}%)`);
+    const missing = [];
+    if (state.stageKills < state.stageRequiredKills) {
+      missing.push(`${state.stageRequiredKills - state.stageKills} MORE KILLS`);
     }
-    const calCount = state.coils.filter(c => c).length;
-    if (calCount < 3) {
-      missingTasks.push(`WARP COILS CALIBRATION (${calCount}/3)`);
+    if (distKm > state.stageTargetDistance) {
+      missing.push(`APPROACH < ${state.stageTargetDistance.toLocaleString()} KM (CURRENT: ${distKm.toLocaleString()} KM)`);
     }
-    if (!state.isVectorAligned || !state.isInRange) {
-      missingTasks.push('SINGULARITY VECTOR ALIGNMENT');
+    if (currentActiveStage === 1) {
+      if (state.scanProgress < 1.0) missing.push('RESONANCE SCAN');
+      if (!state.coils.every(c => c)) missing.push('3 COILS CALIBRATION');
     }
-    const missingStr = missingTasks.length > 0 ? missingTasks.join(', ') : `STAGE ${currentActiveStage} TASKS`;
-    showToast(`⚠️ WARPING NOT POSSIBLE YET: COMPLETE ${missingStr} FIRST!`);
+    showToast(`⛔ WARP JUMP LOCKED: Complete Stage ${currentActiveStage} Objectives first! Need: ${missing.join(', ')}`, 4500);
     return;
   }
 
+  // Objectives satisfied: Authorize and launch hyper-warp jump sequence!
   state.isHyperWarping = true;
-  audioMgr.playWarp();
+  if (audioMgr && typeof audioMgr.playWarp === 'function') {
+    audioMgr.playWarp();
+  }
 
-  const objJump = document.getElementById('obj-jump');
-  const barJump = document.getElementById('bar-jump');
-  const statusJump = document.getElementById('status-jump');
-  if (objJump) objJump.classList.add('completed');
-  if (statusJump) statusJump.textContent = 'PASSING EVENT HORIZON';
-  if (barJump) barJump.style.width = '100%';
-  if (objTotalProgressEl) objTotalProgressEl.textContent = '4/4 COMPLETE';
+  showToast(`🚀 HYPERSPACE JUMP INITIATED: TRAVELING THROUGH WORMHOLE SINGULARITY...`);
+  renderStageObjectivesUI();
+}
+
+async function syncStagesDropdownFromDatabase(showNotification = false) {
+  const jumpSelect = document.getElementById('select-stage-jump');
+  if (!jumpSelect) return;
+
+  try {
+    const res = await fetch('https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_stages');
+    const json = await res.json();
+    if (json && json.success && Array.isArray(json.stages) && json.stages.length > 0) {
+      const activeStages = json.stages.filter(s => parseInt(s.is_enabled) === 1);
+      const stageList = activeStages.length > 0 ? activeStages : json.stages;
+
+      const currentVal = jumpSelect.value;
+      jumpSelect.innerHTML = stageList.map(s => {
+        const lvl = parseInt(s.stage_level) || 1;
+        const icon = lvl === 1 ? '🚀' : (lvl === 2 ? '🌌' : (lvl === 3 ? '🕳️' : '⚛️'));
+        return `<option value="${lvl}">${icon} Stage ${lvl}: ${s.stage_name}</option>`;
+      }).join('');
+
+      jumpSelect.value = currentVal;
+      if (showNotification) {
+        showToast(`🔄 STAGES SYNCHRONIZED: ${stageList.length} Stages loaded from database!`);
+      }
+    }
+  } catch (err) {
+    console.warn('[Wormhole XR] Sync stages error:', err);
+  }
 }
 
 if (warpBtn) {
@@ -7013,6 +7776,16 @@ function updateFlight(delta) {
       console.log(`[Wormhole XR Engine] Warp traversal complete. Advancing to Stage ${nextStage}...`);
       triggerAcquireEvent('warp_horizon_jump');
       triggerAcquireEvent('core_collapse_breakthrough');
+
+      // Replenish shields & hull for victorious arrival into next stage
+      state.playerShield = 100;
+      state.playerHealth = 100;
+      state.stageKills = 0;
+      state.isWarpReady = false;
+      if (typeof updatePlayerDefenseHUD === 'function') {
+        updatePlayerDefenseHUD();
+      }
+      showToast(`🌌 HYPER-WARP COMPLETE! WELCOME TO STAGE ${nextStage}: ${(STAGE_REGISTRY[nextStage] && STAGE_REGISTRY[nextStage].name) || `Stage ${nextStage}`}`);
       loadStageDeviceModule(nextStage, currentActiveDeviceType);
     }
   } else {
@@ -7160,6 +7933,15 @@ if (renderer) {
 
   updateCrosshairPosition(delta);
   updateLaserBolts(delta);
+  if (typeof updateEnemiesCombat === 'function') {
+    updateEnemiesCombat(delta);
+  }
+  if (typeof updatePlayerDefenseHUD === 'function') {
+    updatePlayerDefenseHUD();
+  }
+  if (typeof evaluateWarpReadiness === 'function') {
+    evaluateWarpReadiness();
+  }
   weaponsSystem.update(delta);
 
   accretionUniforms.uTime.value = state.time;
@@ -7515,6 +8297,14 @@ if (typeof window !== 'undefined') {
   window.applyGameManagerValues = applyGameManagerValues;
   window.triggerAcquireEvent = triggerAcquireEvent;
   window.lastGameManagerData = () => lastGameManagerData;
+  window.active3DEnemies = () => active3DEnemies;
+  window.enemyBolts = () => enemyBolts;
+  window.spawnEnemyFromWormhole = spawnEnemyFromWormhole;
+  window.despawnAllActiveEnemies = despawnAllActiveEnemies;
+  window.applyDamageToPlayer = applyDamageToPlayer;
+  window.evaluateWarpReadiness = evaluateWarpReadiness;
+  window.renderStageObjectivesUI = renderStageObjectivesUI;
+  window.syncStagesDropdownFromDatabase = syncStagesDropdownFromDatabase;
 }
 
 // Initial mobile snap grid calculation

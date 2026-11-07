@@ -18,7 +18,29 @@ export const stageConfig = {
   description: 'Outer boundary of no return. High-velocity accretion disk debris and extreme relativistic light bending.',
   par_score: 12500,
 
-  visual: {
+  
+  mission_objectives: 'Neutralize 15 advanced interceptors and breach within < 35,000 KM of event horizon boundary.',
+  required_enemy_kills: 15,
+  warp_target_distance: 35000,
+  objectives: [
+      {
+          "id": "kills",
+          "type": "kills",
+          "target": 15,
+          "title": "Neutralize 15 Interceptors",
+          "description": "Eliminate 15 enemy interceptors in the amber corridor",
+          "requiredForWarp": true
+      },
+      {
+          "id": "distance",
+          "type": "distance",
+          "target": 35000,
+          "title": "Breach Distance < 35,000 KM",
+          "description": "Pilot vessel past the 35,000 KM relativistic shear zone",
+          "requiredForWarp": true
+      }
+  ],
+visual: {
     themeName: 'Accretion Plasma Disk',
     primaryColor: '#3b82f6',
     glowColor: 'rgba(59, 130, 246, 0.50)',
@@ -120,38 +142,50 @@ export const stageConfig = {
   },
 
   enemies: [
-    {
-      id: 'horizon_skimmer',
-      name: 'Horizon Skimmer',
-      enemy_class: ' Striker',
-      icon: '☄️',
-      color: '#f59e0b',
-      hits: 6,
-      armor: 45,
-      shield: 5,
-      speed: 480,
-      attack_damage: 15,
-      fire_rate: 1.50,
-      score: 400,
-      threat: 'Medium',
-      piercing: 'blue_laser'
-    },
-    {
-      id: 'accretion_sentinel',
-      name: 'Accretion Sentinel',
-      enemy_class: 'Heavy Guard',
-      icon: '🛡️',
-      color: '#ef4444',
-      hits: 10,
-      armor: 80,
-      shield: 12,
-      speed: 260,
-      attack_damage: 22,
-      fire_rate: 1.10,
-      score: 750,
-      threat: 'High',
-      piercing: 'tachyon_lance'
-    }
+      {
+          "id": "tachyon_cruiser",
+          "name": "Horizon Tachyon Cruiser",
+          "enemy_class": "Heavy Cruiser",
+          "model_3d_type": "cruiser",
+          "model_3d_url": "",
+          "icon": "🛰️",
+          "color": "#ffd166",
+          "hits": 8,
+          "armor": 50,
+          "shield": 4,
+          "speed": 200,
+          "attack_damage": 20,
+          "weapon_name": "Tachyon Lance Cannon",
+          "weapon_damage": 14,
+          "weapon_speed": 600,
+          "weapon_color": "#ffd166",
+          "fire_rate": 3,
+          "score": 500,
+          "threat": "High",
+          "piercing": "tachyon_lance"
+      },
+      {
+          "id": "phase_interceptor",
+          "name": "Phase Interceptor",
+          "enemy_class": "Fast Interceptor",
+          "model_3d_type": "interceptor",
+          "model_3d_url": "",
+          "icon": "🚀",
+          "color": "#f59e0b",
+          "hits": 5,
+          "armor": 30,
+          "shield": 2,
+          "speed": 440,
+          "attack_damage": 12,
+          "weapon_name": "Amber Pulse Laser",
+          "weapon_damage": 10,
+          "weapon_speed": 560,
+          "weapon_color": "#f59e0b",
+          "fire_rate": 1.7,
+          "score": 300,
+          "threat": "Medium",
+          "piercing": "tachyon_lance"
+      }
   ],
 
   controls: {
@@ -634,6 +668,9 @@ export function applyStage(engineApi) {
   }
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
+  }
+  if (typeof engineApi.setStageObjectives === 'function') {
+    engineApi.setStageObjectives(stageConfig.objectives || []);
   }
   if (typeof engineApi.setDeviceControls === 'function') {
     engineApi.setDeviceControls(stageConfig.controls);

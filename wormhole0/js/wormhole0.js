@@ -189,8 +189,14 @@ let camera = null;
 let renderer = null;
 let vrBtn = null;
 let webglInitError = null;
+let cameraRig = null;
+let activeVrFrameHook = null;
+let xrBasePoseCaptured = false;
+const xrBaseHmdPos = new THREE.Vector3();
 
 const controllers = [];
+const controllerGrips = [];
+const controllerLasers = [];
 
 try {
   const probe = checkWebGLSupport();
@@ -200,9 +206,15 @@ try {
     scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x01050a, 0.0006);
 
+    cameraRig = new THREE.Group();
+    cameraRig.name = 'vr-camera-rig';
+    scene.add(cameraRig);
+
     camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 8000);
     camera.position.copy(state.position);
+    cameraRig.add(camera);
     window.camera = camera;
+    window.cameraRig = cameraRig;
     window.scene = scene;
 
     renderer = new THREE.WebGLRenderer({
@@ -217,11 +229,17 @@ try {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.2;
     renderer.xr.enabled = true;
+    if (typeof renderer.xr.setReferenceSpaceType === 'function') {
+      renderer.xr.setReferenceSpaceType('local');
+    }
     if (container) container.appendChild(renderer.domElement);
 
     // WebXR Button - Never show 'VR NOT SUPPORTED' badge during game play
     try {
-      vrBtn = VRButton.createButton(renderer);
+      vrBtn = VRButton.createButton(renderer, {
+        optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'layers', 'dom-overlay'],
+        domOverlay: { root: document.body }
+      });
       vrBtn.id = 'xr-enter-btn';
       vrBtn.style.display = 'none';
       if (vrBtn && vrBtn.textContent && !vrBtn.textContent.includes('NOT SUPPORTED')) {
@@ -231,29 +249,78 @@ try {
 
     renderer.xr.addEventListener('sessionstart', () => {
       state.isXR = true;
+      xrBasePoseCaptured = false;
+      xrBaseHmdPos.set(0, 0, 0);
       document.body.classList.add('in-xr-session');
-      console.log('[Wormhole XR] WebXR session started.');
+
+      if (state.position.length() < 15.0) {
+        state.position.set(0, 0, CONFIG.wormholeDistance);
+      }
+      camera.position.set(0, 0, 0);
+      camera.rotation.set(0, 0, 0);
+      camera.quaternion.identity();
+
+      if (cameraRig) {
+        cameraRig.position.copy(state.position);
+        cameraRig.rotation.order = 'YXZ';
+        cameraRig.rotation.y = state.yaw;
+        cameraRig.rotation.x = state.pitch;
+        cameraRig.updateMatrixWorld(true);
+      }
+
+      state.xrMode = 'desktop-vr';
+      currentActiveDeviceType = 'vr';
+      const selMode = document.getElementById('select-mode');
+      if (selMode) selMode.value = 'desktop-vr';
+      activateModeParameters('desktop-vr');
+      loadStageDeviceModule(currentActiveStage, 'vr');
+
+      console.log('[Wormhole XR] WebXR session started. CameraRig locked at:', state.position.toArray());
     });
     renderer.xr.addEventListener('sessionend', () => {
       state.isXR = false;
+      xrBasePoseCaptured = false;
       document.body.classList.remove('in-xr-session');
+
+      if (cameraRig) {
+        cameraRig.position.set(0, 0, 0);
+        cameraRig.rotation.set(0, 0, 0);
+        cameraRig.quaternion.identity();
+        cameraRig.updateMatrixWorld(true);
+      }
+
+      camera.fov = 65;
+      camera.aspect = window.innerWidth / Math.max(1, window.innerHeight);
+      camera.position.copy(state.position);
+      camera.rotation.order = 'YXZ';
+      camera.rotation.y = state.yaw;
+      camera.rotation.x = state.pitch;
+      camera.updateProjectionMatrix();
+
+      if (sceneRenderTarget) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+        sceneRenderTarget.setSize(window.innerWidth * dpr, window.innerHeight * dpr);
+      }
+
       console.log('[Wormhole XR] WebXR session exited.');
     });
 
-    // XR Hand Controllers
+    // XR Hand Controllers (parented to cameraRig; hidden by default in cockpit view unless enabled by VR stage config)
     try {
       const controllerModelFactory = new XRControllerModelFactory();
       for (let i = 0; i < 2; i++) {
         const controller = renderer.xr.getController(i);
-        scene.add(controller);
+        controller.visible = false;
+        cameraRig.add(controller);
         
         const grip = renderer.xr.getControllerGrip(i);
+        grip.visible = false;
         if (controllerModelFactory) {
           try {
             grip.add(controllerModelFactory.createControllerModel(grip));
           } catch (e) {}
         }
-        scene.add(grip);
+        cameraRig.add(grip);
 
         const laserGeom = new THREE.BufferGeometry().setFromPoints([
           new THREE.Vector3(0, 0, 0),
@@ -266,8 +333,11 @@ try {
           blending: THREE.AdditiveBlending
         });
         const laser = new THREE.Line(laserGeom, laserMat);
+        laser.visible = false;
         controller.add(laser);
         controllers.push(controller);
+        controllerGrips.push(grip);
+        controllerLasers.push(laser);
       }
     } catch (e) {}
   }
@@ -278,7 +348,15 @@ try {
 
 // Fallback dummy scene & camera so shaders and materials instantiate safely without throwing
 if (!scene) scene = new THREE.Scene();
-if (!camera) camera = new THREE.PerspectiveCamera(65, 1.0, 0.1, 8000);
+if (!cameraRig) {
+  cameraRig = new THREE.Group();
+  cameraRig.name = 'vr-camera-rig';
+  scene.add(cameraRig);
+}
+if (!camera) {
+  camera = new THREE.PerspectiveCamera(65, 1.0, 0.1, 8000);
+  cameraRig.add(camera);
+}
 
 // Lighting
 const ambientLight = new THREE.AmbientLight(0x02111c, 0.4);
@@ -3673,10 +3751,49 @@ function getEngineApi() {
     CONFIG,
     scene,
     camera,
+    cameraRig,
+    controllers,
+    controllerGrips,
+    controllerLasers,
     renderer,
     audioMgr,
     weaponsSystem,
+    starfield,
+    floatingDust,
+    wormholeCorona,
+    accretionDiskMesh,
+    accretionDiskMesh2,
+    accretionUniforms,
+    secondaryDiskMaterial,
+    photonSphere,
+    photonRingMaterial,
+    photonRingUniforms,
+    horizonMesh,
+    shockwaves,
+    particleSystem,
+    particleMaterial,
+    ambientLight,
+    wormholeCoreLight,
+    secondaryLight,
+    compositeShader,
+    centerWormholeOnScreen,
+    alignToWormhole,
+    fireLaserBeam,
+    triggerWarpJump,
+    execute180Turn,
+    execute360Turn,
+    cancelTurn,
     showToast,
+    xrBaseHmdPos,
+    isXrBasePoseCaptured: () => xrBasePoseCaptured,
+    setXrBasePoseCaptured: (val) => { xrBasePoseCaptured = !!val; },
+    resetXrBasePose: () => {
+      xrBasePoseCaptured = false;
+      xrBaseHmdPos.set(0, 0, 0);
+    },
+    registerVrFrameHook: (hookFn) => {
+      activeVrFrameHook = typeof hookFn === 'function' ? hookFn : null;
+    },
     setHudStatus: (statusText) => {
       const hudStatus = document.getElementById('hud-status');
       if (hudStatus) hudStatus.textContent = statusText;
@@ -3715,6 +3832,9 @@ function getEngineApi() {
       if (visual.lights) {
         if (typeof ambientLight !== 'undefined' && ambientLight && visual.lights.ambient) {
           ambientLight.color.setHex(visual.lights.ambient);
+        }
+        if (typeof wormholeCoreLight !== 'undefined' && wormholeCoreLight && visual.lights.center) {
+          wormholeCoreLight.color.setHex(visual.lights.center);
         }
         if (typeof wormholeCenterLight !== 'undefined' && wormholeCenterLight && visual.lights.center) {
           wormholeCenterLight.color.setHex(visual.lights.center);
@@ -3863,6 +3983,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       }
     }
     activeStageModule = mod;
+    activeVrFrameHook = null;
     const api = getEngineApi();
     if (mod && typeof mod.applyStage === 'function') {
       mod.applyStage(api);
@@ -4019,9 +4140,9 @@ async function evaluateSpecificDeviceCompatibility(mode, bypassCheck = false, fo
     let localReason = '';
     let localRecMode = 'desktop-xr';
 
-    // 1. SPECIFIC CHECK: DESKTOP VR (PCVR / HMD)
+    // 1. SPECIFIC CHECK: DESKTOP VR (PCVR / HMD / Immersive Web Emulator)
     if (mode === 'desktop-vr') {
-      if (!effVrSupported || effDevType === 'desktop' || effDevType === 'tablet') {
+      if (!effVrSupported || effDevType === 'tablet') {
         localSupported = false;
         localReason = `DESKTOP VR REQUIRES AN ACTIVE VR HEADSET (HMD): Selected device '${effDevName}' has no active 6-DOF OpenXR/PCVR headset connected. WebXR 'immersive-vr' session cannot be started without physical HMD hardware (Meta Quest Link, Valve Index, or HTC Vive).`;
         localRecMode = 'desktop-xr';
@@ -4178,7 +4299,8 @@ function activateModeParameters(mode) {
     state.postProcessingEnabled = true;
     scene.background = null;
   } else if (mode === 'desktop-vr') {
-    state.postProcessingEnabled = false;
+    state.postProcessingEnabled = true;
+    scene.background = null;
   } else if (mode === 'mobile-xr') {
     state.postProcessingEnabled = false;
     requestDeviceOrientation();
@@ -4216,8 +4338,7 @@ function requestDeviceOrientation() {
 function centerWormholeOnScreen(immediate = true) {
   if (!camera) return;
 
-  camera.position.set(0, 0, CONFIG.wormholeDistance);
-  state.position.copy(camera.position);
+  state.position.set(0, 0, CONFIG.wormholeDistance);
   state.velocity.set(0, 0, 0);
 
   if (lastDeviceAlpha !== null) {
@@ -4237,9 +4358,29 @@ function centerWormholeOnScreen(immediate = true) {
   state.targetPitch = 0;
   state.isAligningToWormhole = false;
 
-  camera.rotation.order = 'YXZ';
-  camera.rotation.set(0, 0, 0);
-  camera.quaternion.identity();
+  if (state.isXR && cameraRig) {
+    xrBasePoseCaptured = false;
+    xrBaseHmdPos.set(0, 0, 0);
+    camera.position.set(0, 0, 0);
+    camera.rotation.set(0, 0, 0);
+    camera.quaternion.identity();
+    cameraRig.position.copy(state.position);
+    cameraRig.rotation.order = 'YXZ';
+    cameraRig.rotation.set(0, 0, 0);
+    cameraRig.quaternion.identity();
+    cameraRig.updateMatrixWorld(true);
+  } else {
+    if (cameraRig) {
+      cameraRig.position.set(0, 0, 0);
+      cameraRig.rotation.set(0, 0, 0);
+      cameraRig.quaternion.identity();
+      cameraRig.updateMatrixWorld(true);
+    }
+    camera.position.copy(state.position);
+    camera.rotation.order = 'YXZ';
+    camera.rotation.set(0, 0, 0);
+    camera.quaternion.identity();
+  }
 
   state.crosshair.x = window.innerWidth / 2;
   state.crosshair.y = window.innerHeight / 2;
@@ -5407,6 +5548,12 @@ function fireLaserBeam() {
   }
 
   // 3D Direction raycast from dynamic crosshair screen coordinates
+  camera.updateMatrixWorld(true);
+  const camWorldPos = new THREE.Vector3();
+  const camWorldQuat = new THREE.Quaternion();
+  camera.getWorldPosition(camWorldPos);
+  camera.getWorldQuaternion(camWorldQuat);
+
   const ndcX = (state.crosshair.x / window.innerWidth) * 2 - 1;
   const ndcY = -(state.crosshair.y / window.innerHeight) * 2 + 1;
   const raycaster = new THREE.Raycaster();
@@ -5416,15 +5563,15 @@ function fireLaserBeam() {
   const targetPoint = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(1200));
 
   // Ship blaster cannons (alternating left / right wingtips)
-  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion).normalize();
-  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).normalize();
-  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).normalize();
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camWorldQuat).normalize();
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camWorldQuat).normalize();
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camWorldQuat).normalize();
 
   if (typeof fireLaserBeam.cannonSide === 'undefined') fireLaserBeam.cannonSide = 1;
   fireLaserBeam.cannonSide = -fireLaserBeam.cannonSide;
   const sideOffset = fireLaserBeam.cannonSide * 0.45;
 
-  const spawnOrigin = camera.position.clone()
+  const spawnOrigin = camWorldPos.clone()
     .addScaledVector(forward, 0.8)
     .addScaledVector(right, sideOffset)
     .addScaledVector(up, -0.25);
@@ -6014,23 +6161,33 @@ function alignToWormhole() {
   if (!camera) return;
 
   // If inside or dangerously close to event horizon, place safely at observation distance
-  if (camera.position.length() < 15.0) {
-    camera.position.set(0, 0, CONFIG.wormholeDistance);
-    state.position.copy(camera.position);
+  if (state.position.length() < 15.0) {
+    state.position.set(0, 0, CONFIG.wormholeDistance);
+    if (!state.isXR) {
+      camera.position.copy(state.position);
+    } else if (cameraRig) {
+      cameraRig.position.copy(state.position);
+    }
   }
 
   // Dampen translation drift so view stabilization doesn't fight centrifugal motion
   state.velocity.multiplyScalar(0.25);
 
-  const toWormhole = new THREE.Vector3(0, 0, 0).sub(camera.position);
+  const toWormhole = new THREE.Vector3(0, 0, 0).sub(state.position);
   if (toWormhole.lengthSq() < 0.001) {
     toWormhole.set(0, 0, -1);
   } else {
     toWormhole.normalize();
   }
 
-  const rawTargetYaw = Math.atan2(-toWormhole.x, -toWormhole.z);
-  const rawTargetPitch = Math.asin(Math.max(-0.95, Math.min(0.95, toWormhole.y)));
+  let rawTargetYaw = Math.atan2(-toWormhole.x, -toWormhole.z);
+  let rawTargetPitch = Math.asin(Math.max(-0.95, Math.min(0.95, toWormhole.y)));
+
+  if (state.isXR && camera) {
+    const hmdEuler = new THREE.Euler(0, 0, 0, 'YXZ').setFromQuaternion(camera.quaternion, 'YXZ');
+    rawTargetYaw -= hmdEuler.y;
+    rawTargetPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, rawTargetPitch - hmdEuler.x));
+  }
 
   // Calculate shortest angular path from current state.yaw (avoids 360-degree swing / modulo glitches)
   let diff = (rawTargetYaw - state.yaw) % (Math.PI * 2);
@@ -6131,7 +6288,7 @@ const hudVectorEl = document.getElementById('hud-vector');
 
 function updateWormholeDistanceBadge(distKm) {
   if (typeof distKm !== 'number') {
-    const curPos = (camera && camera.position) ? camera.position : state.position;
+    const curPos = state.isXR ? state.position : ((camera && camera.position) ? camera.position : state.position);
     distKm = Math.round(curPos.length() * 420);
   }
   const formatted = `${distKm.toLocaleString()} KM`;
@@ -6454,8 +6611,25 @@ function renderPostProcessing() {
     return;
   }
   try {
+    const xrOutputTarget = (state.isXR && renderer.xr && renderer.xr.isPresenting)
+      ? renderer.getRenderTarget()
+      : null;
+
+    if (xrOutputTarget) {
+      if (sceneRenderTarget.width !== xrOutputTarget.width || sceneRenderTarget.height !== xrOutputTarget.height) {
+        sceneRenderTarget.setSize(xrOutputTarget.width, xrOutputTarget.height);
+      }
+      if (renderer.xr.cameraAutoUpdate) {
+        renderer.xr.updateCamera(camera);
+      }
+    }
+
+    const activeProjCam = (state.isXR && renderer.xr && renderer.xr.isPresenting)
+      ? renderer.xr.getCamera()
+      : camera;
+
     tempVec.set(0, 0, 0);
-    tempVec.project(camera);
+    tempVec.project(activeProjCam);
 
     const isBehind = tempVec.z > 1.0 ? 1.0 : 0.0;
     wormholeScreenVec.x = (tempVec.x * 0.5) + 0.5;
@@ -6463,41 +6637,47 @@ function renderPostProcessing() {
 
     compositeShader.uniforms.uWormholeScreenPos.value.copy(wormholeScreenVec);
     compositeShader.uniforms.uIsBehind.value = isBehind;
-    compositeShader.uniforms.uAspect.value = window.innerWidth / window.innerHeight;
+    compositeShader.uniforms.uAspect.value = window.innerWidth / Math.max(1, window.innerHeight);
 
     renderer.setRenderTarget(sceneRenderTarget);
     renderer.render(scene, camera);
 
-    highPassMaterial.uniforms.tDiffuse.value = sceneRenderTarget.texture;
-    highPassMaterial.uniforms.uThreshold.value = CONFIG.bloomThreshold;
-    postScene.clear();
-    postScene.add(highPassQuad);
-    renderer.setRenderTarget(renderTargetA);
-    renderer.render(postScene, postCamera);
+    const prevXrEnabled = renderer.xr.enabled;
+    renderer.xr.enabled = false;
+    try {
+      highPassMaterial.uniforms.tDiffuse.value = sceneRenderTarget.texture;
+      highPassMaterial.uniforms.uThreshold.value = CONFIG.bloomThreshold;
+      postScene.clear();
+      postScene.add(highPassQuad);
+      renderer.setRenderTarget(renderTargetA);
+      renderer.render(postScene, postCamera);
 
-    blurMaterial.uniforms.tDiffuse.value = renderTargetA.texture;
-    blurMaterial.uniforms.uDirection.value.set(1.0, 0.0);
-    blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
-    postScene.clear();
-    postScene.add(blurQuad);
-    renderer.setRenderTarget(renderTargetB);
-    renderer.render(postScene, postCamera);
+      blurMaterial.uniforms.tDiffuse.value = renderTargetA.texture;
+      blurMaterial.uniforms.uDirection.value.set(1.0, 0.0);
+      blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
+      postScene.clear();
+      postScene.add(blurQuad);
+      renderer.setRenderTarget(renderTargetB);
+      renderer.render(postScene, postCamera);
 
-    blurMaterial.uniforms.tDiffuse.value = renderTargetB.texture;
-    blurMaterial.uniforms.uDirection.value.set(0.0, 1.0);
-    blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
-    renderer.setRenderTarget(renderTargetA);
-    renderer.render(postScene, postCamera);
+      blurMaterial.uniforms.tDiffuse.value = renderTargetB.texture;
+      blurMaterial.uniforms.uDirection.value.set(0.0, 1.0);
+      blurMaterial.uniforms.uRadius.value = CONFIG.bloomRadius;
+      renderer.setRenderTarget(renderTargetA);
+      renderer.render(postScene, postCamera);
 
-    compositeMaterial.uniforms.tScene.value = sceneRenderTarget.texture;
-    compositeMaterial.uniforms.tBloom.value = renderTargetA.texture;
-    compositeMaterial.uniforms.uBloomStrength.value = CONFIG.bloomStrength;
-    compositeMaterial.uniforms.uLensingStrength.value = CONFIG.lensingStrength;
-    compositeMaterial.uniforms.uChromaticAberration.value = CONFIG.chromaticAberration;
-    postScene.clear();
-    postScene.add(compositeQuad);
-    renderer.setRenderTarget(null);
-    renderer.render(postScene, postCamera);
+      compositeMaterial.uniforms.tScene.value = sceneRenderTarget.texture;
+      compositeMaterial.uniforms.tBloom.value = renderTargetA.texture;
+      compositeMaterial.uniforms.uBloomStrength.value = CONFIG.bloomStrength;
+      compositeMaterial.uniforms.uLensingStrength.value = CONFIG.lensingStrength;
+      compositeMaterial.uniforms.uChromaticAberration.value = CONFIG.chromaticAberration;
+      postScene.clear();
+      postScene.add(compositeQuad);
+      renderer.setRenderTarget(xrOutputTarget);
+      renderer.render(postScene, postCamera);
+    } finally {
+      renderer.xr.enabled = prevXrEnabled;
+    }
   } catch (err) {
     console.warn('[Wormhole XR] Post-processing render failed, disabling:', err);
     state.postProcessingEnabled = false;
@@ -6522,13 +6702,34 @@ function updateFlight(delta) {
     }
   }
 
-  camera.rotation.order = 'YXZ';
-  camera.rotation.y = state.yaw;
-  camera.rotation.x = state.pitch;
+  if (state.isXR && cameraRig) {
+    cameraRig.rotation.order = 'YXZ';
+    cameraRig.rotation.y = state.yaw;
+    cameraRig.rotation.x = state.pitch;
+    cameraRig.updateMatrixWorld(true);
+  } else {
+    if (cameraRig) {
+      cameraRig.position.set(0, 0, 0);
+      cameraRig.rotation.set(0, 0, 0);
+      cameraRig.quaternion.identity();
+      cameraRig.updateMatrixWorld(true);
+    }
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = state.yaw;
+    camera.rotation.x = state.pitch;
+  }
 
-  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
-  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+  const activeViewQuat = new THREE.Quaternion();
+  if (state.isXR && camera) {
+    camera.updateMatrixWorld(true);
+    camera.getWorldQuaternion(activeViewQuat);
+  } else {
+    activeViewQuat.copy(camera.quaternion);
+  }
+
+  const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(activeViewQuat);
+  const right = new THREE.Vector3(1, 0, 0).applyQuaternion(activeViewQuat);
+  const up = new THREE.Vector3(0, 1, 0).applyQuaternion(activeViewQuat);
 
   const accel = new THREE.Vector3(0, 0, 0);
   const speed = CONFIG.flightSpeed * (keys['ShiftLeft'] || keys['ShiftRight'] ? CONFIG.boostMultiplier : 1.0);
@@ -6618,14 +6819,22 @@ function updateFlight(delta) {
   if (state.isHyperWarping) {
     state.warpJumpTimer += delta;
     const targetWarpDir = new THREE.Vector3(0, 0, 0).sub(state.position).normalize();
-    camera.position.addScaledVector(targetWarpDir, delta * 320.0);
-
-    camera.fov = THREE.MathUtils.lerp(camera.fov, 125, 0.05);
-    camera.updateProjectionMatrix();
-
-    if (camera.position.length() < CONFIG.eventHorizonRadius * 1.2) {
-      state.position.set(0, 0, CONFIG.wormholeDistance);
+    state.position.addScaledVector(targetWarpDir, delta * 320.0);
+    if (!state.isXR) {
       camera.position.copy(state.position);
+      camera.fov = THREE.MathUtils.lerp(camera.fov, 125, 0.05);
+      camera.updateProjectionMatrix();
+    } else if (cameraRig) {
+      cameraRig.position.copy(state.position);
+    }
+
+    if (state.position.length() < CONFIG.eventHorizonRadius * 1.2) {
+      state.position.set(0, 0, CONFIG.wormholeDistance);
+      if (!state.isXR) {
+        camera.position.copy(state.position);
+      } else if (cameraRig) {
+        cameraRig.position.copy(state.position);
+      }
       state.velocity.set(0, 0, 0);
       stopThrottle();
       state.yaw = 0;
@@ -6646,19 +6855,33 @@ function updateFlight(delta) {
       state.velocity.addScaledVector(accel, speed * delta * 4.0 * mag);
     }
     state.velocity.multiplyScalar(0.92);
-    camera.position.addScaledVector(state.velocity, delta);
+    state.position.addScaledVector(state.velocity, delta);
 
     // Sublight navigation: allow flying right up to the accretion disk and event horizon
     // Hold safe standoff radius outside event horizon so the player can orbit and look around
-    const distToCenter = camera.position.length();
+    const distToCenter = state.position.length();
     const minSafeDist = CONFIG.eventHorizonRadius * 1.35;
     if (distToCenter < minSafeDist) {
-      camera.position.normalize().multiplyScalar(minSafeDist);
+      state.position.normalize().multiplyScalar(minSafeDist);
       state.velocity.multiplyScalar(0.5);
+    }
+
+    if (!state.isXR) {
+      camera.position.copy(state.position);
+    } else if (cameraRig) {
+      cameraRig.position.copy(state.position);
+      cameraRig.updateMatrixWorld(true);
     }
   }
 
-  state.position.copy(camera.position);
+  // Run stage-specific VR frame hook (calibrates HMD height offset, XR FOV/aspect, and VR controller inputs)
+  if (typeof activeVrFrameHook === 'function') {
+    try {
+      activeVrFrameHook(delta, getEngineApi());
+    } catch (vrHookErr) {
+      console.warn('[Wormhole XR] VR frame hook warning:', vrHookErr);
+    }
+  }
 
   const distLength = state.position.length();
   const distKm = Math.round(distLength * 420);
@@ -6667,7 +6890,14 @@ function updateFlight(delta) {
   const toWormhole = distLength > 0.01
     ? new THREE.Vector3(0, 0, 0).sub(state.position).normalize()
     : new THREE.Vector3(0, 0, -1);
-  const forwardDir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  const currentViewQuat = new THREE.Quaternion();
+  if (state.isXR && camera) {
+    camera.updateMatrixWorld(true);
+    camera.getWorldQuaternion(currentViewQuat);
+  } else {
+    currentViewQuat.copy(camera.quaternion);
+  }
+  const forwardDir = new THREE.Vector3(0, 0, -1).applyQuaternion(currentViewQuat);
   const angleDeg = THREE.MathUtils.radToDeg(forwardDir.angleTo(toWormhole));
 
   if (hudVectorEl) hudVectorEl.textContent = `${angleDeg.toFixed(1)}°`;
@@ -6730,7 +6960,7 @@ if (renderer) {
     if (state.isPaused) {
       state.lastFrameTime = timestamp;
       checkGamepadPauseOnly();
-      if (state.isXR || !state.postProcessingEnabled) {
+      if (!state.postProcessingEnabled) {
         renderer.render(scene, camera);
       } else {
         renderPostProcessing();
@@ -6749,11 +6979,7 @@ if (renderer) {
     if (hudFpsEl) hudFpsEl.textContent = `${state.fps} FPS`;
   }
 
-  if (!state.isXR) {
-    updateFlight(delta);
-  } else {
-    updateWormholeDistanceBadge();
-  }
+  updateFlight(delta);
 
   // Continuous rapid fire while right mouse button is held down with crosshair captured
   if (state.isRightMouseDown && state.isPointerLocked) {
@@ -6777,13 +7003,13 @@ if (renderer) {
   }
 
   // Dynamic Celestial Starfield: Keep stars tiny and push them more distant as ship approaches the wormhole
-  const distToWormhole = camera.position.length();
+  const distToWormhole = state.position.length();
   const safeStandoff = (CONFIG.eventHorizonRadius || 7.2) * 1.35;
   const maxApproachDist = Math.max(1.0, CONFIG.wormholeDistance - safeStandoff);
   const approachProgress = Math.max(0.0, Math.min(1.0, (CONFIG.wormholeDistance - distToWormhole) / maxApproachDist));
 
-  // 1. Keep celestial starfield centered on camera so ship never flies into stars (skybox / infinite cosmic distance)
-  starfield.position.copy(camera.position);
+  // 1. Keep celestial starfield centered on ship position so ship never flies into stars (skybox / infinite cosmic distance)
+  starfield.position.copy(state.position);
 
   // 2. Outward celestial recession: As ship flies closer to the wormhole, push the stars further out into deep cosmos
   const starDistanceScale = 1.0 + approachProgress * 1.6;
@@ -6806,7 +7032,7 @@ if (renderer) {
     hudFluxEl.textContent = `${flux} TeV`;
   }
 
-  if (state.isXR || !state.postProcessingEnabled) {
+  if (!state.postProcessingEnabled) {
     renderer.render(scene, camera);
   } else {
     renderPostProcessing();

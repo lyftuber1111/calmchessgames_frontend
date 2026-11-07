@@ -135,6 +135,8 @@
 
   const keyElementsMap = new Map();
   let isShiftActive = false;
+  let isPhysicalShiftHeld = false;
+  let isVirtualShiftLatched = false;
   let isCapsLockActive = false;
   let isKeyboardOpen = false;
   let manualRotatePreference = null;
@@ -319,8 +321,9 @@
         field.value = val.substring(0, start) + charToInsert + val.substring(end);
         field.selectionStart = field.selectionEnd = start + charToInsert.length;
 
-        if (isShiftActive) {
-          isShiftActive = false;
+        if (isVirtualShiftLatched) {
+          isVirtualShiftLatched = false;
+          isShiftActive = isPhysicalShiftHeld;
           updateShiftVisuals();
         }
         break;
@@ -352,7 +355,8 @@
       }
 
       case 'shift': {
-        isShiftActive = !isShiftActive;
+        isVirtualShiftLatched = !isVirtualShiftLatched;
+        isShiftActive = isVirtualShiftLatched || isPhysicalShiftHeld;
         updateShiftVisuals();
         break;
       }
@@ -380,6 +384,8 @@
         break;
       }
     }
+
+    field.scrollTop = field.scrollHeight;
 
     // Sync in real-time to active form target
     if (activeTargetInput) {
@@ -717,7 +723,7 @@
 
   // Global detection for keyboard / screen reader tab navigation
   window.addEventListener('keydown', (e) => {
-    if (e.key === 'Tab') {
+    if (e.key === 'Tab' && !isKeyboardOpen) {
       if (!isSystemInputPreferred) {
         checkAssistiveTech();
       }
@@ -849,10 +855,14 @@
     }
 
     if (field) {
-      field.readOnly = true;
-      field.inputMode = 'none';
-      field.setAttribute('readonly', 'readonly');
-      if (!isTouchDevice()) {
+      if (isTouchDevice()) {
+        field.readOnly = true;
+        field.inputMode = 'none';
+        field.setAttribute('readonly', 'readonly');
+      } else {
+        field.readOnly = false;
+        field.removeAttribute('readonly');
+        field.removeAttribute('inputmode');
         setTimeout(() => {
           try { field.focus({ preventScroll: true }); } catch (_) {}
         }, 100);
@@ -874,6 +884,10 @@
     rotateBadgeDismissedThisSession = false;
     hideRotateBadge();
     stopBackspaceRepeat();
+    isPhysicalShiftHeld = false;
+    isVirtualShiftLatched = false;
+    isShiftActive = false;
+    updateShiftVisuals();
 
     // Final sync back to target input
     const field = document.getElementById('wood-kb-textarea');
@@ -965,40 +979,151 @@
       return;
     }
 
+    const field = document.getElementById('wood-kb-textarea');
+
+    // Clipboard and selection shortcuts (Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X)
+    if (e.ctrlKey || e.metaKey) {
+      const lowerKey = e.key ? e.key.toLowerCase() : '';
+      if (lowerKey === 'a' || e.code === 'KeyA') {
+        if (field) {
+          e.preventDefault();
+          field.focus();
+          field.select();
+        }
+        return;
+      } else if (lowerKey === 'c' || e.code === 'KeyC') {
+        return;
+      } else if (lowerKey === 'v' || e.code === 'KeyV') {
+        e.preventDefault();
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          navigator.clipboard.readText().then((clipText) => {
+            if (clipText && field) {
+              const start = field.selectionStart ?? field.value.length;
+              const end = field.selectionEnd ?? field.value.length;
+              const val = field.value;
+              field.value = val.substring(0, start) + clipText + val.substring(end);
+              field.selectionStart = field.selectionEnd = start + clipText.length;
+              field.scrollTop = field.scrollHeight;
+              if (activeTargetInput) activeTargetInput.value = field.value;
+              updateKeyboardStats();
+            }
+          }).catch(() => {});
+        }
+        return;
+      } else if (lowerKey === 'x' || e.code === 'KeyX') {
+        if (field) {
+          const start = field.selectionStart ?? field.value.length;
+          const end = field.selectionEnd ?? field.value.length;
+          if (start !== end) {
+            e.preventDefault();
+            const cutText = field.value.substring(start, end);
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+              navigator.clipboard.writeText(cutText).catch(() => {});
+            }
+            const val = field.value;
+            field.value = val.substring(0, start) + val.substring(end);
+            field.selectionStart = field.selectionEnd = start;
+            if (activeTargetInput) activeTargetInput.value = field.value;
+            updateKeyboardStats();
+          }
+        }
+        return;
+      }
+      return;
+    }
+
+    if (e.altKey) {
+      return;
+    }
+
+    // Allow cursor navigation keys without preventing default
+    if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) {
+      if (field && document.activeElement !== field) {
+        try { field.focus({ preventScroll: true }); } catch (_) {}
+      }
+      return;
+    }
+
+    // CapsLock and Shift state tracking
+    if (e.getModifierState) {
+      const caps = e.getModifierState('CapsLock');
+      if (caps !== isCapsLockActive) {
+        isCapsLockActive = caps;
+        updateCapsLockVisuals();
+      }
+    }
+
+    if (e.key === 'Shift') {
+      isPhysicalShiftHeld = true;
+      isShiftActive = true;
+      updateShiftVisuals();
+    } else {
+      isPhysicalShiftHeld = !!e.shiftKey;
+      isShiftActive = isPhysicalShiftHeld || isVirtualShiftLatched;
+      updateShiftVisuals();
+    }
+
     const code = e.code;
     const entry = keyElementsMap.get(code);
-    const field = document.getElementById('wood-kb-textarea');
 
     if (entry) {
       if (!e.repeat) {
         entry.el.classList.add('is-pressed');
         playKeySound(entry.data.type, true);
-      } else if (code === 'Backspace') {
-        playKeySound('backspace', true);
+      } else if (code === 'Backspace' || entry.data.type === 'standard' || entry.data.type === 'space') {
+        playKeySound(entry.data.type, true);
       }
 
-      // If user is not directly focused on the textarea or focus was on a button:
-      // Route the typed character into the parchment display
-      if (document.activeElement !== field) {
-        if (['Space', 'Enter', 'Backspace', 'Tab'].includes(code) || entry.data.type === 'standard') {
-          e.preventDefault();
-        }
+      // Always intercept typable keys and route them into the parchment display
+      if (['Space', 'Enter', 'Backspace', 'Tab'].includes(code) || entry.data.type === 'standard') {
+        e.preventDefault();
         processKeyInput(entry.data);
-      } else {
-        // Active in field: handle Tab specially
-        if (code === 'Tab') {
-          e.preventDefault();
-          processKeyInput(entry.data);
+      } else if (code === 'CapsLock') {
+        e.preventDefault();
+      }
+    } else {
+      // Keys not in layout (e.g. Delete, NumpadEnter, Numpad digits, etc.)
+      if (code === 'Delete' || e.key === 'Delete') {
+        e.preventDefault();
+        playKeySound('backspace', true);
+        if (field) {
+          const start = field.selectionStart ?? field.value.length;
+          const end = field.selectionEnd ?? field.value.length;
+          let val = field.value;
+          if (start === end) {
+            if (start < val.length) {
+              field.value = val.substring(0, start) + val.substring(start + 1);
+              field.selectionStart = field.selectionEnd = start;
+            }
+          } else {
+            field.value = val.substring(0, start) + val.substring(end);
+            field.selectionStart = field.selectionEnd = start;
+          }
+          if (activeTargetInput) activeTargetInput.value = field.value;
+          updateKeyboardStats();
+        }
+      } else if (code === 'NumpadEnter') {
+        e.preventDefault();
+        const enterEntry = keyElementsMap.get('Enter');
+        if (enterEntry) {
+          enterEntry.el.classList.add('is-pressed');
+          playKeySound('enter', true);
+        }
+        processKeyInput({ type: 'enter', code: 'Enter' });
+      } else if (e.key && e.key.length === 1) {
+        e.preventDefault();
+        playKeySound('standard', true);
+        if (field) {
+          const start = field.selectionStart ?? field.value.length;
+          const end = field.selectionEnd ?? field.value.length;
+          let val = field.value;
+          field.value = val.substring(0, start) + e.key + val.substring(end);
+          field.selectionStart = field.selectionEnd = start + 1;
+          field.scrollTop = field.scrollHeight;
+          if (activeTargetInput) activeTargetInput.value = field.value;
+          updateKeyboardStats();
         }
       }
-    }
-
-    if (e.key === 'CapsLock') {
-      isCapsLockActive = e.getModifierState('CapsLock');
-      updateCapsLockVisuals();
-    } else if (e.key === 'Shift') {
-      isShiftActive = true;
-      updateShiftVisuals();
     }
 
     setTimeout(() => {
@@ -1017,17 +1142,34 @@
     if (entry) {
       entry.el.classList.remove('is-pressed');
       playKeySound(entry.data.type, false);
+    } else if (code === 'NumpadEnter') {
+      const enterEntry = keyElementsMap.get('Enter');
+      if (enterEntry) {
+        enterEntry.el.classList.remove('is-pressed');
+        playKeySound('enter', false);
+      }
     }
 
-    if (e.key === 'CapsLock') {
-      isCapsLockActive = e.getModifierState('CapsLock');
-      updateCapsLockVisuals();
-    } else if (e.key === 'Shift') {
-      isShiftActive = false;
+    if (e.key === 'Shift' || !e.shiftKey) {
+      isPhysicalShiftHeld = false;
+      isShiftActive = isVirtualShiftLatched;
       updateShiftVisuals();
     }
 
+    if (e.getModifierState) {
+      isCapsLockActive = e.getModifierState('CapsLock');
+      updateCapsLockVisuals();
+    }
+
     setTimeout(updateKeyboardStats, 10);
+  });
+
+  window.addEventListener('blur', () => {
+    keyElementsMap.forEach(entry => entry.el.classList.remove('is-pressed'));
+    isPhysicalShiftHeld = false;
+    isVirtualShiftLatched = false;
+    isShiftActive = false;
+    updateShiftVisuals();
   });
 
   // Setup DOM bindings when ready
@@ -1143,9 +1285,15 @@
     }
 
     if (field) {
-      field.readOnly = true;
-      field.inputMode = 'none';
-      field.setAttribute('readonly', 'readonly');
+      if (isTouchDevice()) {
+        field.readOnly = true;
+        field.inputMode = 'none';
+        field.setAttribute('readonly', 'readonly');
+      } else {
+        field.readOnly = false;
+        field.removeAttribute('readonly');
+        field.removeAttribute('inputmode');
+      }
       field.addEventListener('focus', () => {
         if ('virtualKeyboard' in navigator) {
           try { navigator.virtualKeyboard.hide(); } catch (_) {}

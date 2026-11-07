@@ -6729,17 +6729,19 @@ function spawnEnemyFromWormhole() {
   const cfg = enemyPool[Math.floor(Math.random() * enemyPool.length)];
   const mesh = create3DEnemyMesh(cfg);
 
-  // Spawn deep near the wormhole mouth (-Z)
-  const spawnZ = -2400 - Math.random() * 600;
-  const spawnX = (Math.random() - 0.5) * 160;
-  const spawnY = (Math.random() - 0.5) * 120;
+  // Requirement 9: Enemies travel out of the wormhole (origin 0,0,0) towards the player (z ~220)
+  // Spawn right at the throat/portal core of the wormhole
+  const spawnZ = -6.0 + (Math.random() - 0.5) * 4.0;
+  const spawnX = (Math.random() - 0.5) * 12.0;
+  const spawnY = (Math.random() - 0.5) * 9.0;
   mesh.position.set(spawnX, spawnY, spawnZ);
 
   // Requirement 9: Starting off small and getting bigger as they rush towards the player
-  mesh.scale.set(0.08, 0.08, 0.08);
+  mesh.scale.set(0.12, 0.12, 0.12);
 
-  const baseScale = 1.0 + Math.random() * 0.45;
-  const speed = parseInt(cfg.movement_speed || cfg.speed || 260);
+  const baseScale = 1.35 + Math.random() * 0.35;
+  const rawSpeed = parseInt(cfg.movement_speed || cfg.speed || 260);
+  const speed = Math.max(26, Math.min(55, rawSpeed * 0.11)); // ~28 - 46 units/s
   const hits = parseInt(cfg.hits_to_destroy || cfg.hits || 2);
   const weaponDmg = parseInt(cfg.weapon_damage || cfg.attack_damage || 6);
   const weaponSpeed = parseInt(cfg.weapon_speed || 480);
@@ -6749,7 +6751,7 @@ function spawnEnemyFromWormhole() {
   const enemyObj = {
     mesh,
     config: cfg,
-    spawnZ,
+    spawnPos: new THREE.Vector3(spawnX, spawnY, spawnZ),
     baseScale,
     speed,
     currentHits: hits,
@@ -6758,7 +6760,7 @@ function spawnEnemyFromWormhole() {
     weaponSpeed,
     weaponColor,
     fireRate,
-    nextShotTime: performance.now() + 1200 + Math.random() * 1500,
+    nextShotTime: performance.now() + 1000 + Math.random() * 1500,
     rotSpeedX: (Math.random() - 0.5) * 1.2,
     rotSpeedY: (Math.random() - 0.5) * 1.5
   };
@@ -6770,27 +6772,35 @@ function spawnEnemyFromWormhole() {
 function updateEnemiesCombat(delta) {
   if (state.isPaused) return;
   const now = performance.now();
+  const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
 
-  // 1. Spawning check: maintain up to 5 concurrent hostiles until required kills fulfilled
-  if (now > lastEnemySpawnCheckTime + 2800) {
+  // 1. Spawning check: maintain active hostiles until required kills fulfilled
+  if (active3DEnemies.length === 0 && state.stageKills < state.stageRequiredKills + 6) {
+    if (now > lastEnemySpawnCheckTime + 500) {
+      lastEnemySpawnCheckTime = now;
+      spawnEnemyFromWormhole();
+    }
+  } else if (now > lastEnemySpawnCheckTime + 2200) {
     lastEnemySpawnCheckTime = now;
-    if (active3DEnemies.length < 5 && state.stageKills < state.stageRequiredKills + 8) {
+    if (active3DEnemies.length < 4 && state.stageKills < state.stageRequiredKills + 6) {
       spawnEnemyFromWormhole();
     }
   }
-
-  const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
 
   // 2. Update active 3D enemies
   for (let i = active3DEnemies.length - 1; i >= 0; i--) {
     const e = active3DEnemies[i];
 
-    // Rush toward player along Z axis
-    e.mesh.position.z += e.speed * delta * 1.35;
+    // Rush toward player along Z axis with slight tracking
+    e.mesh.position.z += e.speed * delta;
+    e.mesh.position.x += (playerPos.x - e.mesh.position.x) * delta * 0.35;
+    e.mesh.position.y += (playerPos.y - e.mesh.position.y) * delta * 0.35;
 
-    // Requirement 9: Scale grows dynamically from 0.08 up to baseScale as they rush toward player
-    const progress = Math.max(0, Math.min(1.0, (e.mesh.position.z - e.spawnZ) / (-e.spawnZ)));
-    const curScale = THREE.MathUtils.lerp(0.08, e.baseScale, progress);
+    // Requirement 9: Scale grows dynamically from small (0.12) up to baseScale as they rush toward player
+    const distTraveled = e.mesh.position.z - e.spawnPos.z;
+    const totalDist = Math.max(35, playerPos.z - e.spawnPos.z);
+    const progress = Math.max(0, Math.min(1.0, distTraveled / (totalDist * 0.85)));
+    const curScale = THREE.MathUtils.lerp(0.12, e.baseScale, progress);
     e.mesh.scale.set(curScale, curScale, curScale);
 
     // Subtle bank and gyro rotation
@@ -6800,14 +6810,15 @@ function updateEnemiesCombat(delta) {
       e.mesh.userData.spinRing.rotation.z += 4.5 * delta;
     }
 
-    // Enemy Firing: when within range (< 1600 units) and timer expires
-    if (e.mesh.position.z > -1600 && e.mesh.position.z < -30 && now >= e.nextShotTime) {
+    // Enemy Firing: when in front of player and timer expires
+    const distToPlayer = e.mesh.position.distanceTo(playerPos);
+    if (distToPlayer > 18 && distToPlayer < 240 && now >= e.nextShotTime) {
       e.nextShotTime = now + (e.fireRate * 1000) * (0.8 + Math.random() * 0.4);
       fireEnemyWeaponBolt(e);
     }
 
     // Despawn if rushed past player
-    if (e.mesh.position.z > 120) {
+    if (e.mesh.position.z > playerPos.z + 20 || distToPlayer > 350) {
       scene.remove(e.mesh);
       active3DEnemies.splice(i, 1);
     }
@@ -6820,7 +6831,7 @@ function updateEnemiesCombat(delta) {
 
     // Test collision against player cockpit
     const distToPlayer = b.mesh.position.distanceTo(playerPos);
-    if (distToPlayer < 4.2) {
+    if (distToPlayer < 4.8) {
       // Direct enemy hit on player!
       applyDamageToPlayer(b.damage);
       scene.remove(b.mesh);
@@ -6830,8 +6841,8 @@ function updateEnemiesCombat(delta) {
       continue;
     }
 
-    // Lifetime expiration
-    if ((now - b.spawnTime) * 0.001 > b.lifetime || b.mesh.position.z > 150) {
+    // Lifetime expiration or passed far behind player
+    if ((now - b.spawnTime) * 0.001 > b.lifetime || b.mesh.position.z > playerPos.z + 30) {
       scene.remove(b.mesh);
       b.geometry.dispose();
       b.material.dispose();
@@ -6846,7 +6857,7 @@ function updateEnemiesCombat(delta) {
 
     for (let ei = active3DEnemies.length - 1; ei >= 0; ei--) {
       const e = active3DEnemies[ei];
-      const collisionRadius = Math.max(2.2, e.mesh.scale.x * 2.8);
+      const collisionRadius = Math.max(3.2, e.mesh.scale.x * 3.6);
       const dist = bolt.mesh.position.distanceTo(e.mesh.position);
 
       if (dist < collisionRadius) {
@@ -6893,7 +6904,7 @@ function fireEnemyWeaponBolt(enemyObj) {
   const direction = new THREE.Vector3().subVectors(playerPos, spawnOrigin).normalize();
 
   const boltColorHex = parseInt((enemyObj.weaponColor || '#ff0055').replace('#', '0x'), 16) || 0xff0055;
-  const geometry = new THREE.CylinderGeometry(0.22, 0.4, 4.2, 6);
+  const geometry = new THREE.CylinderGeometry(0.24, 0.42, 4.2, 6);
   geometry.rotateX(Math.PI / 2);
 
   const material = new THREE.MeshBasicMaterial({
@@ -6911,15 +6922,16 @@ function fireEnemyWeaponBolt(enemyObj) {
   mesh.add(light);
 
   scene.add(mesh);
+  const boltSpeed = Math.max(75, Math.min(220, (enemyObj.weaponSpeed || 480) * 0.28));
   enemyBolts.push({
     mesh,
     geometry,
     material,
     direction,
-    speed: enemyObj.weaponSpeed || 480,
+    speed: boltSpeed,
     damage: enemyObj.weaponDmg || 6,
     spawnTime: performance.now(),
-    lifetime: 4.0
+    lifetime: 4.5
   });
 
   if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
@@ -7873,6 +7885,12 @@ function updateFlight(delta) {
       }
     }
   }
+
+function checkObjectives() {
+  if (typeof evaluateWarpReadiness === 'function') {
+    evaluateWarpReadiness();
+  }
+}
 
   checkObjectives();
   audioMgr.updateProximity(distKm);

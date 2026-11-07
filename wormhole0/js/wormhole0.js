@@ -36,6 +36,18 @@ const CONFIG = {
   gamepadDeadzone: 0.14
 };
 
+// Dynamic Multi-Stage Device System Configuration
+const STAGE_REGISTRY = {
+  1: { level: 1, name: 'Warp Origin', slug: 'warp_origin' },
+  2: { level: 2, name: 'Event Horizon', slug: 'event_horizon' },
+  3: { level: 3, name: 'Singularity Core', slug: 'singularity_core' },
+  4: { level: 4, name: 'Quantum Realm', slug: 'quantum_realm' }
+};
+
+let currentActiveStage = 1;
+let currentActiveDeviceType = 'desktop';
+let activeStageModule = null;
+
 // Application & Flight state
 const state = {
   time: 0,
@@ -1624,6 +1636,7 @@ class WeaponsSystem {
   updateWeaponsTabUI() {
     const active = this.getActiveWeapon();
     if (!active) return;
+    const curStage = (typeof currentActiveStage !== 'undefined') ? currentActiveStage : 1;
 
     // Active weapon telemetry box
     const activeTitle = document.getElementById('wpn-active-title');
@@ -1757,7 +1770,7 @@ class WeaponsSystem {
 
         const titleEl = card.querySelector('.wpn-title');
         if (titleEl) {
-          const initTag = (w.isInitialWeapon && w.stageUnlocked === currentActiveStage) ? ' <small style="color:var(--accent-gold); font-size:0.65rem;">[INITIAL]</small>' : '';
+          const initTag = (w.isInitialWeapon && w.stageUnlocked === curStage) ? ' <small style="color:var(--accent-gold); font-size:0.65rem;">[INITIAL]</small>' : '';
           titleEl.innerHTML = `${w.icon} ${w.name.toUpperCase()}${initTag}`;
         }
       }
@@ -1782,10 +1795,10 @@ class WeaponsSystem {
           badge.style.borderColor = '';
         } else if (isEquipped) {
           badge.className = 'wpn-badge equipped';
-          badge.textContent = (w.isInitialWeapon && w.stageUnlocked === currentActiveStage) ? 'INITIAL &bull; EQUIPPED' : 'EQUIPPED';
+          badge.textContent = (w.isInitialWeapon && w.stageUnlocked === curStage) ? 'INITIAL &bull; EQUIPPED' : 'EQUIPPED';
           badge.style.color = '';
           badge.style.borderColor = '';
-        } else if (w.isInitialWeapon && w.stageUnlocked === currentActiveStage) {
+        } else if (w.isInitialWeapon && w.stageUnlocked === curStage) {
           badge.className = 'wpn-badge';
           badge.style.color = 'var(--accent-gold)';
           badge.style.borderColor = 'var(--accent-gold)';
@@ -3646,16 +3659,6 @@ if (btnForceContinue) {
 // =============================================================================
 // STAGE & DEVICE LEVEL PROGRESSION & CUSTOMIZATION MANAGER
 // =============================================================================
-const STAGE_REGISTRY = {
-  1: { level: 1, name: 'Warp Origin', slug: 'warp_origin' },
-  2: { level: 2, name: 'Event Horizon', slug: 'event_horizon' },
-  3: { level: 3, name: 'Singularity Core', slug: 'singularity_core' },
-  4: { level: 4, name: 'Quantum Realm', slug: 'quantum_realm' }
-};
-
-let currentActiveStage = 1;
-let currentActiveDeviceType = 'desktop';
-let activeStageModule = null;
 
 function getDeviceTypeFromMode(mode) {
   if (mode === 'desktop-vr') return 'vr';

@@ -1851,6 +1851,12 @@ class WeaponsSystem {
 const weaponsSystem = new WeaponsSystem();
 weaponsSystem.updateCrosshairWeaponRing();
 
+function updateWeaponsTabUI() {
+  if (weaponsSystem && typeof weaponsSystem.updateWeaponsTabUI === 'function') {
+    weaponsSystem.updateWeaponsTabUI();
+  }
+}
+
 // =============================================================================
 // GAME MANAGER DATABASE LIVE SYNCHRONIZATION SYSTEM
 // Checks and integrates all Admin Console Game Manager values:
@@ -1875,49 +1881,24 @@ function hexToRgbaString(hex, alpha = 0.65) {
 
 async function fetchGameManagerDatabaseValues(stageLevel = null) {
   const queryParam = stageLevel ? `&stage_level=${stageLevel}` : '';
-  const endpoints = [
-    `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_manager${queryParam}`,
-    `https://api.calmchessgames.com/wormhole_device_api.php?action=get_game_manager${queryParam}`,
-    `../admin/wormhole_device_api.php?action=get_game_manager${queryParam}`,
-    `admin/wormhole_device_api.php?action=get_game_manager${queryParam}`,
-    `../wormhole_device_api.php?action=get_game_manager${queryParam}`,
-    `wormhole_device_api.php?action=get_game_manager${queryParam}`,
-    `/admin/wormhole_device_api.php?action=get_game_manager${queryParam}`,
-    `/wormhole_device_api.php?action=get_game_manager${queryParam}`
-  ];
 
-  for (const ep of endpoints) {
-    try {
-      const res = await fetch(ep, {
-        method: 'GET',
-        headers: { 'Accept': 'application/json' },
-        cache: 'no-cache'
-      });
-      if (res && res.ok) {
-        const json = await res.json().catch(() => null);
-        if (json && json.success && (json.weapons || json.stages || json.enemies)) {
-          console.log(`[GameManagerSync] Fetched Game Manager database records via ${ep}`);
-          return json;
-        }
-      }
-    } catch (e) {
-      // try next fallback endpoint
-    }
-  }
-
-  // Fallback: Query individual endpoints if combined action was not returned
+  // 1. First attempt: Query primary individual endpoints in parallel (guaranteed on live server)
   try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 2800);
     const baseW = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_weapons${queryParam}`;
     const baseS = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_stages`;
     const baseE = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_enemies${queryParam}`;
 
     const [rW, rS, rE] = await Promise.all([
-      fetch(baseW, { cache: 'no-cache' }).then(r => r.json()).catch(() => null),
-      fetch(baseS, { cache: 'no-cache' }).then(r => r.json()).catch(() => null),
-      fetch(baseE, { cache: 'no-cache' }).then(r => r.json()).catch(() => null)
+      fetch(baseW, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null),
+      fetch(baseS, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null),
+      fetch(baseE, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null)
     ]);
+    clearTimeout(tid);
 
-    if (rW || rS || rE) {
+    if (rW && rW.weapons && rW.weapons.length > 0) {
+      console.log(`[GameManagerSync] Fetched ${rW.weapons.length} weapons, ${(rS && rS.stages) ? rS.stages.length : 0} stages, ${(rE && rE.enemies) ? rE.enemies.length : 0} threats`);
       return {
         success: true,
         weapons: (rW && rW.weapons) || [],
@@ -1925,9 +1906,28 @@ async function fetchGameManagerDatabaseValues(stageLevel = null) {
         enemies: (rE && rE.enemies) || []
       };
     }
-  } catch (errFallback) {
-    console.warn('[GameManagerSync] Fallback individual query failed:', errFallback);
+  } catch (errIndiv) {
+    console.warn('[GameManagerSync] Parallel individual query failed:', errIndiv);
   }
+
+  // 2. Secondary attempt: Unified get_game_manager endpoint
+  try {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 2000);
+    const res = await fetch(`https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_manager${queryParam}`, {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-cache',
+      signal: ctrl.signal
+    });
+    clearTimeout(tid);
+    if (res && res.ok) {
+      const json = await res.json().catch(() => null);
+      if (json && json.success && (json.weapons || json.stages || json.enemies)) {
+        console.log(`[GameManagerSync] Fetched Game Manager database records via unified endpoint`);
+        return json;
+      }
+    }
+  } catch (e) {}
 
   return null;
 }
@@ -3803,7 +3803,9 @@ function getEngineApi() {
       if (typeof renderWeaponWheel === 'function') {
         renderWeaponWheel();
       }
-      updateWeaponsTabUI();
+      if (weaponsSystem && typeof weaponsSystem.updateWeaponsTabUI === 'function') {
+        weaponsSystem.updateWeaponsTabUI();
+      }
     },
     setEnemies: (enemiesConfig) => {
       window.activeStageEnemies = enemiesConfig;
@@ -3851,13 +3853,17 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     try {
       mod = await import(scriptRelative);
     } catch (e1) {
-      mod = await import(directPath);
+      try {
+        mod = await import(directPath);
+      } catch (e2) {
+        console.warn(`[Wormhole XR Engine] Dynamic import fallback for ${stage.slug}:`, e2);
+      }
     }
     activeStageModule = mod;
     const api = getEngineApi();
-    if (typeof mod.applyStage === 'function') {
+    if (mod && typeof mod.applyStage === 'function') {
       mod.applyStage(api);
-    } else if (mod.default && typeof mod.default.applyStage === 'function') {
+    } else if (mod && mod.default && typeof mod.default.applyStage === 'function') {
       mod.default.applyStage(api);
     }
 
@@ -6950,45 +6956,31 @@ async function runStartupDiagnosticsAndSplashScreen() {
     };
 
     let dbResult = null;
-    const endpoints = [
-      'https://api.calmchessgames.com/wormhole_device_api.php?action=check',
-      'https://api.calmchessgames.com/admin/wormhole_device_api.php?action=check',
-      'wormhole_device_api.php?action=check',
-      '../wormhole_device_api.php?action=check',
-      '../admin/wormhole_device_api.php?action=check',
-      'admin/wormhole_device_api.php?action=check',
-      '/wormhole_device_api.php?action=check'
-    ];
-
-    for (const ep of endpoints) {
-      try {
-        const res = await fetch(ep, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-          body: JSON.stringify(dbPayload)
-        });
-        if (res && res.ok) {
-          dbResult = await res.json().catch(() => null);
-          if (dbResult) break;
-        }
-      } catch (e) {}
-    }
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 2000);
+      const res = await fetch('https://api.calmchessgames.com/admin/wormhole_device_api.php?action=check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(dbPayload),
+        signal: ctrl.signal
+      });
+      clearTimeout(tid);
+      if (res && res.ok) {
+        dbResult = await res.json().catch(() => null);
+      }
+    } catch (e) {}
 
     if (splashBar) splashBar.style.width = '100%';
 
     // 4. Verify whether device is runnable on current mobile, desktop, vr, or arcore
-    const isBlacklisted = (dbResult && dbResult.supported === false && dbResult.reason && dbResult.reason.includes('incompatible'));
-    const isRunnable = isWebglRunnable && !isBlacklisted;
+    // Any browser with active WebGL hardware acceleration is fully runnable
+    const isRunnable = isWebglRunnable;
 
     if (!isRunnable) {
-      const failureReason = !isWebglRunnable 
-        ? (webglCheck.reason || 'Hardware graphics acceleration (WebGL) is unavailable on this device.')
-        : (dbResult && dbResult.reason ? dbResult.reason : 'Device flagged as unsupported in system database.');
+      const failureReason = webglCheck.reason || 'Hardware graphics acceleration (WebGL) is unavailable on this device.';
 
-      if (splashStatus) splashStatus.textContent = 'HARDWARE INCOMPATIBLE - DISPLAYING UNSUPPORTED BADGE';
-
-      // Record device as unsupported in database
-      await reportUnsupportedDeviceTelemetry(descriptiveName, failureReason);
+      if (splashStatus) splashStatus.textContent = 'HARDWARE INCOMPATIBLE - WEBGL UNAVAILABLE';
 
       setTimeout(() => {
         if (splashEl) {
@@ -7020,7 +7012,13 @@ async function runStartupDiagnosticsAndSplashScreen() {
       console.warn('[Wormhole XR Engine] Startup Game Manager sync error:', startupSyncErr);
     }
 
-    await loadStageDeviceModule(1, detectedDevType);
+    try {
+      await loadStageDeviceModule(1, detectedDevType);
+    } catch (stageErr) {
+      console.warn('[Wormhole XR Engine] loadStageDeviceModule error:', stageErr);
+    }
+
+    if (splashStatus) splashStatus.textContent = 'SYSTEMS NOMINAL - READY TO ENTER COCKPIT';
 
     const startBtn = document.getElementById('btn-splash-start');
     if (startBtn) {
@@ -7055,10 +7053,27 @@ async function runStartupDiagnosticsAndSplashScreen() {
     return true;
   } catch (err) {
     console.error('[Wormhole XR] Startup verification exception:', err);
-    const descriptiveName = getDescriptiveDeviceName();
-    await reportUnsupportedDeviceTelemetry(descriptiveName, 'Startup runtime error: ' + err.message);
-    showUnsupportedBadge('mobile-xr', 'Hardware error during startup: ' + err.message, 'desktop-xr', true);
-    if (splashEl) splashEl.remove();
+    // Emergency Fallback: If WebGL is present, never lock user out - enable Start button!
+    const startBtn = document.getElementById('btn-splash-start');
+    if (startBtn) {
+      startBtn.disabled = false;
+      startBtn.innerHTML = '🚀 START MISSION / ENTER COCKPIT';
+      startBtn.title = 'Click or press Enter/Space to launch mission';
+      startBtn.classList.add('btn-ready');
+      const emergencyLaunch = () => {
+        state.hasStarted = true;
+        if (audioMgr && !audioMgr.isInitialized) audioMgr.init();
+        const splashEl = document.getElementById('wormhole-splash-screen');
+        if (splashEl) {
+          splashEl.classList.add('splash-fade-out');
+          setTimeout(() => splashEl.remove(), 500);
+        }
+      };
+      startBtn.onclick = emergencyLaunch;
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Enter' || e.code === 'Space') emergencyLaunch();
+      });
+    }
     return false;
   }
 }

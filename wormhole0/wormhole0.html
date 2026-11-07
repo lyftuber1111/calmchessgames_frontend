@@ -3104,28 +3104,150 @@
     }
 
     body.in-xr-session #mobile-touch-controls,
-    body.in-xr-session #landscape-rotate-prompt {
+    body.in-xr-session #landscape-rotate-prompt,
+    body.in-xr-session #wormhole-splash-screen,
+    body.in-xr-session canvas[data-webxr-visibility-mask] {
       display: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+
+    body.in-xr-session div[data-webxr_runtime] {
+      z-index: 5 !important;
     }
 
     body.in-xr-session #hud-layer {
       display: flex !important;
+      position: fixed !important;
+      inset: 0 !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 10010 !important;
+      pointer-events: none !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
 
-    body.in-xr-session #left-drawer-container,
-    body.in-xr-session #top-drawer-container,
-    body.in-xr-session #bottom-drawer-container {
+    body.in-xr-session #center-crosshair {
       display: flex !important;
+      z-index: 10025 !important;
+      visibility: visible !important;
+      opacity: 0.92 !important;
+      pointer-events: none !important;
+    }
+
+    body.in-xr-session #vector-alignment-ring {
+      display: block !important;
+      z-index: 10024 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: none !important;
+    }
+
+    body.in-xr-session .hud-reticle {
+      display: block !important;
+      z-index: 10015 !important;
+      visibility: visible !important;
+      opacity: 0.65 !important;
+      pointer-events: none !important;
+    }
+
+    body.in-xr-session #toast-msg {
+      z-index: 10100 !important;
     }
 
     body.in-xr-session .hud-pause-icon-btn,
     body.in-xr-session .hud-quick-pause-btn {
-      top: 42px;
-      left: 8px;
+      display: flex !important;
+      position: fixed !important;
+      top: 8px !important;
+      left: 8px !important;
+      z-index: 10060 !important;
+      pointer-events: auto !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
 
     body.in-xr-session #left-drawer-container {
-      top: 74px;
+      display: flex !important;
+      position: fixed !important;
+      top: 44px !important;
+      left: 0 !important;
+      z-index: 10050 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    body.in-xr-session #laser-pct-badge-wrap,
+    body.in-xr-session #hud-weapon-pill,
+    body.in-xr-session #hud-weapon-cycle-badge {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+
+    body.in-xr-session #top-drawer-container {
+      display: flex !important;
+      position: fixed !important;
+      top: 44px !important;
+      left: 50% !important;
+      z-index: 10055 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    body.in-xr-session #top-drawer-container:not(.open) .hud-header {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    body.in-xr-session #top-drawer-container.open .hud-header {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+
+    body.in-xr-session #wormhole-dist-badge-wrap,
+    body.in-xr-session #wormhole-distance-badge {
+      display: inline-flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+
+    body.in-xr-session #bottom-drawer-container {
+      display: flex !important;
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 50% !important;
+      z-index: 10055 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+    body.in-xr-session #bottom-drawer-container:not(.open) .hud-footer {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
+    body.in-xr-session #bottom-drawer-container.open .hud-footer {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+
+    body.in-xr-session .weapon-wheel-overlay,
+    body.in-xr-session #weapon-wheel-overlay {
+      z-index: 10200 !important;
+    }
+
+    body.in-xr-session #unsupported-device-modal {
+      z-index: 10300 !important;
     }
 
     @media (max-width: 1024px), (pointer: coarse), (hover: none) {
@@ -4039,7 +4161,7 @@
   </div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261107_vr_cockpit_v2"></script>
+  <script type="module" src="js/wormhole0.js?v=20261107_vr_cockpit_v3"></script>
 
 </body>
 </html>

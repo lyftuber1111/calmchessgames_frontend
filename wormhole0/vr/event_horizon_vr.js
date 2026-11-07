@@ -219,6 +219,7 @@ export function configureVRGraphics(engineApi) {
 export function configureVRCockpit(engineApi) {
   if (typeof document === 'undefined') return;
   const c = stageConfig.vrConfig.cockpit;
+  const topOffset = c.emulatorToolbarOffsetTopPx || 44;
 
   let styleEl = document.getElementById('wormhole-vr-cockpit-style');
   if (!styleEl) {
@@ -228,46 +229,166 @@ export function configureVRCockpit(engineApi) {
   }
 
   styleEl.textContent = `
+    body.in-xr-session div[data-webxr_runtime] {
+      z-index: 5 !important;
+    }
+    body.in-xr-session canvas[data-webxr-visibility-mask],
+    body.in-xr-session #mobile-touch-controls,
+    body.in-xr-session #landscape-rotate-prompt,
+    body.in-xr-session #wormhole-splash-screen {
+      display: none !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
     body.in-xr-session #hud-layer {
       display: ${c.showHudOverlay ? 'flex' : 'none'} !important;
-      z-index: 10 !important;
+      position: fixed !important;
+      inset: 0 !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 10010 !important;
+      pointer-events: none !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
-    body.in-xr-session #left-drawer-container {
-      display: ${c.showLeftDrawer ? 'flex' : 'none'} !important;
-      top: ${(c.emulatorToolbarOffsetTopPx || 42) + 32}px !important;
+    body.in-xr-session #center-crosshair {
+      display: ${c.showCrosshairAndAlignmentRing ? 'flex' : 'none'} !important;
+      z-index: 10025 !important;
+      visibility: visible !important;
+      opacity: 0.92 !important;
+      pointer-events: none !important;
     }
-    body.in-xr-session #top-drawer-container {
-      display: ${c.showTopDrawer ? 'flex' : 'none'} !important;
+    body.in-xr-session #vector-alignment-ring {
+      display: ${c.showCrosshairAndAlignmentRing ? 'block' : 'none'} !important;
+      z-index: 10024 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: none !important;
     }
-    body.in-xr-session #bottom-drawer-container {
-      display: ${c.showBottomDrawer ? 'flex' : 'none'} !important;
+    body.in-xr-session .hud-reticle {
+      display: ${c.showCornerReticles ? 'block' : 'none'} !important;
+      z-index: 10015 !important;
+      visibility: visible !important;
+      opacity: 0.65 !important;
+      pointer-events: none !important;
+    }
+    body.in-xr-session #toast-msg {
+      z-index: 10100 !important;
     }
     body.in-xr-session .hud-pause-icon-btn,
     body.in-xr-session .hud-quick-pause-btn {
       display: flex !important;
-      top: ${c.emulatorToolbarOffsetTopPx || 42}px !important;
+      position: fixed !important;
+      top: 8px !important;
       left: 8px !important;
+      z-index: 10060 !important;
+      pointer-events: auto !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    body.in-xr-session #left-drawer-container {
+      display: ${c.showLeftDrawer ? 'flex' : 'none'} !important;
+      position: fixed !important;
+      top: ${topOffset}px !important;
+      left: 0 !important;
+      z-index: 10050 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    body.in-xr-session #laser-pct-badge-wrap,
+    body.in-xr-session #hud-weapon-pill,
+    body.in-xr-session #hud-weapon-cycle-badge {
+      display: ${c.showWeaponPills !== false ? 'flex' : 'none'} !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+    body.in-xr-session #top-drawer-container {
+      display: ${c.showTopDrawer ? 'flex' : 'none'} !important;
+      position: fixed !important;
+      top: ${topOffset}px !important;
+      left: 50% !important;
+      z-index: 10055 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    body.in-xr-session #top-drawer-container:not(.open) .hud-header {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    body.in-xr-session #top-drawer-container.open .hud-header {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
     }
     body.in-xr-session #wormhole-dist-badge-wrap,
     body.in-xr-session #wormhole-distance-badge {
       display: ${c.showDistanceBadge ? 'inline-flex' : 'none'} !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
     }
-    body.in-xr-session #center-crosshair,
-    body.in-xr-session #vector-alignment-ring {
-      display: ${c.showCrosshairAndAlignmentRing ? 'flex' : 'none'} !important;
+    body.in-xr-session #bottom-drawer-container {
+      display: ${c.showBottomDrawer ? 'flex' : 'none'} !important;
+      position: fixed !important;
+      bottom: 0 !important;
+      left: 50% !important;
+      z-index: 10055 !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
-    body.in-xr-session .hud-reticle {
-      display: ${c.showCornerReticles ? 'block' : 'none'} !important;
+    body.in-xr-session #bottom-drawer-container:not(.open) .hud-footer {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
     }
-    body.in-xr-session #mobile-touch-controls,
-    body.in-xr-session #landscape-rotate-prompt {
-      display: none !important;
+    body.in-xr-session #bottom-drawer-container.open .hud-footer {
+      opacity: 1 !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+    body.in-xr-session .weapon-wheel-overlay,
+    body.in-xr-session #weapon-wheel-overlay {
+      z-index: 10200 !important;
+    }
+    body.in-xr-session #unsupported-device-modal {
+      z-index: 10300 !important;
     }
   `;
+
+  if (engineApi && engineApi.state) {
+    engineApi.state.hudVisible = true;
+  }
+
+  const xrRuntimeContainer = document.querySelector('div[data-webxr_runtime]');
+  if (xrRuntimeContainer) {
+    xrRuntimeContainer.style.zIndex = '5';
+  }
+  const maskCanvas = document.querySelector('canvas[data-webxr-visibility-mask]');
+  if (maskCanvas) {
+    maskCanvas.style.display = 'none';
+  }
 
   const hudLayer = document.getElementById('hud-layer');
   if (hudLayer && c.showHudOverlay) {
     hudLayer.style.display = 'flex';
+    hudLayer.style.zIndex = '10010';
+  }
+  const chEl = document.getElementById('center-crosshair');
+  if (chEl && c.showCrosshairAndAlignmentRing) {
+    chEl.style.display = 'flex';
+    chEl.style.zIndex = '10025';
+  }
+  const vrEl = document.getElementById('vector-alignment-ring');
+  if (vrEl && c.showCrosshairAndAlignmentRing) {
+    vrEl.style.display = 'block';
+    vrEl.style.zIndex = '10024';
+  }
+  if (engineApi && engineApi.weaponsSystem && typeof engineApi.weaponsSystem.updateCrosshairWeaponRing === 'function') {
+    engineApi.weaponsSystem.updateCrosshairWeaponRing();
   }
 }
 
@@ -335,19 +456,17 @@ function pollVRControllers(delta, engineApi) {
     const ay = Math.abs(rawY) > deadzone ? rawY : 0;
 
     if (hand === 'left') {
-      if ((ax !== 0 || ay !== 0) && state && state.crosshair) {
-        const speed = 380 * (state.crosshairSpeedMultiplier || 4.0) * 0.25;
-        state.crosshair.x = Math.max(15, Math.min(window.innerWidth - 15, state.crosshair.x + ax * speed * delta));
-        state.crosshair.y = Math.max(15, Math.min(window.innerHeight - 15, state.crosshair.y + ay * speed * delta));
-        const chEl = document.getElementById('center-crosshair');
-        if (chEl) {
-          chEl.style.left = `${state.crosshair.x}px`;
-          chEl.style.top = `${state.crosshair.y}px`;
-        }
-        const vrEl = document.getElementById('vector-alignment-ring');
-        if (vrEl) {
-          vrEl.style.left = `${state.crosshair.x}px`;
-          vrEl.style.top = `${state.crosshair.y}px`;
+      if (state) {
+        if (ax !== 0 || ay !== 0) {
+          state.aimMove.x = ax;
+          state.aimMove.y = ay;
+          state.aimActive = true;
+          vrControllerButtonState.leftAimWasActive = true;
+        } else if (vrControllerButtonState.leftAimWasActive) {
+          state.aimActive = false;
+          state.aimMove.x = 0;
+          state.aimMove.y = 0;
+          vrControllerButtonState.leftAimWasActive = false;
         }
       }
     } else if (hand === 'right' && state && CONFIG) {
@@ -411,6 +530,20 @@ export function configureVRSpatialAspectAndPerspective(engineApi) {
   if (typeof engineApi.registerVrFrameHook === 'function') {
     engineApi.registerVrFrameHook((delta, api) => {
       if (!api || !api.state || !api.state.isXR) return;
+
+      if (typeof document !== 'undefined') {
+        const xrRuntimeDiv = document.querySelector('div[data-webxr_runtime]') ||
+          (api.renderer && api.renderer.domElement && api.renderer.domElement.parentElement && api.renderer.domElement.parentElement.id !== 'webgl-container'
+            ? api.renderer.domElement.parentElement
+            : null);
+        if (xrRuntimeDiv && xrRuntimeDiv !== document.body && xrRuntimeDiv.style.zIndex !== '5') {
+          xrRuntimeDiv.style.zIndex = '5';
+        }
+        const maskCanvas = document.querySelector('canvas[data-webxr-visibility-mask]');
+        if (maskCanvas && maskCanvas.style.display !== 'none') {
+          maskCanvas.style.display = 'none';
+        }
+      }
 
       const xrMgr = api.renderer && api.renderer.xr;
       if (xrMgr && xrMgr.isPresenting && api.cameraRig) {

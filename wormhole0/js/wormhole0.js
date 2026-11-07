@@ -293,9 +293,22 @@ try {
 
     renderer.xr.addEventListener('sessionstart', () => {
       state.isXR = true;
+      state.hasStarted = true;
+      state.hudVisible = true;
       xrBasePoseCaptured = false;
       xrBaseHmdPos.set(0, 0, 0);
       document.body.classList.add('in-xr-session');
+
+      if (document.pointerLockElement) {
+        try { document.exitPointerLock(); } catch (e) {}
+      }
+      state.isPointerLocked = false;
+
+      const splashEl = document.getElementById('wormhole-splash-screen');
+      if (splashEl) {
+        splashEl.classList.add('splash-fade-out');
+        splashEl.style.display = 'none';
+      }
 
       if (state.position.length() < 15.0) {
         state.position.set(0, 0, CONFIG.wormholeDistance);
@@ -310,6 +323,13 @@ try {
         cameraRig.rotation.y = state.yaw;
         cameraRig.rotation.x = state.pitch;
         cameraRig.updateMatrixWorld(true);
+      }
+
+      if (typeof centerWormholeOnScreen === 'function') {
+        centerWormholeOnScreen(true);
+      }
+      if (typeof weaponsSystem !== 'undefined' && weaponsSystem && typeof weaponsSystem.updateCrosshairWeaponRing === 'function') {
+        weaponsSystem.updateCrosshairWeaponRing();
       }
 
       state.xrMode = 'desktop-vr';
@@ -5998,7 +6018,7 @@ if (mouseLockBtn) {
     if (document.pointerLockElement === container) {
       document.exitPointerLock();
     } else {
-      requestCrosshairCapture();
+      requestCrosshairCapture(true);
     }
   });
 }
@@ -6017,18 +6037,38 @@ document.addEventListener('pointerlockchange', () => {
   }
 });
 
-function isInteractiveUiElement(target) {
-  if (!target) return false;
-  return !!target.closest(
+function isInteractiveUiElement(target, event = null) {
+  const selector =
     '#left-drawer-container, #top-drawer-container, #bottom-drawer-container, ' +
     '#mobile-touch-controls, #unsupported-device-modal, .weapon-wheel-overlay, ' +
+    '#wormhole-splash-screen, ' +
     '.hud-weapon-pill, .hud-btn, .drawer-pause-btn, .hud-pause-icon-btn, ' +
-    'button, input, select, textarea, a, [role="button"], [role="tab"]'
-  );
+    'button, input, select, textarea, a, [role="button"], [role="tab"]';
+
+  if (event && typeof event.composedPath === 'function') {
+    const path = event.composedPath();
+    for (let i = 0; i < path.length; i++) {
+      const node = path[i];
+      if (!node || node === window || node === document || node === document.documentElement || node === document.body) {
+        continue;
+      }
+      if (node.shadowRoot) return true;
+      if (typeof node.matches === 'function' && node.matches(selector)) {
+        return true;
+      }
+    }
+  }
+  if (!target) return false;
+  if (target.shadowRoot) return true;
+  if (target.closest && target.closest('[data-webxr_runtime]') && target.tagName !== 'CANVAS') {
+    return true;
+  }
+  return !!(target.closest && target.closest(selector));
 }
 
-function requestCrosshairCapture() {
+function requestCrosshairCapture(forceInXr = false) {
   if (state.isPaused || !container) return;
+  if (state.isXR && !forceInXr) return;
   if (document.pointerLockElement !== container) {
     try {
       const p = container.requestPointerLock();
@@ -6039,7 +6079,9 @@ function requestCrosshairCapture() {
 
 // Window focus event captures crosshair when focusing into the window
 window.addEventListener('focus', () => {
-  requestCrosshairCapture();
+  if (!state.isXR) {
+    requestCrosshairCapture();
+  }
 });
 
 // Window mouse interaction: captures crosshair and fires active weapon on left click
@@ -6052,7 +6094,7 @@ window.addEventListener('mousedown', (e) => {
       return;
     }
     const splashEl = document.getElementById('wormhole-splash-screen');
-    if (splashEl && splashEl.parentNode) {
+    if (splashEl && splashEl.parentNode && splashEl.style.display !== 'none') {
       return;
     }
     e.preventDefault();
@@ -6065,8 +6107,11 @@ window.addEventListener('mousedown', (e) => {
     return;
   }
 
-  // If clicking on an interactive UI element, let it handle the event
-  if (isInteractiveUiElement(e.target)) return;
+  // If clicking on an interactive UI element (including Immersive Web Emulator Shadow DOM controls), let it handle the event
+  if (isInteractiveUiElement(e.target, e)) return;
+
+  // In WebXR / Immersive Web Emulator mode, let clicks on the emulator gizmo canvas pass through without moving the centered crosshair
+  if (state.isXR && !state.isPointerLocked) return;
 
   if (!audioMgr.isInitialized) audioMgr.init();
 

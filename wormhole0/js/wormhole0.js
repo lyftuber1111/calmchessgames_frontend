@@ -1390,7 +1390,7 @@ class AudioManager {
   }
 
   playHit() {
-    if (CONFIG.audioMuted) return;
+    if (!state.hasStarted || CONFIG.audioMuted) return;
     if (!this.ctx) this.init();
     if (!this.ctx) return;
     try {
@@ -1411,7 +1411,7 @@ class AudioManager {
   }
 
   playExplosion() {
-    if (CONFIG.audioMuted) return;
+    if (!state.hasStarted || CONFIG.audioMuted) return;
     if (!this.ctx) this.init();
     if (!this.ctx) return;
     try {
@@ -1432,7 +1432,7 @@ class AudioManager {
   }
 
   playEnemyLaser() {
-    if (CONFIG.audioMuted) return;
+    if (!state.hasStarted || CONFIG.audioMuted) return;
     if (!this.ctx) this.init();
     if (!this.ctx) return;
     try {
@@ -1453,7 +1453,7 @@ class AudioManager {
   }
 
   playEnemyMissile() {
-    if (CONFIG.audioMuted) return;
+    if (!state.hasStarted || CONFIG.audioMuted) return;
     if (!this.ctx) this.init();
     if (!this.ctx) return;
     try {
@@ -6582,6 +6582,15 @@ function create3DEnemyMesh(config) {
   const rawColor = config.color_hex || config.color || '#00f0ff';
   const colorHex = parseInt(rawColor.replace('#', '0x'), 16) || 0x00f0ff;
 
+  // Extract configured 3D dimensions (Overall Scale, Length X, Height Y, Depth Z, Circumference)
+  const userScale = Math.max(0.05, Math.min(20.0, parseFloat(config.scale !== undefined && config.scale !== null ? config.scale : 1.0) || 1.0));
+  const userLength = Math.max(0.2, Math.min(100.0, parseFloat(config.length !== undefined && config.length !== null ? config.length : 3.0) || 3.0));
+  const userHeight = Math.max(0.2, Math.min(100.0, parseFloat(config.height !== undefined && config.height !== null ? config.height : 1.5) || 1.5));
+  const userDepth = Math.max(0.2, Math.min(100.0, parseFloat(config.depth !== undefined && config.depth !== null ? config.depth : 3.0) || 3.0));
+  const userCircumference = Math.max(0.5, Math.min(200.0, parseFloat(config.circumference !== undefined && config.circumference !== null ? config.circumference : 6.0) || 6.0));
+  // Radius derived from circumference: C = 2 * PI * r => r = C / (2 * PI)
+  const userRadius = Math.max(0.1, userCircumference / (2 * Math.PI));
+
   const hullMat = new THREE.MeshStandardMaterial({
     color: colorHex,
     metalness: 0.85,
@@ -6607,112 +6616,113 @@ function create3DEnemyMesh(config) {
   });
 
   if (modelType === 'interceptor') {
-    // 3D Delta-Wing Fighter
-    const bodyGeom = new THREE.ConeGeometry(1.3, 3.4, 4);
+    // 3D Delta-Wing Fighter using configured length (wingspan), height, depth, circumference
+    const bodyGeom = new THREE.ConeGeometry(Math.max(0.25, userRadius * 0.7), userDepth, 4);
     bodyGeom.rotateX(-Math.PI / 2);
     const body = new THREE.Mesh(bodyGeom, hullMat);
     group.add(body);
 
-    const wingGeom = new THREE.BoxGeometry(4.2, 0.08, 1.6);
+    const wingGeom = new THREE.BoxGeometry(userLength, Math.max(0.04, userHeight * 0.08), Math.max(0.5, userDepth * 0.45));
     const wings = new THREE.Mesh(wingGeom, hullMat);
-    wings.position.set(0, 0, 0.3);
+    wings.position.set(0, 0, userDepth * 0.08);
     group.add(wings);
 
-    const engL = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.35, 0.9, 8), glowMat);
-    engL.geometry.rotateX(Math.PI / 2);
-    engL.position.set(-0.7, 0, 1.5);
-    const engR = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.35, 0.9, 8), glowMat);
-    engR.geometry.rotateX(Math.PI / 2);
-    engR.position.set(0.7, 0, 1.5);
+    const engRadius = Math.max(0.1, userRadius * 0.18);
+    const engGeom = new THREE.CylinderGeometry(engRadius, engRadius * 1.6, Math.max(0.3, userDepth * 0.28), 8);
+    engGeom.rotateX(Math.PI / 2);
+    const engL = new THREE.Mesh(engGeom, glowMat);
+    engL.position.set(-userLength * 0.18, 0, userDepth * 0.42);
+    const engR = new THREE.Mesh(engGeom, glowMat);
+    engR.position.set(userLength * 0.18, 0, userDepth * 0.42);
     group.add(engL, engR);
 
     // Twin Wingtip Weapon Emitters
-    const gunL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 1.1, 6), weaponGlowMat);
-    gunL.geometry.rotateX(Math.PI / 2);
-    gunL.position.set(-1.8, -0.05, -0.3);
-    const gunR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 1.1, 6), weaponGlowMat);
-    gunR.geometry.rotateX(Math.PI / 2);
-    gunR.position.set(1.8, -0.05, -0.3);
+    const gunGeom = new THREE.CylinderGeometry(0.08, 0.12, Math.max(0.4, userDepth * 0.32), 6);
+    gunGeom.rotateX(Math.PI / 2);
+    const gunL = new THREE.Mesh(gunGeom, weaponGlowMat);
+    gunL.position.set(-userLength * 0.42, -0.05, -userDepth * 0.08);
+    const gunR = new THREE.Mesh(gunGeom, weaponGlowMat);
+    gunR.position.set(userLength * 0.42, -0.05, -userDepth * 0.08);
     group.add(gunL, gunR);
   } else if (modelType === 'cruiser') {
-    // 3D Heavy Hexagonal Battlecruiser
-    const hullGeom = new THREE.CylinderGeometry(1.4, 2.0, 5.5, 6);
+    // 3D Heavy Hexagonal Battlecruiser using configured depth, height, length, circumference
+    const hullGeom = new THREE.CylinderGeometry(Math.max(0.4, userRadius * 0.8), Math.max(0.6, userRadius * 1.15), userDepth, 6);
     hullGeom.rotateX(-Math.PI / 2);
     const hull = new THREE.Mesh(hullGeom, hullMat);
     group.add(hull);
 
-    const bridgeGeom = new THREE.BoxGeometry(1.4, 0.9, 1.8);
+    const bridgeGeom = new THREE.BoxGeometry(Math.max(0.4, userLength * 0.35), Math.max(0.3, userHeight * 0.4), Math.max(0.6, userDepth * 0.32));
     const bridge = new THREE.Mesh(bridgeGeom, hullMat);
-    bridge.position.set(0, 1.0, 0.6);
+    bridge.position.set(0, userHeight * 0.45, userDepth * 0.12);
     group.add(bridge);
 
-    const coreGeom = new THREE.SphereGeometry(0.8, 12, 12);
+    const coreGeom = new THREE.SphereGeometry(Math.max(0.3, userRadius * 0.5), 12, 12);
     const core = new THREE.Mesh(coreGeom, glowMat);
     group.add(core);
 
-    const gunFront = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, 2.2, 8), weaponGlowMat);
+    const gunFront = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.25, Math.max(0.8, userDepth * 0.4), 8), weaponGlowMat);
     gunFront.geometry.rotateX(Math.PI / 2);
-    gunFront.position.set(0, -0.4, -2.6);
+    gunFront.position.set(0, -userHeight * 0.2, -userDepth * 0.48);
     group.add(gunFront);
   } else if (modelType === 'dreadnought') {
-    // 3D Massive Capital Dreadnought
-    const citGeom = new THREE.DodecahedronGeometry(2.2);
+    // 3D Massive Capital Dreadnought using configured dimensions
+    const citGeom = new THREE.DodecahedronGeometry(Math.max(0.7, userRadius));
     const citadel = new THREE.Mesh(citGeom, hullMat);
     group.add(citadel);
 
-    const wingGeom = new THREE.BoxGeometry(7.0, 0.18, 2.6);
+    const wingGeom = new THREE.BoxGeometry(userLength, Math.max(0.08, userHeight * 0.12), Math.max(0.8, userDepth * 0.42));
     const wings = new THREE.Mesh(wingGeom, hullMat);
     group.add(wings);
 
-    const orbGeom = new THREE.SphereGeometry(1.2, 16, 16);
+    const orbGeom = new THREE.SphereGeometry(Math.max(0.4, userRadius * 0.55), 16, 16);
     const orb = new THREE.Mesh(orbGeom, glowMat);
     group.add(orb);
 
-    const turret1 = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.4, 6), weaponGlowMat);
-    turret1.geometry.rotateX(-Math.PI / 2);
-    turret1.position.set(-2.2, 0.2, -1.2);
-    const turret2 = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.4, 6), weaponGlowMat);
-    turret2.geometry.rotateX(-Math.PI / 2);
-    turret2.position.set(2.2, 0.2, -1.2);
+    const turretGeom = new THREE.ConeGeometry(Math.max(0.15, userRadius * 0.18), Math.max(0.5, userDepth * 0.25), 6);
+    turretGeom.rotateX(-Math.PI / 2);
+    const turret1 = new THREE.Mesh(turretGeom, weaponGlowMat);
+    turret1.position.set(-userLength * 0.32, userHeight * 0.12, -userDepth * 0.2);
+    const turret2 = new THREE.Mesh(turretGeom, weaponGlowMat);
+    turret2.position.set(userLength * 0.32, userHeight * 0.12, -userDepth * 0.2);
     group.add(turret1, turret2);
   } else if (modelType === 'singularity_probe') {
-    // 3D Spherical Probe with Orbiting Stabilizers
-    const sphereGeom = new THREE.SphereGeometry(1.3, 16, 16);
+    // 3D Spherical Probe with Orbiting Stabilizers using circumference & depth
+    const sphereGeom = new THREE.SphereGeometry(userRadius, 16, 16);
     const sphere = new THREE.Mesh(sphereGeom, hullMat);
     group.add(sphere);
 
-    const eyeGeom = new THREE.SphereGeometry(0.65, 12, 12);
+    const eyeGeom = new THREE.SphereGeometry(Math.max(0.2, userRadius * 0.5), 12, 12);
     const eye = new THREE.Mesh(eyeGeom, glowMat);
-    eye.position.set(0, 0, -1.0);
+    eye.position.set(0, 0, -userRadius * 0.75);
     group.add(eye);
 
-    const ringGeom = new THREE.TorusGeometry(1.9, 0.09, 8, 24);
+    const ringGeom = new THREE.TorusGeometry(userRadius * 1.45, Math.max(0.04, userRadius * 0.07), 8, 24);
     const ring = new THREE.Mesh(ringGeom, glowMat);
     group.add(ring);
     group.userData.spinRing = ring;
 
-    const probeEmitter = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.16, 1.8, 8), weaponGlowMat);
+    const probeEmitter = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.16, Math.max(0.6, userDepth * 0.55), 8), weaponGlowMat);
     probeEmitter.geometry.rotateX(Math.PI / 2);
-    probeEmitter.position.set(0, 0, -1.6);
+    probeEmitter.position.set(0, 0, -userRadius - userDepth * 0.25);
     group.add(probeEmitter);
   } else {
-    // Scout Drone (Default 3D Mesh)
-    const hullGeom = new THREE.OctahedronGeometry(1.4);
+    // Scout Drone (Default 3D Mesh) using configured circumference & dimensions
+    const hullGeom = new THREE.OctahedronGeometry(userRadius);
     const hull = new THREE.Mesh(hullGeom, hullMat);
     group.add(hull);
 
-    const coreGeom = new THREE.SphereGeometry(0.55, 12, 12);
+    const coreGeom = new THREE.SphereGeometry(Math.max(0.2, userRadius * 0.4), 12, 12);
     const core = new THREE.Mesh(coreGeom, glowMat);
     group.add(core);
 
-    const ringGeom = new THREE.TorusGeometry(2.0, 0.08, 6, 24);
+    const ringGeom = new THREE.TorusGeometry(userRadius * 1.4, Math.max(0.03, userRadius * 0.06), 6, 24);
     const ring = new THREE.Mesh(ringGeom, glowMat);
     group.add(ring);
     group.userData.spinRing = ring;
 
-    const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, 1.3, 6), weaponGlowMat);
+    const gun = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.15, Math.max(0.5, userDepth * 0.45), 6), weaponGlowMat);
     gun.geometry.rotateX(Math.PI / 2);
-    gun.position.set(0, 0, -1.2);
+    gun.position.set(0, 0, -userRadius - 0.2);
     group.add(gun);
   }
 
@@ -6721,11 +6731,19 @@ function create3DEnemyMesh(config) {
   group.add(light);
 
   group.userData.config = config;
+  group.userData.dimensions = {
+    scale: userScale,
+    length: userLength,
+    height: userHeight,
+    depth: userDepth,
+    circumference: userCircumference,
+    radius: userRadius
+  };
   return group;
 }
 
 function spawnEnemySwarmFromWormhole(forcedCount = null) {
-  if (state.isPaused || state.isHyperWarping) return;
+  if (!state.hasStarted || state.isPaused || state.isHyperWarping) return;
   if (!scene || !camera) return;
 
   const enemyPool = (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.length > 0)
@@ -6737,6 +6755,11 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
             enemy_id: 'scout_drone',
             enemy_name: 'Void Recon Drone',
             model_3d_type: 'scout_drone',
+            scale: 1.0,
+            length: 2.8,
+            height: 2.8,
+            depth: 2.8,
+            circumference: 8.8,
             weapon_name: 'Plasma Pulse',
             weapon_damage: 6,
             weapon_speed: 480,
@@ -6766,8 +6789,9 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
     // Fly out of wormhole starting small and scaling dynamically up as they travel
     mesh.scale.set(0.1, 0.1, 0.1);
 
+    const userScale = parseFloat(cfg.scale !== undefined && cfg.scale !== null ? cfg.scale : 1.0) || 1.0;
     const isHeavy = cfg.model_3d_type === 'cruiser' || cfg.model_3d_type === 'dreadnought';
-    const baseScale = isHeavy ? (1.55 + Math.random() * 0.35) : (1.3 + Math.random() * 0.3);
+    const baseScale = (isHeavy ? (1.55 + Math.random() * 0.35) : (1.3 + Math.random() * 0.3)) * userScale;
     const rawSpeed = parseInt(cfg.movement_speed || cfg.speed || 260);
     const speed = Math.max(34, Math.min(62, rawSpeed * 0.13)); // outward corridor rush speed
 
@@ -6830,11 +6854,12 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
 }
 
 function spawnEnemyFromWormhole() {
+  if (!state.hasStarted || state.isPaused) return;
   spawnEnemySwarmFromWormhole();
 }
 
 function updateEnemiesCombat(delta) {
-  if (state.isPaused) return;
+  if (!state.hasStarted || state.isPaused) return;
   const now = performance.now();
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
 
@@ -7020,7 +7045,9 @@ function updateEnemiesCombat(delta) {
 
     for (let ei = active3DEnemies.length - 1; ei >= 0; ei--) {
       const e = active3DEnemies[ei];
-      const collisionRadius = Math.max(3.2, e.mesh.scale.x * 3.6);
+      const dims = e.mesh.userData && e.mesh.userData.dimensions;
+      const maxDim = dims ? Math.max(dims.length, dims.height, dims.depth, dims.radius * 2) : 3.0;
+      const collisionRadius = Math.max(2.8, (e.mesh.scale.x / (dims ? dims.scale : 1.0)) * maxDim * 0.65);
       const dist = bolt.mesh.position.distanceTo(e.mesh.position);
 
       if (dist < collisionRadius) {
@@ -7061,7 +7088,7 @@ function updateEnemiesCombat(delta) {
 }
 
 function fireEnemyWeaponBolt(enemyObj) {
-  if (!scene) return;
+  if (!state.hasStarted || state.isPaused || !scene) return;
   const cfg = enemyObj.config || {};
   const wpnName = (cfg.weapon_name || enemyObj.weaponName || '').toLowerCase();
   const modelType = (cfg.model_3d_type || '').toLowerCase();
@@ -7217,6 +7244,7 @@ function fireEnemyWeaponBolt(enemyObj) {
 }
 
 function applyDamageToPlayer(rawDamage) {
+  if (!state.hasStarted || state.isHyperWarping || state.isInvulnerable) return;
   const dmg = rawDamage || 8;
 
   // Requirement 10b: The health depletes faster than the shield!
@@ -8228,7 +8256,7 @@ if (renderer) {
 
   updateCrosshairPosition(delta);
   updateLaserBolts(delta);
-  if (typeof updateEnemiesCombat === 'function') {
+  if (state.hasStarted && typeof updateEnemiesCombat === 'function') {
     updateEnemiesCombat(delta);
   }
   if (typeof updatePlayerDefenseHUD === 'function') {

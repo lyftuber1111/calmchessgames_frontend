@@ -1243,29 +1243,7 @@ class WeaponsSystem {
     this.activeWeaponId = 'red_laser';
     this.listeners = [];
 
-    // Stage 2 Initial Weapon: Tachyon Lance
-    this.registerWeapon({
-      id: 'tachyon_lance',
-      name: 'Tachyon Lance',
-      shortName: 'TACHYON LANCE',
-      icon: '⚡',
-      colorHex: 0xffd166,
-      cssColor: '#ffd166',
-      glowColor: 'rgba(255, 209, 102, 0.65)',
-      energyCost: 20,       // Loses 20% out of 100% per shot
-      cooldownDurationSec: 7, // 7 seconds cool-off on 0% overheat
-      bulletSpeed: 850,
-      boltLength: 12.0,
-      boltRadius: 0.20,
-      bulletLifetime: 2.8,
-      bulletLightIntensity: 5.0,
-      description: 'Piercing tachyon singularity lance. Initial weapon for Stage 2.',
-      stageUnlocked: 2,
-      acquired: true,
-      isAvailable: true
-    });
-
-    // Stage 1 Weapons
+    // Stage 1 Initial Weapon: Neon Red Laser (Default fallback before database sync)
     this.registerWeapon({
       id: 'red_laser',
       name: 'Neon Red Laser',
@@ -1274,15 +1252,20 @@ class WeaponsSystem {
       colorHex: 0xff0033,
       cssColor: '#ff0033',
       glowColor: 'rgba(255, 0, 51, 0.55)',
-      energyCost: 10,       // Loses 10% out of 100% per shot
-      cooldownDurationSec: 5, // 5 seconds cool-off on 0% overheat
+      energyCost: 10,         // Drain % / shot
+      canOverheat: true,      // Can overheat
+      cooldownDurationSec: 5, // Cool off time
+      damagePerHit: 2,        // Damage hits
       bulletSpeed: 550,
       boltLength: 7.5,
       boltRadius: 0.14,
       bulletLifetime: 2.2,
       bulletLightIntensity: 3.5,
-      description: 'Directed neon plasma pulse. Consumes 10% energy per shot. 5-second dissipation when overheated.',
+      description: 'Directed neon plasma pulse. Standard Stage 1 initial weapon.',
       stageUnlocked: 1,
+      isInitialWeapon: true,
+      isAcquirable: true,
+      acquireEvent: 'default_start',
       acquired: true,
       isAvailable: true
     });
@@ -1295,17 +1278,103 @@ class WeaponsSystem {
       colorHex: 0x00d4ff,
       cssColor: '#00d4ff',
       glowColor: 'rgba(0, 212, 255, 0.65)',
-      energyCost: 30,       // Loses 30% out of 100% per shot
-      cooldownDurationSec: 10, // 10 seconds cool-off on 0% overheat
+      energyCost: 30,
+      canOverheat: true,
+      cooldownDurationSec: 10,
+      damagePerHit: 1,
       bulletSpeed: 700,
       boltLength: 9.0,
       boltRadius: 0.18,
       bulletLifetime: 2.5,
       bulletLightIntensity: 4.5,
-      description: 'High-density quantum particle beam. Consumes 30% energy per shot. 10-second dissipation when overheated.',
+      description: 'High-density quantum particle beam.',
       stageUnlocked: 1,
+      isInitialWeapon: false,
+      isAcquirable: true,
+      acquireEvent: 'default_start',
       acquired: true,
       isAvailable: true
+    });
+
+    // Stage 2 Initial Weapon: Tachyon Lance
+    this.registerWeapon({
+      id: 'tachyon_lance',
+      name: 'Tachyon Lance',
+      shortName: 'TACHYON LANCE',
+      icon: '⚡',
+      colorHex: 0xffd166,
+      cssColor: '#ffd166',
+      glowColor: 'rgba(255, 209, 102, 0.65)',
+      energyCost: 20,
+      canOverheat: true,
+      cooldownDurationSec: 7,
+      damagePerHit: 3,
+      bulletSpeed: 850,
+      boltLength: 12.0,
+      boltRadius: 0.20,
+      bulletLifetime: 2.8,
+      bulletLightIntensity: 5.0,
+      description: 'Piercing tachyon singularity lance. Initial weapon for Stage 2.',
+      stageUnlocked: 2,
+      isInitialWeapon: true,
+      isAcquirable: true,
+      acquireEvent: 'warp_horizon_jump',
+      acquired: false,
+      isAvailable: false
+    });
+
+    // Stage 3 Weapon: Quantum Plasma Torpedo
+    this.registerWeapon({
+      id: 'plasma_torpedo',
+      name: 'Quantum Plasma Torpedo',
+      shortName: 'PLASMA TORPEDO',
+      icon: '💣',
+      colorHex: 0xf59e0b,
+      cssColor: '#f59e0b',
+      glowColor: 'rgba(245, 158, 11, 0.65)',
+      energyCost: 40,
+      canOverheat: false, // NON-OVERHEATING
+      cooldownDurationSec: 0,
+      damagePerHit: 5,
+      bulletSpeed: 450,
+      boltLength: 14.0,
+      boltRadius: 0.28,
+      bulletLifetime: 3.0,
+      bulletLightIntensity: 6.0,
+      description: 'Heavy matter/antimatter explosive ordinance. Non-overheating heavy weapon.',
+      stageUnlocked: 3,
+      isInitialWeapon: false,
+      isAcquirable: true,
+      acquireEvent: 'singularity_core_probe',
+      acquired: false,
+      isAvailable: false
+    });
+
+    // Stage 4 Initial Weapon: Quantum Phaser Cannon
+    this.registerWeapon({
+      id: 'quantum_phaser',
+      name: 'Quantum Phaser Cannon',
+      shortName: 'QUANTUM PHASER',
+      icon: '✨',
+      colorHex: 0x10b981,
+      cssColor: '#10b981',
+      glowColor: 'rgba(16, 185, 129, 0.65)',
+      energyCost: 15,
+      canOverheat: true,
+      cooldownDurationSec: 6,
+      damagePerHit: 4,
+      bulletSpeed: 950,
+      boltLength: 10.0,
+      boltRadius: 0.20,
+      bulletLifetime: 2.6,
+      bulletLightIntensity: 5.0,
+      description: 'Multi-phase singularity beam emitter. Initial weapon for Stage 4 deep core.',
+      stageUnlocked: 4,
+      isInitialWeapon: true,
+      isAcquirable: true,
+      acquireEvent: 'deep_core_breakthrough',
+      acquired: false,
+      isAvailable: false
     });
   }
 
@@ -1319,8 +1388,10 @@ class WeaponsSystem {
       colorHex: config.colorHex !== undefined ? config.colorHex : 0x00f0ff,
       cssColor: config.cssColor || '#00f0ff',
       glowColor: config.glowColor || 'rgba(0, 240, 255, 0.4)',
-      energyCost: config.energyCost !== undefined ? config.energyCost : 10,
-      cooldownDurationSec: config.cooldownDurationSec !== undefined ? config.cooldownDurationSec : 5,
+      energyCost: config.energyCost !== undefined ? parseFloat(config.energyCost) : 10,
+      canOverheat: config.canOverheat !== undefined ? Boolean(config.canOverheat) : true,
+      cooldownDurationSec: config.cooldownDurationSec !== undefined ? parseFloat(config.cooldownDurationSec) : 5,
+      damagePerHit: config.damagePerHit !== undefined ? parseInt(config.damagePerHit) : (config.damage || 1),
       bulletSpeed: config.bulletSpeed || 600,
       boltLength: config.boltLength || 8,
       boltRadius: config.boltRadius || 0.15,
@@ -1328,8 +1399,12 @@ class WeaponsSystem {
       bulletLightIntensity: config.bulletLightIntensity || 3.5,
       description: config.description || '',
       stageUnlocked: config.stageUnlocked || 1,
-      acquired: config.acquired !== undefined ? config.acquired : true,
-      isAvailable: config.isAvailable !== undefined ? config.isAvailable : true,
+      isInitialWeapon: Boolean(config.isInitialWeapon),
+      isAcquirable: config.isAcquirable !== undefined ? Boolean(config.isAcquirable) : true,
+      acquireEvent: config.acquireEvent || 'default_start',
+      acquired: config.acquired !== undefined ? Boolean(config.acquired) : true,
+      isAvailable: config.isAvailable !== undefined ? Boolean(config.isAvailable) : true,
+      rechargeRate: config.rechargeRate || 35,
 
       // Live runtime state
       energy: 100, // 100%
@@ -1370,7 +1445,7 @@ class WeaponsSystem {
       return false;
     }
     if (!target.isAvailable || !target.acquired) {
-      showToast(`🔒 ${target.name.toUpperCase()} LOCKED: COMPLETE STAGE TASK TO UNLOCK`);
+      showToast(`🔒 ${target.name.toUpperCase()} LOCKED: COMPLETE EVENT [${target.acquireEvent || 'STAGE'}] TO UNLOCK`);
       return false;
     }
     this.activeWeaponId = id;
@@ -1394,7 +1469,7 @@ class WeaponsSystem {
   }
 
   getActiveWeapon() {
-    return this.weapons[this.activeWeaponId] || this.weapons['red_laser'];
+    return this.weapons[this.activeWeaponId] || this.weapons['red_laser'] || Object.values(this.weapons)[0];
   }
 
   canFire() {
@@ -1404,6 +1479,9 @@ class WeaponsSystem {
     if (w.isOverheated) {
       return false;
     }
+    if (!w.canOverheat && w.energy < w.energyCost) {
+      return false; // Non-overheating weapon requires enough charge for shot drain
+    }
     return true;
   }
 
@@ -1411,17 +1489,23 @@ class WeaponsSystem {
     const w = this.getActiveWeapon();
     if (!w) return false;
 
-    // Deduct percentage (10% for red, 30% for blue)
+    // Deduct percentage (drain % per shot from database)
     w.energy = Math.max(0, w.energy - w.energyCost);
 
-    // If reaches 0%, overheat and disable until cool off
-    if (w.energy <= 0) {
-      w.energy = 0;
-      w.isOverheated = true;
-      w.overheatRemainingMs = w.cooldownDurationSec * 1000;
-      if (audioMgr && audioMgr.playOverheatAlert) {
-        audioMgr.playOverheatAlert();
+    // If reaches 0% and weapon CAN overheat, overheat and disable until cool off
+    if (w.canOverheat) {
+      if (w.energy <= 0) {
+        w.energy = 0;
+        w.isOverheated = true;
+        w.overheatRemainingMs = w.cooldownDurationSec * 1000;
+        if (audioMgr && audioMgr.playOverheatAlert) {
+          audioMgr.playOverheatAlert();
+        }
       }
+    } else {
+      // Weapon CANNOT overheat (e.g. Plasma Torpedo)
+      w.isOverheated = false;
+      w.overheatRemainingMs = 0;
     }
     this.notify();
     return true;
@@ -1442,6 +1526,10 @@ class WeaponsSystem {
         } else {
           changed = true;
         }
+      } else if (!w.canOverheat && w.energy < 100) {
+        // Continuous energy regeneration for non-overheating weapons
+        w.energy = Math.min(100, w.energy + (delta * (w.rechargeRate || 35)));
+        changed = true;
       }
     }
     if (changed) {
@@ -1583,9 +1671,97 @@ class WeaponsSystem {
     }
 
     // Per-weapon card updates
+    const arsenalBox = document.querySelector('#tab-pane-weapons .drawer-controls-box:nth-of-type(2)');
+
     for (const id in this.weapons) {
       const w = this.weapons[id];
-      const card = document.getElementById(`card-wpn-${id}`);
+      let card = document.getElementById(`card-wpn-${id}`);
+      const isEquipped = (this.activeWeaponId === id);
+
+      if (!card && arsenalBox) {
+        card = document.createElement('div');
+        card.className = `weapon-card ${isEquipped ? 'active-equipped' : ''}`;
+        card.id = `card-wpn-${id}`;
+        card.dataset.weaponId = id;
+        card.innerHTML = `
+          <div class="wpn-header-row">
+            <span class="wpn-title">${w.icon} ${w.name.toUpperCase()}</span>
+            <span class="wpn-badge" id="badge-wpn-${id}">STANDBY</span>
+          </div>
+          <div class="wpn-specs-grid">
+            <div class="wpn-spec-item">
+              <span>Drain / Shot:</span>
+              <span class="wpn-spec-val" style="color:${w.cssColor};">-${w.energyCost}%</span>
+            </div>
+            <div class="wpn-spec-item">
+              <span>Overheat Cool-off:</span>
+              <span class="wpn-spec-val">${w.canOverheat ? `${w.cooldownDurationSec.toFixed(1)}s` : 'NONE'}</span>
+            </div>
+            <div class="wpn-spec-item">
+              <span>Damage Hits:</span>
+              <span class="wpn-spec-val" style="color:#06d6a0;">${w.damagePerHit || 1} HITS</span>
+            </div>
+            <div class="wpn-spec-item">
+              <span>Beam Speed:</span>
+              <span class="wpn-spec-val">${w.bulletSpeed} KM/S</span>
+            </div>
+          </div>
+          <div class="wpn-energy-bar-wrap">
+            <div class="wpn-energy-bar-fill" id="bar-wpn-${id}" style="width: ${w.energy}%; background-color: ${w.cssColor};"></div>
+          </div>
+          <div class="wpn-cooldown-text" id="cd-text-${id}" style="display:none;">
+            <span>OVERHEATED (0%)</span>
+            <span id="cd-val-${id}">${w.cooldownDurationSec.toFixed(1)}s</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+            <span id="status-wpn-${id}" class="obj-status" style="color:${isEquipped ? 'var(--accent-green)' : 'var(--cyan-neon)'}; font-size:0.64rem;">READY (${w.energy}%)</span>
+            <button type="button" class="btn-action wpn-select-btn" id="btn-select-${id}">EQUIP ${w.shortName}</button>
+          </div>
+        `;
+        arsenalBox.appendChild(card);
+        const newBtn = card.querySelector(`#btn-select-${id}`);
+        if (newBtn) {
+          newBtn.addEventListener('click', () => {
+            weaponsSystem.selectWeapon(id);
+          });
+        }
+      }
+
+      if (card) {
+        card.classList.toggle('active-equipped', isEquipped);
+        card.classList.toggle('is-overheated', w.isOverheated);
+        card.classList.toggle('weapon-locked', !w.isAvailable || !w.acquired);
+
+        // Update specs grid with live values
+        const specsGrid = card.querySelector('.wpn-specs-grid');
+        if (specsGrid) {
+          specsGrid.innerHTML = `
+            <div class="wpn-spec-item">
+              <span>Drain / Shot:</span>
+              <span class="wpn-spec-val" style="color:${w.cssColor};">-${w.energyCost}%</span>
+            </div>
+            <div class="wpn-spec-item">
+              <span>Overheat Cool-off:</span>
+              <span class="wpn-spec-val">${w.canOverheat ? `${w.cooldownDurationSec.toFixed(1)}s` : 'NONE (NO OVERHEAT)'}</span>
+            </div>
+            <div class="wpn-spec-item">
+              <span>Damage Hits:</span>
+              <span class="wpn-spec-val" style="color:#06d6a0;">${w.damagePerHit || 1} HITS</span>
+            </div>
+            <div class="wpn-spec-item">
+              <span>Beam Speed:</span>
+              <span class="wpn-spec-val">${w.bulletSpeed} KM/S</span>
+            </div>
+          `;
+        }
+
+        const titleEl = card.querySelector('.wpn-title');
+        if (titleEl) {
+          const initTag = (w.isInitialWeapon && w.stageUnlocked === currentActiveStage) ? ' <small style="color:var(--accent-gold); font-size:0.65rem;">[INITIAL]</small>' : '';
+          titleEl.innerHTML = `${w.icon} ${w.name.toUpperCase()}${initTag}`;
+        }
+      }
+
       const badge = document.getElementById(`badge-wpn-${id}`);
       const bar = document.getElementById(`bar-wpn-${id}`);
       const cdText = document.getElementById(`cd-text-${id}`);
@@ -1593,22 +1769,32 @@ class WeaponsSystem {
       const status = document.getElementById(`status-wpn-${id}`);
       const btn = document.getElementById(`btn-select-${id}`);
 
-      const isEquipped = (this.activeWeaponId === id);
-
-      if (card) {
-        card.classList.toggle('active-equipped', isEquipped);
-        card.classList.toggle('is-overheated', w.isOverheated);
-      }
       if (badge) {
-        if (w.isOverheated) {
+        if (!w.isAvailable || !w.acquired) {
+          badge.className = 'wpn-badge';
+          badge.style.color = '#888';
+          badge.style.borderColor = '#555';
+          badge.textContent = w.acquireEvent && w.acquireEvent !== 'default_start' ? `EVENT: ${w.acquireEvent.toUpperCase()}` : 'LOCKED';
+        } else if (w.isOverheated) {
           badge.className = 'wpn-badge overheated';
           badge.textContent = 'OVERHEATED';
+          badge.style.color = '';
+          badge.style.borderColor = '';
         } else if (isEquipped) {
           badge.className = 'wpn-badge equipped';
-          badge.textContent = 'EQUIPPED';
+          badge.textContent = (w.isInitialWeapon && w.stageUnlocked === currentActiveStage) ? 'INITIAL &bull; EQUIPPED' : 'EQUIPPED';
+          badge.style.color = '';
+          badge.style.borderColor = '';
+        } else if (w.isInitialWeapon && w.stageUnlocked === currentActiveStage) {
+          badge.className = 'wpn-badge';
+          badge.style.color = 'var(--accent-gold)';
+          badge.style.borderColor = 'var(--accent-gold)';
+          badge.textContent = 'INITIAL WEAPON';
         } else {
           badge.className = 'wpn-badge';
           badge.textContent = 'STANDBY';
+          badge.style.color = '';
+          badge.style.borderColor = '';
         }
       }
       if (bar) {
@@ -1617,7 +1803,9 @@ class WeaponsSystem {
           const coolFraction = 1.0 - (w.overheatRemainingMs / (w.cooldownDurationSec * 1000));
           bar.style.width = `${Math.round(Math.max(0, Math.min(100, coolFraction * 100)))}%`;
         } else {
-          bar.className = `wpn-energy-bar-fill ${id === 'blue_laser' ? 'blue-laser' : (id === 'tachyon_lance' ? 'tachyon-lance' : 'red-laser')}`;
+          bar.className = 'wpn-energy-bar-fill';
+          bar.style.backgroundColor = w.cssColor;
+          bar.style.boxShadow = `0 0 8px ${w.glowColor}`;
           bar.style.width = `${w.energy}%`;
         }
       }
@@ -1630,16 +1818,23 @@ class WeaponsSystem {
         }
       }
       if (status) {
-        if (w.isOverheated) {
+        if (!w.isAvailable || !w.acquired) {
+          status.textContent = `LOCKED (${w.acquireEvent || 'STAGE EVENT'})`;
+          status.style.color = '#888';
+        } else if (w.isOverheated) {
           status.textContent = `OVERHEATED (COOLING: ${(w.overheatRemainingMs / 1000).toFixed(1)}s)`;
           status.style.color = '#ff85a1';
         } else {
-          status.textContent = `READY (${w.energy}%)`;
+          status.textContent = `READY (${Math.round(w.energy)}%) &bull; DMG: ${w.damagePerHit || 1}`;
           status.style.color = isEquipped ? 'var(--accent-green)' : 'var(--cyan-neon)';
         }
       }
       if (btn) {
-        if (isEquipped) {
+        if (!w.isAvailable || !w.acquired) {
+          btn.textContent = 'LOCKED';
+          btn.disabled = true;
+          btn.style.opacity = '0.5';
+        } else if (isEquipped) {
           btn.textContent = 'EQUIPPED';
           btn.disabled = true;
           btn.style.opacity = '0.85';
@@ -1655,6 +1850,396 @@ class WeaponsSystem {
 
 const weaponsSystem = new WeaponsSystem();
 weaponsSystem.updateCrosshairWeaponRing();
+
+// =============================================================================
+// GAME MANAGER DATABASE LIVE SYNCHRONIZATION SYSTEM
+// Checks and integrates all Admin Console Game Manager values:
+// - Weapons (Initial weapon, acquirable & events, drain %/shot, can overheat, cool-off time, damage hits, bullet speed)
+// - Stages (Level, name, theme, events within level, end level event, description, par score)
+// - Enemies (Hits to destroy, piercing weapon needed, armor strength, force fields, speed, damage, score, threat level)
+// =============================================================================
+let lastGameManagerData = null;
+let isGameManagerSyncing = false;
+
+function hexToRgbaString(hex, alpha = 0.65) {
+  if (!hex) return `rgba(0, 240, 255, ${alpha})`;
+  let clean = hex.replace('#', '');
+  if (clean.length === 3) {
+    clean = clean.split('').map(c => c + c).join('');
+  }
+  const r = parseInt(clean.substring(0, 2), 16) || 0;
+  const g = parseInt(clean.substring(2, 4), 16) || 240;
+  const b = parseInt(clean.substring(4, 6), 16) || 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+async function fetchGameManagerDatabaseValues(stageLevel = null) {
+  const queryParam = stageLevel ? `&stage_level=${stageLevel}` : '';
+  const endpoints = [
+    `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_manager${queryParam}`,
+    `https://api.calmchessgames.com/wormhole_device_api.php?action=get_game_manager${queryParam}`,
+    `../admin/wormhole_device_api.php?action=get_game_manager${queryParam}`,
+    `admin/wormhole_device_api.php?action=get_game_manager${queryParam}`,
+    `../wormhole_device_api.php?action=get_game_manager${queryParam}`,
+    `wormhole_device_api.php?action=get_game_manager${queryParam}`,
+    `/admin/wormhole_device_api.php?action=get_game_manager${queryParam}`,
+    `/wormhole_device_api.php?action=get_game_manager${queryParam}`
+  ];
+
+  for (const ep of endpoints) {
+    try {
+      const res = await fetch(ep, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        cache: 'no-cache'
+      });
+      if (res && res.ok) {
+        const json = await res.json().catch(() => null);
+        if (json && json.success && (json.weapons || json.stages || json.enemies)) {
+          console.log(`[GameManagerSync] Fetched Game Manager database records via ${ep}`);
+          return json;
+        }
+      }
+    } catch (e) {
+      // try next fallback endpoint
+    }
+  }
+
+  // Fallback: Query individual endpoints if combined action was not returned
+  try {
+    const baseW = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_weapons${queryParam}`;
+    const baseS = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_stages`;
+    const baseE = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_enemies${queryParam}`;
+
+    const [rW, rS, rE] = await Promise.all([
+      fetch(baseW, { cache: 'no-cache' }).then(r => r.json()).catch(() => null),
+      fetch(baseS, { cache: 'no-cache' }).then(r => r.json()).catch(() => null),
+      fetch(baseE, { cache: 'no-cache' }).then(r => r.json()).catch(() => null)
+    ]);
+
+    if (rW || rS || rE) {
+      return {
+        success: true,
+        weapons: (rW && rW.weapons) || [],
+        stages: (rS && rS.stages) || [],
+        enemies: (rE && rE.enemies) || []
+      };
+    }
+  } catch (errFallback) {
+    console.warn('[GameManagerSync] Fallback individual query failed:', errFallback);
+  }
+
+  return null;
+}
+
+function applyGameManagerValues(data, stageLevel = 1) {
+  if (!data) return false;
+  lastGameManagerData = data;
+  const currentStage = stageLevel || currentActiveStage || 1;
+
+  console.log(`[GameManagerSync] 🔄 Analyzing & integrating Game Manager database values for Stage ${currentStage}...`);
+
+  // ---------------------------------------------------------------------------
+  // 1. INTEGRATE WEAPONS (INITIAL WEAPON, ACQUIRABLE & EVENT, DRAIN %/SHOT, CAN OVERHEAT, COOL OFF TIME, DAMAGE HITS)
+  // ---------------------------------------------------------------------------
+  let initialWeaponForStage = null;
+  const dbWeapons = Array.isArray(data.weapons) ? data.weapons : [];
+
+  if (dbWeapons.length > 0 && weaponsSystem) {
+    for (const rawW of dbWeapons) {
+      const wid = rawW.weapon_id;
+      if (!wid) continue;
+
+      const wStage = parseInt(rawW.stage_level) || 1;
+      const isInit = (rawW.is_initial_weapon == 1 || rawW.is_initial_weapon === true || rawW.is_initial_weapon === '1');
+      const isAcq = (rawW.is_acquirable == 1 || rawW.is_acquirable === true || rawW.is_acquirable === '1' || rawW.is_acquirable === undefined);
+      const acqEvent = rawW.acquire_event || 'default_start';
+      const drainPct = parseFloat(rawW.energy_drain_pct) !== undefined && !isNaN(parseFloat(rawW.energy_drain_pct)) ? parseFloat(rawW.energy_drain_pct) : 10.0;
+      const canHeat = (rawW.can_overheat == 1 || rawW.can_overheat === true || rawW.can_overheat === '1' || rawW.can_overheat === undefined);
+      const coolSec = parseFloat(rawW.cooldown_seconds) !== undefined && !isNaN(parseFloat(rawW.cooldown_seconds)) ? parseFloat(rawW.cooldown_seconds) : 5.0;
+      const dmgHits = parseInt(rawW.damage_per_hit) || 1;
+      const bSpeed = parseInt(rawW.bullet_speed) || 600;
+
+      // Color computation
+      const rawHex = rawW.color_hex || '#00f0ff';
+      const parsedHex = parseInt(rawHex.replace('#', '0x'), 16) || 0x00f0ff;
+      const glowRgba = hexToRgbaString(rawHex, 0.65);
+
+      // Determine acquisition & availability for current stage level
+      let isAcquired = false;
+      let isAvailable = false;
+
+      if (isInit && wStage === currentStage) {
+        // Initial weapon for current stage is immediately acquired and available
+        isAcquired = true;
+        isAvailable = true;
+        initialWeaponForStage = wid;
+      } else if (wStage < currentStage) {
+        // Weapons from earlier stages that were acquired remain available
+        isAcquired = true;
+        isAvailable = true;
+      } else if (wStage === currentStage && acqEvent === 'default_start' && isAcq) {
+        // Default start weapons for current stage are available
+        isAcquired = true;
+        isAvailable = true;
+      } else if (state.unlockedEvents && state.unlockedEvents[acqEvent]) {
+        // Event already triggered in gameplay
+        isAcquired = true;
+        isAvailable = true;
+      } else {
+        // Future/extensible or event-locked weapon
+        isAcquired = false;
+        isAvailable = false;
+      }
+
+      // Track acquirable event trigger
+      if (acqEvent && acqEvent !== 'default_start') {
+        if (!state.acquirableEvents) state.acquirableEvents = {};
+        state.acquirableEvents[acqEvent] = wid;
+      }
+
+      if (weaponsSystem.weapons[wid]) {
+        // Update existing weapon with live database values
+        const existing = weaponsSystem.weapons[wid];
+        existing.name = rawW.weapon_name || existing.name;
+        existing.shortName = (rawW.weapon_name || existing.shortName || wid).toUpperCase();
+        existing.icon = rawW.icon || existing.icon;
+        existing.colorHex = parsedHex;
+        existing.cssColor = rawHex;
+        existing.glowColor = glowRgba;
+        existing.energyCost = drainPct;                   // DRAIN % / SHOT
+        existing.canOverheat = canHeat;                   // CAN OVERHEAT
+        existing.cooldownDurationSec = coolSec;           // COOL OFF TIME
+        existing.damagePerHit = dmgHits;                  // DAMAGE HITS FOR WEAPONS
+        existing.bulletSpeed = bSpeed;
+        existing.stageUnlocked = wStage;
+        existing.isInitialWeapon = isInit;                // INITIAL WEAPON
+        existing.isAcquirable = isAcq;                    // ACQUIRABLE
+        existing.acquireEvent = acqEvent;                 // EVENT
+        existing.description = rawW.description || existing.description;
+        existing.isAvailable = isAvailable || existing.isAvailable;
+        existing.acquired = isAcquired || existing.acquired;
+      } else {
+        // Register new weapon from database
+        weaponsSystem.registerWeapon({
+          id: wid,
+          name: rawW.weapon_name || wid,
+          shortName: (rawW.weapon_name || wid).toUpperCase(),
+          icon: rawW.icon || '⚡',
+          colorHex: parsedHex,
+          cssColor: rawHex,
+          glowColor: glowRgba,
+          energyCost: drainPct,                           // DRAIN % / SHOT
+          canOverheat: canHeat,                           // CAN OVERHEAT
+          cooldownDurationSec: coolSec,                   // COOL OFF TIME
+          damagePerHit: dmgHits,                          // DAMAGE HITS FOR WEAPONS
+          bulletSpeed: bSpeed,
+          stageUnlocked: wStage,
+          isInitialWeapon: isInit,                        // INITIAL WEAPON
+          isAcquirable: isAcq,                            // ACQUIRABLE
+          acquireEvent: acqEvent,                         // EVENT
+          description: rawW.description || '',
+          acquired: isAcquired,
+          isAvailable: isAvailable
+        });
+      }
+    }
+
+    // Auto-equip the initial weapon for this stage!
+    if (initialWeaponForStage && weaponsSystem.weapons[initialWeaponForStage]) {
+      console.log(`[GameManagerSync] 🎯 Equipped Stage ${currentStage} initial weapon from database: ${initialWeaponForStage}`);
+      weaponsSystem.equipWeapon(initialWeaponForStage);
+    } else {
+      // Fallback: equip first available weapon for this stage
+      const stageWpns = Object.values(weaponsSystem.weapons).filter(w => w.stageUnlocked === currentStage && w.isAvailable && w.acquired);
+      if (stageWpns.length > 0) {
+        weaponsSystem.equipWeapon(stageWpns[0].id);
+      }
+    }
+
+    // Refresh UI
+    weaponsSystem.updateCrosshairWeaponRing();
+    weaponsSystem.notify();
+    if (typeof renderWeaponWheel === 'function') {
+      renderWeaponWheel();
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 2. INTEGRATE STAGES (STAGE LEVEL, NAME, THEME, EVENTS WITHIN LEVEL, END LEVEL EVENT, PAR SCORE, DESCRIPTION)
+  // ---------------------------------------------------------------------------
+  const dbStages = Array.isArray(data.stages) ? data.stages : [];
+  if (dbStages.length > 0) {
+    for (const s of dbStages) {
+      const lvl = parseInt(s.stage_level) || 1;
+      if (!STAGE_REGISTRY[lvl]) {
+        STAGE_REGISTRY[lvl] = {
+          level: lvl,
+          name: s.stage_name,
+          slug: s.stage_name.toLowerCase().replace(/[^a-z0-9_]/g, '_')
+        };
+      }
+      STAGE_REGISTRY[lvl].name = s.stage_name;
+      STAGE_REGISTRY[lvl].theme = s.environment_theme;
+      STAGE_REGISTRY[lvl].eventsWithin = s.events_within_level;
+      STAGE_REGISTRY[lvl].endLevelEvent = s.end_level_event;
+      STAGE_REGISTRY[lvl].description = s.description;
+      STAGE_REGISTRY[lvl].parScore = parseInt(s.par_score) || 5000;
+    }
+
+    const currentStageRecord = dbStages.find(s => parseInt(s.stage_level) === currentStage);
+    if (currentStageRecord) {
+      // Update HUD status & subtitle
+      const hudStatus = document.getElementById('hud-status');
+      if (hudStatus) {
+        hudStatus.textContent = `STAGE ${currentStage}: ${currentStageRecord.stage_name.toUpperCase()}`;
+      }
+      const splashSub = document.querySelector('.splash-game-sub');
+      if (splashSub) {
+        splashSub.textContent = `STAGE ${currentStage}: ${currentStageRecord.stage_name.toUpperCase()}`;
+      }
+
+      // Update Mission objectives heading
+      const missionHeading = document.querySelector('#tab-pane-missions .section-subheading span:first-child');
+      if (missionHeading) {
+        missionHeading.textContent = `🎯 STAGE ${currentStage}: ${currentStageRecord.stage_name.toUpperCase()} OBJECTIVES`;
+      }
+
+      // Update in-game events display if present
+      updateMissionObjectivesUI(currentStageRecord);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // 3. INTEGRATE ENEMIES & THREAT REGISTRY (HITS TO DESTROY, PIERCING WEAPON, ARMOR, FORCE FIELD, SPEED, DAMAGE, THREAT)
+  // ---------------------------------------------------------------------------
+  const dbEnemies = Array.isArray(data.enemies) ? data.enemies : [];
+  if (dbEnemies.length > 0) {
+    const stageEnemies = dbEnemies.filter(e => parseInt(e.stage_level) === currentStage);
+    window.activeStageEnemies = stageEnemies.length > 0 ? stageEnemies : dbEnemies;
+    state.stageEnemies = window.activeStageEnemies;
+
+    console.log(`[GameManagerSync] Loaded ${window.activeStageEnemies.length} threat enemy profiles from database for Stage ${currentStage}`);
+    updateTacticalEnemiesUI(window.activeStageEnemies);
+  }
+
+  return true;
+}
+
+async function syncGameManagerFromDatabase(stageLevel = null) {
+  const targetLvl = stageLevel || currentActiveStage || 1;
+  try {
+    const data = await fetchGameManagerDatabaseValues(targetLvl);
+    if (data) {
+      applyGameManagerValues(data, targetLvl);
+      return true;
+    }
+  } catch (err) {
+    console.warn('[GameManagerSync] Error synchronizing Game Manager database values:', err);
+  }
+  return false;
+}
+
+function triggerAcquireEvent(eventName) {
+  if (!eventName) return;
+  if (!state.unlockedEvents) state.unlockedEvents = {};
+  state.unlockedEvents[eventName] = true;
+
+  if (state.acquirableEvents && state.acquirableEvents[eventName]) {
+    const wid = state.acquirableEvents[eventName];
+    if (weaponsSystem && weaponsSystem.weapons[wid]) {
+      weaponsSystem.weapons[wid].acquired = true;
+      weaponsSystem.weapons[wid].isAvailable = true;
+      weaponsSystem.notify();
+      if (typeof renderWeaponWheel === 'function') {
+        renderWeaponWheel();
+      }
+      showToast(`🎉 ARSENAL EVENT UNLOCKED: ${weaponsSystem.weapons[wid].name.toUpperCase()} ACQUIRED!`);
+    }
+  }
+}
+
+function updateMissionObjectivesUI(stageRecord) {
+  if (!stageRecord) return;
+  const eventsBox = document.getElementById('tab-pane-missions');
+  if (!eventsBox) return;
+
+  let dbEventsContainer = document.getElementById('mission-database-events-box');
+  if (!dbEventsContainer) {
+    dbEventsContainer = document.createElement('div');
+    dbEventsContainer.id = 'mission-database-events-box';
+    dbEventsContainer.className = 'drawer-controls-box';
+    eventsBox.appendChild(dbEventsContainer);
+  }
+
+  const eventsList = (stageRecord.events_within_level || '')
+    .split(',')
+    .map(e => e.trim())
+    .filter(e => e.length > 0);
+
+  const eventsHtml = eventsList.map((evt, i) => `
+    <div class="key-row" style="margin-bottom: 4px;">
+      <span>Phase ${i + 1}: ${evt}</span>
+      <span class="badge-val" style="color:var(--cyan-neon); font-size:0.68rem;">ACTIVE</span>
+    </div>
+  `).join('');
+
+  dbEventsContainer.innerHTML = `
+    <div class="section-subheading">
+      <span>🛰️ LEVEL PROGRESSION &amp; MISSION EVENTS</span>
+      <span style="font-size:0.65rem; color:var(--accent-gold); font-weight:bold;">PAR: ${(parseInt(stageRecord.par_score) || 5000).toLocaleString()} PTS</span>
+    </div>
+    <div style="font-size:0.64rem; color:var(--text-dim); margin-bottom:8px;">
+      ${stageRecord.description || 'Navigate through hyperspace corridor and complete navigation objectives.'}
+    </div>
+    <div style="display:flex; flex-direction:column; gap:2px; margin-bottom:8px;">
+      ${eventsHtml}
+    </div>
+    <div class="key-row" style="border-top:1px solid rgba(0,240,255,0.25); padding-top:6px; margin-top:4px;">
+      <span style="color:var(--accent-gold); font-weight:bold;">🏁 LEVEL EXIT EVENT:</span>
+      <span class="badge-val" style="color:var(--accent-green); font-size:0.68rem;">${stageRecord.end_level_event || 'Jump Gate Initialized'}</span>
+    </div>
+  `;
+}
+
+function updateTacticalEnemiesUI(enemiesList) {
+  if (!Array.isArray(enemiesList) || enemiesList.length === 0) return;
+  const missionsPane = document.getElementById('tab-pane-missions');
+  if (!missionsPane) return;
+
+  let threatsContainer = document.getElementById('mission-threat-registry-box');
+  if (!threatsContainer) {
+    threatsContainer = document.createElement('div');
+    threatsContainer.id = 'mission-threat-registry-box';
+    threatsContainer.className = 'drawer-controls-box';
+    missionsPane.appendChild(threatsContainer);
+  }
+
+  const threatsHtml = enemiesList.map(e => `
+    <div style="background:rgba(239,68,111,0.08); border:1px solid rgba(239,68,111,0.3); border-radius:6px; padding:8px 10px; margin-bottom:6px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+        <span style="font-weight:bold; font-size:0.75rem; color:#fff;">${e.icon || '🛸'} ${(e.enemy_name || e.id).toUpperCase()}</span>
+        <span style="font-size:0.65rem; padding:1px 6px; border-radius:3px; background:rgba(239,68,111,0.25); color:#ff85a1;">${e.threat_level || 'THREAT'}</span>
+      </div>
+      <div class="wpn-specs-grid" style="grid-template-columns: repeat(2, 1fr); gap: 4px; font-size: 0.65rem;">
+        <div><span style="color:var(--text-dim);">Hits to Destroy:</span> <strong style="color:#06d6a0;">${e.hits_to_destroy || e.hits || 2} HITS</strong></div>
+        <div><span style="color:var(--text-dim);">Piercing:</span> <strong style="color:var(--cyan-neon);">${(e.piercing_weapon_id || e.piercing || 'any').toUpperCase()}</strong></div>
+        <div><span style="color:var(--text-dim);">Armor:</span> <strong>${e.armor_strength || e.armor || 10}%</strong></div>
+        <div><span style="color:var(--text-dim);">Bounty:</span> <strong style="color:var(--accent-gold);">${e.score_value || e.score || 100} PTS</strong></div>
+      </div>
+    </div>
+  `).join('');
+
+  threatsContainer.innerHTML = `
+    <div class="section-subheading">
+      <span>👾 ENEMY THREAT REGISTRY &amp; ARMOR SPECS</span>
+      <span style="font-size:0.65rem; color:#ff85a1; font-weight:bold;">${enemiesList.length} UNITS</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:4px; margin-top:6px;">
+      ${threatsHtml}
+    </div>
+  `;
+}
 
 // =============================================================================
 // COLLAPSIBLE PANELS: LEFT (MISSION), TOP (TELEMETRY), BOTTOM (TACTICAL)
@@ -3144,61 +3729,81 @@ function getEngineApi() {
       if (flight.yawSpeed) CONFIG.yawSpeed = flight.yawSpeed;
     },
     setWeapons: (weaponsConfig) => {
-      if (!weaponsConfig) return;
+      if (!weaponsConfig || !weaponsSystem) return;
       if (weaponsConfig.initial) {
         const initWpn = weaponsConfig.initial;
-        if (weaponsSystem && !weaponsSystem.weapons[initWpn.id]) {
-          weaponsSystem.registerWeapon({
-            id: initWpn.id,
-            name: initWpn.name,
-            shortName: (initWpn.name || initWpn.id).toUpperCase(),
-            icon: initWpn.icon || '⚡',
-            colorHex: initWpn.color ? parseInt(initWpn.color.replace('#', '0x')) : 0xffd166,
-            cssColor: initWpn.color || '#ffd166',
-            glowColor: initWpn.glowColor || 'rgba(255, 209, 102, 0.65)',
-            energyCost: initWpn.energy_drain_pct || 15,
-            cooldownDurationSec: initWpn.cooldown_seconds || 6,
-            bulletSpeed: initWpn.bullet_speed || 800,
-            boltLength: 12.0,
-            boltRadius: 0.20,
-            bulletLifetime: 2.8,
-            bulletLightIntensity: 5.0,
-            description: initWpn.description || '',
-            stageUnlocked: currentActiveStage,
-            acquired: true,
-            isAvailable: true
-          });
+        const initData = {
+          id: initWpn.id,
+          name: initWpn.name,
+          shortName: (initWpn.name || initWpn.id).toUpperCase(),
+          icon: initWpn.icon || '⚡',
+          colorHex: initWpn.color ? parseInt(initWpn.color.replace('#', '0x'), 16) : 0xffd166,
+          cssColor: initWpn.color || '#ffd166',
+          glowColor: initWpn.glowColor || hexToRgbaString(initWpn.color || '#ffd166', 0.65),
+          energyCost: initWpn.energy_drain_pct !== undefined ? parseFloat(initWpn.energy_drain_pct) : 15,
+          canOverheat: initWpn.can_overheat !== undefined ? (parseInt(initWpn.can_overheat) !== 0) : true,
+          cooldownDurationSec: initWpn.cooldown_seconds !== undefined ? parseFloat(initWpn.cooldown_seconds) : 6,
+          damagePerHit: initWpn.damage_per_hit || initWpn.damage || 1,
+          bulletSpeed: initWpn.bullet_speed || 800,
+          boltLength: 12.0,
+          boltRadius: 0.20,
+          bulletLifetime: 2.8,
+          bulletLightIntensity: 5.0,
+          description: initWpn.description || '',
+          stageUnlocked: currentActiveStage,
+          isInitialWeapon: true,
+          acquired: true,
+          isAvailable: true
+        };
+        if (!weaponsSystem.weapons[initWpn.id]) {
+          weaponsSystem.registerWeapon(initData);
+        } else {
+          Object.assign(weaponsSystem.weapons[initWpn.id], initData);
         }
-        if (weaponsSystem && typeof weaponsSystem.equipWeapon === 'function') {
+        if (typeof weaponsSystem.equipWeapon === 'function') {
           weaponsSystem.equipWeapon(initWpn.id);
         }
       }
       if (Array.isArray(weaponsConfig.acquirable) && weaponsSystem) {
         for (const acq of weaponsConfig.acquirable) {
+          const isAcq = acq.acquire_event === 'default_start' || (state.unlockedEvents && state.unlockedEvents[acq.acquire_event]);
+          const acqData = {
+            id: acq.id,
+            name: acq.name,
+            shortName: (acq.name || acq.id).toUpperCase(),
+            icon: acq.icon || '🔫',
+            colorHex: acq.color ? parseInt(acq.color.replace('#', '0x'), 16) : 0x00f0ff,
+            cssColor: acq.color || '#00f0ff',
+            glowColor: acq.glowColor || hexToRgbaString(acq.color || '#00f0ff', 0.65),
+            energyCost: acq.energy_drain_pct !== undefined ? parseFloat(acq.energy_drain_pct) : 15,
+            canOverheat: acq.can_overheat !== undefined ? (parseInt(acq.can_overheat) !== 0) : true,
+            cooldownDurationSec: acq.cooldown_seconds !== undefined ? parseFloat(acq.cooldown_seconds) : 6,
+            damagePerHit: acq.damage_per_hit || acq.damage || 1,
+            bulletSpeed: acq.bullet_speed || 700,
+            boltLength: 10.0,
+            boltRadius: 0.18,
+            bulletLifetime: 2.5,
+            bulletLightIntensity: 4.0,
+            description: acq.description || '',
+            stageUnlocked: currentActiveStage,
+            isAcquirable: true,
+            acquireEvent: acq.acquire_event,
+            acquired: !!isAcq,
+            isAvailable: !!isAcq
+          };
           if (!weaponsSystem.weapons[acq.id]) {
-            weaponsSystem.registerWeapon({
-              id: acq.id,
-              name: acq.name,
-              shortName: (acq.name || acq.id).toUpperCase(),
-              icon: acq.icon || '🔫',
-              colorHex: acq.color ? parseInt(acq.color.replace('#', '0x')) : 0x00f0ff,
-              cssColor: acq.color || '#00f0ff',
-              glowColor: acq.glowColor || 'rgba(0, 240, 255, 0.65)',
-              energyCost: acq.energy_drain_pct || 15,
-              cooldownDurationSec: acq.cooldown_seconds || 6,
-              bulletSpeed: acq.bullet_speed || 700,
-              boltLength: 10.0,
-              boltRadius: 0.18,
-              bulletLifetime: 2.5,
-              bulletLightIntensity: 4.0,
-              description: acq.description || '',
-              stageUnlocked: currentActiveStage,
-              acquired: acq.acquire_event === 'default_start',
-              isAvailable: true
-            });
+            weaponsSystem.registerWeapon(acqData);
+          } else {
+            Object.assign(weaponsSystem.weapons[acq.id], acqData);
           }
         }
       }
+      weaponsSystem.updateCrosshairWeaponRing();
+      weaponsSystem.notify();
+      if (typeof renderWeaponWheel === 'function') {
+        renderWeaponWheel();
+      }
+      updateWeaponsTabUI();
     },
     setEnemies: (enemiesConfig) => {
       window.activeStageEnemies = enemiesConfig;
@@ -3254,6 +3859,13 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       mod.applyStage(api);
     } else if (mod.default && typeof mod.default.applyStage === 'function') {
       mod.default.applyStage(api);
+    }
+
+    // At level change: check all admin console game manager database values and update the game values
+    try {
+      await syncGameManagerFromDatabase(stage.level);
+    } catch (syncErr) {
+      console.warn('[Wormhole XR Engine] Game Manager database sync error on level change:', syncErr);
     }
 
     // Keep DOM script tag synchronized for DevTools Elements panel inspection
@@ -4854,6 +5466,10 @@ function fireLaserBeam() {
     light,
     direction,
     speed: activeWpn.bulletSpeed || 550, // units per second
+    damage: activeWpn.damagePerHit || 1, // Damage hits for weapons from Game Manager
+    weaponId: activeWpn.id,
+    canOverheat: activeWpn.canOverheat,
+    drainPct: activeWpn.energyCost,
     spawnTime: now,
     lifetime: activeWpn.bulletLifetime || 2.2 // seconds
   });
@@ -5572,6 +6188,8 @@ if (btnScan) {
         objScan.classList.add('completed');
         statusScan.textContent = 'LOCKED (432.8 THz)';
         btnScan.textContent = '✓ Scanned';
+        triggerAcquireEvent('singularity_core_probe');
+        triggerAcquireEvent('resonance_scan_complete');
         checkObjectives();
       }
     }, 120);
@@ -6004,6 +6622,13 @@ function updateFlight(delta) {
       state.yaw = 0;
       state.pitch = 0;
       state.isHyperWarping = false;
+
+      // Advance stage level and trigger level change update from Game Manager database
+      const nextStage = (currentActiveStage % 4) + 1;
+      console.log(`[Wormhole XR Engine] Warp traversal complete. Advancing to Stage ${nextStage}...`);
+      triggerAcquireEvent('warp_horizon_jump');
+      triggerAcquireEvent('core_collapse_breakthrough');
+      loadStageDeviceModule(nextStage, currentActiveDeviceType);
     }
   } else {
     if (accel.lengthSq() > 0) {
@@ -6386,6 +7011,15 @@ async function runStartupDiagnosticsAndSplashScreen() {
 
     const detectedDevType = getDeviceTypeFromMode(initialMode);
     currentActiveDeviceType = detectedDevType;
+
+    // At startup: check all admin console game manager database values and update the game values
+    if (splashStatus) splashStatus.textContent = 'CHECKING ARSENAL & GAME MANAGER DATABASE...';
+    try {
+      await syncGameManagerFromDatabase(1);
+    } catch (startupSyncErr) {
+      console.warn('[Wormhole XR Engine] Startup Game Manager sync error:', startupSyncErr);
+    }
+
     await loadStageDeviceModule(1, detectedDevType);
 
     const startBtn = document.getElementById('btn-splash-start');
@@ -6460,6 +7094,11 @@ if (typeof window !== 'undefined') {
   window.reloadActiveStage = () => loadStageDeviceModule(currentActiveStage, currentActiveDeviceType);
   window.currentActiveStage = () => currentActiveStage;
   window.currentActiveDeviceType = () => currentActiveDeviceType;
+  window.syncGameManagerFromDatabase = syncGameManagerFromDatabase;
+  window.fetchGameManagerDatabaseValues = fetchGameManagerDatabaseValues;
+  window.applyGameManagerValues = applyGameManagerValues;
+  window.triggerAcquireEvent = triggerAcquireEvent;
+  window.lastGameManagerData = () => lastGameManagerData;
 }
 
 // Initial mobile snap grid calculation

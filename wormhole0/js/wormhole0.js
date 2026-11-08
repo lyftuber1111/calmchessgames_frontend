@@ -2128,14 +2128,15 @@ function hexToRgbaString(hex, alpha = 0.65) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-async function fetchGameManagerDatabaseValues(stageLevel = null) {
-  const queryParam = stageLevel ? `&stage_level=${stageLevel}` : '';
+async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = null) {
+  const dev = deviceType || currentActiveDeviceType || 'desktop';
+  const queryParam = (stageLevel ? `&stage_level=${stageLevel}` : '') + (dev ? `&device_type=${dev}` : '');
 
   // 1. First attempt: Query primary individual endpoints in parallel (guaranteed on live server)
   try {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 2800);
-    const baseW = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_weapons${queryParam}`;
+    const baseW = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_weapons${stageLevel ? `&stage_level=${stageLevel}` : ''}`;
     const baseS = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_stages`;
     const baseE = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_enemies${queryParam}`;
 
@@ -2147,7 +2148,7 @@ async function fetchGameManagerDatabaseValues(stageLevel = null) {
     clearTimeout(tid);
 
     if (rW && rW.weapons && rW.weapons.length > 0) {
-      console.log(`[GameManagerSync] Fetched ${rW.weapons.length} weapons, ${(rS && rS.stages) ? rS.stages.length : 0} stages, ${(rE && rE.enemies) ? rE.enemies.length : 0} threats`);
+      console.log(`[GameManagerSync] Fetched ${rW.weapons.length} weapons, ${(rS && rS.stages) ? rS.stages.length : 0} stages, ${(rE && rE.enemies) ? rE.enemies.length : 0} threats for [${dev.toUpperCase()}]`);
       return {
         success: true,
         weapons: (rW && rW.weapons) || [],
@@ -2172,7 +2173,7 @@ async function fetchGameManagerDatabaseValues(stageLevel = null) {
     if (res && res.ok) {
       const json = await res.json().catch(() => null);
       if (json && json.success && (json.weapons || json.stages || json.enemies)) {
-        console.log(`[GameManagerSync] Fetched Game Manager database records via unified endpoint`);
+        console.log(`[GameManagerSync] Fetched Game Manager database records via unified endpoint for [${dev.toUpperCase()}]`);
         return json;
       }
     }
@@ -2181,12 +2182,13 @@ async function fetchGameManagerDatabaseValues(stageLevel = null) {
   return null;
 }
 
-function applyGameManagerValues(data, stageLevel = 1) {
+function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
   if (!data) return false;
   lastGameManagerData = data;
   const currentStage = stageLevel || currentActiveStage || 1;
+  const currentDev = (deviceType || currentActiveDeviceType || 'desktop').toLowerCase();
 
-  console.log(`[GameManagerSync] 🔄 Analyzing & integrating Game Manager database values for Stage ${currentStage}...`);
+  console.log(`[GameManagerSync] 🔄 Analyzing & integrating Game Manager database values for Stage ${currentStage} on [${currentDev.toUpperCase()}]...`);
 
   // ---------------------------------------------------------------------------
   // 1. INTEGRATE WEAPONS (INITIAL WEAPON, ACQUIRABLE & EVENT, DRAIN %/SHOT, CAN OVERHEAT, COOL OFF TIME, DAMAGE HITS)
@@ -2367,27 +2369,34 @@ function applyGameManagerValues(data, stageLevel = 1) {
   }
 
   // ---------------------------------------------------------------------------
-  // 3. INTEGRATE ENEMIES & THREAT REGISTRY (HITS TO DESTROY, PIERCING WEAPON, ARMOR, FORCE FIELD, SPEED, DAMAGE, THREAT)
+  // 3. INTEGRATE ENEMIES & THREAT REGISTRY (SEPARATED VALUES FOR CURRENT DEVICE)
   // ---------------------------------------------------------------------------
   const dbEnemies = Array.isArray(data.enemies) ? data.enemies : [];
   if (dbEnemies.length > 0) {
-    const stageEnemies = dbEnemies.filter(e => parseInt(e.stage_level) === currentStage);
-    window.activeStageEnemies = stageEnemies.length > 0 ? stageEnemies : dbEnemies;
+    const stageEnemies = dbEnemies.filter(e => {
+      const matchStage = parseInt(e.stage_level) === currentStage;
+      const enemyDev = (e.device_type || 'all').toLowerCase();
+      const matchDevice = (enemyDev === 'all' || enemyDev === currentDev || !e.device_type);
+      return matchStage && matchDevice;
+    });
+
+    window.activeStageEnemies = stageEnemies.length > 0 ? stageEnemies : dbEnemies.filter(e => parseInt(e.stage_level) === currentStage);
     state.stageEnemies = window.activeStageEnemies;
 
-    console.log(`[GameManagerSync] Loaded ${window.activeStageEnemies.length} threat enemy profiles from database for Stage ${currentStage}`);
+    console.log(`[GameManagerSync] ✅ Verified ${window.activeStageEnemies.length} threat enemy profiles from database for Stage ${currentStage} on device [${currentDev.toUpperCase()}]`);
     updateTacticalEnemiesUI(window.activeStageEnemies);
   }
 
   return true;
 }
 
-async function syncGameManagerFromDatabase(stageLevel = null) {
+async function syncGameManagerFromDatabase(stageLevel = null, deviceType = null) {
   const targetLvl = stageLevel || currentActiveStage || 1;
+  const dev = deviceType || currentActiveDeviceType || 'desktop';
   try {
-    const data = await fetchGameManagerDatabaseValues(targetLvl);
+    const data = await fetchGameManagerDatabaseValues(targetLvl, dev);
     if (data) {
-      applyGameManagerValues(data, targetLvl);
+      applyGameManagerValues(data, targetLvl, dev);
       return true;
     }
   } catch (err) {
@@ -4166,7 +4175,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
 
     // At level change: check all admin console game manager database values and update the game values
     try {
-      await syncGameManagerFromDatabase(stage.level);
+      await syncGameManagerFromDatabase(stage.level, deviceType);
     } catch (syncErr) {
       console.warn('[Wormhole XR Engine] Game Manager database sync error on level change:', syncErr);
     }

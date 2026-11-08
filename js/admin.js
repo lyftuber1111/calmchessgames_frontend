@@ -4198,11 +4198,11 @@ Thank you for reaching out to Calm Chess Games. `;
           // Sensible default fallback if DB table not yet populated
           if (!cachedGameEnemies || cachedGameEnemies.length === 0) {
               cachedGameEnemies = [
-                  { id: 1, enemy_id: 'void_recon_drone', enemy_name: 'Void Recon Drone', enemy_class: 'Scout Drone', icon: '🛸', color_hex: '#00f0ff', stage_level: 1, hits_to_destroy: 2, piercing_weapon_id: 'any', armor_strength: 10, has_force_field: 0, shield_capacity_hits: 0, movement_speed: 320, attack_damage: 5, fire_rate_seconds: 2.5, score_value: 100, threat_level: 'Low', description: 'Light autonomous scout probe sent to map entry corridor geometry.', is_enabled: 1 },
-                  { id: 2, enemy_id: 'phase_interceptor', enemy_name: 'Phase Interceptor', enemy_class: 'Fast Interceptor', icon: '🚀', color_hex: '#38bdf8', stage_level: 1, hits_to_destroy: 4, piercing_weapon_id: 'red_laser', armor_strength: 25, has_force_field: 1, shield_capacity_hits: 2, movement_speed: 420, attack_damage: 10, fire_rate_seconds: 1.8, score_value: 250, threat_level: 'Medium', description: 'High-agility skirmisher equipped with a polarized light shield. Pierced by Neon Red Laser.', is_enabled: 1 },
-                  { id: 3, enemy_id: 'tachyon_cruiser', enemy_name: 'Horizon Tachyon Cruiser', enemy_class: 'Heavy Cruiser', icon: '🛰️', color_hex: '#ffd166', stage_level: 2, hits_to_destroy: 8, piercing_weapon_id: 'tachyon_lance', armor_strength: 50, has_force_field: 1, shield_capacity_hits: 4, movement_speed: 200, attack_damage: 20, fire_rate_seconds: 3.0, score_value: 500, threat_level: 'High', description: 'Reinforced hull traversing relativistic space. Shields pierced by Tachyon Lance.', is_enabled: 1 },
-                  { id: 4, enemy_id: 'void_guardian', enemy_name: 'Singularity Void Guardian', enemy_class: 'Guardian Frigate', icon: '👾', color_hex: '#a855f7', stage_level: 3, hits_to_destroy: 15, piercing_weapon_id: 'plasma_torpedo', armor_strength: 70, has_force_field: 1, shield_capacity_hits: 6, movement_speed: 150, attack_damage: 35, fire_rate_seconds: 2.2, score_value: 1000, threat_level: 'High', description: 'Ancient automaton defending singularity core. Dense armor broken by Quantum Plasma Torpedoes.', is_enabled: 1 },
-                  { id: 5, enemy_id: 'quantum_dreadnought', enemy_name: 'Quantum Omega Dreadnought', enemy_class: 'Boss Dreadnought', icon: '💀', color_hex: '#ef476f', stage_level: 4, hits_to_destroy: 35, piercing_weapon_id: 'quantum_phaser', armor_strength: 90, has_force_field: 1, shield_capacity_hits: 15, movement_speed: 90, attack_damage: 60, fire_rate_seconds: 1.2, score_value: 5000, threat_level: 'Extreme', description: 'Colossal multi-phase flagship commanding deep realm forces. Impervious nanite armor.', is_enabled: 1 }
+                  { id: 1, enemy_id: 'void_recon_drone_desktop', enemy_name: 'Void Recon Drone (Desktop)', device_type: 'desktop', enemy_class: 'Scout Drone', icon: '🛸', color_hex: '#00f0ff', stage_level: 1, hits_to_destroy: 2, piercing_weapon_id: 'any', armor_strength: 10, has_force_field: 0, shield_capacity_hits: 0, movement_speed: 320, attack_damage: 5, fire_rate_seconds: 2.5, score_value: 100, threat_level: 'Low', description: 'Light autonomous scout probe sent to map entry corridor geometry.', is_enabled: 1 },
+                  { id: 2, enemy_id: 'phase_interceptor_desktop', enemy_name: 'Phase Interceptor (Desktop)', device_type: 'desktop', enemy_class: 'Fast Interceptor', icon: '🚀', color_hex: '#38bdf8', stage_level: 1, hits_to_destroy: 4, piercing_weapon_id: 'red_laser', armor_strength: 25, has_force_field: 1, shield_capacity_hits: 2, movement_speed: 420, attack_damage: 10, fire_rate_seconds: 1.8, score_value: 250, threat_level: 'Medium', description: 'High-agility skirmisher equipped with a polarized light shield. Pierced by Neon Red Laser.', is_enabled: 1 },
+                  { id: 3, enemy_id: 'tachyon_cruiser_desktop', enemy_name: 'Horizon Tachyon Cruiser (Desktop)', device_type: 'desktop', enemy_class: 'Heavy Cruiser', icon: '🛰️', color_hex: '#ffd166', stage_level: 2, hits_to_destroy: 8, piercing_weapon_id: 'tachyon_lance', armor_strength: 50, has_force_field: 1, shield_capacity_hits: 4, movement_speed: 200, attack_damage: 20, fire_rate_seconds: 3.0, score_value: 500, threat_level: 'High', description: 'Reinforced hull traversing relativistic space. Shields pierced by Tachyon Lance.', is_enabled: 1 },
+                  { id: 4, enemy_id: 'void_guardian_desktop', enemy_name: 'Singularity Void Guardian (Desktop)', device_type: 'desktop', enemy_class: 'Guardian Frigate', icon: '👾', color_hex: '#a855f7', stage_level: 3, hits_to_destroy: 15, piercing_weapon_id: 'plasma_torpedo', armor_strength: 70, has_force_field: 1, shield_capacity_hits: 6, movement_speed: 150, attack_damage: 35, fire_rate_seconds: 2.2, score_value: 1000, threat_level: 'High', description: 'Ancient automaton defending singularity core. Dense armor broken by Quantum Plasma Torpedoes.', is_enabled: 1 },
+                  { id: 5, enemy_id: 'quantum_dreadnought_desktop', enemy_name: 'Quantum Omega Dreadnought (Desktop)', device_type: 'desktop', enemy_class: 'Boss Dreadnought', icon: '💀', color_hex: '#ef476f', stage_level: 4, hits_to_destroy: 35, piercing_weapon_id: 'quantum_phaser', armor_strength: 90, has_force_field: 1, shield_capacity_hits: 15, movement_speed: 90, attack_damage: 60, fire_rate_seconds: 1.2, score_value: 5000, threat_level: 'Extreme', description: 'Colossal multi-phase flagship commanding deep realm forces. Impervious nanite armor.', is_enabled: 1 }
               ];
           }
 
@@ -4285,17 +4285,33 @@ Thank you for reaching out to Calm Chess Games. `;
           const circumference = parseFloat(e.circumference !== undefined && e.circumference !== null ? e.circumference : 6.0).toFixed(1);
           const radius = (parseFloat(circumference) / (2 * Math.PI)).toFixed(2);
 
-          // Device badge
+          // Device badge & listing type label
           const devType = (e.device_type || 'desktop').toLowerCase();
-          let devBadge = '<span style="background:rgba(56,189,248,0.18);border:1px solid #38bdf8;color:#38bdf8;padding:3px 8px;border-radius:6px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">💻 Desktop</span>';
+          let devListingLabel = 'Desktop';
+          let devBadge = '<span style="background:rgba(56,189,248,0.18);border:1px solid #38bdf8;color:#38bdf8;padding:2px 7px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">💻 Desktop</span>';
           if (devType === 'mobile') {
-              devBadge = '<span style="background:rgba(239,68,111,0.18);border:1px solid #ef476f;color:#ff4d6d;padding:3px 8px;border-radius:6px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">📱 Mobile</span>';
+              devListingLabel = 'Mobile';
+              devBadge = '<span style="background:rgba(239,68,111,0.18);border:1px solid #ef476f;color:#ff4d6d;padding:2px 7px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">📱 Mobile</span>';
           } else if (devType === 'vr') {
-              devBadge = '<span style="background:rgba(168,85,247,0.18);border:1px solid #a855f7;color:#c084fc;padding:3px 8px;border-radius:6px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">🥽 VR Headset</span>';
+              devListingLabel = 'VR Headset';
+              devBadge = '<span style="background:rgba(168,85,247,0.18);border:1px solid #a855f7;color:#c084fc;padding:2px 7px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">🥽 VR Headset</span>';
           } else if (devType === 'arcore') {
-              devBadge = '<span style="background:rgba(16,185,129,0.18);border:1px solid #10b981;color:#10b981;padding:3px 8px;border-radius:6px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">📱 ARCore</span>';
+              devListingLabel = 'ARCore';
+              devBadge = '<span style="background:rgba(16,185,129,0.18);border:1px solid #10b981;color:#10b981;padding:2px 7px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">📱 ARCore</span>';
           } else if (devType === 'all') {
-              devBadge = '<span style="background:rgba(255,215,0,0.18);border:1px solid #ffd700;color:#ffd700;padding:3px 8px;border-radius:6px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">🌐 Universal</span>';
+              devListingLabel = 'Universal';
+              devBadge = '<span style="background:rgba(255,215,0,0.18);border:1px solid #ffd700;color:#ffd700;padding:2px 7px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;">🌐 Universal</span>';
+          }
+
+          // Ensure each enemy display name includes device type, replacing any (Copy)
+          let rawName = (e.enemy_name || '').trim();
+          rawName = rawName.replace(/\s*\(Copy(?:\s+\d+)?\)\s*/gi, ' ').trim();
+          rawName = rawName.replace(/\s*\((?:Desktop|Mobile|VR Headset|VR|ARCore|Universal)(?:\s+\d+)?\)\s*$/i, '').trim();
+          let displayName = `${rawName} (${devListingLabel})`;
+
+          let displayCode = (e.enemy_id || '').trim();
+          if (/_copy(?:\_\d+)?/i.test(displayCode)) {
+              displayCode = displayCode.replace(/_copy(?:\_\d+)?/i, `_${devType}`).trim();
           }
 
           // Threat badge color
@@ -4318,10 +4334,14 @@ Thank you for reaching out to Calm Chess Games. `;
                       </span>
                   </td>
                   <td style="padding: 10px 12px;">
-                      <div style="font-weight: bold; color: #fff; font-size: 0.92rem;">${escapeHtml(e.enemy_name)}</div>
+                      <div style="font-weight: bold; color: #fff; font-size: 0.92rem;">${escapeHtml(displayName)}</div>
                       <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
-                          <span style="font-size: 0.73rem; color: #ff4d6d; font-family: monospace;">${escapeHtml(e.enemy_id)}</span>
+                          <span style="font-size: 0.73rem; color: #ff4d6d; font-family: monospace;">${escapeHtml(displayCode)}</span>
                           <span style="font-size: 0.7rem; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px;">${escapeHtml(e.enemy_class || 'Drone')}</span>
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
+                          <span style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Device:</span>
+                          ${devBadge}
                       </div>
                       ${e.description ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">${escapeHtml(e.description)}</div>` : ''}
                   </td>
@@ -4528,13 +4548,30 @@ Thank you for reaching out to Calm Chess Games. `;
           return;
       }
 
+      const devType = (enemy.device_type || 'desktop').toLowerCase();
+      let devListingLabel = 'Desktop';
+      if (devType === 'mobile') devListingLabel = 'Mobile';
+      else if (devType === 'vr') devListingLabel = 'VR Headset';
+      else if (devType === 'arcore') devListingLabel = 'ARCore';
+      else if (devType === 'all') devListingLabel = 'Universal';
+
+      let cleanName = (enemy.enemy_name || '').trim();
+      if (/\(Copy(?:\s+\d+)?\)/i.test(cleanName)) {
+          cleanName = cleanName.replace(/\(Copy(?:\s+\d+)?\)/i, `(${devListingLabel})`).trim();
+      }
+
+      let cleanCode = (enemy.enemy_id || '').trim();
+      if (/_copy(?:\_\d+)?/i.test(cleanCode)) {
+          cleanCode = cleanCode.replace(/_copy(?:\_\d+)?/i, `_${devType}`).trim();
+      }
+
       const title = document.getElementById('enemyModalTitle');
-      if (title) title.innerHTML = `<span>👾 Edit Threat: ${escapeHtml(enemy.enemy_name)}</span>`;
+      if (title) title.innerHTML = `<span>👾 Edit Threat: ${escapeHtml(cleanName)} [${escapeHtml(devListingLabel)}]</span>`;
 
       document.getElementById('enemyRecordId').value = enemy.id;
-      document.getElementById('enemyCodeInput').value = enemy.enemy_id || '';
+      document.getElementById('enemyCodeInput').value = cleanCode;
       document.getElementById('enemyCodeInput').disabled = false;
-      document.getElementById('enemyNameInput').value = enemy.enemy_name || '';
+      document.getElementById('enemyNameInput').value = cleanName;
       document.getElementById('enemyClassInput').value = enemy.enemy_class || 'Scout Drone';
       if (document.getElementById('enemy3DModelInput')) document.getElementById('enemy3DModelInput').value = enemy.model_3d_type || 'scout_drone';
       if (document.getElementById('enemy3DModelUrlInput')) document.getElementById('enemy3DModelUrlInput').value = enemy.model_3d_url || '';
@@ -4713,11 +4750,25 @@ Thank you for reaching out to Calm Chess Games. `;
       if (cachedGameEnemies && cachedGameEnemies.length > 0) {
           html += cachedGameEnemies.map(e => {
               const icon = e.icon || '🛸';
-              const name = e.enemy_name || e.enemy_id;
-              const code = e.enemy_id || '';
+              const devType = (e.device_type || 'desktop').toLowerCase();
+              let devListingLabel = 'Desktop';
+              if (devType === 'mobile') devListingLabel = 'Mobile';
+              else if (devType === 'vr') devListingLabel = 'VR Headset';
+              else if (devType === 'arcore') devListingLabel = 'ARCore';
+              else if (devType === 'all') devListingLabel = 'Universal';
+
+              let rawName = (e.enemy_name || e.enemy_id).trim();
+              rawName = rawName.replace(/\s*\(Copy(?:\s+\d+)?\)\s*/gi, ' ').trim();
+              rawName = rawName.replace(/\s*\((?:Desktop|Mobile|VR Headset|VR|ARCore|Universal)(?:\s+\d+)?\)\s*$/i, '').trim();
+              let name = `${rawName} (${devListingLabel})`;
+
+              let code = (e.enemy_id || '').trim();
+              if (/_copy(?:\_\d+)?/i.test(code)) {
+                  code = code.replace(/_copy(?:\_\d+)?/i, `_${devType}`).trim();
+              }
+
               const stage = e.stage_level || 1;
-              const device = e.device_type || 'desktop';
-              return `<option value="${e.id}">${icon} ${escapeHtml(name)} (${escapeHtml(code)} &bull; ${escapeHtml(device)} &bull; Stage ${stage})</option>`;
+              return `<option value="${e.id}">${icon} ${escapeHtml(name)} (${escapeHtml(code)} &bull; Device: ${escapeHtml(devListingLabel)} &bull; Stage ${stage})</option>`;
           }).join('');
       }
 

@@ -91,7 +91,7 @@ const state = {
   },
   lastLaserShotTime: 0,
 
-  // Right Joystick Flight Lockout Timer (1s on touch before navigating, 1s resetting on fire tap)
+  // Right Joystick Flight Lockout Timer (3s on touch before navigating, 3s resetting on fire tap)
   flightLockoutUntil: 0,
 
   // Crosshair Aim speed multiplier (default 4.00, max 10.00)
@@ -4946,7 +4946,7 @@ function pollGamepad(delta) {
 
     if ((btnRT && !state.lastPadButtons[7]) || (btnA && !state.lastPadButtons[0])) {
       fireLaserBeam();
-      state.flightLockoutUntil = performance.now() + 1000;
+      state.flightLockoutUntil = performance.now() + 3000;
       vibratePad(pad, 100);
     }
 
@@ -5101,6 +5101,8 @@ if (touchStickZone) {
         flightTapStartTime = performance.now();
         state.touchActive = true;
         setThrottleLockout(true);
+        // Wait 3 seconds before flight navigation (was 1 second)
+        state.flightLockoutUntil = performance.now() + 3000;
         updateStickPos(touch.clientX, touch.clientY);
         handleFlightActivity(); // Closes panels if open
         break;
@@ -5157,11 +5159,11 @@ if (touchStickZone) {
       if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
 
       // Switched fire button to right hand joystick:
-      // Each time fire button is tapped, fire laser and reset the 1 second lockout timer
+      // Each time fire button is tapped, fire laser and reset the 3-second lockout timer
       if (wasTap) {
         lastFireTapTime = performance.now();
         fireLaserBeam();
-        state.flightLockoutUntil = performance.now() + 1000;
+        state.flightLockoutUntil = performance.now() + 3000;
       }
     }
   };
@@ -5181,6 +5183,8 @@ if (touchStickZone) {
     mouseFlightStartX = e.clientX;
     mouseFlightStartY = e.clientY;
     mouseFlightStartTime = performance.now();
+    // Wait 3 seconds before flight navigation (was 1 second)
+    state.flightLockoutUntil = performance.now() + 3000;
     updateStickPos(e.clientX, e.clientY);
     handleFlightActivity();
   });
@@ -5206,12 +5210,12 @@ if (touchStickZone) {
       if (wasTap) {
         lastFireTapTime = performance.now();
         fireLaserBeam();
-        state.flightLockoutUntil = performance.now() + 1000;
+        state.flightLockoutUntil = performance.now() + 3000;
       }
     }
   });
 
-  // Direct click / tap backup on right stick to fire laser and lockout for 1s
+  // Direct click / tap backup on right stick to fire laser and lockout for 3s
   touchStickZone.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -5219,7 +5223,7 @@ if (touchStickZone) {
     lastFireTapTime = performance.now();
     handleFlightActivity();
     fireLaserBeam();
-    state.flightLockoutUntil = performance.now() + 1000;
+    state.flightLockoutUntil = performance.now() + 3000;
   });
 }
 
@@ -5725,8 +5729,8 @@ function fireLaserBeam() {
   // Consume weapon energy (Red laser: 10%, Blue laser: 30%; overheats at 0%)
   weaponsSystem.consumeEnergyOnFire();
 
-  // Lock out right-hand flight for 1 second when fire is triggered
-  state.flightLockoutUntil = now + 1000;
+  // Lock out right-hand flight for 3 seconds when fire is triggered
+  state.flightLockoutUntil = now + 3000;
 
   // If cruise engine is actively thrusting, halt engine and show notification once.
   // Do not show again on subsequent shots until the engine starts thrusting again.
@@ -6146,7 +6150,7 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.code === 'KeyX') {
     fireLaserBeam();
-    state.flightLockoutUntil = performance.now() + 1000;
+    state.flightLockoutUntil = performance.now() + 3000;
   }
   if (e.code === 'KeyZ' || e.code === 'KeyN') {
     alignToWormhole();
@@ -6294,12 +6298,12 @@ window.addEventListener('mousedown', (e) => {
   if (e.button === 0) {
     state.isLeftMouseDown = true;
     fireLaserBeam();
-    state.flightLockoutUntil = performance.now() + 1000;
+    state.flightLockoutUntil = performance.now() + 3000;
   } else if (e.button === 2) {
     // When right mouse button is pressed, rapid fire active weapon
     state.isRightMouseDown = true;
     fireLaserBeam();
-    state.flightLockoutUntil = performance.now() + 1000;
+    state.flightLockoutUntil = performance.now() + 3000;
   }
 });
 
@@ -8013,7 +8017,7 @@ function updateFlight(delta) {
   if (keys['KeyQ']) state.yaw += 0.02;
   if (keys['KeyE']) state.yaw -= 0.02;
 
-  // Right joystick flight control lockout check (disabled for 1s after tapping fire or before navigating)
+  // Right joystick flight control lockout check (disabled for 3s after tapping fire or before navigating)
   const isFlightLockedOut = performance.now() < state.flightLockoutUntil;
   if (touchStickZone) {
     if (isFlightLockedOut && state.touchActive) {

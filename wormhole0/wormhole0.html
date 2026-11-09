@@ -3071,6 +3071,17 @@
       border: 1px solid rgba(239, 68, 111, 0.4);
     }
 
+    .splash-copyright {
+      margin-top: 14px;
+      font-size: clamp(0.70rem, 1.4vmin, 0.78rem);
+      color: #94d8ec;
+      letter-spacing: 0.5px;
+      opacity: 0.9;
+      text-align: center;
+      line-height: 1.4;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+    }
+
     /* ==========================================================================
        CLOSEABLE FULL-SCREEN UNSUPPORTED DEVICE BADGE
        ========================================================================== */
@@ -3716,6 +3727,11 @@
         font-size: 0.82rem !important;
       }
 
+      #wormhole-splash-screen .splash-copyright {
+        margin-top: 6px !important;
+        font-size: 0.62rem !important;
+      }
+
       /* Game Over Modal Landscape */
       #game-over-modal {
         overflow-y: auto !important;
@@ -3845,6 +3861,11 @@
           <button id="btn-splash-start" class="btn-splash-start" disabled title="Device check in progress...">
             ⏳ RUNNING DEVICE CHECK...
           </button>
+        </div>
+
+        <!-- Copyright Display on Beginning Splash Screen -->
+        <div class="splash-copyright" id="splash-copyright">
+          &copy; 2026 Calm Chess Computers &bull; Brian Berry. All Rights Reserved.
         </div>
       </div>
     </div>

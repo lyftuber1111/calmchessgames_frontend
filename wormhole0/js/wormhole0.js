@@ -203,6 +203,9 @@ function checkWebGLSupport() {
 // THREE.JS CORE SCENE INITIALIZATION
 // =============================================================================
 let container = document.getElementById('webgl-container');
+if (container && !container.hasAttribute('tabindex')) {
+  container.setAttribute('tabindex', '0');
+}
 let scene = null;
 let camera = null;
 let renderer = null;
@@ -6318,17 +6321,6 @@ function updateCrosshairPosition(delta) {
         state.crosshair.y = snapGrid.virtualY;
       }
     }
-  } else if (!state.aimActive && !state.isPointerLocked && snapGrid.currentCol >= 0 && snapGrid.currentRow >= 0) {
-    // When aim stick is released, ensure crosshair is snapped at the center of the grid box
-    const boxCenterX = (snapGrid.currentCol + 0.5) * snapGrid.cellWidth;
-    const boxCenterY = (snapGrid.currentRow + 0.5) * snapGrid.cellHeight;
-    if (Math.abs(state.crosshair.x - boxCenterX) > 0.5 || Math.abs(state.crosshair.y - boxCenterY) > 0.5) {
-      state.crosshair.x = boxCenterX;
-      state.crosshair.y = boxCenterY;
-      snapGrid.virtualX = boxCenterX;
-      snapGrid.virtualY = boxCenterY;
-      highlightActiveGridBox(snapGrid.currentCol, snapGrid.currentRow);
-    }
   }
 
   const crosshairEl = document.getElementById('center-crosshair');
@@ -6779,18 +6771,50 @@ window.addEventListener('mousemove', (e) => {
       vectorRing.style.left = `${state.crosshair.x}px`;
       vectorRing.style.top = `${state.crosshair.y}px`;
     }
-  } else if (state.isMouseDown && !isMouseAim) {
-    const deltaX = e.clientX - state.lastMouseX;
-    const deltaY = e.clientY - state.lastMouseY;
-    state.lastMouseX = e.clientX;
-    state.lastMouseY = e.clientY;
+  } else {
+    // When pointer lock is not active, allow mouse cursor to drive crosshair so reticle is NEVER frozen
+    if (!state.isGameOver && !isMouseAim) {
+      const margin = 10;
+      state.crosshair.x = Math.max(margin, Math.min(window.innerWidth - margin, e.clientX));
+      state.crosshair.y = Math.max(margin, Math.min(window.innerHeight - margin, e.clientY));
 
-    touchLookYaw -= deltaX * CONFIG.yawSpeed;
-    touchLookPitch -= deltaY * CONFIG.pitchSpeed;
-    touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
-    state.yaw = lastGyroYaw + touchLookYaw;
-    state.pitch = lastGyroPitch + touchLookPitch;
-    state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
+      if (typeof snapGrid !== 'undefined' && snapGrid.cellWidth > 0 && snapGrid.cellHeight > 0) {
+        snapGrid.virtualX = state.crosshair.x;
+        snapGrid.virtualY = state.crosshair.y;
+        const newCol = Math.min(snapGrid.cols - 1, Math.max(0, Math.floor(state.crosshair.x / snapGrid.cellWidth)));
+        const newRow = Math.min(snapGrid.rows - 1, Math.max(0, Math.floor(state.crosshair.y / snapGrid.cellHeight)));
+        if (newCol !== snapGrid.currentCol || newRow !== snapGrid.currentRow) {
+          snapGrid.currentCol = newCol;
+          snapGrid.currentRow = newRow;
+          highlightActiveGridBox(newCol, newRow);
+        }
+      }
+
+      const crosshairEl = document.getElementById('center-crosshair');
+      if (crosshairEl) {
+        crosshairEl.style.left = `${state.crosshair.x}px`;
+        crosshairEl.style.top = `${state.crosshair.y}px`;
+      }
+      const vectorRing = document.getElementById('vector-alignment-ring');
+      if (vectorRing) {
+        vectorRing.style.left = `${state.crosshair.x}px`;
+        vectorRing.style.top = `${state.crosshair.y}px`;
+      }
+    }
+
+    if (state.isMouseDown && !isMouseAim) {
+      const deltaX = e.clientX - state.lastMouseX;
+      const deltaY = e.clientY - state.lastMouseY;
+      state.lastMouseX = e.clientX;
+      state.lastMouseY = e.clientY;
+
+      touchLookYaw -= deltaX * CONFIG.yawSpeed;
+      touchLookPitch -= deltaY * CONFIG.pitchSpeed;
+      touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
+      state.yaw = lastGyroYaw + touchLookYaw;
+      state.pitch = lastGyroPitch + touchLookPitch;
+      state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
+    }
   }
 });
 
@@ -8419,6 +8443,7 @@ function triggerGameOver() {
 }
 
 let countdownTimerInterval = null;
+let countdownCompletionTimeout = null;
 
 /**
  * Handles Game Start & Restart countdown sequencing:
@@ -8431,11 +8456,16 @@ function startCountdownAndLaunchGame(isRestart = false) {
     clearInterval(countdownTimerInterval);
     countdownTimerInterval = null;
   }
+  if (countdownCompletionTimeout) {
+    clearTimeout(countdownCompletionTimeout);
+    countdownCompletionTimeout = null;
+  }
 
   // Pre-countdown state normalization
   state.isPaused = false;
   state.isGameOver = false;
   state.hasStarted = false;
+  state.isCountdownActive = false;
   document.body.classList.remove('game-paused');
   document.body.classList.remove('game-in-flight');
   const btnQuickPause = document.getElementById('btn-quick-pause');
@@ -8533,6 +8563,15 @@ function startCountdownAndLaunchGame(isRestart = false) {
 }
 
 function executeMissionCountdown(isRestart = false) {
+  if (countdownTimerInterval) {
+    clearInterval(countdownTimerInterval);
+    countdownTimerInterval = null;
+  }
+  if (countdownCompletionTimeout) {
+    clearTimeout(countdownCompletionTimeout);
+    countdownCompletionTimeout = null;
+  }
+
   state.isCountdownActive = true;
   state.hasStarted = false; // Enemies and flight hold until countdown concludes
   state.lastFrameTime = performance.now();
@@ -8560,6 +8599,7 @@ function executeMissionCountdown(isRestart = false) {
   const tipLabel = document.getElementById('countdown-tip-label');
 
   if (countdownOverlay) {
+    countdownOverlay.style.display = '';
     countdownOverlay.classList.add('active');
   }
 
@@ -8593,19 +8633,35 @@ function executeMissionCountdown(isRestart = false) {
     remaining--;
     if (remaining > 0) {
       updateCountdownDisplay();
-    } else if (remaining === 0) {
-      updateCountdownDisplay();
-      setTimeout(() => {
-        clearInterval(countdownTimerInterval);
-        countdownTimerInterval = null;
+    } else {
+      // Clear interval immediately when remaining reaches 0
+      clearInterval(countdownTimerInterval);
+      countdownTimerInterval = null;
+      updateCountdownDisplay(); // Shows 'GO!'
+
+      countdownCompletionTimeout = setTimeout(() => {
+        countdownCompletionTimeout = null;
         if (countdownOverlay) {
           countdownOverlay.classList.remove('active');
+          countdownOverlay.style.display = 'none';
         }
         state.isCountdownActive = false;
         state.hasStarted = true;
         document.body.classList.add('game-in-flight');
         state.lastFrameTime = performance.now();
         centerWormholeOnScreen(true);
+
+        // Ensure keyboard focus is restored and request crosshair capture if on desktop
+        try {
+          if (document.activeElement && document.activeElement.blur) {
+            document.activeElement.blur();
+          }
+          window.focus();
+          if (container && container.focus) container.focus();
+        } catch (e) {}
+        if (!isMobileInUse() && !state.isPointerLocked) {
+          requestCrosshairCapture(true);
+        }
       }, 500);
     }
   }, 1000);
@@ -8614,6 +8670,25 @@ function executeMissionCountdown(isRestart = false) {
 function restartGame() {
   const modal = document.getElementById('game-over-modal');
   if (modal) modal.style.display = 'none';
+
+  // Restore focus to window/container so keyboard input is immediately received
+  try {
+    if (document.activeElement && document.activeElement.blur) {
+      document.activeElement.blur();
+    }
+    window.focus();
+    if (container && container.focus) container.focus();
+  } catch (e) {}
+
+  // Cancel any lingering countdown intervals or timeouts
+  if (countdownTimerInterval) {
+    clearInterval(countdownTimerInterval);
+    countdownTimerInterval = null;
+  }
+  if (countdownCompletionTimeout) {
+    clearTimeout(countdownCompletionTimeout);
+    countdownCompletionTimeout = null;
+  }
 
   // Completely reset pause & game over states across entire game
   state.isGameOver = false;
@@ -8626,6 +8701,9 @@ function restartGame() {
   if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
 
   // Reset desktop keyboard and mouse capture states
+  for (const k in keys) {
+    delete keys[k];
+  }
   state.keys = {};
   state.isPointerLocked = false;
   state.isLeftMouseDown = false;
@@ -8646,7 +8724,7 @@ function restartGame() {
   aimTouchId = null;
   touchLookPitch = 0;
   touchLookYaw = 0;
-  const flightKnob = document.getElementById('flight-stick-knob');
+  const flightKnob = document.getElementById('touch-stick-knob') || document.getElementById('flight-stick-knob');
   if (flightKnob) flightKnob.style.transform = 'translate(-50%, -50%)';
   const aimKnob = document.getElementById('aim-stick-knob');
   if (aimKnob) aimKnob.style.transform = 'translate(-50%, -50%)';
@@ -10073,6 +10151,8 @@ if (typeof window !== 'undefined') {
   window.quitGame = quitGame;
   window.applyPowerupEffect = applyPowerupEffect;
   window.startCountdownAndLaunchGame = startCountdownAndLaunchGame;
+  window.keys = keys;
+  window.requestCrosshairCapture = requestCrosshairCapture;
 }
 
 // Quick Red X Exit buttons (HUD and Splash) -> returns to calmchessgames.com
@@ -10097,6 +10177,9 @@ if (btnRestartGame) {
   btnRestartGame.addEventListener('click', (e) => {
     e.preventDefault();
     restartGame();
+    if (!isMobileInUse()) {
+      requestCrosshairCapture(true);
+    }
   });
 }
 
@@ -10114,6 +10197,9 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyR' || e.code === 'Enter' || e.code === 'Space') {
       e.preventDefault();
       restartGame();
+      if (!isMobileInUse()) {
+        requestCrosshairCapture(true);
+      }
     } else if (e.code === 'Escape' || e.code === 'KeyQ') {
       e.preventDefault();
       quitGame();

@@ -138,6 +138,8 @@ const state = {
   playerHealth: 100,
   maxShield: 100,
   maxHealth: 100,
+  isGameOver: false,
+  stagePowerups: [],
   score: 0,
   stageKills: 0,
   stageRequiredKills: 10,
@@ -2131,6 +2133,17 @@ function hexToRgbaString(hex, alpha = 0.65) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+const DEFAULT_STAGE_POWERUPS = [
+  { id: 1, powerup_id: 'health_pack_s1', powerup_name: 'Sub-Space Nanite Repair Kit', powerup_type: 'health', icon: '💖', color_hex: '#00ff88', stage_level: 1, device_type: 'all', trigger_events: 'Asteroid Debris Belt, Anomaly Alpha Spike', drop_on_enemy_kill: 1, drop_chance_pct: 30, enemy_id: 'void_recon_drone', boost_percentage: 25, is_enabled: 1 },
+  { id: 2, powerup_id: 'shield_cell_s1', powerup_name: 'Deflector Shield Overcharger', powerup_type: 'shield', icon: '🛡️', color_hex: '#00f0ff', stage_level: 1, device_type: 'all', trigger_events: 'Nav-Beacon Calibration, Plasma Surge Alert', drop_on_enemy_kill: 1, drop_chance_pct: 35, enemy_id: 'all', boost_percentage: 30, is_enabled: 1 },
+  { id: 3, powerup_id: 'health_pack_s2', powerup_name: 'Tachyon Infused Hull Matrix', powerup_type: 'health', icon: '💚', color_hex: '#10b981', stage_level: 2, device_type: 'all', trigger_events: 'Tachyon Flux Distortions, Interceptor Ambush Wave', drop_on_enemy_kill: 1, drop_chance_pct: 25, enemy_id: 'phase_interceptor', boost_percentage: 35, is_enabled: 1 },
+  { id: 4, powerup_id: 'shield_cell_s2', powerup_name: 'Ion Shield Harmonizer', powerup_type: 'shield', icon: '🔰', color_hex: '#38bdf8', stage_level: 2, device_type: 'all', trigger_events: 'Ion Cloud Interference, Wormhole Coil Resonance Alert', drop_on_enemy_kill: 1, drop_chance_pct: 30, enemy_id: 'all', boost_percentage: 40, is_enabled: 1 },
+  { id: 5, powerup_id: 'health_pack_s3', powerup_name: 'Graviton Integrity Restorer', powerup_type: 'health', icon: '🧪', color_hex: '#a855f7', stage_level: 3, device_type: 'all', trigger_events: 'Gravitational Tidal Waves, Core Guardian Awakening', drop_on_enemy_kill: 1, drop_chance_pct: 25, enemy_id: 'tachyon_cruiser', boost_percentage: 45, is_enabled: 1 },
+  { id: 6, powerup_id: 'shield_cell_s3', powerup_name: 'Singularity Void Barrier', powerup_type: 'shield', icon: '🔷', color_hex: '#6366f1', stage_level: 3, device_type: 'all', trigger_events: 'Singularity Probe Deployment, Heavy Antimatter Eruptions', drop_on_enemy_kill: 1, drop_chance_pct: 35, enemy_id: 'void_guardian', boost_percentage: 50, is_enabled: 1 },
+  { id: 7, powerup_id: 'health_pack_s4', powerup_name: 'Quantum Regenerative Core', powerup_type: 'health', icon: '💖', color_hex: '#ec4899', stage_level: 4, device_type: 'all', trigger_events: 'Phase-Shift Anomalies, Quantum Dreadnought Confrontation', drop_on_enemy_kill: 1, drop_chance_pct: 30, enemy_id: 'quantum_dreadnought', boost_percentage: 50, is_enabled: 1 },
+  { id: 8, powerup_id: 'shield_cell_s4', powerup_name: 'Omni-Phase Deflector Matrix', powerup_type: 'shield', icon: '🛡️', color_hex: '#00f0ff', stage_level: 4, device_type: 'all', trigger_events: 'Multi-Dimensional Phasing, Antimatter Vortex', drop_on_enemy_kill: 1, drop_chance_pct: 40, enemy_id: 'all', boost_percentage: 60, is_enabled: 1 }
+];
+
 async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = null) {
   const dev = deviceType || currentActiveDeviceType || 'desktop';
   const queryParam = (stageLevel ? `&stage_level=${stageLevel}` : '') + (dev ? `&device_type=${dev}` : '');
@@ -2142,21 +2155,24 @@ async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = nu
     const baseW = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_weapons${stageLevel ? `&stage_level=${stageLevel}` : ''}`;
     const baseS = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_stages`;
     const baseE = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_enemies${queryParam}`;
+    const baseP = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_powerups${queryParam}`;
 
-    const [rW, rS, rE] = await Promise.all([
+    const [rW, rS, rE, rP] = await Promise.all([
       fetch(baseW, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null),
       fetch(baseS, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null),
-      fetch(baseE, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null)
+      fetch(baseE, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null),
+      fetch(baseP, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null)
     ]);
     clearTimeout(tid);
 
     if (rW && rW.weapons && rW.weapons.length > 0) {
-      console.log(`[GameManagerSync] Fetched ${rW.weapons.length} weapons, ${(rS && rS.stages) ? rS.stages.length : 0} stages, ${(rE && rE.enemies) ? rE.enemies.length : 0} threats for [${dev.toUpperCase()}]`);
+      console.log(`[GameManagerSync] Fetched ${rW.weapons.length} weapons, ${(rS && rS.stages) ? rS.stages.length : 0} stages, ${(rE && rE.enemies) ? rE.enemies.length : 0} threats, ${(rP && rP.powerups) ? rP.powerups.length : 0} powerups for [${dev.toUpperCase()}]`);
       return {
         success: true,
         weapons: (rW && rW.weapons) || [],
         stages: (rS && rS.stages) || [],
-        enemies: (rE && rE.enemies) || []
+        enemies: (rE && rE.enemies) || [],
+        powerups: (rP && rP.powerups) || []
       };
     }
   } catch (errIndiv) {
@@ -2175,7 +2191,7 @@ async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = nu
     clearTimeout(tid);
     if (res && res.ok) {
       const json = await res.json().catch(() => null);
-      if (json && json.success && (json.weapons || json.stages || json.enemies)) {
+      if (json && json.success && (json.weapons || json.stages || json.enemies || json.powerups)) {
         console.log(`[GameManagerSync] Fetched Game Manager database records via unified endpoint for [${dev.toUpperCase()}]`);
         return json;
       }
@@ -2390,6 +2406,28 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
     updateTacticalEnemiesUI(window.activeStageEnemies);
   }
 
+  // ---------------------------------------------------------------------------
+  // 4. INTEGRATE POWER UPS (HEALTH & SHIELD BOOSTS, MULTI-EVENTS, ENEMY DROPS)
+  // ---------------------------------------------------------------------------
+  const dbPowerups = Array.isArray(data.powerups) ? data.powerups : [];
+  if (dbPowerups.length > 0) {
+    const stagePowerups = dbPowerups.filter(p => {
+      const matchStage = parseInt(p.stage_level) === currentStage;
+      const pDev = (p.device_type || 'all').toLowerCase();
+      const matchDevice = (pDev === 'all' || pDev === currentDev || !p.device_type);
+      const isActive = (p.is_active === undefined || p.is_active == 1 || p.is_active === true || p.is_active === '1');
+      return matchStage && matchDevice && isActive;
+    });
+
+    window.activeStagePowerups = stagePowerups.length > 0 ? stagePowerups : dbPowerups.filter(p => parseInt(p.stage_level) === currentStage);
+    state.stagePowerups = window.activeStagePowerups;
+    console.log(`[GameManagerSync] 🔋 Integrated ${window.activeStagePowerups.length} powerups from database for Stage ${currentStage} on [${currentDev.toUpperCase()}]`);
+  } else if (typeof DEFAULT_STAGE_POWERUPS !== 'undefined' && DEFAULT_STAGE_POWERUPS.length > 0) {
+    window.activeStagePowerups = DEFAULT_STAGE_POWERUPS.filter(p => parseInt(p.stage_level) === currentStage);
+    state.stagePowerups = window.activeStagePowerups;
+    console.log(`[GameManagerSync] 🔋 Loaded fallback powerups for Stage ${currentStage}`);
+  }
+
   return true;
 }
 
@@ -2422,8 +2460,12 @@ function triggerAcquireEvent(eventName) {
       if (typeof renderWeaponWheel === 'function') {
         renderWeaponWheel();
       }
-      showToast(`🎉 ARSENAL EVENT UNLOCKED: ${weaponsSystem.weapons[wid].name.toUpperCase()} ACQUIRED!`);
     }
+  }
+
+  // Trigger any powerups configured to appear on this event
+  if (typeof checkEventPowerupAppearance === 'function') {
+    checkEventPowerupAppearance(eventName);
   }
 }
 
@@ -6223,8 +6265,8 @@ function lockLandscape() {
 // DESKTOP 6-DOF FLIGHT CONTROLS & POINTER LOCK
 // =============================================================================
 window.addEventListener('keydown', (e) => {
-  // If game is paused, lock out all flight, combat, and weapon controls!
-  if (state.isPaused) return;
+  // If game is paused or game over, lock out all flight, combat, and weapon controls!
+  if (state.isPaused || state.isGameOver) return;
 
   keys[e.code] = true;
   if (!audioMgr.isInitialized) audioMgr.init();
@@ -6672,15 +6714,374 @@ const warpBtn = document.getElementById('btn-warp');
 const objTotalProgressEl = document.getElementById('obj-total-progress');
 
 let toastTimer = null;
-function showToast(msg, duration = 3200) {
-  if (!toastEl) return;
+function showToast(msg, duration = 2500) {
+  if (!toastEl || !msg) return;
+  const str = String(msg).toUpperCase();
+  // Strictly enforce: No messages except WARP UNAVAILABLE
+  if (!str.includes('WARP') || !str.includes('UNAVAILABLE')) {
+    return;
+  }
   if (toastTimer) clearTimeout(toastTimer);
-  toastEl.textContent = msg;
+  toastEl.textContent = 'WARP UNAVAILABLE';
   toastEl.style.display = 'block';
   toastTimer = setTimeout(() => {
     toastEl.style.display = 'none';
     toastTimer = null;
   }, duration);
+}
+
+// =============================================================================
+// 3D POWER UP PICKUP SYSTEM (HEALTH & SHIELD BOOSTERS, MULTI-EVENTS, ENEMY DROPS)
+// =============================================================================
+const active3DPowerups = [];
+const triggeredPowerupEventSet = new Set();
+
+function createPowerupSprite(icon, boostPct, colorHex) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 128;
+  canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+
+  // Radial glow background
+  const grad = ctx.createRadialGradient(64, 64, 8, 64, 64, 60);
+  grad.addColorStop(0, colorHex || '#00f0ff');
+  grad.addColorStop(0.55, 'rgba(0, 240, 255, 0.28)');
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(64, 64, 60, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Draw Emoji icon
+  ctx.font = '52px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(icon || '⚡', 64, 58);
+
+  // Boost percentage badge
+  if (boostPct) {
+    ctx.font = 'bold 20px monospace';
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = colorHex || '#00f0ff';
+    ctx.shadowBlur = 8;
+    ctx.fillText(`+${Math.round(boostPct)}%`, 64, 106);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.needsUpdate = true;
+
+  const mat = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    opacity: 0.95,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+
+  const sprite = new THREE.Sprite(mat);
+  sprite.scale.set(10, 10, 1);
+  return sprite;
+}
+
+function spawn3DPowerUp(pConfig, spawnPos = null) {
+  if (!scene || !pConfig) return null;
+
+  const group = new THREE.Group();
+  const isHealth = (pConfig.powerup_type || '').toLowerCase() === 'health';
+  const boostPct = parseFloat(pConfig.boost_pct) || 25.0;
+  const colorHexStr = pConfig.color_hex || (isHealth ? '#10b981' : '#00f0ff');
+  const colorHexInt = parseInt(colorHexStr.replace('#', '0x'), 16) || (isHealth ? 0x10b981 : 0x00f0ff);
+  const icon = pConfig.icon || (isHealth ? '💖' : '🛡️');
+
+  // 1. Outer rotating geometric energy cage (Octahedron wireframe)
+  const cageGeom = new THREE.OctahedronGeometry(4.2, 0);
+  const cageMat = new THREE.MeshBasicMaterial({
+    color: colorHexInt,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.85
+  });
+  const cageMesh = new THREE.Mesh(cageGeom, cageMat);
+  group.add(cageMesh);
+
+  // 2. Inner glowing core sphere
+  const coreGeom = new THREE.SphereGeometry(2.0, 12, 12);
+  const coreMat = new THREE.MeshBasicMaterial({
+    color: colorHexInt,
+    transparent: true,
+    opacity: 0.45,
+    blending: THREE.AdditiveBlending
+  });
+  const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+  group.add(coreMesh);
+
+  // 3. 2D Billboard Sprite showing the Power Up Icon and boost percentage
+  const sprite = createPowerupSprite(icon, boostPct, colorHexStr);
+  group.add(sprite);
+
+  // 4. Position within tunnel
+  if (spawnPos) {
+    group.position.copy(spawnPos);
+  } else {
+    // Spawn ahead of player along tunnel
+    const playerZ = state.position ? state.position.z : 0;
+    const angle = Math.random() * Math.PI * 2;
+    const radius = 12 + Math.random() * 20;
+    group.position.set(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
+      playerZ - (180 + Math.random() * 120)
+    );
+  }
+
+  scene.add(group);
+
+  const powerupInstance = {
+    mesh: group,
+    cage: cageMesh,
+    core: coreMesh,
+    sprite: sprite,
+    config: pConfig,
+    powerupType: isHealth ? 'health' : 'shield',
+    boostPct: boostPct,
+    colorHex: colorHexStr,
+    spawnTime: performance.now(),
+    rotSpeedX: (Math.random() - 0.5) * 2.5 + 1.2,
+    rotSpeedY: (Math.random() - 0.5) * 2.5 + 1.2,
+    collected: false
+  };
+
+  active3DPowerups.push(powerupInstance);
+  return powerupInstance;
+}
+
+function update3DPowerups(delta) {
+  if (!scene) return;
+  const now = performance.now();
+  const playerPos = state.position || new THREE.Vector3(0, 0, 0);
+
+  for (let i = active3DPowerups.length - 1; i >= 0; i--) {
+    const p = active3DPowerups[i];
+    if (p.collected) continue;
+
+    // Rotation and pulsing animation
+    if (p.cage) {
+      p.cage.rotation.x += p.rotSpeedX * delta;
+      p.cage.rotation.y += p.rotSpeedY * delta;
+    }
+    const pulse = 1.0 + Math.sin((now - p.spawnTime) * 0.005) * 0.15;
+    p.mesh.scale.set(pulse, pulse, pulse);
+
+    // Slowly drift forward in wormhole tunnel toward player
+    p.mesh.position.z += (state.speed || 120) * delta * 0.35;
+
+    // Check distance to player for collection
+    const distToPlayer = p.mesh.position.distanceTo(playerPos);
+    if (distToPlayer < 9.5) {
+      // COLLECTED!
+      p.collected = true;
+      applyPowerupEffect(p);
+      triggerPowerupCollectFx(p.mesh.position, p.colorHex);
+
+      scene.remove(p.mesh);
+      if (p.cage && p.cage.geometry) p.cage.geometry.dispose();
+      if (p.cage && p.cage.material) p.cage.material.dispose();
+      if (p.core && p.core.geometry) p.core.geometry.dispose();
+      if (p.core && p.core.material) p.core.material.dispose();
+      active3DPowerups.splice(i, 1);
+      continue;
+    }
+
+    // Despawn if passed far behind player (> 60 units) or lifetime > 45s
+    if (p.mesh.position.z > playerPos.z + 60 || (now - p.spawnTime) > 45000) {
+      scene.remove(p.mesh);
+      if (p.cage && p.cage.geometry) p.cage.geometry.dispose();
+      if (p.cage && p.cage.material) p.cage.material.dispose();
+      if (p.core && p.core.geometry) p.core.geometry.dispose();
+      if (p.core && p.core.material) p.core.material.dispose();
+      active3DPowerups.splice(i, 1);
+    }
+  }
+}
+
+function applyPowerupEffect(powerupInstance) {
+  const isHealth = powerupInstance.powerupType === 'health';
+  const boost = powerupInstance.boostPct || 25.0;
+
+  if (isHealth) {
+    state.playerHealth = Math.min(state.maxHealth || 100, (state.playerHealth || 0) + boost);
+  } else {
+    state.playerShield = Math.min(state.maxShield || 100, (state.playerShield || 0) + boost);
+  }
+
+  // Flash Defense HUD on hit / gain
+  showShieldAndHealthOnHit(1200);
+  updatePlayerDefenseHUD();
+
+  if (audioMgr && typeof audioMgr.playLaserBolt === 'function') {
+    audioMgr.playLaserBolt();
+  }
+}
+
+function triggerPowerupCollectFx(position, colorHexStr) {
+  if (!scene) return;
+  const colorHexInt = parseInt((colorHexStr || '#00f0ff').replace('#', '0x'), 16) || 0x00f0ff;
+  const count = 30;
+  const geom = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  const velocities = [];
+
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] = position.x;
+    positions[i * 3 + 1] = position.y;
+    positions[i * 3 + 2] = position.z;
+    velocities.push(new THREE.Vector3(
+      (Math.random() - 0.5) * 35,
+      (Math.random() - 0.5) * 35,
+      (Math.random() - 0.5) * 35
+    ));
+  }
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const mat = new THREE.PointsMaterial({
+    color: colorHexInt,
+    size: 2.8,
+    transparent: true,
+    opacity: 1.0,
+    blending: THREE.AdditiveBlending
+  });
+
+  const points = new THREE.Points(geom, mat);
+  scene.add(points);
+
+  const startTime = performance.now();
+  const interval = setInterval(() => {
+    const elapsed = (performance.now() - startTime) * 0.001;
+    const posAttr = geom.attributes.position;
+    for (let i = 0; i < count; i++) {
+      posAttr.setXYZ(
+        i,
+        posAttr.getX(i) + velocities[i].x * 0.025,
+        posAttr.getY(i) + velocities[i].y * 0.025,
+        posAttr.getZ(i) + velocities[i].z * 0.025
+      );
+    }
+    posAttr.needsUpdate = true;
+    mat.opacity = Math.max(0, 1.0 - elapsed * 2.0);
+
+    if (elapsed > 0.5) {
+      clearInterval(interval);
+      scene.remove(points);
+      geom.dispose();
+      mat.dispose();
+    }
+  }, 25);
+}
+
+function despawnAllActivePowerups() {
+  for (let i = active3DPowerups.length - 1; i >= 0; i--) {
+    const p = active3DPowerups[i];
+    if (p.mesh && scene) scene.remove(p.mesh);
+    if (p.cage && p.cage.geometry) p.cage.geometry.dispose();
+    if (p.cage && p.cage.material) p.cage.material.dispose();
+    if (p.core && p.core.geometry) p.core.geometry.dispose();
+    if (p.core && p.core.material) p.core.material.dispose();
+    active3DPowerups.splice(i, 1);
+  }
+}
+
+function checkEnemyPowerupDrop(enemyConfig, position) {
+  if (!enemyConfig || !position) return;
+  const powerupList = window.activeStagePowerups || state.stagePowerups || DEFAULT_STAGE_POWERUPS || [];
+  if (!powerupList.length) return;
+
+  const currentDev = (currentActiveDeviceType || 'desktop').toLowerCase();
+  const currentStage = currentActiveStage || 1;
+
+  for (const p of powerupList) {
+    if (p.is_active === 0 || p.is_active === '0' || p.is_active === false) continue;
+    if (parseInt(p.stage_level) !== currentStage) continue;
+
+    const pDev = (p.device_type || 'all').toLowerCase();
+    if (pDev !== 'all' && pDev !== currentDev) continue;
+
+    const dropOnKill = (p.drop_on_enemy_kill == 1 || p.drop_on_enemy_kill === true || p.drop_on_enemy_kill === '1');
+    if (!dropOnKill) continue;
+
+    // Check target enemy type
+    const targetEnemy = (p.drop_enemy_type || 'all').trim().toLowerCase();
+    const enemyId = (enemyConfig.enemy_id || '').toLowerCase();
+    const enemyName = (enemyConfig.name || enemyConfig.enemy_name || '').toLowerCase();
+    const enemyModel = (enemyConfig.model_3d_type || '').toLowerCase();
+
+    const enemyMatches = (targetEnemy === 'all' ||
+      targetEnemy === enemyId ||
+      targetEnemy === enemyName ||
+      targetEnemy === enemyModel ||
+      enemyId.includes(targetEnemy) ||
+      enemyName.includes(targetEnemy));
+
+    if (!enemyMatches) continue;
+
+    // Check drop chance percentage
+    const chance = parseFloat(p.drop_chance_pct) !== undefined && !isNaN(parseFloat(p.drop_chance_pct))
+      ? parseFloat(p.drop_chance_pct)
+      : 30.0;
+    const roll = Math.random() * 100;
+    if (roll <= chance) {
+      spawn3DPowerUp(p, position.clone ? position.clone() : new THREE.Vector3(position.x, position.y, position.z));
+      break; // Drop one powerup per enemy kill
+    }
+  }
+}
+
+function checkEventPowerupAppearance(eventName) {
+  if (!eventName) return;
+  const powerupList = window.activeStagePowerups || state.stagePowerups || DEFAULT_STAGE_POWERUPS || [];
+  if (!powerupList.length) return;
+
+  const currentDev = (currentActiveDeviceType || 'desktop').toLowerCase();
+  const currentStage = currentActiveStage || 1;
+  const normalizedEvent = eventName.trim().toLowerCase();
+
+  for (const p of powerupList) {
+    if (p.is_active === 0 || p.is_active === '0' || p.is_active === false) continue;
+    if (parseInt(p.stage_level) !== currentStage) continue;
+
+    const pDev = (p.device_type || 'all').toLowerCase();
+    if (pDev !== 'all' && pDev !== currentDev) continue;
+
+    const rawEvents = (p.trigger_events || '').toLowerCase().split(',').map(s => s.trim());
+    if (rawEvents.includes(normalizedEvent)) {
+      // Event matches!
+      const eventKey = `${currentStage}_${p.powerup_id || p.id}_${normalizedEvent}`;
+      if (!triggeredPowerupEventSet.has(eventKey)) {
+        triggeredPowerupEventSet.add(eventKey);
+        spawn3DPowerUp(p);
+      }
+    }
+  }
+}
+
+let lastCheckedDistMilestone = 100000;
+function checkDistanceStageEvents(distKm) {
+  if (!state.hasStarted || state.isGameOver) return;
+  if (distKm <= 75000 && lastCheckedDistMilestone > 75000) {
+    triggerAcquireEvent('stage_quarter_approach');
+  }
+  if (distKm <= 50000 && lastCheckedDistMilestone > 50000) {
+    triggerAcquireEvent('halfway_approach');
+    triggerAcquireEvent('resonance_alignment_achieved');
+  }
+  if (distKm <= 25000 && lastCheckedDistMilestone > 25000) {
+    triggerAcquireEvent('singularity_proximity');
+    triggerAcquireEvent('singularity_approach');
+  }
+  if (distKm <= 10000 && lastCheckedDistMilestone > 10000) {
+    triggerAcquireEvent('warp_gate_contact');
+    triggerAcquireEvent('gravitational_well_ingress');
+  }
+  lastCheckedDistMilestone = distKm;
 }
 
 // =============================================================================
@@ -7186,15 +7587,21 @@ function updateEnemiesCombat(delta) {
 
         // Enemy Destroyed
         if (e.currentHits <= 0) {
-          triggerEnemyExplosion(e.mesh.position, e.config);
+          const deathPos = e.mesh.position.clone();
+          const deathCfg = e.config;
+          triggerEnemyExplosion(deathPos, deathCfg);
           scene.remove(e.mesh);
           active3DEnemies.splice(ei, 1);
 
           state.stageKills++;
-          const bounty = parseInt(e.config.score_value || e.config.score || 100);
+          const bounty = parseInt(deathCfg.score_value || deathCfg.score || 100);
           state.score += bounty;
 
-          showToast(`💥 ENEMY DESTROYED (+${bounty} PTS) [STAGE KILLS: ${state.stageKills}/${state.stageRequiredKills}]`);
+          // Check powerup drop on enemy kill (drop_on_enemy_kill, drop_chance_pct, drop_enemy_type)
+          if (typeof checkEnemyPowerupDrop === 'function') {
+            checkEnemyPowerupDrop(deathCfg, deathPos);
+          }
+
           evaluateWarpReadiness();
           renderStageObjectivesUI();
         } else {
@@ -7371,20 +7778,22 @@ function fireEnemyWeaponBolt(enemyObj) {
 }
 
 function applyDamageToPlayer(rawDamage) {
-  if (!state.hasStarted || state.isHyperWarping || state.isInvulnerable) return;
+  if (!state.hasStarted || state.isHyperWarping || state.isInvulnerable || state.isGameOver) return;
   const dmg = rawDamage || 8;
 
-  // Requirement: Shield takes more hits before being depleted than health.
-  // When shield is active (> 0), shield absorbs hit impacts (taking ~13-14 hits to deplete)
-  // with slight kinetic bleed-through (10%) to health.
-  // Once shield is depleted (= 0), unshielded direct hull hits deplete health rapidly (in ~5-6 hits).
+  // Requirement: Health does NOT deplete until the shield reaches 0%.
+  // Deflector shield absorbs 100% of incoming damage first.
   if (state.playerShield > 0) {
-    const shieldLoss = dmg * 0.95; // ~7.6 shield per standard hit (~13 hits to deplete 100%)
-    state.playerShield = Math.max(0, state.playerShield - shieldLoss);
-    state.playerHealth = Math.max(0, state.playerHealth - dmg * 0.1); // minor kinetic bleed (~0.8 per hit)
+    if (state.playerShield >= dmg) {
+      state.playerShield -= dmg;
+    } else {
+      const leftover = dmg - state.playerShield;
+      state.playerShield = 0;
+      state.playerHealth = Math.max(0, state.playerHealth - leftover);
+    }
   } else {
-    const directHealthLoss = dmg * 2.0; // ~16 health per standard hit (~5-6 hits to deplete unshielded)
-    state.playerHealth = Math.max(0, state.playerHealth - directHealthLoss);
+    // Shield is depleted (0%): Direct hull damage depletes health
+    state.playerHealth = Math.max(0, state.playerHealth - dmg);
   }
 
   // Red damage vignette hit flash
@@ -7407,17 +7816,74 @@ function applyDamageToPlayer(rawDamage) {
     audioMgr.playHit();
   }
 
-  // Emergency reboot if health depleted (maintains end-to-end playable continuous loop)
+  updatePlayerDefenseHUD();
+
+  // Requirement: Game over when health reaches 0% with option to restart
   if (state.playerHealth <= 0) {
-    state.playerShield = 50;
-    state.playerHealth = 40;
-    showToast('⚠️ CRITICAL HULL BREACH: EMERGENCY DEFLECTORS & REBOOT ENGAGED');
-    if (audioMgr && typeof audioMgr.playOverheatAlert === 'function') {
-      audioMgr.playOverheatAlert();
-    }
+    triggerGameOver();
+  }
+}
+
+function triggerGameOver() {
+  if (state.isGameOver) return;
+  state.isGameOver = true;
+  state.playerHealth = 0;
+  state.playerShield = 0;
+  updatePlayerDefenseHUD();
+
+  // Show Game Over modal overlay
+  const modal = document.getElementById('game-over-modal');
+  if (modal) {
+    const scoreEl = document.getElementById('game-over-score');
+    const stageEl = document.getElementById('game-over-stage');
+    const killsEl = document.getElementById('game-over-kills');
+    if (scoreEl) scoreEl.textContent = state.score.toLocaleString();
+    if (stageEl) stageEl.textContent = `Stage ${currentActiveStage}`;
+    if (killsEl) killsEl.textContent = String(state.totalKills ? state.totalKills + state.stageKills : state.stageKills);
+    modal.style.display = 'flex';
   }
 
+  if (audioMgr && typeof audioMgr.playOverheatAlert === 'function') {
+    audioMgr.playOverheatAlert();
+  }
+}
+
+function restartGame() {
+  const modal = document.getElementById('game-over-modal');
+  if (modal) modal.style.display = 'none';
+
+  state.isGameOver = false;
+  state.playerShield = 100;
+  state.playerHealth = 100;
+  state.score = 0;
+  state.stageKills = 0;
+  state.isWarpReady = false;
+  state.isHyperWarping = false;
+  state.distance = 0;
+
+  // Reset vessel position
+  state.position.set(0, 0, 0);
+  if (!state.isXR && camera) {
+    camera.position.set(0, 0, 0);
+  } else if (cameraRig) {
+    cameraRig.position.set(0, 0, 0);
+  }
+  state.velocity.set(0, 0, 0);
+  stopThrottle();
+
+  // Despawn combat entities
+  despawnAllActiveEnemies();
+  despawnAllActivePowerups();
+  if (typeof triggeredPowerupEventSet !== 'undefined') {
+    triggeredPowerupEventSet.clear();
+  }
+
+  // Reset to Stage 1 and re-sync
+  currentActiveStage = 1;
+  syncGameManagerFromDatabase(1, currentActiveDeviceType);
+
   updatePlayerDefenseHUD();
+  renderStageObjectivesUI();
 }
 
 function triggerEnemyExplosion(position, config) {
@@ -7724,7 +8190,7 @@ function triggerWarpJump() {
       if (state.scanProgress < 1.0) missing.push('RESONANCE SCAN');
       if (!state.coils.every(c => c)) missing.push('3 COILS CALIBRATION');
     }
-    showToast(`⛔ WARP JUMP LOCKED: Complete Stage ${currentActiveStage} Objectives first! Need: ${missing.join(', ')}`, 4500);
+    showToast('WARP UNAVAILABLE', 2500);
     return;
   }
 
@@ -7734,7 +8200,6 @@ function triggerWarpJump() {
     audioMgr.playWarp();
   }
 
-  showToast(`🚀 HYPERSPACE JUMP INITIATED: TRAVELING THROUGH WORMHOLE SINGULARITY...`);
   renderStageObjectivesUI();
 }
 
@@ -7757,9 +8222,6 @@ async function syncStagesDropdownFromDatabase(showNotification = false) {
       }).join('');
 
       jumpSelect.value = currentVal;
-      if (showNotification) {
-        showToast(`🔄 STAGES SYNCHRONIZED: ${stageList.length} Stages loaded from database!`);
-      }
     }
   } catch (err) {
     console.warn('[Wormhole XR] Sync stages error:', err);
@@ -8245,7 +8707,9 @@ function updateFlight(delta) {
       if (typeof updatePlayerDefenseHUD === 'function') {
         updatePlayerDefenseHUD();
       }
-      showToast(`🌌 HYPER-WARP COMPLETE! WELCOME TO STAGE ${nextStage}: ${(STAGE_REGISTRY[nextStage] && STAGE_REGISTRY[nextStage].name) || `Stage ${nextStage}`}`);
+      if (typeof despawnAllActivePowerups === 'function') {
+        despawnAllActivePowerups();
+      }
       loadStageDeviceModule(nextStage, currentActiveDeviceType);
     }
   } else {
@@ -8338,6 +8802,9 @@ function checkObjectives() {
   if (typeof evaluateWarpReadiness === 'function') {
     evaluateWarpReadiness();
   }
+  if (typeof checkDistanceStageEvents === 'function') {
+    checkDistanceStageEvents(distKm);
+  }
 }
 
   checkObjectives();
@@ -8401,6 +8868,9 @@ if (renderer) {
   updateLaserBolts(delta);
   if (state.hasStarted && typeof updateEnemiesCombat === 'function') {
     updateEnemiesCombat(delta);
+  }
+  if (state.hasStarted && typeof update3DPowerups === 'function') {
+    update3DPowerups(delta);
   }
   if (typeof updatePlayerDefenseHUD === 'function') {
     updatePlayerDefenseHUD();
@@ -8775,7 +9245,29 @@ if (typeof window !== 'undefined') {
   window.isMobileInUse = isMobileInUse;
   window.updateMobileControlsVisibility = updateMobileControlsVisibility;
   window.showShieldAndHealthOnHit = showShieldAndHealthOnHit;
+  window.active3DPowerups = () => active3DPowerups;
+  window.spawn3DPowerUp = spawn3DPowerUp;
+  window.despawnAllActivePowerups = despawnAllActivePowerups;
+  window.checkEnemyPowerupDrop = checkEnemyPowerupDrop;
+  window.checkEventPowerupAppearance = checkEventPowerupAppearance;
+  window.triggerGameOver = triggerGameOver;
+  window.restartGame = restartGame;
 }
+
+// Restart button & keyboard shortcut listener for Game Over screen
+const btnRestartGame = document.getElementById('btn-restart-game');
+if (btnRestartGame) {
+  btnRestartGame.addEventListener('click', (e) => {
+    e.preventDefault();
+    restartGame();
+  });
+}
+window.addEventListener('keydown', (e) => {
+  if (state.isGameOver && (e.code === 'KeyR' || e.code === 'Enter' || e.code === 'Space')) {
+    e.preventDefault();
+    restartGame();
+  }
+});
 
 // Initial mobile snap grid calculation
 updateMobileSnapGrid();

@@ -6062,6 +6062,7 @@ function calculateSnapPauseDuration(speedMult) {
 const snapGrid = {
   cols: 15,
   rows: 7,
+  targetCellSize: 58.8, // 2% smaller than original 60px (60 * 0.98)
   cellWidth: 0,
   cellHeight: 0,
   currentCol: -1,
@@ -6077,12 +6078,13 @@ function updateMobileSnapGrid() {
   const w = window.innerWidth;
   const h = window.innerHeight;
 
-  // Compute odd number of columns & rows around 55px - 65px per box
-  let cols = Math.round(w / 60);
+  // Compute odd number of columns & rows (target cell size 2% smaller: 58.8px base divisor)
+  const targetCellSize = 60 * 0.98; // 58.8px per cell (2% smaller than original 60px)
+  let cols = Math.round(w / targetCellSize);
   if (cols % 2 === 0) cols += 1; // Ensure odd count for exact screen-center alignment
   if (cols < 3) cols = 3;
 
-  let rows = Math.round(h / 60);
+  let rows = Math.round(h / targetCellSize);
   if (rows % 2 === 0) rows += 1; // Ensure odd count for exact screen-center alignment
   if (rows < 3) rows = 3;
 

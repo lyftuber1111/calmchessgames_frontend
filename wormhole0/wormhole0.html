@@ -2833,11 +2833,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: safe center;
       padding: clamp(14px, 3vmin, 28px);
       box-sizing: border-box;
       transition: opacity 0.75s ease-out, visibility 0.75s ease-out;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
 
     #wormhole-splash-screen.splash-fade-out {
@@ -3073,13 +3074,14 @@
 
     .splash-copyright {
       margin-top: 14px;
-      font-size: clamp(0.70rem, 1.4vmin, 0.78rem);
+      font-size: clamp(0.72rem, 1.4vmin, 0.82rem);
       color: #94d8ec;
-      letter-spacing: 0.5px;
-      opacity: 0.9;
+      letter-spacing: 0.8px;
+      opacity: 0.95;
       text-align: center;
       line-height: 1.4;
       text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+      font-weight: 500;
     }
 
     /* ==========================================================================
@@ -3865,7 +3867,7 @@
 
         <!-- Copyright Display on Beginning Splash Screen -->
         <div class="splash-copyright" id="splash-copyright">
-          &copy; 2026 Calm Chess Computers &bull; Brian Berry. All Rights Reserved.
+          Copyright Calm Chess Computers 2026
         </div>
       </div>
     </div>

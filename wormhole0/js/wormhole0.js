@@ -97,6 +97,9 @@ const state = {
   // Crosshair Aim speed multiplier (default 4.00, max 10.00)
   crosshairSpeedMultiplier: 4.00,
 
+  // Mobile Crosshair Movement Controls Auto-Hiding State
+  mobileControlsHidden: false,
+
   // Wormhole Nav Lock State
   isAligningToWormhole: false,
   targetYaw: 0,
@@ -2814,6 +2817,16 @@ function setGamePaused(paused, skipDrawer = false) {
   });
 
   if (state.isPaused) {
+    // If mobile controls were hidden due to crosshair movement, unhide them upon pause
+    if (state.mobileControlsHidden || document.body.classList.contains('mobile-crosshair-moving')) {
+      state.mobileControlsHidden = false;
+      document.body.classList.remove('mobile-crosshair-moving');
+    }
+    state.aimActive = false;
+    state.aimMove.x = 0;
+    state.aimMove.y = 0;
+    if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
+
     document.body.classList.add('game-paused');
 
     // Release pointer lock if active
@@ -3457,13 +3470,20 @@ window.cycleWheelSegment = cycleWheelSegment;
 window.selectHighlightedWheelSegment = selectHighlightedWheelSegment;
 
 
-// Wire Pause Button Click Handlers
+// Wire Pause Button Click & Touch Handlers
+let lastPauseToggleTime = 0;
 [btnQuickPause, btnDrawerPause, btnTogglePause].forEach(btn => {
   if (btn) {
-    btn.addEventListener('click', (e) => {
+    const handlePauseToggle = (e) => {
       e.stopPropagation();
+      if (e.cancelable && e.type === 'touchstart') e.preventDefault();
+      const now = performance.now();
+      if (now - lastPauseToggleTime < 250) return;
+      lastPauseToggleTime = now;
       setGamePaused(!state.isPaused);
-    });
+    };
+    btn.addEventListener('click', handlePauseToggle);
+    btn.addEventListener('touchstart', handlePauseToggle, { passive: false });
   }
 });
 
@@ -5314,6 +5334,7 @@ if (aimStickZone) {
           state.aimMove.y = 0;
           if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
           snapCrosshairToCurrentGridCenter();
+          updateMobileControlsVisibility();
           break;
         }
       }
@@ -5324,6 +5345,7 @@ if (aimStickZone) {
       state.aimMove.y = 0;
       if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
       snapCrosshairToCurrentGridCenter();
+      updateMobileControlsVisibility();
     }
   };
 
@@ -5359,6 +5381,7 @@ if (aimStickZone) {
       state.aimMove.y = 0;
       if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
       snapCrosshairToCurrentGridCenter();
+      updateMobileControlsVisibility();
     }
   });
 
@@ -5385,6 +5408,7 @@ function updateAimStickPos(clientX, clientY) {
   // Velocity factor: -1.0 to 1.0
   state.aimMove.x = knobX / maxStickRadius;
   state.aimMove.y = knobY / maxStickRadius;
+  updateMobileControlsVisibility();
 }
 
 // =============================================================================
@@ -5998,6 +6022,93 @@ function setShowTargetGrid(val) {
   });
 }
 
+// =============================================================================
+// MOBILE CONTROLS AUTO-HIDING & DEFENSE HIT MONITOR
+// Requirements:
+// 1. Only hide controls if mobile is in use!
+// 2. When mobile is in use, if crosshair is moving, hide all controls except:
+//    - Left crosshair controller (#aim-stick-zone)
+//    - Right fire and flight controller (#touch-stick-zone)
+//    - Pause button (#btn-quick-pause)
+// 3. If pause button is pressed and hidden controls are hidden, unhide those
+//    controls but keep usual pause logic that locks out controls.
+// 4. If crosshair stops moving, unhide all the hidden controls.
+// 5. Make shield and health appear for 1 second each time player takes a hit.
+// =============================================================================
+let shieldHealthHitTimer = null;
+
+function isMobileInUse() {
+  if (currentActiveDeviceType === 'mobile' || currentActiveDeviceType === 'arcore') return true;
+  if (state.xrMode === 'mobile-xr' || state.xrMode === 'mobile-ar') return true;
+  if (detectedHardware && (detectedHardware.type === 'mobile' || detectedHardware.type === 'tablet')) return true;
+  if (typeof window !== 'undefined') {
+    if (window.matchMedia && window.matchMedia('(max-width: 1024px), (pointer: coarse), (hover: none)').matches) {
+      return true;
+    }
+    const touchControls = document.getElementById('mobile-touch-controls');
+    if (touchControls && window.getComputedStyle(touchControls).display !== 'none') {
+      return true;
+    }
+  }
+  return false;
+}
+
+function updateMobileControlsVisibility() {
+  // Requirement: ONLY hide the controls if mobile is in use
+  if (!isMobileInUse()) {
+    if (state.mobileControlsHidden || document.body.classList.contains('mobile-crosshair-moving')) {
+      state.mobileControlsHidden = false;
+      document.body.classList.remove('mobile-crosshair-moving');
+    }
+    return;
+  }
+
+  // Requirement: If pause button is pressed and controls are hidden, unhide them (keeping usual pause lockout)
+  if (state.isPaused) {
+    if (state.mobileControlsHidden || document.body.classList.contains('mobile-crosshair-moving')) {
+      state.mobileControlsHidden = false;
+      document.body.classList.remove('mobile-crosshair-moving');
+    }
+    return;
+  }
+
+  // Check if crosshair is actively moving (virtual joystick active & deflected)
+  const isMoving = !!(state.aimActive && (Math.abs(state.aimMove.x) > 0.02 || Math.abs(state.aimMove.y) > 0.02));
+
+  if (isMoving) {
+    if (!state.mobileControlsHidden) {
+      state.mobileControlsHidden = true;
+      document.body.classList.add('mobile-crosshair-moving');
+    }
+  } else {
+    // Requirement: If the crosshair stops moving then unhide all the hidden controls
+    if (state.mobileControlsHidden) {
+      state.mobileControlsHidden = false;
+      document.body.classList.remove('mobile-crosshair-moving');
+    }
+  }
+}
+
+function showShieldAndHealthOnHit(durationMs = 1000) {
+  const defenseIndicator = document.getElementById('hud-defense-indicator');
+  const badgeWrap = document.getElementById('laser-pct-badge-wrap');
+  if (!defenseIndicator) return;
+
+  defenseIndicator.classList.add('hit-showing');
+  if (badgeWrap) badgeWrap.classList.add('hit-showing-defense');
+
+  if (shieldHealthHitTimer) {
+    clearTimeout(shieldHealthHitTimer);
+    shieldHealthHitTimer = null;
+  }
+
+  shieldHealthHitTimer = setTimeout(() => {
+    defenseIndicator.classList.remove('hit-showing');
+    if (badgeWrap) badgeWrap.classList.remove('hit-showing-defense');
+    shieldHealthHitTimer = null;
+  }, durationMs);
+}
+
 function updateCrosshairPosition(delta) {
   const now = performance.now();
   const w = window.innerWidth;
@@ -6082,6 +6193,9 @@ function updateCrosshairPosition(delta) {
     vectorRing.style.left = `${state.crosshair.x}px`;
     vectorRing.style.top = `${state.crosshair.y}px`;
   }
+
+  // Monitor mobile crosshair movement and auto-hide/unhide controls
+  updateMobileControlsVisibility();
 }
 
 if (touchBtnScan) {
@@ -7281,6 +7395,9 @@ function applyDamageToPlayer(rawDamage) {
       vignette.style.opacity = '0';
     }, 180);
   }
+
+  // Make the shield and health appear for one second each time the player takes a hit
+  showShieldAndHealthOnHit(1000);
 
   // Cockpit camera shudder
   state.position.x += (Math.random() - 0.5) * 0.35;
@@ -8655,6 +8772,9 @@ if (typeof window !== 'undefined') {
   window.evaluateWarpReadiness = evaluateWarpReadiness;
   window.renderStageObjectivesUI = renderStageObjectivesUI;
   window.syncStagesDropdownFromDatabase = syncStagesDropdownFromDatabase;
+  window.isMobileInUse = isMobileInUse;
+  window.updateMobileControlsVisibility = updateMobileControlsVisibility;
+  window.showShieldAndHealthOnHit = showShieldAndHealthOnHit;
 }
 
 // Initial mobile snap grid calculation

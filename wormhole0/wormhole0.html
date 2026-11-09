@@ -3371,6 +3371,64 @@
       display: block !important;
     }
 
+    /* ==========================================================================
+       MOBILE CROSSHAIR CONTROLS HIDING & HIT SHIELD/HEALTH APPEARANCE
+       When mobile is in use and crosshair is moving:
+       Hide all controls EXCEPT:
+         1. Left crosshair controller (#aim-stick-zone)
+         2. Right fire and flight controller (#touch-stick-zone)
+         3. Pause button (#btn-quick-pause)
+       When crosshair stops moving: unhide all the hidden controls.
+       When pause button is pressed: unhide all hidden controls, keeping standard pause lockout.
+       Each time player takes a hit: shield and health appears for 1 second.
+       Only hide controls when mobile is in use!
+       ========================================================================== */
+    body.mobile-crosshair-moving #mobile-touch-controls .mobile-touch-actions,
+    body.mobile-crosshair-moving #mobile-touch-controls .throttle-slider-container,
+    body.mobile-crosshair-moving #top-drawer-container,
+    body.mobile-crosshair-moving #bottom-drawer-container,
+    body.mobile-crosshair-moving #weapon-wheel-overlay,
+    body.mobile-crosshair-moving #left-drawer-container .drawer-content,
+    body.mobile-crosshair-moving #left-drawer-container .drawer-strip-handle,
+    body.mobile-crosshair-moving #left-drawer-container #hud-weapon-indicator,
+    body.mobile-crosshair-moving #left-drawer-container #hud-weapon-cycle-badge {
+      display: none !important;
+      pointer-events: none !important;
+    }
+
+    /* While crosshair is moving on mobile, hide shield and health unless hit-showing is active */
+    body.mobile-crosshair-moving #hud-defense-indicator:not(.hit-showing) {
+      display: none !important;
+      pointer-events: none !important;
+    }
+
+    /* Always ensure left crosshair stick, right fire/flight stick, and pause button stay visible */
+    body.mobile-crosshair-moving #aim-stick-zone,
+    body.mobile-crosshair-moving #touch-stick-zone,
+    body.mobile-crosshair-moving #btn-quick-pause {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+
+    /* Shield and health hit appearance for 1 second each time the player takes a hit */
+    #hud-defense-indicator.hit-showing {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+      box-shadow: 0 0 22px rgba(0, 240, 255, 0.95), 0 0 14px rgba(239, 71, 111, 0.95) !important;
+      border-color: #00f0ff !important;
+      animation: defenseHitPulse 0.35s ease-out;
+    }
+
+    @keyframes defenseHitPulse {
+      0% { transform: scale(0.95); }
+      50% { transform: scale(1.08); }
+      100% { transform: scale(1.0); }
+    }
+
   </style>
 </head>
 <body>
@@ -4265,7 +4323,7 @@
   <div id="damage-vignette" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:9999; box-shadow:inset 0 0 100px rgba(239, 68, 111, 0.95); opacity:0; transition:opacity 0.12s ease-out;"></div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261108_flight_lockout_3s"></script>
+  <script type="module" src="js/wormhole0.js?v=20261108_mobile_crosshair_controls"></script>
 
 </body>
 </html>

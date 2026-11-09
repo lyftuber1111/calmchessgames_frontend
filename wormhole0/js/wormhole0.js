@@ -64,6 +64,7 @@ const state = {
   postProcessingEnabled: true,
   hasStarted: false,
   isPaused: false,
+  isCountdownActive: false,
   
   // Panel state
   autoClose: true,
@@ -4766,7 +4767,8 @@ function handleOrientation(e) {
   // When device is held vertically upright, screenUpY > 0 and screenUpZ = 0.
   // Tilt is positive when tilted back towards player's face (screenUpZ > 0).
   const rawTiltRad = Math.atan2(screenUpZ, screenUpY);
-  let tiltDeg = THREE.MathUtils.radToDeg(rawTiltRad);
+  const rawTiltDeg = THREE.MathUtils.radToDeg(rawTiltRad);
+  let tiltDeg = rawTiltDeg;
 
   const TILT_EPSILON = 1.0; // 1 degree tolerance to absorb sensor noise at boundaries
 
@@ -6805,7 +6807,7 @@ function showToast(msg, duration = 2500) {
 const active3DPowerups = [];
 const triggeredPowerupEventSet = new Set();
 
-function createPowerupSprite(icon, boostPct, colorHex) {
+function createPowerupSprite(icon, boostPct, colorHex, restoreBoth = false) {
   const canvas = document.createElement('canvas');
   canvas.width = 128;
   canvas.height = 128;
@@ -6825,14 +6827,16 @@ function createPowerupSprite(icon, boostPct, colorHex) {
   ctx.font = '52px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(icon || '⚡', 64, 58);
+  ctx.fillText(icon || '⚡', 64, 56);
 
   // Boost percentage badge
-  if (boostPct) {
-    ctx.font = 'bold 20px monospace';
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = colorHex || '#00f0ff';
-    ctx.shadowBlur = 8;
+  ctx.font = 'bold 18px monospace';
+  ctx.fillStyle = '#ffffff';
+  ctx.shadowColor = colorHex || '#00f0ff';
+  ctx.shadowBlur = 8;
+  if (restoreBoth) {
+    ctx.fillText('100% DUAL', 64, 106);
+  } else if (boostPct) {
     ctx.fillText(`+${Math.round(boostPct)}%`, 64, 106);
   }
 
@@ -6975,8 +6979,10 @@ function create3DPowerupMesh(pConfig) {
   // Scale the whole group by userScale
   group.scale.set(userScale, userScale, userScale);
 
+  const isDual = pConfig.restore_both == 1 || pConfig.restoreBoth == 1;
+
   // 2D Billboard Sprite showing the Power Up Icon and boost percentage
-  const sprite = createPowerupSprite(icon, boostPct, colorHexStr);
+  const sprite = createPowerupSprite(icon, boostPct, colorHexStr, isDual);
   sprite.position.y = (modelType === 'icon_sprite') ? 0 : (userRadius * 1.35 + 1.2);
   group.add(sprite);
 
@@ -6996,17 +7002,25 @@ function create3DPowerupMesh(pConfig) {
 function spawn3DPowerUp(pConfig, spawnPos = null) {
   if (!scene || !pConfig) return null;
 
+  const isDualRestore = pConfig.restore_both == 1 || pConfig.restoreBoth == 1;
   const isHealth = (pConfig.powerup_type || '').toLowerCase() === 'health';
   const isShield = (pConfig.powerup_type || '').toLowerCase() === 'shield';
 
-  // Requirement: Don't make health powerups until shield has depleted to 0%
-  if (isHealth && (state.playerShield || 0) > 0) return null;
+  if (isDualRestore) {
+    // Only spawn dual restore if player is not already at 100% health AND 100% shield
+    if ((state.playerHealth || 0) >= (state.maxHealth || 100) && (state.playerShield || 0) >= (state.maxShield || 100)) {
+      return null;
+    }
+  } else {
+    // Requirement: Don't make health powerups until shield has depleted to 0%
+    if (isHealth && (state.playerShield || 0) > 0) return null;
 
-  // Requirement: Don't make shield power ups if health is not 100%
-  if (isShield && (state.playerHealth || 0) < (state.maxHealth || 100)) return null;
+    // Requirement: Don't make shield power ups if health is not 100%
+    if (isShield && (state.playerHealth || 0) < (state.maxHealth || 100)) return null;
+  }
 
   const boostPct = parseFloat(pConfig.boost_pct !== undefined ? pConfig.boost_pct : pConfig.boost_percentage) || 25.0;
-  const colorHexStr = pConfig.color_hex || (isHealth ? '#10b981' : '#00f0ff');
+  const colorHexStr = pConfig.color_hex || (isDualRestore ? '#f59e0b' : (isHealth ? '#10b981' : '#00f0ff'));
 
   const { group, meshBody, coreMesh, spinRing, sprite } = create3DPowerupMesh(pConfig);
 
@@ -7059,6 +7073,7 @@ function spawn3DPowerUp(pConfig, spawnPos = null) {
     sprite: sprite,
     config: pConfig,
     powerupType: isHealth ? 'health' : 'shield',
+    restore_both: isDualRestore ? 1 : 0,
     boostPct: boostPct,
     colorHex: colorHexStr,
     spawnTime: performance.now(),
@@ -7076,6 +7091,7 @@ function spawn3DPowerUp(pConfig, spawnPos = null) {
  * Automatically cleans up uncollected powerups based on player's current health and shield status:
  * - If health energy is below 99%, any uncollected shield powerups automatically disappear.
  * - If shield energy is above 1%, any uncollected health powerups automatically disappear.
+ * - If both shield and health are at or above 99%, dual restore powerups automatically disappear.
  * Ensures complete disposal of geometries and materials to avoid memory leaks.
  */
 function pruneUncollectedPowerupsByEnergyState() {
@@ -7088,6 +7104,17 @@ function pruneUncollectedPowerupsByEnergyState() {
   for (let i = active3DPowerups.length - 1; i >= 0; i--) {
     const p = active3DPowerups[i];
     if (!p || p.collected) continue;
+
+    const isDual = p.restore_both == 1 || (p.config && (p.config.restore_both == 1 || p.config.restoreBoth == 1));
+
+    if (isDual) {
+      if (healthPct >= 99.0 && shieldPct >= 99.0) {
+        if (p.mesh && scene) scene.remove(p.mesh);
+        disposeMeshHierarchy(p.mesh);
+        active3DPowerups.splice(i, 1);
+      }
+      continue;
+    }
 
     // Requirement: if health energy is below 99% then any uncollected shield powerups should automatically disappear
     if (p.powerupType === 'shield' && healthPct < 99.0) {
@@ -7218,13 +7245,21 @@ function disposeMeshHierarchy(obj) {
 }
 
 function applyPowerupEffect(powerupInstance) {
-  const isHealth = powerupInstance.powerupType === 'health';
-  const boost = powerupInstance.boostPct || 25.0;
+  const isDualRestore = powerupInstance.restore_both == 1 || (powerupInstance.config && (powerupInstance.config.restore_both == 1 || powerupInstance.config.restoreBoth == 1));
 
-  if (isHealth) {
-    state.playerHealth = Math.min(state.maxHealth || 100, (state.playerHealth || 0) + boost);
+  if (isDualRestore) {
+    // 100% restoration for both shield and health simultaneously
+    state.playerHealth = 100;
+    state.playerShield = 100;
   } else {
-    state.playerShield = Math.min(state.maxShield || 100, (state.playerShield || 0) + boost);
+    const isHealth = powerupInstance.powerupType === 'health';
+    const boost = powerupInstance.boostPct || 25.0;
+
+    if (isHealth) {
+      state.playerHealth = Math.min(state.maxHealth || 100, (state.playerHealth || 0) + boost);
+    } else {
+      state.playerShield = Math.min(state.maxShield || 100, (state.playerShield || 0) + boost);
+    }
   }
 
   // Flash Defense HUD on hit / gain
@@ -8339,11 +8374,182 @@ function triggerGameOver() {
   }
 }
 
+let countdownTimerInterval = null;
+
+/**
+ * Handles Game Start & Restart countdown sequencing:
+ * 1. Verifies mobile orientation; if portrait, awaits landscape rotation and dismissal of rotation prompt.
+ * 2. Displays a 5-second countdown with bold white numerical SVG text before engaging gameplay.
+ */
+function startCountdownAndLaunchGame(isRestart = false) {
+  if (countdownTimerInterval) {
+    clearInterval(countdownTimerInterval);
+    countdownTimerInterval = null;
+  }
+
+  // Pre-countdown state normalization
+  state.isPaused = false;
+  state.isGameOver = false;
+  state.hasStarted = false;
+  document.body.classList.remove('game-paused');
+  const btnQuickPause = document.getElementById('btn-quick-pause');
+  if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
+
+  // Requirement E: Don't start game until rotate phone screen has disappeared and phone is in landscape mode
+  const isPortraitMobile = (window.innerWidth < window.innerHeight) && (
+    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+    (window.matchMedia && window.matchMedia('(max-width: 900px)').matches)
+  );
+
+  const rotatePrompt = document.getElementById('landscape-rotate-prompt');
+
+  if (isPortraitMobile) {
+    if (rotatePrompt) rotatePrompt.classList.remove('dismissed');
+    document.body.classList.remove('portrait-dismissed');
+
+    const onOrientationSatisfied = () => {
+      if (window.innerWidth >= window.innerHeight) {
+        window.removeEventListener('resize', onOrientationSatisfied);
+        window.removeEventListener('orientationchange', onOrientationSatisfied);
+        if (screen.orientation && typeof screen.orientation.removeEventListener === 'function') {
+          screen.orientation.removeEventListener('change', onOrientationSatisfied);
+        }
+        if (rotatePrompt) rotatePrompt.classList.add('dismissed');
+        document.body.classList.add('portrait-dismissed');
+        executeMissionCountdown(isRestart);
+      }
+    };
+
+    window.addEventListener('resize', onOrientationSatisfied);
+    window.addEventListener('orientationchange', onOrientationSatisfied);
+    if (screen.orientation && typeof screen.orientation.addEventListener === 'function') {
+      screen.orientation.addEventListener('change', onOrientationSatisfied);
+    }
+    return;
+  }
+
+  // If already in landscape or on desktop, proceed directly to countdown
+  executeMissionCountdown(isRestart);
+}
+
+function executeMissionCountdown(isRestart = false) {
+  state.isCountdownActive = true;
+  state.hasStarted = false; // Enemies and flight hold until countdown concludes
+  state.lastFrameTime = performance.now();
+
+  // Dismiss splash screen if active
+  const splashEl = document.getElementById('wormhole-splash-screen');
+  if (splashEl && splashEl.parentNode) {
+    splashEl.classList.add('splash-fade-out');
+    setTimeout(() => {
+      if (splashEl.parentNode) splashEl.remove();
+    }, 750);
+  }
+
+  if (audioMgr && !audioMgr.isInitialized) {
+    try { audioMgr.init(); } catch (e) {}
+  }
+  lockLandscape();
+  requestDeviceOrientation();
+  centerWormholeOnScreen(true);
+
+  const countdownOverlay = document.getElementById('game-countdown-overlay');
+  const countdownText = document.getElementById('countdown-text-num');
+  const ringBar = document.getElementById('countdown-ring-bar');
+  const headerLabel = document.getElementById('countdown-header-label');
+  const tipLabel = document.getElementById('countdown-tip-label');
+
+  if (countdownOverlay) {
+    countdownOverlay.classList.add('active');
+  }
+
+  let remaining = 5;
+  const totalSeconds = 5;
+  const circumference = 408;
+
+  const updateCountdownDisplay = () => {
+    if (countdownText) {
+      countdownText.textContent = remaining > 0 ? String(remaining) : 'GO!';
+    }
+    if (ringBar) {
+      const progress = (totalSeconds - remaining) / totalSeconds;
+      ringBar.style.strokeDashoffset = String(circumference * (1 - progress));
+    }
+    if (headerLabel) {
+      headerLabel.textContent = isRestart ? 'MISSION RE-ENGAGEMENT' : 'MISSION LAUNCH IMMINENT';
+    }
+    if (tipLabel) {
+      tipLabel.textContent = remaining > 2 ? 'CALIBRATING QUANTUM CORE' : 'ENGAGING THRUSTERS';
+    }
+
+    if (audioMgr && typeof audioMgr.playLaserBolt === 'function') {
+      try { audioMgr.playLaserBolt(); } catch (e) {}
+    }
+  };
+
+  updateCountdownDisplay();
+
+  countdownTimerInterval = setInterval(() => {
+    remaining--;
+    if (remaining > 0) {
+      updateCountdownDisplay();
+    } else if (remaining === 0) {
+      updateCountdownDisplay();
+      setTimeout(() => {
+        clearInterval(countdownTimerInterval);
+        countdownTimerInterval = null;
+        if (countdownOverlay) {
+          countdownOverlay.classList.remove('active');
+        }
+        state.isCountdownActive = false;
+        state.hasStarted = true;
+        state.lastFrameTime = performance.now();
+        centerWormholeOnScreen(true);
+      }, 500);
+    }
+  }, 1000);
+}
+
 function restartGame() {
   const modal = document.getElementById('game-over-modal');
   if (modal) modal.style.display = 'none';
 
+  // Completely reset pause & game over states across entire game
   state.isGameOver = false;
+  state.isPaused = false;
+  state.hasStarted = false;
+  state.isCountdownActive = false;
+  document.body.classList.remove('game-paused');
+  const btnQuickPause = document.getElementById('btn-quick-pause');
+  if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
+
+  // Reset desktop keyboard and mouse capture states
+  state.keys = {};
+  state.isPointerLocked = false;
+  state.isLeftMouseDown = false;
+  state.isRightMouseDown = false;
+  state.isMouseDown = false;
+  state.aimActive = false;
+  const mouseLockBtn = document.getElementById('btn-mouse-lock');
+  if (mouseLockBtn) {
+    mouseLockBtn.classList.remove('active');
+    mouseLockBtn.textContent = '🎯 Capture Crosshair';
+  }
+
+  // Reset mobile touch controls & virtual sticks
+  state.touchActive = false;
+  state.touchMove = { x: 0, y: 0 };
+  state.aimMove = { x: 0, y: 0 };
+  flightTouchId = null;
+  aimTouchId = null;
+  touchLookPitch = 0;
+  touchLookYaw = 0;
+  const flightKnob = document.getElementById('flight-stick-knob');
+  if (flightKnob) flightKnob.style.transform = 'translate(-50%, -50%)';
+  const aimKnob = document.getElementById('aim-stick-knob');
+  if (aimKnob) aimKnob.style.transform = 'translate(-50%, -50%)';
+
+  // Reset player stats
   state.playerShield = 100;
   state.playerHealth = 100;
   state.score = 0;
@@ -8352,7 +8558,7 @@ function restartGame() {
   state.isHyperWarping = false;
   state.distance = 0;
 
-  // Reset vessel position to safe distance away from wormhole singularity (never at 0, 0, 0!)
+  // Reset vessel position to safe distance away from wormhole singularity
   const respawnDistance = CONFIG.wormholeDistance || 220;
   state.position.set(0, 0, respawnDistance);
   if (!state.isXR && camera) {
@@ -8381,6 +8587,13 @@ function restartGame() {
 
   updatePlayerDefenseHUD();
   renderStageObjectivesUI();
+  centerWormholeOnScreen(true);
+
+  // Reset frame timestamp to prevent delta time explosion
+  state.lastFrameTime = performance.now();
+
+  // Launch the 5-second countdown to prepare the player before hostiles spawn
+  startCountdownAndLaunchGame(true);
 }
 
 function quitGame() {
@@ -9346,9 +9559,23 @@ if (renderer) {
       }
       return;
     }
-    const delta = (timestamp - state.lastFrameTime) * 0.001;
+
+    // Clamp delta to prevent simulation spikes during tab changes or pauses
+    const delta = Math.min(0.1, (timestamp - state.lastFrameTime) * 0.001);
     state.lastFrameTime = timestamp;
     state.time += delta;
+
+    // During 5-second countdown, render the scene smoothly while holding combat and flight
+    if (state.isCountdownActive) {
+      centerWormholeOnScreen();
+      updateCrosshairPosition(delta);
+      if (!state.postProcessingEnabled) {
+        renderer.render(scene, camera);
+      } else {
+        renderPostProcessing();
+      }
+      return;
+    }
 
   state.frameCount++;
   if (timestamp - state.lastFpsUpdate >= 500) {
@@ -9650,15 +9877,7 @@ async function runStartupDiagnosticsAndSplashScreen() {
       const launchGame = () => {
         if (startBtn.dataset.launched) return;
         startBtn.dataset.launched = 'true';
-        state.hasStarted = true;
-        if (!audioMgr.isInitialized) audioMgr.init();
-        lockLandscape();
-        requestDeviceOrientation();
-        centerWormholeOnScreen();
-        if (splashEl) {
-          splashEl.classList.add('splash-fade-out');
-          setTimeout(() => splashEl.remove(), 750);
-        }
+        startCountdownAndLaunchGame(false);
       };
 
       startBtn.addEventListener('click', launchGame);
@@ -9681,13 +9900,7 @@ async function runStartupDiagnosticsAndSplashScreen() {
       startBtn.title = 'Click or press Enter/Space to launch mission';
       startBtn.classList.add('btn-ready');
       const emergencyLaunch = () => {
-        state.hasStarted = true;
-        if (audioMgr && !audioMgr.isInitialized) audioMgr.init();
-        const splashEl = document.getElementById('wormhole-splash-screen');
-        if (splashEl) {
-          splashEl.classList.add('splash-fade-out');
-          setTimeout(() => splashEl.remove(), 500);
-        }
+        startCountdownAndLaunchGame(false);
       };
       startBtn.onclick = emergencyLaunch;
       window.addEventListener('keydown', (e) => {
@@ -9756,6 +9969,24 @@ if (typeof window !== 'undefined') {
   window.triggerGameOver = triggerGameOver;
   window.restartGame = restartGame;
   window.quitGame = quitGame;
+  window.applyPowerupEffect = applyPowerupEffect;
+  window.startCountdownAndLaunchGame = startCountdownAndLaunchGame;
+}
+
+// Quick Red X Exit buttons (HUD and Splash) -> returns to calmchessgames.com
+const btnQuickExit = document.getElementById('btn-quick-exit');
+if (btnQuickExit) {
+  btnQuickExit.addEventListener('click', (e) => {
+    e.preventDefault();
+    quitGame();
+  });
+}
+const btnSplashExit = document.getElementById('btn-splash-exit');
+if (btnSplashExit) {
+  btnSplashExit.addEventListener('click', (e) => {
+    e.preventDefault();
+    quitGame();
+  });
 }
 
 // Restart button & keyboard shortcut listener for Game Over screen

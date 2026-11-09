@@ -5939,12 +5939,53 @@ function updateLaserBolts(delta) {
   for (let i = laserBolts.length - 1; i >= 0; i--) {
     const bolt = laserBolts[i];
     bolt.mesh.position.addScaledVector(bolt.direction, bolt.speed * delta);
+
+    // Requirement: Allow collecting powerups by shooting them!
+    let boltConsumed = false;
+    if (typeof active3DPowerups !== 'undefined' && Array.isArray(active3DPowerups) && active3DPowerups.length > 0) {
+      for (let pi = active3DPowerups.length - 1; pi >= 0; pi--) {
+        const p = active3DPowerups[pi];
+        if (!p || p.collected || !p.mesh) continue;
+
+        const hitRadius = Math.max(4.2, (p.config && p.config.scale ? p.config.scale * 3.8 : 4.2));
+        const dist = bolt.mesh.position.distanceTo(p.mesh.position);
+
+        if (dist < hitRadius) {
+          boltConsumed = true;
+          p.collected = true;
+
+          applyPowerupEffect(p);
+          triggerPowerupCollectFx(p.mesh.position, p.colorHex);
+
+          scene.remove(p.mesh);
+          disposeMeshHierarchy(p.mesh);
+          active3DPowerups.splice(pi, 1);
+
+          if (typeof pruneUncollectedPowerupsByEnergyState === 'function') {
+            pruneUncollectedPowerupsByEnergyState();
+          }
+          break;
+        }
+      }
+    }
+
+    if (boltConsumed) {
+      scene.remove(bolt.mesh);
+      if (bolt.geometry) bolt.geometry.dispose();
+      if (bolt.material) bolt.material.dispose();
+      if (bolt.coreGeom) bolt.coreGeom.dispose();
+      if (bolt.coreMat) bolt.coreMat.dispose();
+      if (bolt.light) bolt.mesh.remove(bolt.light);
+      laserBolts.splice(i, 1);
+      continue;
+    }
+
     if ((now - bolt.spawnTime) * 0.001 > bolt.lifetime) {
       scene.remove(bolt.mesh);
-      bolt.geometry.dispose();
-      bolt.material.dispose();
-      bolt.coreGeom.dispose();
-      bolt.coreMat.dispose();
+      if (bolt.geometry) bolt.geometry.dispose();
+      if (bolt.material) bolt.material.dispose();
+      if (bolt.coreGeom) bolt.coreGeom.dispose();
+      if (bolt.coreMat) bolt.coreMat.dispose();
       if (bolt.light) bolt.mesh.remove(bolt.light);
       laserBolts.splice(i, 1);
     }
@@ -7031,8 +7072,51 @@ function spawn3DPowerUp(pConfig, spawnPos = null) {
   return powerupInstance;
 }
 
+/**
+ * Automatically cleans up uncollected powerups based on player's current health and shield status:
+ * - If health energy is below 99%, any uncollected shield powerups automatically disappear.
+ * - If shield energy is above 1%, any uncollected health powerups automatically disappear.
+ * Ensures complete disposal of geometries and materials to avoid memory leaks.
+ */
+function pruneUncollectedPowerupsByEnergyState() {
+  if (!scene || !Array.isArray(active3DPowerups) || active3DPowerups.length === 0) return;
+  const maxH = state.maxHealth || 100;
+  const maxS = state.maxShield || 100;
+  const healthPct = ((state.playerHealth || 0) / maxH) * 100;
+  const shieldPct = ((state.playerShield || 0) / maxS) * 100;
+
+  for (let i = active3DPowerups.length - 1; i >= 0; i--) {
+    const p = active3DPowerups[i];
+    if (!p || p.collected) continue;
+
+    // Requirement: if health energy is below 99% then any uncollected shield powerups should automatically disappear
+    if (p.powerupType === 'shield' && healthPct < 99.0) {
+      if (p.mesh && scene) scene.remove(p.mesh);
+      disposeMeshHierarchy(p.mesh);
+      active3DPowerups.splice(i, 1);
+      continue;
+    }
+
+    // Requirement: if shield energy is above 1% then any uncollected health powerups should automatically disappear
+    if (p.powerupType === 'health' && shieldPct > 1.0) {
+      if (p.mesh && scene) scene.remove(p.mesh);
+      disposeMeshHierarchy(p.mesh);
+      active3DPowerups.splice(i, 1);
+      continue;
+    }
+  }
+}
+
 function update3DPowerups(delta) {
   if (!scene) return;
+  if (state.isGameOver) {
+    despawnAllActivePowerups();
+    return;
+  }
+
+  // Requirement: Auto-disappear uncollected shield or health powerups when energy constraints trigger
+  pruneUncollectedPowerupsByEnergyState();
+
   const now = performance.now();
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : (state.position || new THREE.Vector3(0, 0, CONFIG.wormholeDistance || 220));
 
@@ -7095,6 +7179,7 @@ function update3DPowerups(delta) {
       scene.remove(p.mesh);
       disposeMeshHierarchy(p.mesh);
       active3DPowerups.splice(i, 1);
+      pruneUncollectedPowerupsByEnergyState();
       continue;
     }
 
@@ -7110,13 +7195,24 @@ function update3DPowerups(delta) {
 function disposeMeshHierarchy(obj) {
   if (!obj) return;
   obj.traverse((child) => {
-    if (child.geometry) child.geometry.dispose();
+    if (child.geometry) {
+      child.geometry.dispose();
+    }
     if (child.material) {
-      if (Array.isArray(child.material)) {
-        child.material.forEach(m => m.dispose());
-      } else {
-        child.material.dispose();
-      }
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      mats.forEach(m => {
+        if (!m) return;
+        if (m.map && typeof m.map.dispose === 'function') m.map.dispose();
+        if (m.alphaMap && typeof m.alphaMap.dispose === 'function') m.alphaMap.dispose();
+        if (m.lightMap && typeof m.lightMap.dispose === 'function') m.lightMap.dispose();
+        if (m.normalMap && typeof m.normalMap.dispose === 'function') m.normalMap.dispose();
+        if (m.roughnessMap && typeof m.roughnessMap.dispose === 'function') m.roughnessMap.dispose();
+        if (m.metalnessMap && typeof m.metalnessMap.dispose === 'function') m.metalnessMap.dispose();
+        m.dispose();
+      });
+    }
+    if (typeof child.dispose === 'function') {
+      try { child.dispose(); } catch (e) {}
     }
   });
 }
@@ -7134,6 +7230,9 @@ function applyPowerupEffect(powerupInstance) {
   // Flash Defense HUD on hit / gain
   showShieldAndHealthOnHit(1200);
   updatePlayerDefenseHUD();
+
+  // Prune any uncollected powerups that become invalid following the energy boost
+  pruneUncollectedPowerupsByEnergyState();
 
   if (audioMgr && typeof audioMgr.playLaserBolt === 'function') {
     audioMgr.playLaserBolt();
@@ -7427,12 +7526,22 @@ let lastEnemySpawnCheckTime = 0;
 function despawnAllActiveEnemies() {
   for (let i = active3DEnemies.length - 1; i >= 0; i--) {
     const e = active3DEnemies[i];
-    if (e.mesh && scene) scene.remove(e.mesh);
+    if (e && e.mesh && scene) {
+      scene.remove(e.mesh);
+      disposeMeshHierarchy(e.mesh);
+    }
     active3DEnemies.splice(i, 1);
   }
   for (let i = enemyBolts.length - 1; i >= 0; i--) {
     const b = enemyBolts[i];
-    if (b.mesh && scene) scene.remove(b.mesh);
+    if (b && b.mesh && scene) {
+      scene.remove(b.mesh);
+      if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
+      if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
+      if (b.geometry && b.geometry.dispose) b.geometry.dispose();
+      if (b.material && b.material.dispose) b.material.dispose();
+      disposeMeshHierarchy(b.mesh);
+    }
     enemyBolts.splice(i, 1);
   }
 }
@@ -7604,7 +7713,7 @@ function create3DEnemyMesh(config) {
 }
 
 function spawnEnemySwarmFromWormhole(forcedCount = null) {
-  if (!state.hasStarted || state.isPaused || state.isHyperWarping) return;
+  if (!state.hasStarted || state.isPaused || state.isGameOver || state.isHyperWarping) return;
   if (!scene || !camera) return;
 
   const enemyPool = (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.length > 0)
@@ -7715,12 +7824,12 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
 }
 
 function spawnEnemyFromWormhole() {
-  if (!state.hasStarted || state.isPaused) return;
+  if (!state.hasStarted || state.isPaused || state.isGameOver) return;
   spawnEnemySwarmFromWormhole();
 }
 
 function updateEnemiesCombat(delta) {
-  if (!state.hasStarted || state.isPaused) return;
+  if (!state.hasStarted || state.isPaused || state.isGameOver) return;
   const now = performance.now();
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
 
@@ -7852,9 +7961,10 @@ function updateEnemiesCombat(delta) {
       fireEnemyWeaponBolt(e);
     }
 
-    // Despawn safeguard if pushed far behind player
+    // Despawn safeguard if pushed far behind player (and dispose mesh hierarchy to prevent leaks)
     if (e.mesh.position.z > playerPos.z + 30 || distToPlayer > 400) {
       scene.remove(e.mesh);
+      disposeMeshHierarchy(e.mesh);
       active3DEnemies.splice(i, 1);
     }
   }
@@ -7880,10 +7990,11 @@ function updateEnemiesCombat(delta) {
       // Direct enemy weapon impact on player!
       applyDamageToPlayer(b.damage);
       scene.remove(b.mesh);
-      if (b.geometryList) b.geometryList.forEach(g => g.dispose());
-      if (b.materialList) b.materialList.forEach(m => m.dispose());
-      if (b.geometry) b.geometry.dispose();
-      if (b.material) b.material.dispose();
+      if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
+      if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
+      if (b.geometry && b.geometry.dispose) b.geometry.dispose();
+      if (b.material && b.material.dispose) b.material.dispose();
+      disposeMeshHierarchy(b.mesh);
       enemyBolts.splice(i, 1);
       continue;
     }
@@ -7891,10 +8002,11 @@ function updateEnemiesCombat(delta) {
     // Lifetime expiration or passed far behind player
     if ((now - b.spawnTime) * 0.001 > b.lifetime || b.mesh.position.z > playerPos.z + 30) {
       scene.remove(b.mesh);
-      if (b.geometryList) b.geometryList.forEach(g => g.dispose());
-      if (b.materialList) b.materialList.forEach(m => m.dispose());
-      if (b.geometry) b.geometry.dispose();
-      if (b.material) b.material.dispose();
+      if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
+      if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
+      if (b.geometry && b.geometry.dispose) b.geometry.dispose();
+      if (b.material && b.material.dispose) b.material.dispose();
+      disposeMeshHierarchy(b.mesh);
       enemyBolts.splice(i, 1);
     }
   }
@@ -7924,6 +8036,7 @@ function updateEnemiesCombat(delta) {
           const deathCfg = e.config;
           triggerEnemyExplosion(deathPos, deathCfg);
           scene.remove(e.mesh);
+          disposeMeshHierarchy(e.mesh);
           active3DEnemies.splice(ei, 1);
 
           state.stageKills++;
@@ -7947,15 +8060,18 @@ function updateEnemiesCombat(delta) {
 
     if (boltConsumed) {
       scene.remove(bolt.mesh);
-      bolt.geometry.dispose();
-      bolt.material.dispose();
+      if (bolt.geometry) bolt.geometry.dispose();
+      if (bolt.material) bolt.material.dispose();
+      if (bolt.coreGeom) bolt.coreGeom.dispose();
+      if (bolt.coreMat) bolt.coreMat.dispose();
+      if (bolt.light) bolt.mesh.remove(bolt.light);
       laserBolts.splice(bi, 1);
     }
   }
 }
 
 function fireEnemyWeaponBolt(enemyObj) {
-  if (!state.hasStarted || state.isPaused || !scene) return;
+  if (!state.hasStarted || state.isPaused || state.isGameOver || !scene) return;
   const cfg = enemyObj.config || {};
   const wpnName = (cfg.weapon_name || enemyObj.weaponName || '').toLowerCase();
   const modelType = (cfg.model_3d_type || '').toLowerCase();
@@ -8151,6 +8267,12 @@ function applyDamageToPlayer(rawDamage) {
 
   updatePlayerDefenseHUD();
 
+  // Requirement: if health energy is below 99% then uncollected shield powerups automatically disappear,
+  // and if shield energy is above 1% then uncollected health powerups automatically disappear.
+  if (typeof pruneUncollectedPowerupsByEnergyState === 'function') {
+    pruneUncollectedPowerupsByEnergyState();
+  }
+
   // Requirement: Game over when health reaches 0% with option to restart
   if (state.playerHealth <= 0) {
     triggerGameOver();
@@ -8163,6 +8285,24 @@ function triggerGameOver() {
   state.playerHealth = 0;
   state.playerShield = 0;
   updatePlayerDefenseHUD();
+
+  // Requirement: when the game is over any remaining enemies should be cleaned up and stop firing
+  despawnAllActiveEnemies();
+  despawnAllActivePowerups();
+
+  // Clean up all active player laser bolts to prevent lingering effects and memory leaks
+  for (let i = laserBolts.length - 1; i >= 0; i--) {
+    const bolt = laserBolts[i];
+    if (bolt && bolt.mesh && scene) {
+      scene.remove(bolt.mesh);
+      if (bolt.geometry) bolt.geometry.dispose();
+      if (bolt.material) bolt.material.dispose();
+      if (bolt.coreGeom) bolt.coreGeom.dispose();
+      if (bolt.coreMat) bolt.coreMat.dispose();
+      if (bolt.light) bolt.mesh.remove(bolt.light);
+    }
+    laserBolts.splice(i, 1);
+  }
 
   // Requirement: when the game over screen appears if the crosshair has captured the mouse pointer automatically un capture it
   if (document.pointerLockElement) {
@@ -9611,6 +9751,7 @@ if (typeof window !== 'undefined') {
   window.despawnAllActivePowerups = despawnAllActivePowerups;
   window.checkEnemyPowerupDrop = checkEnemyPowerupDrop;
   window.calculateSafeFarPowerupSpawnPos = calculateSafeFarPowerupSpawnPos;
+  window.pruneUncollectedPowerupsByEnergyState = pruneUncollectedPowerupsByEnergyState;
   window.checkEventPowerupAppearance = checkEventPowerupAppearance;
   window.triggerGameOver = triggerGameOver;
   window.restartGame = restartGame;

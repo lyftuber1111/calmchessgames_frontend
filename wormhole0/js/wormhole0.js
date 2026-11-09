@@ -6353,6 +6353,13 @@ if (mouseLockBtn) {
 }
 
 document.addEventListener('pointerlockchange', () => {
+  if (state.isGameOver && document.pointerLockElement) {
+    try {
+      document.exitPointerLock();
+    } catch (e) {}
+    state.isPointerLocked = false;
+    return;
+  }
   const wasLocked = state.isPointerLocked;
   state.isPointerLocked = (document.pointerLockElement === container);
   if (wasLocked && !state.isPointerLocked) {
@@ -6368,6 +6375,7 @@ document.addEventListener('pointerlockchange', () => {
 
 function isInteractiveUiElement(target, event = null) {
   const selector =
+    '#game-over-modal, .device-modal-overlay, ' +
     '#left-drawer-container, #top-drawer-container, #bottom-drawer-container, ' +
     '#mobile-touch-controls, #unsupported-device-modal, .weapon-wheel-overlay, ' +
     '#wormhole-splash-screen, ' +
@@ -6396,7 +6404,7 @@ function isInteractiveUiElement(target, event = null) {
 }
 
 function requestCrosshairCapture(forceInXr = false) {
-  if (state.isPaused || !container) return;
+  if (state.isPaused || state.isGameOver || !container) return;
   if (state.isXR && !forceInXr) return;
   if (document.pointerLockElement !== container) {
     try {
@@ -6408,13 +6416,14 @@ function requestCrosshairCapture(forceInXr = false) {
 
 // Window focus event captures crosshair when focusing into the window
 window.addEventListener('focus', () => {
-  if (!state.isXR) {
+  if (!state.isXR && !state.isGameOver && !state.isPaused) {
     requestCrosshairCapture();
   }
 });
 
 // Window mouse interaction: captures crosshair and fires active weapon on left click
 window.addEventListener('mousedown', (e) => {
+  if (state.isGameOver) return;
   if (e.pointerType === 'touch' || (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents)) return;
 
   // Middle mouse wheel click (button 1): Open weapons arsenal
@@ -6947,6 +6956,14 @@ function spawn3DPowerUp(pConfig, spawnPos = null) {
   if (!scene || !pConfig) return null;
 
   const isHealth = (pConfig.powerup_type || '').toLowerCase() === 'health';
+  const isShield = (pConfig.powerup_type || '').toLowerCase() === 'shield';
+
+  // Requirement: Don't make health powerups until shield has depleted to 0%
+  if (isHealth && (state.playerShield || 0) > 0) return null;
+
+  // Requirement: Don't make shield power ups if health is not 100%
+  if (isShield && (state.playerHealth || 0) < (state.maxHealth || 100)) return null;
+
   const boostPct = parseFloat(pConfig.boost_pct !== undefined ? pConfig.boost_pct : pConfig.boost_percentage) || 25.0;
   const colorHexStr = pConfig.color_hex || (isHealth ? '#10b981' : '#00f0ff');
 
@@ -6956,15 +6973,39 @@ function spawn3DPowerUp(pConfig, spawnPos = null) {
   if (spawnPos) {
     group.position.copy(spawnPos);
   } else {
-    // Spawn ahead of player along tunnel toward wormhole
+    // Spawn ahead of player along tunnel toward wormhole with proximity detection
     const playerZ = (state.position && state.position.z) ? state.position.z : (CONFIG.wormholeDistance || 220);
-    const angle = Math.random() * Math.PI * 2;
-    const radius = 10 + Math.random() * 18;
-    group.position.set(
-      Math.cos(angle) * radius,
-      Math.sin(angle) * radius,
-      Math.max(15, playerZ - (40 + Math.random() * 50))
-    );
+    let chosenPos = null;
+    let bestClearance = -1;
+    for (let attempt = 0; attempt < 24; attempt++) {
+      const angle = (attempt / 24) * Math.PI * 2 + Math.random() * 0.2;
+      const radius = 10 + Math.random() * 14;
+      const candZ = Math.max(18, playerZ - (45 + Math.random() * 55));
+      const cand = new THREE.Vector3(Math.cos(angle) * radius, Math.sin(angle) * radius, candZ);
+
+      let minEnemyDist = Infinity;
+      if (Array.isArray(active3DEnemies) && active3DEnemies.length > 0) {
+        for (let j = 0; j < active3DEnemies.length; j++) {
+          const enemy = active3DEnemies[j];
+          if (enemy && enemy.mesh) {
+            const d = cand.distanceTo(enemy.mesh.position);
+            if (d < minEnemyDist) minEnemyDist = d;
+          }
+        }
+      } else {
+        minEnemyDist = 999.0;
+      }
+
+      if (minEnemyDist >= 16.0) {
+        chosenPos = cand;
+        break;
+      }
+      if (minEnemyDist > bestClearance) {
+        bestClearance = minEnemyDist;
+        chosenPos = cand;
+      }
+    }
+    group.position.copy(chosenPos || new THREE.Vector3(0, 6, Math.max(18, playerZ - 50)));
   }
 
   scene.add(group);
@@ -7017,6 +7058,22 @@ function update3DPowerups(delta) {
     // Gentle hovering bob in place
     const hoverOffset = Math.sin((now - p.spawnTime) * 0.003) * 0.08;
     p.mesh.position.y += hoverOffset * delta * 15.0;
+
+    // Requirement: Proximity detection so it doesn't collide with other undestroyed enemies
+    if (Array.isArray(active3DEnemies) && active3DEnemies.length > 0) {
+      for (let j = 0; j < active3DEnemies.length; j++) {
+        const enemy = active3DEnemies[j];
+        if (!enemy || !enemy.mesh) continue;
+        const sepVec = new THREE.Vector3().subVectors(p.mesh.position, enemy.mesh.position);
+        const sepDist = sepVec.length();
+        const minSafeSep = Math.max(12.0, (enemy.mesh.scale.x * 3.0) + 4.0);
+        if (sepDist < minSafeSep && sepDist > 0.001) {
+          // Smoothly repel the powerup away from the undestroyed enemy
+          sepVec.normalize().multiplyScalar((minSafeSep - sepDist) * 10.0 * delta);
+          p.mesh.position.add(sepVec);
+        }
+      }
+    }
 
     // Check distance to player
     const distToPlayer = p.mesh.position.distanceTo(playerPos);
@@ -7149,6 +7206,101 @@ function despawnAllActivePowerups() {
   }
 }
 
+/**
+ * Calculates a display/spawn position for dropped powerups that is:
+ * 1. Far away from where the enemy was destroyed (deathPos).
+ * 2. Positioned with proximity detection so it doesn't collide with any other undestroyed enemies.
+ * 3. Safely situated within visible tunnel/corridor flight bounds.
+ */
+function calculateSafeFarPowerupSpawnPos(deathPos) {
+  const dPos = (deathPos && deathPos.isVector3) ? deathPos : new THREE.Vector3(deathPos ? deathPos.x : 0, deathPos ? deathPos.y : 0, deathPos ? deathPos.z : 100);
+  const playerZ = (state.position && typeof state.position.z === 'number') ? state.position.z : (CONFIG.wormholeDistance || 220);
+
+  // Target separation distance from where enemy was destroyed (at least 48 to 76 units away)
+  const minDistanceFromDeath = 48.0;
+  const maxDistanceFromDeath = 76.0;
+
+  let bestPos = null;
+  let maxClearance = -1;
+
+  // Undestroyed enemies currently active in scene
+  const undestroyedEnemies = Array.isArray(active3DEnemies) ? active3DEnemies : [];
+
+  // Helper to measure distance to closest undestroyed enemy
+  const getMinClearanceToEnemies = (pos) => {
+    if (!undestroyedEnemies.length) return 999.0;
+    let minD = Infinity;
+    for (let k = 0; k < undestroyedEnemies.length; k++) {
+      const u = undestroyedEnemies[k];
+      if (!u || !u.mesh) continue;
+      const d = pos.distanceTo(u.mesh.position);
+      if (d < minD) minD = d;
+    }
+    return minD;
+  };
+
+  // Generate candidates across radial angles, corridor radii, and forward & rear corridor offsets
+  const candidateOffsets = [];
+  const angleSteps = 16;
+  for (let a = 0; a < angleSteps; a++) {
+    const angle = (a / angleSteps) * Math.PI * 2;
+    // Radial distance from corridor center axis (between 10 and 22 units)
+    const rad = 10.0 + (a % 4) * 3.5;
+    const candX = Math.cos(angle) * rad;
+    const candY = Math.sin(angle) * (rad * 0.85);
+
+    // Test forward (toward player), backward (toward wormhole), and lateral deep offsets
+    const zOffsets = [
+      minDistanceFromDeath + Math.random() * (maxDistanceFromDeath - minDistanceFromDeath),
+      -(minDistanceFromDeath + Math.random() * (maxDistanceFromDeath - minDistanceFromDeath)),
+      (minDistanceFromDeath * 0.75),
+      -(minDistanceFromDeath * 0.75)
+    ];
+
+    for (const zOff of zOffsets) {
+      let candZ = dPos.z + zOff;
+      // Clamp candZ inside playable visible flight corridor
+      candZ = Math.max(18.0, Math.min(playerZ - 12.0, candZ));
+
+      const cand = new THREE.Vector3(candX, candY, candZ);
+      const distFromDeath = cand.distanceTo(dPos);
+
+      // Verify it is indeed far away from the enemy's destruction point
+      if (distFromDeath >= minDistanceFromDeath) {
+        candidateOffsets.push(cand);
+      }
+    }
+  }
+
+  // Minimum required safe proximity distance to consider a position collision-free from undestroyed enemies
+  const minSafeEnemyClearance = 16.0;
+
+  for (let i = 0; i < candidateOffsets.length; i++) {
+    const cand = candidateOffsets[i];
+    const clearance = getMinClearanceToEnemies(cand);
+
+    // If clearance exceeds safe threshold, this position is collision-free!
+    if (clearance >= minSafeEnemyClearance) {
+      if (clearance > maxClearance) {
+        maxClearance = clearance;
+        bestPos = cand;
+      }
+    } else if (!bestPos && clearance > maxClearance) {
+      maxClearance = clearance;
+      bestPos = cand;
+    }
+  }
+
+  // Fallback: If no candidate was accepted, compute safe position away from death point
+  if (!bestPos) {
+    const fallbackAngle = Math.random() * Math.PI * 2;
+    const fallbackZ = Math.max(18.0, Math.min(playerZ - 15.0, dPos.z > 80 ? dPos.z - 52.0 : dPos.z + 52.0));
+    bestPos = new THREE.Vector3(Math.cos(fallbackAngle) * 14.0, Math.sin(fallbackAngle) * 12.0, fallbackZ);
+  }
+
+  return bestPos;
+}
+
 function checkEnemyPowerupDrop(enemyConfig, position) {
   if (!enemyConfig || !position) return;
   const powerupList = window.activeStagePowerups || state.stagePowerups || DEFAULT_STAGE_POWERUPS || [];
@@ -7166,6 +7318,15 @@ function checkEnemyPowerupDrop(enemyConfig, position) {
 
     const dropOnKill = (p.drop_on_enemy_kill == 1 || p.drop_on_enemy_kill === true || p.drop_on_enemy_kill === '1');
     if (!dropOnKill) continue;
+
+    const isHealth = (p.powerup_type || '').toLowerCase() === 'health';
+    const isShield = (p.powerup_type || '').toLowerCase() === 'shield';
+
+    // Requirement: Don't make health powerups until shield has depleted to 0%
+    if (isHealth && (state.playerShield || 0) > 0) continue;
+
+    // Requirement: Don't make shield power ups if health is not 100%
+    if (isShield && (state.playerHealth || 0) < (state.maxHealth || 100)) continue;
 
     // Check target enemy type (match against all identifier fields)
     const targetEnemy = (p.drop_enemy_type || p.enemy_id || 'all').trim().toLowerCase();
@@ -7189,9 +7350,9 @@ function checkEnemyPowerupDrop(enemyConfig, position) {
       : 75.0;
     const roll = Math.random() * 100;
     if (roll <= chance) {
-      const dropSpawn = position.clone ? position.clone() : new THREE.Vector3(position.x, position.y, position.z);
-      // Offset slightly forward towards player so it's clearly visible out of the blast
-      dropSpawn.z += 1.5;
+      // Requirement: When a power up displays make it display far away from where the enemy was destroyed
+      // but give it proximity detection so it doesn't collide with other un destroyed enemies
+      const dropSpawn = calculateSafeFarPowerupSpawnPos(position);
       spawn3DPowerUp(p, dropSpawn);
       break; // Drop one powerup per enemy kill
     }
@@ -7213,6 +7374,15 @@ function checkEventPowerupAppearance(eventName) {
 
     const pDev = (p.device_type || 'all').toLowerCase();
     if (pDev !== 'all' && pDev !== currentDev) continue;
+
+    const isHealth = (p.powerup_type || '').toLowerCase() === 'health';
+    const isShield = (p.powerup_type || '').toLowerCase() === 'shield';
+
+    // Requirement: Don't make health powerups until shield has depleted to 0%
+    if (isHealth && (state.playerShield || 0) > 0) continue;
+
+    // Requirement: Don't make shield power ups if health is not 100%
+    if (isShield && (state.playerHealth || 0) < (state.maxHealth || 100)) continue;
 
     const rawEvents = (p.trigger_events || '').toLowerCase().split(',').map(s => s.trim());
     if (rawEvents.includes(normalizedEvent)) {
@@ -7993,6 +8163,24 @@ function triggerGameOver() {
   state.playerHealth = 0;
   state.playerShield = 0;
   updatePlayerDefenseHUD();
+
+  // Requirement: when the game over screen appears if the crosshair has captured the mouse pointer automatically un capture it
+  if (document.pointerLockElement) {
+    try {
+      document.exitPointerLock();
+    } catch (e) {}
+  }
+  state.isPointerLocked = false;
+  state.isLeftMouseDown = false;
+  state.isRightMouseDown = false;
+  state.isMouseDown = false;
+  state.aimActive = false;
+
+  const mouseLockBtn = document.getElementById('btn-mouse-lock');
+  if (mouseLockBtn) {
+    mouseLockBtn.classList.remove('active');
+    mouseLockBtn.textContent = '🎯 Capture Crosshair';
+  }
 
   // Show Game Over modal overlay
   const modal = document.getElementById('game-over-modal');
@@ -9422,6 +9610,7 @@ if (typeof window !== 'undefined') {
   window.spawn3DPowerUp = spawn3DPowerUp;
   window.despawnAllActivePowerups = despawnAllActivePowerups;
   window.checkEnemyPowerupDrop = checkEnemyPowerupDrop;
+  window.calculateSafeFarPowerupSpawnPos = calculateSafeFarPowerupSpawnPos;
   window.checkEventPowerupAppearance = checkEventPowerupAppearance;
   window.triggerGameOver = triggerGameOver;
   window.restartGame = restartGame;

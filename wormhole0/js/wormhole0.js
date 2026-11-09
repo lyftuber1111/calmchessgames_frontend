@@ -5844,6 +5844,123 @@ if (btnSpin360) {
 // 3. SELECTABLE LASER CANNON SYSTEM & CROSSHAIR RETICLE TRACKER
 const laserBolts = [];
 
+/**
+ * Checks whether a given 3D target mesh (enemy or powerup) is within the inside boundaries
+ * of the crosshair outside circle (#vector-alignment-ring, default 70px diameter = 35px radius).
+ * Supports standard desktop/mobile projection and WebXR camera viewports.
+ */
+function isTargetInCrosshairOutsideCircle(targetMesh, customRadius3D = null) {
+  if (!targetMesh || !scene || !camera) return false;
+  const activeCamera = (typeof renderer !== 'undefined' && renderer && renderer.xr && renderer.xr.isPresenting)
+    ? renderer.xr.getCamera()
+    : camera;
+  if (!activeCamera) return false;
+
+  activeCamera.updateMatrixWorld(true);
+  const targetWorldPos = new THREE.Vector3();
+  targetMesh.getWorldPosition(targetWorldPos);
+
+  const camWorldPos = new THREE.Vector3();
+  activeCamera.getWorldPosition(camWorldPos);
+
+  // Vector from camera to target
+  const toTarget = new THREE.Vector3().subVectors(targetWorldPos, camWorldPos);
+  const camForward = new THREE.Vector3(0, 0, -1).applyQuaternion(activeCamera.quaternion);
+
+  // Target must be in front of the camera plane
+  if (camForward.dot(toTarget) <= 0.1) return false;
+
+  // Project target position into normalized device screen coordinates
+  const projected = targetWorldPos.clone().project(activeCamera);
+  if (projected.z > 1.0) return false; // Beyond far clipping plane
+
+  const screenW = window.innerWidth || 1920;
+  const screenH = window.innerHeight || 1080;
+  const targetScreenX = (projected.x * 0.5 + 0.5) * screenW;
+  const targetScreenY = (-projected.y * 0.5 + 0.5) * screenH;
+
+  const crosshairX = (state.crosshair && typeof state.crosshair.x === 'number') ? state.crosshair.x : (screenW * 0.5);
+  const crosshairY = (state.crosshair && typeof state.crosshair.y === 'number') ? state.crosshair.y : (screenH * 0.5);
+
+  const screenDist = Math.hypot(targetScreenX - crosshairX, targetScreenY - crosshairY);
+
+  // Crosshair outside circle radius (#vector-alignment-ring, 70px diameter -> 35px radius)
+  const vectorRing = document.getElementById('vector-alignment-ring');
+  const ringRadius = (vectorRing && vectorRing.offsetWidth > 0) ? (vectorRing.offsetWidth * 0.5) : 35;
+
+  // Approximate target radius in screen pixels based on 3D dimensions and camera FOV
+  const dist3D = toTarget.length();
+  let objScreenRadius = 0;
+  if (dist3D > 0.1) {
+    let r3D = (typeof customRadius3D === 'number' && customRadius3D > 0) ? customRadius3D : 3.0;
+    const fov = activeCamera.fov || 65;
+    const fovRad = (fov * Math.PI) / 180;
+    objScreenRadius = (r3D / (dist3D * Math.tan(fovRad * 0.5))) * (screenH * 0.5);
+  }
+
+  // Inside boundaries of the crosshair outside circle
+  return screenDist <= (ringRadius + Math.max(0, objScreenRadius * 0.85));
+}
+
+/**
+ * Destroys an active 3D enemy instance upon laser bolt hit, triggering full explosion,
+ * score increment, powerup drop evaluation, warp readiness evaluation, and objectives update.
+ */
+function destroyEnemyInstance(e, enemyIndex = -1) {
+  if (!e || !e.mesh) return;
+  const deathPos = e.mesh.position.clone();
+  const deathCfg = e.config || {};
+  triggerEnemyExplosion(deathPos, deathCfg);
+
+  if (scene) scene.remove(e.mesh);
+  disposeMeshHierarchy(e.mesh);
+
+  if (typeof enemyIndex === 'number' && enemyIndex >= 0 && enemyIndex < active3DEnemies.length) {
+    active3DEnemies.splice(enemyIndex, 1);
+  } else {
+    const idx = active3DEnemies.indexOf(e);
+    if (idx !== -1) active3DEnemies.splice(idx, 1);
+  }
+
+  state.stageKills++;
+  const bounty = parseInt(deathCfg.score_value || deathCfg.score || 100);
+  state.score += bounty;
+
+  // Check powerup drop on enemy kill (drop_on_enemy_kill, drop_chance_pct, drop_enemy_type)
+  if (typeof checkEnemyPowerupDrop === 'function') {
+    checkEnemyPowerupDrop(deathCfg, deathPos);
+  }
+
+  evaluateWarpReadiness();
+  renderStageObjectivesUI();
+}
+
+/**
+ * Collects an active 3D powerup instance upon laser bolt hit, applying powerup effects,
+ * visual collection fx, and cleaning up geometries/materials.
+ */
+function collectPowerupInstance(p, powerupIndex = -1) {
+  if (!p || p.collected || !p.mesh) return;
+  p.collected = true;
+
+  applyPowerupEffect(p);
+  triggerPowerupCollectFx(p.mesh.position, p.colorHex);
+
+  if (scene) scene.remove(p.mesh);
+  disposeMeshHierarchy(p.mesh);
+
+  if (typeof powerupIndex === 'number' && powerupIndex >= 0 && powerupIndex < active3DPowerups.length) {
+    active3DPowerups.splice(powerupIndex, 1);
+  } else {
+    const idx = active3DPowerups.indexOf(p);
+    if (idx !== -1) active3DPowerups.splice(idx, 1);
+  }
+
+  if (typeof pruneUncollectedPowerupsByEnergyState === 'function') {
+    pruneUncollectedPowerupsByEnergyState();
+  }
+}
+
 function fireLaserBeam() {
   if (state.isPaused) return;
   if (!scene || !camera) return;
@@ -5911,8 +6028,41 @@ function fireLaserBeam() {
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
 
-  // Target point 1200 units deep into cosmos
-  const targetPoint = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(1200));
+  // Target prioritization: If an enemy or powerup is inside the crosshair outside circle,
+  // aim the blaster bolt straight into the target!
+  let targetPoint = null;
+  let nearestTargetDist = Infinity;
+
+  if (typeof active3DEnemies !== 'undefined' && Array.isArray(active3DEnemies)) {
+    for (let ei = active3DEnemies.length - 1; ei >= 0; ei--) {
+      const e = active3DEnemies[ei];
+      if (e && e.mesh && isTargetInCrosshairOutsideCircle(e.mesh)) {
+        const d = camWorldPos.distanceTo(e.mesh.position);
+        if (d < nearestTargetDist) {
+          nearestTargetDist = d;
+          targetPoint = e.mesh.position.clone();
+        }
+      }
+    }
+  }
+
+  if (!targetPoint && typeof active3DPowerups !== 'undefined' && Array.isArray(active3DPowerups)) {
+    for (let pi = active3DPowerups.length - 1; pi >= 0; pi--) {
+      const p = active3DPowerups[pi];
+      if (p && !p.collected && p.mesh && isTargetInCrosshairOutsideCircle(p.mesh)) {
+        const d = camWorldPos.distanceTo(p.mesh.position);
+        if (d < nearestTargetDist) {
+          nearestTargetDist = d;
+          targetPoint = p.mesh.position.clone();
+        }
+      }
+    }
+  }
+
+  // Fallback target point 1200 units deep into cosmos
+  if (!targetPoint) {
+    targetPoint = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(1200));
+  }
 
   // Ship blaster cannons (alternating left / right wingtips)
   const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camWorldQuat).normalize();
@@ -5989,7 +6139,7 @@ function updateLaserBolts(delta) {
     const bolt = laserBolts[i];
     bolt.mesh.position.addScaledVector(bolt.direction, bolt.speed * delta);
 
-    // Requirement: Allow collecting powerups by shooting them!
+    // Requirement: Allow collecting powerups on laser bolt hit (in 3D or within crosshair outside circle)!
     let boltConsumed = false;
     if (typeof active3DPowerups !== 'undefined' && Array.isArray(active3DPowerups) && active3DPowerups.length > 0) {
       for (let pi = active3DPowerups.length - 1; pi >= 0; pi--) {
@@ -5998,21 +6148,11 @@ function updateLaserBolts(delta) {
 
         const hitRadius = Math.max(4.2, (p.config && p.config.scale ? p.config.scale * 3.8 : 4.2));
         const dist = bolt.mesh.position.distanceTo(p.mesh.position);
+        const insideCrosshair = isTargetInCrosshairOutsideCircle(p.mesh, hitRadius);
 
-        if (dist < hitRadius) {
+        if (dist < hitRadius || insideCrosshair) {
           boltConsumed = true;
-          p.collected = true;
-
-          applyPowerupEffect(p);
-          triggerPowerupCollectFx(p.mesh.position, p.colorHex);
-
-          scene.remove(p.mesh);
-          disposeMeshHierarchy(p.mesh);
-          active3DPowerups.splice(pi, 1);
-
-          if (typeof pruneUncollectedPowerupsByEnergyState === 'function') {
-            pruneUncollectedPowerupsByEnergyState();
-          }
+          collectPowerupInstance(p, pi);
           break;
         }
       }
@@ -7268,15 +7408,7 @@ function update3DPowerups(delta) {
 
     // Collection check - expanded radius for smooth pickup
     if (distToPlayer < 14.0) {
-      // COLLECTED!
-      p.collected = true;
-      applyPowerupEffect(p);
-      triggerPowerupCollectFx(p.mesh.position, p.colorHex);
-
-      scene.remove(p.mesh);
-      disposeMeshHierarchy(p.mesh);
-      active3DPowerups.splice(i, 1);
-      pruneUncollectedPowerupsByEnergyState();
+      collectPowerupInstance(p, i);
       continue;
     }
 
@@ -8116,49 +8248,25 @@ function updateEnemiesCombat(delta) {
     }
   }
 
-  // 4. Test Player Lasers against 3D Enemy Meshes
+  // 4. Test Player Lasers against 3D Enemy Meshes (Destroyable on Laser Bolt Hit and Crosshair Circle Hit)
   for (let bi = laserBolts.length - 1; bi >= 0; bi--) {
     const bolt = laserBolts[bi];
     let boltConsumed = false;
 
     for (let ei = active3DEnemies.length - 1; ei >= 0; ei--) {
       const e = active3DEnemies[ei];
+      if (!e || !e.mesh) continue;
       const dims = e.mesh.userData && e.mesh.userData.dimensions;
       const maxDim = dims ? Math.max(dims.length, dims.height, dims.depth, dims.radius * 2) : 3.0;
       const collisionRadius = Math.max(2.8, (e.mesh.scale.x / (dims ? dims.scale : 1.0)) * maxDim * 0.65);
       const dist = bolt.mesh.position.distanceTo(e.mesh.position);
+      const insideCrosshair = isTargetInCrosshairOutsideCircle(e.mesh, collisionRadius);
 
-      if (dist < collisionRadius) {
-        // Laser impact!
+      if (dist < collisionRadius || insideCrosshair) {
+        // Laser impact! Enemy destroyed on laser bolt hit!
         boltConsumed = true;
-        const activeWpn = weaponsSystem.getActiveWeapon();
-        const dmgDealt = (activeWpn && activeWpn.damagePerHit) ? activeWpn.damagePerHit : 2;
-        e.currentHits -= dmgDealt;
-
-        // Enemy Destroyed
-        if (e.currentHits <= 0) {
-          const deathPos = e.mesh.position.clone();
-          const deathCfg = e.config;
-          triggerEnemyExplosion(deathPos, deathCfg);
-          scene.remove(e.mesh);
-          disposeMeshHierarchy(e.mesh);
-          active3DEnemies.splice(ei, 1);
-
-          state.stageKills++;
-          const bounty = parseInt(deathCfg.score_value || deathCfg.score || 100);
-          state.score += bounty;
-
-          // Check powerup drop on enemy kill (drop_on_enemy_kill, drop_chance_pct, drop_enemy_type)
-          if (typeof checkEnemyPowerupDrop === 'function') {
-            checkEnemyPowerupDrop(deathCfg, deathPos);
-          }
-
-          evaluateWarpReadiness();
-          renderStageObjectivesUI();
-        } else {
-          // Flash enemy hull white briefly
-          e.mesh.scale.multiplyScalar(1.15);
-        }
+        e.currentHits = 0;
+        destroyEnemyInstance(e, ei);
         break;
       }
     }
@@ -10152,6 +10260,9 @@ if (typeof window !== 'undefined') {
   window.restartGame = restartGame;
   window.quitGame = quitGame;
   window.applyPowerupEffect = applyPowerupEffect;
+  window.isTargetInCrosshairOutsideCircle = isTargetInCrosshairOutsideCircle;
+  window.destroyEnemyInstance = destroyEnemyInstance;
+  window.collectPowerupInstance = collectPowerupInstance;
   window.startCountdownAndLaunchGame = startCountdownAndLaunchGame;
   window.keys = keys;
   window.requestCrosshairCapture = requestCrosshairCapture;

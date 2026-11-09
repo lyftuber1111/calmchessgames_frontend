@@ -2641,7 +2641,7 @@ function toggleLeftPanel(e) {
   if (!leftDrawer) return;
   const willOpen = !leftDrawer.classList.contains('open');
   if (willOpen) {
-    setCockpitTab('weapons'); // Default tab when the panel opens!
+    setCockpitTab('missions'); // Default tab when the panel opens!
     if (state.autoClose && !state.isPaused) {
       closeOtherPanels('left');
     }
@@ -2683,7 +2683,7 @@ if (btnToggleDrawer) {
 }
 
 // =============================================================================
-// COCKPIT CONTROLS & MISSIONS PANEL TAB SWITCHER (WEAPONS DEFAULT, INFO, MISSIONS)
+// COCKPIT CONTROLS & MISSIONS PANEL TAB SWITCHER (MISSIONS DEFAULT, WEAPONS, INFO)
 // =============================================================================
 const tabBtnWeapons = document.getElementById('tab-btn-weapons');
 const tabBtnInfo = document.getElementById('tab-btn-info');
@@ -2769,7 +2769,7 @@ window.assertNotPaused = assertNotPaused;
 // =============================================================================
 // PAUSE / UN-PAUSE SIMULATION & LOCKOUT CONTROLLER
 // Pauses all game animations, physics, audio drones, and weapons cooldown,
-// opens Cockpit Controls & Missions panel with WEAPONS tab selected by default,
+// opens Cockpit Controls & Missions panel with MISSIONS tab selected by default,
 // locks out current and future gameplay controls with red highlight styling,
 // and returns all controls to normal when unpaused.
 // =============================================================================
@@ -2905,7 +2905,7 @@ function setGamePaused(paused, skipDrawer = false) {
     Object.keys(keys).forEach(k => { keys[k] = false; });
     state.velocity.set(0, 0, 0);
 
-    // Open Cockpit Controls & Missions panel with WEAPONS tab selected by default (unless paused by modal selector)
+    // Open Cockpit Controls & Missions panel with MISSIONS tab selected by default (unless paused by modal selector)
     if (!skipDrawer) {
       if (leftDrawer) {
         leftDrawer.classList.add('open');
@@ -2913,7 +2913,7 @@ function setGamePaused(paused, skipDrawer = false) {
       if (btnToggleDrawer) {
         btnToggleDrawer.classList.add('active');
       }
-      setCockpitTab('weapons'); // Weapons is the default tab when panel opens!
+      setCockpitTab('missions'); // Missions is the default tab when panel opens!
     }
 
     // Suspend audio drone while paused

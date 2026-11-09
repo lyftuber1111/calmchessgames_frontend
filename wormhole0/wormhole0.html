@@ -4038,21 +4038,21 @@
         </div>
       </div>
 
-      <!-- Three Tabs Navigation Bar: Weapons (Default Open), Info & Missions -->
+      <!-- Three Tabs Navigation Bar: Missions (Default Open), Weapons & Info -->
       <div class="drawer-tabs-bar" role="tablist" aria-label="Cockpit Controls, Weapons, and Missions Tabs">
-        <button type="button" class="drawer-tab-btn active" id="tab-btn-weapons" role="tab" aria-selected="true" aria-controls="tab-pane-weapons" tabindex="0">
+        <button type="button" class="drawer-tab-btn" id="tab-btn-weapons" role="tab" aria-selected="false" aria-controls="tab-pane-weapons" tabindex="0">
           <span>⚔️</span> WEAPONS
         </button>
         <button type="button" class="drawer-tab-btn" id="tab-btn-info" role="tab" aria-selected="false" aria-controls="tab-pane-info" tabindex="0">
           <span>ℹ️</span> INFO
         </button>
-        <button type="button" class="drawer-tab-btn" id="tab-btn-missions" role="tab" aria-selected="false" aria-controls="tab-pane-missions" tabindex="0">
+        <button type="button" class="drawer-tab-btn active" id="tab-btn-missions" role="tab" aria-selected="true" aria-controls="tab-pane-missions" tabindex="0">
           <span>🎯</span> MISSIONS
         </button>
       </div>
 
-      <!-- Tab 0: Weapons Tab (Selectable Weapons, Energy, Overheat System - Default Open Tab) -->
-      <div class="drawer-tab-pane active" id="tab-pane-weapons" role="tabpanel" aria-labelledby="tab-btn-weapons">
+      <!-- Tab 0: Weapons Tab (Selectable Weapons, Energy, Overheat System) -->
+      <div class="drawer-tab-pane" id="tab-pane-weapons" role="tabpanel" aria-labelledby="tab-btn-weapons">
         <div class="locked-out-banner" id="weapons-locked-banner">
           🔒 WEAPONS &amp; CONTROLS LOCKED OUT &mdash; GAME PAUSED
         </div>
@@ -4341,8 +4341,8 @@
         </div>
       </div>
 
-      <!-- Tab 2: Missions Tab (Stage/Level Objectives - Dynamically Evaluated per Stage) -->
-      <div class="drawer-tab-pane" id="tab-pane-missions" role="tabpanel" aria-labelledby="tab-btn-missions">
+      <!-- Tab 2: Missions Tab (Stage/Level Objectives - Dynamically Evaluated per Stage - Default Open Tab) -->
+      <div class="drawer-tab-pane active" id="tab-pane-missions" role="tabpanel" aria-labelledby="tab-btn-missions">
         <div class="locked-out-banner" id="missions-locked-banner">
           🔒 MISSIONS LOCKED OUT &mdash; GAME PAUSED
         </div>

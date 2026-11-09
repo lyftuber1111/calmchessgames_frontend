@@ -251,7 +251,7 @@
           targetTab = 'appointments';
       } else if (normalized === 'messages' || normalized === 'message' || normalized === 'contact' || normalized === 'inquiries' || normalized === 'sent' || normalized === 'sent-messages') {
           targetTab = 'messages';
-      } else if (normalized === 'manager' || normalized === 'game_manager' || normalized === 'gamemanager' || normalized === 'game-manager' || normalized === 'gamemgr' || normalized === 'game' || normalized === 'weapons' || normalized === 'wormhole_devices' || normalized === 'wormhole' || normalized === 'devices' || normalized === 'xr') {
+      } else if (normalized === 'manager' || normalized === 'game_manager' || normalized === 'gamemanager' || normalized === 'game-manager' || normalized === 'gamemgr' || normalized === 'game' || normalized === 'weapons' || normalized === 'weapon' || normalized === 'arsenal' || normalized === 'enemies' || normalized === 'enemy' || normalized === 'threats' || normalized === 'stages' || normalized === 'stage' || normalized === 'levels' || normalized === 'level' || normalized === 'powerups' || normalized === 'powerup' || normalized === 'boosts' || normalized === 'boost' || normalized === 'wormhole_devices' || normalized === 'wormhole' || normalized === 'devices' || normalized === 'device' || normalized === 'xr') {
           targetTab = 'game_manager';
       } else {
           targetTab = 'segments';
@@ -319,6 +319,8 @@
               switchGameManagerSubTab('enemies');
           } else if (normalized === 'stages' || normalized === 'stage') {
               switchGameManagerSubTab('stages');
+          } else if (normalized === 'powerups' || normalized === 'powerup' || normalized === 'boosts' || normalized === 'boost') {
+              switchGameManagerSubTab('powerups');
           } else {
               switchGameManagerSubTab(activeGameManagerSubTab || 'devices');
           }
@@ -326,6 +328,7 @@
           fetchGameWeapons();
           fetchGameEnemies();
           fetchWormholeDevices();
+          fetchGamePowerups();
       }
 
       try {
@@ -3154,6 +3157,26 @@ Thank you for reaching out to Calm Chess Games. `;
           });
       }
 
+      // Explicit click listener binding on all Game Manager subtab buttons for robust cross-browser clickability
+      const gmSubTabButtons = [
+          { id: 'gmSubTabBtnDevices', name: 'devices' },
+          { id: 'gmSubTabBtnStages', name: 'stages' },
+          { id: 'gmSubTabBtnWeapons', name: 'weapons' },
+          { id: 'gmSubTabBtnEnemies', name: 'enemies' },
+          { id: 'gmSubTabBtnPowerups', name: 'powerups' }
+      ];
+      gmSubTabButtons.forEach(item => {
+          const btn = document.getElementById(item.id);
+          if (btn && (!btn.dataset || !btn.dataset.boundClick)) {
+              if (btn.dataset) btn.dataset.boundClick = 'true';
+              btn.style.cursor = 'pointer';
+              btn.addEventListener('click', function(e) {
+                  if (e) e.preventDefault();
+                  switchGameManagerSubTab(item.name);
+              });
+          }
+      });
+
       // Check for initial URL hash (#manager, #game_manager, etc.)
       try {
           if (typeof window !== 'undefined' && window.location && window.location.hash) {
@@ -3199,7 +3222,7 @@ Thank you for reaching out to Calm Chess Games. `;
       const t = Date.now();
 
       // Dual-endpoint candidate cascade: checks both admin_api.php and wormhole_device_api.php across relative and base origins
-      const isStageOrAdminAction = action.includes('stage') || action.includes('weapon') || action.includes('enem');
+      const isStageOrAdminAction = action.includes('stage') || action.includes('weapon') || action.includes('enem') || action.includes('powerup');
       const endpoints = isStageOrAdminAction ? [
           `admin_api.php?action=${action}&_t=${t}`,
           `./admin_api.php?action=${action}&_t=${t}`,
@@ -3820,6 +3843,7 @@ Thank you for reaching out to Calm Chess Games. `;
   let activeGameManagerSubTab = 'devices';
   let cachedGameStages = [];
   let cachedGameEnemies = [];
+  let cachedGamePowerups = [];
 
   function switchGameManagerSubTab(subTab) {
       const normalized = (subTab || 'devices').toLowerCase().trim();
@@ -3830,30 +3854,52 @@ Thank you for reaching out to Calm Chess Games. `;
           target = 'weapons';
       } else if (normalized === 'enemies' || normalized === 'enemy' || normalized === 'threats') {
           target = 'enemies';
+      } else if (normalized === 'powerups' || normalized === 'powerup' || normalized === 'boosts' || normalized === 'boost') {
+          target = 'powerups';
       } else {
           target = 'devices';
       }
       activeGameManagerSubTab = target;
 
+      // Ensure Game Manager parent container is active and visible
+      const contentGameManager = document.getElementById('tabContentGameManager') || document.getElementById('tabContentManager') || document.getElementById('tabContentWormholeDevices');
+      if (contentGameManager && (contentGameManager.style.display === 'none' || activeAdminTab !== 'game_manager')) {
+          if (typeof switchAdminTab === 'function') {
+              switchAdminTab('game_manager');
+          } else {
+              contentGameManager.style.display = 'block';
+          }
+      }
+
       const btnDevices = document.getElementById('gmSubTabBtnDevices');
       const btnStages = document.getElementById('gmSubTabBtnStages');
       const btnWeapons = document.getElementById('gmSubTabBtnWeapons');
       const btnEnemies = document.getElementById('gmSubTabBtnEnemies');
+      const btnPowerups = document.getElementById('gmSubTabBtnPowerups');
 
       const panelDevices = document.getElementById('gmSubTabPanelDevices');
       const panelStages = document.getElementById('gmSubTabPanelStages');
       const panelWeapons = document.getElementById('gmSubTabPanelWeapons');
       const panelEnemies = document.getElementById('gmSubTabPanelEnemies');
+      const panelPowerups = document.getElementById('gmSubTabPanelPowerups');
 
       if (btnDevices) btnDevices.classList.toggle('active', target === 'devices');
       if (btnStages) btnStages.classList.toggle('active', target === 'stages');
       if (btnWeapons) btnWeapons.classList.toggle('active', target === 'weapons');
       if (btnEnemies) btnEnemies.classList.toggle('active', target === 'enemies');
+      if (btnPowerups) btnPowerups.classList.toggle('active', target === 'powerups');
 
       if (panelDevices) panelDevices.style.display = (target === 'devices') ? 'block' : 'none';
       if (panelStages) panelStages.style.display = (target === 'stages') ? 'block' : 'none';
       if (panelWeapons) panelWeapons.style.display = (target === 'weapons') ? 'block' : 'none';
       if (panelEnemies) panelEnemies.style.display = (target === 'enemies') ? 'block' : 'none';
+      if (panelPowerups) panelPowerups.style.display = (target === 'powerups') ? 'block' : 'none';
+
+      try {
+          if (typeof window !== 'undefined' && window.location && window.history && window.history.replaceState) {
+              window.history.replaceState(null, '', '#' + (target === 'devices' ? 'game_manager' : target));
+          }
+      } catch (e) {}
 
       if (target === 'devices') {
           initLiveClientSpecs();
@@ -3864,8 +3910,14 @@ Thank you for reaching out to Calm Chess Games. `;
           fetchGameWeapons();
       } else if (target === 'enemies') {
           fetchGameEnemies();
+      } else if (target === 'powerups') {
+          fetchGamePowerups();
       }
   }
+
+  // Immediately bind to global/window scope
+  global.switchGameManagerSubTab = switchGameManagerSubTab;
+  if (typeof window !== 'undefined') window.switchGameManagerSubTab = switchGameManagerSubTab;
 
   // =========================================================================
   // SUB-TAB 1: WORMHOLE GAME STAGES & LEVEL PROGRESSION
@@ -5158,6 +5210,448 @@ Thank you for reaching out to Calm Chess Games. `;
       }
   }
 
+  // =========================================================================
+  // SUB-TAB 5: WORMHOLE GAME POWER UPS & COMBAT BOOSTS MANAGER
+  // =========================================================================
+  // cachedGamePowerups initialized above
+
+  const STAGE_DEFAULT_EVENTS = {
+      1: ['Sub-space Entry', 'Nav-Beacon Calibration', 'Asteroid Debris Belt', 'Anomaly Alpha Spike', 'Plasma Surge Alert'],
+      2: ['Tachyon Flux Distortions', 'Ion Cloud Interference', 'Interceptor Ambush Wave', 'Wormhole Coil Resonance Alert'],
+      3: ['Gravitational Tidal Waves', 'Singularity Probe Deployment', 'Heavy Antimatter Eruptions', 'Core Guardian Awakening'],
+      4: ['Phase-Shift Anomalies', 'Multi-Dimensional Phasing', 'Antimatter Vortex', 'Quantum Dreadnought Confrontation']
+  };
+
+  async function fetchGamePowerups() {
+      const tbody = document.getElementById('adminGamePowerupsBody');
+      if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted);">Querying power ups database...</td></tr>';
+      }
+
+      try {
+          const res = await callAdminWormholeApi('get_game_powerups', 'GET');
+          cachedGamePowerups = res.powerups || [];
+
+          // Update metrics
+          const metricTotal = document.getElementById('metricTotalPowerups');
+          if (metricTotal) metricTotal.textContent = cachedGamePowerups.length;
+
+          const badgePowerups = document.getElementById('badgePowerupCount');
+          if (badgePowerups) badgePowerups.textContent = cachedGamePowerups.length;
+
+          const healthCount = cachedGamePowerups.filter(p => p.powerup_type === 'health').length;
+          const metricHealth = document.getElementById('metricHealthPowerups');
+          if (metricHealth) metricHealth.textContent = healthCount;
+
+          const shieldCount = cachedGamePowerups.filter(p => p.powerup_type === 'shield').length;
+          const metricShield = document.getElementById('metricShieldPowerups');
+          if (metricShield) metricShield.textContent = shieldCount;
+
+          const enemyDropCount = cachedGamePowerups.filter(p => parseInt(p.drop_on_enemy_kill) === 1).length;
+          const metricEnemyDrop = document.getElementById('metricEnemyDropPowerups');
+          if (metricEnemyDrop) metricEnemyDrop.textContent = enemyDropCount;
+
+          renderGamePowerups(cachedGamePowerups);
+      } catch (err) {
+          console.error('[Admin] Fetch powerups error:', err);
+          if (tbody) {
+              tbody.innerHTML = `<tr><td colspan="10" style="padding: 16px; text-align: center; color: #ef476f;">Error loading powerups: ${escapeHtml(err.message)}</td></tr>`;
+          }
+      }
+  }
+
+  function renderGamePowerups(powerups) {
+      const tbody = document.getElementById('adminGamePowerupsBody');
+      if (!tbody) return;
+
+      if (!powerups || powerups.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="10" style="padding: 16px; text-align: center; color: var(--text-muted);">No power ups found. Click "+ Add Power Up" or "🌱 Reset Default Powerups" to initialize.</td></tr>';
+          return;
+      }
+
+      tbody.innerHTML = powerups.map(p => {
+          const isActive = parseInt(p.is_enabled) === 1;
+          const isDropKill = parseInt(p.drop_on_enemy_kill) === 1;
+          const type = (p.powerup_type || 'health').toLowerCase();
+          const typeLabel = (type === 'shield') ? '🛡️ Deflector Shield' : '💖 Hull Health';
+          const typeClass = (type === 'shield') ? 'powerup-type-shield' : 'powerup-type-health';
+          const boostPct = parseInt(p.boost_percentage || 25);
+          const stageLevel = parseInt(p.stage_level || 1);
+          const stageLabel = (stageLevel === 0) ? '🌐 All Stages' : `Stage ${stageLevel}`;
+          const devType = (p.device_type || 'all').toLowerCase();
+          let devBadge = '<span class="status-badge-box active" style="min-width:auto; padding:2px 8px; font-size:0.75rem;">🌐 Universal</span>';
+          if (devType === 'desktop') devBadge = '<span class="status-badge-box" style="min-width:auto; padding:2px 8px; font-size:0.75rem; background:rgba(56,189,248,0.15); border:1px solid #38bdf8; color:#38bdf8;">💻 Desktop</span>';
+          else if (devType === 'mobile') devBadge = '<span class="status-badge-box" style="min-width:auto; padding:2px 8px; font-size:0.75rem; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; color:#fbbf24;">📱 Mobile</span>';
+          else if (devType === 'vr') devBadge = '<span class="status-badge-box" style="min-width:auto; padding:2px 8px; font-size:0.75rem; background:rgba(168,85,247,0.15); border:1px solid #a855f7; color:#c084fc;">🥽 VR Headset</span>';
+          else if (devType === 'arcore') devBadge = '<span class="status-badge-box" style="min-width:auto; padding:2px 8px; font-size:0.75rem; background:rgba(239,68,111,0.15); border:1px solid #ef476f; color:#ff6b6b;">📱 ARCore</span>';
+
+          const eventsList = (p.trigger_events || '')
+              .split(',')
+              .map(e => e.trim())
+              .filter(e => e.length > 0);
+          const eventsHtml = eventsList.length > 0
+              ? eventsList.map(ev => `<span class="event-tag-pill" style="font-size: 0.72rem; padding: 2px 7px; margin: 1px;">⏱️ ${escapeHtml(ev)}</span>`).join(' ')
+              : '<span style="color:var(--text-muted); font-size:0.75rem;">No stage events</span>';
+
+          const enemyTargetName = (p.enemy_id === 'all' || !p.enemy_id) ? 'All Enemies' : escapeHtml(p.enemy_id.replace(/_/g, ' '));
+          const dropHtml = isDropKill
+              ? `<div style="font-size: 0.78rem;"><strong style="color:#10b981;">✓ ${p.drop_chance_pct || 35}% Chance</strong><div style="font-size:0.72rem; color:var(--text-muted);">Target: <span style="color:#ef476f;">${enemyTargetName}</span></div></div>`
+              : `<span style="color:var(--text-muted); font-size:0.75rem;">Event-Only (Disabled)</span>`;
+
+          const isDual = parseInt(p.restore_both || 0) === 1;
+          const boostBadge = isDual
+              ? `<span style="display:inline-block; padding:4px 10px; background:rgba(245,158,11,0.22); border:1.5px solid #f59e0b; border-radius:6px; color:#fbbf24; font-weight:bold; font-size:0.85rem; box-shadow:0 0 10px rgba(245,158,11,0.35);">⚡ 100% Both (Shield &amp; Health)</span>`
+              : ((type === 'shield')
+                  ? `<span style="display:inline-block; padding:4px 10px; background:rgba(0,240,255,0.15); border:1.5px solid #00f0ff; border-radius:6px; color:#00f0ff; font-weight:bold; font-size:0.85rem; box-shadow:0 0 8px rgba(0,240,255,0.25);">+${boostPct}% Shield</span>`
+                  : `<span style="display:inline-block; padding:4px 10px; background:rgba(16,185,129,0.18); border:1.5px solid #10b981; border-radius:6px; color:#10b981; font-weight:bold; font-size:0.85rem; box-shadow:0 0 8px rgba(16,185,129,0.25);">+${boostPct}% Health</span>`);
+
+          return `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.15s ease;">
+                  <td style="padding: 10px 14px; text-align: center;">
+                      <div class="powerup-icon-badge-box" style="border-color:${escapeHtml(p.color_hex || '#f59e0b')}; font-size:1.4rem;">
+                          ${escapeHtml(p.icon || '⚡')}
+                      </div>
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <div style="font-weight: 700; color: #fff; font-size: 0.92rem;">${escapeHtml(p.powerup_name || 'Power Up')}</div>
+                      <div style="font-family: monospace; font-size: 0.75rem; color: #fbbf24;">${escapeHtml(p.powerup_id || '')}</div>
+                      <div style="display: flex; gap: 4px; align-items: center; margin-top: 2px;">
+                          <span style="color:#00f0ff; font-size:0.7rem; border:1px solid rgba(0,240,255,0.4); padding:1px 6px; border-radius:4px; background:rgba(0,240,255,0.08); font-weight:600;">3D: ${escapeHtml(p.model_3d_type || 'octahedron')}${p.model_3d_url ? ' (GLTF)' : ''}</span>
+                          <span style="color:var(--text-muted); font-size:0.68rem;">Scale: ${p.scale || '1.0'}</span>
+                      </div>
+                      ${p.description ? `<div style="font-size: 0.73rem; color: var(--text-muted); margin-top: 3px; max-width: 280px;">${escapeHtml(p.description)}</div>` : ''}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <span class="powerup-type-badge ${typeClass}">${typeLabel}</span>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      ${boostBadge}
+                  </td>
+                  <td style="padding: 10px 14px; text-align: center;">
+                      <span class="stage-badge-box" style="font-size:0.75rem; padding:4px 10px; min-width:auto;">${stageLabel}</span>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      ${devBadge}
+                  </td>
+                  <td style="padding: 10px 14px; line-height: 1.4;">
+                      ${eventsHtml}
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      ${dropHtml}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <button type="button" class="status-badge-box ${isActive ? 'active' : 'inactive'}" style="cursor: pointer; background: none; border-radius: 6px;" onclick="togglePowerupStatus(${p.id})">
+                          ${isActive ? 'Active' : 'Disabled'}
+                      </button>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <div style="display: flex; gap: 6px; justify-content: center;">
+                          <button type="button" class="admin-tab-btn" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(245,158,11,0.15); border-color: #f59e0b; color: #fbbf24;" onclick="openEditGamePowerupModal(${p.id})">✏️ Edit</button>
+                          <button type="button" class="admin-tab-btn" style="padding: 4px 8px; font-size: 0.75rem; background: rgba(239,68,111,0.15); border-color: #ef476f; color: #ff6b6b;" onclick="deleteGamePowerup(${p.id}, '${escapeHtml(p.powerup_name)}')">🗑️</button>
+                      </div>
+                  </td>
+              </tr>
+          `;
+      }).join('');
+  }
+
+  function filterGamePowerups() {
+      const q = (document.getElementById('gamePowerupSearchInput')?.value || '').toLowerCase().trim();
+      const typeFilter = document.getElementById('gamePowerupTypeFilter')?.value || 'all';
+      const stageFilter = document.getElementById('gamePowerupStageFilter')?.value || 'all';
+      const devFilter = document.getElementById('gamePowerupDeviceFilter')?.value || 'all';
+      const dropFilter = document.getElementById('gamePowerupDropFilter')?.value || 'all';
+
+      const filtered = cachedGamePowerups.filter(p => {
+          if (q) {
+              const name = (p.powerup_name || '').toLowerCase();
+              const id = (p.powerup_id || '').toLowerCase();
+              const events = (p.trigger_events || '').toLowerCase();
+              const enemy = (p.enemy_id || '').toLowerCase();
+              const desc = (p.description || '').toLowerCase();
+              if (!name.includes(q) && !id.includes(q) && !events.includes(q) && !enemy.includes(q) && !desc.includes(q)) {
+                  return false;
+              }
+          }
+
+          if (typeFilter !== 'all' && (p.powerup_type || 'health').toLowerCase() !== typeFilter) {
+              return false;
+          }
+
+          if (stageFilter !== 'all') {
+              const sLevel = parseInt(p.stage_level || 0);
+              const filterLevel = parseInt(stageFilter);
+              if (sLevel !== filterLevel && sLevel !== 0) {
+                  return false;
+              }
+          }
+
+          if (devFilter !== 'all') {
+              const pDev = (p.device_type || 'all').toLowerCase();
+              if (pDev !== 'all' && pDev !== devFilter) {
+                  return false;
+              }
+          }
+
+          if (dropFilter === 'kill_only' && parseInt(p.drop_on_enemy_kill) !== 1) {
+              return false;
+          }
+          if (dropFilter === 'event_only' && parseInt(p.drop_on_enemy_kill) === 1) {
+              return false;
+          }
+
+          return true;
+      });
+
+      renderGamePowerups(filtered);
+  }
+
+  function openAddGamePowerupModal() {
+      const title = document.getElementById('powerupModalTitle');
+      if (title) title.innerHTML = '<span>⚡ Register New Power Up Boost</span>';
+
+      document.getElementById('powerupRecordId').value = '0';
+      document.getElementById('powerupCodeInput').value = '';
+      document.getElementById('powerupNameInput').value = '';
+      document.getElementById('powerupTypeInput').value = 'health';
+      document.getElementById('powerupIconInput').value = '💖';
+      document.getElementById('powerup3DModelInput').value = 'capsule';
+      document.getElementById('powerup3DModelUrlInput').value = '';
+      document.getElementById('powerupColorInput').value = '#00ff88';
+      document.getElementById('powerupColorPicker').value = '#00ff88';
+      document.getElementById('powerupScaleInput').value = '1.00';
+      document.getElementById('powerupLengthInput').value = '2.50';
+      document.getElementById('powerupHeightInput').value = '2.50';
+      document.getElementById('powerupDepthInput').value = '2.50';
+      document.getElementById('powerupCircumferenceInput').value = '6.00';
+      document.getElementById('powerupBoostPctInput').value = '25';
+      document.getElementById('powerupStageLevelInput').value = '1';
+      document.getElementById('powerupDeviceTypeInput').value = 'all';
+      document.getElementById('powerupEnemyIdInput').value = 'all';
+      document.getElementById('powerupTriggerEventsInput').value = 'Asteroid Debris Belt, Anomaly Alpha Spike';
+      document.getElementById('powerupDropOnEnemyKillInput').value = '1';
+      document.getElementById('powerupDropChancePctInput').value = '65';
+      document.getElementById('powerupIsEnabledInput').value = '1';
+      document.getElementById('powerupDescriptionInput').value = '';
+      const restoreBothEl = document.getElementById('powerupRestoreBothInput');
+      if (restoreBothEl) restoreBothEl.checked = false;
+
+      updatePowerupEventSuggestions();
+
+      const modal = document.getElementById('editGamePowerupModal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function openEditGamePowerupModal(id) {
+      const p = cachedGamePowerups.find(x => parseInt(x.id) === parseInt(id));
+      if (!p) {
+          alert('Power up not found in cache');
+          return;
+      }
+
+      const title = document.getElementById('powerupModalTitle');
+      if (title) title.innerHTML = `<span>⚡ Edit Power Up: ${escapeHtml(p.powerup_name)}</span>`;
+
+      document.getElementById('powerupRecordId').value = p.id;
+      document.getElementById('powerupCodeInput').value = p.powerup_id || '';
+      document.getElementById('powerupNameInput').value = p.powerup_name || '';
+      document.getElementById('powerupTypeInput').value = (p.powerup_type || 'health').toLowerCase();
+      document.getElementById('powerupIconInput').value = p.icon || '💖';
+      document.getElementById('powerup3DModelInput').value = p.model_3d_type || ((p.powerup_type || '').toLowerCase() === 'shield' ? 'octahedron' : 'capsule');
+      document.getElementById('powerup3DModelUrlInput').value = p.model_3d_url || '';
+      const col = p.color_hex || '#00ff88';
+      document.getElementById('powerupColorInput').value = col;
+      document.getElementById('powerupColorPicker').value = col.startsWith('#') ? col : '#00ff88';
+      document.getElementById('powerupScaleInput').value = p.scale !== undefined && p.scale !== null ? p.scale : '1.00';
+      document.getElementById('powerupLengthInput').value = p.length !== undefined && p.length !== null ? p.length : '2.50';
+      document.getElementById('powerupHeightInput').value = p.height !== undefined && p.height !== null ? p.height : '2.50';
+      document.getElementById('powerupDepthInput').value = p.depth !== undefined && p.depth !== null ? p.depth : '2.50';
+      document.getElementById('powerupCircumferenceInput').value = p.circumference !== undefined && p.circumference !== null ? p.circumference : '6.00';
+      document.getElementById('powerupBoostPctInput').value = p.boost_percentage || 25;
+      document.getElementById('powerupStageLevelInput').value = p.stage_level !== undefined ? p.stage_level : 1;
+      document.getElementById('powerupDeviceTypeInput').value = (p.device_type || 'all').toLowerCase();
+      document.getElementById('powerupEnemyIdInput').value = p.enemy_id || 'all';
+      document.getElementById('powerupTriggerEventsInput').value = p.trigger_events || '';
+      document.getElementById('powerupDropOnEnemyKillInput').value = parseInt(p.drop_on_enemy_kill) === 1 ? '1' : '0';
+      document.getElementById('powerupDropChancePctInput').value = p.drop_chance_pct !== undefined ? p.drop_chance_pct : 65;
+      document.getElementById('powerupIsEnabledInput').value = parseInt(p.is_enabled) === 1 ? '1' : '0';
+      document.getElementById('powerupDescriptionInput').value = p.description || '';
+      const restoreBothEl = document.getElementById('powerupRestoreBothInput');
+      if (restoreBothEl) restoreBothEl.checked = (parseInt(p.restore_both || 0) === 1);
+
+      updatePowerupEventSuggestions();
+
+      const modal = document.getElementById('editGamePowerupModal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function closeEditGamePowerupModal() {
+      const modal = document.getElementById('editGamePowerupModal');
+      if (modal) modal.style.display = 'none';
+  }
+
+  function setPowerupIcon(icon, color) {
+      const iconInput = document.getElementById('powerupIconInput');
+      if (iconInput) iconInput.value = icon;
+      if (color) {
+          const colorInput = document.getElementById('powerupColorInput');
+          const colorPicker = document.getElementById('powerupColorPicker');
+          if (colorInput) colorInput.value = color;
+          if (colorPicker) colorPicker.value = color;
+      }
+  }
+
+  function onPowerupTypeChanged() {
+      const type = document.getElementById('powerupTypeInput')?.value || 'health';
+      if (type === 'shield') {
+          setPowerupIcon('🛡️', '#00f0ff');
+      } else {
+          setPowerupIcon('💖', '#00ff88');
+      }
+  }
+
+  function updatePowerupEventSuggestions() {
+      const stage = parseInt(document.getElementById('powerupStageLevelInput')?.value || 1);
+      const container = document.getElementById('powerupEventSuggestionChips');
+      if (!container) return;
+
+      const events = STAGE_DEFAULT_EVENTS[stage] || STAGE_DEFAULT_EVENTS[1];
+      container.innerHTML = events.map(ev => `
+          <button type="button" class="admin-tab-btn" style="padding: 2px 7px; font-size: 0.72rem; background: rgba(0,240,255,0.12); border-color: rgba(0,240,255,0.3); color: #7dd3fc;" onclick="appendPowerupTriggerEvent('${escapeHtml(ev)}')">
+              + ${escapeHtml(ev)}
+          </button>
+      `).join('');
+  }
+
+  function appendPowerupTriggerEvent(evName) {
+      const input = document.getElementById('powerupTriggerEventsInput');
+      if (!input) return;
+      const current = input.value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+      if (!current.includes(evName)) {
+          current.push(evName);
+          input.value = current.join(', ');
+      }
+  }
+
+  async function saveGamePowerup() {
+      const id = parseInt(document.getElementById('powerupRecordId')?.value || 0);
+      const code = (document.getElementById('powerupCodeInput')?.value || '').trim();
+      const name = (document.getElementById('powerupNameInput')?.value || '').trim();
+      const type = (document.getElementById('powerupTypeInput')?.value || 'health').trim();
+      const icon = (document.getElementById('powerupIconInput')?.value || '💖').trim();
+      const model3dType = (document.getElementById('powerup3DModelInput')?.value || 'octahedron').trim();
+      const model3dUrl = (document.getElementById('powerup3DModelUrlInput')?.value || '').trim();
+      const color = (document.getElementById('powerupColorInput')?.value || '#00ff88').trim();
+      const scale = parseFloat(document.getElementById('powerupScaleInput')?.value || 1.0);
+      const length = parseFloat(document.getElementById('powerupLengthInput')?.value || 2.5);
+      const height = parseFloat(document.getElementById('powerupHeightInput')?.value || 2.5);
+      const depth = parseFloat(document.getElementById('powerupDepthInput')?.value || 2.5);
+      const circ = parseFloat(document.getElementById('powerupCircumferenceInput')?.value || 6.0);
+      const boostPct = parseInt(document.getElementById('powerupBoostPctInput')?.value || 25);
+      const stage = parseInt(document.getElementById('powerupStageLevelInput')?.value || 1);
+      const deviceType = (document.getElementById('powerupDeviceTypeInput')?.value || 'all').trim();
+      const enemyId = (document.getElementById('powerupEnemyIdInput')?.value || 'all').trim();
+      const events = (document.getElementById('powerupTriggerEventsInput')?.value || '').trim();
+      const dropKill = parseInt(document.getElementById('powerupDropOnEnemyKillInput')?.value || 1);
+      const dropChance = parseInt(document.getElementById('powerupDropChancePctInput')?.value || 65);
+      const isEnabled = parseInt(document.getElementById('powerupIsEnabledInput')?.value || 1);
+      const restoreBoth = document.getElementById('powerupRestoreBothInput')?.checked ? 1 : 0;
+      const desc = (document.getElementById('powerupDescriptionInput')?.value || '').trim();
+
+      if (!code || !name) {
+          alert('Power Up Code and Display Name are required!');
+          return;
+      }
+
+      const payload = {
+          id: id,
+          powerup_id: code,
+          powerup_name: name,
+          powerup_type: type,
+          restore_both: restoreBoth,
+          icon: icon,
+          model_3d_type: model3dType,
+          model_3d_url: model3dUrl,
+          color_hex: color,
+          scale: scale,
+          length: length,
+          height: height,
+          depth: depth,
+          circumference: circ,
+          boost_percentage: boostPct,
+          stage_level: stage,
+          device_type: deviceType,
+          enemy_id: enemyId,
+          trigger_events: events,
+          drop_on_enemy_kill: dropKill,
+          drop_chance_pct: dropChance,
+          is_enabled: isEnabled,
+          description: desc
+      };
+
+      try {
+          const res = await callAdminWormholeApi('save_game_powerup', 'POST', payload);
+          if (res && res.success) {
+              alert(res.message || 'Power up saved successfully!');
+              closeEditGamePowerupModal();
+              fetchGamePowerups();
+          } else {
+              alert('Failed to save power up: ' + (res?.message || 'Unknown error'));
+          }
+      } catch (err) {
+          console.error('[Admin] Save powerup error:', err);
+          alert('Error saving power up: ' + err.message);
+      }
+  }
+
+  async function deleteGamePowerup(id, name) {
+      if (!confirm(`Are you sure you want to permanently delete power up '${name}'?`)) {
+          return;
+      }
+
+      try {
+          const res = await callAdminWormholeApi('delete_game_powerup', 'POST', { id: id });
+          if (res && res.success) {
+              alert(res.message || 'Power up deleted successfully!');
+              fetchGamePowerups();
+          } else {
+              alert('Failed to delete power up: ' + (res?.message || 'Unknown error'));
+          }
+      } catch (err) {
+          console.error('[Admin] Delete powerup error:', err);
+          alert('Error deleting power up: ' + err.message);
+      }
+  }
+
+  async function togglePowerupStatus(id) {
+      try {
+          const res = await callAdminWormholeApi('toggle_game_powerup_field', 'POST', { id: id, field: 'is_enabled' });
+          if (res && res.success) {
+              fetchGamePowerups();
+          } else {
+              alert('Failed to toggle status: ' + (res?.message || 'Unknown error'));
+          }
+      } catch (err) {
+          console.error('[Admin] Toggle powerup error:', err);
+          alert('Error toggling powerup: ' + err.message);
+      }
+  }
+
+  async function seedDefaultGamePowerups() {
+      if (!confirm('Re-seed / Reset default power ups for all stages and events? This will restore certified default configurations.')) {
+          return;
+      }
+
+      try {
+          const res = await callAdminWormholeApi('seed_game_powerups', 'POST', {});
+          alert(res.message || 'Default power ups successfully initialized!');
+          fetchGamePowerups();
+      } catch (err) {
+          console.error('[Admin] Seed powerups error:', err);
+          alert('Failed to seed default power ups: ' + err.message);
+      }
+  }
+
   global.switchGameManagerSubTab = switchGameManagerSubTab;
   global.runAdminLiveDeviceCheck = runAdminLiveDeviceCheck;
   global.simulateDeviceCheck = simulateDeviceCheck;
@@ -5201,7 +5695,6 @@ Thank you for reaching out to Calm Chess Games. `;
   global.toggleWeaponInitial = toggleWeaponInitial;
   global.seedDefaultGameWeapons = seedDefaultGameWeapons;
   global.fetchWormholeDevices = fetchWormholeDevices;
-  global.fetchWormholeDevices = fetchWormholeDevices;
   global.renderWormholeDevices = renderWormholeDevices;
   global.filterWormholeDevices = filterWormholeDevices;
   global.openAddWormholeDeviceModal = openAddWormholeDeviceModal;
@@ -5210,5 +5703,29 @@ Thank you for reaching out to Calm Chess Games. `;
   global.toggleWormholeDeviceSupport = toggleWormholeDeviceSupport;
   global.deleteWormholeDevice = deleteWormholeDevice;
   global.seedOpenSourceWormholeDevices = seedOpenSourceWormholeDevices;
+
+  // Sub-tab 5: Power Ups exports
+  global.fetchGamePowerups = fetchGamePowerups;
+  global.renderGamePowerups = renderGamePowerups;
+  global.filterGamePowerups = filterGamePowerups;
+  global.openAddGamePowerupModal = openAddGamePowerupModal;
+  global.openEditGamePowerupModal = openEditGamePowerupModal;
+  global.closeEditGamePowerupModal = closeEditGamePowerupModal;
+  global.saveGamePowerup = saveGamePowerup;
+  global.deleteGamePowerup = deleteGamePowerup;
+  global.togglePowerupStatus = togglePowerupStatus;
+  global.seedDefaultGamePowerups = seedDefaultGamePowerups;
+  function onRestoreBothToggled(checked) {
+      if (checked) {
+          const boostInput = document.getElementById('powerupBoostPctInput');
+          if (boostInput) boostInput.value = '100';
+      }
+  }
+
+  global.onRestoreBothToggled = onRestoreBothToggled;
+  global.setPowerupIcon = setPowerupIcon;
+  global.onPowerupTypeChanged = onPowerupTypeChanged;
+  global.updatePowerupEventSuggestions = updatePowerupEventSuggestions;
+  global.appendPowerupTriggerEvent = appendPowerupTriggerEvent;
 
 })(window);

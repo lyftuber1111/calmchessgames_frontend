@@ -3924,6 +3924,39 @@ if (btnCloseModal) {
 }
 if (btnDismissModal) btnDismissModal.addEventListener('click', hideUnsupportedBadge);
 
+// Helpers for orientation detection across mobile browsers & APIs
+function isDeviceInPortrait() {
+  if (screen.orientation && screen.orientation.type) {
+    if (screen.orientation.type.startsWith('portrait')) return true;
+    if (screen.orientation.type.startsWith('landscape')) return false;
+  }
+  if (typeof window.orientation === 'number') {
+    if (window.orientation === 0 || window.orientation === 180) return true;
+    if (Math.abs(window.orientation) === 90) return false;
+  }
+  if (window.matchMedia) {
+    if (window.matchMedia('(orientation: portrait)').matches) return true;
+    if (window.matchMedia('(orientation: landscape)').matches) return false;
+  }
+  return window.innerWidth < window.innerHeight;
+}
+
+function isDeviceInLandscape() {
+  if (screen.orientation && screen.orientation.type) {
+    if (screen.orientation.type.startsWith('landscape')) return true;
+    if (screen.orientation.type.startsWith('portrait')) return false;
+  }
+  if (typeof window.orientation === 'number') {
+    if (Math.abs(window.orientation) === 90) return true;
+    if (window.orientation === 0 || window.orientation === 180) return false;
+  }
+  if (window.matchMedia) {
+    if (window.matchMedia('(orientation: landscape)').matches) return true;
+    if (window.matchMedia('(orientation: portrait)').matches) return false;
+  }
+  return window.innerWidth >= window.innerHeight;
+}
+
 // Dismiss or manage mobile fullscreen rotate advisory prompt
 const btnDismissRotate = document.getElementById('btn-dismiss-rotate');
 const btnCloseRotateTop = document.getElementById('btn-close-rotate-top');
@@ -3931,7 +3964,9 @@ const landscapePrompt = document.getElementById('landscape-rotate-prompt');
 
 function dismissRotatePrompt() {
   if (landscapePrompt) {
+    landscapePrompt.classList.remove('active');
     landscapePrompt.classList.add('dismissed');
+    landscapePrompt.style.display = 'none';
   }
   document.body.classList.add('portrait-dismissed');
 }
@@ -3944,12 +3979,21 @@ if (btnCloseRotateTop) {
 }
 
 function handleOrientationPromptUpdate() {
-  const isLandscape = (window.innerWidth > window.innerHeight);
+  const isLandscape = isDeviceInLandscape();
   if (isLandscape) {
-    if (landscapePrompt) landscapePrompt.classList.remove('dismissed');
+    if (landscapePrompt) {
+      landscapePrompt.classList.remove('active');
+      landscapePrompt.style.display = 'none';
+    }
     document.body.classList.remove('portrait-dismissed');
     if (state.hasStarted) {
       centerWormholeOnScreen();
+    }
+  } else {
+    // If during active gameplay flight the user rotates back to portrait, show rotate prompt unless dismissed
+    if (state.hasStarted && landscapePrompt && !landscapePrompt.classList.contains('dismissed')) {
+      landscapePrompt.classList.add('active');
+      landscapePrompt.style.display = 'flex';
     }
   }
 }
@@ -8378,8 +8422,9 @@ let countdownTimerInterval = null;
 
 /**
  * Handles Game Start & Restart countdown sequencing:
- * 1. Verifies mobile orientation; if portrait, awaits landscape rotation and dismissal of rotation prompt.
- * 2. Displays a 5-second countdown with bold white numerical SVG text before engaging gameplay.
+ * 1. Dismisses the beginning splash screen immediately.
+ * 2. If phone is in portrait mode, displays the fullscreen rotate phone screen and waits for rotation to landscape.
+ * 3. Once rotated to landscape (or if already in landscape), launches the 5-second countdown timer before engaging gameplay.
  */
 function startCountdownAndLaunchGame(isRestart = false) {
   if (countdownTimerInterval) {
@@ -8392,43 +8437,98 @@ function startCountdownAndLaunchGame(isRestart = false) {
   state.isGameOver = false;
   state.hasStarted = false;
   document.body.classList.remove('game-paused');
+  document.body.classList.remove('game-in-flight');
   const btnQuickPause = document.getElementById('btn-quick-pause');
   if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
 
-  // Requirement E: Don't start game until rotate phone screen has disappeared and phone is in landscape mode
-  const isPortraitMobile = (window.innerWidth < window.innerHeight) && (
-    /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
-    (window.matchMedia && window.matchMedia('(max-width: 900px)').matches)
+  // Dismiss beginning splash screen immediately so it doesn't block the rotate prompt or game
+  const splashEl = document.getElementById('wormhole-splash-screen');
+  if (splashEl && splashEl.parentNode) {
+    splashEl.classList.add('splash-fade-out');
+    setTimeout(() => {
+      if (splashEl.parentNode) splashEl.remove();
+    }, 400);
+  }
+
+  // Determine if on mobile/touch device in portrait mode
+  const isPortraitMobile = isDeviceInPortrait() && (
+    /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints > 0) ||
+    (window.innerWidth < window.innerHeight)
   );
 
   const rotatePrompt = document.getElementById('landscape-rotate-prompt');
 
   if (isPortraitMobile) {
-    if (rotatePrompt) rotatePrompt.classList.remove('dismissed');
+    // Display the rotate phone screen
+    if (rotatePrompt) {
+      rotatePrompt.classList.remove('dismissed');
+      rotatePrompt.classList.add('active');
+      rotatePrompt.style.display = 'flex';
+    }
     document.body.classList.remove('portrait-dismissed');
 
-    const onOrientationSatisfied = () => {
-      if (window.innerWidth >= window.innerHeight) {
-        window.removeEventListener('resize', onOrientationSatisfied);
-        window.removeEventListener('orientationchange', onOrientationSatisfied);
-        if (screen.orientation && typeof screen.orientation.removeEventListener === 'function') {
-          screen.orientation.removeEventListener('change', onOrientationSatisfied);
-        }
-        if (rotatePrompt) rotatePrompt.classList.add('dismissed');
-        document.body.classList.add('portrait-dismissed');
-        executeMissionCountdown(isRestart);
+    let hasLaunched = false;
+    const launchAfterRotate = () => {
+      if (hasLaunched) return;
+      hasLaunched = true;
+
+      window.removeEventListener('resize', checkOrientationWithDelays);
+      window.removeEventListener('orientationchange', checkOrientationWithDelays);
+      if (screen.orientation && typeof screen.orientation.removeEventListener === 'function') {
+        screen.orientation.removeEventListener('change', checkOrientationWithDelays);
+      }
+
+      if (rotatePrompt) {
+        rotatePrompt.classList.remove('active');
+        rotatePrompt.classList.add('dismissed');
+        rotatePrompt.style.display = 'none';
+      }
+      document.body.classList.add('portrait-dismissed');
+
+      // Start the 5-second mission countdown timer after rotating to landscape
+      executeMissionCountdown(isRestart);
+    };
+
+    const checkOrientation = () => {
+      if (isDeviceInLandscape()) {
+        launchAfterRotate();
       }
     };
 
-    window.addEventListener('resize', onOrientationSatisfied);
-    window.addEventListener('orientationchange', onOrientationSatisfied);
+    const checkOrientationWithDelays = () => {
+      checkOrientation();
+      setTimeout(checkOrientation, 100);
+      setTimeout(checkOrientation, 250);
+      setTimeout(checkOrientation, 500);
+    };
+
+    window.addEventListener('resize', checkOrientationWithDelays);
+    window.addEventListener('orientationchange', checkOrientationWithDelays);
     if (screen.orientation && typeof screen.orientation.addEventListener === 'function') {
-      screen.orientation.addEventListener('change', onOrientationSatisfied);
+      screen.orientation.addEventListener('change', checkOrientationWithDelays);
+    }
+
+    // If player taps 'Continue in Portrait' or 'X', dismiss prompt and start 5-second countdown
+    const btnDismissRotate = document.getElementById('btn-dismiss-rotate');
+    const btnCloseRotateTop = document.getElementById('btn-close-rotate-top');
+    if (btnDismissRotate) {
+      btnDismissRotate.onclick = (e) => {
+        if (e) e.preventDefault();
+        launchAfterRotate();
+      };
+    }
+    if (btnCloseRotateTop) {
+      btnCloseRotateTop.onclick = (e) => {
+        if (e) e.preventDefault();
+        launchAfterRotate();
+      };
     }
     return;
   }
 
-  // If already in landscape or on desktop, proceed directly to countdown
+  // If already in landscape or on desktop, proceed directly to 5-second countdown
   executeMissionCountdown(isRestart);
 }
 
@@ -8503,6 +8603,7 @@ function executeMissionCountdown(isRestart = false) {
         }
         state.isCountdownActive = false;
         state.hasStarted = true;
+        document.body.classList.add('game-in-flight');
         state.lastFrameTime = performance.now();
         centerWormholeOnScreen(true);
       }, 500);
@@ -8520,6 +8621,7 @@ function restartGame() {
   state.hasStarted = false;
   state.isCountdownActive = false;
   document.body.classList.remove('game-paused');
+  document.body.classList.remove('game-in-flight');
   const btnQuickPause = document.getElementById('btn-quick-pause');
   if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
 

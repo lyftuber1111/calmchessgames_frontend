@@ -4342,12 +4342,21 @@
         </div>
       </div>
 
-      <!-- Restart Option Button -->
-      <button id="btn-restart-game" type="button" class="hud-btn btn-ready" style="font-size:1.15rem; font-weight:bold; padding:14px 34px; background:rgba(0,240,255,0.2); border:2px solid #00f0ff; color:#fff; border-radius:10px; box-shadow:0 0 25px rgba(0,240,255,0.7); cursor:pointer; width:100%; letter-spacing:2px; transition:all 0.2s ease;">
-        🔄 RESTART MISSION
+      <!-- Restart Option Button (Icon and text centered on button) -->
+      <button id="btn-restart-game" type="button" class="hud-btn btn-ready" style="font-size:1.15rem; font-weight:bold; padding:14px 24px; background:rgba(0,240,255,0.2); border:2px solid #00f0ff; color:#fff; border-radius:10px; box-shadow:0 0 25px rgba(0,240,255,0.7); cursor:pointer; width:100%; letter-spacing:2px; transition:all 0.2s ease; display:flex; align-items:center; justify-content:center; text-align:center; gap:10px; margin:0 auto;">
+        <span style="font-size:1.35rem; line-height:1; display:inline-flex; align-items:center; justify-content:center;">🔄</span>
+        <span style="display:inline-block; line-height:1;">RESTART MISSION</span>
       </button>
-      <div style="margin-top:10px; font-size:0.75rem; color:var(--text-muted);">
-        [Press <kbd style="background:#1e293b; padding:2px 6px; border-radius:4px; color:#fff;">SPACE</kbd> or <kbd style="background:#1e293b; padding:2px 6px; border-radius:4px; color:#fff;">R</kbd> to restart]
+
+      <!-- Quit Game Option Button (Returns to calmchessgames.com) -->
+      <button id="btn-quit-game" type="button" class="hud-btn" style="font-size:1.05rem; font-weight:bold; padding:12px 24px; margin-top:12px; background:rgba(239,68,111,0.18); border:2px solid #ef476f; color:#ff6b8b; border-radius:10px; box-shadow:0 0 15px rgba(239,68,111,0.4); cursor:pointer; width:100%; letter-spacing:2px; transition:all 0.2s ease; display:flex; align-items:center; justify-content:center; text-align:center; gap:10px;">
+        <span style="font-size:1.25rem; line-height:1; display:inline-flex; align-items:center; justify-content:center;">🚪</span>
+        <span style="display:inline-block; line-height:1;">ABORT &amp; QUIT MISSION</span>
+      </button>
+
+      <div style="margin-top:12px; font-size:0.75rem; color:var(--text-muted); display:flex; justify-content:center; gap:14px;">
+        <span>Restart: <kbd style="background:#1e293b; padding:2px 6px; border-radius:4px; color:#fff;">SPACE</kbd> / <kbd style="background:#1e293b; padding:2px 6px; border-radius:4px; color:#fff;">R</kbd></span>
+        <span>Quit: <kbd style="background:#1e293b; padding:2px 6px; border-radius:4px; color:#fff;">ESC</kbd> / <kbd style="background:#1e293b; padding:2px 6px; border-radius:4px; color:#fff;">Q</kbd></span>
       </div>
     </div>
   </div>

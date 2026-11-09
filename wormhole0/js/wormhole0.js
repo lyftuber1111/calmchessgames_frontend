@@ -10,6 +10,9 @@
 import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+const gltfLoader = new GLTFLoader();
 
 // =============================================================================
 // STATE & CONFIGURATION
@@ -2134,14 +2137,14 @@ function hexToRgbaString(hex, alpha = 0.65) {
 }
 
 const DEFAULT_STAGE_POWERUPS = [
-  { id: 1, powerup_id: 'health_pack_s1', powerup_name: 'Sub-Space Nanite Repair Kit', powerup_type: 'health', icon: '💖', color_hex: '#00ff88', stage_level: 1, device_type: 'all', trigger_events: 'Asteroid Debris Belt, Anomaly Alpha Spike', drop_on_enemy_kill: 1, drop_chance_pct: 30, enemy_id: 'void_recon_drone', boost_percentage: 25, is_enabled: 1 },
-  { id: 2, powerup_id: 'shield_cell_s1', powerup_name: 'Deflector Shield Overcharger', powerup_type: 'shield', icon: '🛡️', color_hex: '#00f0ff', stage_level: 1, device_type: 'all', trigger_events: 'Nav-Beacon Calibration, Plasma Surge Alert', drop_on_enemy_kill: 1, drop_chance_pct: 35, enemy_id: 'all', boost_percentage: 30, is_enabled: 1 },
-  { id: 3, powerup_id: 'health_pack_s2', powerup_name: 'Tachyon Infused Hull Matrix', powerup_type: 'health', icon: '💚', color_hex: '#10b981', stage_level: 2, device_type: 'all', trigger_events: 'Tachyon Flux Distortions, Interceptor Ambush Wave', drop_on_enemy_kill: 1, drop_chance_pct: 25, enemy_id: 'phase_interceptor', boost_percentage: 35, is_enabled: 1 },
-  { id: 4, powerup_id: 'shield_cell_s2', powerup_name: 'Ion Shield Harmonizer', powerup_type: 'shield', icon: '🔰', color_hex: '#38bdf8', stage_level: 2, device_type: 'all', trigger_events: 'Ion Cloud Interference, Wormhole Coil Resonance Alert', drop_on_enemy_kill: 1, drop_chance_pct: 30, enemy_id: 'all', boost_percentage: 40, is_enabled: 1 },
-  { id: 5, powerup_id: 'health_pack_s3', powerup_name: 'Graviton Integrity Restorer', powerup_type: 'health', icon: '🧪', color_hex: '#a855f7', stage_level: 3, device_type: 'all', trigger_events: 'Gravitational Tidal Waves, Core Guardian Awakening', drop_on_enemy_kill: 1, drop_chance_pct: 25, enemy_id: 'tachyon_cruiser', boost_percentage: 45, is_enabled: 1 },
-  { id: 6, powerup_id: 'shield_cell_s3', powerup_name: 'Singularity Void Barrier', powerup_type: 'shield', icon: '🔷', color_hex: '#6366f1', stage_level: 3, device_type: 'all', trigger_events: 'Singularity Probe Deployment, Heavy Antimatter Eruptions', drop_on_enemy_kill: 1, drop_chance_pct: 35, enemy_id: 'void_guardian', boost_percentage: 50, is_enabled: 1 },
-  { id: 7, powerup_id: 'health_pack_s4', powerup_name: 'Quantum Regenerative Core', powerup_type: 'health', icon: '💖', color_hex: '#ec4899', stage_level: 4, device_type: 'all', trigger_events: 'Phase-Shift Anomalies, Quantum Dreadnought Confrontation', drop_on_enemy_kill: 1, drop_chance_pct: 30, enemy_id: 'quantum_dreadnought', boost_percentage: 50, is_enabled: 1 },
-  { id: 8, powerup_id: 'shield_cell_s4', powerup_name: 'Omni-Phase Deflector Matrix', powerup_type: 'shield', icon: '🛡️', color_hex: '#00f0ff', stage_level: 4, device_type: 'all', trigger_events: 'Multi-Dimensional Phasing, Antimatter Vortex', drop_on_enemy_kill: 1, drop_chance_pct: 40, enemy_id: 'all', boost_percentage: 60, is_enabled: 1 }
+  { id: 1, powerup_id: 'health_pack_s1', powerup_name: 'Sub-Space Nanite Repair Kit', powerup_type: 'health', icon: '💖', model_3d_type: 'capsule', model_3d_url: '', color_hex: '#00ff88', scale: 1.0, length: 2.5, height: 2.5, depth: 2.5, circumference: 6.0, stage_level: 1, device_type: 'all', trigger_events: 'Asteroid Debris Belt, Anomaly Alpha Spike', drop_on_enemy_kill: 1, drop_chance_pct: 70, enemy_id: 'void_recon_drone', boost_percentage: 25, is_enabled: 1 },
+  { id: 2, powerup_id: 'shield_cell_s1', powerup_name: 'Deflector Shield Overcharger', powerup_type: 'shield', icon: '🛡️', model_3d_type: 'octahedron', model_3d_url: '', color_hex: '#00f0ff', scale: 1.0, length: 2.5, height: 2.5, depth: 2.5, circumference: 6.0, stage_level: 1, device_type: 'all', trigger_events: 'Nav-Beacon Calibration, Plasma Surge Alert', drop_on_enemy_kill: 1, drop_chance_pct: 80, enemy_id: 'all', boost_percentage: 30, is_enabled: 1 },
+  { id: 3, powerup_id: 'health_pack_s2', powerup_name: 'Tachyon Infused Hull Matrix', powerup_type: 'health', icon: '💚', model_3d_type: 'dodecahedron', model_3d_url: '', color_hex: '#10b981', scale: 1.0, length: 2.5, height: 2.5, depth: 2.5, circumference: 6.0, stage_level: 2, device_type: 'all', trigger_events: 'Tachyon Flux Distortions, Interceptor Ambush Wave', drop_on_enemy_kill: 1, drop_chance_pct: 65, enemy_id: 'phase_interceptor', boost_percentage: 35, is_enabled: 1 },
+  { id: 4, powerup_id: 'shield_cell_s2', powerup_name: 'Ion Shield Harmonizer', powerup_type: 'shield', icon: '🔰', model_3d_type: 'torus', model_3d_url: '', color_hex: '#38bdf8', scale: 1.0, length: 2.8, height: 2.8, depth: 2.8, circumference: 7.0, stage_level: 2, device_type: 'all', trigger_events: 'Ion Cloud Interference, Wormhole Coil Resonance Alert', drop_on_enemy_kill: 1, drop_chance_pct: 75, enemy_id: 'all', boost_percentage: 40, is_enabled: 1 },
+  { id: 5, powerup_id: 'health_pack_s3', powerup_name: 'Graviton Integrity Restorer', powerup_type: 'health', icon: '🧪', model_3d_type: 'icosahedron', model_3d_url: '', color_hex: '#a855f7', scale: 1.0, length: 2.5, height: 2.5, depth: 2.5, circumference: 6.0, stage_level: 3, device_type: 'all', trigger_events: 'Gravitational Tidal Waves, Core Guardian Awakening', drop_on_enemy_kill: 1, drop_chance_pct: 60, enemy_id: 'tachyon_cruiser', boost_percentage: 45, is_enabled: 1 },
+  { id: 6, powerup_id: 'shield_cell_s3', powerup_name: 'Singularity Void Barrier', powerup_type: 'shield', icon: '🔷', model_3d_type: 'sphere', model_3d_url: '', color_hex: '#6366f1', scale: 1.0, length: 3.0, height: 3.0, depth: 3.0, circumference: 7.5, stage_level: 3, device_type: 'all', trigger_events: 'Singularity Probe Deployment, Heavy Antimatter Eruptions', drop_on_enemy_kill: 1, drop_chance_pct: 70, enemy_id: 'void_guardian', boost_percentage: 50, is_enabled: 1 },
+  { id: 7, powerup_id: 'health_pack_s4', powerup_name: 'Quantum Regenerative Core', powerup_type: 'health', icon: '💖', model_3d_type: 'icosahedron', model_3d_url: '', color_hex: '#ec4899', scale: 1.1, length: 2.8, height: 2.8, depth: 2.8, circumference: 7.0, stage_level: 4, device_type: 'all', trigger_events: 'Phase-Shift Anomalies, Quantum Dreadnought Confrontation', drop_on_enemy_kill: 1, drop_chance_pct: 65, enemy_id: 'quantum_dreadnought', boost_percentage: 50, is_enabled: 1 },
+  { id: 8, powerup_id: 'shield_cell_s4', powerup_name: 'Omni-Phase Deflector Matrix', powerup_type: 'shield', icon: '🛡️', model_3d_type: 'octahedron', model_3d_url: '', color_hex: '#00f0ff', scale: 1.2, length: 3.2, height: 3.2, depth: 3.2, circumference: 8.0, stage_level: 4, device_type: 'all', trigger_events: 'Multi-Dimensional Phasing, Antimatter Vortex', drop_on_enemy_kill: 1, drop_chance_pct: 85, enemy_id: 'all', boost_percentage: 60, is_enabled: 1 }
 ];
 
 async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = null) {
@@ -2410,22 +2413,38 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
   // 4. INTEGRATE POWER UPS (HEALTH & SHIELD BOOSTS, MULTI-EVENTS, ENEMY DROPS)
   // ---------------------------------------------------------------------------
   const dbPowerups = Array.isArray(data.powerups) ? data.powerups : [];
-  if (dbPowerups.length > 0) {
-    const stagePowerups = dbPowerups.filter(p => {
-      const matchStage = parseInt(p.stage_level) === currentStage;
+  const rawList = dbPowerups.length > 0 ? dbPowerups : (typeof DEFAULT_STAGE_POWERUPS !== 'undefined' ? DEFAULT_STAGE_POWERUPS : []);
+  if (rawList.length > 0) {
+    const stagePowerups = rawList.filter(p => {
+      const pStage = parseInt(p.stage_level) || 0;
+      const matchStage = (pStage === 0 || pStage === currentStage);
       const pDev = (p.device_type || 'all').toLowerCase();
       const matchDevice = (pDev === 'all' || pDev === currentDev || !p.device_type);
-      const isActive = (p.is_active === undefined || p.is_active == 1 || p.is_active === true || p.is_active === '1');
-      return matchStage && matchDevice && isActive;
-    });
+      const isEnabled = (p.is_enabled === undefined || p.is_enabled == 1 || p.is_enabled === true || p.is_enabled === '1')
+        && (p.is_active === undefined || p.is_active == 1 || p.is_active === true || p.is_active === '1');
+      return matchStage && matchDevice && isEnabled;
+    }).map(p => ({
+      ...p,
+      powerup_id: p.powerup_id || p.id,
+      powerup_name: p.powerup_name || p.name || 'Power Up',
+      boost_percentage: p.boost_percentage !== undefined ? parseFloat(p.boost_percentage) : (p.boost_pct !== undefined ? parseFloat(p.boost_pct) : 25),
+      boost_pct: p.boost_pct !== undefined ? parseFloat(p.boost_pct) : (p.boost_percentage !== undefined ? parseFloat(p.boost_percentage) : 25),
+      enemy_id: p.enemy_id || p.drop_enemy_type || 'all',
+      drop_enemy_type: p.drop_enemy_type || p.enemy_id || 'all',
+      drop_on_enemy_kill: (p.drop_on_enemy_kill == 1 || p.drop_on_enemy_kill === true || p.drop_on_enemy_kill === '1') ? 1 : 0,
+      drop_chance_pct: p.drop_chance_pct !== undefined ? parseFloat(p.drop_chance_pct) : 65,
+      model_3d_type: p.model_3d_type || ((p.powerup_type || '').toLowerCase() === 'shield' ? 'octahedron' : 'capsule'),
+      model_3d_url: p.model_3d_url || '',
+      scale: parseFloat(p.scale || 1.0),
+      length: parseFloat(p.length || 2.5),
+      height: parseFloat(p.height || 2.5),
+      depth: parseFloat(p.depth || 2.5),
+      circumference: parseFloat(p.circumference || 6.0)
+    }));
 
-    window.activeStagePowerups = stagePowerups.length > 0 ? stagePowerups : dbPowerups.filter(p => parseInt(p.stage_level) === currentStage);
+    window.activeStagePowerups = stagePowerups;
     state.stagePowerups = window.activeStagePowerups;
-    console.log(`[GameManagerSync] 🔋 Integrated ${window.activeStagePowerups.length} powerups from database for Stage ${currentStage} on [${currentDev.toUpperCase()}]`);
-  } else if (typeof DEFAULT_STAGE_POWERUPS !== 'undefined' && DEFAULT_STAGE_POWERUPS.length > 0) {
-    window.activeStagePowerups = DEFAULT_STAGE_POWERUPS.filter(p => parseInt(p.stage_level) === currentStage);
-    state.stagePowerups = window.activeStagePowerups;
-    console.log(`[GameManagerSync] 🔋 Loaded fallback powerups for Stage ${currentStage}`);
+    console.log(`[GameManagerSync] 🔋 Integrated ${window.activeStagePowerups.length} active powerups for Stage ${currentStage} on [${currentDev.toUpperCase()}]`);
   }
 
   return true;
@@ -6783,54 +6802,168 @@ function createPowerupSprite(icon, boostPct, colorHex) {
   return sprite;
 }
 
-function spawn3DPowerUp(pConfig, spawnPos = null) {
-  if (!scene || !pConfig) return null;
-
+function create3DPowerupMesh(pConfig) {
   const group = new THREE.Group();
   const isHealth = (pConfig.powerup_type || '').toLowerCase() === 'health';
-  const boostPct = parseFloat(pConfig.boost_pct) || 25.0;
+  const boostPct = parseFloat(pConfig.boost_pct !== undefined ? pConfig.boost_pct : pConfig.boost_percentage) || 25.0;
   const colorHexStr = pConfig.color_hex || (isHealth ? '#10b981' : '#00f0ff');
   const colorHexInt = parseInt(colorHexStr.replace('#', '0x'), 16) || (isHealth ? 0x10b981 : 0x00f0ff);
   const icon = pConfig.icon || (isHealth ? '💖' : '🛡️');
+  const modelType = (pConfig.model_3d_type || (isHealth ? 'capsule' : 'octahedron')).toLowerCase();
 
-  // 1. Outer rotating geometric energy cage (Octahedron wireframe)
-  const cageGeom = new THREE.OctahedronGeometry(4.2, 0);
-  const cageMat = new THREE.MeshBasicMaterial({
+  // Sizing & Dimensions
+  const userScale = Math.max(0.1, Math.min(20.0, parseFloat(pConfig.scale !== undefined && pConfig.scale !== null ? pConfig.scale : 1.0) || 1.0));
+  const userLength = Math.max(0.2, Math.min(50.0, parseFloat(pConfig.length !== undefined && pConfig.length !== null ? pConfig.length : 2.5) || 2.5));
+  const userHeight = Math.max(0.2, Math.min(50.0, parseFloat(pConfig.height !== undefined && pConfig.height !== null ? pConfig.height : 2.5) || 2.5));
+  const userDepth = Math.max(0.2, Math.min(50.0, parseFloat(pConfig.depth !== undefined && pConfig.depth !== null ? pConfig.depth : 2.5) || 2.5));
+  const userCircumference = Math.max(0.5, Math.min(100.0, parseFloat(pConfig.circumference !== undefined && pConfig.circumference !== null ? pConfig.circumference : 6.0) || 6.0));
+  const userRadius = Math.max(0.1, userCircumference / (2 * Math.PI));
+
+  const wireMat = new THREE.MeshBasicMaterial({
     color: colorHexInt,
     wireframe: true,
     transparent: true,
     opacity: 0.85
   });
-  const cageMesh = new THREE.Mesh(cageGeom, cageMat);
-  group.add(cageMesh);
 
-  // 2. Inner glowing core sphere
-  const coreGeom = new THREE.SphereGeometry(2.0, 12, 12);
-  const coreMat = new THREE.MeshBasicMaterial({
+  const solidMat = new THREE.MeshStandardMaterial({
+    color: colorHexInt,
+    metalness: 0.8,
+    roughness: 0.2,
+    emissive: colorHexInt,
+    emissiveIntensity: 0.4
+  });
+
+  const coreGlowMat = new THREE.MeshBasicMaterial({
     color: colorHexInt,
     transparent: true,
-    opacity: 0.45,
+    opacity: 0.55,
     blending: THREE.AdditiveBlending
   });
-  const coreMesh = new THREE.Mesh(coreGeom, coreMat);
-  group.add(coreMesh);
 
-  // 3. 2D Billboard Sprite showing the Power Up Icon and boost percentage
+  let meshBody = null;
+  let coreMesh = null;
+  let spinRing = null;
+
+  if (modelType === 'icosahedron') {
+    meshBody = new THREE.Mesh(new THREE.IcosahedronGeometry(userRadius, 0), wireMat);
+    coreMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(userRadius * 0.5), coreGlowMat);
+    group.add(meshBody);
+    group.add(coreMesh);
+  } else if (modelType === 'dodecahedron') {
+    meshBody = new THREE.Mesh(new THREE.DodecahedronGeometry(userRadius), solidMat);
+    const wireCage = new THREE.Mesh(new THREE.DodecahedronGeometry(userRadius * 1.25), wireMat);
+    coreMesh = new THREE.Mesh(new THREE.SphereGeometry(userRadius * 0.4, 12, 12), coreGlowMat);
+    group.add(meshBody);
+    group.add(wireCage);
+    group.add(coreMesh);
+  } else if (modelType === 'torus') {
+    meshBody = new THREE.Mesh(new THREE.TorusGeometry(userRadius, Math.max(0.15, userRadius * 0.25), 12, 32), solidMat);
+    spinRing = new THREE.Mesh(new THREE.TorusGeometry(userRadius * 1.35, Math.max(0.05, userRadius * 0.08), 8, 24), wireMat);
+    coreMesh = new THREE.Mesh(new THREE.SphereGeometry(userRadius * 0.5, 16, 16), coreGlowMat);
+    group.add(meshBody);
+    group.add(spinRing);
+    group.add(coreMesh);
+  } else if (modelType === 'sphere') {
+    meshBody = new THREE.Mesh(new THREE.SphereGeometry(userRadius, 16, 16), coreGlowMat);
+    spinRing = new THREE.Mesh(new THREE.TorusGeometry(userRadius * 1.4, Math.max(0.05, userRadius * 0.08), 8, 24), wireMat);
+    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(userRadius * 1.4, Math.max(0.05, userRadius * 0.08), 8, 24), wireMat);
+    ring2.rotation.x = Math.PI / 2;
+    spinRing.add(ring2);
+    group.add(meshBody);
+    group.add(spinRing);
+  } else if (modelType === 'capsule') {
+    // Bio-nanite cylinder capsule with rounded ends
+    const capHeight = Math.max(0.6, userHeight);
+    const capRadius = Math.max(0.3, userRadius * 0.6);
+    meshBody = new THREE.Mesh(new THREE.CylinderGeometry(capRadius, capRadius, capHeight, 16), solidMat);
+    const topCap = new THREE.Mesh(new THREE.SphereGeometry(capRadius, 12, 12), solidMat);
+    topCap.position.y = capHeight * 0.5;
+    const botCap = new THREE.Mesh(new THREE.SphereGeometry(capRadius, 12, 12), solidMat);
+    botCap.position.y = -capHeight * 0.5;
+    meshBody.add(topCap);
+    meshBody.add(botCap);
+
+    coreMesh = new THREE.Mesh(new THREE.CylinderGeometry(capRadius * 0.45, capRadius * 0.45, capHeight * 0.85, 8), coreGlowMat);
+    group.add(meshBody);
+    group.add(coreMesh);
+  } else if (modelType === 'custom' || modelType === 'gltf') {
+    const gltfUrl = (pConfig.model_3d_url || '').trim();
+    if (gltfUrl && typeof gltfLoader !== 'undefined') {
+      gltfLoader.load(
+        gltfUrl,
+        (gltf) => {
+          const model = gltf.scene;
+          model.scale.set(userScale, userScale, userScale);
+          group.add(model);
+        },
+        undefined,
+        (err) => {
+          console.warn('[PowerUp] GLTF loading failed for:', gltfUrl, err);
+          const fb = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius, 0), solidMat);
+          group.add(fb);
+        }
+      );
+    } else {
+      meshBody = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius, 0), solidMat);
+      coreMesh = new THREE.Mesh(new THREE.SphereGeometry(userRadius * 0.4, 12, 12), coreGlowMat);
+      group.add(meshBody);
+      group.add(coreMesh);
+    }
+  } else if (modelType === 'icon_sprite') {
+    // Icon sprite billboard only
+  } else {
+    // Default: 'octahedron' Diamond Energy Cage
+    meshBody = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius, 0), wireMat);
+    const innerCrystal = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius * 0.65, 0), solidMat);
+    coreMesh = new THREE.Mesh(new THREE.SphereGeometry(userRadius * 0.35, 12, 12), coreGlowMat);
+    group.add(meshBody);
+    group.add(innerCrystal);
+    group.add(coreMesh);
+  }
+
+  // Scale the whole group by userScale
+  group.scale.set(userScale, userScale, userScale);
+
+  // 2D Billboard Sprite showing the Power Up Icon and boost percentage
   const sprite = createPowerupSprite(icon, boostPct, colorHexStr);
+  sprite.position.y = (modelType === 'icon_sprite') ? 0 : (userRadius * 1.35 + 1.2);
   group.add(sprite);
 
-  // 4. Position within tunnel
+  // Point light for spatial glow
+  const light = new THREE.PointLight(colorHexInt, 2.5, 28);
+  group.add(light);
+
+  return {
+    group,
+    meshBody,
+    coreMesh,
+    spinRing,
+    sprite
+  };
+}
+
+function spawn3DPowerUp(pConfig, spawnPos = null) {
+  if (!scene || !pConfig) return null;
+
+  const isHealth = (pConfig.powerup_type || '').toLowerCase() === 'health';
+  const boostPct = parseFloat(pConfig.boost_pct !== undefined ? pConfig.boost_pct : pConfig.boost_percentage) || 25.0;
+  const colorHexStr = pConfig.color_hex || (isHealth ? '#10b981' : '#00f0ff');
+
+  const { group, meshBody, coreMesh, spinRing, sprite } = create3DPowerupMesh(pConfig);
+
+  // Position within tunnel
   if (spawnPos) {
     group.position.copy(spawnPos);
   } else {
-    // Spawn ahead of player along tunnel
-    const playerZ = state.position ? state.position.z : 0;
+    // Spawn ahead of player along tunnel toward wormhole
+    const playerZ = (state.position && state.position.z) ? state.position.z : (CONFIG.wormholeDistance || 220);
     const angle = Math.random() * Math.PI * 2;
-    const radius = 12 + Math.random() * 20;
+    const radius = 10 + Math.random() * 18;
     group.position.set(
       Math.cos(angle) * radius,
       Math.sin(angle) * radius,
-      playerZ - (180 + Math.random() * 120)
+      Math.max(15, playerZ - (40 + Math.random() * 50))
     );
   }
 
@@ -6838,8 +6971,9 @@ function spawn3DPowerUp(pConfig, spawnPos = null) {
 
   const powerupInstance = {
     mesh: group,
-    cage: cageMesh,
+    meshBody: meshBody,
     core: coreMesh,
+    spinRing: spinRing,
     sprite: sprite,
     config: pConfig,
     powerupType: isHealth ? 'health' : 'shield',
@@ -6848,6 +6982,7 @@ function spawn3DPowerUp(pConfig, spawnPos = null) {
     spawnTime: performance.now(),
     rotSpeedX: (Math.random() - 0.5) * 2.5 + 1.2,
     rotSpeedY: (Math.random() - 0.5) * 2.5 + 1.2,
+    rotSpeedZ: (Math.random() - 0.5) * 2.0,
     collected: false
   };
 
@@ -6858,50 +6993,75 @@ function spawn3DPowerUp(pConfig, spawnPos = null) {
 function update3DPowerups(delta) {
   if (!scene) return;
   const now = performance.now();
-  const playerPos = state.position || new THREE.Vector3(0, 0, 0);
+  const playerPos = (state.isXR && cameraRig) ? cameraRig.position : (state.position || new THREE.Vector3(0, 0, CONFIG.wormholeDistance || 220));
 
   for (let i = active3DPowerups.length - 1; i >= 0; i--) {
     const p = active3DPowerups[i];
     if (p.collected) continue;
 
     // Rotation and pulsing animation
-    if (p.cage) {
-      p.cage.rotation.x += p.rotSpeedX * delta;
-      p.cage.rotation.y += p.rotSpeedY * delta;
+    if (p.meshBody) {
+      p.meshBody.rotation.x += p.rotSpeedX * delta;
+      p.meshBody.rotation.y += p.rotSpeedY * delta;
+      p.meshBody.rotation.z += (p.rotSpeedZ || 0.8) * delta;
     }
-    const pulse = 1.0 + Math.sin((now - p.spawnTime) * 0.005) * 0.15;
-    p.mesh.scale.set(pulse, pulse, pulse);
+    if (p.spinRing) {
+      p.spinRing.rotation.x += 1.8 * delta;
+      p.spinRing.rotation.y += 1.2 * delta;
+    }
+    const pulse = 1.0 + Math.sin((now - p.spawnTime) * 0.005) * 0.12;
+    if (p.core) {
+      p.core.scale.set(pulse, pulse, pulse);
+    }
 
-    // Slowly drift forward in wormhole tunnel toward player
-    p.mesh.position.z += (state.speed || 120) * delta * 0.35;
+    // Gentle hovering bob in place
+    const hoverOffset = Math.sin((now - p.spawnTime) * 0.003) * 0.08;
+    p.mesh.position.y += hoverOffset * delta * 15.0;
 
-    // Check distance to player for collection
+    // Check distance to player
     const distToPlayer = p.mesh.position.distanceTo(playerPos);
-    if (distToPlayer < 9.5) {
+
+    // Magnetic tractor beam homing: when player is within 45 units, pull powerup smoothly toward player
+    if (distToPlayer < 45.0) {
+      const pullDir = new THREE.Vector3().subVectors(playerPos, p.mesh.position).normalize();
+      const pullSpeed = Math.max(35.0, 75.0 * (1.0 - distToPlayer / 45.0));
+      p.mesh.position.addScaledVector(pullDir, pullSpeed * delta);
+    }
+
+    // Collection check - expanded radius for smooth pickup
+    if (distToPlayer < 14.0) {
       // COLLECTED!
       p.collected = true;
       applyPowerupEffect(p);
       triggerPowerupCollectFx(p.mesh.position, p.colorHex);
 
       scene.remove(p.mesh);
-      if (p.cage && p.cage.geometry) p.cage.geometry.dispose();
-      if (p.cage && p.cage.material) p.cage.material.dispose();
-      if (p.core && p.core.geometry) p.core.geometry.dispose();
-      if (p.core && p.core.material) p.core.material.dispose();
+      disposeMeshHierarchy(p.mesh);
       active3DPowerups.splice(i, 1);
       continue;
     }
 
-    // Despawn if passed far behind player (> 60 units) or lifetime > 45s
-    if (p.mesh.position.z > playerPos.z + 60 || (now - p.spawnTime) > 45000) {
+    // Despawn if passed far away or expired (90 seconds)
+    if (distToPlayer > 260 || (now - p.spawnTime) > 90000) {
       scene.remove(p.mesh);
-      if (p.cage && p.cage.geometry) p.cage.geometry.dispose();
-      if (p.cage && p.cage.material) p.cage.material.dispose();
-      if (p.core && p.core.geometry) p.core.geometry.dispose();
-      if (p.core && p.core.material) p.core.material.dispose();
+      disposeMeshHierarchy(p.mesh);
       active3DPowerups.splice(i, 1);
     }
   }
+}
+
+function disposeMeshHierarchy(obj) {
+  if (!obj) return;
+  obj.traverse((child) => {
+    if (child.geometry) child.geometry.dispose();
+    if (child.material) {
+      if (Array.isArray(child.material)) {
+        child.material.forEach(m => m.dispose());
+      } else {
+        child.material.dispose();
+      }
+    }
+  });
 }
 
 function applyPowerupEffect(powerupInstance) {
@@ -6981,11 +7141,10 @@ function triggerPowerupCollectFx(position, colorHexStr) {
 function despawnAllActivePowerups() {
   for (let i = active3DPowerups.length - 1; i >= 0; i--) {
     const p = active3DPowerups[i];
-    if (p.mesh && scene) scene.remove(p.mesh);
-    if (p.cage && p.cage.geometry) p.cage.geometry.dispose();
-    if (p.cage && p.cage.material) p.cage.material.dispose();
-    if (p.core && p.core.geometry) p.core.geometry.dispose();
-    if (p.core && p.core.material) p.core.material.dispose();
+    if (p.mesh && scene) {
+      scene.remove(p.mesh);
+      disposeMeshHierarchy(p.mesh);
+    }
     active3DPowerups.splice(i, 1);
   }
 }
@@ -7000,7 +7159,7 @@ function checkEnemyPowerupDrop(enemyConfig, position) {
 
   for (const p of powerupList) {
     if (p.is_active === 0 || p.is_active === '0' || p.is_active === false) continue;
-    if (parseInt(p.stage_level) !== currentStage) continue;
+    if (parseInt(p.stage_level) !== currentStage && parseInt(p.stage_level) !== 0) continue;
 
     const pDev = (p.device_type || 'all').toLowerCase();
     if (pDev !== 'all' && pDev !== currentDev) continue;
@@ -7008,9 +7167,9 @@ function checkEnemyPowerupDrop(enemyConfig, position) {
     const dropOnKill = (p.drop_on_enemy_kill == 1 || p.drop_on_enemy_kill === true || p.drop_on_enemy_kill === '1');
     if (!dropOnKill) continue;
 
-    // Check target enemy type
-    const targetEnemy = (p.drop_enemy_type || 'all').trim().toLowerCase();
-    const enemyId = (enemyConfig.enemy_id || '').toLowerCase();
+    // Check target enemy type (match against all identifier fields)
+    const targetEnemy = (p.drop_enemy_type || p.enemy_id || 'all').trim().toLowerCase();
+    const enemyId = (enemyConfig.enemy_id || enemyConfig.id || '').toLowerCase();
     const enemyName = (enemyConfig.name || enemyConfig.enemy_name || '').toLowerCase();
     const enemyModel = (enemyConfig.model_3d_type || '').toLowerCase();
 
@@ -7019,17 +7178,21 @@ function checkEnemyPowerupDrop(enemyConfig, position) {
       targetEnemy === enemyName ||
       targetEnemy === enemyModel ||
       enemyId.includes(targetEnemy) ||
-      enemyName.includes(targetEnemy));
+      enemyName.includes(targetEnemy) ||
+      targetEnemy.includes(enemyId));
 
     if (!enemyMatches) continue;
 
     // Check drop chance percentage
     const chance = parseFloat(p.drop_chance_pct) !== undefined && !isNaN(parseFloat(p.drop_chance_pct))
       ? parseFloat(p.drop_chance_pct)
-      : 30.0;
+      : 75.0;
     const roll = Math.random() * 100;
     if (roll <= chance) {
-      spawn3DPowerUp(p, position.clone ? position.clone() : new THREE.Vector3(position.x, position.y, position.z));
+      const dropSpawn = position.clone ? position.clone() : new THREE.Vector3(position.x, position.y, position.z);
+      // Offset slightly forward towards player so it's clearly visible out of the blast
+      dropSpawn.z += 1.5;
+      spawn3DPowerUp(p, dropSpawn);
       break; // Drop one powerup per enemy kill
     }
   }
@@ -7861,14 +8024,20 @@ function restartGame() {
   state.isHyperWarping = false;
   state.distance = 0;
 
-  // Reset vessel position
-  state.position.set(0, 0, 0);
+  // Reset vessel position to safe distance away from wormhole singularity (never at 0, 0, 0!)
+  const respawnDistance = CONFIG.wormholeDistance || 220;
+  state.position.set(0, 0, respawnDistance);
   if (!state.isXR && camera) {
-    camera.position.set(0, 0, 0);
+    camera.position.set(0, 0, respawnDistance);
+    camera.rotation.set(0, 0, 0);
   } else if (cameraRig) {
-    cameraRig.position.set(0, 0, 0);
+    cameraRig.position.set(0, 0, respawnDistance);
+    cameraRig.rotation.set(0, 0, 0);
   }
   state.velocity.set(0, 0, 0);
+  state.pitch = 0;
+  state.yaw = 0;
+  state.roll = 0;
   stopThrottle();
 
   // Despawn combat entities
@@ -7884,6 +8053,10 @@ function restartGame() {
 
   updatePlayerDefenseHUD();
   renderStageObjectivesUI();
+}
+
+function quitGame() {
+  window.location.href = 'https://calmchessgames.com';
 }
 
 function triggerEnemyExplosion(position, config) {
@@ -9252,6 +9425,7 @@ if (typeof window !== 'undefined') {
   window.checkEventPowerupAppearance = checkEventPowerupAppearance;
   window.triggerGameOver = triggerGameOver;
   window.restartGame = restartGame;
+  window.quitGame = quitGame;
 }
 
 // Restart button & keyboard shortcut listener for Game Over screen
@@ -9262,10 +9436,25 @@ if (btnRestartGame) {
     restartGame();
   });
 }
-window.addEventListener('keydown', (e) => {
-  if (state.isGameOver && (e.code === 'KeyR' || e.code === 'Enter' || e.code === 'Space')) {
+
+// Quit button listener for Game Over screen (returns to calmchessgames.com)
+const btnQuitGame = document.getElementById('btn-quit-game');
+if (btnQuitGame) {
+  btnQuitGame.addEventListener('click', (e) => {
     e.preventDefault();
-    restartGame();
+    quitGame();
+  });
+}
+
+window.addEventListener('keydown', (e) => {
+  if (state.isGameOver) {
+    if (e.code === 'KeyR' || e.code === 'Enter' || e.code === 'Space') {
+      e.preventDefault();
+      restartGame();
+    } else if (e.code === 'Escape' || e.code === 'KeyQ') {
+      e.preventDefault();
+      quitGame();
+    }
   }
 });
 

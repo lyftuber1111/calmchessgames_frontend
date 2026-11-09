@@ -6966,10 +6966,14 @@ window.addEventListener('mousemove', (e) => {
 const hudDistEl = document.getElementById('hud-distance');
 const hudVectorEl = document.getElementById('hud-vector');
 
+function getWormholeDistanceKm() {
+  const curPos = state.isXR ? state.position : ((camera && camera.position) ? camera.position : state.position);
+  return Math.round(curPos.length() * 420);
+}
+
 function updateWormholeDistanceBadge(distKm) {
   if (typeof distKm !== 'number') {
-    const curPos = state.isXR ? state.position : ((camera && camera.position) ? camera.position : state.position);
-    distKm = Math.round(curPos.length() * 420);
+    distKm = getWormholeDistanceKm();
   }
   const formatted = `${distKm.toLocaleString()} KM`;
   if (hudDistEl) hudDistEl.textContent = formatted;
@@ -9012,7 +9016,7 @@ function renderStageObjectivesUI() {
   const briefing = state.stageMissionBriefing || `Neutralize ${state.stageRequiredKills} hostile units and close within < ${state.stageTargetDistance.toLocaleString()} KM of wormhole singularity to authorize jump gate.`;
   if (briefingBox) briefingBox.textContent = briefing;
 
-  const distKm = Math.round((state.position.length() / CONFIG.wormholeDistance) * 100000);
+  const distKm = getWormholeDistanceKm();
   const killsProgress = Math.min(1.0, state.stageKills / Math.max(1, state.stageRequiredKills));
   const distProgress = distKm <= state.stageTargetDistance ? 1.0 : Math.max(0, 1.0 - (distKm - state.stageTargetDistance) / 100000);
 
@@ -9027,10 +9031,10 @@ function renderStageObjectivesUI() {
     <div class="objective-item ${killsCompleted ? 'completed' : ''}" id="obj-kills">
       <div class="obj-header">
         <span>1. Destroy ${state.stageRequiredKills} Hostile Units</span>
-        <span class="obj-status" style="color:${killsCompleted ? '#10b981' : '#f59e0b'}; font-weight:bold;">${killsCompleted ? '✓ COMPLETED' : `${state.stageKills} / ${state.stageRequiredKills} KILLS`}</span>
+        <span class="obj-status" id="status-kills" style="color:${killsCompleted ? '#10b981' : '#f59e0b'}; font-weight:bold;">${killsCompleted ? '✓ COMPLETED' : `${state.stageKills} / ${state.stageRequiredKills} KILLS`}</span>
       </div>
       <div class="obj-bar-wrap">
-        <div class="obj-bar" style="width:${Math.round(killsProgress * 100)}%; background:${killsCompleted ? '#10b981' : '#f59e0b'};"></div>
+        <div class="obj-bar" id="bar-kills" style="width:${Math.round(killsProgress * 100)}%; background:${killsCompleted ? '#10b981' : '#f59e0b'};"></div>
       </div>
       <div style="font-size:0.64rem; color:var(--text-dim); margin-top:2px;">
         Shoot down 3D enemies emerging from the wormhole with ship lasers.
@@ -9041,10 +9045,10 @@ function renderStageObjectivesUI() {
     <div class="objective-item ${distCompleted ? 'completed' : ''}" id="obj-distance">
       <div class="obj-header">
         <span>2. Wormhole Proximity &lt; ${state.stageTargetDistance.toLocaleString()} KM</span>
-        <span class="obj-status" style="color:${distCompleted ? '#10b981' : '#00f0ff'}; font-weight:bold;">${distCompleted ? '✓ IN RANGE' : `${distKm.toLocaleString()} KM`}</span>
+        <span class="obj-status" id="status-distance" style="color:${distCompleted ? '#10b981' : '#00f0ff'}; font-weight:bold;">${distCompleted ? '✓ IN RANGE' : `${distKm.toLocaleString()} KM`}</span>
       </div>
       <div class="obj-bar-wrap">
-        <div class="obj-bar" style="width:${Math.round(distProgress * 100)}%; background:${distCompleted ? '#10b981' : '#00f0ff'};"></div>
+        <div class="obj-bar" id="bar-distance" style="width:${Math.round(distProgress * 100)}%; background:${distCompleted ? '#10b981' : '#00f0ff'};"></div>
       </div>
       <div style="font-size:0.64rem; color:var(--text-dim); margin-top:2px;">
         Fly toward cyan singularity core (<span class="kbd">WASD</span> / Throttle slider).
@@ -9062,7 +9066,7 @@ function renderStageObjectivesUI() {
     if (coilsCompleted) completedObjectives++;
 
     html += `
-      <!-- Objective 3: Resonance Scanner -->
+      <!-- Objective 3: Resonance Scanner (Optional) -->
       <div class="objective-item ${scanCompleted ? 'completed' : ''}" id="obj-scan">
         <div class="obj-header">
           <span>3. Singularity Harmonic Scan</span>
@@ -9076,7 +9080,7 @@ function renderStageObjectivesUI() {
         </div>
       </div>
 
-      <!-- Objective 4: Tachyon Warp Coils -->
+      <!-- Objective 4: Tachyon Warp Coils (Optional) -->
       <div class="objective-item ${coilsCompleted ? 'completed' : ''}" id="obj-coils">
         <div class="obj-header">
           <span>4. Tachyon Warp Coils Calibration</span>
@@ -9136,41 +9140,112 @@ function renderStageObjectivesUI() {
     }
   });
 
-  if (authStatusText && authBox) {
-    if (state.isWarpReady) {
-      authBox.style.background = 'rgba(16,185,129,0.18)';
-      authBox.style.borderColor = '#10b981';
-      authStatusText.style.color = '#10b981';
-      authStatusText.textContent = '✅ HYPER-WARP GATE AUTHORIZED: READY FOR JUMP!';
-    } else {
-      authBox.style.background = 'rgba(239,68,111,0.12)';
-      authBox.style.borderColor = 'rgba(239,68,111,0.4)';
-      authStatusText.style.color = '#ff6b8b';
-      authStatusText.textContent = '⛔ HYPER-WARP LOCKED: OBJECTIVES INCOMPLETE';
-    }
-  }
+  evaluateWarpReadiness(distKm);
 }
 
-function evaluateWarpReadiness() {
-  const distKm = Math.round((state.position.length() / CONFIG.wormholeDistance) * 100000);
+function updateStageDistanceObjective(distKm) {
+  if (typeof distKm !== 'number') {
+    distKm = getWormholeDistanceKm();
+  }
+  const distCompleted = distKm <= state.stageTargetDistance;
+  const distProgress = distCompleted ? 1.0 : Math.max(0, 1.0 - (distKm - state.stageTargetDistance) / 100000);
+
+  const objDist = document.getElementById('obj-distance');
+  const statusDist = document.getElementById('status-distance');
+  const barDist = document.getElementById('bar-distance');
+
+  if (objDist) {
+    if (distCompleted) {
+      objDist.classList.add('completed');
+    } else {
+      objDist.classList.remove('completed');
+    }
+  }
+  if (statusDist) {
+    statusDist.style.color = distCompleted ? '#10b981' : '#00f0ff';
+    statusDist.textContent = distCompleted ? '✓ IN RANGE' : `${distKm.toLocaleString()} KM`;
+  }
+  if (barDist) {
+    barDist.style.width = `${Math.round(distProgress * 100)}%`;
+    barDist.style.background = distCompleted ? '#10b981' : '#00f0ff';
+  }
+
+  const killsCompleted = state.stageKills >= state.stageRequiredKills;
+  let totalObjectives = 2;
+  let completedObjectives = (killsCompleted ? 1 : 0) + (distCompleted ? 1 : 0);
+  if (currentActiveStage === 1) {
+    totalObjectives += 2;
+    if (state.scanProgress >= 1.0) completedObjectives++;
+    if (state.coils.filter(c => c).length === 3) completedObjectives++;
+  }
+  const progressBadge = document.getElementById('obj-total-progress');
+  if (progressBadge) {
+    progressBadge.textContent = `${completedObjectives}/${totalObjectives} COMPLETE`;
+  }
+
+  evaluateWarpReadiness(distKm);
+}
+
+function evaluateWarpReadiness(distKm) {
+  if (typeof distKm !== 'number') {
+    distKm = getWormholeDistanceKm();
+  }
   const killsMet = state.stageKills >= state.stageRequiredKills;
   const distMet = distKm <= state.stageTargetDistance;
-  const stage1ExtraMet = (currentActiveStage !== 1) || (state.scanProgress >= 1.0 && state.coils.every(c => c));
 
-  const isReady = killsMet && distMet && stage1ExtraMet;
+  // Warp authorization requires completing the required mission objectives (kills & distance threshold)
+  const isReady = killsMet && distMet;
   state.isWarpReady = isReady;
 
   if (warpBtn) {
     if (isReady) {
       warpBtn.classList.add('btn-ready');
       warpBtn.innerHTML = '⚡ ENGAGE WARP JUMP [F]';
-      warpBtn.style.boxShadow = '0 0 18px rgba(16,185,129,0.85)';
-      warpBtn.style.borderColor = '#10b981';
+      warpBtn.style.boxShadow = '0 0 18px rgba(255,215,0,0.85)';
+      warpBtn.style.borderColor = '#ffd700';
+      warpBtn.removeAttribute('disabled');
     } else {
       warpBtn.classList.remove('btn-ready');
       warpBtn.innerHTML = '🚀 Engage Warp';
       warpBtn.style.boxShadow = '';
       warpBtn.style.borderColor = '';
+    }
+  }
+
+  const touchWarpBtn = document.getElementById('touch-btn-warp');
+  if (touchWarpBtn) {
+    if (isReady) {
+      touchWarpBtn.classList.add('btn-ready');
+      touchWarpBtn.style.boxShadow = '0 0 18px rgba(255,215,0,0.85)';
+      touchWarpBtn.style.borderColor = '#ffd700';
+    } else {
+      touchWarpBtn.classList.remove('btn-ready');
+      touchWarpBtn.style.boxShadow = '';
+      touchWarpBtn.style.borderColor = '';
+    }
+  }
+
+  // Update bold yellow WARP AVAILEABLE badges
+  const warpBadges = document.querySelectorAll('.badge-warp-available');
+  warpBadges.forEach(b => {
+    b.style.display = isReady ? 'inline-flex' : 'none';
+  });
+
+  const authStatusText = document.getElementById('warp-auth-status-text');
+  const authBox = document.getElementById('warp-gate-authorization-box');
+  if (authStatusText && authBox) {
+    if (isReady) {
+      authBox.style.background = 'rgba(255,215,0,0.15)';
+      authBox.style.borderColor = '#ffd700';
+      authStatusText.style.color = '#ffd700';
+      authStatusText.style.fontWeight = 'bold';
+      authStatusText.textContent = '⚡ WARP AVAILEABLE: HYPER-WARP GATE AUTHORIZED!';
+    } else {
+      authBox.style.background = 'rgba(239,68,111,0.12)';
+      authBox.style.borderColor = 'rgba(239,68,111,0.4)';
+      authStatusText.style.color = '#ff6b8b';
+      authStatusText.style.fontWeight = 'bold';
+      authStatusText.textContent = '⛔ HYPER-WARP LOCKED: OBJECTIVES INCOMPLETE';
     }
   }
 }
@@ -9179,8 +9254,8 @@ function triggerWarpJump() {
   if (state.isPaused || state.isHyperWarping) return;
   if (audioMgr) audioMgr.init();
 
-  const distKm = Math.round((state.position.length() / CONFIG.wormholeDistance) * 100000);
-  evaluateWarpReadiness();
+  const distKm = getWormholeDistanceKm();
+  evaluateWarpReadiness(distKm);
 
   if (!state.isWarpReady) {
     const missing = [];
@@ -9189,10 +9264,6 @@ function triggerWarpJump() {
     }
     if (distKm > state.stageTargetDistance) {
       missing.push(`APPROACH < ${state.stageTargetDistance.toLocaleString()} KM (CURRENT: ${distKm.toLocaleString()} KM)`);
-    }
-    if (currentActiveStage === 1) {
-      if (state.scanProgress < 1.0) missing.push('RESONANCE SCAN');
-      if (!state.coils.every(c => c)) missing.push('3 COILS CALIBRATION');
     }
     showToast('WARP UNAVAILABLE', 2500);
     return;
@@ -9235,6 +9306,13 @@ async function syncStagesDropdownFromDatabase(showNotification = false) {
 if (warpBtn) {
   warpBtn.addEventListener('click', triggerWarpJump);
 }
+
+// Wire any bold yellow WARP AVAILEABLE badges to also trigger warp jump when clicked
+document.querySelectorAll('.badge-warp-available').forEach(b => {
+  b.addEventListener('click', () => {
+    triggerWarpJump();
+  });
+});
 
 // Sliders and Audio Toggle
 const bloomSlider = document.getElementById('slider-bloom');
@@ -9754,6 +9832,7 @@ function updateFlight(delta) {
   const distLength = state.position.length();
   const distKm = Math.round(distLength * 420);
   updateWormholeDistanceBadge(distKm);
+  updateStageDistanceObjective(distKm);
 
   const toWormhole = distLength > 0.01
     ? new THREE.Vector3(0, 0, 0).sub(state.position).normalize()
@@ -9803,8 +9882,10 @@ function updateFlight(delta) {
   }
 
 function checkObjectives() {
-  if (typeof evaluateWarpReadiness === 'function') {
-    evaluateWarpReadiness();
+  if (typeof updateStageDistanceObjective === 'function') {
+    updateStageDistanceObjective();
+  } else if (typeof evaluateWarpReadiness === 'function') {
+    evaluateWarpReadiness(distKm);
   }
   if (typeof checkDistanceStageEvents === 'function') {
     checkDistanceStageEvents(distKm);
@@ -9893,8 +9974,8 @@ if (renderer) {
   if (typeof updatePlayerDefenseHUD === 'function') {
     updatePlayerDefenseHUD();
   }
-  if (typeof evaluateWarpReadiness === 'function') {
-    evaluateWarpReadiness();
+  if (typeof updateStageDistanceObjective === 'function') {
+    updateStageDistanceObjective();
   }
   weaponsSystem.update(delta);
 
@@ -10245,6 +10326,8 @@ if (typeof window !== 'undefined') {
   window.applyDamageToPlayer = applyDamageToPlayer;
   window.evaluateWarpReadiness = evaluateWarpReadiness;
   window.renderStageObjectivesUI = renderStageObjectivesUI;
+  window.updateStageDistanceObjective = updateStageDistanceObjective;
+  window.getWormholeDistanceKm = getWormholeDistanceKm;
   window.syncStagesDropdownFromDatabase = syncStagesDropdownFromDatabase;
   window.isMobileInUse = isMobileInUse;
   window.updateMobileControlsVisibility = updateMobileControlsVisibility;

@@ -1691,10 +1691,55 @@
       transform: translateX(-50%);
       margin-top: 5px;
       display: inline-flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 6px;
       z-index: 46;
       white-space: nowrap;
+    }
+
+    /* WARP AVAILABLE BADGE - Bold Yellow Text */
+    .badge-warp-available {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 4px 14px;
+      background: rgba(24, 20, 0, 0.94);
+      border: 2px solid #ffd700;
+      border-radius: 20px;
+      color: #ffd700;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-weight: 900;
+      font-size: 0.82rem;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      text-shadow: 0 0 8px #ffd700, 0 0 16px rgba(255, 215, 0, 0.7);
+      box-shadow: 0 2px 16px rgba(255, 215, 0, 0.6), inset 0 0 10px rgba(255, 215, 0, 0.25);
+      animation: warpAvailablePulse 1.4s ease-in-out infinite;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: pointer;
+      white-space: nowrap;
+      z-index: 60;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .badge-warp-available:hover {
+      transform: scale(1.06);
+      box-shadow: 0 4px 24px rgba(255, 215, 0, 0.95), inset 0 0 14px rgba(255, 215, 0, 0.4);
+    }
+
+    @keyframes warpAvailablePulse {
+      0%, 100% {
+        box-shadow: 0 2px 14px rgba(255, 215, 0, 0.5), inset 0 0 8px rgba(255, 215, 0, 0.2);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 4px 26px rgba(255, 215, 0, 0.95), inset 0 0 14px rgba(255, 215, 0, 0.4);
+        transform: scale(1.04);
+      }
     }
 
     .wormhole-distance-badge {
@@ -4316,6 +4361,11 @@
             <!-- Rendered dynamically -->
           </div>
 
+          <!-- Warp Available Badge in Controls Drawer (Missions Tab) -->
+          <div id="controls-warp-available-badge" class="badge-warp-available" style="display:none; margin:10px auto 4px auto;" title="All mission objectives complete! Click to engage hyper-warp jump (Hotkey: F)">
+            ⚡ WARP AVAILEABLE
+          </div>
+
           <!-- Warp Gate Authorization Status Box -->
           <div id="warp-gate-authorization-box" style="margin-top:12px; padding:8px 10px; border-radius:6px; background:rgba(239,68,111,0.12); border:1px solid rgba(239,68,111,0.4); text-align:center;">
             <div style="font-size:0.75rem; font-weight:bold; color:#ff6b8b;" id="warp-auth-status-text">⛔ HYPER-WARP LOCKED: OBJECTIVES INCOMPLETE</div>
@@ -4487,6 +4537,9 @@
         <span class="wormhole-dist-label">DISTANCE TO WORMHOLE:</span>
         <span id="hud-distance" class="wormhole-dist-val">92,400 KM</span>
       </div>
+      <div class="badge-warp-available hud-warp-available-badge" id="hud-warp-available-badge" style="display:none;" title="All mission objectives complete! Click to engage hyper-warp jump (Hotkey: F)">
+        ⚡ WARP AVAILEABLE
+      </div>
     </div>
   </div>
 
@@ -4504,6 +4557,9 @@
         <button id="btn-warp" class="hud-btn" title="Initiate sub-light cruise or hyper-warp jump">
           🚀 Engage Warp
         </button>
+        <div id="btn-warp-badge" class="badge-warp-available" style="display:none;" title="All mission objectives complete! Click to engage hyper-warp jump (Hotkey: F)">
+          ⚡ WARP AVAILEABLE
+        </div>
         <button id="btn-toggle-drawer" class="hud-btn" title="Toggle left-hand Controls & Objectives Panel">
           📋 Objectives
         </button>
@@ -4695,7 +4751,7 @@
   <div id="damage-vignette" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:9999; box-shadow:inset 0 0 100px rgba(239, 68, 111, 0.95); opacity:0; transition:opacity 0.12s ease-out;"></div>
 
   <!-- Primary Game Module -->
-  <script type="module" src="js/wormhole0.js?v=20261109_compact_tactical_hud"></script>
+  <script type="module" src="js/wormhole0.js?v=20261109_warp_available_badge"></script>
 
 </body>
 </html>

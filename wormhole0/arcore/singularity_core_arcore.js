@@ -3,6 +3,7 @@
  * Calibrated for WebXR Immersive-AR in Passthrough Space
  * Database Stage Level: 3 | Environment: Singularity Void Violet
  * Calm Chess Games / Brian Berry (C) 2026. All Rights Reserved.
+ * Calm Chess Computers 2026
  */
 
 export const stageConfig = {

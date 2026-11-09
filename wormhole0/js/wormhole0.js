@@ -5,6 +5,7 @@
  * and Collapsible Left-Hand Objectives Drawer.
  * 
  * Calm Chess Games / Brian Berry (C) 2026
+ * Calm Chess Computers 2026
  */
 
 import * as THREE from 'three';

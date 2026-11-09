@@ -3,6 +3,7 @@
  * Calibrated for WebXR Immersive-VR (6-DOF Spatial Motion Controllers, Stereo Rendering)
  * Database Stage Level: 1 | Environment: Warp Cyan Corridor
  * Calm Chess Games / Brian Berry (C) 2026. All Rights Reserved.
+ * Calm Chess Computers 2026
  */
 
 export const stageConfig = {

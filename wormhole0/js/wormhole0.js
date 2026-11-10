@@ -12,8 +12,91 @@ import * as THREE from 'three';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
 const gltfLoader = new GLTFLoader();
+const objLoader = new OBJLoader();
+
+// Global cache for 3D asset models (.glb, .gltf, .obj) to prevent duplicate downloads
+const cached3DAssetModels = new Map();
+
+function normalizeAssetUrl(url) {
+  if (!url) return '';
+  url = url.trim();
+  // If already absolute protocol (http:, https:, //, data:), keep as-is
+  if (/^(https?:|\/\/|data:)/i.test(url)) {
+    return url;
+  }
+  // If path starts with /wormhole0/, return as-is
+  if (url.startsWith('/wormhole0/')) {
+    return url;
+  }
+  // If path starts with wormhole0/ without slash, make it /wormhole0/...
+  if (url.startsWith('wormhole0/')) {
+    return '/' + url;
+  }
+  // If path starts with / (other root path), return as-is
+  if (url.startsWith('/')) {
+    return url;
+  }
+  // Otherwise it's a relative path (e.g. "mobile/event_horizon_images/red_recon_drone.glb")
+  // Since wormhole0.html is served from /wormhole0/, this resolves to /wormhole0/mobile/...
+  return url;
+}
+
+function load3DAssetModel(rawUrl, onLoaded, onError) {
+  const url = normalizeAssetUrl(rawUrl);
+  if (!url) {
+    if (onError) onError(new Error('Empty asset URL'));
+    return;
+  }
+
+  // Fast memory clone if already loaded
+  if (cached3DAssetModels.has(url)) {
+    const cachedObj = cached3DAssetModels.get(url);
+    if (onLoaded) {
+      try {
+        onLoaded(cachedObj.clone(true));
+      } catch (cloneErr) {
+        if (onLoaded) onLoaded(cachedObj);
+      }
+    }
+    return;
+  }
+
+  const cleanUrl = url.split('?')[0].split('#')[0].toLowerCase();
+  const isObj = cleanUrl.endsWith('.obj');
+
+  if (isObj) {
+    objLoader.load(
+      url,
+      (obj) => {
+        cached3DAssetModels.set(url, obj);
+        if (onLoaded) onLoaded(obj.clone(true));
+      },
+      undefined,
+      (err) => {
+        console.warn(`[3DAsset] Failed to load .OBJ model from '${url}':`, err);
+        if (onError) onError(err);
+      }
+    );
+  } else {
+    // Both .glb and .gltf are handled seamlessly by Three.js GLTFLoader
+    gltfLoader.load(
+      url,
+      (gltf) => {
+        const scene = gltf.scene || gltf.scenes[0] || gltf;
+        cached3DAssetModels.set(url, scene);
+        if (onLoaded) onLoaded(scene.clone(true));
+      },
+      undefined,
+      (err) => {
+        console.warn(`[3DAsset] Failed to load GLTF/GLB model from '${url}':`, err);
+        if (onError) onError(err);
+      }
+    );
+  }
+}
 
 // =============================================================================
 // STATE & CONFIGURATION
@@ -7262,19 +7345,30 @@ function create3DPowerupMesh(pConfig) {
     coreMesh = new THREE.Mesh(new THREE.CylinderGeometry(capRadius * 0.45, capRadius * 0.45, capHeight * 0.85, 8), coreGlowMat);
     group.add(meshBody);
     group.add(coreMesh);
-  } else if (modelType === 'custom' || modelType === 'gltf') {
-    const gltfUrl = (pConfig.model_3d_url || '').trim();
-    if (gltfUrl && typeof gltfLoader !== 'undefined') {
-      gltfLoader.load(
-        gltfUrl,
-        (gltf) => {
-          const model = gltf.scene;
-          model.scale.set(userScale, userScale, userScale);
-          group.add(model);
+  } else if (modelType.startsWith('custom') || modelType === 'gltf' || modelType === 'glb' || modelType === 'obj' || pConfig.model_3d_url) {
+    const assetUrl = (pConfig.model_3d_url || '').trim();
+    if (assetUrl) {
+      load3DAssetModel(
+        assetUrl,
+        (loadedModel) => {
+          try {
+            const box = new THREE.Box3().setFromObject(loadedModel);
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+            loadedModel.position.sub(center);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+            const targetSpan = (userRadius * 2.2) * userScale;
+            const autoScale = targetSpan / maxDim;
+            loadedModel.scale.set(autoScale, autoScale, autoScale);
+            group.add(loadedModel);
+          } catch (e) {
+            console.warn('[PowerUp] Error processing 3D asset model:', e);
+          }
         },
-        undefined,
         (err) => {
-          console.warn('[PowerUp] GLTF loading failed for:', gltfUrl, err);
+          console.warn('[PowerUp] 3D Asset loading failed for:', assetUrl, err);
           const fb = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius, 0), solidMat);
           group.add(fb);
         }
@@ -7933,7 +8027,64 @@ function create3DEnemyMesh(config) {
     blending: THREE.AdditiveBlending
   });
 
-  if (modelType === 'interceptor') {
+  const customModelUrl = (config.model_3d_url || '').trim();
+  const isCustomModel = customModelUrl !== '' ||
+    modelType.startsWith('custom') ||
+    modelType === 'glb' ||
+    modelType === 'gltf' ||
+    modelType === 'obj';
+
+  if (isCustomModel && customModelUrl) {
+    // 1. Build a procedural proxy placeholder while the 3D asset loads asynchronously
+    const proxyHull = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius), hullMat);
+    proxyHull.name = 'enemy_proxy_placeholder';
+    group.add(proxyHull);
+
+    const coreProxy = new THREE.Mesh(new THREE.SphereGeometry(userRadius * 0.4, 12, 12), glowMat);
+    coreProxy.name = 'enemy_proxy_core';
+    group.add(coreProxy);
+
+    // 2. Load the custom .glb, .obj, or .gltf model
+    load3DAssetModel(
+      customModelUrl,
+      (loadedModel) => {
+        try {
+          // Auto-center model at its bounding box center
+          const box = new THREE.Box3().setFromObject(loadedModel);
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          loadedModel.position.sub(center);
+
+          // Compute target span and auto-scale
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+          const targetSpan = (userLength || (userRadius * 2.4)) * userScale;
+          const autoScale = targetSpan / maxDim;
+          loadedModel.scale.set(autoScale, autoScale, autoScale);
+
+          // Configure shadows & meshes
+          loadedModel.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+          });
+
+          // Remove proxy placeholder meshes and add the loaded 3D asset model
+          group.remove(proxyHull);
+          group.remove(coreProxy);
+          group.add(loadedModel);
+          group.userData.loadedAsset = loadedModel;
+        } catch (procErr) {
+          console.warn('[Enemy 3D] Error attaching loaded model:', procErr);
+        }
+      },
+      (err) => {
+        console.warn(`[Enemy 3D] Failed loading asset '${customModelUrl}', keeping procedural proxy:`, err);
+      }
+    );
+  } else if (modelType === 'interceptor') {
     // 3D Delta-Wing Fighter using configured length (wingspan), height, depth, circumference
     const bodyGeom = new THREE.ConeGeometry(Math.max(0.25, userRadius * 0.7), userDepth, 4);
     bodyGeom.rotateX(-Math.PI / 2);
@@ -9092,22 +9243,16 @@ function spawnGLTFDebrisExplosion(position, url, count, scale, colorHex, colorSt
     }, 30);
   };
 
-  if (debrisGLTFCache.has(url)) {
-    spawnShards(debrisGLTFCache.get(url));
-  } else {
-    gltfLoader.load(
-      url,
-      (gltf) => {
-        debrisGLTFCache.set(url, gltf.scene);
-        spawnShards(gltf.scene);
-      },
-      undefined,
-      (err) => {
-        console.warn(`[DestructionAsset] Failed to load GLTF debris from '${url}', falling back to procedural debris cloud:`, err);
-        spawnDebrisCloudExplosion(position, count, scale, colorHex);
-      }
-    );
-  }
+  load3DAssetModel(
+    url,
+    (loadedScene) => {
+      spawnShards(loadedScene);
+    },
+    (err) => {
+      console.warn(`[DestructionAsset] Failed to load 3D debris from '${url}', falling back to procedural debris cloud:`, err);
+      spawnDebrisCloudExplosion(position, count, scale, colorHex);
+    }
+  );
 }
 
 function spawnPlasmaShatterExplosion(position, count, scale, colorHex) {

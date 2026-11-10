@@ -3177,6 +3177,13 @@ Thank you for reaching out to Calm Chess Games. `;
           }
       });
 
+      // Live 3D model asset URL format detector listener
+      const enemyUrlEl = document.getElementById('enemy3DModelUrlInput');
+      if (enemyUrlEl && (!enemyUrlEl.dataset || !enemyUrlEl.dataset.boundFormat)) {
+          if (enemyUrlEl.dataset) enemyUrlEl.dataset.boundFormat = 'true';
+          enemyUrlEl.addEventListener('input', updateEnemy3DModelFormatStatus);
+      }
+
       // Check for initial URL hash (#manager, #game_manager, etc.)
       try {
           if (typeof window !== 'undefined' && window.location && window.location.hash) {
@@ -3844,6 +3851,7 @@ Thank you for reaching out to Calm Chess Games. `;
   let cachedGameStages = [];
   let cachedGameEnemies = [];
   let cachedGamePowerups = [];
+  let cachedGameEnvironments = [];
 
   function switchGameManagerSubTab(subTab) {
       const normalized = (subTab || 'devices').toLowerCase().trim();
@@ -3856,6 +3864,8 @@ Thank you for reaching out to Calm Chess Games. `;
           target = 'enemies';
       } else if (normalized === 'powerups' || normalized === 'powerup' || normalized === 'boosts' || normalized === 'boost') {
           target = 'powerups';
+      } else if (normalized === 'environment' || normalized === 'env' || normalized === 'wormhole_env' || normalized === 'environments') {
+          target = 'environment';
       } else {
           target = 'devices';
       }
@@ -3876,24 +3886,28 @@ Thank you for reaching out to Calm Chess Games. `;
       const btnWeapons = document.getElementById('gmSubTabBtnWeapons');
       const btnEnemies = document.getElementById('gmSubTabBtnEnemies');
       const btnPowerups = document.getElementById('gmSubTabBtnPowerups');
+      const btnEnvironment = document.getElementById('gmSubTabBtnEnvironment');
 
       const panelDevices = document.getElementById('gmSubTabPanelDevices');
       const panelStages = document.getElementById('gmSubTabPanelStages');
       const panelWeapons = document.getElementById('gmSubTabPanelWeapons');
       const panelEnemies = document.getElementById('gmSubTabPanelEnemies');
       const panelPowerups = document.getElementById('gmSubTabPanelPowerups');
+      const panelEnvironment = document.getElementById('gmSubTabPanelEnvironment');
 
       if (btnDevices) btnDevices.classList.toggle('active', target === 'devices');
       if (btnStages) btnStages.classList.toggle('active', target === 'stages');
       if (btnWeapons) btnWeapons.classList.toggle('active', target === 'weapons');
       if (btnEnemies) btnEnemies.classList.toggle('active', target === 'enemies');
       if (btnPowerups) btnPowerups.classList.toggle('active', target === 'powerups');
+      if (btnEnvironment) btnEnvironment.classList.toggle('active', target === 'environment');
 
       if (panelDevices) panelDevices.style.display = (target === 'devices') ? 'block' : 'none';
       if (panelStages) panelStages.style.display = (target === 'stages') ? 'block' : 'none';
       if (panelWeapons) panelWeapons.style.display = (target === 'weapons') ? 'block' : 'none';
       if (panelEnemies) panelEnemies.style.display = (target === 'enemies') ? 'block' : 'none';
       if (panelPowerups) panelPowerups.style.display = (target === 'powerups') ? 'block' : 'none';
+      if (panelEnvironment) panelEnvironment.style.display = (target === 'environment') ? 'block' : 'none';
 
       try {
           if (typeof window !== 'undefined' && window.location && window.history && window.history.replaceState) {
@@ -3912,6 +3926,8 @@ Thank you for reaching out to Calm Chess Games. `;
           fetchGameEnemies();
       } else if (target === 'powerups') {
           fetchGamePowerups();
+      } else if (target === 'environment') {
+          fetchGameEnvironments();
       }
   }
 
@@ -4237,6 +4253,81 @@ Thank you for reaching out to Calm Chess Games. `;
   // =========================================================================
   // SUB-TAB 3: WORMHOLE GAME ENEMIES & THREAT REGISTRY
   // =========================================================================
+  function detect3DModelFormat(url) {
+      if (!url) return null;
+      const clean = String(url).trim().split('?')[0].split('#')[0].toLowerCase();
+      if (clean.endsWith('.glb')) {
+          return { format: 'glb', label: 'Binary GLTF', badge: '📦 .GLB', color: '#00f0ff' };
+      }
+      if (clean.endsWith('.gltf')) {
+          return { format: 'gltf', label: 'JSON GLTF', badge: '📄 .GLTF', color: '#10b981' };
+      }
+      if (clean.endsWith('.obj')) {
+          return { format: 'obj', label: 'Wavefront OBJ', badge: '🗿 .OBJ', color: '#ffd700' };
+      }
+      return null;
+  }
+
+  function setEnemyModelPathExample(path) {
+      const urlInput = document.getElementById('enemy3DModelUrlInput');
+      if (urlInput) {
+          urlInput.value = path;
+          updateEnemy3DModelFormatStatus();
+      }
+  }
+
+  function updateEnemy3DModelFormatStatus() {
+      const urlInput = document.getElementById('enemy3DModelUrlInput');
+      const select = document.getElementById('enemy3DModelInput');
+      const badge = document.getElementById('enemy3DModelStatusBadge');
+      if (!urlInput) return;
+
+      const rawUrl = urlInput.value.trim();
+      const detected = detect3DModelFormat(rawUrl);
+
+      if (detected) {
+          if (badge) {
+              badge.textContent = `${detected.badge} (${detected.label})`;
+              badge.style.color = detected.color;
+              badge.style.borderColor = detected.color;
+              badge.style.background = 'rgba(0, 240, 255, 0.15)';
+          }
+          if (select) {
+              const currentVal = select.value;
+              const isProcedural = !currentVal.startsWith('custom');
+              if (isProcedural || currentVal === 'custom') {
+                  const targetOpt = `custom_${detected.format}`;
+                  if (select.querySelector(`option[value="${targetOpt}"]`)) {
+                      select.value = targetOpt;
+                  } else {
+                      select.value = 'custom';
+                  }
+              }
+          }
+      } else if (rawUrl.length > 0) {
+          if (badge) {
+              badge.textContent = '🌐 Custom Asset URL';
+              badge.style.color = '#38bdf8';
+              badge.style.borderColor = '#38bdf8';
+          }
+          if (select && !select.value.startsWith('custom')) {
+              select.value = 'custom';
+          }
+      } else {
+          if (badge) {
+              badge.textContent = 'Procedural / Custom Asset';
+              badge.style.color = '#00f0ff';
+              badge.style.borderColor = '#00f0ff';
+          }
+      }
+  }
+
+  if (typeof window !== 'undefined') {
+      window.setEnemyModelPathExample = setEnemyModelPathExample;
+      window.detect3DModelFormat = detect3DModelFormat;
+      window.updateEnemy3DModelFormatStatus = updateEnemy3DModelFormatStatus;
+  }
+
   async function fetchGameEnemies() {
       const tbody = document.getElementById('adminGameEnemiesBody');
       if (tbody) {
@@ -4302,6 +4393,24 @@ Thank you for reaching out to Calm Chess Games. `;
           'quantum_phaser': '✨ Quantum Phaser Cannon'
       };
       return known[weaponId] || `🔫 ${weaponId}`;
+  }
+
+  function formatEffectLabel(effectKey) {
+      if (!effectKey || effectKey === 'none') return 'None';
+      const effectMap = {
+          'plasma_aura': 'Plasma Aura',
+          'sparks_burst': 'Sparks Burst',
+          'tachyon_trail': 'Tachyon Trail',
+          'quantum_phase_glow': 'Phase Shift',
+          'energy_shield_pulse': 'Shield Pulse',
+          'engine_ion_thrust': 'Ion Thrust',
+          'antimatter_smoke': 'Antimatter Smoke',
+          'arc_lightning': 'Arc Lightning',
+          'strobe_beacon': 'Strobe Beacon',
+          'gravitational_vortex': 'Gravitational Vortex',
+          'photonic_sparkles': 'Photonic Sparkles'
+      };
+      return effectMap[effectKey] || effectKey.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
 
   function renderGameEnemies(enemies) {
@@ -4397,12 +4506,52 @@ Thank you for reaching out to Calm Chess Games. `;
                       </div>
                       ${e.description ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">${escapeHtml(e.description)}</div>` : ''}
                   </td>
-                  <td style="padding: 10px 12px; min-width: 140px;">
-                      <div style="font-weight: bold; font-size: 0.82rem; color: #00f0ff; display: flex; align-items: center; gap: 5px;">
-                          <span>🛸</span>
-                          <span>${model3dLabel}</span>
+                  <td style="padding: 10px 12px; min-width: 155px;">
+                      ${(() => {
+                          const enemyModelUrl = (e.model_3d_url || '').trim();
+                          const detectedModel = detect3DModelFormat(enemyModelUrl);
+                          if (enemyModelUrl) {
+                              const badgeTag = detectedModel
+                                  ? `<span style="background:rgba(0,240,255,0.18);border:1px solid ${detectedModel.color};color:${detectedModel.color};padding:1px 6px;border-radius:4px;font-size:0.7rem;font-weight:bold;">${detectedModel.badge}</span>`
+                                  : `<span style="background:rgba(56,189,248,0.18);border:1px solid #38bdf8;color:#38bdf8;padding:1px 6px;border-radius:4px;font-size:0.7rem;font-weight:bold;">🌐 3D</span>`;
+                              const filename = enemyModelUrl.split('/').pop();
+                              return `
+                                  <div style="font-weight: bold; font-size: 0.82rem; color: #00f0ff; display: flex; align-items: center; gap: 5px;">
+                                      <span>🛸</span>
+                                      <span title="${escapeHtml(enemyModelUrl)}">${escapeHtml(filename)}</span>
+                                  </div>
+                                  <div style="display:flex; align-items:center; gap:5px; margin-top:2px;">
+                                      ${badgeTag}
+                                      <span style="font-size: 0.68rem; color: var(--text-muted); font-family: monospace; overflow:hidden; text-overflow:ellipsis; max-width:140px; white-space:nowrap;" title="${escapeHtml(enemyModelUrl)}">${escapeHtml(enemyModelUrl)}</span>
+                                  </div>
+                              `;
+                          }
+                          return `
+                              <div style="font-weight: bold; font-size: 0.82rem; color: #00f0ff; display: flex; align-items: center; gap: 5px;">
+                                  <span>🛸</span>
+                                  <span>${model3dLabel}</span>
+                              </div>
+                              <div style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">3D Procedural Mesh</div>
+                          `;
+                      })()}
+                  </td>
+                  <td style="padding: 10px 12px; min-width: 150px;">
+                      ${(e.quick_effect_primary && e.quick_effect_primary !== 'none') ? `
+                          <div style="display:inline-flex;align-items:center;gap:4px;font-size:0.75rem;font-weight:bold;color:${e.quick_effect_color || '#00f0ff'};background:rgba(56,189,248,0.12);padding:2px 7px;border-radius:4px;border:1px solid ${e.quick_effect_color || '#38bdf8'};white-space:nowrap;">
+                              <span>✨</span>
+                              <span>${escapeHtml(formatEffectLabel(e.quick_effect_primary))}</span>
+                          </div>
+                      ` : '<span style="color:var(--text-muted);font-size:0.74rem;">None</span>'}
+                      ${(e.quick_effect_secondary && e.quick_effect_secondary !== 'none') ? `
+                          <div style="display:inline-flex;align-items:center;gap:4px;font-size:0.72rem;color:#c084fc;margin-top:3px;white-space:nowrap;">
+                              <span>⚡</span>
+                              <span>${escapeHtml(formatEffectLabel(e.quick_effect_secondary))}</span>
+                          </div>
+                      ` : ''}
+                      <div style="display:inline-flex;align-items:center;gap:4px;font-size:0.7rem;color:${e.destruction_particle_color || '#ff0055'};margin-top:3px;white-space:nowrap;">
+                          <span>💥</span>
+                          <span>${escapeHtml((e.destruction_particle_type || 'procedural_sparks_explosion').replace('procedural_', '').replace(/_/g, ' '))} (${e.destruction_particle_count || 40})</span>
                       </div>
-                      <div style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">3D Procedural Mesh</div>
                   </td>
                   <td style="padding: 10px 12px; min-width: 190px;">
                       <div style="display: flex; gap: 5px; align-items: center; margin-bottom: 2px;">
@@ -4574,6 +4723,16 @@ Thank you for reaching out to Calm Chess Games. `;
       if (document.getElementById('enemyWeaponDamageInput')) document.getElementById('enemyWeaponDamageInput').value = '5';
       if (document.getElementById('enemyWeaponSpeedInput')) document.getElementById('enemyWeaponSpeedInput').value = '450';
       if (document.getElementById('enemyWeaponColorInput')) document.getElementById('enemyWeaponColorInput').value = '#ff0055';
+      if (document.getElementById('enemyEffectPrimaryInput')) document.getElementById('enemyEffectPrimaryInput').value = 'none';
+      if (document.getElementById('enemyEffectSecondaryInput')) document.getElementById('enemyEffectSecondaryInput').value = 'none';
+      if (document.getElementById('enemyEffectColorInput')) document.getElementById('enemyEffectColorInput').value = '#00f0ff';
+      if (document.getElementById('enemyEffectIntensityInput')) document.getElementById('enemyEffectIntensityInput').value = '1.0';
+      if (document.getElementById('enemyEffectSpeedInput')) document.getElementById('enemyEffectSpeedInput').value = '1.0';
+      if (document.getElementById('enemyDestructionParticleTypeInput')) document.getElementById('enemyDestructionParticleTypeInput').value = 'procedural_sparks_explosion';
+      if (document.getElementById('enemyDestructionParticleUrlInput')) document.getElementById('enemyDestructionParticleUrlInput').value = '';
+      if (document.getElementById('enemyDestructionParticleColorInput')) document.getElementById('enemyDestructionParticleColorInput').value = '#ff0055';
+      if (document.getElementById('enemyDestructionParticleCountInput')) document.getElementById('enemyDestructionParticleCountInput').value = '40';
+      if (document.getElementById('enemyDestructionParticleScaleInput')) document.getElementById('enemyDestructionParticleScaleInput').value = '1.0';
       document.getElementById('enemyHitsToDestroyInput').value = '4';
       document.getElementById('enemyArmorStrengthInput').value = '25';
       document.getElementById('enemyHasForceFieldInput').value = '0';
@@ -4588,6 +4747,7 @@ Thank you for reaching out to Calm Chess Games. `;
       populateEnemyPiercingWeaponDropdown();
       document.getElementById('enemyPiercingWeaponInput').value = 'any';
       toggleEnemyShieldCapacityInput();
+      updateEnemy3DModelFormatStatus();
 
       const modal = document.getElementById('editGameEnemyModal');
       if (modal) modal.style.display = 'flex';
@@ -4642,6 +4802,16 @@ Thank you for reaching out to Calm Chess Games. `;
       if (document.getElementById('enemyWeaponDamageInput')) document.getElementById('enemyWeaponDamageInput').value = enemy.weapon_damage || 5;
       if (document.getElementById('enemyWeaponSpeedInput')) document.getElementById('enemyWeaponSpeedInput').value = enemy.weapon_speed || 450;
       if (document.getElementById('enemyWeaponColorInput')) document.getElementById('enemyWeaponColorInput').value = enemy.weapon_color || '#ff0055';
+      if (document.getElementById('enemyEffectPrimaryInput')) document.getElementById('enemyEffectPrimaryInput').value = enemy.quick_effect_primary || 'none';
+      if (document.getElementById('enemyEffectSecondaryInput')) document.getElementById('enemyEffectSecondaryInput').value = enemy.quick_effect_secondary || 'none';
+      if (document.getElementById('enemyEffectColorInput')) document.getElementById('enemyEffectColorInput').value = enemy.quick_effect_color || '#00f0ff';
+      if (document.getElementById('enemyEffectIntensityInput')) document.getElementById('enemyEffectIntensityInput').value = enemy.quick_effect_intensity !== undefined && enemy.quick_effect_intensity !== null ? enemy.quick_effect_intensity : '1.0';
+      if (document.getElementById('enemyEffectSpeedInput')) document.getElementById('enemyEffectSpeedInput').value = enemy.quick_effect_speed !== undefined && enemy.quick_effect_speed !== null ? enemy.quick_effect_speed : '1.0';
+      if (document.getElementById('enemyDestructionParticleTypeInput')) document.getElementById('enemyDestructionParticleTypeInput').value = enemy.destruction_particle_type || 'procedural_sparks_explosion';
+      if (document.getElementById('enemyDestructionParticleUrlInput')) document.getElementById('enemyDestructionParticleUrlInput').value = enemy.destruction_particle_url || '';
+      if (document.getElementById('enemyDestructionParticleColorInput')) document.getElementById('enemyDestructionParticleColorInput').value = enemy.destruction_particle_color || enemy.color_hex || '#ff0055';
+      if (document.getElementById('enemyDestructionParticleCountInput')) document.getElementById('enemyDestructionParticleCountInput').value = enemy.destruction_particle_count || 40;
+      if (document.getElementById('enemyDestructionParticleScaleInput')) document.getElementById('enemyDestructionParticleScaleInput').value = enemy.destruction_particle_scale !== undefined && enemy.destruction_particle_scale !== null ? enemy.destruction_particle_scale : '1.0';
       document.getElementById('enemyHitsToDestroyInput').value = enemy.hits_to_destroy || 2;
       document.getElementById('enemyArmorStrengthInput').value = enemy.armor_strength || 10;
       document.getElementById('enemyHasForceFieldInput').value = parseInt(enemy.has_force_field) === 1 ? '1' : '0';
@@ -4656,6 +4826,7 @@ Thank you for reaching out to Calm Chess Games. `;
       populateEnemyPiercingWeaponDropdown();
       document.getElementById('enemyPiercingWeaponInput').value = enemy.piercing_weapon_id || 'any';
       toggleEnemyShieldCapacityInput();
+      updateEnemy3DModelFormatStatus();
 
       const modal = document.getElementById('editGameEnemyModal');
       if (modal) modal.style.display = 'flex';
@@ -4671,8 +4842,16 @@ Thank you for reaching out to Calm Chess Games. `;
       const code = (document.getElementById('enemyCodeInput').value || '').trim();
       const name = (document.getElementById('enemyNameInput').value || '').trim();
       const enemyClass = (document.getElementById('enemyClassInput').value || 'Scout Drone').trim();
-      const model3dType = (document.getElementById('enemy3DModelInput')?.value || 'scout_drone').trim();
+      let model3dType = (document.getElementById('enemy3DModelInput')?.value || 'scout_drone').trim();
       const model3dUrl = (document.getElementById('enemy3DModelUrlInput')?.value || '').trim();
+
+      // Auto-promote model3dType to custom format if URL is specified (.glb, .obj, .gltf)
+      if (model3dUrl) {
+          const detected = detect3DModelFormat(model3dUrl);
+          if (!model3dType.startsWith('custom')) {
+              model3dType = detected ? `custom_${detected.format}` : 'custom';
+          }
+      }
       const scale = parseFloat(document.getElementById('enemyScaleInput')?.value || 1.0);
       const length = parseFloat(document.getElementById('enemyLengthInput')?.value || 3.0);
       const height = parseFloat(document.getElementById('enemyHeightInput')?.value || 1.5);
@@ -4686,6 +4865,16 @@ Thank you for reaching out to Calm Chess Games. `;
       const weaponDamage = parseInt(document.getElementById('enemyWeaponDamageInput')?.value || 5);
       const weaponSpeed = parseInt(document.getElementById('enemyWeaponSpeedInput')?.value || 450);
       const weaponColor = (document.getElementById('enemyWeaponColorInput')?.value || '#ff0055').trim();
+      const quickEffectPrimary = (document.getElementById('enemyEffectPrimaryInput')?.value || 'none').trim();
+      const quickEffectSecondary = (document.getElementById('enemyEffectSecondaryInput')?.value || 'none').trim();
+      const quickEffectColor = (document.getElementById('enemyEffectColorInput')?.value || '#00f0ff').trim();
+      const quickEffectIntensity = parseFloat(document.getElementById('enemyEffectIntensityInput')?.value || 1.0);
+      const quickEffectSpeed = parseFloat(document.getElementById('enemyEffectSpeedInput')?.value || 1.0);
+      const destType = (document.getElementById('enemyDestructionParticleTypeInput')?.value || 'procedural_sparks_explosion').trim();
+      const destUrl = (document.getElementById('enemyDestructionParticleUrlInput')?.value || '').trim();
+      const destColor = (document.getElementById('enemyDestructionParticleColorInput')?.value || '#ff0055').trim();
+      const destCount = parseInt(document.getElementById('enemyDestructionParticleCountInput')?.value || 40);
+      const destScale = parseFloat(document.getElementById('enemyDestructionParticleScaleInput')?.value || 1.0);
       const hits = parseInt(document.getElementById('enemyHitsToDestroyInput').value || 1);
       const pierce = (document.getElementById('enemyPiercingWeaponInput').value || 'any').trim();
       const armor = parseInt(document.getElementById('enemyArmorStrengthInput').value || 0);
@@ -4727,6 +4916,16 @@ Thank you for reaching out to Calm Chess Games. `;
           weapon_damage: weaponDamage,
           weapon_speed: weaponSpeed,
           weapon_color: weaponColor,
+          quick_effect_primary: quickEffectPrimary,
+          quick_effect_secondary: quickEffectSecondary,
+          quick_effect_color: quickEffectColor,
+          quick_effect_intensity: quickEffectIntensity,
+          quick_effect_speed: quickEffectSpeed,
+          destruction_particle_type: destType,
+          destruction_particle_url: destUrl,
+          destruction_particle_count: destCount,
+          destruction_particle_color: destColor,
+          destruction_particle_scale: destScale,
           hits_to_destroy: hits,
           piercing_weapon_id: pierce,
           armor_strength: armor,
@@ -5316,7 +5515,12 @@ Thank you for reaching out to Calm Chess Games. `;
                       <div style="font-weight: 700; color: #fff; font-size: 0.92rem;">${escapeHtml(p.powerup_name || 'Power Up')}</div>
                       <div style="font-family: monospace; font-size: 0.75rem; color: #fbbf24;">${escapeHtml(p.powerup_id || '')}</div>
                       <div style="display: flex; gap: 4px; align-items: center; margin-top: 2px;">
-                          <span style="color:#00f0ff; font-size:0.7rem; border:1px solid rgba(0,240,255,0.4); padding:1px 6px; border-radius:4px; background:rgba(0,240,255,0.08); font-weight:600;">3D: ${escapeHtml(p.model_3d_type || 'octahedron')}${p.model_3d_url ? ' (GLTF)' : ''}</span>
+                          ${(() => {
+                              const pModelUrl = (p.model_3d_url || '').trim();
+                              const pDetected = detect3DModelFormat(pModelUrl);
+                              const pBadge = pDetected ? pDetected.badge : (pModelUrl ? '🌐 3D' : '');
+                              return `<span style="color:#00f0ff; font-size:0.7rem; border:1px solid rgba(0,240,255,0.4); padding:1px 6px; border-radius:4px; background:rgba(0,240,255,0.08); font-weight:600;">3D: ${escapeHtml(p.model_3d_type || 'octahedron')}${pBadge ? ` (${pBadge})` : ''}</span>`;
+                          })()}
                           <span style="color:var(--text-muted); font-size:0.68rem;">Scale: ${p.scale || '1.0'}</span>
                       </div>
                       ${p.description ? `<div style="font-size: 0.73rem; color: var(--text-muted); margin-top: 3px; max-width: 280px;">${escapeHtml(p.description)}</div>` : ''}
@@ -5539,8 +5743,14 @@ Thank you for reaching out to Calm Chess Games. `;
       const name = (document.getElementById('powerupNameInput')?.value || '').trim();
       const type = (document.getElementById('powerupTypeInput')?.value || 'health').trim();
       const icon = (document.getElementById('powerupIconInput')?.value || '💖').trim();
-      const model3dType = (document.getElementById('powerup3DModelInput')?.value || 'octahedron').trim();
+      let model3dType = (document.getElementById('powerup3DModelInput')?.value || 'octahedron').trim();
       const model3dUrl = (document.getElementById('powerup3DModelUrlInput')?.value || '').trim();
+      if (model3dUrl) {
+          const detected = detect3DModelFormat(model3dUrl);
+          if (!model3dType.startsWith('custom')) {
+              model3dType = detected ? `custom_${detected.format}` : 'custom';
+          }
+      }
       const color = (document.getElementById('powerupColorInput')?.value || '#00ff88').trim();
       const scale = parseFloat(document.getElementById('powerupScaleInput')?.value || 1.0);
       const length = parseFloat(document.getElementById('powerupLengthInput')?.value || 2.5);
@@ -5727,5 +5937,581 @@ Thank you for reaching out to Calm Chess Games. `;
   global.onPowerupTypeChanged = onPowerupTypeChanged;
   global.updatePowerupEventSuggestions = updatePowerupEventSuggestions;
   global.appendPowerupTriggerEvent = appendPowerupTriggerEvent;
+
+  // =========================================================================
+  // SUB-TAB 6: ENVIRONMENT & COSMIC ASSETS MANAGER
+  // =========================================================================
+  function calcEnvCircumference() {
+      const radiusInput = document.getElementById('envEventHorizonRadiusInput');
+      const circInput = document.getElementById('envCircumferenceInput');
+      if (radiusInput && circInput) {
+          const r = parseFloat(radiusInput.value || 7.5);
+          circInput.value = (2 * Math.PI * r).toFixed(2);
+      }
+  }
+
+  function syncEnvImageFolders() {
+      const stageLevel = parseInt(document.getElementById('envStageLevelInput')?.value || 1);
+      const deviceType = (document.getElementById('envDeviceTypeInput')?.value || 'all').toLowerCase();
+      const select = document.getElementById('envImageFolderSelect');
+      if (!select) return;
+
+      let stageSlug = 'event_horizon';
+      if (stageLevel === 1) stageSlug = 'warp_origin';
+      else if (stageLevel === 2) stageSlug = 'event_horizon';
+      else if (stageLevel === 3) stageSlug = 'singularity_core';
+      else if (stageLevel === 4) stageSlug = 'quantum_realm';
+      else if (cachedGameStages && cachedGameStages.length > 0) {
+          const found = cachedGameStages.find(s => parseInt(s.stage_level) === stageLevel);
+          if (found && found.stage_name) {
+              stageSlug = found.stage_name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+          }
+      }
+
+      const devices = (deviceType === 'all') ? ['desktop', 'mobile', 'vr', 'arcore'] : [deviceType];
+      const filenames = ['singularity_corona.png', 'accretion_disk.png', 'event_horizon_glow.png', 'photon_ring.png', 'skybox_panorama.jpg'];
+
+      let html = '<option value="">-- Quick Pick from Stage Folders --</option>';
+      devices.forEach(dev => {
+          const folder = `${dev}/${stageSlug}_images/`;
+          html += `<optgroup label="${dev.toUpperCase()} &bull; ${stageSlug}_images">`;
+          filenames.forEach(fn => {
+              html += `<option value="${folder}${fn}">${folder}${fn}</option>`;
+          });
+          html += `</optgroup>`;
+      });
+
+      select.innerHTML = html;
+  }
+
+  function pickEnvImageFromFolder(val) {
+      if (!val) return;
+      const input = document.getElementById('envImageAssetUrlInput');
+      if (input) input.value = val;
+  }
+
+  async function fetchGameEnvironments() {
+      const tbody = document.getElementById('adminGameEnvironmentsBody');
+      if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="13" style="padding: 16px; text-align: center; color: var(--text-muted);">Querying Cosmic Environment &amp; Wormhole assets...</td></tr>';
+      }
+
+      try {
+          const res = await callAdminWormholeApi('get_game_environments', 'GET');
+          cachedGameEnvironments = (res && res.environments) ? res.environments : [];
+
+          // Update metrics
+          const metricTotal = document.getElementById('metricTotalEnvironments');
+          const metricWormholes = document.getElementById('metricWormholesCount');
+          const metricImageAssets = document.getElementById('metricImageAssetsCount');
+          const metricQuickEffects = document.getElementById('metricQuickEffectsCount');
+
+          if (metricTotal) metricTotal.textContent = cachedGameEnvironments.length;
+          if (metricWormholes) {
+              metricWormholes.textContent = cachedGameEnvironments.filter(e => (e.category || e.env_category) === 'wormhole_singularity').length;
+          }
+          if (metricImageAssets) {
+              metricImageAssets.textContent = cachedGameEnvironments.filter(e => e.image_asset_url && e.image_asset_url.trim().length > 0).length;
+          }
+          if (metricQuickEffects) {
+              metricQuickEffects.textContent = cachedGameEnvironments.filter(e => 
+                  (e.quick_effect_primary && e.quick_effect_primary !== 'none') || 
+                  (e.quick_effect_secondary && e.quick_effect_secondary !== 'none')
+              ).length;
+          }
+
+          populateCloneEnvironmentDropdown();
+          filterGameEnvironments();
+      } catch (err) {
+          console.error('[Admin] Fetch environments error:', err);
+          if (tbody) {
+              tbody.innerHTML = `<tr><td colspan="13" style="padding: 16px; text-align: center; color: #ff6b6b;">Failed to load environments: ${escapeHtml(err.message)}</td></tr>`;
+          }
+      }
+  }
+
+  function renderGameEnvironments(environments) {
+      const tbody = document.getElementById('adminGameEnvironmentsBody');
+      if (!tbody) return;
+
+      if (!environments || environments.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="13" style="padding: 16px; text-align: center; color: var(--text-muted);">No environment assets found matching the criteria. Click "+ Add Environment Asset" or "🌱 Reset Default Environments".</td></tr>';
+          return;
+      }
+
+      tbody.innerHTML = environments.map(e => {
+          const category = e.category || e.env_category || 'wormhole_singularity';
+          let catIcon = '🌀';
+          let catLabel = 'Wormhole Singularity';
+          if (category === 'accretion_disk') { catIcon = '💫'; catLabel = 'Accretion Disk'; }
+          else if (category === 'photon_ring') { catIcon = '✨'; catLabel = 'Photon Ring'; }
+          else if (category === 'particle_vortex') { catIcon = '🌪️'; catLabel = 'Particle Vortex'; }
+          else if (category === 'celestial_skybox') { catIcon = '🌌'; catLabel = 'Celestial Skybox'; }
+          else if (category === 'nebula_cloud') { catIcon = '☁️'; catLabel = 'Cosmic Nebula'; }
+          else if (category === 'custom_gltf') { catIcon = '🛸'; catLabel = 'Custom GLTF'; }
+
+          // Device target badge
+          const devType = (e.device_type || 'all').toLowerCase();
+          let devBadge = '<span style="background:rgba(255,215,0,0.18);border:1px solid #ffd700;color:#ffd700;padding:2px 7px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">🌐 Universal</span>';
+          if (devType === 'desktop') devBadge = '<span style="background:rgba(56,189,248,0.18);border:1px solid #38bdf8;color:#38bdf8;padding:2px 7px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">💻 Desktop</span>';
+          else if (devType === 'mobile') devBadge = '<span style="background:rgba(239,68,111,0.18);border:1px solid #ef476f;color:#ff4d6d;padding:2px 7px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">📱 Mobile</span>';
+          else if (devType === 'vr') devBadge = '<span style="background:rgba(168,85,247,0.18);border:1px solid #a855f7;color:#c084fc;padding:2px 7px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">🥽 VR Headset</span>';
+          else if (devType === 'arcore') devBadge = '<span style="background:rgba(16,185,129,0.18);border:1px solid #10b981;color:#10b981;padding:2px 7px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">📱 ARCore</span>';
+
+          const stageLevel = parseInt(e.stage_level || 1);
+          const stageBadge = stageLevel === 0
+              ? '<span style="background:rgba(255,215,0,0.15);border:1px solid #ffd700;color:#ffd700;padding:2px 8px;border-radius:5px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">🌐 Universal</span>'
+              : `<span class="stage-badge-box" style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;font-size:0.78rem;background:rgba(0,240,255,0.15);border:1px solid #00f0ff;border-radius:5px;color:#00f0ff;font-weight:bold;white-space:nowrap;">🗺️ Stage ${stageLevel}</span>`;
+
+          const imageUrl = (e.image_asset_url || '').trim();
+          const imageType = (e.image_asset_type || 'corona_sprite').replace(/_/g, ' ');
+
+          const isEnabled = parseInt(e.is_enabled) === 1;
+          const statusBtn = isEnabled
+              ? `<button onclick="toggleEnvironmentStatus(${e.id}, 1)" class="admin-tab-btn" style="background:rgba(16,185,129,0.18);border-color:#10b981;color:#10b981;font-size:0.75rem;padding:3px 8px;cursor:pointer;">Active</button>`
+              : `<button onclick="toggleEnvironmentStatus(${e.id}, 0)" class="admin-tab-btn" style="background:rgba(255,255,255,0.06);border-color:#475569;color:var(--text-muted);font-size:0.75rem;padding:3px 8px;cursor:pointer;">Disabled</button>`;
+
+          return `
+              <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.15s ease;">
+                  <td style="padding: 10px 14px; text-align: center;">
+                      <span style="display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:8px;background:rgba(56,189,248,0.15);border:1.5px solid rgba(56,189,248,0.4);font-size:1.4rem;">
+                          ${catIcon}
+                      </span>
+                  </td>
+                  <td style="padding: 10px 12px;">
+                      <div style="font-weight: bold; color: #fff; font-size: 0.92rem;">${escapeHtml(e.env_name || e.env_id)}</div>
+                      <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+                          <span style="font-size: 0.73rem; color: #38bdf8; font-family: monospace;">${escapeHtml(e.env_code || e.env_id)}</span>
+                          <span style="font-size: 0.7rem; color: var(--text-muted); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px;">ID: ${e.id}</span>
+                      </div>
+                      ${e.description ? `<div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px; max-width: 260px;">${escapeHtml(e.description)}</div>` : ''}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <span style="background:rgba(192,132,252,0.15);border:1px solid #c084fc;color:#c084fc;padding:2px 7px;border-radius:4px;font-size:0.75rem;font-weight:bold;white-space:nowrap;">
+                          ${catIcon} ${catLabel}
+                      </span>
+                  </td>
+                  <td style="padding: 10px 12px; min-width: 170px;">
+                      ${imageUrl ? `
+                          <div style="display:flex;align-items:center;gap:6px;">
+                              <img src="${escapeHtml(imageUrl)}" alt="Asset" style="width:28px;height:28px;border-radius:4px;border:1px solid #38bdf8;object-fit:cover;background:#000;" onerror="this.style.display='none'">
+                              <div style="overflow:hidden;">
+                                  <div style="font-size:0.75rem;font-weight:bold;color:#10b981;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;" title="${escapeHtml(imageUrl)}">
+                                      ${escapeHtml(imageUrl.split('/').pop())}
+                                  </div>
+                                  <div style="font-size:0.68rem;color:var(--text-muted);text-transform:capitalize;">${escapeHtml(imageType)}</div>
+                              </div>
+                          </div>
+                      ` : '<span style="color:var(--text-muted);font-size:0.75rem;">— Procedural / None —</span>'}
+                  </td>
+                  <td style="padding: 10px 12px; min-width: 150px;">
+                      <div style="font-size: 0.8rem; font-weight: bold; color: #00f0ff;">${escapeHtml((e.model_3d_type || 'procedural_wormhole').replace(/_/g, ' '))}</div>
+                      ${e.model_3d_url ? `<div style="font-size: 0.7rem; color: #fbbf24; font-family: monospace; overflow: hidden; text-overflow: ellipsis; max-width: 130px;" title="${escapeHtml(e.model_3d_url)}">GLTF: ${escapeHtml(e.model_3d_url.split('/').pop())}</div>` : ''}
+                  </td>
+                  <td style="padding: 10px 12px; min-width: 190px;">
+                      <div style="display: flex; gap: 5px; align-items: center; margin-bottom: 2px;">
+                          <span style="background: rgba(245,158,11,0.2); border: 1px solid #f59e0b; color: #fbbf24; font-weight: bold; font-size: 0.74rem; padding: 1px 6px; border-radius: 4px;">Scale: ${parseFloat(e.scale || 1.0).toFixed(2)}x</span>
+                          <span style="font-size: 0.72rem; color: #00f0ff; font-family: monospace;">Horizon: ${parseFloat(e.event_horizon_radius || 7.5).toFixed(1)}m</span>
+                      </div>
+                      <div style="font-size: 0.7rem; color: var(--text-muted); font-family: monospace;">
+                          Disk: ${parseFloat(e.accretion_disk_radius || 38.0).toFixed(1)}m &bull; C: ${parseFloat(e.circumference || 47.12).toFixed(1)}m
+                      </div>
+                  </td>
+                  <td style="padding: 10px 14px; text-align: center;">
+                      ${stageBadge}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      ${devBadge}
+                  </td>
+                  <td style="padding: 10px 12px; min-width: 160px;">
+                      <div style="display: flex; gap: 5px; align-items: center; flex-wrap: wrap;">
+                          <span title="Primary: ${e.color_primary || '#00f0ff'}" style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${e.color_primary || '#00f0ff'};border:1px solid #fff;"></span>
+                          <span title="Edge: ${e.color_edge || '#003366'}" style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${e.color_edge || '#003366'};border:1px solid #fff;"></span>
+                          <span title="Core: ${e.color_core || '#00f0ff'}" style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${e.color_core || '#00f0ff'};border:1px solid #fff;"></span>
+                          <span title="Hot: ${e.color_hot || '#d6ffff'}" style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${e.color_hot || '#d6ffff'};border:1px solid #fff;"></span>
+                          <span title="Halo: ${e.color_halo || '#00f0ff'}" style="display:inline-block;width:14px;height:14px;border-radius:3px;background:${e.color_halo || '#00f0ff'};border:1px solid #fff;"></span>
+                      </div>
+                      <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 2px;">Edge &bull; Core &bull; Hot &bull; Halo</div>
+                  </td>
+                  <td style="padding: 10px 12px; min-width: 170px;">
+                      ${(e.quick_effect_primary && e.quick_effect_primary !== 'none') ? `
+                          <div style="display:inline-flex;align-items:center;gap:4px;font-size:0.74rem;font-weight:bold;color:${e.quick_effect_color || '#38bdf8'};background:rgba(56,189,248,0.12);padding:2px 6px;border-radius:4px;border:1px solid ${e.quick_effect_color || '#38bdf8'};white-space:nowrap;">
+                              <span>✨</span>
+                              <span>${escapeHtml(formatEffectLabel(e.quick_effect_primary))}</span>
+                          </div>
+                      ` : '<span style="color:var(--text-muted);font-size:0.74rem;">None</span>'}
+                      ${(e.quick_effect_secondary && e.quick_effect_secondary !== 'none') ? `
+                          <div style="display:inline-flex;align-items:center;gap:4px;font-size:0.71rem;color:#c084fc;margin-top:2px;white-space:nowrap;">
+                              <span>⚡</span>
+                              <span>${escapeHtml(formatEffectLabel(e.quick_effect_secondary))}</span>
+                          </div>
+                      ` : ''}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <div style="font-size: 0.82rem; font-weight: bold; color: #00f0ff;">⚡ ${parseFloat(e.rotation_speed || 0.65).toFixed(2)} rad/s</div>
+                      <div style="font-size: 0.7rem; color: #10b981;">🌪️ ${parseInt(e.particle_count || 4500).toLocaleString()} pts</div>
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      ${statusBtn}
+                  </td>
+                  <td style="padding: 10px 12px; text-align: center;">
+                      <div style="display: flex; gap: 6px; justify-content: center;">
+                          <button onclick="openEditGameEnvironmentModal(${e.id})" class="admin-tab-btn" style="padding: 4px 10px; font-size: 0.78rem; background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #38bdf8; cursor: pointer;">✏️ Edit</button>
+                          <button onclick="cloneGameEnvironment(${e.id})" class="admin-tab-btn" style="padding: 4px 8px; font-size: 0.78rem; background: rgba(255,215,0,0.15); border-color: #ffd700; color: #ffd700; cursor: pointer;" title="Clone environment asset">📋 Clone</button>
+                          <button onclick="deleteGameEnvironment(${e.id}, '${escapeHtml(e.env_name || e.env_id)}')" class="admin-tab-btn" style="padding: 4px 8px; font-size: 0.78rem; background: rgba(239,68,111,0.15); border-color: #ef476f; color: #ef476f; cursor: pointer;" title="Delete environment">🗑️</button>
+                      </div>
+                  </td>
+              </tr>
+          `;
+      }).join('');
+  }
+
+  function filterGameEnvironments() {
+      const q = (document.getElementById('gameEnvironmentSearchInput')?.value || '').toLowerCase().trim();
+      const devFilter = (document.getElementById('gameEnvironmentDeviceFilter')?.value || 'all').toLowerCase();
+      const stageFilter = document.getElementById('gameEnvironmentStageFilter')?.value || 'all';
+      const catFilter = document.getElementById('gameEnvironmentCategoryFilter')?.value || 'all';
+
+      const filtered = cachedGameEnvironments.filter(e => {
+          if (stageFilter !== 'all' && String(e.stage_level) !== String(stageFilter)) {
+              return false;
+          }
+          if (devFilter !== 'all') {
+              const envDev = (e.device_type || 'all').toLowerCase();
+              if (envDev !== devFilter && envDev !== 'all') return false;
+          }
+          if (catFilter !== 'all') {
+              const cat = (e.category || e.env_category || 'wormhole_singularity').toLowerCase();
+              if (cat !== catFilter.toLowerCase()) return false;
+          }
+          if (!q) return true;
+          return (e.env_name && e.env_name.toLowerCase().includes(q)) ||
+                 (e.env_code && e.env_code.toLowerCase().includes(q)) ||
+                 (e.env_id && e.env_id.toLowerCase().includes(q)) ||
+                 (e.image_asset_url && e.image_asset_url.toLowerCase().includes(q)) ||
+                 (e.model_3d_type && e.model_3d_type.toLowerCase().includes(q)) ||
+                 (e.quick_effect_primary && e.quick_effect_primary.toLowerCase().includes(q)) ||
+                 (e.description && e.description.toLowerCase().includes(q));
+      });
+
+      renderGameEnvironments(filtered);
+  }
+
+  function populateCloneEnvironmentDropdown() {
+      const select = document.getElementById('cloneEnvironmentSelect');
+      if (!select) return;
+
+      let html = '<option value="">-- Select Asset to Clone --</option>';
+      if (cachedGameEnvironments && cachedGameEnvironments.length > 0) {
+          html += cachedGameEnvironments.map(e => {
+              const dev = (e.device_type || 'all').toUpperCase();
+              return `<option value="${e.id}">🪐 ${escapeHtml(e.env_name || e.env_id)} (${escapeHtml(e.env_code || e.env_id)} &bull; ${dev} &bull; Stage ${e.stage_level})</option>`;
+          }).join('');
+      }
+      select.innerHTML = html;
+  }
+
+  function openAddGameEnvironmentModal() {
+      const title = document.getElementById('envModalTitle');
+      if (title) title.innerHTML = '<span>🪐 Create New Environment &amp; Wormhole Asset</span>';
+
+      document.getElementById('envRecordId').value = '0';
+      document.getElementById('envCodeInput').value = '';
+      document.getElementById('envCodeInput').disabled = false;
+      document.getElementById('envNameInput').value = '';
+      document.getElementById('envCategoryInput').value = 'wormhole_singularity';
+      document.getElementById('envStageLevelInput').value = '1';
+      document.getElementById('envDeviceTypeInput').value = 'all';
+      document.getElementById('envIsEnabledInput').value = '1';
+      document.getElementById('envImageAssetUrlInput').value = '';
+      document.getElementById('envImageAssetTypeInput').value = 'corona_sprite';
+      document.getElementById('env3DModelTypeInput').value = 'procedural_wormhole';
+      document.getElementById('env3DModelUrlInput').value = '';
+      document.getElementById('envScaleInput').value = '1.00';
+      document.getElementById('envEventHorizonRadiusInput').value = '7.50';
+      document.getElementById('envAccretionDiskRadiusInput').value = '38.00';
+      document.getElementById('envLengthInput').value = '300.00';
+      document.getElementById('envHeightInput').value = '80.00';
+      document.getElementById('envDepthInput').value = '300.00';
+      document.getElementById('envCircumferenceInput').value = '47.12';
+      document.getElementById('envColorPrimaryInput').value = '#00f0ff';
+      document.getElementById('envColorEdgeInput').value = '#003366';
+      document.getElementById('envColorCoreInput').value = '#00f0ff';
+      document.getElementById('envColorHotInput').value = '#d6ffff';
+      document.getElementById('envColorHaloInput').value = '#00f0ff';
+      document.getElementById('envAmbientLightInput').value = '#002233';
+      document.getElementById('envCenterLightInput').value = '#00f0ff';
+      document.getElementById('envRotationSpeedInput').value = '0.65';
+      document.getElementById('envDistortionInput').value = '1.00';
+      document.getElementById('envParticleCountInput').value = '4500';
+      document.getElementById('envEffectPrimaryInput').value = 'plasma_aura';
+      document.getElementById('envEffectSecondaryInput').value = 'sparks_burst';
+      document.getElementById('envEffectColorInput').value = '#00f0ff';
+      document.getElementById('envEffectIntensityInput').value = '1.0';
+      document.getElementById('envEffectSpeedInput').value = '1.0';
+      document.getElementById('envDescriptionInput').value = '';
+
+      syncEnvImageFolders();
+
+      const modal = document.getElementById('editGameEnvironmentModal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function openEditGameEnvironmentModal(id) {
+      const env = cachedGameEnvironments.find(e => parseInt(e.id) === parseInt(id));
+      if (!env) {
+          alert('Environment asset not found in cache');
+          return;
+      }
+
+      const title = document.getElementById('envModalTitle');
+      if (title) title.innerHTML = `<span>🪐 Edit Cosmic Environment: ${escapeHtml(env.env_name || env.env_id)}</span>`;
+
+      document.getElementById('envRecordId').value = env.id;
+      document.getElementById('envCodeInput').value = env.env_code || env.env_id || '';
+      document.getElementById('envCodeInput').disabled = false;
+      document.getElementById('envNameInput').value = env.env_name || '';
+      document.getElementById('envCategoryInput').value = env.category || env.env_category || 'wormhole_singularity';
+      document.getElementById('envStageLevelInput').value = env.stage_level !== undefined ? env.stage_level : 1;
+      document.getElementById('envDeviceTypeInput').value = env.device_type || 'all';
+      document.getElementById('envIsEnabledInput').value = parseInt(env.is_enabled) === 0 ? '0' : '1';
+      document.getElementById('envImageAssetUrlInput').value = env.image_asset_url || '';
+      document.getElementById('envImageAssetTypeInput').value = env.image_asset_type || 'corona_sprite';
+      document.getElementById('env3DModelTypeInput').value = env.model_3d_type || 'procedural_wormhole';
+      document.getElementById('env3DModelUrlInput').value = env.model_3d_url || '';
+      document.getElementById('envScaleInput').value = env.scale !== undefined ? env.scale : '1.00';
+      document.getElementById('envEventHorizonRadiusInput').value = env.event_horizon_radius !== undefined ? env.event_horizon_radius : '7.50';
+      document.getElementById('envAccretionDiskRadiusInput').value = env.accretion_disk_radius !== undefined ? env.accretion_disk_radius : '38.00';
+      document.getElementById('envLengthInput').value = env.length !== undefined ? env.length : '300.00';
+      document.getElementById('envHeightInput').value = env.height !== undefined ? env.height : '80.00';
+      document.getElementById('envDepthInput').value = env.depth !== undefined ? env.depth : '300.00';
+      document.getElementById('envCircumferenceInput').value = env.circumference !== undefined ? env.circumference : '47.12';
+      document.getElementById('envColorPrimaryInput').value = env.color_primary || '#00f0ff';
+      document.getElementById('envColorEdgeInput').value = env.color_edge || '#003366';
+      document.getElementById('envColorCoreInput').value = env.color_core || '#00f0ff';
+      document.getElementById('envColorHotInput').value = env.color_hot || '#d6ffff';
+      document.getElementById('envColorHaloInput').value = env.color_halo || '#00f0ff';
+      document.getElementById('envAmbientLightInput').value = env.ambient_light_color || env.ambient_light || '#002233';
+      document.getElementById('envCenterLightInput').value = env.center_light_color || env.center_light || '#00f0ff';
+      document.getElementById('envRotationSpeedInput').value = env.rotation_speed !== undefined ? env.rotation_speed : '0.65';
+      document.getElementById('envDistortionInput').value = env.gravitational_distortion !== undefined ? env.gravitational_distortion : (env.distortion_intensity !== undefined ? env.distortion_intensity : '1.00');
+      document.getElementById('envParticleCountInput').value = env.particle_count !== undefined ? env.particle_count : 4500;
+      document.getElementById('envEffectPrimaryInput').value = env.quick_effect_primary || 'plasma_aura';
+      document.getElementById('envEffectSecondaryInput').value = env.quick_effect_secondary || 'sparks_burst';
+      document.getElementById('envEffectColorInput').value = env.quick_effect_color || '#00f0ff';
+      document.getElementById('envEffectIntensityInput').value = env.quick_effect_intensity !== undefined ? env.quick_effect_intensity : '1.0';
+      document.getElementById('envEffectSpeedInput').value = env.quick_effect_speed !== undefined ? env.quick_effect_speed : '1.0';
+      document.getElementById('envDescriptionInput').value = env.description || '';
+
+      syncEnvImageFolders();
+
+      const modal = document.getElementById('editGameEnvironmentModal');
+      if (modal) modal.style.display = 'flex';
+  }
+
+  function closeEditGameEnvironmentModal() {
+      const modal = document.getElementById('editGameEnvironmentModal');
+      if (modal) modal.style.display = 'none';
+  }
+
+  async function saveGameEnvironment() {
+      const id = parseInt(document.getElementById('envRecordId').value || 0);
+      const code = (document.getElementById('envCodeInput').value || '').trim();
+      const name = (document.getElementById('envNameInput').value || '').trim();
+      const category = (document.getElementById('envCategoryInput')?.value || 'wormhole_singularity').trim();
+      const stageLevel = parseInt(document.getElementById('envStageLevelInput')?.value || 1);
+      const deviceType = (document.getElementById('envDeviceTypeInput')?.value || 'all').trim().toLowerCase();
+      const isEnabled = parseInt(document.getElementById('envIsEnabledInput')?.value || 1);
+      const imageAssetUrl = (document.getElementById('envImageAssetUrlInput')?.value || '').trim();
+      const imageAssetType = (document.getElementById('envImageAssetTypeInput')?.value || 'corona_sprite').trim();
+      let model3dType = (document.getElementById('env3DModelTypeInput')?.value || 'procedural_wormhole').trim();
+      const model3dUrl = (document.getElementById('env3DModelUrlInput')?.value || '').trim();
+      if (model3dUrl) {
+          const detected = detect3DModelFormat(model3dUrl);
+          if (!model3dType.startsWith('custom')) {
+              model3dType = detected ? `custom_${detected.format}` : 'custom';
+          }
+      }
+      const scale = parseFloat(document.getElementById('envScaleInput')?.value || 1.0);
+      const horizonRadius = parseFloat(document.getElementById('envEventHorizonRadiusInput')?.value || 7.5);
+      const diskRadius = parseFloat(document.getElementById('envAccretionDiskRadiusInput')?.value || 38.0);
+      const length = parseFloat(document.getElementById('envLengthInput')?.value || 300.0);
+      const height = parseFloat(document.getElementById('envHeightInput')?.value || 80.0);
+      const depth = parseFloat(document.getElementById('envDepthInput')?.value || 300.0);
+      const circumference = parseFloat(document.getElementById('envCircumferenceInput')?.value || 47.12);
+      const colorPrimary = (document.getElementById('envColorPrimaryInput')?.value || '#00f0ff').trim();
+      const colorEdge = (document.getElementById('envColorEdgeInput')?.value || '#003366').trim();
+      const colorCore = (document.getElementById('envColorCoreInput')?.value || '#00f0ff').trim();
+      const colorHot = (document.getElementById('envColorHotInput')?.value || '#d6ffff').trim();
+      const colorHalo = (document.getElementById('envColorHaloInput')?.value || '#00f0ff').trim();
+      const ambientLight = (document.getElementById('envAmbientLightInput')?.value || '#002233').trim();
+      const centerLight = (document.getElementById('envCenterLightInput')?.value || '#00f0ff').trim();
+      const rotationSpeed = parseFloat(document.getElementById('envRotationSpeedInput')?.value || 0.65);
+      const distortion = parseFloat(document.getElementById('envDistortionInput')?.value || 1.0);
+      const particleCount = parseInt(document.getElementById('envParticleCountInput')?.value || 4500);
+      const quickEffectPrimary = (document.getElementById('envEffectPrimaryInput')?.value || 'none').trim();
+      const quickEffectSecondary = (document.getElementById('envEffectSecondaryInput')?.value || 'none').trim();
+      const quickEffectColor = (document.getElementById('envEffectColorInput')?.value || '#00f0ff').trim();
+      const quickEffectIntensity = parseFloat(document.getElementById('envEffectIntensityInput')?.value || 1.0);
+      const quickEffectSpeed = parseFloat(document.getElementById('envEffectSpeedInput')?.value || 1.0);
+      const description = (document.getElementById('envDescriptionInput')?.value || '').trim();
+
+      if (!code || !name) {
+          alert('Asset Identifier Code and Display Name are required!');
+          return;
+      }
+
+      const payload = {
+          id: id,
+          env_id: code,
+          env_code: code,
+          env_name: name,
+          env_category: category,
+          category: category,
+          stage_level: stageLevel,
+          device_type: deviceType,
+          is_enabled: isEnabled,
+          image_asset_url: imageAssetUrl,
+          image_asset_type: imageAssetType,
+          model_3d_type: model3dType,
+          model_3d_url: model3dUrl,
+          scale: scale,
+          event_horizon_radius: horizonRadius,
+          accretion_disk_radius: diskRadius,
+          length: length,
+          height: height,
+          depth: depth,
+          circumference: circumference,
+          color_primary: colorPrimary,
+          color_edge: colorEdge,
+          color_core: colorCore,
+          color_hot: colorHot,
+          color_halo: colorHalo,
+          ambient_light: ambientLight,
+          center_light: centerLight,
+          rotation_speed: rotationSpeed,
+          gravitational_distortion: distortion,
+          distortion_intensity: distortion,
+          particle_count: particleCount,
+          quick_effect_primary: quickEffectPrimary,
+          quick_effect_secondary: quickEffectSecondary,
+          quick_effect_color: quickEffectColor,
+          quick_effect_intensity: quickEffectIntensity,
+          quick_effect_speed: quickEffectSpeed,
+          description: description
+      };
+
+      try {
+          const res = await callAdminWormholeApi('save_game_environment', 'POST', payload);
+          alert(res.message || 'Environment asset saved successfully!');
+          closeEditGameEnvironmentModal();
+          fetchGameEnvironments();
+      } catch (err) {
+          console.error('[Admin] Save environment error:', err);
+          alert('Failed to save environment asset: ' + err.message);
+      }
+  }
+
+  async function deleteGameEnvironment(id, name) {
+      if (!confirm(`Are you sure you want to delete environment asset '${name}'?`)) {
+          return;
+      }
+
+      try {
+          const res = await callAdminWormholeApi('delete_game_environment', 'POST', { id: id });
+          alert(res.message || 'Environment asset deleted successfully');
+          fetchGameEnvironments();
+      } catch (err) {
+          console.error('[Admin] Delete environment error:', err);
+          alert('Failed to delete environment asset: ' + err.message);
+      }
+  }
+
+  async function toggleEnvironmentStatus(id, currentStatus) {
+      try {
+          await callAdminWormholeApi('save_game_environment', 'POST', { id: id, is_enabled: currentStatus ? 0 : 1 });
+          fetchGameEnvironments();
+      } catch (err) {
+          console.error('[Admin] Toggle environment status error:', err);
+          alert('Failed to toggle status: ' + err.message);
+      }
+  }
+
+  async function seedDefaultGameEnvironments() {
+      if (!confirm('Re-seed / Reset default environment stages (Warp Origin, Event Horizon, Singularity Core, Quantum Realm)?')) {
+          return;
+      }
+
+      try {
+          const res = await callAdminWormholeApi('seed_default_game_environments', 'POST', {});
+          alert(res.message || 'Default environments successfully reset!');
+          fetchGameEnvironments();
+      } catch (err) {
+          console.error('[Admin] Seed environments error:', err);
+          alert('Failed to seed default environments: ' + err.message);
+      }
+  }
+
+  async function cloneSelectedGameEnvironment() {
+      const select = document.getElementById('cloneEnvironmentSelect');
+      const selectedId = select ? select.value : '';
+      if (!selectedId) {
+          alert('Please select an environment asset from the dropdown to clone.');
+          if (select) select.focus();
+          return;
+      }
+      await cloneGameEnvironment(selectedId);
+  }
+
+  async function cloneGameEnvironment(id) {
+      const source = cachedGameEnvironments.find(e => parseInt(e.id) === parseInt(id));
+      if (!source) {
+          alert('Source environment asset not found');
+          return;
+      }
+
+      const devFilter = document.getElementById('gameEnvironmentDeviceFilter')?.value || 'all';
+      const targetDev = (devFilter !== 'all') ? devFilter : (source.device_type || 'all');
+      const newCode = `${source.env_code || source.env_id || 'env'}_${targetDev}_copy`;
+      const newName = `${source.env_name || 'Environment'} (Clone)`;
+
+      const payload = {
+          id: id,
+          new_code: newCode,
+          new_name: newName,
+          device_type: targetDev
+      };
+
+      try {
+          const res = await callAdminWormholeApi('clone_game_environment', 'POST', payload);
+          alert(res.message || 'Environment cloned successfully!');
+          await fetchGameEnvironments();
+          const newId = parseInt(res.id || (res.data && res.data.id) || 0);
+          if (newId > 0) {
+              openEditGameEnvironmentModal(newId);
+          }
+      } catch (err) {
+          console.error('[Admin] Clone environment error:', err);
+          alert('Failed to clone environment: ' + err.message);
+      }
+  }
+
+  // Export Environment Manager to global
+  global.calcEnvCircumference = calcEnvCircumference;
+  global.syncEnvImageFolders = syncEnvImageFolders;
+  global.pickEnvImageFromFolder = pickEnvImageFromFolder;
+  global.fetchGameEnvironments = fetchGameEnvironments;
+  global.renderGameEnvironments = renderGameEnvironments;
+  global.filterGameEnvironments = filterGameEnvironments;
+  global.openAddGameEnvironmentModal = openAddGameEnvironmentModal;
+  global.openEditGameEnvironmentModal = openEditGameEnvironmentModal;
+  global.closeEditGameEnvironmentModal = closeEditGameEnvironmentModal;
+  global.saveGameEnvironment = saveGameEnvironment;
+  global.deleteGameEnvironment = deleteGameEnvironment;
+  global.toggleEnvironmentStatus = toggleEnvironmentStatus;
+  global.seedDefaultGameEnvironments = seedDefaultGameEnvironments;
+  global.populateCloneEnvironmentDropdown = populateCloneEnvironmentDropdown;
+  global.cloneSelectedGameEnvironment = cloneSelectedGameEnvironment;
+  global.cloneGameEnvironment = cloneGameEnvironment;
 
 })(window);

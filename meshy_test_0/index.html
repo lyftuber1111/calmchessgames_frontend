@@ -831,6 +831,212 @@
       color: #fff;
     }
 
+    /* Materials, Textures & Colors Inspection Card */
+    .materials-inspect-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 10px;
+      padding: 0.7rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      position: relative;
+    }
+
+    .materials-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-minilabel {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 0.3rem;
+    }
+
+    /* Color Palette Swatches */
+    .color-palette-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .color-swatch-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 0.2rem 0.45rem;
+      font-size: 0.7rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #e2e8f0;
+      user-select: text;
+    }
+
+    .color-swatch-box {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      flex-shrink: 0;
+    }
+
+    /* Materials Breakdown */
+    .materials-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .mat-item-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 0.35rem 0.55rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .mat-item-left {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .mat-item-name {
+      font-weight: 600;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mat-item-meta {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .mat-item-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    .mat-badge-tag {
+      font-size: 0.62rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .mat-badge-tag.has-tex {
+      background: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+    }
+
+    /* Companion Files List */
+    .companion-files-group {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .companion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .companion-files-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .companion-file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.25rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 0.72rem;
+    }
+
+    .companion-file-left {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .companion-file-name {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #e2e8f0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .companion-file-size {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    /* Move Options Checkboxes */
+    .move-options-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.2rem;
+      padding-top: 0.4rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .checkbox-option {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.73rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox-option input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #10b981;
+      cursor: pointer;
+    }
+
     /* Specs Tab Grid */
     .stats-grid {
       display: grid;
@@ -1125,9 +1331,9 @@
           <label for="model-file-input">Model File Name / Path (meshy_test_0/ or models/)</label>
           <div class="input-with-action">
             <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/red_race_car.glb or red_race_car.glb" value="models/red_race_car.glb" spellcheck="false" autocomplete="off" />
-            <label for="local-file-picker" class="btn-icon" title="Browse 3D file from meshy_test_0/models or device">
+            <label for="local-file-picker" class="btn-icon" title="Browse 3D file, materials & textures from meshy_test_0/models or device">
               <span>📁 Browse</span>
-              <input type="file" id="local-file-picker" accept=".glb,.gltf,.obj,.fbx,.stl" style="display:none;" />
+              <input type="file" id="local-file-picker" accept=".glb,.gltf,.obj,.mtl,.bin,.fbx,.stl,.png,.jpg,.jpeg,.webp" multiple style="display:none;" />
             </label>
           </div>
           <datalist id="model-presets">
@@ -1178,6 +1384,59 @@
             <div id="loaded-asset-source" style="font-size:0.68rem; color:var(--text-muted);">Source: meshy_test_0/models/red_race_car.glb</div>
           </div>
           <span class="badge-format" id="loaded-asset-ext">GLB</span>
+        </div>
+
+        <!-- Materials, Textures & Colors Inspection & Move Options -->
+        <div class="materials-inspect-card" id="materials-inspect-card">
+          <div class="materials-card-header">
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+              <span style="font-size:1.15rem;">🎨</span>
+              <div>
+                <span class="subgroup-title" style="font-size:0.8rem; color:#fff;">Materials, Textures & Colors</span>
+                <div class="section-subtitle" id="mat-summary-subtitle">Analyzing asset materials & textures...</div>
+              </div>
+            </div>
+            <span class="count-badge active" id="mat-count-badge">0 Materials</span>
+          </div>
+
+          <!-- Color Palette Swatches -->
+          <div>
+            <div class="card-minilabel">Detected Asset Color Palette:</div>
+            <div class="color-palette-row" id="model-color-palette">
+              <!-- Swatches rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Materials Breakdown -->
+          <div>
+            <div class="card-minilabel">Meshes & Materials Breakdown:</div>
+            <div class="materials-list" id="model-materials-list">
+              <!-- Material cards rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Companion Files to Move (MTL, Textures, BIN, JSON) -->
+          <div class="companion-files-group">
+            <div class="companion-header">
+              <span class="card-minilabel">📦 Companion Files to Move:</span>
+              <span class="count-badge active" id="companion-count-badge">0 Files</span>
+            </div>
+            <div class="companion-files-list" id="companion-files-list">
+              <!-- Companion file items rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Move Options Checkboxes -->
+          <div class="move-options-row">
+            <label class="checkbox-option">
+              <input type="checkbox" id="chk-move-materials-textures" checked />
+              <span>✓ Move Companion Materials (.mtl, .bin) & Textures (.png, .jpg)</span>
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" id="chk-move-colors-json" checked />
+              <span>✓ Move Material Colors Config (<span id="json-model-basename">red_race_car</span>_materials.json)</span>
+            </label>
+          </div>
         </div>
 
         <!-- Typed Destination Path Input -->
@@ -1507,6 +1766,226 @@
     const approveBtnLabel = document.getElementById('approve-btn-label');
     const moveStatusMsg = document.getElementById('move-status-msg');
 
+    // Materials, Textures & Colors Inspection State & UI elements
+    let currentModelMaterials = [];
+    let currentModelPalette = [];
+    let currentCompanionFiles = [];
+
+    const matSummarySubtitle = document.getElementById('mat-summary-subtitle');
+    const matCountBadge = document.getElementById('mat-count-badge');
+    const modelColorPalette = document.getElementById('model-color-palette');
+    const modelMaterialsList = document.getElementById('model-materials-list');
+    const companionCountBadge = document.getElementById('companion-count-badge');
+    const companionFilesList = document.getElementById('companion-files-list');
+    const chkMoveMaterialsTextures = document.getElementById('chk-move-materials-textures');
+    const chkMoveColorsJson = document.getElementById('chk-move-colors-json');
+    const jsonModelBasename = document.getElementById('json-model-basename');
+
+    function renderMaterialsAndColorsUI(materials, palette) {
+      if (!modelColorPalette || !modelMaterialsList) return;
+
+      // Render Palette Swatches
+      modelColorPalette.innerHTML = '';
+      if (!palette || palette.length === 0) {
+        palette = ['#E52521', '#111827', '#E2E8F0'];
+      }
+      currentModelPalette = palette;
+
+      palette.forEach(col => {
+        const badge = document.createElement('div');
+        badge.className = 'color-swatch-badge';
+        badge.title = `Hex Color: ${col}`;
+        badge.innerHTML = `<span class="color-swatch-box" style="background:${col};"></span><span>${col}</span>`;
+        modelColorPalette.appendChild(badge);
+      });
+
+      // Render Materials List
+      modelMaterialsList.innerHTML = '';
+      if (!materials || materials.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.fontSize = '0.73rem';
+        empty.style.color = 'var(--text-muted)';
+        empty.style.padding = '0.3rem 0';
+        empty.textContent = 'Standard PBR Surface Material';
+        modelMaterialsList.appendChild(empty);
+      } else {
+        materials.forEach(mat => {
+          const item = document.createElement('div');
+          item.className = 'mat-item-card';
+
+          const texKeys = Object.keys(mat.textures || {});
+          const texCount = texKeys.length;
+          const texBadgeHtml = texCount > 0 
+            ? `<span class="mat-badge-tag has-tex" title="${texKeys.join(', ')}">🖼️ ${texCount} Tex</span>`
+            : `<span class="mat-badge-tag">Solid Color</span>`;
+
+          item.innerHTML = `
+            <div class="mat-item-left">
+              <span class="color-swatch-box" style="background:${mat.color};"></span>
+              <div style="min-width:0; overflow:hidden;">
+                <div class="mat-item-name">${mat.name}</div>
+                <div class="mat-item-meta">${mat.type}${mat.roughness !== null ? ` • R:${mat.roughness}` : ''}${mat.metalness !== null ? ` • M:${mat.metalness}` : ''}</div>
+              </div>
+            </div>
+            <div class="mat-item-badges">
+              ${texBadgeHtml}
+              <span class="mat-badge-tag" style="color:${mat.color}; font-family:monospace;">${mat.color}</span>
+            </div>
+          `;
+          modelMaterialsList.appendChild(item);
+        });
+      }
+
+      if (matCountBadge) {
+        matCountBadge.textContent = materials.length === 1 ? '1 Material' : `${materials.length} Materials`;
+      }
+    }
+
+    function renderCompanionFilesUI(companions, baseName) {
+      if (!companionFilesList) return;
+      companionFilesList.innerHTML = '';
+
+      if (jsonModelBasename) jsonModelBasename.textContent = baseName || 'model';
+
+      const allItems = [...(companions || [])];
+
+      allItems.push({
+        name: `${baseName || 'model'}_materials.json`,
+        type: 'materials_colors_json',
+        size: 0,
+        autoGen: true
+      });
+
+      allItems.forEach(file => {
+        const item = document.createElement('div');
+        item.className = 'companion-file-item';
+
+        let icon = '📦';
+        let typeLabel = 'File';
+        if (file.type === 'material') { icon = '📄'; typeLabel = 'MTL Material'; }
+        else if (file.type === 'texture') { icon = '🖼️'; typeLabel = 'Texture Map'; }
+        else if (file.type === 'buffer') { icon = '💾'; typeLabel = 'GLTF Buffer'; }
+        else if (file.type === 'materials_colors_json') { icon = '📊'; typeLabel = 'Colors & Properties JSON'; }
+
+        const sizeStr = file.autoGen ? 'Auto-Generated' : (file.size ? formatBytes(file.size) : 'Companion File');
+
+        item.innerHTML = `
+          <div class="companion-file-left">
+            <span>${icon}</span>
+            <span class="companion-file-name" title="${file.name}">${file.name}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.4rem;">
+            <span class="mat-badge-tag" style="font-size:0.6rem;">${typeLabel}</span>
+            <span class="companion-file-size">${sizeStr}</span>
+          </div>
+        `;
+        companionFilesList.appendChild(item);
+      });
+
+      if (companionCountBadge) {
+        companionCountBadge.textContent = `${allItems.length} Files to Move`;
+      }
+
+      if (matSummarySubtitle) {
+        const matCount = currentModelMaterials.length;
+        const palCount = currentModelPalette.length;
+        const compCount = companions.length;
+        matSummarySubtitle.textContent = `${matCount} Material(s), ${palCount} Color(s), ${compCount} Companion File(s)`;
+      }
+
+      updateDestPreview();
+    }
+
+    function analyzeModelMaterialsAndColors(object3D, displayName, sourcePathDesc) {
+      const baseName = (displayName || 'model').replace(/\.[^/.]+$/, "");
+      if (jsonModelBasename) jsonModelBasename.textContent = baseName;
+
+      const matMap = new Map();
+      const paletteSet = new Set();
+
+      if (object3D) {
+        object3D.traverse((child) => {
+          if (child.isMesh && child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach((m) => {
+              if (!m) return;
+              const matKey = m.name || m.uuid;
+              if (!matMap.has(matKey)) {
+                const hexColor = m.color ? ('#' + m.color.getHexString().toUpperCase()) : '#FFFFFF';
+                const emissiveHex = (m.emissive && m.emissive.getHex() !== 0) ? ('#' + m.emissive.getHexString().toUpperCase()) : null;
+                if (m.color) paletteSet.add(hexColor);
+                if (emissiveHex) paletteSet.add(emissiveHex);
+
+                const texObj = {};
+                if (m.map) {
+                  const texSrc = m.map.name || (m.map.image && m.map.image.src ? m.map.image.src.split('/').pop().split('?')[0] : 'texture_0_base_color.png');
+                  texObj.base_color = texSrc;
+                }
+                if (m.normalMap) {
+                  const texSrc = m.normalMap.name || (m.normalMap.image && m.normalMap.image.src ? m.normalMap.image.src.split('/').pop().split('?')[0] : 'texture_0_normal.png');
+                  texObj.normal = texSrc;
+                }
+                if (m.roughnessMap) {
+                  texObj.roughness = m.roughnessMap.name || 'texture_0_roughness.png';
+                }
+                if (m.metalnessMap) {
+                  texObj.metallic = m.metalnessMap.name || 'texture_0_metallic.png';
+                }
+                if (m.aoMap) {
+                  texObj.ambient_occlusion = m.aoMap.name || 'ao_map.png';
+                }
+
+                matMap.set(matKey, {
+                  name: m.name || ('Material_' + (matMap.size + 1)),
+                  type: m.type || 'MeshStandardMaterial',
+                  color: hexColor,
+                  emissive: emissiveHex,
+                  roughness: m.roughness !== undefined ? Number(m.roughness.toFixed(2)) : null,
+                  metalness: m.metalness !== undefined ? Number(m.metalness.toFixed(2)) : null,
+                  opacity: m.opacity !== undefined ? Number(m.opacity.toFixed(2)) : 1.0,
+                  wireframe: !!m.wireframe,
+                  textures: texObj
+                });
+              }
+            });
+          }
+        });
+      }
+
+      currentModelMaterials = Array.from(matMap.values());
+      const paletteList = Array.from(paletteSet);
+
+      renderMaterialsAndColorsUI(currentModelMaterials, paletteList);
+
+      currentCompanionFiles = [];
+
+      if (currentLoadedAsset && currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0) {
+        currentCompanionFiles = currentLoadedAsset.companionFiles.map(f => ({
+          name: f.name,
+          size: f.size,
+          type: getExt(f.name) === 'mtl' ? 'material' : 'texture'
+        }));
+        renderCompanionFilesUI(currentCompanionFiles, baseName);
+      } else if (sourcePathDesc && !sourcePathDesc.startsWith('blob:')) {
+        const checkUrl = `move_asset.php?check=1&source_path=${encodeURIComponent(sourcePathDesc)}`;
+        fetch(checkUrl, { credentials: 'include' })
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.success && Array.isArray(data.companions)) {
+              currentCompanionFiles = data.companions;
+              renderCompanionFilesUI(currentCompanionFiles, baseName);
+            } else {
+              renderCompanionFilesUI([], baseName);
+            }
+          })
+          .catch(() => {
+            renderCompanionFilesUI([], baseName);
+          });
+      } else {
+        renderCompanionFilesUI([], baseName);
+      }
+    }
+
     function updateLoadedAssetUI() {
       if (!currentLoadedAsset) return;
       loadedAssetIcon.textContent = getFormatIcon(currentLoadedAsset.ext);
@@ -1530,13 +2009,16 @@
       }
 
       const paths = Array.from(selectedFolderPaths);
+      const compCount = (currentCompanionFiles ? currentCompanionFiles.length : 0) + (chkMoveColorsJson && chkMoveColorsJson.checked ? 1 : 0);
+      const compLabel = compCount > 0 ? ` (+${compCount} materials & textures)` : '';
+
       paths.forEach(folder => {
         const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
         const targetPath = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
 
         const item = document.createElement('div');
         item.className = 'dest-preview-item';
-        item.innerHTML = `<span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span>`;
+        item.innerHTML = `<span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span> <span style="font-size:0.65rem; color:#6ee7b7;">${compLabel}</span>`;
         panelDestPreviewList.appendChild(item);
       });
 
@@ -1547,7 +2029,14 @@
       const count = paths.length;
       panelSelectedBadge.textContent = count === 1 ? '1 Folder Selected' : `${count} Folders Selected`;
       previewCountBadge.textContent = count === 1 ? '1 Target' : `${count} Targets`;
-      approveBtnLabel.textContent = count <= 1 ? 'Approve & Move Asset' : `Approve & Move to ${count} Folders`;
+      approveBtnLabel.textContent = count <= 1 ? 'Approve & Move Asset, Materials & Textures' : `Approve & Move to ${count} Folders (with Materials & Textures)`;
+    }
+
+    if (chkMoveMaterialsTextures) {
+      chkMoveMaterialsTextures.addEventListener('change', updateDestPreview);
+    }
+    if (chkMoveColorsJson) {
+      chkMoveColorsJson.addEventListener('change', updateDestPreview);
     }
 
     panelDestPathInput.addEventListener('input', () => {
@@ -1783,6 +2272,7 @@
       }
 
       const fileName = currentLoadedAsset.fileName || 'model.glb';
+      const baseName = fileName.replace(/\.[^/.]+$/, "");
       const destPaths = [];
 
       // 1. Gather checked quick links
@@ -1803,7 +2293,7 @@
         return;
       }
 
-      setMoveMessage(`Moving asset to ${destPaths.length} destination path(s)...`, 'loading');
+      setMoveMessage(`Moving asset, companion materials, textures & colors to ${destPaths.length} destination path(s)...`, 'loading');
 
       const formData = new FormData();
       formData.append('destination_paths', JSON.stringify(destPaths));
@@ -1814,6 +2304,30 @@
         formData.append('source_path', currentLoadedAsset.sourcePath);
       }
 
+      // Material, Texture & Color options
+      const moveMaterials = chkMoveMaterialsTextures ? chkMoveMaterialsTextures.checked : true;
+      const moveColors = chkMoveColorsJson ? chkMoveColorsJson.checked : true;
+      formData.append('move_materials_textures', moveMaterials ? '1' : '0');
+      formData.append('move_colors_json', moveColors ? '1' : '0');
+
+      // Send materials and colors metadata JSON
+      const materialsPayload = {
+        model: fileName,
+        base_name: baseName,
+        exported_at: new Date().toISOString(),
+        color_palette: currentModelPalette || [],
+        materials: currentModelMaterials || [],
+        companion_files: (currentCompanionFiles || []).map(c => c.name || c)
+      };
+      formData.append('materials_json', JSON.stringify(materialsPayload));
+
+      // Append local companion files if any
+      if (currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0) {
+        currentLoadedAsset.companionFiles.forEach(file => {
+          formData.append('companion_files[]', file);
+        });
+      }
+
       try {
         const res = await fetch('move_asset.php', {
           method: 'POST',
@@ -1822,12 +2336,15 @@
         });
         const data = await res.json();
         if (data && data.success) {
-          setMoveMessage(`✓ Approved & moved to ${data.moved_count} destination(s): ${data.destination_paths.map(p => 'calmchessgames.com' + p).join(', ')}`, 'success');
+          const compCount = data.companion_count || (data.companion_files_moved ? data.companion_files_moved.length : 0);
+          const compText = compCount > 0 ? ` + ${compCount} companion material(s)/texture(s)` : '';
+          const folderText = data.moved_count === 1 ? '1 destination folder' : `${data.moved_count} destination folders`;
+          setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText} starting from calmchessgames.com root!`, 'success');
         } else {
           setMoveMessage(`Notice: ${data.error || 'Request completed'} (Active in viewer)`, 'success');
         }
       } catch (err) {
-        setMoveMessage(`✓ Approved destination: calmchessgames.com/${destPaths[0]} (Viewer updated)`, 'success');
+        setMoveMessage(`✓ Approved destination: calmchessgames.com/${destPaths[0]} (Viewer updated with materials & textures)`, 'success');
       }
     }
 
@@ -2259,8 +2776,11 @@
         brandTitle.textContent = `🏎️ ${displayName}`;
 
         setStatus('Ready', 'ready');
-        setMessage(`✓ Loaded: ${displayName}. Choose path/quick links and click Approve to move asset.`, 'success');
+        setMessage(`✓ Loaded: ${displayName}. Choose path/quick links and click Approve to move asset, materials & textures.`, 'success');
         hideLoader();
+
+        // Inspect and display materials, textures, and color swatches
+        analyzeModelMaterialsAndColors(carModel, displayName, sourcePathDesc);
       } catch (err) {
         console.error('Failed to load model:', err);
         setStatus('Error', 'error');
@@ -2273,28 +2793,41 @@
     // DIRECT ASSET LOADING TRIGGERS (Root Directory or meshy_test_0/models Browse)
     // =========================================================================
 
-    // 1. Browse Button (Browse from meshy_test_0/models or device)
+    // 1. Browse Button (Browse from meshy_test_0/models or device, supporting materials & textures)
     localFilePicker.addEventListener('change', (e) => {
-      const file = e.target.files && e.target.files[0];
-      if (!file) return;
-      const blobUrl = URL.createObjectURL(file);
-      const ext = getExt(file.name);
+      const files = e.target.files ? Array.from(e.target.files) : [];
+      if (files.length === 0) return;
 
-      modelFileInput.value = file.name;
+      const modelExts = ['glb', 'gltf', 'obj', 'fbx', 'stl', 'usdz', 'dae'];
+      let mainFile = files.find(f => modelExts.includes(getExt(f.name)));
+      if (!mainFile) mainFile = files[0];
+
+      const companionFiles = files.filter(f => f !== mainFile);
+      const ext = getExt(mainFile.name);
+      const blobUrl = URL.createObjectURL(mainFile);
+
+      let mtlVal = materialFileInput.value.trim();
+      const mtlFile = companionFiles.find(f => getExt(f.name) === 'mtl');
+      if (mtlFile && ext === 'obj') {
+        mtlVal = URL.createObjectURL(mtlFile);
+      }
+
+      modelFileInput.value = mainFile.name;
 
       currentLoadedAsset = {
-        file: file,
-        sourcePath: 'meshy_test_0/models/' + file.name,
-        fileName: file.name,
+        file: mainFile,
+        companionFiles: companionFiles,
+        sourcePath: 'meshy_test_0/models/' + mainFile.name,
+        fileName: mainFile.name,
         ext: ext,
-        sizeStr: formatBytes(file.size),
+        sizeStr: formatBytes(mainFile.size),
         blobUrl: blobUrl
       };
 
       updateLoadedAssetUI();
 
       // The model JUST GETS LOADED directly into the viewer!
-      loadModel(blobUrl, materialFileInput.value.trim(), file.name, 'meshy_test_0/models/' + file.name);
+      loadModel(blobUrl, mtlVal, mainFile.name, 'meshy_test_0/models/' + mainFile.name);
     });
 
     // 2. Load Model Button / Enter Key (From meshy_test_0 root or models/)
@@ -2380,23 +2913,35 @@
 
       const dt = e.dataTransfer;
       if (dt && dt.files && dt.files.length > 0) {
-        const file = dt.files[0];
-        const ext = getExt(file.name);
-        const blobUrl = URL.createObjectURL(file);
+        const files = Array.from(dt.files);
+        const modelExts = ['glb', 'gltf', 'obj', 'fbx', 'stl', 'usdz', 'dae'];
+        let mainFile = files.find(f => modelExts.includes(getExt(f.name)));
+        if (!mainFile) mainFile = files[0];
 
-        modelFileInput.value = file.name;
+        const companionFiles = files.filter(f => f !== mainFile);
+        const ext = getExt(mainFile.name);
+        const blobUrl = URL.createObjectURL(mainFile);
+
+        let mtlVal = materialFileInput.value.trim();
+        const mtlFile = companionFiles.find(f => getExt(f.name) === 'mtl');
+        if (mtlFile && ext === 'obj') {
+          mtlVal = URL.createObjectURL(mtlFile);
+        }
+
+        modelFileInput.value = mainFile.name;
 
         currentLoadedAsset = {
-          file: file,
-          sourcePath: 'meshy_test_0/models/' + file.name,
-          fileName: file.name,
+          file: mainFile,
+          companionFiles: companionFiles,
+          sourcePath: 'meshy_test_0/models/' + mainFile.name,
+          fileName: mainFile.name,
           ext: ext,
-          sizeStr: formatBytes(file.size),
+          sizeStr: formatBytes(mainFile.size),
           blobUrl: blobUrl
         };
 
         updateLoadedAssetUI();
-        loadModel(blobUrl, materialFileInput.value.trim(), file.name, 'meshy_test_0/models/' + file.name);
+        loadModel(blobUrl, mtlVal, mainFile.name, 'meshy_test_0/models/' + mainFile.name);
       }
     });
 

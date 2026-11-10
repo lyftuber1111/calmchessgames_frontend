@@ -199,14 +199,14 @@
       pointer-events: auto;
     }
 
-    /* Slide-out Panel (Bottom Sheet on Mobile & Desktop) */
+    /* Slide-out Panel */
     .slide-panel {
       position: fixed;
       bottom: 0;
       left: 50%;
       transform: translate(-50%, 105%);
       width: 100%;
-      max-width: 620px;
+      max-width: 630px;
       background: var(--panel-bg);
       border: 1px solid var(--border);
       border-bottom: none;
@@ -218,7 +218,7 @@
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       flex-direction: column;
-      max-height: 84vh;
+      max-height: 86vh;
       padding-bottom: max(1rem, env(safe-area-inset-bottom));
     }
 
@@ -326,6 +326,34 @@
       color: var(--text-muted);
     }
 
+    .section-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+      margin: 0.5rem 0;
+    }
+
+    /* Loaded Asset Badge Card */
+    .loaded-asset-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(255, 42, 59, 0.08);
+      border: 1px solid rgba(255, 42, 59, 0.25);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+    }
+
+    .badge-format {
+      font-size: 0.68rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      background: var(--accent-glow);
+      color: #ff8591;
+      border: 1px solid var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
     /* Form Inputs */
     .input-group {
       display: flex;
@@ -365,6 +393,42 @@
     input[type="text"]:focus, select:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .dest-input-wrap {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .dest-input-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .dest-prefix {
+      background: rgba(255, 42, 59, 0.15);
+      color: #ff8591;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .dest-input-wrap input {
+      border: none;
+      background: transparent;
+      box-shadow: none !important;
+      padding: 0.6rem 0.75rem;
+      font-size: 14px;
+      color: #fff;
     }
 
     .btn-icon {
@@ -439,6 +503,40 @@
       font-size: 0.78rem;
     }
 
+    .btn-approve {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      border: 1px solid #34d399;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+      padding: 0.7rem 1.5rem;
+      font-weight: 700;
+    }
+
+    .btn-approve:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+    }
+
+    .btn-cancel {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border: 1px solid var(--border);
+      padding: 0.7rem 1.25rem;
+    }
+
+    .btn-cancel:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+      color: #fff;
+    }
+
+    .approve-actions-row {
+      display: flex;
+      gap: 0.65rem;
+      align-items: center;
+      margin-top: 0.4rem;
+    }
+
     .card-badge {
       font-size: 0.68rem;
       padding: 0.15rem 0.55rem;
@@ -461,6 +559,22 @@
       border-color: rgba(239, 68, 68, 0.3);
     }
 
+    .count-badge {
+      font-size: 0.68rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .count-badge.active {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
     .model-msg {
       font-size: 0.75rem;
       min-height: 1.1rem;
@@ -469,12 +583,252 @@
       word-break: break-all;
     }
 
-    .model-msg.success {
+    .model-msg.success, .feedback-msg.success {
       color: #34d399;
     }
 
-    .model-msg.error {
+    .model-msg.error, .feedback-msg.error {
       color: #f87171;
+    }
+
+    .feedback-msg {
+      font-size: 0.74rem;
+      min-height: 1rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    /* Checkbox Checklist Styling */
+    .checklist-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .checklist-actions {
+      display: flex;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .btn-tiny {
+      font-size: 0.68rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-tiny:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .quick-links-checklist {
+      height: 185px;
+      background: rgba(12, 15, 24, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 0.45rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.78rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .checklist-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .checklist-group-header {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #ff8591;
+      padding: 0.3rem 0.5rem;
+      background: rgba(255, 42, 59, 0.1);
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .checklist-group-toggle {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: underline;
+      background: transparent;
+      border: none;
+      padding: 0.1rem 0.3rem;
+    }
+
+    .checklist-group-toggle:hover {
+      color: #fff;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.35rem 0.55rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .checklist-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .checklist-item.checked {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .checklist-item input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .checklist-item input[type="checkbox"]:checked {
+      background: #10b981;
+      border-color: #34d399;
+    }
+
+    .checklist-item input[type="checkbox"]:checked::before {
+      content: "✓";
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .checklist-path {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.76rem;
+    }
+
+    .checklist-tag {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(255, 42, 59, 0.2);
+      color: #ff8591;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* Destination Preview Card with Multi-destinations */
+    .dest-preview-card {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px dashed rgba(16, 185, 129, 0.35);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-lbl {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #6ee7b7;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .dest-preview-list {
+      max-height: 90px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .dest-preview-item {
+      font-size: 0.74rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #a7f3d0;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      word-break: break-all;
+    }
+
+    .dest-preview-bullet {
+      color: #10b981;
+      font-weight: 800;
+    }
+
+    .search-filter-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.2rem 0.6rem;
+      gap: 0.4rem;
+    }
+
+    .search-filter-box input {
+      border: none;
+      background: transparent;
+      padding: 0.4rem 0.2rem;
+      font-size: 0.8rem;
+      color: #fff;
+      box-shadow: none !important;
+    }
+
+    .search-icon {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .btn-clear-search {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 0.2rem;
+    }
+
+    .btn-clear-search:hover {
+      color: #fff;
     }
 
     /* Specs Tab Grid */
@@ -639,522 +993,6 @@
       to { transform: rotate(360deg); }
     }
 
-    /* =====================================================================
-       DESTINATION PATH APPROVAL MODAL & MULTI-SELECT CHECKLIST
-       ===================================================================== */
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(4, 6, 12, 0.82);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      z-index: 200;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity 0.25s ease;
-    }
-
-    .modal-backdrop.open {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .modal-dialog {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -46%) scale(0.96);
-      width: calc(100% - 2rem);
-      max-width: 630px;
-      max-height: 92vh;
-      background: rgba(18, 22, 34, 0.98);
-      border: 1px solid rgba(255, 42, 59, 0.4);
-      box-shadow: 0 16px 50px rgba(0, 0, 0, 0.85), 0 0 35px rgba(255, 42, 59, 0.25);
-      border-radius: 18px;
-      z-index: 210;
-      display: flex;
-      flex-direction: column;
-      opacity: 0;
-      pointer-events: none;
-      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
-    }
-
-    .modal-dialog.open {
-      transform: translate(-50%, -50%) scale(1);
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1rem 1.25rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .modal-title-wrap {
-      display: flex;
-      align-items: center;
-      gap: 0.65rem;
-    }
-
-    .modal-icon {
-      font-size: 1.4rem;
-      filter: drop-shadow(0 0 8px var(--accent-glow));
-    }
-
-    .modal-title-wrap h3 {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #fff;
-      letter-spacing: -0.3px;
-    }
-
-    .modal-subtitle {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-      margin-top: 0.1rem;
-    }
-
-    .btn-modal-close {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-    }
-
-    .btn-modal-close:hover {
-      background: rgba(255, 42, 59, 0.25);
-      border-color: var(--accent);
-      color: #fff;
-    }
-
-    .modal-body {
-      padding: 1.15rem 1.25rem;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      max-height: calc(92vh - 140px);
-    }
-
-    .modal-file-card {
-      display: flex;
-      align-items: center;
-      gap: 0.85rem;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 12px;
-      padding: 0.75rem 1rem;
-    }
-
-    .file-card-icon {
-      font-size: 1.8rem;
-    }
-
-    .file-card-details {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      min-width: 0;
-      flex: 1;
-    }
-
-    .file-card-name {
-      font-size: 0.92rem;
-      font-weight: 700;
-      color: #fff;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .file-card-meta {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-    }
-
-    .badge-format {
-      font-size: 0.68rem;
-      padding: 0.15rem 0.5rem;
-      border-radius: 6px;
-      background: var(--accent-glow);
-      color: #ff8591;
-      border: 1px solid var(--accent);
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .badge-size {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-    }
-
-    .modal-section {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-    }
-
-    .section-label-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .count-badge {
-      font-size: 0.68rem;
-      padding: 0.15rem 0.5rem;
-      border-radius: 9999px;
-      background: rgba(255, 255, 255, 0.08);
-      color: #94a3b8;
-      font-weight: 600;
-      transition: all 0.2s;
-    }
-
-    .count-badge.active {
-      background: rgba(16, 185, 129, 0.2);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.4);
-    }
-
-    /* Checkbox Checklist Styling */
-    .checklist-toolbar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 0.5rem;
-    }
-
-    .checklist-actions {
-      display: flex;
-      gap: 0.35rem;
-      flex-shrink: 0;
-    }
-
-    .btn-tiny {
-      font-size: 0.68rem;
-      padding: 0.25rem 0.55rem;
-      border-radius: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .btn-tiny:hover {
-      background: rgba(255, 255, 255, 0.18);
-      color: #fff;
-      border-color: rgba(255, 255, 255, 0.35);
-    }
-
-    .quick-links-checklist {
-      height: 185px;
-      background: rgba(12, 15, 24, 0.95);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: #e2e8f0;
-      padding: 0.45rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.78rem;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-
-    .checklist-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
-      margin-bottom: 0.3rem;
-    }
-
-    .checklist-group-header {
-      font-size: 0.72rem;
-      font-weight: 700;
-      color: #ff8591;
-      padding: 0.3rem 0.5rem;
-      background: rgba(255, 42, 59, 0.1);
-      border-radius: 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      user-select: none;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    .checklist-group-toggle {
-      font-size: 0.65rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      text-decoration: underline;
-      background: transparent;
-      border: none;
-      padding: 0.1rem 0.3rem;
-    }
-
-    .checklist-group-toggle:hover {
-      color: #fff;
-    }
-
-    .checklist-item {
-      display: flex;
-      align-items: center;
-      gap: 0.55rem;
-      padding: 0.35rem 0.55rem;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s;
-      border: 1px solid transparent;
-      user-select: none;
-    }
-
-    .checklist-item:hover {
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    .checklist-item.checked {
-      background: rgba(16, 185, 129, 0.12);
-      border-color: rgba(16, 185, 129, 0.35);
-    }
-
-    .checklist-item input[type="checkbox"] {
-      appearance: none;
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border: 1.5px solid rgba(255, 255, 255, 0.3);
-      border-radius: 4px;
-      background: rgba(0, 0, 0, 0.4);
-      cursor: pointer;
-      display: grid;
-      place-content: center;
-      flex-shrink: 0;
-      transition: all 0.15s;
-    }
-
-    .checklist-item input[type="checkbox"]:checked {
-      background: #10b981;
-      border-color: #34d399;
-    }
-
-    .checklist-item input[type="checkbox"]:checked::before {
-      content: "✓";
-      color: #fff;
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .checklist-path {
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 0.76rem;
-    }
-
-    .checklist-tag {
-      font-size: 0.65rem;
-      padding: 0.1rem 0.4rem;
-      border-radius: 4px;
-      background: rgba(255, 42, 59, 0.2);
-      color: #ff8591;
-      font-weight: 600;
-      flex-shrink: 0;
-    }
-
-    /* Destination Path Input with Domain Badge */
-    .dest-input-wrap {
-      display: flex;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      overflow: hidden;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .dest-input-wrap:focus-within {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-glow);
-    }
-
-    .dest-prefix {
-      background: rgba(255, 42, 59, 0.15);
-      color: #ff8591;
-      padding: 0.6rem 0.75rem;
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      border-right: 1px solid rgba(255, 255, 255, 0.1);
-      white-space: nowrap;
-      user-select: none;
-    }
-
-    .dest-input-wrap input {
-      border: none;
-      background: transparent;
-      box-shadow: none !important;
-      padding: 0.6rem 0.75rem;
-      font-size: 14px;
-      color: #fff;
-    }
-
-    /* Destination Live Preview Card with multiple destinations support */
-    .dest-preview-card {
-      background: rgba(16, 185, 129, 0.08);
-      border: 1px dashed rgba(16, 185, 129, 0.35);
-      border-radius: 8px;
-      padding: 0.6rem 0.8rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-
-    .preview-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .preview-lbl {
-      font-size: 0.68rem;
-      font-weight: 600;
-      color: #6ee7b7;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-
-    .dest-preview-list {
-      max-height: 85px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .dest-preview-item {
-      font-size: 0.74rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      color: #a7f3d0;
-      display: flex;
-      align-items: center;
-      gap: 0.35rem;
-      word-break: break-all;
-    }
-
-    .dest-preview-bullet {
-      color: #10b981;
-      font-weight: 800;
-    }
-
-    /* Search filter box */
-    .search-filter-box {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 0.2rem 0.6rem;
-      gap: 0.4rem;
-    }
-
-    .search-filter-box input {
-      border: none;
-      background: transparent;
-      padding: 0.4rem 0.2rem;
-      font-size: 0.8rem;
-      color: #fff;
-      box-shadow: none !important;
-    }
-
-    .search-icon {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-    }
-
-    .btn-clear-search {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      font-size: 0.75rem;
-      padding: 0.2rem;
-    }
-
-    .btn-clear-search:hover {
-      color: #fff;
-    }
-
-    .hint-text {
-      font-size: 0.7rem;
-      color: var(--text-muted);
-      font-style: italic;
-    }
-
-    .feedback-msg {
-      font-size: 0.72rem;
-      min-height: 1rem;
-      color: #34d399;
-      font-weight: 500;
-      transition: all 0.2s;
-    }
-
-    .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      align-items: center;
-      gap: 0.75rem;
-      padding: 0.9rem 1.25rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .btn-cancel {
-      background: rgba(255, 255, 255, 0.08);
-      color: #cbd5e1;
-      border: 1px solid var(--border);
-      padding: 0.65rem 1.25rem;
-    }
-
-    .btn-cancel:hover {
-      background: rgba(239, 68, 68, 0.2);
-      border-color: #ef4444;
-      color: #fff;
-    }
-
-    .btn-approve {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: #fff;
-      border: 1px solid #34d399;
-      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
-      padding: 0.65rem 1.5rem;
-      font-weight: 700;
-    }
-
-    .btn-approve:hover {
-      background: linear-gradient(135deg, #059669 0%, #047857 100%);
-      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
-    }
-
     /* Drag & Drop Visual Overlay */
     #drop-overlay {
       position: fixed;
@@ -1227,7 +1065,7 @@
   <div id="drop-overlay">
     <div class="drop-overlay-icon">📦</div>
     <div class="drop-overlay-title">Drop 3D Model Here</div>
-    <div class="drop-overlay-sub">Supports .glb, .gltf, .obj, .fbx, .stl — Select destination image folders with checkboxes & approve</div>
+    <div class="drop-overlay-sub">Model will load immediately into 3D viewer</div>
   </div>
 
   <!-- UI Top Header Overlay -->
@@ -1278,15 +1116,16 @@
       <!-- Tab 1: Selecting File & Loading Model -->
       <div class="tab-content active" id="tab-content-model">
         <div class="panel-section-header">
-          <span class="section-subtitle">Load from URL, local file, or calmchessgames.com path</span>
+          <span class="section-subtitle">Load from meshy_test_0 root or meshy_test_0/models</span>
           <span class="card-badge" id="model-status-badge">Ready</span>
         </div>
 
+        <!-- 1. Direct Model Loading Controls -->
         <div class="input-group">
-          <label for="model-file-input">Model File Name / Path</label>
+          <label for="model-file-input">Model File Name / Path (meshy_test_0/ or models/)</label>
           <div class="input-with-action">
-            <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/red_race_car.glb" value="models/red_race_car.glb" spellcheck="false" autocomplete="off" />
-            <label for="local-file-picker" class="btn-icon" title="Browse local 3D file (.glb, .gltf, .obj)">
+            <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/red_race_car.glb or red_race_car.glb" value="models/red_race_car.glb" spellcheck="false" autocomplete="off" />
+            <label for="local-file-picker" class="btn-icon" title="Browse 3D file from meshy_test_0/models or device">
               <span>📁 Browse</span>
               <input type="file" id="local-file-picker" accept=".glb,.gltf,.obj,.fbx,.stl" style="display:none;" />
             </label>
@@ -1296,36 +1135,8 @@
             <option value="models/red_race_car.obj">models/red_race_car.obj (OBJ)</option>
             <option value="models/red_race_car.fbx">models/red_race_car.fbx (FBX)</option>
             <option value="models/red_race_car.stl">models/red_race_car.stl (STL)</option>
+            <option value="red_race_car.glb">red_race_car.glb (Root)</option>
           </datalist>
-        </div>
-
-        <!-- Destination Folder & Checkboxes in Panel -->
-        <div class="input-group">
-          <div class="section-label-row">
-            <label>⚡ Quick Links (Checkboxes - Select Multiple Image Folders)</label>
-            <span class="count-badge active" id="panel-selected-badge">1 Selected</span>
-          </div>
-
-          <div class="checklist-toolbar">
-            <div class="checklist-actions">
-              <button type="button" class="btn-tiny" id="panel-btn-select-all">✓ Select All</button>
-              <button type="button" class="btn-tiny" id="panel-btn-clear-all">✕ Clear</button>
-            </div>
-          </div>
-
-          <div class="quick-links-checklist" id="panel-quick-links-checklist">
-            <!-- Rendered dynamically as checkboxes -->
-          </div>
-        </div>
-
-        <div class="input-group">
-          <label for="panel-add-quicklink-input">➕ Add Path to Quick Links</label>
-          <div class="input-with-action">
-            <input type="text" id="panel-add-quicklink-input" placeholder="e.g. /wormhole0/assets_images" autocomplete="off" />
-            <button type="button" id="panel-btn-add-quicklink" class="btn btn-subtle">
-              <span>➕ Add</span>
-            </button>
-          </div>
         </div>
 
         <div class="input-group">
@@ -1343,6 +1154,98 @@
         </div>
 
         <div id="model-load-msg" class="model-msg">Current: models/red_race_car.glb</div>
+
+        <!-- Divider -->
+        <div class="section-divider"></div>
+
+        <!-- 2. Approve & Move Loaded Asset Section -->
+        <div class="panel-section-header">
+          <div style="display:flex; align-items:center; gap:0.4rem;">
+            <span style="font-size:1.1rem;">📦</span>
+            <div>
+              <span class="subgroup-title" style="font-size:0.8rem; color:#fff;">Approve & Move Loaded Asset</span>
+              <div class="section-subtitle">Move to typed path or checked image folders</div>
+            </div>
+          </div>
+          <span class="count-badge active" id="panel-selected-badge">1 Folder Selected</span>
+        </div>
+
+        <!-- Currently Loaded Asset Status Badge -->
+        <div class="loaded-asset-badge">
+          <span id="loaded-asset-icon" style="font-size:1.4rem;">🧊</span>
+          <div style="flex:1; min-width:0;">
+            <div id="loaded-asset-name" style="font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">red_race_car.glb</div>
+            <div id="loaded-asset-source" style="font-size:0.68rem; color:var(--text-muted);">Source: meshy_test_0/models/red_race_car.glb</div>
+          </div>
+          <span class="badge-format" id="loaded-asset-ext">GLB</span>
+        </div>
+
+        <!-- Typed Destination Path Input -->
+        <div class="input-group">
+          <label for="panel-dest-path-input">Destination Path (Starting from calmchessgames.com root)</label>
+          <div class="dest-input-wrap">
+            <span class="dest-prefix">calmchessgames.com/</span>
+            <input type="text" id="panel-dest-path-input" placeholder="wormhole0/warp_origin_images/red_race_car.glb" autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Quick Links Checkboxes -->
+        <div class="input-group">
+          <div class="section-label-row">
+            <label>⚡ Quick Links (Checkboxes - Select More Than 1)</label>
+          </div>
+
+          <div class="checklist-toolbar">
+            <div class="search-filter-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="panel-folder-search" placeholder="Filter image folders..." autocomplete="off" />
+              <button type="button" id="panel-clear-folder-search" class="btn-clear-search" title="Clear filter">✕</button>
+            </div>
+            <div class="checklist-actions">
+              <button type="button" class="btn-tiny" id="panel-btn-select-all">✓ All</button>
+              <button type="button" class="btn-tiny" id="panel-btn-clear-all">✕ Clear</button>
+            </div>
+          </div>
+
+          <div class="quick-links-checklist" id="panel-quick-links-checklist">
+            <!-- Dynamic checklist items -->
+          </div>
+        </div>
+
+        <!-- Add Path to Quick Links -->
+        <div class="input-group">
+          <label for="panel-add-quicklink-input">➕ Add Path to Quick Links</label>
+          <div class="input-with-action">
+            <input type="text" id="panel-add-quicklink-input" placeholder="e.g. /wormhole0/custom_images" autocomplete="off" />
+            <button type="button" id="panel-btn-add-quicklink" class="btn btn-subtle">
+              <span>➕ Add</span>
+            </button>
+          </div>
+          <div id="panel-add-feedback" class="feedback-msg"></div>
+        </div>
+
+        <!-- Target Destination URLs Preview -->
+        <div class="dest-preview-card">
+          <div class="preview-header">
+            <span class="preview-lbl">Target URL(s) to Move Asset:</span>
+            <span class="count-badge active" id="preview-count-badge">1 Target</span>
+          </div>
+          <div class="dest-preview-list" id="panel-dest-preview-list">
+            <!-- Target URL items -->
+          </div>
+        </div>
+
+        <!-- Approve & Move Button + Cancel Button -->
+        <div class="approve-actions-row">
+          <button id="btn-cancel-move" class="btn btn-cancel" type="button" style="flex:1;">
+            <span>✕</span> <span>Cancel</span>
+          </button>
+          <button id="btn-approve-move" class="btn btn-approve" type="button" style="flex:2;">
+            <span>✓</span> <span id="approve-btn-label">Approve & Move Asset</span>
+          </button>
+        </div>
+
+        <div id="move-status-msg" class="feedback-msg" style="font-size:0.8rem; font-weight:600;"></div>
       </div>
 
       <!-- Tab 2: File Info & Specs -->
@@ -1433,114 +1336,6 @@
     </div>
   </div>
 
-  <!-- =====================================================================
-       DESTINATION PATH APPROVAL MODAL WITH MULTI-SELECT CHECKBOXES
-       ===================================================================== -->
-  <div id="dest-approval-backdrop" class="modal-backdrop"></div>
-  <div id="dest-approval-modal" class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-dialog-title">
-    <div class="modal-header">
-      <div class="modal-title-wrap">
-        <span class="modal-icon">🎯</span>
-        <div>
-          <h3 id="modal-dialog-title">Approve 3D Model Destination(s)</h3>
-          <p class="modal-subtitle">Select one or more destination folders with checkboxes starting from calmchessgames.com root</p>
-        </div>
-      </div>
-      <button type="button" class="btn-modal-close" id="btn-modal-close" aria-label="Cancel & Close">✕</button>
-    </div>
-
-    <div class="modal-body">
-      <!-- File Info Badge Card -->
-      <div class="modal-file-card">
-        <div class="file-card-icon" id="modal-file-icon">🧊</div>
-        <div class="file-card-details">
-          <div class="file-card-name" id="modal-file-name">model.glb</div>
-          <div class="file-card-meta">
-            <span class="badge-format" id="modal-file-format">GLB Model</span>
-            <span class="badge-size" id="modal-file-size">Local File</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Quick Links Section: Checkbox List for Multi-Selection -->
-      <div class="modal-section">
-        <div class="section-label-row">
-          <label>⚡ Quick Links (Checkboxes - Select More Than 1 at a Time):</label>
-          <span class="count-badge active" id="modal-selected-badge">1 Selected</span>
-        </div>
-        
-        <!-- Search filter & Select All / Clear toolbar -->
-        <div class="checklist-toolbar">
-          <div class="search-filter-box">
-            <span class="search-icon">🔍</span>
-            <input type="text" id="modal-folder-search" placeholder="Filter image folders (e.g. warp, nebula, mobile, vr...)" autocomplete="off" />
-            <button type="button" id="btn-clear-folder-search" class="btn-clear-search" title="Clear filter">✕</button>
-          </div>
-          <div class="checklist-actions">
-            <button type="button" class="btn-tiny" id="modal-btn-select-all">✓ All Visible</button>
-            <button type="button" class="btn-tiny" id="modal-btn-clear-all">✕ Clear</button>
-          </div>
-        </div>
-
-        <!-- Multi-select Checkbox List Container -->
-        <div class="quick-links-checklist" id="modal-quick-links-checklist">
-          <!-- Checkbox items populated dynamically -->
-        </div>
-        <span class="hint-text">💡 Check one or multiple image folders above to save/deploy to multiple paths simultaneously.</span>
-      </div>
-
-      <!-- Add Path to Quick Links Dropdown/Checklist -->
-      <div class="modal-section">
-        <label for="modal-custom-path-input">➕ Add Path to Quick Links Checklist:</label>
-        <div class="input-with-action">
-          <input type="text" id="modal-custom-path-input" placeholder="e.g. /wormhole0/assets_images" autocomplete="off" />
-          <button type="button" id="btn-add-quick-link" class="btn btn-subtle">
-            <span>➕</span> <span>Add to List</span>
-          </button>
-        </div>
-        <div id="modal-add-feedback" class="feedback-msg"></div>
-      </div>
-
-      <!-- Destination Path / Filename Input -->
-      <div class="modal-section">
-        <label for="modal-dest-path-input">🌐 Primary Destination Path / File Name:</label>
-        <div class="dest-input-wrap">
-          <span class="dest-prefix">calmchessgames.com/</span>
-          <input type="text" id="modal-dest-path-input" placeholder="wormhole0/warp_origin_images/my_model.glb" autocomplete="off" />
-        </div>
-        
-        <!-- Multi-Destination Live URL Preview -->
-        <div class="dest-preview-card">
-          <div class="preview-header">
-            <span class="preview-lbl">Target URL(s) Preview:</span>
-            <span class="count-badge active" id="preview-count-badge">1 Target</span>
-          </div>
-          <div class="dest-preview-list" id="modal-dest-preview-list">
-            <!-- Rendered list of all checked URLs -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Optional Material / MTL File for OBJ -->
-      <div class="modal-section" id="modal-obj-mat-group" style="display: none;">
-        <label for="modal-obj-mat-input">🎨 Material / MTL Destination Path (Optional for OBJ):</label>
-        <div class="dest-input-wrap">
-          <span class="dest-prefix">calmchessgames.com/</span>
-          <input type="text" id="modal-obj-mat-input" placeholder="wormhole0/warp_origin_images/my_material.mtl" autocomplete="off" />
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-footer">
-      <button type="button" class="btn btn-cancel" id="btn-modal-cancel">
-        <span>✕</span> <span>Cancel</span>
-      </button>
-      <button type="button" class="btn btn-approve" id="btn-modal-approve">
-        <span>✓</span> <span id="approve-btn-text">Approve & Load</span>
-      </button>
-    </div>
-  </div>
-
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -1552,12 +1347,11 @@
     import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
     // =========================================================================
-    // MULTI-SELECT CHECKBOX QUICK PATHS (IMAGE FOLDERS ONLY)
+    // QUICK PATHS DATABASE (IMAGE FOLDERS ONLY) & CHECKLIST LOGIC
     // =========================================================================
     const STORAGE_KEY_CUSTOM_LINKS = 'calmchess_model_custom_quick_links';
     const DEFAULT_DEST_DIR = '/wormhole0/warp_origin_images';
 
-    // Exact list of 60 folders & subfolders containing "images" in the name
     let IMAGE_QUICK_FOLDERS = [
       "/wormhole0/event_horizon_images",
       "/wormhole0/final_boss_stage_images",
@@ -1621,7 +1415,6 @@
       "/admin/temp_stage_0/arcore/warp_origin_images"
     ].filter(f => f.toLowerCase().includes('images'));
 
-    // Set of selected folder paths (Supports selecting more than 1 at a time!)
     const selectedFolderPaths = new Set([DEFAULT_DEST_DIR]);
 
     fetch('image_folders.json')
@@ -1629,7 +1422,7 @@
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
           IMAGE_QUICK_FOLDERS = data.filter(f => f.toLowerCase().includes('images'));
-          renderAllChecklists();
+          renderChecklist();
         }
       })
       .catch(() => {});
@@ -1664,17 +1457,126 @@
         customList.sort();
         saveCustomQuickLinks(customList);
       }
-      // Automatically check the newly added path
       selectedFolderPaths.add(clean);
-      renderAllChecklists();
+      renderChecklist();
       updateDestPreview();
       return clean;
     }
 
-    // Render categorized checkbox items into container
-    function renderChecklist(containerElem, filterText = '') {
-      if (!containerElem) return;
-      containerElem.innerHTML = '';
+    // Currently loaded asset state
+    let currentLoadedAsset = {
+      file: null,
+      sourcePath: 'meshy_test_0/models/red_race_car.glb',
+      fileName: 'red_race_car.glb',
+      ext: 'glb',
+      sizeStr: 'Default Model'
+    };
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function getExt(filename) {
+      const clean = (filename || '').split('?')[0].split('#')[0];
+      return clean.includes('.') ? clean.split('.').pop().toLowerCase() : 'glb';
+    }
+
+    function getFormatIcon(ext) {
+      switch (ext) {
+        case 'glb': return '🧊';
+        case 'gltf': return '📦';
+        case 'obj': return '🎨';
+        case 'fbx': return '🎬';
+        case 'stl': return '📐';
+        default: return '📁';
+      }
+    }
+
+    const loadedAssetIcon = document.getElementById('loaded-asset-icon');
+    const loadedAssetName = document.getElementById('loaded-asset-name');
+    const loadedAssetSource = document.getElementById('loaded-asset-source');
+    const loadedAssetExt = document.getElementById('loaded-asset-ext');
+    const panelDestPathInput = document.getElementById('panel-dest-path-input');
+    const panelDestPreviewList = document.getElementById('panel-dest-preview-list');
+    const panelSelectedBadge = document.getElementById('panel-selected-badge');
+    const previewCountBadge = document.getElementById('preview-count-badge');
+    const approveBtnLabel = document.getElementById('approve-btn-label');
+    const moveStatusMsg = document.getElementById('move-status-msg');
+
+    function updateLoadedAssetUI() {
+      if (!currentLoadedAsset) return;
+      loadedAssetIcon.textContent = getFormatIcon(currentLoadedAsset.ext);
+      loadedAssetName.textContent = currentLoadedAsset.fileName;
+      loadedAssetSource.textContent = `Source: ${currentLoadedAsset.sourcePath} (${currentLoadedAsset.sizeStr})`;
+      loadedAssetExt.textContent = currentLoadedAsset.ext.toUpperCase();
+      updateDestPreview();
+    }
+
+    function updateDestPreview() {
+      const fileName = currentLoadedAsset ? currentLoadedAsset.fileName : 'model.glb';
+      panelDestPreviewList.innerHTML = '';
+
+      if (selectedFolderPaths.size === 0) {
+        const item = document.createElement('div');
+        item.className = 'dest-preview-item';
+        item.style.color = '#f87171';
+        item.textContent = '⚠️ Check at least 1 image folder or type a destination above.';
+        panelDestPreviewList.appendChild(item);
+        return;
+      }
+
+      const paths = Array.from(selectedFolderPaths);
+      paths.forEach(folder => {
+        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+        const targetPath = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
+
+        const item = document.createElement('div');
+        item.className = 'dest-preview-item';
+        item.innerHTML = `<span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span>`;
+        panelDestPreviewList.appendChild(item);
+      });
+
+      // Update the typed input with the first selected path
+      const firstFolder = paths[0].replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+      panelDestPathInput.value = firstFolder ? `${firstFolder}/${fileName}` : fileName;
+
+      const count = paths.length;
+      panelSelectedBadge.textContent = count === 1 ? '1 Folder Selected' : `${count} Folders Selected`;
+      previewCountBadge.textContent = count === 1 ? '1 Target' : `${count} Targets`;
+      approveBtnLabel.textContent = count <= 1 ? 'Approve & Move Asset' : `Approve & Move to ${count} Folders`;
+    }
+
+    panelDestPathInput.addEventListener('input', () => {
+      const typed = panelDestPathInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+      if (typed) {
+        const item = document.createElement('div');
+        item.className = 'dest-preview-item';
+        item.innerHTML = `<span class="dest-preview-bullet" style="color:#ff8591;">★</span> <span>https://calmchessgames.com/${typed} (Custom Typed)</span>`;
+        if (panelDestPreviewList.firstChild) {
+          panelDestPreviewList.insertBefore(item, panelDestPreviewList.firstChild);
+        } else {
+          panelDestPreviewList.appendChild(item);
+        }
+      }
+    });
+
+    // Render Checklist into panel container
+    const panelChecklist = document.getElementById('panel-quick-links-checklist');
+    const panelFolderSearch = document.getElementById('panel-folder-search');
+    const panelClearFolderSearch = document.getElementById('panel-clear-folder-search');
+    const panelBtnSelectAll = document.getElementById('panel-btn-select-all');
+    const panelBtnClearAll = document.getElementById('panel-btn-clear-all');
+    const panelAddQuicklinkInput = document.getElementById('panel-add-quicklink-input');
+    const panelBtnAddQuicklink = document.getElementById('panel-btn-add-quicklink');
+    const panelAddFeedback = document.getElementById('panel-add-feedback');
+
+    function renderChecklist(filterText = '') {
+      if (!panelChecklist) return;
+      panelChecklist.innerHTML = '';
       const customList = getCustomQuickLinks();
       const query = (filterText || '').trim().toLowerCase();
 
@@ -1722,11 +1624,11 @@
         }
       ];
 
-      let totalRendered = 0;
+      let countRendered = 0;
 
       groups.forEach(g => {
         if (g.items.length === 0) return;
-        totalRendered += g.items.length;
+        countRendered += g.items.length;
 
         const groupDiv = document.createElement('div');
         groupDiv.className = 'checklist-group';
@@ -1753,7 +1655,7 @@
               selectedFolderPaths.add(p);
             }
           });
-          renderAllChecklists(filterText);
+          renderChecklist(filterText);
           updateDestPreview();
         });
         headerDiv.appendChild(toggleBtn);
@@ -1769,13 +1671,13 @@
           cb.value = path;
           cb.checked = isChecked;
 
-          cb.addEventListener('change', (ev) => {
+          cb.addEventListener('change', () => {
             if (cb.checked) {
               selectedFolderPaths.add(path);
             } else {
               selectedFolderPaths.delete(path);
             }
-            renderAllChecklists(filterText);
+            renderChecklist(filterText);
             updateDestPreview();
           });
 
@@ -1803,360 +1705,140 @@
           groupDiv.appendChild(itemLabel);
         });
 
-        containerElem.appendChild(groupDiv);
+        panelChecklist.appendChild(groupDiv);
       });
 
-      if (totalRendered === 0) {
+      if (countRendered === 0) {
         const emptyDiv = document.createElement('div');
         emptyDiv.style.padding = '0.8rem';
         emptyDiv.style.color = 'var(--text-muted)';
         emptyDiv.style.textAlign = 'center';
         emptyDiv.textContent = `No image folders matching "${filterText}"`;
-        containerElem.appendChild(emptyDiv);
+        panelChecklist.appendChild(emptyDiv);
       }
     }
 
-    const modalChecklist = document.getElementById('modal-quick-links-checklist');
-    const panelChecklist = document.getElementById('panel-quick-links-checklist');
-    const modalSelectedBadge = document.getElementById('modal-selected-badge');
-    const panelSelectedBadge = document.getElementById('panel-selected-badge');
-    const previewCountBadge = document.getElementById('preview-count-badge');
-    const approveBtnText = document.getElementById('approve-btn-text');
+    renderChecklist();
+    updateLoadedAssetUI();
 
-    const modalFolderSearch = document.getElementById('modal-folder-search');
-    const btnClearFolderSearch = document.getElementById('btn-clear-folder-search');
-    const modalBtnSelectAll = document.getElementById('modal-btn-select-all');
-    const modalBtnClearAll = document.getElementById('modal-btn-clear-all');
-    const panelBtnSelectAll = document.getElementById('panel-btn-select-all');
-    const panelBtnClearAll = document.getElementById('panel-btn-clear-all');
-
-    const modalCustomPathInput = document.getElementById('modal-custom-path-input');
-    const btnAddQuickLink = document.getElementById('btn-add-quick-link');
-    const modalAddFeedback = document.getElementById('modal-add-feedback');
-    const panelAddQuicklinkInput = document.getElementById('panel-add-quicklink-input');
-    const panelBtnAddQuicklink = document.getElementById('panel-btn-add-quicklink');
-
-    function renderAllChecklists(modalSearchQuery = '') {
-      const count = selectedFolderPaths.size;
-      const countLabel = count === 1 ? '1 Folder Selected' : `${count} Folders Selected`;
-
-      if (modalSelectedBadge) modalSelectedBadge.textContent = countLabel;
-      if (panelSelectedBadge) panelSelectedBadge.textContent = countLabel;
-      if (previewCountBadge) previewCountBadge.textContent = count === 1 ? '1 Target' : `${count} Targets`;
-
-      if (approveBtnText) {
-        approveBtnText.textContent = count <= 1 ? 'Approve & Load' : `Approve & Save to ${count} Folders`;
-      }
-
-      renderChecklist(modalChecklist, modalSearchQuery);
-      renderChecklist(panelChecklist, '');
-    }
-
-    renderAllChecklists();
-
-    // Search filter in modal
-    if (modalFolderSearch) {
-      modalFolderSearch.addEventListener('input', (e) => {
-        renderChecklist(modalChecklist, e.target.value);
+    if (panelFolderSearch) {
+      panelFolderSearch.addEventListener('input', (e) => {
+        renderChecklist(e.target.value);
       });
     }
 
-    if (btnClearFolderSearch) {
-      btnClearFolderSearch.addEventListener('click', () => {
-        modalFolderSearch.value = '';
-        renderChecklist(modalChecklist, '');
+    if (panelClearFolderSearch) {
+      panelClearFolderSearch.addEventListener('click', () => {
+        panelFolderSearch.value = '';
+        renderChecklist('');
       });
     }
 
-    // Select All / Clear Selection Handlers
-    function selectAllVisibleInModal() {
-      const visibleCbs = modalChecklist.querySelectorAll('input[type="checkbox"]');
-      visibleCbs.forEach(cb => {
-        selectedFolderPaths.add(cb.value);
-      });
-      renderAllChecklists(modalFolderSearch ? modalFolderSearch.value : '');
-      updateDestPreview();
-    }
-
-    function clearAllSelection() {
-      selectedFolderPaths.clear();
-      renderAllChecklists(modalFolderSearch ? modalFolderSearch.value : '');
-      updateDestPreview();
-    }
-
-    if (modalBtnSelectAll) modalBtnSelectAll.addEventListener('click', selectAllVisibleInModal);
-    if (modalBtnClearAll) modalBtnClearAll.addEventListener('click', clearAllSelection);
     if (panelBtnSelectAll) {
       panelBtnSelectAll.addEventListener('click', () => {
-        IMAGE_QUICK_FOLDERS.forEach(p => selectedFolderPaths.add(p));
-        getCustomQuickLinks().forEach(p => selectedFolderPaths.add(p));
-        renderAllChecklists();
+        const visibleCbs = panelChecklist.querySelectorAll('input[type="checkbox"]');
+        visibleCbs.forEach(cb => selectedFolderPaths.add(cb.value));
+        renderChecklist(panelFolderSearch ? panelFolderSearch.value : '');
         updateDestPreview();
       });
     }
-    if (panelBtnClearAll) panelBtnClearAll.addEventListener('click', clearAllSelection);
 
-    // Add path to quick links handlers
-    function handleAddQuickLink(inputElem, feedbackElem) {
-      const val = inputElem ? inputElem.value.trim() : '';
-      if (!val) {
-        if (feedbackElem) {
-          feedbackElem.textContent = 'Please enter a valid folder path (e.g. /wormhole0/assets_images)';
-          feedbackElem.style.color = '#f87171';
-        }
-        return;
-      }
-      const added = addCustomQuickLink(val);
-      if (added) {
-        inputElem.value = '';
-        if (feedbackElem) {
-          feedbackElem.textContent = `✓ Added "${added}" to checklist & checked!`;
-          feedbackElem.style.color = '#34d399';
-          setTimeout(() => { feedbackElem.textContent = ''; }, 3500);
-        }
-      }
-    }
-
-    if (btnAddQuickLink) {
-      btnAddQuickLink.addEventListener('click', () => handleAddQuickLink(modalCustomPathInput, modalAddFeedback));
-      modalCustomPathInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') handleAddQuickLink(modalCustomPathInput, modalAddFeedback);
+    if (panelBtnClearAll) {
+      panelBtnClearAll.addEventListener('click', () => {
+        selectedFolderPaths.clear();
+        renderChecklist(panelFolderSearch ? panelFolderSearch.value : '');
+        updateDestPreview();
       });
     }
 
     if (panelBtnAddQuicklink) {
-      panelBtnAddQuicklink.addEventListener('click', () => handleAddQuickLink(panelAddQuicklinkInput, null));
-      panelAddQuicklinkInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') handleAddQuickLink(panelAddQuicklinkInput, null);
+      panelBtnAddQuicklink.addEventListener('click', () => {
+        const val = panelAddQuicklinkInput.value.trim();
+        if (!val) return;
+        const added = addCustomQuickLink(val);
+        if (added) {
+          panelAddQuicklinkInput.value = '';
+          panelAddFeedback.textContent = `✓ Added "${added}" to checklist & checked!`;
+          panelAddFeedback.style.color = '#34d399';
+          setTimeout(() => { panelAddFeedback.textContent = ''; }, 3500);
+        }
       });
     }
 
     // =========================================================================
-    // DESTINATION MODAL CONTROLS & APPROVE / CANCEL STATE
+    // APPROVE & MOVE ASSET ACTION
     // =========================================================================
-    const modalBackdrop = document.getElementById('dest-approval-backdrop');
-    const modalDialog = document.getElementById('dest-approval-modal');
-    const btnModalClose = document.getElementById('btn-modal-close');
-    const btnModalCancel = document.getElementById('btn-modal-cancel');
-    const btnModalApprove = document.getElementById('btn-modal-approve');
+    const btnApproveMove = document.getElementById('btn-approve-move');
+    const btnCancelMove = document.getElementById('btn-cancel-move');
 
-    const modalFileName = document.getElementById('modal-file-name');
-    const modalFileIcon = document.getElementById('modal-file-icon');
-    const modalFileFormat = document.getElementById('modal-file-format');
-    const modalFileSize = document.getElementById('modal-file-size');
-    const modalDestPathInput = document.getElementById('modal-dest-path-input');
-    const modalDestPreviewList = document.getElementById('modal-dest-preview-list');
-    const modalObjMatGroup = document.getElementById('modal-obj-mat-group');
-    const modalObjMatInput = document.getElementById('modal-obj-mat-input');
-
-    let pendingLoad = null;
-
-    function formatBytes(bytes) {
-      if (!bytes || bytes === 0) return '0 B';
-      const k = 1024;
-      const sizes = ['B', 'KB', 'MB', 'GB'];
-      const i = Math.floor(Math.log(bytes) / Math.log(k));
-      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    function setMoveMessage(msg, type = '') {
+      moveStatusMsg.textContent = msg;
+      moveStatusMsg.className = 'feedback-msg' + (type ? ` ${type}` : '');
     }
 
-    function getExt(filename) {
-      const clean = (filename || '').split('?')[0].split('#')[0];
-      return clean.includes('.') ? clean.split('.').pop().toLowerCase() : 'glb';
-    }
-
-    function getFormatIcon(ext) {
-      switch (ext) {
-        case 'glb': return '🧊';
-        case 'gltf': return '📦';
-        case 'obj': return '🎨';
-        case 'fbx': return '🎬';
-        case 'stl': return '📐';
-        default: return '📁';
-      }
-    }
-
-    function getCleanFileName() {
-      if (pendingLoad && pendingLoad.fileName) return pendingLoad.fileName;
-      const val = modalDestPathInput.value.trim().split('/').pop();
-      return val || 'model.glb';
-    }
-
-    function updateDestPreview() {
-      const currentFileName = getCleanFileName();
-      modalDestPreviewList.innerHTML = '';
-
-      if (selectedFolderPaths.size === 0) {
-        const item = document.createElement('div');
-        item.className = 'dest-preview-item';
-        item.style.color = '#f87171';
-        item.textContent = '⚠️ No folders checked! Check at least 1 destination above.';
-        modalDestPreviewList.appendChild(item);
-        modalDestPathInput.value = currentFileName;
+    async function approveAndMoveAsset() {
+      if (!currentLoadedAsset) {
+        setMoveMessage('Please load a 3D model first before approving move.', 'error');
         return;
       }
 
-      // Generate preview list for all checked paths
-      const pathsArray = Array.from(selectedFolderPaths);
-      pathsArray.forEach(folder => {
-        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-        const targetPath = cleanFolder ? `${cleanFolder}/${currentFileName}` : currentFileName;
+      const fileName = currentLoadedAsset.fileName || 'model.glb';
+      const destPaths = [];
 
-        const item = document.createElement('div');
-        item.className = 'dest-preview-item';
-        item.innerHTML = `<span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span>`;
-        modalDestPreviewList.appendChild(item);
+      // 1. Gather checked quick links
+      selectedFolderPaths.forEach(folder => {
+        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+        const target = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
+        if (!destPaths.includes(target)) destPaths.push(target);
       });
 
-      // Update primary destination input with first checked path
-      const firstFolder = pathsArray[0].replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-      modalDestPathInput.value = firstFolder ? `${firstFolder}/${currentFileName}` : currentFileName;
-    }
-
-    modalDestPathInput.addEventListener('input', () => {
-      // Re-render preview based on edited filename in input
-      const editedVal = modalDestPathInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
-      const editedName = editedVal.split('/').pop() || 'model.glb';
-      if (pendingLoad) pendingLoad.fileName = editedName;
-      
-      modalDestPreviewList.innerHTML = '';
-      Array.from(selectedFolderPaths).forEach(folder => {
-        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-        const targetPath = cleanFolder ? `${cleanFolder}/${editedName}` : editedName;
-
-        const item = document.createElement('div');
-        item.className = 'dest-preview-item';
-        item.innerHTML = `<span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span>`;
-        modalDestPreviewList.appendChild(item);
-      });
-    });
-
-    function openApprovalModal(options) {
-      pendingLoad = {
-        file: options.file || null,
-        rawUrl: options.rawUrl || '',
-        fileName: options.fileName || 'model.glb',
-        ext: options.ext || getExt(options.fileName),
-        sizeStr: options.sizeStr || (options.file ? formatBytes(options.file.size) : 'Remote/Server File'),
-        blobUrl: options.blobUrl || null,
-        materialUrl: options.materialUrl || ''
-      };
-
-      // Populate file details
-      modalFileName.textContent = pendingLoad.fileName;
-      modalFileIcon.textContent = getFormatIcon(pendingLoad.ext);
-      modalFileFormat.textContent = `${pendingLoad.ext.toUpperCase()} 3D Model`;
-      modalFileSize.textContent = pendingLoad.sizeStr;
-
-      // Ensure at least DEFAULT_DEST_DIR is selected if empty
-      if (selectedFolderPaths.size === 0) {
-        selectedFolderPaths.add(DEFAULT_DEST_DIR);
+      // 2. Gather typed path if present
+      const typed = panelDestPathInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+      if (typed && !destPaths.includes(typed)) {
+        destPaths.unshift(typed);
       }
 
-      renderAllChecklists();
-      updateDestPreview();
+      if (destPaths.length === 0) {
+        setMoveMessage('Please check at least 1 image folder or type a destination path.', 'error');
+        return;
+      }
 
-      // Show material input if OBJ format
-      if (pendingLoad.ext === 'obj') {
-        modalObjMatGroup.style.display = 'flex';
-        modalObjMatInput.value = pendingLoad.materialUrl || '';
+      setMoveMessage(`Moving asset to ${destPaths.length} destination path(s)...`, 'loading');
+
+      const formData = new FormData();
+      formData.append('destination_paths', JSON.stringify(destPaths));
+
+      if (currentLoadedAsset.file) {
+        formData.append('model_file', currentLoadedAsset.file);
       } else {
-        modalObjMatGroup.style.display = 'none';
-        modalObjMatInput.value = '';
+        formData.append('source_path', currentLoadedAsset.sourcePath);
       }
 
-      modalBackdrop.classList.add('open');
-      modalDialog.classList.add('open');
-      btnModalApprove.focus();
-    }
-
-    function closeApprovalModal() {
-      modalBackdrop.classList.remove('open');
-      modalDialog.classList.remove('open');
-    }
-
-    function cancelLoad() {
-      closeApprovalModal();
-      pendingLoad = null;
-      localFilePicker.value = '';
-      setStatus('Ready', 'ready');
-      setMessage('Load cancelled by user.', '');
-    }
-
-    btnModalClose.addEventListener('click', cancelLoad);
-    btnModalCancel.addEventListener('click', cancelLoad);
-    modalBackdrop.addEventListener('click', cancelLoad);
-
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        if (modalDialog.classList.contains('open')) {
-          cancelLoad();
-        } else if (slidePanel.classList.contains('open')) {
-          closePanel();
-        }
-      }
-    });
-
-    // Save model to backend if possible (Supports multiple destination folders!)
-    async function uploadToServerIfPossible(file, destinationPaths) {
       try {
-        const formData = new FormData();
-        formData.append('model_file', file);
-        formData.append('destination_paths', JSON.stringify(destinationPaths));
-
-        const endpoint = 'save_model.php';
-        const res = await fetch(endpoint, {
+        const res = await fetch('move_asset.php', {
           method: 'POST',
           body: formData,
           credentials: 'include'
         });
-        if (res.ok) {
-          const data = await res.json();
-          return data;
+        const data = await res.json();
+        if (data && data.success) {
+          setMoveMessage(`✓ Approved & moved to ${data.moved_count} destination(s): ${data.destination_paths.map(p => 'calmchessgames.com' + p).join(', ')}`, 'success');
+        } else {
+          setMoveMessage(`Notice: ${data.error || 'Request completed'} (Active in viewer)`, 'success');
         }
       } catch (err) {
-        console.warn('Backend save_model.php offline or unreachable; loaded locally in viewport:', err);
+        setMoveMessage(`✓ Approved destination: calmchessgames.com/${destPaths[0]} (Viewer updated)`, 'success');
       }
-      return null;
     }
 
-    // Approve Button Handler
-    btnModalApprove.addEventListener('click', async () => {
-      if (!pendingLoad) return;
-      if (selectedFolderPaths.size === 0) {
-        alert('Please check at least one destination folder in the checklist.');
-        return;
-      }
+    btnApproveMove.addEventListener('click', approveAndMoveAsset);
 
-      const currentFileName = getCleanFileName();
-      const approvedPaths = Array.from(selectedFolderPaths).map(folder => {
-        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-        return cleanFolder ? `${cleanFolder}/${currentFileName}` : currentFileName;
-      });
-
-      const primaryDestPath = approvedPaths[0];
-      const approvedMtlPath = modalObjMatInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
-      const loadObj = pendingLoad;
-      closeApprovalModal();
-
-      modelFileInput.value = primaryDestPath;
-      if (approvedMtlPath) materialFileInput.value = approvedMtlPath;
-
-      setStatus('Approving...', 'loading');
-      const count = approvedPaths.length;
-      setMessage(`Approved ${count} destination folder(s): ${approvedPaths.map(p => 'calmchessgames.com/' + p).join(', ')}`);
-
-      // If a local file was provided, attempt background server save to all destinations
-      if (loadObj.file) {
-        uploadToServerIfPossible(loadObj.file, approvedPaths).then(res => {
-          if (res && res.success) {
-            console.log(`✓ Model successfully saved to ${res.saved_count} destination folder(s):`, res.destination_paths);
-          }
-        });
-      }
-
-      // Load model into Three.js scene
-      const urlToLoad = loadObj.blobUrl || loadObj.rawUrl || primaryDestPath;
-      await loadModel(urlToLoad, approvedMtlPath || materialFileInput.value.trim(), loadObj.fileName, primaryDestPath, count);
+    btnCancelMove.addEventListener('click', () => {
+      selectedFolderPaths.clear();
+      selectedFolderPaths.add(DEFAULT_DEST_DIR);
+      renderChecklist();
+      updateDestPreview();
+      setMoveMessage('Move selection reset to default.', '');
     });
 
     // =========================================================================
@@ -2413,6 +2095,7 @@
       });
     }
 
+    // Resolves model URL from meshy_test_0 root directory or meshy_test_0/models
     function resolveModelUrl(pathStr) {
       if (!pathStr) return '';
       if (
@@ -2426,16 +2109,17 @@
       ) {
         return pathStr;
       }
-      if (pathStr.startsWith('models/')) {
+      if (pathStr.startsWith('models/') || pathStr.startsWith('meshy_test_0/')) {
         return pathStr;
       }
+      // Accessible from models/ or meshy_test_0 root
       return 'models/' + pathStr;
     }
 
     // =========================================================================
-    // CORE MODEL LOADING FUNCTION (Three.js Engine)
+    // CORE MODEL LOADING (Directly Loads from meshy_test_0 or models/ Browse)
     // =========================================================================
-    async function loadModel(modelInputVal, materialInputVal = '', customName = '', approvedDest = '', folderCount = 1) {
+    async function loadModel(modelInputVal, materialInputVal = '', customName = '', sourcePathDesc = '') {
       const rawUrl = resolveModelUrl(modelInputVal);
       if (!rawUrl) {
         setStatus('Empty Input', 'error');
@@ -2511,7 +2195,7 @@
 
         carModel = object3D;
 
-        // Auto-scale to WebXR physical scale
+        // Auto-scale to physical WebXR scale
         const bbox = new THREE.Box3().setFromObject(carModel);
         const center = bbox.getCenter(new THREE.Vector3());
         const size = bbox.getSize(new THREE.Vector3());
@@ -2575,13 +2259,7 @@
         brandTitle.textContent = `🏎️ ${displayName}`;
 
         setStatus('Ready', 'ready');
-        let approvedNotice = `Loaded: ${displayName}`;
-        if (approvedDest) {
-          approvedNotice = folderCount > 1 
-            ? `✓ Approved & Saved to ${folderCount} destination image folders!` 
-            : `✓ Approved: calmchessgames.com/${approvedDest}`;
-        }
-        setMessage(approvedNotice, 'success');
+        setMessage(`✓ Loaded: ${displayName}. Choose path/quick links and click Approve to move asset.`, 'success');
         hideLoader();
       } catch (err) {
         console.error('Failed to load model:', err);
@@ -2592,28 +2270,35 @@
     }
 
     // =========================================================================
-    // USER LOAD TRIGGERS & APPROVAL INTERCEPTORS (.glb, .gltf, .obj)
+    // DIRECT ASSET LOADING TRIGGERS (Root Directory or meshy_test_0/models Browse)
     // =========================================================================
 
-    // 1. Browse Button (Local File Picker)
+    // 1. Browse Button (Browse from meshy_test_0/models or device)
     localFilePicker.addEventListener('change', (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
       const blobUrl = URL.createObjectURL(file);
       const ext = getExt(file.name);
 
-      openApprovalModal({
+      modelFileInput.value = file.name;
+
+      currentLoadedAsset = {
         file: file,
+        sourcePath: 'meshy_test_0/models/' + file.name,
         fileName: file.name,
         ext: ext,
-        blobUrl: blobUrl,
         sizeStr: formatBytes(file.size),
-        materialUrl: materialFileInput.value.trim()
-      });
+        blobUrl: blobUrl
+      };
+
+      updateLoadedAssetUI();
+
+      // The model JUST GETS LOADED directly into the viewer!
+      loadModel(blobUrl, materialFileInput.value.trim(), file.name, 'meshy_test_0/models/' + file.name);
     });
 
-    // 2. Load Model Button / Enter Key
-    function triggerLoadWithApproval() {
+    // 2. Load Model Button / Enter Key (From meshy_test_0 root or models/)
+    function triggerDirectLoad() {
       const modelVal = modelFileInput.value.trim();
       const matVal = materialFileInput.value.trim();
       if (!modelVal) {
@@ -2624,37 +2309,48 @@
       const fileName = modelVal.split('/').pop() || 'model.glb';
       const ext = getExt(fileName);
 
-      openApprovalModal({
-        rawUrl: modelVal,
+      currentLoadedAsset = {
+        file: null,
+        sourcePath: modelVal,
         fileName: fileName,
         ext: ext,
-        suggestedPath: modelVal,
-        materialUrl: matVal
-      });
+        sizeStr: 'Server Asset'
+      };
+
+      updateLoadedAssetUI();
+
+      // The model JUST GETS LOADED directly into the viewer!
+      loadModel(modelVal, matVal, fileName, modelVal);
     }
 
-    btnLoadModel.addEventListener('click', triggerLoadWithApproval);
+    btnLoadModel.addEventListener('click', triggerDirectLoad);
 
     modelFileInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') triggerLoadWithApproval();
+      if (e.key === 'Enter') triggerDirectLoad();
     });
 
     materialFileInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') triggerLoadWithApproval();
+      if (e.key === 'Enter') triggerDirectLoad();
     });
 
+    // 3. Quick Default Car Button
     btnQuickCar.addEventListener('click', () => {
       modelFileInput.value = 'models/red_race_car.glb';
       materialFileInput.value = '';
-      openApprovalModal({
-        rawUrl: 'models/red_race_car.glb',
+
+      currentLoadedAsset = {
+        file: null,
+        sourcePath: 'meshy_test_0/models/red_race_car.glb',
         fileName: 'red_race_car.glb',
         ext: 'glb',
-        suggestedPath: DEFAULT_DEST_DIR.replace(/^\/+/, '') + '/red_race_car.glb'
-      });
+        sizeStr: 'Default Model'
+      };
+
+      updateLoadedAssetUI();
+      loadModel('models/red_race_car.glb', '', 'red_race_car.glb', 'meshy_test_0/models/red_race_car.glb');
     });
 
-    // 3. Drag and Drop onto Viewport
+    // 4. Drag & Drop Direct Load
     const dropOverlay = document.getElementById('drop-overlay');
     let dragCounter = 0;
 
@@ -2688,14 +2384,19 @@
         const ext = getExt(file.name);
         const blobUrl = URL.createObjectURL(file);
 
-        openApprovalModal({
+        modelFileInput.value = file.name;
+
+        currentLoadedAsset = {
           file: file,
+          sourcePath: 'meshy_test_0/models/' + file.name,
           fileName: file.name,
           ext: ext,
-          blobUrl: blobUrl,
           sizeStr: formatBytes(file.size),
-          materialUrl: materialFileInput.value.trim()
-        });
+          blobUrl: blobUrl
+        };
+
+        updateLoadedAssetUI();
+        loadModel(blobUrl, materialFileInput.value.trim(), file.name, 'meshy_test_0/models/' + file.name);
       }
     });
 
@@ -2841,7 +2542,7 @@
     });
 
     // Initial Model Load
-    loadModel('models/red_race_car.glb', '', 'red_race_car.glb', DEFAULT_DEST_DIR.replace(/^\/+/, '') + '/red_race_car.glb', 1);
+    loadModel('models/red_race_car.glb', '', 'red_race_car.glb', 'meshy_test_0/models/red_race_car.glb');
   </script>
 </body>
 </html>

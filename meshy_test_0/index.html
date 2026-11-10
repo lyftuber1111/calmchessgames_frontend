@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Meshy 3D - WebXR Red Race Car</title>
+  <style>
+    :root {
+      --bg: #0b0d13;
+      --panel-bg: rgba(18, 22, 32, 0.85);
+      --accent: #ff2a3b;
+      --accent-glow: rgba(255, 42, 59, 0.35);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border: rgba(255, 255, 255, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* UI Header Overlay */
+    header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 1rem 1.5rem;
+      z-index: 10;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, rgba(11, 13, 19, 0.9) 0%, rgba(11, 13, 19, 0) 100%);
+      pointer-events: none;
+    }
+
+    .brand {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand h1 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .pill {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+    }
+
+    .xr-status-tag {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      pointer-events: auto;
+    }
+
+    .xr-status-tag.active {
+      border-color: #10b981;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* Bottom Control Bar */
+    .controls-panel {
+      position: absolute;
+      bottom: 1.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      border-radius: 14px;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-xr {
+      background: linear-gradient(135deg, #ff2a3b 0%, #e01124 100%);
+      border: 1px solid #ff5967;
+      box-shadow: 0 4px 14px rgba(255, 42, 59, 0.4);
+    }
+
+    .btn-xr:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ff4352 0%, #eb1e31 100%);
+      box-shadow: 0 6px 20px rgba(255, 42, 59, 0.6);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Left Stats Overlay */
+    .info-card {
+      position: absolute;
+      top: 5rem;
+      left: 1.5rem;
+      z-index: 10;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 12px;
+      backdrop-filter: blur(12px);
+      width: 240px;
+      font-size: 0.8rem;
+    }
+
+    .info-card h4 {
+      font-size: 0.85rem;
+      margin-bottom: 0.6rem;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-lbl {
+      color: var(--text-muted);
+    }
+
+    .stat-val {
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    /* Loading Overlay */
+    #loader {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1rem;
+      z-index: 100;
+      transition: opacity 0.5s ease;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255, 42, 59, 0.2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    #xr-overlay-msg {
+      position: absolute;
+      bottom: 5.5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.75rem;
+      color: #cbd5e1;
+      pointer-events: none;
+    }
+  </style>
+
+  <!-- Import maps polyfill for ES module browser support -->
+  <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="loader">
+    <div class="spinner"></div>
+    <div style="font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px;">Loading Red Race Car GLB...</div>
+    <div id="load-progress" style="font-size: 0.8rem; color: var(--text-muted);">0%</div>
+  </div>
+
+  <header>
+    <div class="brand">
+      <h1>🏎️ Red Race Car</h1>
+      <span class="pill">WebXR Mode</span>
+    </div>
+    <div id="xr-support-status" class="xr-status-tag">
+      <span class="dot"></span>
+      <span id="xr-status-text">Checking WebXR...</span>
+    </div>
+  </header>
+
+  <div class="info-card">
+    <h4>Model & WebXR Specs</h4>
+    <div class="stat-row">
+      <span class="stat-lbl">Format</span>
+      <span class="stat-val">GLB (Binary)</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-lbl">Triangles</span>
+      <span class="stat-val" id="poly-count">29,941</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-lbl">Vertices</span>
+      <span class="stat-val" id="vert-count">46,544</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-lbl">Real Length</span>
+      <span class="stat-val">~3.80 m</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-lbl">Real Width</span>
+      <span class="stat-val">~1.80 m</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-lbl">Real Height</span>
+      <span class="stat-val">~1.06 m</span>
+    </div>
+    <div class="stat-row">
+      <span class="stat-lbl">FPS</span>
+      <span class="stat-val" id="fps-counter">60</span>
+    </div>
+  </div>
+
+  <div id="xr-overlay-msg">Drag to orbit &bull; Scroll to zoom &bull; Click 'Enter VR/AR' for headset</div>
+
+  <div class="controls-panel">
+    <button id="btn-vr" class="btn btn-xr" disabled>
+      <span>🥽</span> <span id="vr-btn-label">Enter VR</span>
+    </button>
+    <button id="btn-ar" class="btn" disabled>
+      <span>📱</span> <span id="ar-btn-label">Enter AR</span>
+    </button>
+    <button id="btn-auto-rotate" class="btn">
+      <span>🔄</span> <span>Rotate</span>
+    </button>
+    <button id="btn-wireframe" class="btn">
+      <span>🕸️</span> <span>Wireframe</span>
+    </button>
+    <button id="btn-reset-cam" class="btn">
+      <span>🎯</span> <span>Reset View</span>
+    </button>
+  </div>
+
+  <div id="canvas-container"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+
+    // Scene Setup
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1118);
+    scene.fog = new THREE.FogExp2(0x0e1118, 0.08);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(2.8, 1.4, 3.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.xr.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    // Orbit Controls (for non-XR mode)
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, 0.5, 0);
+    controls.maxPolarAngle = Math.PI / 2 - 0.01; // Don't clip through ground
+    controls.minDistance = 1.2;
+    controls.maxDistance = 15;
+
+    // Lighting (Studio PBR setup)
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x223344, 0.7);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    keyLight.position.set(4, 5, 3);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.bias = -0.0001;
+    keyLight.shadow.camera.near = 0.5;
+    keyLight.shadow.camera.far = 15;
+    keyLight.shadow.camera.left = -3;
+    keyLight.shadow.camera.right = 3;
+    keyLight.shadow.camera.top = 3;
+    keyLight.shadow.camera.bottom = -3;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0x7799bb, 1.2);
+    fillLight.position.set(-4, 3, -2);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xff3344, 1.5);
+    rimLight.position.set(0, 2, -4);
+    scene.add(rimLight);
+
+    // Ground Environment with Grid and Shadow Receiver
+    const floorGeo = new THREE.PlaneGeometry(30, 30);
+    const floorMat = new THREE.ShadowMaterial({ opacity: 0.45 });
+    const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+    floorMesh.rotation.x = -Math.PI / 2;
+    floorMesh.receiveShadow = true;
+    scene.add(floorMesh);
+
+    const gridHelper = new THREE.GridHelper(20, 40, 0xff2a3b, 0x232938);
+    gridHelper.position.y = 0.001;
+    scene.add(gridHelper);
+
+    // Radial floor glow circle
+    const glowGeo = new THREE.RingGeometry(0.01, 3.5, 64);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: 0x1f2430,
+      side: THREE.DoubleSide
+    });
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.rotation.x = -Math.PI / 2;
+    glowMesh.position.y = -0.001;
+    scene.add(glowMesh);
+
+    // Car Root Group
+    const carRoot = new THREE.Group();
+    scene.add(carRoot);
+
+    // WebXR Controllers Setup
+    const controllerFactory = new XRControllerModelFactory();
+    const controllers = [];
+    for (let i = 0; i < 2; i++) {
+      const controller = renderer.xr.getController(i);
+      scene.add(controller);
+
+      const controllerGrip = renderer.xr.getControllerGrip(i);
+      controllerGrip.add(controllerFactory.createControllerModel(controllerGrip));
+      scene.add(controllerGrip);
+
+      // Add simple pointer ray
+      const rayGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, -2)
+      ]);
+      const rayMat = new THREE.LineBasicMaterial({ color: 0xff3344, transparent: true, opacity: 0.7 });
+      const rayLine = new THREE.Line(rayGeo, rayMat);
+      controller.add(rayLine);
+
+      controllers.push(controller);
+    }
+
+    // Load Model
+    let carModel = null;
+    let autoRotate = false;
+    let isWireframe = false;
+    const loader = new GLTFLoader();
+
+    loader.load(
+      'models/red_race_car.glb',
+      (gltf) => {
+        carModel = gltf.scene;
+
+        // Compute Bounding Box to center and place tires on ground (y = 0)
+        const bbox = new THREE.Box3().setFromObject(carModel);
+        const center = bbox.getCenter(new THREE.Vector3());
+        const size = bbox.getSize(new THREE.Vector3());
+
+        // Target length ~3.8m in real-world XR scale
+        const scaleFactor = 3.8 / Math.max(size.x, size.z);
+        carModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+        // Recompute bbox with scale
+        bbox.setFromObject(carModel);
+        const scaledBottomY = bbox.min.y;
+        
+        // Offset so bottom rests exactly on y = 0 and is centered horizontally
+        carModel.position.x = -center.x * scaleFactor;
+        carModel.position.y = -scaledBottomY;
+        carModel.position.z = -center.z * scaleFactor;
+
+        // Enable shadows & fine-tune materials
+        carModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              child.material.envMapIntensity = 1.2;
+              child.material.needsUpdate = true;
+            }
+          }
+        });
+
+        carRoot.add(carModel);
+
+        // Hide loader
+        const loaderElem = document.getElementById('loader');
+        loaderElem.style.opacity = '0';
+        setTimeout(() => loaderElem.style.display = 'none', 500);
+      },
+      (xhr) => {
+        if (xhr.lengthComputable) {
+          const percent = Math.round((xhr.loaded / xhr.total) * 100);
+          document.getElementById('load-progress').textContent = `${percent}%`;
+        }
+      },
+      (error) => {
+        console.error('Failed to load GLB model:', error);
+        document.getElementById('load-progress').textContent = 'Error loading model';
+      }
+    );
+
+    // UI Buttons & Interaction
+    const btnAutoRotate = document.getElementById('btn-auto-rotate');
+    btnAutoRotate.addEventListener('click', () => {
+      autoRotate = !autoRotate;
+      btnAutoRotate.style.background = autoRotate ? 'var(--accent)' : 'rgba(255,255,255,0.08)';
+    });
+
+    const btnWireframe = document.getElementById('btn-wireframe');
+    btnWireframe.addEventListener('click', () => {
+      if (!carModel) return;
+      isWireframe = !isWireframe;
+      carModel.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.wireframe = isWireframe;
+        }
+      });
+      btnWireframe.style.background = isWireframe ? 'var(--accent)' : 'rgba(255,255,255,0.08)';
+    });
+
+    const btnResetCam = document.getElementById('btn-reset-cam');
+    btnResetCam.addEventListener('click', () => {
+      camera.position.set(2.8, 1.4, 3.2);
+      controls.target.set(0, 0.5, 0);
+      controls.update();
+    });
+
+    // WebXR Hardware & Session Management
+    const btnVR = document.getElementById('btn-vr');
+    const btnAR = document.getElementById('btn-ar');
+    const xrStatusTag = document.getElementById('xr-support-status');
+    const xrStatusText = document.getElementById('xr-status-text');
+
+    let currentXRSession = null;
+
+    if ('xr' in navigator) {
+      // Check VR capability
+      navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+        if (supported) {
+          btnVR.disabled = false;
+          xrStatusTag.classList.add('active');
+          xrStatusText.textContent = 'VR Headset Detected / Supported';
+        }
+      });
+
+      // Check AR capability
+      navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
+        if (supported) {
+          btnAR.disabled = false;
+          xrStatusTag.classList.add('active');
+          xrStatusText.textContent = 'WebXR AR / VR Supported';
+        }
+      });
+
+      navigator.xr.isSessionSupported('immersive-vr').then(vr => {
+        navigator.xr.isSessionSupported('immersive-ar').then(ar => {
+          if (!vr && !ar) {
+            xrStatusText.textContent = 'Desktop / Mobile Mode';
+          }
+        });
+      });
+    } else {
+      xrStatusText.textContent = 'WebXR Not Available (Browser)';
+    }
+
+    async function toggleXRSession(mode) {
+      if (currentXRSession) {
+        await currentXRSession.end();
+        return;
+      }
+
+      try {
+        const sessionInit = { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] };
+        const session = await navigator.xr.requestSession(mode, sessionInit);
+        renderer.xr.setSession(session);
+        currentXRSession = session;
+
+        if (mode === 'immersive-vr') {
+          document.getElementById('vr-btn-label').textContent = 'Exit VR';
+          scene.background = new THREE.Color(0x0e1118);
+          gridHelper.visible = true;
+          glowMesh.visible = true;
+        } else {
+          document.getElementById('ar-btn-label').textContent = 'Exit AR';
+          scene.background = null; // Transparent for passthrough / real-world
+          gridHelper.visible = false;
+          glowMesh.visible = false;
+        }
+
+        session.addEventListener('end', () => {
+          currentXRSession = null;
+          document.getElementById('vr-btn-label').textContent = 'Enter VR';
+          document.getElementById('ar-btn-label').textContent = 'Enter AR';
+          scene.background = new THREE.Color(0x0e1118);
+          gridHelper.visible = true;
+          glowMesh.visible = true;
+        });
+      } catch (err) {
+        console.error('Error starting WebXR session:', err);
+        alert('Could not start WebXR session: ' + err.message);
+      }
+    }
+
+    btnVR.addEventListener('click', () => toggleXRSession('immersive-vr'));
+    btnAR.addEventListener('click', () => toggleXRSession('immersive-ar'));
+
+    // FPS Meter
+    let frameCount = 0;
+    let lastFpsTime = performance.now();
+    const fpsElem = document.getElementById('fps-counter');
+
+    // Resize handling
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Render Loop (Compatible with WebXR XRAnimationLoop)
+    renderer.setAnimationLoop((timestamp, frame) => {
+      // Rotate if auto-rotate is active and not inside immersive XR
+      if (autoRotate && carModel && !renderer.xr.isPresenting) {
+        carRoot.rotation.y += 0.007;
+      }
+
+      if (!renderer.xr.isPresenting) {
+        controls.update();
+      }
+
+      renderer.render(scene, camera);
+
+      // FPS Calculation
+      frameCount++;
+      if (timestamp - lastFpsTime >= 1000) {
+        fpsElem.textContent = Math.round((frameCount * 1000) / (timestamp - lastFpsTime));
+        frameCount = 0;
+        lastFpsTime = timestamp;
+      }
+    });
+  </script>
+</body>
+</html>

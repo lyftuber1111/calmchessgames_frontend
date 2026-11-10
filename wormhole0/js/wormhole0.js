@@ -2164,23 +2164,26 @@ async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = nu
     const baseS = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_stages`;
     const baseE = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_enemies${queryParam}`;
     const baseP = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_powerups${queryParam}`;
+    const baseEnv = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_environments${queryParam}`;
 
-    const [rW, rS, rE, rP] = await Promise.all([
+    const [rW, rS, rE, rP, rEnv] = await Promise.all([
       fetch(baseW, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null),
       fetch(baseS, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null),
       fetch(baseE, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null),
-      fetch(baseP, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null)
+      fetch(baseP, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null),
+      fetch(baseEnv, { cache: 'no-cache', signal: ctrl.signal }).then(r => r.json()).catch(() => null)
     ]);
     clearTimeout(tid);
 
     if (rW && rW.weapons && rW.weapons.length > 0) {
-      console.log(`[GameManagerSync] Fetched ${rW.weapons.length} weapons, ${(rS && rS.stages) ? rS.stages.length : 0} stages, ${(rE && rE.enemies) ? rE.enemies.length : 0} threats, ${(rP && rP.powerups) ? rP.powerups.length : 0} powerups for [${dev.toUpperCase()}]`);
+      console.log(`[GameManagerSync] Fetched ${rW.weapons.length} weapons, ${(rS && rS.stages) ? rS.stages.length : 0} stages, ${(rE && rE.enemies) ? rE.enemies.length : 0} threats, ${(rP && rP.powerups) ? rP.powerups.length : 0} powerups, ${(rEnv && rEnv.environments) ? rEnv.environments.length : 0} environments for [${dev.toUpperCase()}]`);
       return {
         success: true,
         weapons: (rW && rW.weapons) || [],
         stages: (rS && rS.stages) || [],
         enemies: (rE && rE.enemies) || [],
-        powerups: (rP && rP.powerups) || []
+        powerups: (rP && rP.powerups) || [],
+        environments: (rEnv && rEnv.environments) || (rEnv && rEnv.data) || []
       };
     }
   } catch (errIndiv) {
@@ -2450,6 +2453,109 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
     window.activeStagePowerups = stagePowerups;
     state.stagePowerups = window.activeStagePowerups;
     console.log(`[GameManagerSync] 🔋 Integrated ${window.activeStagePowerups.length} active powerups for Stage ${currentStage} on [${currentDev.toUpperCase()}]`);
+  }
+
+  // ---------------------------------------------------------------------------
+  // 5. INTEGRATE ENVIRONMENT & COSMIC ASSETS (CUSTOM IMAGES, WORMHOLE GEOMETRY, SHADERS, QUICK XR EFFECTS)
+  // ---------------------------------------------------------------------------
+  const dbEnvironments = Array.isArray(data.environments) ? data.environments : [];
+  if (dbEnvironments.length > 0) {
+    let activeEnv = dbEnvironments.find(e => parseInt(e.stage_level) === currentStage && ((e.device_type || 'all').toLowerCase() === currentDev || (e.device_type || 'all').toLowerCase() === 'all') && (e.is_enabled === undefined || e.is_enabled == 1));
+    if (!activeEnv) {
+      activeEnv = dbEnvironments.find(e => parseInt(e.stage_level) === currentStage && (e.is_enabled === undefined || e.is_enabled == 1));
+    }
+    if (!activeEnv && dbEnvironments.length > 0) {
+      activeEnv = dbEnvironments[0];
+    }
+
+    if (activeEnv) {
+      window.activeEnvironmentConfig = activeEnv;
+      console.log(`[GameManagerSync] 🪐 Integrating active environment config '${activeEnv.env_name || activeEnv.env_id}' for Stage ${currentStage}...`);
+
+      const envScale = Math.max(0.1, Math.min(10.0, parseFloat(activeEnv.scale || 1.0)));
+      const horizonRad = Math.max(1.0, Math.min(100.0, parseFloat(activeEnv.event_horizon_radius || 7.5)));
+      const diskRad = Math.max(5.0, Math.min(300.0, parseFloat(activeEnv.accretion_disk_radius || 38.0)));
+      const rotSpeed = Math.max(0.05, Math.min(5.0, parseFloat(activeEnv.rotation_speed || 0.65)));
+
+      CONFIG.eventHorizonRadius = horizonRad;
+      CONFIG.accretionDiskRadius = diskRad;
+      CONFIG.rotationSpeed = rotSpeed;
+      if (activeEnv.particle_count) {
+        CONFIG.particleCount = parseInt(activeEnv.particle_count);
+      }
+
+      // Live 3D Mesh Scaling
+      const horizonBaseR = 7.2;
+      const diskBaseR = 36.0;
+      const hScaleFactor = (horizonRad / horizonBaseR) * envScale;
+      const dScaleFactor = (diskRad / diskBaseR) * envScale;
+
+      if (typeof horizonMesh !== 'undefined' && horizonMesh) {
+        horizonMesh.scale.set(hScaleFactor, hScaleFactor, hScaleFactor);
+      }
+      if (typeof photonRingMesh !== 'undefined' && photonRingMesh) {
+        photonRingMesh.scale.set(hScaleFactor, hScaleFactor, hScaleFactor);
+      }
+      if (typeof accretionDiskMesh !== 'undefined' && accretionDiskMesh) {
+        accretionDiskMesh.scale.set(dScaleFactor, dScaleFactor, dScaleFactor);
+      }
+      if (typeof accretionDiskMesh2 !== 'undefined' && accretionDiskMesh2) {
+        accretionDiskMesh2.scale.set(dScaleFactor, dScaleFactor, dScaleFactor);
+      }
+
+      // Live Shader Uniform Updates
+      if (typeof accretionUniforms !== 'undefined' && accretionUniforms) {
+        if (activeEnv.color_edge && accretionUniforms.uColorEdge) {
+          accretionUniforms.uColorEdge.value.setStyle(activeEnv.color_edge);
+        }
+        if (activeEnv.color_core && accretionUniforms.uColorCore) {
+          accretionUniforms.uColorCore.value.setStyle(activeEnv.color_core);
+        }
+        if (activeEnv.color_hot && accretionUniforms.uColorHot) {
+          accretionUniforms.uColorHot.value.setStyle(activeEnv.color_hot);
+        }
+        if (accretionUniforms.uSpeed) {
+          accretionUniforms.uSpeed.value = rotSpeed;
+        }
+      }
+      if (typeof secondaryDiskMaterial !== 'undefined' && secondaryDiskMaterial && secondaryDiskMaterial.uniforms) {
+        if (activeEnv.color_edge && secondaryDiskMaterial.uniforms.uColorEdge) {
+          secondaryDiskMaterial.uniforms.uColorEdge.value.setStyle(activeEnv.color_edge);
+        }
+        if (secondaryDiskMaterial.uniforms.uSpeed) {
+          secondaryDiskMaterial.uniforms.uSpeed.value = -rotSpeed * 0.6;
+        }
+      }
+      if (typeof photonRingMaterial !== 'undefined' && photonRingMaterial && photonRingMaterial.uniforms) {
+        if (activeEnv.color_halo && photonRingMaterial.uniforms.uHaloColor) {
+          photonRingMaterial.uniforms.uHaloColor.value.setStyle(activeEnv.color_halo);
+        }
+      }
+
+      // Lights Updates
+      const ambCol = activeEnv.ambient_light || activeEnv.ambient_light_color;
+      if (typeof ambientLight !== 'undefined' && ambientLight && ambCol) {
+        ambientLight.color.setStyle(ambCol);
+      }
+      const centerCol = activeEnv.center_light || activeEnv.center_light_color || activeEnv.color_primary;
+      if (typeof wormholeCoreLight !== 'undefined' && wormholeCoreLight && centerCol) {
+        wormholeCoreLight.color.setStyle(centerCol);
+      }
+      if (typeof wormholeCenterLight !== 'undefined' && wormholeCenterLight && centerCol) {
+        wormholeCenterLight.color.setStyle(centerCol);
+      }
+      if (typeof secondaryLight !== 'undefined' && secondaryLight && centerCol) {
+        secondaryLight.color.setStyle(centerCol);
+      }
+
+      // Custom Image Asset URL
+      if (activeEnv.image_asset_url && activeEnv.image_asset_url.trim()) {
+        applyCustomEnvironmentImageAsset(activeEnv.image_asset_url.trim(), activeEnv.image_asset_type || 'corona_sprite');
+      }
+
+      // Quick Special Effects for Wormhole Singularity
+      attachWormholeEnvironmentQuickEffects(activeEnv);
+    }
   }
 
   return true;
@@ -7951,6 +8057,12 @@ function create3DEnemyMesh(config) {
     circumference: userCircumference,
     radius: userRadius
   };
+
+  // Attach configured Quick Special Effects (Plasma Aura, Sparks, Tachyon Trail, etc.)
+  if (typeof attachQuickEffectsToMesh === 'function') {
+    attachQuickEffectsToMesh(group, config);
+  }
+
   return group;
 }
 
@@ -8895,11 +9007,125 @@ function quitGame() {
   window.location.href = 'https://calmchessgames.com';
 }
 
-function triggerEnemyExplosion(position, config) {
+function triggerEnemyExplosion(position, config = {}) {
   if (!scene) return;
-  const colorHex = parseInt((config.color_hex || config.color || '#00f0ff').replace('#', '0x'), 16) || 0x00f0ff;
+  const pType = (config.destruction_particle_type || 'procedural_sparks_explosion').toLowerCase();
+  const pCount = Math.max(10, Math.min(300, parseInt(config.destruction_particle_count || 40)));
+  const pScale = Math.max(0.1, Math.min(5.0, parseFloat(config.destruction_particle_scale || 1.0)));
+  const rawColor = config.destruction_particle_color || config.color_hex || config.color || '#ff0055';
+  const colorHex = parseInt(rawColor.replace('#', '0x'), 16) || 0xff0055;
+  const gltfUrl = (config.destruction_particle_url || '').trim();
 
-  const count = 40;
+  // 1. Custom 3D GLTF Debris Asset
+  if (pType === 'custom_gltf' && gltfUrl) {
+    spawnGLTFDebrisExplosion(position, gltfUrl, pCount, pScale, colorHex, rawColor);
+  } else if (pType === 'procedural_plasma_shatter') {
+    spawnPlasmaShatterExplosion(position, pCount, pScale, colorHex);
+  } else if (pType === 'procedural_quantum_implosion') {
+    spawnQuantumImplosionExplosion(position, pCount, pScale, colorHex);
+  } else if (pType === 'procedural_debris_cloud') {
+    spawnDebrisCloudExplosion(position, pCount, pScale, colorHex);
+  } else {
+    // Default: procedural_sparks_explosion
+    spawnSparksBurstExplosion(position, pCount, pScale, colorHex);
+  }
+
+  if (audioMgr && typeof audioMgr.playExplosion === 'function') {
+    audioMgr.playExplosion();
+  }
+}
+
+// -----------------------------------------------------------------------------
+// ENEMY DESTRUCTION PARTICLE ASSETS (PROCEDURAL & CUSTOM GLTF)
+// -----------------------------------------------------------------------------
+const debrisGLTFCache = new Map();
+
+function spawnGLTFDebrisExplosion(position, url, count, scale, colorHex, colorStr) {
+  const shardCount = Math.min(count, 28);
+  const spawnShards = (templateScene) => {
+    const shardsGroup = new THREE.Group();
+    const shards = [];
+
+    for (let i = 0; i < shardCount; i++) {
+      const shard = templateScene.clone(true);
+      shard.position.copy(position);
+      const shardScale = (0.2 + Math.random() * 0.4) * scale;
+      shard.scale.set(shardScale, shardScale, shardScale);
+
+      // Random outward velocity vector
+      const vel = new THREE.Vector3(
+        (Math.random() - 0.5) * 55 * scale,
+        (Math.random() - 0.5) * 55 * scale,
+        (Math.random() - 0.5) * 55 * scale
+      );
+      // Random angular tumble velocity
+      const angVel = new THREE.Vector3(
+        (Math.random() - 0.5) * 12,
+        (Math.random() - 0.5) * 12,
+        (Math.random() - 0.5) * 12
+      );
+
+      shardsGroup.add(shard);
+      shards.push({ mesh: shard, vel, angVel });
+    }
+    scene.add(shardsGroup);
+
+    const startTime = performance.now();
+    const interval = setInterval(() => {
+      const elapsed = (performance.now() - startTime) * 0.001;
+      const dt = 0.03;
+
+      for (let i = 0; i < shards.length; i++) {
+        const s = shards[i];
+        s.mesh.position.addScaledVector(s.vel, dt);
+        s.mesh.rotation.x += s.angVel.x * dt;
+        s.mesh.rotation.y += s.angVel.y * dt;
+        s.mesh.rotation.z += s.angVel.z * dt;
+        s.vel.multiplyScalar(0.97); // Drag
+      }
+
+      if (elapsed > 1.2) {
+        clearInterval(interval);
+        scene.remove(shardsGroup);
+        disposeMeshHierarchy(shardsGroup);
+      }
+    }, 30);
+  };
+
+  if (debrisGLTFCache.has(url)) {
+    spawnShards(debrisGLTFCache.get(url));
+  } else {
+    gltfLoader.load(
+      url,
+      (gltf) => {
+        debrisGLTFCache.set(url, gltf.scene);
+        spawnShards(gltf.scene);
+      },
+      undefined,
+      (err) => {
+        console.warn(`[DestructionAsset] Failed to load GLTF debris from '${url}', falling back to procedural debris cloud:`, err);
+        spawnDebrisCloudExplosion(position, count, scale, colorHex);
+      }
+    );
+  }
+}
+
+function spawnPlasmaShatterExplosion(position, count, scale, colorHex) {
+  // Expanding Shockwave Ring
+  const ringGeom = new THREE.RingGeometry(0.3 * scale, 1.2 * scale, 32);
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: colorHex,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending
+  });
+  const ring = new THREE.Mesh(ringGeom, ringMat);
+  ring.position.copy(position);
+  ring.rotation.x = Math.PI / 2;
+  scene.add(ring);
+
+  // Plasma fireballs point cloud
   const geom = new THREE.BufferGeometry();
   const positions = new Float32Array(count * 3);
   const velocities = [];
@@ -8909,16 +9135,209 @@ function triggerEnemyExplosion(position, config) {
     positions[i * 3 + 1] = position.y;
     positions[i * 3 + 2] = position.z;
     velocities.push(new THREE.Vector3(
-      (Math.random() - 0.5) * 45,
-      (Math.random() - 0.5) * 45,
-      (Math.random() - 0.5) * 45
+      (Math.random() - 0.5) * 60 * scale,
+      (Math.random() - 0.5) * 60 * scale,
+      (Math.random() - 0.5) * 60 * scale
     ));
   }
   geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
 
   const mat = new THREE.PointsMaterial({
     color: colorHex,
-    size: 2.2,
+    size: 3.5 * scale,
+    transparent: true,
+    opacity: 1.0,
+    blending: THREE.AdditiveBlending
+  });
+  const points = new THREE.Points(geom, mat);
+  scene.add(points);
+
+  const startTime = performance.now();
+  const interval = setInterval(() => {
+    const elapsed = (performance.now() - startTime) * 0.001;
+    const posAttr = points.geometry.attributes.position;
+    for (let i = 0; i < count; i++) {
+      posAttr.array[i * 3] += velocities[i].x * 0.035;
+      posAttr.array[i * 3 + 1] += velocities[i].y * 0.035;
+      posAttr.array[i * 3 + 2] += velocities[i].z * 0.035;
+    }
+    posAttr.needsUpdate = true;
+    points.material.opacity = Math.max(0, 1.0 - elapsed * 1.5);
+
+    // Expand shockwave ring
+    const ringScale = 1.0 + elapsed * 16.0 * scale;
+    ring.scale.set(ringScale, ringScale, 1.0);
+    ring.material.opacity = Math.max(0, 0.95 - elapsed * 1.8);
+
+    if (elapsed > 0.75) {
+      clearInterval(interval);
+      scene.remove(points);
+      scene.remove(ring);
+      geom.dispose();
+      mat.dispose();
+      ringGeom.dispose();
+      ringMat.dispose();
+    }
+  }, 25);
+}
+
+function spawnQuantumImplosionExplosion(position, count, scale, colorHex) {
+  const geom = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  const targetVelocities = [];
+
+  // Spawn particles on outer sphere and pull inward first, then blast outward
+  for (let i = 0; i < count; i++) {
+    const u = Math.random();
+    const v = Math.random();
+    const theta = u * 2.0 * Math.PI;
+    const phi = Math.acos(2.0 * v - 1.0);
+    const r = (1.5 + Math.random() * 3.5) * scale;
+    const sinPhi = Math.sin(phi);
+
+    positions[i * 3] = position.x + r * sinPhi * Math.cos(theta);
+    positions[i * 3 + 1] = position.y + r * sinPhi * Math.sin(theta);
+    positions[i * 3 + 2] = position.z + r * Math.cos(phi);
+
+    targetVelocities.push(new THREE.Vector3(
+      (Math.random() - 0.5) * 80 * scale,
+      (Math.random() - 0.5) * 80 * scale,
+      (Math.random() - 0.5) * 80 * scale
+    ));
+  }
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const mat = new THREE.PointsMaterial({
+    color: colorHex,
+    size: 2.8 * scale,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending
+  });
+  const points = new THREE.Points(geom, mat);
+  scene.add(points);
+
+  const startTime = performance.now();
+  let exploded = false;
+
+  const interval = setInterval(() => {
+    const elapsed = (performance.now() - startTime) * 0.001;
+    const posAttr = points.geometry.attributes.position;
+
+    if (elapsed < 0.16) {
+      // Phase 1: Inward implosion toward epicenter
+      for (let i = 0; i < count; i++) {
+        posAttr.array[i * 3] += (position.x - posAttr.array[i * 3]) * 0.22;
+        posAttr.array[i * 3 + 1] += (position.y - posAttr.array[i * 3 + 1]) * 0.22;
+        posAttr.array[i * 3 + 2] += (position.z - posAttr.array[i * 3 + 2]) * 0.22;
+      }
+    } else {
+      // Phase 2: Quantum flash burst outwards
+      if (!exploded) {
+        exploded = true;
+        mat.size = 4.2 * scale;
+      }
+      for (let i = 0; i < count; i++) {
+        posAttr.array[i * 3] += targetVelocities[i].x * 0.04;
+        posAttr.array[i * 3 + 1] += targetVelocities[i].y * 0.04;
+        posAttr.array[i * 3 + 2] += targetVelocities[i].z * 0.04;
+      }
+      mat.opacity = Math.max(0, 1.0 - (elapsed - 0.16) * 1.8);
+    }
+    posAttr.needsUpdate = true;
+
+    if (elapsed > 0.8) {
+      clearInterval(interval);
+      scene.remove(points);
+      geom.dispose();
+      mat.dispose();
+    }
+  }, 25);
+}
+
+function spawnDebrisCloudExplosion(position, count, scale, colorHex) {
+  const debrisGroup = new THREE.Group();
+  const shards = [];
+  const shardCount = Math.min(count, 22);
+
+  const shardMat = new THREE.MeshStandardMaterial({
+    color: colorHex,
+    metalness: 0.8,
+    roughness: 0.3,
+    emissive: colorHex,
+    emissiveIntensity: 0.35
+  });
+
+  for (let i = 0; i < shardCount; i++) {
+    const isTetra = (i % 2 === 0);
+    const sGeom = isTetra 
+      ? new THREE.TetrahedronGeometry((0.25 + Math.random() * 0.35) * scale)
+      : new THREE.BoxGeometry((0.3 + Math.random() * 0.3) * scale, (0.15 + Math.random() * 0.2) * scale, (0.4 + Math.random() * 0.3) * scale);
+    
+    const mesh = new THREE.Mesh(sGeom, shardMat);
+    mesh.position.copy(position);
+    debrisGroup.add(mesh);
+
+    shards.push({
+      mesh,
+      vel: new THREE.Vector3(
+        (Math.random() - 0.5) * 45 * scale,
+        (Math.random() - 0.5) * 45 * scale,
+        (Math.random() - 0.5) * 45 * scale
+      ),
+      angVel: new THREE.Vector3(
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10,
+        (Math.random() - 0.5) * 10
+      )
+    });
+  }
+  scene.add(debrisGroup);
+
+  const startTime = performance.now();
+  const interval = setInterval(() => {
+    const elapsed = (performance.now() - startTime) * 0.001;
+    const dt = 0.03;
+
+    for (let i = 0; i < shards.length; i++) {
+      const s = shards[i];
+      s.mesh.position.addScaledVector(s.vel, dt);
+      s.mesh.rotation.x += s.angVel.x * dt;
+      s.mesh.rotation.y += s.angVel.y * dt;
+      s.mesh.rotation.z += s.angVel.z * dt;
+      s.vel.multiplyScalar(0.96);
+    }
+    shardMat.opacity = Math.max(0, 1.0 - elapsed * 1.3);
+
+    if (elapsed > 0.85) {
+      clearInterval(interval);
+      scene.remove(debrisGroup);
+      disposeMeshHierarchy(debrisGroup);
+      shardMat.dispose();
+    }
+  }, 25);
+}
+
+function spawnSparksBurstExplosion(position, count, scale, colorHex) {
+  const geom = new THREE.BufferGeometry();
+  const positions = new Float32Array(count * 3);
+  const velocities = [];
+
+  for (let i = 0; i < count; i++) {
+    positions[i * 3] = position.x;
+    positions[i * 3 + 1] = position.y;
+    positions[i * 3 + 2] = position.z;
+    velocities.push(new THREE.Vector3(
+      (Math.random() - 0.5) * 50 * scale,
+      (Math.random() - 0.5) * 50 * scale,
+      (Math.random() - 0.5) * 50 * scale
+    ));
+  }
+  geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+  const mat = new THREE.PointsMaterial({
+    color: colorHex,
+    size: 2.2 * scale,
     transparent: true,
     opacity: 1.0,
     blending: THREE.AdditiveBlending
@@ -8946,10 +9365,382 @@ function triggerEnemyExplosion(position, config) {
       mat.dispose();
     }
   }, 25);
+}
 
-  if (audioMgr && typeof audioMgr.playExplosion === 'function') {
-    audioMgr.playExplosion();
+// =============================================================================
+// QUICK SPECIAL EFFECTS SYSTEM FOR XR (ATTACHED TO 3D MESHES & GLTF)
+// =============================================================================
+const activeSpecialEffects = [];
+
+function attachQuickEffectsToMesh(targetMesh, config = {}) {
+  if (!targetMesh) return;
+  const primary = config.quick_effect_primary || 'none';
+  const secondary = config.quick_effect_secondary || 'none';
+  if (primary === 'none' && secondary === 'none') return;
+
+  const colorHex = parseInt((config.quick_effect_color || config.color_hex || config.color || '#00f0ff').replace('#', '0x'), 16) || 0x00f0ff;
+  const intensity = Math.max(0.1, Math.min(5.0, parseFloat(config.quick_effect_intensity || 1.0)));
+  const speed = Math.max(0.2, Math.min(5.0, parseFloat(config.quick_effect_speed || 1.0)));
+  const dims = targetMesh.userData.dimensions || { scale: 1.0, length: 3.0, height: 1.5, depth: 3.0, radius: 1.0 };
+
+  const container = new THREE.Group();
+  container.name = 'quick_effects_container';
+  targetMesh.add(container);
+
+  const effectInstances = [];
+
+  [primary, secondary].forEach(eff => {
+    if (eff && eff !== 'none') {
+      const obj = createQuickEffectObject(eff, colorHex, intensity, speed, dims);
+      if (obj) {
+        container.add(obj.mesh);
+        effectInstances.push(obj);
+      }
+    }
+  });
+
+  if (effectInstances.length > 0) {
+    activeSpecialEffects.push({
+      parent: targetMesh,
+      container,
+      effects: effectInstances,
+      update: (delta, time) => {
+        effectInstances.forEach(e => e.update(delta, time));
+      },
+      isAlive: () => {
+        return targetMesh.parent !== null && targetMesh.parent !== undefined;
+      },
+      dispose: () => {
+        targetMesh.remove(container);
+        disposeMeshHierarchy(container);
+      }
+    });
   }
+}
+
+function createQuickEffectObject(effectName, colorHex, intensity, speed, dims) {
+  const r = (dims.radius || 1.2) * (dims.scale || 1.0);
+  const depth = (dims.depth || 3.0) * (dims.scale || 1.0);
+
+  if (effectName === 'plasma_aura') {
+    const geom = new THREE.SphereGeometry(r * 1.35, 16, 16);
+    const mat = new THREE.MeshBasicMaterial({
+      color: colorHex,
+      transparent: true,
+      opacity: 0.32 * intensity,
+      wireframe: true,
+      blending: THREE.AdditiveBlending
+    });
+    const mesh = new THREE.Mesh(geom, mat);
+    return {
+      mesh,
+      update: (delta, time) => {
+        const pulse = 1.0 + Math.sin(time * 3.8 * speed) * 0.12 * intensity;
+        mesh.scale.set(pulse, pulse, pulse);
+        mesh.rotation.y += delta * 0.5 * speed;
+      }
+    };
+  }
+
+  if (effectName === 'sparks_burst') {
+    const count = 24;
+    const geom = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * r * 2.2;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * r * 2.2;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * depth;
+    }
+    geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({
+      color: colorHex,
+      size: 2.0 * intensity,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+    const mesh = new THREE.Points(geom, mat);
+    return {
+      mesh,
+      update: (delta, time) => {
+        mesh.rotation.z += delta * 2.5 * speed;
+        const attr = mesh.geometry.attributes.position;
+        for (let i = 0; i < count; i++) {
+          attr.array[i * 3] += (Math.random() - 0.5) * 0.15 * speed;
+          attr.array[i * 3 + 1] += (Math.random() - 0.5) * 0.15 * speed;
+        }
+        attr.needsUpdate = true;
+      }
+    };
+  }
+
+  if (effectName === 'tachyon_trail' || effectName === 'engine_ion_thrust') {
+    const count = 30;
+    const geom = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * r * 0.4;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * r * 0.4;
+      pos[i * 3 + 2] = (i / count) * depth * 2.2; // Stream backward (+Z relative to forward flight)
+    }
+    geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({
+      color: colorHex,
+      size: 2.4 * intensity,
+      transparent: true,
+      opacity: 0.9,
+      blending: THREE.AdditiveBlending
+    });
+    const mesh = new THREE.Points(geom, mat);
+    return {
+      mesh,
+      update: (delta, time) => {
+        const attr = mesh.geometry.attributes.position;
+        for (let i = 0; i < count; i++) {
+          attr.array[i * 3 + 2] += delta * 15.0 * speed;
+          if (attr.array[i * 3 + 2] > depth * 3.5) {
+            attr.array[i * 3 + 2] = depth * 0.2;
+          }
+        }
+        attr.needsUpdate = true;
+      }
+    };
+  }
+
+  if (effectName === 'quantum_phase_glow') {
+    const geom = new THREE.IcosahedronGeometry(r * 1.25, 1);
+    const mat = new THREE.MeshBasicMaterial({
+      color: colorHex,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.45 * intensity,
+      blending: THREE.AdditiveBlending
+    });
+    const mesh = new THREE.Mesh(geom, mat);
+    return {
+      mesh,
+      update: (delta, time) => {
+        mesh.rotation.x += delta * 1.2 * speed;
+        mesh.rotation.y -= delta * 1.5 * speed;
+        mat.opacity = (0.35 + Math.sin(time * 4.0 * speed) * 0.25) * intensity;
+      }
+    };
+  }
+
+  if (effectName === 'energy_shield_pulse') {
+    const geom = new THREE.SphereGeometry(r * 1.4, 24, 24);
+    const mat = new THREE.MeshBasicMaterial({
+      color: colorHex,
+      transparent: true,
+      opacity: 0.22 * intensity,
+      blending: THREE.AdditiveBlending
+    });
+    const mesh = new THREE.Mesh(geom, mat);
+    return {
+      mesh,
+      update: (delta, time) => {
+        const pulse = 1.0 + Math.abs(Math.sin(time * 2.5 * speed)) * 0.25 * intensity;
+        mesh.scale.set(pulse, pulse, pulse);
+        mat.opacity = (0.15 + (1.0 - (pulse - 1.0)) * 0.3) * intensity;
+      }
+    };
+  }
+
+  if (effectName === 'arc_lightning') {
+    const segments = 12;
+    const geom = new THREE.BufferGeometry();
+    const pos = new Float32Array(segments * 2 * 3);
+    geom.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.LineBasicMaterial({
+      color: colorHex,
+      transparent: true,
+      opacity: 0.85 * intensity,
+      blending: THREE.AdditiveBlending
+    });
+    const mesh = new THREE.LineSegments(geom, mat);
+    let lastJitter = 0;
+    return {
+      mesh,
+      update: (delta, time) => {
+        if (time - lastJitter > 0.08 / speed) {
+          lastJitter = time;
+          const attr = mesh.geometry.attributes.position;
+          for (let i = 0; i < segments; i++) {
+            const idx1 = i * 2;
+            const idx2 = i * 2 + 1;
+            attr.array[idx1 * 3] = (Math.random() - 0.5) * r * 1.8;
+            attr.array[idx1 * 3 + 1] = (Math.random() - 0.5) * r * 1.8;
+            attr.array[idx1 * 3 + 2] = (Math.random() - 0.5) * depth * 1.2;
+
+            attr.array[idx2 * 3] = attr.array[idx1 * 3] + (Math.random() - 0.5) * r * 0.8;
+            attr.array[idx2 * 3 + 1] = attr.array[idx1 * 3 + 1] + (Math.random() - 0.5) * r * 0.8;
+            attr.array[idx2 * 3 + 2] = attr.array[idx1 * 3 + 2] + (Math.random() - 0.5) * r * 0.8;
+          }
+          attr.needsUpdate = true;
+          mat.opacity = (Math.random() > 0.3 ? 0.9 : 0.2) * intensity;
+        }
+      }
+    };
+  }
+
+  if (effectName === 'strobe_beacon') {
+    const beaconGroup = new THREE.Group();
+    const flareGeom = new THREE.SphereGeometry(0.25 * intensity, 8, 8);
+    const flareMat = new THREE.MeshBasicMaterial({ color: colorHex, blending: THREE.AdditiveBlending });
+    const b1 = new THREE.Mesh(flareGeom, flareMat);
+    const b2 = new THREE.Mesh(flareGeom, flareMat);
+    b1.position.set(-r * 1.2, 0, 0);
+    b2.position.set(r * 1.2, 0, 0);
+    beaconGroup.add(b1, b2);
+    return {
+      mesh: beaconGroup,
+      update: (delta, time) => {
+        const strobe = Math.floor(time * 3.5 * speed) % 2 === 0;
+        b1.visible = strobe;
+        b2.visible = !strobe;
+      }
+    };
+  }
+
+  // Fallback: photonic_sparkles / gravitational_vortex
+  const pCount = 20;
+  const pGeom = new THREE.BufferGeometry();
+  const pPos = new Float32Array(pCount * 3);
+  for (let i = 0; i < pCount; i++) {
+    const ang = (i / pCount) * Math.PI * 2;
+    pPos[i * 3] = Math.cos(ang) * r * 1.3;
+    pPos[i * 3 + 1] = Math.sin(ang) * r * 1.3;
+    pPos[i * 3 + 2] = (Math.random() - 0.5) * depth;
+  }
+  pGeom.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+  const pMat = new THREE.PointsMaterial({
+    color: colorHex,
+    size: 2.2 * intensity,
+    transparent: true,
+    opacity: 0.85,
+    blending: THREE.AdditiveBlending
+  });
+  const mesh = new THREE.Points(pGeom, pMat);
+  return {
+    mesh,
+    update: (delta, time) => {
+      mesh.rotation.z += delta * 1.8 * speed;
+      mesh.rotation.x += delta * 0.4 * speed;
+    }
+  };
+}
+
+function updateActiveSpecialEffects(delta, time) {
+  for (let i = activeSpecialEffects.length - 1; i >= 0; i--) {
+    const fx = activeSpecialEffects[i];
+    if (!fx.isAlive()) {
+      fx.dispose();
+      activeSpecialEffects.splice(i, 1);
+    } else {
+      fx.update(delta, time);
+    }
+  }
+}
+
+// -----------------------------------------------------------------------------
+// WORMHOLE SINGULARITY QUICK EFFECTS & CUSTOM IMAGE ASSETS
+// -----------------------------------------------------------------------------
+let wormholeEnvEffectGroup = null;
+let customEnvironmentCoronaSprite = null;
+
+function attachWormholeEnvironmentQuickEffects(activeEnv) {
+  if (!activeEnv || !scene) return;
+  if (!wormholeEnvEffectGroup) {
+    wormholeEnvEffectGroup = new THREE.Group();
+    wormholeEnvEffectGroup.name = 'wormhole_environment_fx';
+    scene.add(wormholeEnvEffectGroup);
+  }
+
+  // Clear existing effects from group
+  while (wormholeEnvEffectGroup.children.length > 0) {
+    const c = wormholeEnvEffectGroup.children[0];
+    wormholeEnvEffectGroup.remove(c);
+    disposeMeshHierarchy(c);
+  }
+
+  const primary = activeEnv.quick_effect_primary || 'none';
+  const secondary = activeEnv.quick_effect_secondary || 'none';
+  if (primary === 'none' && secondary === 'none') return;
+
+  const colorHex = parseInt((activeEnv.quick_effect_color || activeEnv.color_primary || '#00f0ff').replace('#', '0x'), 16) || 0x00f0ff;
+  const intensity = Math.max(0.1, Math.min(5.0, parseFloat(activeEnv.quick_effect_intensity || 1.0)));
+  const speed = Math.max(0.2, Math.min(5.0, parseFloat(activeEnv.quick_effect_speed || 1.0)));
+  const dims = {
+    radius: (activeEnv.event_horizon_radius || 7.5) * 1.1,
+    scale: activeEnv.scale || 1.0,
+    depth: (activeEnv.accretion_disk_radius || 38.0) * 0.5
+  };
+
+  const effectInstances = [];
+  [primary, secondary].forEach(eff => {
+    if (eff && eff !== 'none') {
+      const obj = createQuickEffectObject(eff, colorHex, intensity, speed, dims);
+      if (obj) {
+        wormholeEnvEffectGroup.add(obj.mesh);
+        effectInstances.push(obj);
+      }
+    }
+  });
+
+  if (effectInstances.length > 0) {
+    activeSpecialEffects.push({
+      parent: wormholeEnvEffectGroup,
+      container: wormholeEnvEffectGroup,
+      effects: effectInstances,
+      update: (delta, time) => {
+        effectInstances.forEach(e => e.update(delta, time));
+      },
+      isAlive: () => true,
+      dispose: () => {}
+    });
+  }
+}
+
+function applyCustomEnvironmentImageAsset(imageUrl, role = 'corona_sprite') {
+  if (!imageUrl || !scene) return;
+  const loader = new THREE.TextureLoader();
+  loader.load(
+    imageUrl,
+    (texture) => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      if (role === 'disk_diffuse' && typeof accretionDiskMaterial !== 'undefined' && accretionDiskMaterial) {
+        accretionDiskMaterial.map = texture;
+        accretionDiskMaterial.needsUpdate = true;
+      } else {
+        if (!customEnvironmentCoronaSprite) {
+          const mat = new THREE.SpriteMaterial({
+            map: texture,
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.85,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+          });
+          customEnvironmentCoronaSprite = new THREE.Sprite(mat);
+          const r = (CONFIG.accretionDiskRadius || 38.0) * 2.2;
+          customEnvironmentCoronaSprite.scale.set(r, r, 1);
+          customEnvironmentCoronaSprite.position.set(0, 0, 0);
+          scene.add(customEnvironmentCoronaSprite);
+        } else {
+          customEnvironmentCoronaSprite.material.map = texture;
+          customEnvironmentCoronaSprite.material.needsUpdate = true;
+          const r = (CONFIG.accretionDiskRadius || 38.0) * 2.2;
+          customEnvironmentCoronaSprite.scale.set(r, r, 1);
+          customEnvironmentCoronaSprite.visible = true;
+        }
+      }
+      console.log(`[Environment] Applied custom image asset texture '${imageUrl}' (${role})`);
+    },
+    undefined,
+    (err) => {
+      console.warn(`[Environment] Failed to load image asset '${imageUrl}':`, err);
+    }
+  );
 }
 
 function updatePlayerDefenseHUD() {
@@ -9979,6 +10770,10 @@ if (renderer) {
     updateStageDistanceObjective();
   }
   weaponsSystem.update(delta);
+
+  if (typeof updateActiveSpecialEffects === 'function') {
+    updateActiveSpecialEffects(delta, state.time);
+  }
 
   accretionUniforms.uTime.value = state.time;
   secondaryDiskMaterial.uniforms.uTime.value = state.time;

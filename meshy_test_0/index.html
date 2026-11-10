@@ -1676,15 +1676,102 @@
 
     const selectedFolderPaths = new Set([DEFAULT_DEST_DIR]);
 
-    fetch('image_folders.json')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          IMAGE_QUICK_FOLDERS = data.filter(f => f.toLowerCase().includes('images'));
-          renderChecklist();
+    // Backend Server URL Resolution (Connects frontend on Git to backend PHP servers)
+    const BACKEND_BASE = (function () {
+      if (typeof window !== 'undefined' && window.location) {
+        if (window.CC_BACKEND_BASE) return window.CC_BACKEND_BASE;
+        const host = window.location.hostname;
+        if (host === 'api.calmchessgames.com') {
+          return window.location.origin;
         }
-      })
-      .catch(() => {});
+        if ((host === 'localhost' || host === '127.0.0.1') && (window.location.port === '' || window.location.port === '80' || window.location.port === '443')) {
+          return window.location.origin;
+        }
+      }
+      return 'https://api.calmchessgames.com';
+    })();
+
+    // Candidate PHP endpoints across backend servers
+    function getBackendEndpoints(scriptName = 'move_asset.php') {
+      const endpoints = [
+        `${BACKEND_BASE}/meshy_test_0/${scriptName}`,
+        `https://api.calmchessgames.com/meshy_test_0/${scriptName}`,
+        `${BACKEND_BASE}/${scriptName}`,
+        `https://api.calmchessgames.com/${scriptName}`,
+        `https://calmchessgames.com/meshy_test_0/${scriptName}`,
+        `https://calmchessgames.com/${scriptName}`,
+        `./${scriptName}`,
+        scriptName
+      ];
+      return [...new Set(endpoints)];
+    }
+
+    // Helper to query backend PHP check endpoint
+    async function checkBackendCompanions(sourcePathDesc) {
+      const endpoints = getBackendEndpoints('move_asset.php');
+      for (const ep of endpoints) {
+        try {
+          const sep = ep.includes('?') ? '&' : '?';
+          const url = `${ep}${sep}check=1&source_path=${encodeURIComponent(sourcePathDesc)}&_t=${Date.now()}`;
+          const res = await fetch(url, { credentials: 'include', mode: 'cors' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success && Array.isArray(data.companions)) {
+              return data.companions;
+            }
+          }
+        } catch (e) {
+          // cascade to next candidate endpoint
+        }
+      }
+      return [];
+    }
+
+    // Helper to post asset approval to backend PHP servers
+    async function postBackendMoveAsset(formData) {
+      const endpoints = getBackendEndpoints('move_asset.php');
+      let lastErr = null;
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+            mode: 'cors'
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data;
+          }
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      throw lastErr || new Error('Backend server move endpoint unreachable');
+    }
+
+    // Load folder quick links with fallback across local and backend server
+    const imageFolderUrls = [
+      'image_folders.json',
+      './image_folders.json',
+      `${BACKEND_BASE}/meshy_test_0/image_folders.json`,
+      'https://calmchessgames.com/meshy_test_0/image_folders.json'
+    ];
+    (async function loadImageFolders() {
+      for (const url of imageFolderUrls) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              IMAGE_QUICK_FOLDERS = data.filter(f => f.toLowerCase().includes('images'));
+              renderChecklist();
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+    })();
 
     function getCustomQuickLinks() {
       try {
@@ -1967,20 +2054,12 @@
         }));
         renderCompanionFilesUI(currentCompanionFiles, baseName);
       } else if (sourcePathDesc && !sourcePathDesc.startsWith('blob:')) {
-        const checkUrl = `move_asset.php?check=1&source_path=${encodeURIComponent(sourcePathDesc)}`;
-        fetch(checkUrl, { credentials: 'include' })
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.success && Array.isArray(data.companions)) {
-              currentCompanionFiles = data.companions;
-              renderCompanionFilesUI(currentCompanionFiles, baseName);
-            } else {
-              renderCompanionFilesUI([], baseName);
-            }
-          })
-          .catch(() => {
-            renderCompanionFilesUI([], baseName);
-          });
+        checkBackendCompanions(sourcePathDesc).then(companions => {
+          currentCompanionFiles = companions || [];
+          renderCompanionFilesUI(currentCompanionFiles, baseName);
+        }).catch(() => {
+          renderCompanionFilesUI([], baseName);
+        });
       } else {
         renderCompanionFilesUI([], baseName);
       }
@@ -2329,17 +2408,13 @@
       }
 
       try {
-        const res = await fetch('move_asset.php', {
-          method: 'POST',
-          body: formData,
-          credentials: 'include'
-        });
-        const data = await res.json();
+        const data = await postBackendMoveAsset(formData);
         if (data && data.success) {
           const compCount = data.companion_count || (data.companion_files_moved ? data.companion_files_moved.length : 0);
           const compText = compCount > 0 ? ` + ${compCount} companion material(s)/texture(s)` : '';
           const folderText = data.moved_count === 1 ? '1 destination folder' : `${data.moved_count} destination folders`;
-          setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText} starting from calmchessgames.com root!`, 'success');
+          const feGitText = data.frontend_git_synced ? ' (synced to frontend git server)' : '';
+          setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText} on backend server${feGitText}!`, 'success');
         } else {
           setMoveMessage(`Notice: ${data.error || 'Request completed'} (Active in viewer)`, 'success');
         }

@@ -22,11 +22,26 @@ const cached3DAssetModels = new Map();
 
 function normalizeAssetUrl(url) {
   if (!url) return '';
-  url = url.trim();
+  url = url.trim().replace(/\\/g, '/');
+
   // If already absolute protocol (http:, https:, //, data:), keep as-is
   if (/^(https?:|\/\/|data:)/i.test(url)) {
     return url;
   }
+
+  // Strip leading ./
+  if (url.startsWith('./')) {
+    url = url.substring(2);
+  }
+
+  // If path starts with meshy_test_0/ without leading slash, add leading slash so it resolves from domain root
+  if (url.startsWith('meshy_test_0/')) {
+    return '/' + url;
+  }
+  if (url.startsWith('/meshy_test_0/')) {
+    return url;
+  }
+
   // If path starts with /wormhole0/, return as-is
   if (url.startsWith('/wormhole0/')) {
     return url;
@@ -39,8 +54,42 @@ function normalizeAssetUrl(url) {
   if (url.startsWith('/')) {
     return url;
   }
+
+  // Fix casing and missing _images suffix for stage folders across desktop, mobile, vr, arcore
+  const stageFolderMap = {
+    'event_horizon': 'event_horizon_images',
+    'warp_origin': 'warp_origin_images',
+    'singularity_core': 'singularity_core_images',
+    'quantum_realm': 'quantum_realm_images',
+    'final_boss_stage': 'final_boss_stage_images',
+    'nebula_outpost': 'nebula_outpost_images'
+  };
+
+  let workingPath = url;
+  let isMobilePrefix = false;
+  if (/^mobile\//i.test(workingPath)) {
+    isMobilePrefix = true;
+    workingPath = workingPath.substring(7);
+  }
+
+  for (const [folderKey, folderTarget] of Object.entries(stageFolderMap)) {
+    const reg = new RegExp(`^${folderKey}(_images)?(\\/.*)?$`, 'i');
+    if (reg.test(workingPath)) {
+      workingPath = workingPath.replace(reg, `${folderTarget}$2`);
+      return `mobile/${workingPath}`;
+    }
+  }
+
+  // Bare filenames without directory (e.g. "red_recon_drone.glb" or "recon_drone.glb")
+  if (/^[a-zA-Z0-9_\-\.]+\.(glb|gltf|obj|png|jpg|jpeg|webp|svg)$/i.test(workingPath)) {
+    return `mobile/event_horizon_images/${workingPath}`;
+  }
+
+  if (isMobilePrefix) {
+    return `mobile/${workingPath}`;
+  }
+
   // Otherwise it's a relative path (e.g. "mobile/event_horizon_images/red_recon_drone.glb")
-  // Since wormhole0.html is served from /wormhole0/, this resolves to /wormhole0/mobile/...
   return url;
 }
 
@@ -64,26 +113,28 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
     return;
   }
 
+  // Cache-busting URL parameter guarantees fresh network asset load on asset edits
+  const fetchUrl = url.includes('?') ? `${url}&_v=${Date.now()}` : `${url}?_v=${Date.now()}`;
   const cleanUrl = url.split('?')[0].split('#')[0].toLowerCase();
   const isObj = cleanUrl.endsWith('.obj');
 
   if (isObj) {
     objLoader.load(
-      url,
+      fetchUrl,
       (obj) => {
         cached3DAssetModels.set(url, obj);
         if (onLoaded) onLoaded(obj.clone(true));
       },
       undefined,
       (err) => {
-        console.warn(`[3DAsset] Failed to load .OBJ model from '${url}':`, err);
+        console.warn(`[3DAsset] Failed to load .OBJ model from '${url}' (fetch: ${fetchUrl}):`, err);
         if (onError) onError(err);
       }
     );
   } else {
     // Both .glb and .gltf are handled seamlessly by Three.js GLTFLoader
     gltfLoader.load(
-      url,
+      fetchUrl,
       (gltf) => {
         const scene = gltf.scene || gltf.scenes[0] || gltf;
         cached3DAssetModels.set(url, scene);
@@ -91,7 +142,7 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
       },
       undefined,
       (err) => {
-        console.warn(`[3DAsset] Failed to load GLTF/GLB model from '${url}':`, err);
+        console.warn(`[3DAsset] Failed to load GLTF/GLB model from '${url}' (fetch: ${fetchUrl}):`, err);
         if (onError) onError(err);
       }
     );
@@ -2237,14 +2288,15 @@ const DEFAULT_STAGE_POWERUPS = [
 
 async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = null) {
   const dev = deviceType || currentActiveDeviceType || 'desktop';
-  const queryParam = (stageLevel ? `&stage_level=${stageLevel}` : '') + (dev ? `&device_type=${dev}` : '');
+  const timestamp = Date.now();
+  const queryParam = (stageLevel ? `&stage_level=${stageLevel}` : '') + (dev ? `&device_type=${dev}` : '') + `&_t=${timestamp}`;
 
   // 1. First attempt: Query primary individual endpoints in parallel (guaranteed on live server)
   try {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 2800);
-    const baseW = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_weapons${stageLevel ? `&stage_level=${stageLevel}` : ''}`;
-    const baseS = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_stages`;
+    const baseW = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_weapons${stageLevel ? `&stage_level=${stageLevel}` : ''}&_t=${timestamp}`;
+    const baseS = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_stages&_t=${timestamp}`;
     const baseE = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_enemies${queryParam}`;
     const baseP = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_powerups${queryParam}`;
     const baseEnv = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_environments${queryParam}`;
@@ -2287,6 +2339,10 @@ async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = nu
       const json = await res.json().catch(() => null);
       if (json && json.success && (json.weapons || json.stages || json.enemies || json.powerups)) {
         console.log(`[GameManagerSync] Fetched Game Manager database records via unified endpoint for [${dev.toUpperCase()}]`);
+        return json;
+      }
+    }
+  } catch (e) {}
         return json;
       }
     }
@@ -2493,8 +2549,63 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
       return matchStage && matchDevice;
     });
 
-    window.activeStageEnemies = stageEnemies.length > 0 ? stageEnemies : dbEnemies.filter(e => parseInt(e.stage_level) === currentStage);
+    const chosenEnemies = stageEnemies.length > 0 ? stageEnemies : dbEnemies.filter(e => parseInt(e.stage_level) === currentStage);
+    window.activeStageEnemies = chosenEnemies.map(e => ({
+      ...e,
+      custom_from_db: true
+    }));
     state.stageEnemies = window.activeStageEnemies;
+
+    // Clear 3D model cache so updated model URLs reload fresh assets immediately
+    cached3DAssetModels.clear();
+
+    // Hot-update already spawned enemies on screen if their threat profile graphic asset changed
+    if (typeof active3DEnemies !== 'undefined' && Array.isArray(active3DEnemies) && active3DEnemies.length > 0) {
+      for (const ae of active3DEnemies) {
+        if (!ae || !ae.mesh) continue;
+        const matchingCfg = window.activeStageEnemies.find(e => (e.enemy_id === ae.enemyId || e.id === ae.enemyId));
+        if (matchingCfg && matchingCfg.model_3d_url) {
+          const normUrl = normalizeAssetUrl(matchingCfg.model_3d_url);
+          if (ae.currentModelUrl !== normUrl) {
+            ae.currentModelUrl = normUrl;
+            load3DAssetModel(normUrl, (newModel) => {
+              if (!ae.mesh) return;
+              if (ae.mesh.userData && ae.mesh.userData.loadedAsset) {
+                ae.mesh.remove(ae.mesh.userData.loadedAsset);
+                try { disposeMeshHierarchy(ae.mesh.userData.loadedAsset); } catch (e) {}
+              }
+              const proxyPlaceholder = ae.mesh.getObjectByName('enemy_proxy_placeholder');
+              if (proxyPlaceholder) ae.mesh.remove(proxyPlaceholder);
+              const proxyCore = ae.mesh.getObjectByName('enemy_proxy_core');
+              if (proxyCore) ae.mesh.remove(proxyCore);
+
+              const box = new THREE.Box3().setFromObject(newModel);
+              const center = new THREE.Vector3();
+              box.getCenter(center);
+              newModel.position.sub(center);
+
+              const size = new THREE.Vector3();
+              box.getSize(size);
+              const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+              const uScale = parseFloat(matchingCfg.scale || 1.0) || 1.0;
+              const uLen = parseFloat(matchingCfg.length || 3.0) || 3.0;
+              const autoScale = (uLen * uScale) / maxDim;
+              newModel.scale.set(autoScale, autoScale, autoScale);
+
+              newModel.traverse((child) => {
+                if (child.isMesh) {
+                  child.castShadow = true;
+                  child.receiveShadow = true;
+                }
+              });
+
+              ae.mesh.add(newModel);
+              ae.mesh.userData.loadedAsset = newModel;
+            });
+          }
+        }
+      }
+    }
 
     console.log(`[GameManagerSync] ✅ Verified ${window.activeStageEnemies.length} threat enemy profiles from database for Stage ${currentStage} on device [${currentDev.toUpperCase()}]`);
     updateTacticalEnemiesUI(window.activeStageEnemies);
@@ -4426,6 +4537,12 @@ function getEngineApi() {
       }
     },
     setEnemies: (enemiesConfig) => {
+      // If we already loaded customized enemies from the live database for this stage,
+      // preserve the database model_3d_url and customizations rather than blowing them away with static defaults!
+      if (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.some(e => e.model_3d_url || e.custom_from_db)) {
+        console.log('[Wormhole XR Engine] Preserving live database enemy profiles with custom models/assets.');
+        return;
+      }
       window.activeStageEnemies = enemiesConfig;
     },
     setStageObjectives: (objectives) => {
@@ -9846,11 +9963,13 @@ function attachWormholeEnvironmentQuickEffects(activeEnv) {
   }
 }
 
-function applyCustomEnvironmentImageAsset(imageUrl, role = 'corona_sprite') {
-  if (!imageUrl || !scene) return;
+function applyCustomEnvironmentImageAsset(rawImageUrl, role = 'corona_sprite') {
+  if (!rawImageUrl || !scene) return;
+  const imageUrl = normalizeAssetUrl(rawImageUrl);
+  const fetchUrl = imageUrl.includes('?') ? `${imageUrl}&_v=${Date.now()}` : `${imageUrl}?_v=${Date.now()}`;
   const loader = new THREE.TextureLoader();
   loader.load(
-    imageUrl,
+    fetchUrl,
     (texture) => {
       texture.colorSpace = THREE.SRGBColorSpace;
       if (role === 'disk_diffuse' && typeof accretionDiskMaterial !== 'undefined' && accretionDiskMaterial) {
@@ -11346,5 +11465,19 @@ window.addEventListener('keydown', (e) => {
 
 // Initial mobile snap grid calculation
 updateMobileSnapGrid();
+
+// Auto-synchronize Game Manager whenever player switches back to game tab from Admin Console
+if (typeof window !== 'undefined') {
+  window.addEventListener('focus', () => {
+    syncGameManagerFromDatabase(currentActiveStage, currentActiveDeviceType);
+  });
+}
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      syncGameManagerFromDatabase(currentActiveStage, currentActiveDeviceType);
+    }
+  });
+}
 
 runStartupDiagnosticsAndSplashScreen();

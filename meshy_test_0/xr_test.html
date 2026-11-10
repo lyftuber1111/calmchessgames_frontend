@@ -2,12 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Meshy 3D - WebXR Model Viewer</title>
   <style>
     :root {
       --bg: #0b0d13;
-      --panel-bg: rgba(18, 22, 32, 0.88);
+      --panel-bg: rgba(18, 22, 32, 0.95);
+      --dock-bg: rgba(15, 18, 26, 0.88);
       --accent: #ff2a3b;
       --accent-glow: rgba(255, 42, 59, 0.35);
       --text: #f3f4f6;
@@ -21,6 +22,7 @@
       padding: 0;
       user-select: none;
       -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
@@ -30,6 +32,7 @@
       overflow: hidden;
       width: 100vw;
       height: 100vh;
+      touch-action: none;
     }
 
     #canvas-container {
@@ -41,17 +44,19 @@
       z-index: 1;
     }
 
-    /* UI Header Overlay */
+    /* UI Header Overlay (Responsive on mobile) */
     header {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      padding: 1rem 1.5rem;
-      z-index: 10;
+      padding: 0.85rem 1.25rem;
+      padding-top: max(0.85rem, env(safe-area-inset-top));
+      z-index: 15;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      gap: 0.5rem;
       background: linear-gradient(180deg, rgba(11, 13, 19, 0.92) 0%, rgba(11, 13, 19, 0) 100%);
       pointer-events: none;
     }
@@ -60,18 +65,23 @@
       pointer-events: auto;
       display: flex;
       align-items: center;
-      gap: 0.75rem;
+      gap: 0.5rem;
+      min-width: 0;
     }
 
     .brand h1 {
-      font-size: 1.25rem;
+      font-size: 1.15rem;
       font-weight: 700;
       letter-spacing: -0.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 260px;
     }
 
     .pill {
-      font-size: 0.7rem;
-      padding: 0.2rem 0.55rem;
+      font-size: 0.68rem;
+      padding: 0.18rem 0.5rem;
       border-radius: 9999px;
       font-weight: 600;
       text-transform: uppercase;
@@ -79,11 +89,12 @@
       background: var(--accent-glow);
       color: var(--accent);
       border: 1px solid var(--accent);
+      flex-shrink: 0;
     }
 
     .xr-status-tag {
       font-size: 0.75rem;
-      padding: 0.3rem 0.7rem;
+      padding: 0.3rem 0.65rem;
       border-radius: 6px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid var(--border);
@@ -92,6 +103,11 @@
       align-items: center;
       gap: 0.4rem;
       pointer-events: auto;
+      flex-shrink: 0;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .xr-status-tag.active {
@@ -101,92 +117,331 @@
     }
 
     .dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: currentColor;
+      flex-shrink: 0;
     }
 
-    /* Left Stats Overlay */
-    .info-card {
-      position: absolute;
-      top: 5rem;
-      left: 1.5rem;
-      z-index: 10;
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      padding: 1rem;
-      border-radius: 12px;
-      backdrop-filter: blur(14px);
-      width: 240px;
-      font-size: 0.8rem;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    }
-
-    .info-card h4 {
-      font-size: 0.85rem;
-      margin-bottom: 0.6rem;
-      color: #fff;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .stat-row {
+    /* Fixed Bottom Dock Bar with Tabs */
+    .bottom-dock {
+      position: fixed;
+      bottom: max(0.85rem, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 80;
       display: flex;
-      justify-content: space-between;
-      padding: 0.3rem 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--dock-bg);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.6rem;
+      border-radius: 9999px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      max-width: calc(100vw - 1.5rem);
     }
 
-    .stat-row:last-child {
-      border-bottom: none;
-    }
-
-    .stat-lbl {
+    .dock-tab {
+      background: transparent;
+      border: 1px solid transparent;
       color: var(--text-muted);
-    }
-
-    .stat-val {
+      padding: 0.45rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.82rem;
       font-weight: 600;
-      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
     }
 
-    /* Right Model Loader Card */
-    .model-loader-card {
-      position: absolute;
-      top: 5rem;
-      right: 1.5rem;
-      z-index: 10;
+    .dock-tab:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .dock-tab.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+
+    .dock-icon {
+      font-size: 0.95rem;
+    }
+
+    /* Slide-out Panel Backdrop */
+    .slide-panel-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .slide-panel-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Slide-out Panel (Bottom Sheet on Mobile & Desktop) */
+    .slide-panel {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translate(-50%, 105%);
+      width: 100%;
+      max-width: 580px;
       background: var(--panel-bg);
       border: 1px solid var(--border);
-      padding: 1rem 1.15rem;
-      border-radius: 12px;
-      backdrop-filter: blur(14px);
-      width: 340px;
-      max-width: calc(100vw - 3rem);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+      border-bottom: none;
+      border-radius: 20px 20px 0 0;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.65);
+      z-index: 100;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       display: flex;
       flex-direction: column;
-      gap: 0.75rem;
+      max-height: 80vh;
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
     }
 
-    .card-header {
+    .slide-panel.open {
+      transform: translate(-50%, 0);
+    }
+
+    /* Sheet Handle for touch dragging */
+    .sheet-handle-bar {
+      width: 100%;
+      padding: 0.6rem 0 0.3rem 0;
+      display: flex;
+      justify-content: center;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .sheet-handle {
+      width: 44px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 9999px;
+    }
+
+    .sheet-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      padding: 0.4rem 1.25rem 0.8rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     }
 
-    .card-header h4 {
-      font-size: 0.85rem;
+    .sheet-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .sheet-icon {
+      font-size: 1.15rem;
+    }
+
+    .sheet-header h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
       color: #fff;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      margin: 0;
+    }
+
+    .btn-close-sheet {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-close-sheet:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+    }
+
+    /* Sheet Body & Tab Content */
+    .sheet-body {
+      padding: 1.1rem 1.25rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 0.85rem;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Form Inputs */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .input-group label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .input-with-action {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .slide-panel input[type="text"] {
+      flex: 1;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      font-size: 16px; /* Prevents auto-zoom on iOS Safari */
+      font-family: inherit;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .slide-panel input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 0.6rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      gap: 0.35rem;
+      white-space: nowrap;
+      transition: background 0.2s, border-color 0.2s;
+      touch-action: manipulation;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .loader-actions {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.2rem;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      touch-action: manipulation;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .btn-primary-accent {
+      flex: 2;
+      background: linear-gradient(135deg, #ff2a3b 0%, #d81224 100%);
+      color: #fff;
+      border: 1px solid #ff5967;
+      box-shadow: 0 3px 12px rgba(255, 42, 59, 0.35);
+    }
+
+    .btn-primary-accent:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ff4352 0%, #eb1e31 100%);
+      box-shadow: 0 4px 16px rgba(255, 42, 59, 0.55);
+    }
+
+    .btn-subtle {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
     }
 
     .card-badge {
       font-size: 0.68rem;
-      padding: 0.15rem 0.5rem;
+      padding: 0.15rem 0.55rem;
       border-radius: 9999px;
       font-weight: 600;
       background: rgba(16, 185, 129, 0.15);
@@ -206,103 +461,9 @@
       border-color: rgba(239, 68, 68, 0.3);
     }
 
-    .input-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-
-    .input-group label {
-      font-size: 0.72rem;
-      color: var(--text-muted);
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 0.4px;
-    }
-
-    .input-with-action {
-      display: flex;
-      gap: 0.4rem;
-      align-items: center;
-    }
-
-    .model-loader-card input[type="text"] {
-      flex: 1;
-      width: 100%;
-      background: rgba(0, 0, 0, 0.45);
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 0.5rem 0.7rem;
-      border-radius: 7px;
-      font-size: 0.8rem;
-      font-family: inherit;
-      outline: none;
-      user-select: text;
-      -webkit-user-select: text;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .model-loader-card input[type="text"]:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px var(--accent-glow);
-    }
-
-    .btn-icon {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border);
-      color: #fff;
-      padding: 0.5rem 0.65rem;
-      border-radius: 7px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.85rem;
-      transition: background 0.2s, border-color 0.2s;
-    }
-
-    .btn-icon:hover {
-      background: rgba(255, 255, 255, 0.16);
-      border-color: rgba(255, 255, 255, 0.3);
-    }
-
-    .loader-actions {
-      display: flex;
-      gap: 0.5rem;
-    }
-
-    .btn-primary-accent {
-      flex: 2;
-      background: linear-gradient(135deg, #ff2a3b 0%, #d81224 100%);
-      color: #fff;
-      border: 1px solid #ff5967;
-      box-shadow: 0 3px 10px rgba(255, 42, 59, 0.35);
-      justify-content: center;
-    }
-
-    .btn-primary-accent:hover:not(:disabled) {
-      background: linear-gradient(135deg, #ff4352 0%, #eb1e31 100%);
-      box-shadow: 0 4px 14px rgba(255, 42, 59, 0.55);
-    }
-
-    .btn-subtle {
-      flex: 1;
-      background: rgba(255, 255, 255, 0.08);
-      color: #cbd5e1;
-      border: 1px solid var(--border);
-      justify-content: center;
-      font-size: 0.75rem;
-      padding: 0.5rem;
-    }
-
-    .btn-subtle:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.16);
-      color: #fff;
-    }
-
     .model-msg {
-      font-size: 0.72rem;
-      min-height: 1rem;
+      font-size: 0.75rem;
+      min-height: 1.1rem;
       color: var(--text-muted);
       overflow-wrap: break-word;
       word-break: break-all;
@@ -316,43 +477,92 @@
       color: #f87171;
     }
 
-    /* Bottom Control Bar */
-    .controls-panel {
-      position: absolute;
-      bottom: 1.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      padding: 0.6rem 1rem;
-      border-radius: 14px;
-      backdrop-filter: blur(16px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    /* Specs Tab Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
     }
 
-    .btn {
-      background: rgba(255, 255, 255, 0.08);
-      color: #fff;
-      border: 1px solid var(--border);
-      padding: 0.6rem 1rem;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
+    .stat-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 0.65rem 0.8rem;
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .stat-card .stat-lbl {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .stat-card .stat-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .stat-badge-fps {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+    }
+
+    .specs-footer-tags {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.2rem;
+    }
+
+    .tech-tag {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    /* Controls Tab */
+    .controls-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .controls-subgroup {
+      display: flex;
+      flex-direction: column;
       gap: 0.4rem;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .btn:hover:not(:disabled) {
-      background: rgba(255, 255, 255, 0.18);
-      border-color: rgba(255, 255, 255, 0.35);
-      transform: translateY(-1px);
+    .subgroup-title {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-weight: 600;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-row .btn {
+      flex: 1;
+      min-width: 120px;
     }
 
     .btn-xr {
@@ -372,6 +582,24 @@
       border-color: rgba(255, 255, 255, 0.05);
     }
 
+    .gesture-hints {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 0.6rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .hint-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
     /* Loading Overlay */
     #loader {
       position: absolute;
@@ -385,7 +613,7 @@
       align-items: center;
       justify-content: center;
       gap: 1rem;
-      z-index: 100;
+      z-index: 150;
       transition: opacity 0.5s ease;
     }
 
@@ -402,39 +630,38 @@
       to { transform: rotate(360deg); }
     }
 
-    #xr-overlay-msg {
-      position: absolute;
-      bottom: 5.5rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-      background: rgba(0, 0, 0, 0.7);
-      border: 1px solid var(--border);
-      padding: 0.4rem 0.8rem;
-      border-radius: 8px;
-      font-size: 0.75rem;
-      color: #cbd5e1;
-      pointer-events: none;
-    }
-
-    @media (max-width: 960px) {
-      .model-loader-card {
-        top: auto;
-        bottom: 5.8rem;
-        right: 1rem;
-        left: 1rem;
-        width: auto;
-        max-width: none;
+    /* Mobile Fine-Tuning */
+    @media (max-width: 480px) {
+      header {
+        padding: 0.55rem 0.75rem;
+        padding-top: max(0.55rem, env(safe-area-inset-top));
       }
-      .info-card {
-        top: 4.5rem;
-        left: 1rem;
-        padding: 0.6rem 0.8rem;
-        width: 190px;
-        font-size: 0.75rem;
+      .brand h1 {
+        font-size: 0.92rem;
+        max-width: 135px;
       }
-      #xr-overlay-msg {
-        display: none;
+      .pill {
+        font-size: 0.62rem;
+        padding: 0.15rem 0.4rem;
+      }
+      .xr-status-tag {
+        font-size: 0.68rem;
+        padding: 0.25rem 0.5rem;
+        max-width: 140px;
+      }
+      .dock-tab {
+        padding: 0.4rem 0.65rem;
+        font-size: 0.76rem;
+        gap: 0.35rem;
+      }
+      .dock-icon {
+        font-size: 0.88rem;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .slide-panel {
+        max-height: 85vh;
       }
     }
   </style>
@@ -451,12 +678,17 @@
   </script>
 </head>
 <body>
+  <!-- Full Screen 3D Viewport -->
+  <div id="canvas-container"></div>
+
+  <!-- Loading Overlay -->
   <div id="loader">
     <div class="spinner"></div>
     <div id="loader-title" style="font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px;">Loading 3D Model...</div>
     <div id="load-progress" style="font-size: 0.8rem; color: var(--text-muted);">0%</div>
   </div>
 
+  <!-- Top Info Header (Responsive on mobile) -->
   <header>
     <div class="brand">
       <h1 id="brand-title">🏎️ 3D Model Viewer</h1>
@@ -468,98 +700,167 @@
     </div>
   </header>
 
-  <!-- Left Stats Info Card -->
-  <div class="info-card">
-    <h4>Model & WebXR Specs</h4>
-    <div class="stat-row">
-      <span class="stat-lbl">Format</span>
-      <span class="stat-val" id="format-spec">GLB</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-lbl">Triangles</span>
-      <span class="stat-val" id="poly-count">-</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-lbl">Vertices</span>
-      <span class="stat-val" id="vert-count">-</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-lbl">Real Length</span>
-      <span class="stat-val" id="spec-length">-</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-lbl">Real Width</span>
-      <span class="stat-val" id="spec-width">-</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-lbl">Real Height</span>
-      <span class="stat-val" id="spec-height">-</span>
-    </div>
-    <div class="stat-row">
-      <span class="stat-lbl">FPS</span>
-      <span class="stat-val" id="fps-counter">60</span>
-    </div>
-  </div>
+  <!-- Bottom Navigation Dock Bar with Tab Buttons -->
+  <nav class="bottom-dock" aria-label="Scene Controls Dock">
+    <button class="dock-tab" id="dock-btn-model" data-tab="model" type="button">
+      <span class="dock-icon">📁</span>
+      <span class="dock-label">Model File</span>
+    </button>
+    <button class="dock-tab" id="dock-btn-specs" data-tab="specs" type="button">
+      <span class="dock-icon">📊</span>
+      <span class="dock-label">File Specs</span>
+    </button>
+    <button class="dock-tab" id="dock-btn-controls" data-tab="controls" type="button">
+      <span class="dock-icon">🎮</span>
+      <span class="dock-label">Controls</span>
+    </button>
+  </nav>
 
-  <!-- Right Model Loader Card -->
-  <div class="model-loader-card">
-    <div class="card-header">
-      <h4>Load 3D Model</h4>
-      <span class="card-badge" id="model-status-badge">Ready</span>
+  <!-- Slide-out Panel Backdrop -->
+  <div class="slide-panel-backdrop" id="panel-backdrop"></div>
+
+  <!-- Tabbed Slide-out Panel (Drawer / Bottom Sheet) -->
+  <div class="slide-panel" id="slide-panel">
+    <div class="sheet-handle-bar" id="sheet-handle-bar">
+      <div class="sheet-handle"></div>
     </div>
-    <div class="input-group">
-      <label for="model-file-input">Model File Name / Path</label>
-      <div class="input-with-action">
-        <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/red_race_car.glb" value="models/red_race_car.glb" spellcheck="false" autocomplete="off" />
-        <label for="local-file-picker" class="btn-icon" title="Browse local 3D file">
-          <span>📁</span>
-          <input type="file" id="local-file-picker" accept=".glb,.gltf,.obj,.fbx,.stl" style="display:none;" />
-        </label>
+    <div class="sheet-header">
+      <div class="sheet-title-group">
+        <span class="sheet-icon" id="sheet-header-icon">📁</span>
+        <h3 id="sheet-header-title">Select 3D Model</h3>
       </div>
-      <datalist id="model-presets">
-        <option value="models/red_race_car.glb">models/red_race_car.glb (GLB)</option>
-        <option value="models/red_race_car.obj">models/red_race_car.obj (OBJ)</option>
-        <option value="models/red_race_car.fbx">models/red_race_car.fbx (FBX)</option>
-        <option value="models/red_race_car.stl">models/red_race_car.stl (STL)</option>
-      </datalist>
+      <button class="btn-close-sheet" id="btn-close-sheet" type="button" aria-label="Close Panel">✕</button>
     </div>
-    <div class="input-group">
-      <label for="material-file-input">Material / MTL File (Optional for OBJ)</label>
-      <input type="text" id="material-file-input" placeholder="e.g. models/red_race_car.mtl" spellcheck="false" autocomplete="off" />
+
+    <div class="sheet-body">
+      <!-- Tab 1: Selecting File & Loading Model -->
+      <div class="tab-content active" id="tab-content-model">
+        <div class="panel-section-header">
+          <span class="section-subtitle">Load from URL, path, or local device</span>
+          <span class="card-badge" id="model-status-badge">Ready</span>
+        </div>
+
+        <div class="input-group">
+          <label for="model-file-input">Model File Name / Path</label>
+          <div class="input-with-action">
+            <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/red_race_car.glb" value="models/red_race_car.glb" spellcheck="false" autocomplete="off" />
+            <label for="local-file-picker" class="btn-icon" title="Browse local 3D file">
+              <span>📁 Browse</span>
+              <input type="file" id="local-file-picker" accept=".glb,.gltf,.obj,.fbx,.stl" style="display:none;" />
+            </label>
+          </div>
+          <datalist id="model-presets">
+            <option value="models/red_race_car.glb">models/red_race_car.glb (GLB)</option>
+            <option value="models/red_race_car.obj">models/red_race_car.obj (OBJ)</option>
+            <option value="models/red_race_car.fbx">models/red_race_car.fbx (FBX)</option>
+            <option value="models/red_race_car.stl">models/red_race_car.stl (STL)</option>
+          </datalist>
+        </div>
+
+        <div class="input-group">
+          <label for="material-file-input">Material / MTL File (Optional for OBJ)</label>
+          <input type="text" id="material-file-input" placeholder="e.g. models/red_race_car.mtl" spellcheck="false" autocomplete="off" />
+        </div>
+
+        <div class="loader-actions">
+          <button id="btn-load-model" class="btn btn-primary-accent" type="button">
+            <span>⚡</span> <span>Load Model</span>
+          </button>
+          <button id="btn-quick-car" class="btn btn-subtle" type="button" title="Load default Red Race Car">
+            <span>🏎️</span> <span>Default Car</span>
+          </button>
+        </div>
+
+        <div id="model-load-msg" class="model-msg">Current: models/red_race_car.glb</div>
+      </div>
+
+      <!-- Tab 2: File Info & Specs -->
+      <div class="tab-content" id="tab-content-specs">
+        <div class="panel-section-header">
+          <span class="section-subtitle">Real-time geometry and rendering metrics</span>
+          <span class="stat-badge-fps"><span id="fps-counter">60</span> FPS</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-lbl">Format</span>
+            <span class="stat-val" id="format-spec">GLB</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-lbl">Triangles</span>
+            <span class="stat-val" id="poly-count">-</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-lbl">Vertices</span>
+            <span class="stat-val" id="vert-count">-</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-lbl">Real Length</span>
+            <span class="stat-val" id="spec-length">-</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-lbl">Real Width</span>
+            <span class="stat-val" id="spec-width">-</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-lbl">Real Height</span>
+            <span class="stat-val" id="spec-height">-</span>
+          </div>
+        </div>
+
+        <div class="specs-footer-tags">
+          <span class="tech-tag">✓ PBR Shader</span>
+          <span class="tech-tag">✓ Ground Shadow</span>
+          <span class="tech-tag">✓ WebXR Scale ~3.8m</span>
+        </div>
+      </div>
+
+      <!-- Tab 3: Interactive Viewport & WebXR Controls -->
+      <div class="tab-content" id="tab-content-controls">
+        <div class="panel-section-header">
+          <span class="section-subtitle">Immersive Headset & Viewport Tools</span>
+        </div>
+
+        <div class="controls-grid">
+          <div class="controls-subgroup">
+            <span class="subgroup-title">WebXR Modes</span>
+            <div class="btn-row">
+              <button id="btn-vr" class="btn btn-xr" disabled type="button">
+                <span>🥽</span> <span id="vr-btn-label">Enter VR</span>
+              </button>
+              <button id="btn-ar" class="btn" disabled type="button">
+                <span>📱</span> <span id="ar-btn-label">Enter AR</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="controls-subgroup">
+            <span class="subgroup-title">Display & Camera</span>
+            <div class="btn-row">
+              <button id="btn-auto-rotate" class="btn" type="button">
+                <span>🔄</span> <span id="rotate-label">Rotate</span>
+              </button>
+              <button id="btn-wireframe" class="btn" type="button">
+                <span>🕸️</span> <span id="wireframe-label">Wireframe</span>
+              </button>
+              <button id="btn-reset-cam" class="btn" type="button">
+                <span>🎯</span> <span>Reset View</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="gesture-hints">
+          <div class="hint-item">
+            <span>👆</span> <span>Orbit: 1-finger drag or left mouse button</span>
+          </div>
+          <div class="hint-item">
+            <span>✌️</span> <span>Zoom / Pan: 2-finger pinch/drag or scroll wheel</span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="loader-actions">
-      <button id="btn-load-model" class="btn btn-primary-accent" type="button">
-        <span>⚡</span> <span>Load Model</span>
-      </button>
-      <button id="btn-quick-car" class="btn btn-subtle" type="button" title="Load default Red Race Car">
-        <span>🏎️</span> <span>Default Car</span>
-      </button>
-    </div>
-    <div id="model-load-msg" class="model-msg">Current: models/red_race_car.glb</div>
   </div>
-
-  <div id="xr-overlay-msg">Drag to orbit &bull; Scroll to zoom &bull; Click 'Enter VR/AR' for headset</div>
-
-  <!-- Bottom Control Bar -->
-  <div class="controls-panel">
-    <button id="btn-vr" class="btn btn-xr" disabled>
-      <span>🥽</span> <span id="vr-btn-label">Enter VR</span>
-    </button>
-    <button id="btn-ar" class="btn" disabled>
-      <span>📱</span> <span id="ar-btn-label">Enter AR</span>
-    </button>
-    <button id="btn-auto-rotate" class="btn">
-      <span>🔄</span> <span>Rotate</span>
-    </button>
-    <button id="btn-wireframe" class="btn">
-      <span>🕸️</span> <span>Wireframe</span>
-    </button>
-    <button id="btn-reset-cam" class="btn">
-      <span>🎯</span> <span>Reset View</span>
-    </button>
-  </div>
-
-  <div id="canvas-container"></div>
 
   <script type="module">
     import * as THREE from 'three';
@@ -595,7 +896,7 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.target.set(0, 0.5, 0);
-    controls.maxPolarAngle = Math.PI / 2 - 0.01; // Don't clip through ground
+    controls.maxPolarAngle = Math.PI / 2 - 0.01;
     controls.minDistance = 1.2;
     controls.maxDistance = 15;
 
@@ -663,7 +964,6 @@
       controllerGrip.add(controllerFactory.createControllerModel(controllerGrip));
       scene.add(controllerGrip);
 
-      // Simple pointer ray
       const rayGeo = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(0, 0, 0),
         new THREE.Vector3(0, 0, -2)
@@ -699,6 +999,93 @@
     const btnLoadModel = document.getElementById('btn-load-model');
     const btnQuickCar = document.getElementById('btn-quick-car');
     const localFilePicker = document.getElementById('local-file-picker');
+
+    // Tabbed Slide-out Panel Logic
+    let activeTab = null;
+    const slidePanel = document.getElementById('slide-panel');
+    const panelBackdrop = document.getElementById('panel-backdrop');
+    const dockTabs = document.querySelectorAll('.dock-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const sheetHeaderTitle = document.getElementById('sheet-header-title');
+    const sheetHeaderIcon = document.getElementById('sheet-header-icon');
+    const btnCloseSheet = document.getElementById('btn-close-sheet');
+    const sheetHandleBar = document.getElementById('sheet-handle-bar');
+
+    const tabMeta = {
+      model: { title: 'Select 3D Model', icon: '📁' },
+      specs: { title: 'Model & Scene Specs', icon: '📊' },
+      controls: { title: 'Viewport & WebXR Controls', icon: '🎮' }
+    };
+
+    function openTab(tabName) {
+      if (activeTab === tabName && slidePanel.classList.contains('open')) {
+        closePanel();
+        return;
+      }
+
+      activeTab = tabName;
+      dockTabs.forEach(t => {
+        t.classList.toggle('active', t.getAttribute('data-tab') === tabName);
+      });
+
+      tabContents.forEach(c => {
+        c.classList.toggle('active', c.id === `tab-content-${tabName}`);
+      });
+
+      if (tabMeta[tabName]) {
+        sheetHeaderTitle.textContent = tabMeta[tabName].title;
+        sheetHeaderIcon.textContent = tabMeta[tabName].icon;
+      }
+
+      slidePanel.classList.add('open');
+      panelBackdrop.classList.add('open');
+    }
+
+    function closePanel() {
+      slidePanel.classList.remove('open');
+      panelBackdrop.classList.remove('open');
+      activeTab = null;
+      dockTabs.forEach(t => t.classList.remove('active'));
+    }
+
+    dockTabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-tab');
+        openTab(tab);
+      });
+    });
+
+    btnCloseSheet.addEventListener('click', closePanel);
+    panelBackdrop.addEventListener('click', closePanel);
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && slidePanel.classList.contains('open')) {
+        closePanel();
+      }
+    });
+
+    // Touch drag-down to dismiss
+    let touchStartY = 0;
+    let touchDiff = 0;
+    sheetHandleBar.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+      touchDiff = 0;
+    }, { passive: true });
+
+    sheetHandleBar.addEventListener('touchmove', (e) => {
+      const currentY = e.touches[0].clientY;
+      touchDiff = currentY - touchStartY;
+      if (touchDiff > 0) {
+        slidePanel.style.transform = `translate(-50%, ${touchDiff}px)`;
+      }
+    }, { passive: true });
+
+    sheetHandleBar.addEventListener('touchend', () => {
+      slidePanel.style.transform = '';
+      if (touchDiff > 70) {
+        closePanel();
+      }
+    });
 
     function setStatus(text, state) {
       statusBadge.textContent = text;
@@ -828,7 +1215,7 @@
           });
           object3D = new THREE.Mesh(geom, mat);
         } else {
-          // Fallback attempt with GLTF
+          // Fallback GLTF
           const gltf = await new Promise((resolve, reject) => {
             gltfLoader.load(rawUrl, resolve, onProgress, reject);
           });
@@ -848,7 +1235,7 @@
 
         carModel = object3D;
 
-        // Compute Bounding Box & Scale to comfortable real-world XR scale (~3.8m length)
+        // Compute Bounding Box & Scale to WebXR scale (~3.8m length)
         const bbox = new THREE.Box3().setFromObject(carModel);
         const center = bbox.getCenter(new THREE.Vector3());
         const size = bbox.getSize(new THREE.Vector3());
@@ -1015,7 +1402,7 @@
       navigator.xr.isSessionSupported('immersive-vr').then(vr => {
         navigator.xr.isSessionSupported('immersive-ar').then(ar => {
           if (!vr && !ar) {
-            xrStatusText.textContent = 'Desktop / Mobile 3D Mode';
+            xrStatusText.textContent = 'Desktop / Mobile 3D';
           }
         });
       });
@@ -1034,6 +1421,9 @@
         const session = await navigator.xr.requestSession(mode, sessionInit);
         renderer.xr.setSession(session);
         currentXRSession = session;
+
+        // Auto-close overlay panel when entering XR
+        closePanel();
 
         if (mode === 'immersive-vr') {
           document.getElementById('vr-btn-label').textContent = 'Exit VR';

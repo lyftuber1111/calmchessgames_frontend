@@ -2343,10 +2343,6 @@ async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = nu
       }
     }
   } catch (e) {}
-        return json;
-      }
-    }
-  } catch (e) {}
 
   return null;
 }

@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Meshy 3D - WebXR Red Race Car</title>
+  <title>Meshy 3D - WebXR Model Viewer</title>
   <style>
     :root {
       --bg: #0b0d13;
-      --panel-bg: rgba(18, 22, 32, 0.85);
+      --panel-bg: rgba(18, 22, 32, 0.88);
       --accent: #ff2a3b;
       --accent-glow: rgba(255, 42, 59, 0.35);
       --text: #f3f4f6;
@@ -52,7 +52,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: linear-gradient(180deg, rgba(11, 13, 19, 0.9) 0%, rgba(11, 13, 19, 0) 100%);
+      background: linear-gradient(180deg, rgba(11, 13, 19, 0.92) 0%, rgba(11, 13, 19, 0) 100%);
       pointer-events: none;
     }
 
@@ -105,6 +105,215 @@
       height: 8px;
       border-radius: 50%;
       background: currentColor;
+    }
+
+    /* Left Stats Overlay */
+    .info-card {
+      position: absolute;
+      top: 5rem;
+      left: 1.5rem;
+      z-index: 10;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      padding: 1rem;
+      border-radius: 12px;
+      backdrop-filter: blur(14px);
+      width: 240px;
+      font-size: 0.8rem;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .info-card h4 {
+      font-size: 0.85rem;
+      margin-bottom: 0.6rem;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.3rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stat-row:last-child {
+      border-bottom: none;
+    }
+
+    .stat-lbl {
+      color: var(--text-muted);
+    }
+
+    .stat-val {
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    /* Right Model Loader Card */
+    .model-loader-card {
+      position: absolute;
+      top: 5rem;
+      right: 1.5rem;
+      z-index: 10;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      padding: 1rem 1.15rem;
+      border-radius: 12px;
+      backdrop-filter: blur(14px);
+      width: 340px;
+      max-width: calc(100vw - 3rem);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-header h4 {
+      font-size: 0.85rem;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 0;
+    }
+
+    .card-badge {
+      font-size: 0.68rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .card-badge.loading {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .card-badge.error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .input-group label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .input-with-action {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    .model-loader-card input[type="text"] {
+      flex: 1;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 0.5rem 0.7rem;
+      border-radius: 7px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .model-loader-card input[type="text"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 0.5rem 0.65rem;
+      border-radius: 7px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      transition: background 0.2s, border-color 0.2s;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .loader-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .btn-primary-accent {
+      flex: 2;
+      background: linear-gradient(135deg, #ff2a3b 0%, #d81224 100%);
+      color: #fff;
+      border: 1px solid #ff5967;
+      box-shadow: 0 3px 10px rgba(255, 42, 59, 0.35);
+      justify-content: center;
+    }
+
+    .btn-primary-accent:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ff4352 0%, #eb1e31 100%);
+      box-shadow: 0 4px 14px rgba(255, 42, 59, 0.55);
+    }
+
+    .btn-subtle {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border: 1px solid var(--border);
+      justify-content: center;
+      font-size: 0.75rem;
+      padding: 0.5rem;
+    }
+
+    .btn-subtle:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.16);
+      color: #fff;
+    }
+
+    .model-msg {
+      font-size: 0.72rem;
+      min-height: 1rem;
+      color: var(--text-muted);
+      overflow-wrap: break-word;
+      word-break: break-all;
+    }
+
+    .model-msg.success {
+      color: #34d399;
+    }
+
+    .model-msg.error {
+      color: #f87171;
     }
 
     /* Bottom Control Bar */
@@ -163,49 +372,6 @@
       border-color: rgba(255, 255, 255, 0.05);
     }
 
-    /* Left Stats Overlay */
-    .info-card {
-      position: absolute;
-      top: 5rem;
-      left: 1.5rem;
-      z-index: 10;
-      background: var(--panel-bg);
-      border: 1px solid var(--border);
-      padding: 1rem;
-      border-radius: 12px;
-      backdrop-filter: blur(12px);
-      width: 240px;
-      font-size: 0.8rem;
-    }
-
-    .info-card h4 {
-      font-size: 0.85rem;
-      margin-bottom: 0.6rem;
-      color: #fff;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .stat-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.3rem 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .stat-row:last-child {
-      border-bottom: none;
-    }
-
-    .stat-lbl {
-      color: var(--text-muted);
-    }
-
-    .stat-val {
-      font-weight: 600;
-      color: #e2e8f0;
-    }
-
     /* Loading Overlay */
     #loader {
       position: absolute;
@@ -250,6 +416,27 @@
       color: #cbd5e1;
       pointer-events: none;
     }
+
+    @media (max-width: 960px) {
+      .model-loader-card {
+        top: auto;
+        bottom: 5.8rem;
+        right: 1rem;
+        left: 1rem;
+        width: auto;
+        max-width: none;
+      }
+      .info-card {
+        top: 4.5rem;
+        left: 1rem;
+        padding: 0.6rem 0.8rem;
+        width: 190px;
+        font-size: 0.75rem;
+      }
+      #xr-overlay-msg {
+        display: none;
+      }
+    }
   </style>
 
   <!-- Import maps polyfill for ES module browser support -->
@@ -266,13 +453,13 @@
 <body>
   <div id="loader">
     <div class="spinner"></div>
-    <div style="font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px;">Loading Red Race Car GLB...</div>
+    <div id="loader-title" style="font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px;">Loading 3D Model...</div>
     <div id="load-progress" style="font-size: 0.8rem; color: var(--text-muted);">0%</div>
   </div>
 
   <header>
     <div class="brand">
-      <h1>🏎️ Red Race Car</h1>
+      <h1 id="brand-title">🏎️ 3D Model Viewer</h1>
       <span class="pill">WebXR Mode</span>
     </div>
     <div id="xr-support-status" class="xr-status-tag">
@@ -281,31 +468,32 @@
     </div>
   </header>
 
+  <!-- Left Stats Info Card -->
   <div class="info-card">
     <h4>Model & WebXR Specs</h4>
     <div class="stat-row">
       <span class="stat-lbl">Format</span>
-      <span class="stat-val">GLB (Binary)</span>
+      <span class="stat-val" id="format-spec">GLB</span>
     </div>
     <div class="stat-row">
       <span class="stat-lbl">Triangles</span>
-      <span class="stat-val" id="poly-count">29,941</span>
+      <span class="stat-val" id="poly-count">-</span>
     </div>
     <div class="stat-row">
       <span class="stat-lbl">Vertices</span>
-      <span class="stat-val" id="vert-count">46,544</span>
+      <span class="stat-val" id="vert-count">-</span>
     </div>
     <div class="stat-row">
       <span class="stat-lbl">Real Length</span>
-      <span class="stat-val">~3.80 m</span>
+      <span class="stat-val" id="spec-length">-</span>
     </div>
     <div class="stat-row">
       <span class="stat-lbl">Real Width</span>
-      <span class="stat-val">~1.80 m</span>
+      <span class="stat-val" id="spec-width">-</span>
     </div>
     <div class="stat-row">
       <span class="stat-lbl">Real Height</span>
-      <span class="stat-val">~1.06 m</span>
+      <span class="stat-val" id="spec-height">-</span>
     </div>
     <div class="stat-row">
       <span class="stat-lbl">FPS</span>
@@ -313,8 +501,46 @@
     </div>
   </div>
 
+  <!-- Right Model Loader Card -->
+  <div class="model-loader-card">
+    <div class="card-header">
+      <h4>Load 3D Model</h4>
+      <span class="card-badge" id="model-status-badge">Ready</span>
+    </div>
+    <div class="input-group">
+      <label for="model-file-input">Model File Name / Path</label>
+      <div class="input-with-action">
+        <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/red_race_car.glb" value="models/red_race_car.glb" spellcheck="false" autocomplete="off" />
+        <label for="local-file-picker" class="btn-icon" title="Browse local 3D file">
+          <span>📁</span>
+          <input type="file" id="local-file-picker" accept=".glb,.gltf,.obj,.fbx,.stl" style="display:none;" />
+        </label>
+      </div>
+      <datalist id="model-presets">
+        <option value="models/red_race_car.glb">models/red_race_car.glb (GLB)</option>
+        <option value="models/red_race_car.obj">models/red_race_car.obj (OBJ)</option>
+        <option value="models/red_race_car.fbx">models/red_race_car.fbx (FBX)</option>
+        <option value="models/red_race_car.stl">models/red_race_car.stl (STL)</option>
+      </datalist>
+    </div>
+    <div class="input-group">
+      <label for="material-file-input">Material / MTL File (Optional for OBJ)</label>
+      <input type="text" id="material-file-input" placeholder="e.g. models/red_race_car.mtl" spellcheck="false" autocomplete="off" />
+    </div>
+    <div class="loader-actions">
+      <button id="btn-load-model" class="btn btn-primary-accent" type="button">
+        <span>⚡</span> <span>Load Model</span>
+      </button>
+      <button id="btn-quick-car" class="btn btn-subtle" type="button" title="Load default Red Race Car">
+        <span>🏎️</span> <span>Default Car</span>
+      </button>
+    </div>
+    <div id="model-load-msg" class="model-msg">Current: models/red_race_car.glb</div>
+  </div>
+
   <div id="xr-overlay-msg">Drag to orbit &bull; Scroll to zoom &bull; Click 'Enter VR/AR' for headset</div>
 
+  <!-- Bottom Control Bar -->
   <div class="controls-panel">
     <button id="btn-vr" class="btn btn-xr" disabled>
       <span>🥽</span> <span id="vr-btn-label">Enter VR</span>
@@ -339,6 +565,10 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+    import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+    import { STLLoader } from 'three/addons/loaders/STLLoader.js';
     import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
     // Scene Setup
@@ -418,7 +648,7 @@
     glowMesh.position.y = -0.001;
     scene.add(glowMesh);
 
-    // Car Root Group
+    // Model Root Group
     const carRoot = new THREE.Group();
     scene.add(carRoot);
 
@@ -433,7 +663,7 @@
       controllerGrip.add(controllerFactory.createControllerModel(controllerGrip));
       scene.add(controllerGrip);
 
-      // Add simple pointer ray
+      // Simple pointer ray
       const rayGeo = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(0, 0, 0),
         new THREE.Vector3(0, 0, -2)
@@ -445,67 +675,289 @@
       controllers.push(controller);
     }
 
-    // Load Model
+    // Loaders
+    const gltfLoader = new GLTFLoader();
+    const objLoader = new OBJLoader();
+    const mtlLoader = new MTLLoader();
+    const fbxLoader = new FBXLoader();
+    const stlLoader = new STLLoader();
+
     let carModel = null;
     let autoRotate = false;
     let isWireframe = false;
-    const loader = new GLTFLoader();
 
-    loader.load(
-      'models/red_race_car.glb',
-      (gltf) => {
-        carModel = gltf.scene;
+    // UI Elements
+    const loaderElem = document.getElementById('loader');
+    const loaderTitle = document.getElementById('loader-title');
+    const loadProgress = document.getElementById('load-progress');
+    const statusBadge = document.getElementById('model-status-badge');
+    const modelMsg = document.getElementById('model-load-msg');
+    const brandTitle = document.getElementById('brand-title');
 
-        // Compute Bounding Box to center and place tires on ground (y = 0)
+    const modelFileInput = document.getElementById('model-file-input');
+    const materialFileInput = document.getElementById('material-file-input');
+    const btnLoadModel = document.getElementById('btn-load-model');
+    const btnQuickCar = document.getElementById('btn-quick-car');
+    const localFilePicker = document.getElementById('local-file-picker');
+
+    function setStatus(text, state) {
+      statusBadge.textContent = text;
+      statusBadge.className = 'card-badge' + (state ? ` ${state}` : '');
+    }
+
+    function setMessage(text, type = '') {
+      modelMsg.textContent = text;
+      modelMsg.className = 'model-msg' + (type ? ` ${type}` : '');
+    }
+
+    function showLoader(title) {
+      loaderTitle.textContent = title;
+      loadProgress.textContent = '0%';
+      loaderElem.style.display = 'flex';
+      loaderElem.style.opacity = '1';
+    }
+
+    function hideLoader() {
+      loaderElem.style.opacity = '0';
+      setTimeout(() => {
+        loaderElem.style.display = 'none';
+      }, 400);
+    }
+
+    function onProgress(xhr) {
+      if (xhr.lengthComputable && xhr.total > 0) {
+        const percent = Math.round((xhr.loaded / xhr.total) * 100);
+        loadProgress.textContent = `${percent}%`;
+      }
+    }
+
+    function disposeHierarchy(obj) {
+      obj.traverse((child) => {
+        if (child.isMesh) {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(m => {
+              for (const key in m) {
+                if (m[key] && m[key].isTexture) {
+                  m[key].dispose();
+                }
+              }
+              m.dispose();
+            });
+          }
+        }
+      });
+    }
+
+    function resolveModelUrl(pathStr) {
+      if (!pathStr) return '';
+      pathStr = pathStr.trim();
+      if (
+        pathStr.startsWith('http://') ||
+        pathStr.startsWith('https://') ||
+        pathStr.startsWith('blob:') ||
+        pathStr.startsWith('data:') ||
+        pathStr.startsWith('/') ||
+        pathStr.startsWith('./') ||
+        pathStr.startsWith('../')
+      ) {
+        return pathStr;
+      }
+      if (pathStr.startsWith('models/')) {
+        return pathStr;
+      }
+      return 'models/' + pathStr;
+    }
+
+    async function loadModel(modelInputVal, materialInputVal = '', customName = '') {
+      const rawUrl = resolveModelUrl(modelInputVal);
+      if (!rawUrl) {
+        setStatus('Empty Input', 'error');
+        setMessage('Please enter a model file name or path.', 'error');
+        return;
+      }
+
+      const cleanExt = (customName || rawUrl).split('?')[0].split('#')[0];
+      const ext = cleanExt.includes('.') ? cleanExt.split('.').pop().toLowerCase() : 'glb';
+      const displayName = customName || rawUrl.split('/').pop();
+
+      setStatus('Loading...', 'loading');
+      setMessage(`Loading ${displayName}...`);
+      showLoader(`Loading ${displayName}...`);
+
+      try {
+        let object3D = null;
+
+        if (ext === 'glb' || ext === 'gltf') {
+          const gltf = await new Promise((resolve, reject) => {
+            gltfLoader.load(rawUrl, resolve, onProgress, reject);
+          });
+          object3D = gltf.scene;
+        } else if (ext === 'obj') {
+          const resolvedMtl = resolveModelUrl(materialInputVal);
+          if (resolvedMtl) {
+            try {
+              const materials = await new Promise((resolve, reject) => {
+                mtlLoader.load(resolvedMtl, resolve, undefined, reject);
+              });
+              materials.preload();
+              objLoader.setMaterials(materials);
+            } catch (mtlErr) {
+              console.warn('Could not load MTL file, loading OBJ with default material:', mtlErr);
+              objLoader.setMaterials(null);
+            }
+          } else {
+            objLoader.setMaterials(null);
+          }
+          object3D = await new Promise((resolve, reject) => {
+            objLoader.load(rawUrl, resolve, onProgress, reject);
+          });
+        } else if (ext === 'fbx') {
+          object3D = await new Promise((resolve, reject) => {
+            fbxLoader.load(rawUrl, resolve, onProgress, reject);
+          });
+        } else if (ext === 'stl') {
+          const geom = await new Promise((resolve, reject) => {
+            stlLoader.load(rawUrl, resolve, onProgress, reject);
+          });
+          const mat = new THREE.MeshStandardMaterial({
+            color: 0xff2a3b,
+            metalness: 0.65,
+            roughness: 0.35
+          });
+          object3D = new THREE.Mesh(geom, mat);
+        } else {
+          // Fallback attempt with GLTF
+          const gltf = await new Promise((resolve, reject) => {
+            gltfLoader.load(rawUrl, resolve, onProgress, reject);
+          });
+          object3D = gltf.scene;
+        }
+
+        if (!object3D) {
+          throw new Error('Loader returned empty object.');
+        }
+
+        // Remove and dispose old model
+        if (carModel) {
+          carRoot.remove(carModel);
+          disposeHierarchy(carModel);
+          carModel = null;
+        }
+
+        carModel = object3D;
+
+        // Compute Bounding Box & Scale to comfortable real-world XR scale (~3.8m length)
         const bbox = new THREE.Box3().setFromObject(carModel);
         const center = bbox.getCenter(new THREE.Vector3());
         const size = bbox.getSize(new THREE.Vector3());
 
-        // Target length ~3.8m in real-world XR scale
-        const scaleFactor = 3.8 / Math.max(size.x, size.z);
+        const maxHoriz = Math.max(size.x, size.z);
+        const maxOverall = Math.max(maxHoriz, size.y);
+        let scaleFactor = 1;
+        if (maxOverall > 0.0001) {
+          const targetLength = 3.8;
+          scaleFactor = targetLength / (maxHoriz > 0.1 ? maxHoriz : maxOverall);
+        }
         carModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
         // Recompute bbox with scale
         bbox.setFromObject(carModel);
         const scaledBottomY = bbox.min.y;
-        
-        // Offset so bottom rests exactly on y = 0 and is centered horizontally
+
+        // Offset so base rests exactly on ground (y = 0) and is centered horizontally
         carModel.position.x = -center.x * scaleFactor;
         carModel.position.y = -scaledBottomY;
         carModel.position.z = -center.z * scaleFactor;
 
-        // Enable shadows & fine-tune materials
+        // Traverse mesh to configure materials, shadows, and calculate poly/vertex counts
+        let totalTriangles = 0;
+        let totalVertices = 0;
+
         carModel.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = true;
             if (child.material) {
-              child.material.envMapIntensity = 1.2;
-              child.material.needsUpdate = true;
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(m => {
+                m.envMapIntensity = 1.2;
+                if (isWireframe) m.wireframe = true;
+                m.needsUpdate = true;
+              });
+            }
+            if (child.geometry) {
+              const geom = child.geometry;
+              if (geom.index) {
+                totalTriangles += geom.index.count / 3;
+              } else if (geom.attributes && geom.attributes.position) {
+                totalTriangles += geom.attributes.position.count / 3;
+              }
+              if (geom.attributes && geom.attributes.position) {
+                totalVertices += geom.attributes.position.count;
+              }
             }
           }
         });
 
         carRoot.add(carModel);
 
-        // Hide loader
-        const loaderElem = document.getElementById('loader');
-        loaderElem.style.opacity = '0';
-        setTimeout(() => loaderElem.style.display = 'none', 500);
-      },
-      (xhr) => {
-        if (xhr.lengthComputable) {
-          const percent = Math.round((xhr.loaded / xhr.total) * 100);
-          document.getElementById('load-progress').textContent = `${percent}%`;
-        }
-      },
-      (error) => {
-        console.error('Failed to load GLB model:', error);
-        document.getElementById('load-progress').textContent = 'Error loading model';
-      }
-    );
+        // Update stats
+        const finalBbox = new THREE.Box3().setFromObject(carModel);
+        const finalSize = finalBbox.getSize(new THREE.Vector3());
 
-    // UI Buttons & Interaction
+        document.getElementById('format-spec').textContent = ext.toUpperCase();
+        document.getElementById('poly-count').textContent = Math.round(totalTriangles).toLocaleString();
+        document.getElementById('vert-count').textContent = Math.round(totalVertices).toLocaleString();
+        document.getElementById('spec-length').textContent = `~${finalSize.z.toFixed(2)} m`;
+        document.getElementById('spec-width').textContent = `~${finalSize.x.toFixed(2)} m`;
+        document.getElementById('spec-height').textContent = `~${finalSize.y.toFixed(2)} m`;
+        brandTitle.textContent = `🏎️ ${displayName}`;
+
+        setStatus('Ready', 'ready');
+        setMessage(`Loaded: ${displayName}`, 'success');
+        hideLoader();
+      } catch (err) {
+        console.error('Failed to load model:', err);
+        setStatus('Error', 'error');
+        setMessage(`Load error: ${err.message || 'Check file path'}`, 'error');
+        hideLoader();
+      }
+    }
+
+    // UI Event Listeners for Model Loading
+    function triggerLoad() {
+      const modelVal = modelFileInput.value.trim();
+      const matVal = materialFileInput.value.trim();
+      loadModel(modelVal, matVal);
+    }
+
+    btnLoadModel.addEventListener('click', triggerLoad);
+
+    modelFileInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') triggerLoad();
+    });
+
+    materialFileInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') triggerLoad();
+    });
+
+    btnQuickCar.addEventListener('click', () => {
+      modelFileInput.value = 'models/red_race_car.glb';
+      materialFileInput.value = '';
+      loadModel('models/red_race_car.glb');
+    });
+
+    localFilePicker.addEventListener('change', (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const blobUrl = URL.createObjectURL(file);
+      modelFileInput.value = file.name;
+      loadModel(blobUrl, materialFileInput.value.trim(), file.name);
+    });
+
+    // View Controls
     const btnAutoRotate = document.getElementById('btn-auto-rotate');
     btnAutoRotate.addEventListener('click', () => {
       autoRotate = !autoRotate;
@@ -514,13 +966,17 @@
 
     const btnWireframe = document.getElementById('btn-wireframe');
     btnWireframe.addEventListener('click', () => {
-      if (!carModel) return;
       isWireframe = !isWireframe;
-      carModel.traverse((child) => {
-        if (child.isMesh && child.material) {
-          child.material.wireframe = isWireframe;
-        }
-      });
+      if (carModel) {
+        carModel.traverse((child) => {
+          if (child.isMesh && child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(m => {
+              m.wireframe = isWireframe;
+            });
+          }
+        });
+      }
       btnWireframe.style.background = isWireframe ? 'var(--accent)' : 'rgba(255,255,255,0.08)';
     });
 
@@ -540,7 +996,6 @@
     let currentXRSession = null;
 
     if ('xr' in navigator) {
-      // Check VR capability
       navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
         if (supported) {
           btnVR.disabled = false;
@@ -549,7 +1004,6 @@
         }
       });
 
-      // Check AR capability
       navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
         if (supported) {
           btnAR.disabled = false;
@@ -561,7 +1015,7 @@
       navigator.xr.isSessionSupported('immersive-vr').then(vr => {
         navigator.xr.isSessionSupported('immersive-ar').then(ar => {
           if (!vr && !ar) {
-            xrStatusText.textContent = 'Desktop / Mobile Mode';
+            xrStatusText.textContent = 'Desktop / Mobile 3D Mode';
           }
         });
       });
@@ -588,7 +1042,7 @@
           glowMesh.visible = true;
         } else {
           document.getElementById('ar-btn-label').textContent = 'Exit AR';
-          scene.background = null; // Transparent for passthrough / real-world
+          scene.background = null;
           gridHelper.visible = false;
           glowMesh.visible = false;
         }
@@ -624,7 +1078,6 @@
 
     // Render Loop (Compatible with WebXR XRAnimationLoop)
     renderer.setAnimationLoop((timestamp, frame) => {
-      // Rotate if auto-rotate is active and not inside immersive XR
       if (autoRotate && carModel && !renderer.xr.isPresenting) {
         carRoot.rotation.y += 0.007;
       }
@@ -635,7 +1088,6 @@
 
       renderer.render(scene, camera);
 
-      // FPS Calculation
       frameCount++;
       if (timestamp - lastFpsTime >= 1000) {
         fpsElem.textContent = Math.round((frameCount * 1000) / (timestamp - lastFpsTime));
@@ -643,6 +1095,9 @@
         lastFpsTime = timestamp;
       }
     });
+
+    // Initial Model Load
+    loadModel('models/red_race_car.glb');
   </script>
 </body>
 </html>

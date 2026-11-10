@@ -640,7 +640,7 @@
     }
 
     /* =====================================================================
-       DESTINATION PATH APPROVAL MODAL & QUICK LINKS DIALOG
+       DESTINATION PATH APPROVAL MODAL & MULTI-SELECT CHECKLIST
        ===================================================================== */
     .modal-backdrop {
       position: fixed;
@@ -665,8 +665,8 @@
       left: 50%;
       transform: translate(-50%, -46%) scale(0.96);
       width: calc(100% - 2rem);
-      max-width: 620px;
-      max-height: 90vh;
+      max-width: 630px;
+      max-height: 92vh;
       background: rgba(18, 22, 34, 0.98);
       border: 1px solid rgba(255, 42, 59, 0.4);
       box-shadow: 0 16px 50px rgba(0, 0, 0, 0.85), 0 0 35px rgba(255, 42, 59, 0.25);
@@ -747,7 +747,7 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      max-height: calc(90vh - 140px);
+      max-height: calc(92vh - 140px);
     }
 
     .modal-file-card {
@@ -824,6 +824,160 @@
       background: rgba(255, 255, 255, 0.08);
       color: #94a3b8;
       font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .count-badge.active {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    /* Checkbox Checklist Styling */
+    .checklist-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .checklist-actions {
+      display: flex;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .btn-tiny {
+      font-size: 0.68rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-tiny:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .quick-links-checklist {
+      height: 185px;
+      background: rgba(12, 15, 24, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 0.45rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.78rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .checklist-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .checklist-group-header {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #ff8591;
+      padding: 0.3rem 0.5rem;
+      background: rgba(255, 42, 59, 0.1);
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .checklist-group-toggle {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: underline;
+      background: transparent;
+      border: none;
+      padding: 0.1rem 0.3rem;
+    }
+
+    .checklist-group-toggle:hover {
+      color: #fff;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.35rem 0.55rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .checklist-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .checklist-item.checked {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .checklist-item input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .checklist-item input[type="checkbox"]:checked {
+      background: #10b981;
+      border-color: #34d399;
+    }
+
+    .checklist-item input[type="checkbox"]:checked::before {
+      content: "✓";
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .checklist-path {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.76rem;
+    }
+
+    .checklist-tag {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(255, 42, 59, 0.2);
+      color: #ff8591;
+      font-weight: 600;
+      flex-shrink: 0;
     }
 
     /* Destination Path Input with Domain Badge */
@@ -863,7 +1017,7 @@
       color: #fff;
     }
 
-    /* Destination Live Preview Card */
+    /* Destination Live Preview Card with multiple destinations support */
     .dest-preview-card {
       background: rgba(16, 185, 129, 0.08);
       border: 1px dashed rgba(16, 185, 129, 0.35);
@@ -871,7 +1025,13 @@
       padding: 0.6rem 0.8rem;
       display: flex;
       flex-direction: column;
-      gap: 0.2rem;
+      gap: 0.3rem;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .preview-lbl {
@@ -882,15 +1042,32 @@
       letter-spacing: 0.4px;
     }
 
-    .preview-url {
-      font-size: 0.78rem;
+    .dest-preview-list {
+      max-height: 85px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .dest-preview-item {
+      font-size: 0.74rem;
       font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
       color: #a7f3d0;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
       word-break: break-all;
+    }
+
+    .dest-preview-bullet {
+      color: #10b981;
+      font-weight: 800;
     }
 
     /* Search filter box */
     .search-filter-box {
+      flex: 1;
       display: flex;
       align-items: center;
       background: rgba(0, 0, 0, 0.35);
@@ -925,41 +1102,6 @@
 
     .btn-clear-search:hover {
       color: #fff;
-    }
-
-    /* Quick Links Dropdown (List style) */
-    .quick-links-dropdown {
-      height: 145px;
-      background: rgba(12, 15, 24, 0.95);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: #e2e8f0;
-      padding: 0.3rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.78rem;
-      overflow-y: auto;
-    }
-
-    .quick-links-dropdown optgroup {
-      color: #ff8591;
-      font-weight: 700;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 0.75rem;
-      padding: 0.3rem 0.2rem;
-    }
-
-    .quick-links-dropdown option {
-      padding: 0.35rem 0.5rem;
-      border-radius: 4px;
-      color: #cbd5e1;
-      margin: 1px 0;
-      cursor: pointer;
-    }
-
-    .quick-links-dropdown option:checked,
-    .quick-links-dropdown option:hover {
-      background: var(--accent) !important;
-      color: #fff !important;
     }
 
     .hint-text {
@@ -1085,7 +1227,7 @@
   <div id="drop-overlay">
     <div class="drop-overlay-icon">📦</div>
     <div class="drop-overlay-title">Drop 3D Model Here</div>
-    <div class="drop-overlay-sub">Supports .glb, .gltf, .obj, .fbx, .stl — Pick calmchessgames.com destination & approve</div>
+    <div class="drop-overlay-sub">Supports .glb, .gltf, .obj, .fbx, .stl — Select destination image folders with checkboxes & approve</div>
   </div>
 
   <!-- UI Top Header Overlay -->
@@ -1157,15 +1299,23 @@
           </datalist>
         </div>
 
-        <!-- Destination Folder & Quick Links in Panel (Image Folders Only) -->
+        <!-- Destination Folder & Checkboxes in Panel -->
         <div class="input-group">
           <div class="section-label-row">
-            <label for="panel-quick-links-select">⚡ Quick Links (Folders with "images")</label>
-            <span class="count-badge" id="panel-folder-count">60 Image Folders</span>
+            <label>⚡ Quick Links (Checkboxes - Select Multiple Image Folders)</label>
+            <span class="count-badge active" id="panel-selected-badge">1 Selected</span>
           </div>
-          <select id="panel-quick-links-select" class="panel-quick-select">
-            <!-- Populated dynamically with all folders containing "images" in the name -->
-          </select>
+
+          <div class="checklist-toolbar">
+            <div class="checklist-actions">
+              <button type="button" class="btn-tiny" id="panel-btn-select-all">✓ Select All</button>
+              <button type="button" class="btn-tiny" id="panel-btn-clear-all">✕ Clear</button>
+            </div>
+          </div>
+
+          <div class="quick-links-checklist" id="panel-quick-links-checklist">
+            <!-- Rendered dynamically as checkboxes -->
+          </div>
         </div>
 
         <div class="input-group">
@@ -1284,7 +1434,7 @@
   </div>
 
   <!-- =====================================================================
-       DESTINATION PATH APPROVAL MODAL & QUICK LINKS DIALOG
+       DESTINATION PATH APPROVAL MODAL WITH MULTI-SELECT CHECKBOXES
        ===================================================================== -->
   <div id="dest-approval-backdrop" class="modal-backdrop"></div>
   <div id="dest-approval-modal" class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-dialog-title">
@@ -1292,8 +1442,8 @@
       <div class="modal-title-wrap">
         <span class="modal-icon">🎯</span>
         <div>
-          <h3 id="modal-dialog-title">Approve 3D Model Destination</h3>
-          <p class="modal-subtitle">Choose destination path starting from calmchessgames.com root directory</p>
+          <h3 id="modal-dialog-title">Approve 3D Model Destination(s)</h3>
+          <p class="modal-subtitle">Select one or more destination folders with checkboxes starting from calmchessgames.com root</p>
         </div>
       </div>
       <button type="button" class="btn-modal-close" id="btn-modal-close" aria-label="Cancel & Close">✕</button>
@@ -1312,29 +1462,36 @@
         </div>
       </div>
 
-      <!-- Quick Links Section: ONLY Folders and Subfolders with "images" in the Name -->
+      <!-- Quick Links Section: Checkbox List for Multi-Selection -->
       <div class="modal-section">
         <div class="section-label-row">
-          <label for="modal-quick-links-select">⚡ Quick Links (Folders & Subfolders with "images" in name):</label>
-          <span class="count-badge" id="modal-folder-count">60 Image Folders</span>
+          <label>⚡ Quick Links (Checkboxes - Select More Than 1 at a Time):</label>
+          <span class="count-badge active" id="modal-selected-badge">1 Selected</span>
         </div>
         
-        <!-- Live Search Filter Input -->
-        <div class="search-filter-box">
-          <span class="search-icon">🔍</span>
-          <input type="text" id="modal-folder-search" placeholder="Type to filter image folders (e.g. warp, nebula, mobile, vr...)" autocomplete="off" />
-          <button type="button" id="btn-clear-folder-search" class="btn-clear-search" title="Clear filter">✕</button>
+        <!-- Search filter & Select All / Clear toolbar -->
+        <div class="checklist-toolbar">
+          <div class="search-filter-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="modal-folder-search" placeholder="Filter image folders (e.g. warp, nebula, mobile, vr...)" autocomplete="off" />
+            <button type="button" id="btn-clear-folder-search" class="btn-clear-search" title="Clear filter">✕</button>
+          </div>
+          <div class="checklist-actions">
+            <button type="button" class="btn-tiny" id="modal-btn-select-all">✓ All Visible</button>
+            <button type="button" class="btn-tiny" id="modal-btn-clear-all">✕ Clear</button>
+          </div>
         </div>
 
-        <select id="modal-quick-links-select" size="6" class="quick-links-dropdown">
-          <!-- Populated dynamically with folders & subfolders with 'images' in the name -->
-        </select>
-        <span class="hint-text">👆 Click any image folder above to instantly set your destination path.</span>
+        <!-- Multi-select Checkbox List Container -->
+        <div class="quick-links-checklist" id="modal-quick-links-checklist">
+          <!-- Checkbox items populated dynamically -->
+        </div>
+        <span class="hint-text">💡 Check one or multiple image folders above to save/deploy to multiple paths simultaneously.</span>
       </div>
 
-      <!-- Add Path to Quick Links Dropdown List -->
+      <!-- Add Path to Quick Links Dropdown/Checklist -->
       <div class="modal-section">
-        <label for="modal-custom-path-input">➕ Add Path to Quick Links Dropdown List:</label>
+        <label for="modal-custom-path-input">➕ Add Path to Quick Links Checklist:</label>
         <div class="input-with-action">
           <input type="text" id="modal-custom-path-input" placeholder="e.g. /wormhole0/assets_images" autocomplete="off" />
           <button type="button" id="btn-add-quick-link" class="btn btn-subtle">
@@ -1344,18 +1501,23 @@
         <div id="modal-add-feedback" class="feedback-msg"></div>
       </div>
 
-      <!-- Destination Path Input (Starting from calmchessgames.com root) -->
+      <!-- Destination Path / Filename Input -->
       <div class="modal-section">
-        <label for="modal-dest-path-input">🌐 Destination Path (Starting from calmchessgames.com root):</label>
+        <label for="modal-dest-path-input">🌐 Primary Destination Path / File Name:</label>
         <div class="dest-input-wrap">
           <span class="dest-prefix">calmchessgames.com/</span>
           <input type="text" id="modal-dest-path-input" placeholder="wormhole0/warp_origin_images/my_model.glb" autocomplete="off" />
         </div>
         
-        <!-- Real-time Full URL Preview -->
+        <!-- Multi-Destination Live URL Preview -->
         <div class="dest-preview-card">
-          <span class="preview-lbl">Target URL Preview:</span>
-          <span class="preview-url" id="modal-dest-preview-url">https://calmchessgames.com/wormhole0/warp_origin_images/my_model.glb</span>
+          <div class="preview-header">
+            <span class="preview-lbl">Target URL(s) Preview:</span>
+            <span class="count-badge active" id="preview-count-badge">1 Target</span>
+          </div>
+          <div class="dest-preview-list" id="modal-dest-preview-list">
+            <!-- Rendered list of all checked URLs -->
+          </div>
         </div>
       </div>
 
@@ -1374,7 +1536,7 @@
         <span>✕</span> <span>Cancel</span>
       </button>
       <button type="button" class="btn btn-approve" id="btn-modal-approve">
-        <span>✓</span> <span>Approve & Load</span>
+        <span>✓</span> <span id="approve-btn-text">Approve & Load</span>
       </button>
     </div>
   </div>
@@ -1390,49 +1552,43 @@
     import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
     // =========================================================================
-    // CALMCHESSGAMES.COM QUICK PATHS (ONLY FOLDERS & SUBFOLDERS WITH "images")
+    // MULTI-SELECT CHECKBOX QUICK PATHS (IMAGE FOLDERS ONLY)
     // =========================================================================
     const STORAGE_KEY_CUSTOM_LINKS = 'calmchess_model_custom_quick_links';
     const DEFAULT_DEST_DIR = '/wormhole0/warp_origin_images';
 
-    // Exact list of all 60 folders and subfolders on calmchessgames.com containing "images" in the name
+    // Exact list of 60 folders & subfolders containing "images" in the name
     let IMAGE_QUICK_FOLDERS = [
-      // 1. Wormhole0 Live Scene Images (Root level)
       "/wormhole0/event_horizon_images",
       "/wormhole0/final_boss_stage_images",
       "/wormhole0/nebula_outpost_images",
       "/wormhole0/quantum_realm_images",
       "/wormhole0/singularity_core_images",
       "/wormhole0/warp_origin_images",
-      // 2. Wormhole0 Desktop Mode Images
       "/wormhole0/desktop/event_horizon_images",
       "/wormhole0/desktop/final_boss_stage_images",
       "/wormhole0/desktop/nebula_outpost_images",
       "/wormhole0/desktop/quantum_realm_images",
       "/wormhole0/desktop/singularity_core_images",
       "/wormhole0/desktop/warp_origin_images",
-      // 3. Wormhole0 Mobile Mode Images
       "/wormhole0/mobile/event_horizon_images",
       "/wormhole0/mobile/final_boss_stage_images",
       "/wormhole0/mobile/nebula_outpost_images",
       "/wormhole0/mobile/quantum_realm_images",
       "/wormhole0/mobile/singularity_core_images",
       "/wormhole0/mobile/warp_origin_images",
-      // 4. Wormhole0 VR Mode Images
       "/wormhole0/vr/event_horizon_images",
       "/wormhole0/vr/final_boss_stage_images",
       "/wormhole0/vr/nebula_outpost_images",
       "/wormhole0/vr/quantum_realm_images",
       "/wormhole0/vr/singularity_core_images",
       "/wormhole0/vr/warp_origin_images",
-      // 5. Wormhole0 ARCore Mode Images
       "/wormhole0/arcore/event_horizon_images",
       "/wormhole0/arcore/final_boss_stage_images",
       "/wormhole0/arcore/nebula_outpost_images",
       "/wormhole0/arcore/quantum_realm_images",
       "/wormhole0/arcore/singularity_core_images",
       "/wormhole0/arcore/warp_origin_images",
-      // 6. Admin Staging Image Folders
       "/admin/temp_stage_0/event_horizon_images",
       "/admin/temp_stage_0/final_boss_stage_images",
       "/admin/temp_stage_0/nebula_outpost_images",
@@ -1463,24 +1619,20 @@
       "/admin/temp_stage_0/arcore/quantum_realm_images",
       "/admin/temp_stage_0/arcore/singularity_core_images",
       "/admin/temp_stage_0/arcore/warp_origin_images"
-    ];
+    ].filter(f => f.toLowerCase().includes('images'));
 
-    // Enforce that only folders and subfolders with "images" in the name are in default quick paths
-    IMAGE_QUICK_FOLDERS = IMAGE_QUICK_FOLDERS.filter(f => f.toLowerCase().includes('images'));
+    // Set of selected folder paths (Supports selecting more than 1 at a time!)
+    const selectedFolderPaths = new Set([DEFAULT_DEST_DIR]);
 
-    // Attempt to load external image_folders.json dynamically if available
     fetch('image_folders.json')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
-          // Strictly filter to only folders with "images" in name
           IMAGE_QUICK_FOLDERS = data.filter(f => f.toLowerCase().includes('images'));
-          renderAllQuickLinkSelects();
+          renderAllChecklists();
         }
       })
-      .catch(() => {
-        // Fall back to embedded array seamlessly
-      });
+      .catch(() => {});
 
     function getCustomQuickLinks() {
       try {
@@ -1512,13 +1664,17 @@
         customList.sort();
         saveCustomQuickLinks(customList);
       }
-      renderAllQuickLinkSelects(clean);
+      // Automatically check the newly added path
+      selectedFolderPaths.add(clean);
+      renderAllChecklists();
+      updateDestPreview();
       return clean;
     }
 
-    function renderSelectOptions(selectElem, filterText = '', selectedVal = '') {
-      if (!selectElem) return;
-      selectElem.innerHTML = '';
+    // Render categorized checkbox items into container
+    function renderChecklist(containerElem, filterText = '') {
+      if (!containerElem) return;
+      containerElem.innerHTML = '';
       const customList = getCustomQuickLinks();
       const query = (filterText || '').trim().toLowerCase();
 
@@ -1527,164 +1683,218 @@
         return p.toLowerCase().includes(query);
       }
 
-      // Group 1: 🌌 Wormhole Live Scene Images
-      const gWormholeRoot = IMAGE_QUICK_FOLDERS.filter(f => 
-        f.startsWith('/wormhole0/') && 
-        !f.includes('/desktop/') && 
-        !f.includes('/mobile/') && 
-        !f.includes('/vr/') && 
-        !f.includes('/arcore/') && 
-        matches(f)
-      );
-      if (gWormholeRoot.length > 0) {
-        const og = document.createElement('optgroup');
-        og.label = '🌌 Wormhole Scene Images';
-        gWormholeRoot.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          opt.textContent = f + (f === DEFAULT_DEST_DIR ? ' (Default)' : '');
-          og.appendChild(opt);
+      const groups = [
+        {
+          label: '🌌 Wormhole Scene Images',
+          items: IMAGE_QUICK_FOLDERS.filter(f => 
+            f.startsWith('/wormhole0/') && 
+            !f.includes('/desktop/') && 
+            !f.includes('/mobile/') && 
+            !f.includes('/vr/') && 
+            !f.includes('/arcore/') && 
+            matches(f)
+          )
+        },
+        {
+          label: '🖥️ Wormhole Desktop Images',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/desktop/') && matches(f))
+        },
+        {
+          label: '📱 Wormhole Mobile Images',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/mobile/') && matches(f))
+        },
+        {
+          label: '🥽 Wormhole VR Images',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/vr/') && matches(f))
+        },
+        {
+          label: '📲 Wormhole ARCore Images',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/arcore/') && matches(f))
+        },
+        {
+          label: '📂 Admin Staging Image Folders',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/admin/') && matches(f))
+        },
+        {
+          label: '📌 Custom Quick Links (Added by You)',
+          items: customList.filter(matches),
+          isCustom: true
+        }
+      ];
+
+      let totalRendered = 0;
+
+      groups.forEach(g => {
+        if (g.items.length === 0) return;
+        totalRendered += g.items.length;
+
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'checklist-group';
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'checklist-group-header';
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = `${g.label} (${g.items.length})`;
+        headerDiv.appendChild(titleSpan);
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'checklist-group-toggle';
+        toggleBtn.textContent = 'Toggle Group';
+        toggleBtn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const allInGroupChecked = g.items.every(p => selectedFolderPaths.has(p));
+          g.items.forEach(p => {
+            if (allInGroupChecked) {
+              selectedFolderPaths.delete(p);
+            } else {
+              selectedFolderPaths.add(p);
+            }
+          });
+          renderAllChecklists(filterText);
+          updateDestPreview();
         });
-        selectElem.appendChild(og);
-      }
+        headerDiv.appendChild(toggleBtn);
+        groupDiv.appendChild(headerDiv);
 
-      // Group 2: 🖥️ Wormhole Desktop Images
-      const gDesktop = IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/desktop/') && matches(f));
-      if (gDesktop.length > 0) {
-        const og = document.createElement('optgroup');
-        og.label = '🖥️ Wormhole Desktop Images';
-        gDesktop.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          opt.textContent = f;
-          og.appendChild(opt);
+        g.items.forEach(path => {
+          const isChecked = selectedFolderPaths.has(path);
+          const itemLabel = document.createElement('label');
+          itemLabel.className = 'checklist-item' + (isChecked ? ' checked' : '');
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.value = path;
+          cb.checked = isChecked;
+
+          cb.addEventListener('change', (ev) => {
+            if (cb.checked) {
+              selectedFolderPaths.add(path);
+            } else {
+              selectedFolderPaths.delete(path);
+            }
+            renderAllChecklists(filterText);
+            updateDestPreview();
+          });
+
+          const pathSpan = document.createElement('span');
+          pathSpan.className = 'checklist-path';
+          pathSpan.textContent = path;
+
+          itemLabel.appendChild(cb);
+          itemLabel.appendChild(pathSpan);
+
+          if (path === DEFAULT_DEST_DIR) {
+            const tag = document.createElement('span');
+            tag.className = 'checklist-tag';
+            tag.textContent = 'Default';
+            itemLabel.appendChild(tag);
+          } else if (g.isCustom) {
+            const tag = document.createElement('span');
+            tag.className = 'checklist-tag';
+            tag.style.background = 'rgba(56, 189, 248, 0.2)';
+            tag.style.color = '#7dd3fc';
+            tag.textContent = 'Custom';
+            itemLabel.appendChild(tag);
+          }
+
+          groupDiv.appendChild(itemLabel);
         });
-        selectElem.appendChild(og);
-      }
 
-      // Group 3: 📱 Wormhole Mobile Images
-      const gMobile = IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/mobile/') && matches(f));
-      if (gMobile.length > 0) {
-        const og = document.createElement('optgroup');
-        og.label = '📱 Wormhole Mobile Images';
-        gMobile.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          opt.textContent = f;
-          og.appendChild(opt);
-        });
-        selectElem.appendChild(og);
-      }
+        containerElem.appendChild(groupDiv);
+      });
 
-      // Group 4: 🥽 Wormhole VR Images
-      const gVR = IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/vr/') && matches(f));
-      if (gVR.length > 0) {
-        const og = document.createElement('optgroup');
-        og.label = '🥽 Wormhole VR Images';
-        gVR.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          opt.textContent = f;
-          og.appendChild(opt);
-        });
-        selectElem.appendChild(og);
-      }
-
-      // Group 5: 📲 Wormhole ARCore Images
-      const gARCore = IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/arcore/') && matches(f));
-      if (gARCore.length > 0) {
-        const og = document.createElement('optgroup');
-        og.label = '📲 Wormhole ARCore Images';
-        gARCore.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          opt.textContent = f;
-          og.appendChild(opt);
-        });
-        selectElem.appendChild(og);
-      }
-
-      // Group 6: 📂 Admin Temp Stage Image Folders
-      const gAdmin = IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/admin/') && matches(f));
-      if (gAdmin.length > 0) {
-        const og = document.createElement('optgroup');
-        og.label = '📂 Admin Staging Image Folders';
-        gAdmin.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          opt.textContent = f;
-          og.appendChild(opt);
-        });
-        selectElem.appendChild(og);
-      }
-
-      // Group 7: 📌 Custom Quick Links (Added by You)
-      const filteredCustom = customList.filter(matches);
-      if (filteredCustom.length > 0) {
-        const og = document.createElement('optgroup');
-        og.label = '📌 Custom Quick Links (Added by You)';
-        filteredCustom.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          opt.textContent = f + ' [Custom]';
-          og.appendChild(opt);
-        });
-        selectElem.appendChild(og);
-      }
-
-      if (selectElem.options.length === 0) {
-        const opt = document.createElement('option');
-        opt.value = '';
-        opt.disabled = true;
-        opt.textContent = `No image folders matching "${filterText}"`;
-        selectElem.appendChild(opt);
-      }
-
-      // Preserve selection or default
-      if (selectedVal) {
-        selectElem.value = selectedVal;
-      } else if (!selectElem.value && selectElem.querySelector(`option[value="${DEFAULT_DEST_DIR}"]`)) {
-        selectElem.value = DEFAULT_DEST_DIR;
+      if (totalRendered === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.style.padding = '0.8rem';
+        emptyDiv.style.color = 'var(--text-muted)';
+        emptyDiv.style.textAlign = 'center';
+        emptyDiv.textContent = `No image folders matching "${filterText}"`;
+        containerElem.appendChild(emptyDiv);
       }
     }
 
-    const modalQuickLinksSelect = document.getElementById('modal-quick-links-select');
-    const panelQuickLinksSelect = document.getElementById('panel-quick-links-select');
+    const modalChecklist = document.getElementById('modal-quick-links-checklist');
+    const panelChecklist = document.getElementById('panel-quick-links-checklist');
+    const modalSelectedBadge = document.getElementById('modal-selected-badge');
+    const panelSelectedBadge = document.getElementById('panel-selected-badge');
+    const previewCountBadge = document.getElementById('preview-count-badge');
+    const approveBtnText = document.getElementById('approve-btn-text');
+
     const modalFolderSearch = document.getElementById('modal-folder-search');
     const btnClearFolderSearch = document.getElementById('btn-clear-folder-search');
-    const modalFolderCount = document.getElementById('modal-folder-count');
-    const panelFolderCount = document.getElementById('panel-folder-count');
+    const modalBtnSelectAll = document.getElementById('modal-btn-select-all');
+    const modalBtnClearAll = document.getElementById('modal-btn-clear-all');
+    const panelBtnSelectAll = document.getElementById('panel-btn-select-all');
+    const panelBtnClearAll = document.getElementById('panel-btn-clear-all');
+
     const modalCustomPathInput = document.getElementById('modal-custom-path-input');
     const btnAddQuickLink = document.getElementById('btn-add-quick-link');
     const modalAddFeedback = document.getElementById('modal-add-feedback');
     const panelAddQuicklinkInput = document.getElementById('panel-add-quicklink-input');
     const panelBtnAddQuicklink = document.getElementById('panel-btn-add-quicklink');
 
-    function renderAllQuickLinkSelects(preferredSelection = '') {
-      const totalCount = IMAGE_QUICK_FOLDERS.length + getCustomQuickLinks().length;
-      if (modalFolderCount) modalFolderCount.textContent = `${totalCount} Image Folders`;
-      if (panelFolderCount) panelFolderCount.textContent = `${totalCount} Image Folders`;
+    function renderAllChecklists(modalSearchQuery = '') {
+      const count = selectedFolderPaths.size;
+      const countLabel = count === 1 ? '1 Folder Selected' : `${count} Folders Selected`;
 
-      const searchVal = modalFolderSearch ? modalFolderSearch.value : '';
-      renderSelectOptions(modalQuickLinksSelect, searchVal, preferredSelection || DEFAULT_DEST_DIR);
-      renderSelectOptions(panelQuickLinksSelect, '', preferredSelection || DEFAULT_DEST_DIR);
+      if (modalSelectedBadge) modalSelectedBadge.textContent = countLabel;
+      if (panelSelectedBadge) panelSelectedBadge.textContent = countLabel;
+      if (previewCountBadge) previewCountBadge.textContent = count === 1 ? '1 Target' : `${count} Targets`;
+
+      if (approveBtnText) {
+        approveBtnText.textContent = count <= 1 ? 'Approve & Load' : `Approve & Save to ${count} Folders`;
+      }
+
+      renderChecklist(modalChecklist, modalSearchQuery);
+      renderChecklist(panelChecklist, '');
     }
 
-    renderAllQuickLinkSelects(DEFAULT_DEST_DIR);
+    renderAllChecklists();
 
-    // Search filter event listener
+    // Search filter in modal
     if (modalFolderSearch) {
       modalFolderSearch.addEventListener('input', (e) => {
-        renderSelectOptions(modalQuickLinksSelect, e.target.value);
+        renderChecklist(modalChecklist, e.target.value);
       });
     }
 
     if (btnClearFolderSearch) {
       btnClearFolderSearch.addEventListener('click', () => {
         modalFolderSearch.value = '';
-        renderSelectOptions(modalQuickLinksSelect, '');
+        renderChecklist(modalChecklist, '');
       });
     }
+
+    // Select All / Clear Selection Handlers
+    function selectAllVisibleInModal() {
+      const visibleCbs = modalChecklist.querySelectorAll('input[type="checkbox"]');
+      visibleCbs.forEach(cb => {
+        selectedFolderPaths.add(cb.value);
+      });
+      renderAllChecklists(modalFolderSearch ? modalFolderSearch.value : '');
+      updateDestPreview();
+    }
+
+    function clearAllSelection() {
+      selectedFolderPaths.clear();
+      renderAllChecklists(modalFolderSearch ? modalFolderSearch.value : '');
+      updateDestPreview();
+    }
+
+    if (modalBtnSelectAll) modalBtnSelectAll.addEventListener('click', selectAllVisibleInModal);
+    if (modalBtnClearAll) modalBtnClearAll.addEventListener('click', clearAllSelection);
+    if (panelBtnSelectAll) {
+      panelBtnSelectAll.addEventListener('click', () => {
+        IMAGE_QUICK_FOLDERS.forEach(p => selectedFolderPaths.add(p));
+        getCustomQuickLinks().forEach(p => selectedFolderPaths.add(p));
+        renderAllChecklists();
+        updateDestPreview();
+      });
+    }
+    if (panelBtnClearAll) panelBtnClearAll.addEventListener('click', clearAllSelection);
 
     // Add path to quick links handlers
     function handleAddQuickLink(inputElem, feedbackElem) {
@@ -1700,27 +1910,22 @@
       if (added) {
         inputElem.value = '';
         if (feedbackElem) {
-          feedbackElem.textContent = `✓ Added "${added}" to Quick Links dropdown list!`;
+          feedbackElem.textContent = `✓ Added "${added}" to checklist & checked!`;
           feedbackElem.style.color = '#34d399';
           setTimeout(() => { feedbackElem.textContent = ''; }, 3500);
         }
-        updateDestPathFromFolder(added);
       }
     }
 
     if (btnAddQuickLink) {
-      btnAddQuickLink.addEventListener('click', () => {
-        handleAddQuickLink(modalCustomPathInput, modalAddFeedback);
-      });
+      btnAddQuickLink.addEventListener('click', () => handleAddQuickLink(modalCustomPathInput, modalAddFeedback));
       modalCustomPathInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') handleAddQuickLink(modalCustomPathInput, modalAddFeedback);
       });
     }
 
     if (panelBtnAddQuicklink) {
-      panelBtnAddQuicklink.addEventListener('click', () => {
-        handleAddQuickLink(panelAddQuicklinkInput, null);
-      });
+      panelBtnAddQuicklink.addEventListener('click', () => handleAddQuickLink(panelAddQuicklinkInput, null));
       panelAddQuicklinkInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') handleAddQuickLink(panelAddQuicklinkInput, null);
       });
@@ -1740,7 +1945,7 @@
     const modalFileFormat = document.getElementById('modal-file-format');
     const modalFileSize = document.getElementById('modal-file-size');
     const modalDestPathInput = document.getElementById('modal-dest-path-input');
-    const modalDestPreviewUrl = document.getElementById('modal-dest-preview-url');
+    const modalDestPreviewList = document.getElementById('modal-dest-preview-list');
     const modalObjMatGroup = document.getElementById('modal-obj-mat-group');
     const modalObjMatInput = document.getElementById('modal-obj-mat-input');
 
@@ -1770,38 +1975,59 @@
       }
     }
 
+    function getCleanFileName() {
+      if (pendingLoad && pendingLoad.fileName) return pendingLoad.fileName;
+      const val = modalDestPathInput.value.trim().split('/').pop();
+      return val || 'model.glb';
+    }
+
     function updateDestPreview() {
-      let rawVal = modalDestPathInput.value.trim().replace(/\\/g, '/');
-      rawVal = rawVal.replace(/^\/+/, '');
-      if (!rawVal && pendingLoad) {
-        rawVal = DEFAULT_DEST_DIR.replace(/^\/+/, '') + '/' + pendingLoad.fileName;
+      const currentFileName = getCleanFileName();
+      modalDestPreviewList.innerHTML = '';
+
+      if (selectedFolderPaths.size === 0) {
+        const item = document.createElement('div');
+        item.className = 'dest-preview-item';
+        item.style.color = '#f87171';
+        item.textContent = '⚠️ No folders checked! Check at least 1 destination above.';
+        modalDestPreviewList.appendChild(item);
+        modalDestPathInput.value = currentFileName;
+        return;
       }
-      modalDestPreviewUrl.textContent = `https://calmchessgames.com/${rawVal}`;
-    }
 
-    modalDestPathInput.addEventListener('input', updateDestPreview);
-
-    function updateDestPathFromFolder(folderPath) {
-      const cleanFolder = (folderPath || '').trim().replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-      const currentFile = pendingLoad ? pendingLoad.fileName : 'model.glb';
-      const newPath = cleanFolder ? `${cleanFolder}/${currentFile}` : currentFile;
-      modalDestPathInput.value = newPath;
-      updateDestPreview();
-    }
-
-    modalQuickLinksSelect.addEventListener('change', () => {
-      if (modalQuickLinksSelect.value) {
-        updateDestPathFromFolder(modalQuickLinksSelect.value);
-      }
-    });
-
-    panelQuickLinksSelect.addEventListener('change', () => {
-      const folder = panelQuickLinksSelect.value;
-      if (folder) {
+      // Generate preview list for all checked paths
+      const pathsArray = Array.from(selectedFolderPaths);
+      pathsArray.forEach(folder => {
         const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-        const currentModel = modelFileInput.value.trim().split('/').pop() || 'red_race_car.glb';
-        modelFileInput.value = cleanFolder ? `${cleanFolder}/${currentModel}` : currentModel;
-      }
+        const targetPath = cleanFolder ? `${cleanFolder}/${currentFileName}` : currentFileName;
+
+        const item = document.createElement('div');
+        item.className = 'dest-preview-item';
+        item.innerHTML = `<span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span>`;
+        modalDestPreviewList.appendChild(item);
+      });
+
+      // Update primary destination input with first checked path
+      const firstFolder = pathsArray[0].replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+      modalDestPathInput.value = firstFolder ? `${firstFolder}/${currentFileName}` : currentFileName;
+    }
+
+    modalDestPathInput.addEventListener('input', () => {
+      // Re-render preview based on edited filename in input
+      const editedVal = modalDestPathInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+      const editedName = editedVal.split('/').pop() || 'model.glb';
+      if (pendingLoad) pendingLoad.fileName = editedName;
+      
+      modalDestPreviewList.innerHTML = '';
+      Array.from(selectedFolderPaths).forEach(folder => {
+        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+        const targetPath = cleanFolder ? `${cleanFolder}/${editedName}` : editedName;
+
+        const item = document.createElement('div');
+        item.className = 'dest-preview-item';
+        item.innerHTML = `<span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span>`;
+        modalDestPreviewList.appendChild(item);
+      });
     });
 
     function openApprovalModal(options) {
@@ -1821,13 +2047,12 @@
       modalFileFormat.textContent = `${pendingLoad.ext.toUpperCase()} 3D Model`;
       modalFileSize.textContent = pendingLoad.sizeStr;
 
-      // Determine initial destination folder & path
-      let initialFolder = modalQuickLinksSelect.value || DEFAULT_DEST_DIR;
-      if (options.suggestedPath) {
-        modalDestPathInput.value = options.suggestedPath.replace(/\\/g, '/').replace(/^\/+/, '');
-      } else {
-        updateDestPathFromFolder(initialFolder);
+      // Ensure at least DEFAULT_DEST_DIR is selected if empty
+      if (selectedFolderPaths.size === 0) {
+        selectedFolderPaths.add(DEFAULT_DEST_DIR);
       }
+
+      renderAllChecklists();
       updateDestPreview();
 
       // Show material input if OBJ format
@@ -1871,12 +2096,12 @@
       }
     });
 
-    // Save model to backend if possible
-    async function uploadToServerIfPossible(file, destinationPath) {
+    // Save model to backend if possible (Supports multiple destination folders!)
+    async function uploadToServerIfPossible(file, destinationPaths) {
       try {
         const formData = new FormData();
         formData.append('model_file', file);
-        formData.append('destination_path', destinationPath);
+        formData.append('destination_paths', JSON.stringify(destinationPaths));
 
         const endpoint = 'save_model.php';
         const res = await fetch(endpoint, {
@@ -1897,29 +2122,41 @@
     // Approve Button Handler
     btnModalApprove.addEventListener('click', async () => {
       if (!pendingLoad) return;
-      const approvedDestPath = modalDestPathInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+      if (selectedFolderPaths.size === 0) {
+        alert('Please check at least one destination folder in the checklist.');
+        return;
+      }
+
+      const currentFileName = getCleanFileName();
+      const approvedPaths = Array.from(selectedFolderPaths).map(folder => {
+        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+        return cleanFolder ? `${cleanFolder}/${currentFileName}` : currentFileName;
+      });
+
+      const primaryDestPath = approvedPaths[0];
       const approvedMtlPath = modalObjMatInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
       const loadObj = pendingLoad;
       closeApprovalModal();
 
-      modelFileInput.value = approvedDestPath;
+      modelFileInput.value = primaryDestPath;
       if (approvedMtlPath) materialFileInput.value = approvedMtlPath;
 
       setStatus('Approving...', 'loading');
-      setMessage(`Approved destination: calmchessgames.com/${approvedDestPath}`);
+      const count = approvedPaths.length;
+      setMessage(`Approved ${count} destination folder(s): ${approvedPaths.map(p => 'calmchessgames.com/' + p).join(', ')}`);
 
-      // If a local file was provided, attempt background server save
+      // If a local file was provided, attempt background server save to all destinations
       if (loadObj.file) {
-        uploadToServerIfPossible(loadObj.file, approvedDestPath).then(res => {
+        uploadToServerIfPossible(loadObj.file, approvedPaths).then(res => {
           if (res && res.success) {
-            console.log('✓ Model successfully saved to calmchessgames.com at:', res.destination_path);
+            console.log(`✓ Model successfully saved to ${res.saved_count} destination folder(s):`, res.destination_paths);
           }
         });
       }
 
       // Load model into Three.js scene
-      const urlToLoad = loadObj.blobUrl || loadObj.rawUrl || approvedDestPath;
-      await loadModel(urlToLoad, approvedMtlPath || materialFileInput.value.trim(), loadObj.fileName, approvedDestPath);
+      const urlToLoad = loadObj.blobUrl || loadObj.rawUrl || primaryDestPath;
+      await loadModel(urlToLoad, approvedMtlPath || materialFileInput.value.trim(), loadObj.fileName, primaryDestPath, count);
     });
 
     // =========================================================================
@@ -2198,7 +2435,7 @@
     // =========================================================================
     // CORE MODEL LOADING FUNCTION (Three.js Engine)
     // =========================================================================
-    async function loadModel(modelInputVal, materialInputVal = '', customName = '', approvedDest = '') {
+    async function loadModel(modelInputVal, materialInputVal = '', customName = '', approvedDest = '', folderCount = 1) {
       const rawUrl = resolveModelUrl(modelInputVal);
       if (!rawUrl) {
         setStatus('Empty Input', 'error');
@@ -2338,7 +2575,12 @@
         brandTitle.textContent = `🏎️ ${displayName}`;
 
         setStatus('Ready', 'ready');
-        const approvedNotice = approvedDest ? `✓ Approved: calmchessgames.com/${approvedDest}` : `Loaded: ${displayName}`;
+        let approvedNotice = `Loaded: ${displayName}`;
+        if (approvedDest) {
+          approvedNotice = folderCount > 1 
+            ? `✓ Approved & Saved to ${folderCount} destination image folders!` 
+            : `✓ Approved: calmchessgames.com/${approvedDest}`;
+        }
         setMessage(approvedNotice, 'success');
         hideLoader();
       } catch (err) {
@@ -2599,7 +2841,7 @@
     });
 
     // Initial Model Load
-    loadModel('models/red_race_car.glb', '', 'red_race_car.glb', DEFAULT_DEST_DIR.replace(/^\/+/, '') + '/red_race_car.glb');
+    loadModel('models/red_race_car.glb', '', 'red_race_car.glb', DEFAULT_DEST_DIR.replace(/^\/+/, '') + '/red_race_car.glb', 1);
   </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
  * Calm Chess Computers (c) 2026. All Rights Reserved.
  * Centralized Model Storage & Destination API
  * 
- * Allows saving .glb, .gltf, .obj, and associated 3D assets to user-approved
+ * Allows saving .glb, .gltf, .obj, and associated 3D assets to one or more user-approved
  * destination paths starting from the calmchessgames.com root directory.
  */
 
@@ -32,45 +32,36 @@ if (!isset($_FILES['model_file']) || $_FILES['model_file']['error'] !== UPLOAD_E
 
 $uploadedFile = $_FILES['model_file'];
 $fileName = basename($uploadedFile['name']);
-$destPathRaw = trim($_POST['destination_path'] ?? '');
 
-if (empty($destPathRaw)) {
-    $destPathRaw = 'meshy_test_0/models/' . $fileName;
+// Handle multiple or single destination paths
+$destPathsInput = [];
+if (isset($_POST['destination_paths'])) {
+    if (is_array($_POST['destination_paths'])) {
+        $destPathsInput = $_POST['destination_paths'];
+    } else {
+        $decoded = json_decode($_POST['destination_paths'], true);
+        if (is_array($decoded)) {
+            $destPathsInput = $decoded;
+        } else {
+            $destPathsInput = explode(',', $_POST['destination_paths']);
+        }
+    }
+} elseif (!empty($_POST['destination_path'])) {
+    $destPathsInput = [$_POST['destination_path']];
 }
 
-// Clean and normalize destination path
-$cleanDestPath = ltrim(str_replace('\\', '/', $destPathRaw), '/');
-
-// Security check: Directory traversal prevention
-if (strpos($cleanDestPath, '..') !== false || strpos($cleanDestPath, "\0") !== false) {
-    http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Security Error: Directory traversal sequences are strictly prohibited.'
-    ]);
-    exit;
+if (empty($destPathsInput)) {
+    $destPathsInput = ['wormhole0/warp_origin_images/' . $fileName];
 }
 
-// If destination path is a directory, append the original filename
-if (substr($cleanDestPath, -1) === '/' || empty(pathinfo($cleanDestPath, PATHINFO_EXTENSION))) {
-    $cleanDestPath = rtrim($cleanDestPath, '/') . '/' . $fileName;
+$webRoot = realpath(__DIR__ . '/..');
+if (!$webRoot) {
+    $webRoot = dirname(__DIR__);
 }
 
-// Validate file extension against allowed 3D and texture asset formats
-$ext = strtolower(pathinfo($cleanDestPath, PATHINFO_EXTENSION));
 $allowedExts = ['glb', 'gltf', 'obj', 'mtl', 'bin', 'fbx', 'stl', 'png', 'jpg', 'jpeg', 'webp', 'json'];
+$maxFileSize = 100 * 1024 * 1024; // 100MB
 
-if (!in_array($ext, $allowedExts, true)) {
-    http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'error' => 'Unsupported file extension .' . $ext . '. Supported formats: ' . implode(', ', $allowedExts)
-    ]);
-    exit;
-}
-
-// 100MB File Size Limit
-$maxFileSize = 100 * 1024 * 1024;
 if ($uploadedFile['size'] > $maxFileSize) {
     http_response_code(413);
     echo json_encode([
@@ -80,42 +71,67 @@ if ($uploadedFile['size'] > $maxFileSize) {
     exit;
 }
 
-// Resolve web root directory (parent of meshy_test_0)
-$webRoot = realpath(__DIR__ . '/..');
-if (!$webRoot) {
-    $webRoot = dirname(__DIR__);
-}
+$savedPaths = [];
+$firstSavedFull = null;
 
-$targetFullPath = $webRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanDestPath);
-$targetDir = dirname($targetFullPath);
+foreach ($destPathsInput as $destPathRaw) {
+    $destPathRaw = trim($destPathRaw);
+    if (empty($destPathRaw)) continue;
 
-// Ensure destination directory exists
-if (!is_dir($targetDir)) {
-    if (!mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
-        http_response_code(500);
-        echo json_encode([
-            'success' => false,
-            'error' => 'Failed to create destination folder on server: ' . dirname($cleanDestPath)
-        ]);
-        exit;
+    $cleanDestPath = ltrim(str_replace('\\', '/', $destPathRaw), '/');
+
+    // Security check: Directory traversal prevention
+    if (strpos($cleanDestPath, '..') !== false || strpos($cleanDestPath, "\0") !== false) {
+        continue;
+    }
+
+    // If destination path is a directory, append original filename
+    if (substr($cleanDestPath, -1) === '/' || empty(pathinfo($cleanDestPath, PATHINFO_EXTENSION))) {
+        $cleanDestPath = rtrim($cleanDestPath, '/') . '/' . $fileName;
+    }
+
+    $ext = strtolower(pathinfo($cleanDestPath, PATHINFO_EXTENSION));
+    if (!in_array($ext, $allowedExts, true)) {
+        continue;
+    }
+
+    $targetFullPath = $webRoot . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanDestPath);
+    $targetDir = dirname($targetFullPath);
+
+    if (!is_dir($targetDir)) {
+        if (!mkdir($targetDir, 0755, true) && !is_dir($targetDir)) {
+            continue;
+        }
+    }
+
+    if ($firstSavedFull === null) {
+        if (move_uploaded_file($uploadedFile['tmp_name'], $targetFullPath)) {
+            $firstSavedFull = $targetFullPath;
+            $savedPaths[] = '/' . $cleanDestPath;
+        }
+    } else {
+        if (copy($firstSavedFull, $targetFullPath)) {
+            $savedPaths[] = '/' . $cleanDestPath;
+        }
     }
 }
 
-// Move uploaded file to approved destination
-if (!move_uploaded_file($uploadedFile['tmp_name'], $targetFullPath)) {
+if (empty($savedPaths)) {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'error' => 'Failed to write file to approved destination path.'
+        'error' => 'Failed to save uploaded file to any approved destination path.'
     ]);
     exit;
 }
 
 echo json_encode([
     'success' => true,
-    'message' => 'Model successfully approved and saved to destination.',
-    'destination_path' => '/' . $cleanDestPath,
-    'full_url' => 'https://calmchessgames.com/' . $cleanDestPath,
-    'file_name' => basename($cleanDestPath),
+    'message' => 'Model successfully approved and saved to ' . count($savedPaths) . ' destination(s).',
+    'saved_count' => count($savedPaths),
+    'destination_paths' => $savedPaths,
+    'primary_destination' => $savedPaths[0],
+    'primary_url' => 'https://calmchessgames.com' . $savedPaths[0],
+    'file_name' => $fileName,
     'size' => $uploadedFile['size']
 ]);

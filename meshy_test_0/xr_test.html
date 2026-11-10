@@ -929,7 +929,7 @@
 
     /* Quick Links Dropdown (List style) */
     .quick-links-dropdown {
-      height: 140px;
+      height: 145px;
       background: rgba(12, 15, 24, 0.95);
       border: 1px solid var(--border);
       border-radius: 8px;
@@ -1157,21 +1157,21 @@
           </datalist>
         </div>
 
-        <!-- Destination Folder & Quick Links in Panel -->
+        <!-- Destination Folder & Quick Links in Panel (Image Folders Only) -->
         <div class="input-group">
           <div class="section-label-row">
-            <label for="panel-quick-links-select">⚡ Quick Links (CalmChessGames Folders)</label>
-            <span class="count-badge" id="panel-folder-count">296 Folders</span>
+            <label for="panel-quick-links-select">⚡ Quick Links (Folders with "images")</label>
+            <span class="count-badge" id="panel-folder-count">60 Image Folders</span>
           </div>
           <select id="panel-quick-links-select" class="panel-quick-select">
-            <!-- Populated dynamically with all 296 subfolders + custom links -->
+            <!-- Populated dynamically with all folders containing "images" in the name -->
           </select>
         </div>
 
         <div class="input-group">
           <label for="panel-add-quicklink-input">➕ Add Path to Quick Links</label>
           <div class="input-with-action">
-            <input type="text" id="panel-add-quicklink-input" placeholder="e.g. /models/custom" autocomplete="off" />
+            <input type="text" id="panel-add-quicklink-input" placeholder="e.g. /wormhole0/assets_images" autocomplete="off" />
             <button type="button" id="panel-btn-add-quicklink" class="btn btn-subtle">
               <span>➕ Add</span>
             </button>
@@ -1312,31 +1312,31 @@
         </div>
       </div>
 
-      <!-- Quick Links Section for All CalmChessGames Folders -->
+      <!-- Quick Links Section: ONLY Folders and Subfolders with "images" in the Name -->
       <div class="modal-section">
         <div class="section-label-row">
-          <label for="modal-quick-links-select">⚡ Quick Links (All CalmChessGames Folders):</label>
-          <span class="count-badge" id="modal-folder-count">296 Folders</span>
+          <label for="modal-quick-links-select">⚡ Quick Links (Folders & Subfolders with "images" in name):</label>
+          <span class="count-badge" id="modal-folder-count">60 Image Folders</span>
         </div>
         
         <!-- Live Search Filter Input -->
         <div class="search-filter-box">
           <span class="search-icon">🔍</span>
-          <input type="text" id="modal-folder-search" placeholder="Type to filter folders (e.g. models, wormhole, vr...)" autocomplete="off" />
+          <input type="text" id="modal-folder-search" placeholder="Type to filter image folders (e.g. warp, nebula, mobile, vr...)" autocomplete="off" />
           <button type="button" id="btn-clear-folder-search" class="btn-clear-search" title="Clear filter">✕</button>
         </div>
 
         <select id="modal-quick-links-select" size="6" class="quick-links-dropdown">
-          <!-- Populated dynamically with all 296 subfolders + custom links -->
+          <!-- Populated dynamically with folders & subfolders with 'images' in the name -->
         </select>
-        <span class="hint-text">👆 Click any folder above to instantly set your destination path.</span>
+        <span class="hint-text">👆 Click any image folder above to instantly set your destination path.</span>
       </div>
 
       <!-- Add Path to Quick Links Dropdown List -->
       <div class="modal-section">
         <label for="modal-custom-path-input">➕ Add Path to Quick Links Dropdown List:</label>
         <div class="input-with-action">
-          <input type="text" id="modal-custom-path-input" placeholder="e.g. /models/custom or /wormhole0/assets" autocomplete="off" />
+          <input type="text" id="modal-custom-path-input" placeholder="e.g. /wormhole0/assets_images" autocomplete="off" />
           <button type="button" id="btn-add-quick-link" class="btn btn-subtle">
             <span>➕</span> <span>Add to List</span>
           </button>
@@ -1349,13 +1349,13 @@
         <label for="modal-dest-path-input">🌐 Destination Path (Starting from calmchessgames.com root):</label>
         <div class="dest-input-wrap">
           <span class="dest-prefix">calmchessgames.com/</span>
-          <input type="text" id="modal-dest-path-input" placeholder="meshy_test_0/models/my_model.glb" autocomplete="off" />
+          <input type="text" id="modal-dest-path-input" placeholder="wormhole0/warp_origin_images/my_model.glb" autocomplete="off" />
         </div>
         
         <!-- Real-time Full URL Preview -->
         <div class="dest-preview-card">
           <span class="preview-lbl">Target URL Preview:</span>
-          <span class="preview-url" id="modal-dest-preview-url">https://calmchessgames.com/meshy_test_0/models/my_model.glb</span>
+          <span class="preview-url" id="modal-dest-preview-url">https://calmchessgames.com/wormhole0/warp_origin_images/my_model.glb</span>
         </div>
       </div>
 
@@ -1364,7 +1364,7 @@
         <label for="modal-obj-mat-input">🎨 Material / MTL Destination Path (Optional for OBJ):</label>
         <div class="dest-input-wrap">
           <span class="dest-prefix">calmchessgames.com/</span>
-          <input type="text" id="modal-obj-mat-input" placeholder="meshy_test_0/models/my_material.mtl" autocomplete="off" />
+          <input type="text" id="modal-obj-mat-input" placeholder="wormhole0/warp_origin_images/my_material.mtl" autocomplete="off" />
         </div>
       </div>
     </div>
@@ -1390,307 +1390,91 @@
     import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
     // =========================================================================
-    // CALMCHESSGAMES.COM ALL SUBFOLDERS DATABASE & QUICK LINKS MANAGEMENT
+    // CALMCHESSGAMES.COM QUICK PATHS (ONLY FOLDERS & SUBFOLDERS WITH "images")
     // =========================================================================
     const STORAGE_KEY_CUSTOM_LINKS = 'calmchess_model_custom_quick_links';
-    const DEFAULT_DEST_DIR = '/meshy_test_0/models';
+    const DEFAULT_DEST_DIR = '/wormhole0/warp_origin_images';
 
-    // Comprehensive list of all subfolders on calmchessgames.com
-    let ALL_CALMCHESS_FOLDERS = [
-      "/",
-      "/admin",
-      "/admin/js",
-      "/admin/temp_stage_0",
-      "/admin/temp_stage_0/arcore",
-      "/admin/temp_stage_0/arcore/audio",
-      "/admin/temp_stage_0/arcore/audio/event_horizon",
-      "/admin/temp_stage_0/arcore/audio/final_boss_stage",
-      "/admin/temp_stage_0/arcore/audio/nebula_outpost",
-      "/admin/temp_stage_0/arcore/audio/quantum_realm",
-      "/admin/temp_stage_0/arcore/audio/singularity_core",
-      "/admin/temp_stage_0/arcore/audio/warp_origin",
-      "/admin/temp_stage_0/arcore/event_horizon_images",
-      "/admin/temp_stage_0/arcore/final_boss_stage_images",
-      "/admin/temp_stage_0/arcore/nebula_outpost_images",
-      "/admin/temp_stage_0/arcore/quantum_realm_images",
-      "/admin/temp_stage_0/arcore/singularity_core_images",
-      "/admin/temp_stage_0/arcore/warp_origin_images",
-      "/admin/temp_stage_0/audio",
-      "/admin/temp_stage_0/audio/arcore",
-      "/admin/temp_stage_0/audio/arcore/final_boss_stage",
-      "/admin/temp_stage_0/audio/arcore/nebula_outpost",
-      "/admin/temp_stage_0/audio/desktop",
-      "/admin/temp_stage_0/audio/desktop/final_boss_stage",
-      "/admin/temp_stage_0/audio/desktop/nebula_outpost",
-      "/admin/temp_stage_0/audio/event_horizon",
-      "/admin/temp_stage_0/audio/final_boss_stage",
-      "/admin/temp_stage_0/audio/mobile",
-      "/admin/temp_stage_0/audio/mobile/final_boss_stage",
-      "/admin/temp_stage_0/audio/mobile/nebula_outpost",
-      "/admin/temp_stage_0/audio/nebula_outpost",
-      "/admin/temp_stage_0/audio/quantum_realm",
-      "/admin/temp_stage_0/audio/singularity_core",
-      "/admin/temp_stage_0/audio/vr",
-      "/admin/temp_stage_0/audio/vr/final_boss_stage",
-      "/admin/temp_stage_0/audio/vr/nebula_outpost",
-      "/admin/temp_stage_0/audio/warp_origin",
-      "/admin/temp_stage_0/desktop",
-      "/admin/temp_stage_0/desktop/audio",
-      "/admin/temp_stage_0/desktop/audio/event_horizon",
-      "/admin/temp_stage_0/desktop/audio/final_boss_stage",
-      "/admin/temp_stage_0/desktop/audio/nebula_outpost",
-      "/admin/temp_stage_0/desktop/audio/quantum_realm",
-      "/admin/temp_stage_0/desktop/audio/singularity_core",
-      "/admin/temp_stage_0/desktop/audio/warp_origin",
-      "/admin/temp_stage_0/desktop/event_horizon_images",
-      "/admin/temp_stage_0/desktop/final_boss_stage_images",
-      "/admin/temp_stage_0/desktop/nebula_outpost_images",
-      "/admin/temp_stage_0/desktop/quantum_realm_images",
-      "/admin/temp_stage_0/desktop/singularity_core_images",
-      "/admin/temp_stage_0/desktop/warp_origin_images",
-      "/admin/temp_stage_0/event_horizon_images",
-      "/admin/temp_stage_0/final_boss_stage_images",
-      "/admin/temp_stage_0/mobile",
-      "/admin/temp_stage_0/mobile/audio",
-      "/admin/temp_stage_0/mobile/audio/event_horizon",
-      "/admin/temp_stage_0/mobile/audio/final_boss_stage",
-      "/admin/temp_stage_0/mobile/audio/nebula_outpost",
-      "/admin/temp_stage_0/mobile/audio/quantum_realm",
-      "/admin/temp_stage_0/mobile/audio/singularity_core",
-      "/admin/temp_stage_0/mobile/audio/warp_origin",
-      "/admin/temp_stage_0/mobile/event_horizon_images",
-      "/admin/temp_stage_0/mobile/final_boss_stage_images",
-      "/admin/temp_stage_0/mobile/nebula_outpost_images",
-      "/admin/temp_stage_0/mobile/quantum_realm_images",
-      "/admin/temp_stage_0/mobile/singularity_core_images",
-      "/admin/temp_stage_0/mobile/warp_origin_images",
-      "/admin/temp_stage_0/nebula_outpost_images",
-      "/admin/temp_stage_0/quantum_realm_images",
-      "/admin/temp_stage_0/singularity_core_images",
-      "/admin/temp_stage_0/vr",
-      "/admin/temp_stage_0/vr/audio",
-      "/admin/temp_stage_0/vr/audio/event_horizon",
-      "/admin/temp_stage_0/vr/audio/final_boss_stage",
-      "/admin/temp_stage_0/vr/audio/nebula_outpost",
-      "/admin/temp_stage_0/vr/audio/quantum_realm",
-      "/admin/temp_stage_0/vr/audio/singularity_core",
-      "/admin/temp_stage_0/vr/audio/warp_origin",
-      "/admin/temp_stage_0/vr/event_horizon_images",
-      "/admin/temp_stage_0/vr/final_boss_stage_images",
-      "/admin/temp_stage_0/vr/nebula_outpost_images",
-      "/admin/temp_stage_0/vr/quantum_realm_images",
-      "/admin/temp_stage_0/vr/singularity_core_images",
-      "/admin/temp_stage_0/vr/warp_origin_images",
-      "/admin/temp_stage_0/warp_origin_images",
-      "/games",
-      "/js",
-      "/meshy_test_0",
-      "/meshy_test_0/models",
-      "/meshy_test_0/models/recon_drone_textures",
-      "/scratch",
-      "/wormhole0",
-      "/wormhole0/all_baks0",
-      "/wormhole0/all_baks0/bak0",
-      "/wormhole0/all_baks0/bak0/audio",
-      "/wormhole0/all_baks0/bak0/js",
-      "/wormhole0/all_baks0/bak1",
-      "/wormhole0/all_baks0/bak1/audio",
-      "/wormhole0/all_baks0/bak1/js",
-      "/wormhole0/all_baks0/bak10",
-      "/wormhole0/all_baks0/bak10/all_baks0",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak0",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak0/audio",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak0/js",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak1",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak1/audio",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak1/js",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak2",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak2/js",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak3",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak3/audio",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak3/js",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak4",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak4/audio",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak4/js",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak5",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak5/audio",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak5/js",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak5/js/js",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak6",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak6/js",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak7",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak7/js",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak8",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak8/js",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak9",
-      "/wormhole0/all_baks0/bak10/all_baks0/bak9/js",
-      "/wormhole0/all_baks0/bak10/arcore",
-      "/wormhole0/all_baks0/bak10/arcore/audio",
-      "/wormhole0/all_baks0/bak10/arcore/audio/event_horizon",
-      "/wormhole0/all_baks0/bak10/arcore/audio/quantum_realm",
-      "/wormhole0/all_baks0/bak10/arcore/audio/singularity_core",
-      "/wormhole0/all_baks0/bak10/arcore/audio/warp_origin",
-      "/wormhole0/all_baks0/bak10/arcore/event_horizon_images",
-      "/wormhole0/all_baks0/bak10/arcore/final_boss_stage_images",
-      "/wormhole0/all_baks0/bak10/arcore/nebula_outpost_images",
-      "/wormhole0/all_baks0/bak10/arcore/quantum_realm_images",
-      "/wormhole0/all_baks0/bak10/arcore/singularity_core_images",
-      "/wormhole0/all_baks0/bak10/arcore/warp_origin_images",
-      "/wormhole0/all_baks0/bak10/audio",
-      "/wormhole0/all_baks0/bak10/audio/event_horizon",
-      "/wormhole0/all_baks0/bak10/audio/quantum_realm",
-      "/wormhole0/all_baks0/bak10/audio/singularity_core",
-      "/wormhole0/all_baks0/bak10/audio/warp_origin",
-      "/wormhole0/all_baks0/bak10/desktop",
-      "/wormhole0/all_baks0/bak10/desktop/audio",
-      "/wormhole0/all_baks0/bak10/desktop/audio/event_horizon",
-      "/wormhole0/all_baks0/bak10/desktop/audio/quantum_realm",
-      "/wormhole0/all_baks0/bak10/desktop/audio/singularity_core",
-      "/wormhole0/all_baks0/bak10/desktop/audio/warp_origin",
-      "/wormhole0/all_baks0/bak10/js",
-      "/wormhole0/all_baks0/bak10/mobile",
-      "/wormhole0/all_baks0/bak10/mobile/audio",
-      "/wormhole0/all_baks0/bak10/mobile/audio/event_horizon",
-      "/wormhole0/all_baks0/bak10/mobile/audio/quantum_realm",
-      "/wormhole0/all_baks0/bak10/mobile/audio/singularity_core",
-      "/wormhole0/all_baks0/bak10/mobile/audio/warp_origin",
-      "/wormhole0/all_baks0/bak10/vr",
-      "/wormhole0/all_baks0/bak10/vr/audio",
-      "/wormhole0/all_baks0/bak10/vr/audio/event_horizon",
-      "/wormhole0/all_baks0/bak10/vr/audio/quantum_realm",
-      "/wormhole0/all_baks0/bak10/vr/audio/singularity_core",
-      "/wormhole0/all_baks0/bak10/vr/audio/warp_origin",
-      "/wormhole0/all_baks0/bak11",
-      "/wormhole0/all_baks0/bak11/js",
-      "/wormhole0/all_baks0/bak12",
-      "/wormhole0/all_baks0/bak12/js",
-      "/wormhole0/all_baks0/bak13",
-      "/wormhole0/all_baks0/bak13/js",
-      "/wormhole0/all_baks0/bak14",
-      "/wormhole0/all_baks0/bak14/js",
-      "/wormhole0/all_baks0/bak15",
-      "/wormhole0/all_baks0/bak15/js",
-      "/wormhole0/all_baks0/bak16",
-      "/wormhole0/all_baks0/bak16/js",
-      "/wormhole0/all_baks0/bak17",
-      "/wormhole0/all_baks0/bak17/js",
-      "/wormhole0/all_baks0/bak18",
-      "/wormhole0/all_baks0/bak18/js",
-      "/wormhole0/all_baks0/bak19",
-      "/wormhole0/all_baks0/bak19/js",
-      "/wormhole0/all_baks0/bak2",
-      "/wormhole0/all_baks0/bak2/js",
-      "/wormhole0/all_baks0/bak20",
-      "/wormhole0/all_baks0/bak20/js",
-      "/wormhole0/all_baks0/bak21",
-      "/wormhole0/all_baks0/bak21/js",
-      "/wormhole0/all_baks0/bak22",
-      "/wormhole0/all_baks0/bak22/js",
-      "/wormhole0/all_baks0/bak23",
-      "/wormhole0/all_baks0/bak23/js",
-      "/wormhole0/all_baks0/bak3",
-      "/wormhole0/all_baks0/bak3/audio",
-      "/wormhole0/all_baks0/bak3/js",
-      "/wormhole0/all_baks0/bak4",
-      "/wormhole0/all_baks0/bak4/audio",
-      "/wormhole0/all_baks0/bak4/js",
-      "/wormhole0/all_baks0/bak5",
-      "/wormhole0/all_baks0/bak5/audio",
-      "/wormhole0/all_baks0/bak5/js",
-      "/wormhole0/all_baks0/bak5/js/js",
-      "/wormhole0/all_baks0/bak6",
-      "/wormhole0/all_baks0/bak6/js",
-      "/wormhole0/all_baks0/bak7",
-      "/wormhole0/all_baks0/bak7/js",
-      "/wormhole0/all_baks0/bak8",
-      "/wormhole0/all_baks0/bak8/js",
-      "/wormhole0/all_baks0/bak9",
-      "/wormhole0/all_baks0/bak9/js",
-      "/wormhole0/arcore",
-      "/wormhole0/arcore/audio",
-      "/wormhole0/arcore/audio/event_horizon",
-      "/wormhole0/arcore/audio/quantum_realm",
-      "/wormhole0/arcore/audio/singularity_core",
-      "/wormhole0/arcore/audio/warp_origin",
-      "/wormhole0/arcore/event_horizon_images",
-      "/wormhole0/arcore/final_boss_stage_images",
-      "/wormhole0/arcore/nebula_outpost_images",
-      "/wormhole0/arcore/quantum_realm_images",
-      "/wormhole0/arcore/singularity_core_images",
-      "/wormhole0/arcore/warp_origin_images",
-      "/wormhole0/audio",
-      "/wormhole0/audio/arcore",
-      "/wormhole0/audio/arcore/event_horizon",
-      "/wormhole0/audio/arcore/quantum_realm",
-      "/wormhole0/audio/arcore/singularity_core",
-      "/wormhole0/audio/arcore/warp_origin",
-      "/wormhole0/audio/desktop",
-      "/wormhole0/audio/desktop/event_horizon",
-      "/wormhole0/audio/desktop/quantum_realm",
-      "/wormhole0/audio/desktop/singularity_core",
-      "/wormhole0/audio/desktop/warp_origin",
-      "/wormhole0/audio/mobile",
-      "/wormhole0/audio/mobile/event_horizon",
-      "/wormhole0/audio/mobile/quantum_realm",
-      "/wormhole0/audio/mobile/singularity_core",
-      "/wormhole0/audio/mobile/warp_origin",
-      "/wormhole0/audio/vr",
-      "/wormhole0/audio/vr/event_horizon",
-      "/wormhole0/audio/vr/quantum_realm",
-      "/wormhole0/audio/vr/singularity_core",
-      "/wormhole0/audio/vr/warp_origin",
-      "/wormhole0/desktop",
-      "/wormhole0/desktop/audio",
-      "/wormhole0/desktop/audio/event_horizon",
-      "/wormhole0/desktop/audio/quantum_realm",
-      "/wormhole0/desktop/audio/singularity_core",
-      "/wormhole0/desktop/audio/warp_origin",
+    // Exact list of all 60 folders and subfolders on calmchessgames.com containing "images" in the name
+    let IMAGE_QUICK_FOLDERS = [
+      // 1. Wormhole0 Live Scene Images (Root level)
+      "/wormhole0/event_horizon_images",
+      "/wormhole0/final_boss_stage_images",
+      "/wormhole0/nebula_outpost_images",
+      "/wormhole0/quantum_realm_images",
+      "/wormhole0/singularity_core_images",
+      "/wormhole0/warp_origin_images",
+      // 2. Wormhole0 Desktop Mode Images
       "/wormhole0/desktop/event_horizon_images",
       "/wormhole0/desktop/final_boss_stage_images",
       "/wormhole0/desktop/nebula_outpost_images",
       "/wormhole0/desktop/quantum_realm_images",
       "/wormhole0/desktop/singularity_core_images",
       "/wormhole0/desktop/warp_origin_images",
-      "/wormhole0/event_horizon_images",
-      "/wormhole0/final_boss_stage_images",
-      "/wormhole0/js",
-      "/wormhole0/meshy_test",
-      "/wormhole0/mobile",
-      "/wormhole0/mobile/audio",
-      "/wormhole0/mobile/audio/event_horizon",
-      "/wormhole0/mobile/audio/quantum_realm",
-      "/wormhole0/mobile/audio/singularity_core",
-      "/wormhole0/mobile/audio/warp_origin",
+      // 3. Wormhole0 Mobile Mode Images
       "/wormhole0/mobile/event_horizon_images",
       "/wormhole0/mobile/final_boss_stage_images",
       "/wormhole0/mobile/nebula_outpost_images",
       "/wormhole0/mobile/quantum_realm_images",
       "/wormhole0/mobile/singularity_core_images",
       "/wormhole0/mobile/warp_origin_images",
-      "/wormhole0/nebula_outpost_images",
-      "/wormhole0/quantum_realm_images",
-      "/wormhole0/singularity_core_images",
-      "/wormhole0/vr",
-      "/wormhole0/vr/audio",
-      "/wormhole0/vr/audio/event_horizon",
-      "/wormhole0/vr/audio/quantum_realm",
-      "/wormhole0/vr/audio/singularity_core",
-      "/wormhole0/vr/audio/warp_origin",
+      // 4. Wormhole0 VR Mode Images
       "/wormhole0/vr/event_horizon_images",
       "/wormhole0/vr/final_boss_stage_images",
       "/wormhole0/vr/nebula_outpost_images",
       "/wormhole0/vr/quantum_realm_images",
       "/wormhole0/vr/singularity_core_images",
       "/wormhole0/vr/warp_origin_images",
-      "/wormhole0/warp_origin_images"
+      // 5. Wormhole0 ARCore Mode Images
+      "/wormhole0/arcore/event_horizon_images",
+      "/wormhole0/arcore/final_boss_stage_images",
+      "/wormhole0/arcore/nebula_outpost_images",
+      "/wormhole0/arcore/quantum_realm_images",
+      "/wormhole0/arcore/singularity_core_images",
+      "/wormhole0/arcore/warp_origin_images",
+      // 6. Admin Staging Image Folders
+      "/admin/temp_stage_0/event_horizon_images",
+      "/admin/temp_stage_0/final_boss_stage_images",
+      "/admin/temp_stage_0/nebula_outpost_images",
+      "/admin/temp_stage_0/quantum_realm_images",
+      "/admin/temp_stage_0/singularity_core_images",
+      "/admin/temp_stage_0/warp_origin_images",
+      "/admin/temp_stage_0/desktop/event_horizon_images",
+      "/admin/temp_stage_0/desktop/final_boss_stage_images",
+      "/admin/temp_stage_0/desktop/nebula_outpost_images",
+      "/admin/temp_stage_0/desktop/quantum_realm_images",
+      "/admin/temp_stage_0/desktop/singularity_core_images",
+      "/admin/temp_stage_0/desktop/warp_origin_images",
+      "/admin/temp_stage_0/mobile/event_horizon_images",
+      "/admin/temp_stage_0/mobile/final_boss_stage_images",
+      "/admin/temp_stage_0/mobile/nebula_outpost_images",
+      "/admin/temp_stage_0/mobile/quantum_realm_images",
+      "/admin/temp_stage_0/mobile/singularity_core_images",
+      "/admin/temp_stage_0/mobile/warp_origin_images",
+      "/admin/temp_stage_0/vr/event_horizon_images",
+      "/admin/temp_stage_0/vr/final_boss_stage_images",
+      "/admin/temp_stage_0/vr/nebula_outpost_images",
+      "/admin/temp_stage_0/vr/quantum_realm_images",
+      "/admin/temp_stage_0/vr/singularity_core_images",
+      "/admin/temp_stage_0/vr/warp_origin_images",
+      "/admin/temp_stage_0/arcore/event_horizon_images",
+      "/admin/temp_stage_0/arcore/final_boss_stage_images",
+      "/admin/temp_stage_0/arcore/nebula_outpost_images",
+      "/admin/temp_stage_0/arcore/quantum_realm_images",
+      "/admin/temp_stage_0/arcore/singularity_core_images",
+      "/admin/temp_stage_0/arcore/warp_origin_images"
     ];
 
-    // Attempt to load external all_folders.json dynamically if available
-    fetch('all_folders.json')
+    // Enforce that only folders and subfolders with "images" in the name are in default quick paths
+    IMAGE_QUICK_FOLDERS = IMAGE_QUICK_FOLDERS.filter(f => f.toLowerCase().includes('images'));
+
+    // Attempt to load external image_folders.json dynamically if available
+    fetch('image_folders.json')
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {
-          ALL_CALMCHESS_FOLDERS = data;
+          // Strictly filter to only folders with "images" in name
+          IMAGE_QUICK_FOLDERS = data.filter(f => f.toLowerCase().includes('images'));
           renderAllQuickLinkSelects();
         }
       })
@@ -1723,7 +1507,7 @@
       if (!clean) clean = '/';
 
       const customList = getCustomQuickLinks();
-      if (!customList.includes(clean) && !ALL_CALMCHESS_FOLDERS.includes(clean)) {
+      if (!customList.includes(clean) && !IMAGE_QUICK_FOLDERS.includes(clean)) {
         customList.push(clean);
         customList.sort();
         saveCustomQuickLinks(customList);
@@ -1743,29 +1527,98 @@
         return p.toLowerCase().includes(query);
       }
 
-      // 1. Featured / 3D Model Folders
-      const featured = [
-        "/meshy_test_0/models",
-        "/meshy_test_0/models/recon_drone_textures",
-        "/meshy_test_0",
-        "/wormhole0/models",
-        "/wormhole0/meshy_test",
-        "/"
-      ].filter(matches);
-
-      if (featured.length > 0) {
+      // Group 1: 🌌 Wormhole Live Scene Images
+      const gWormholeRoot = IMAGE_QUICK_FOLDERS.filter(f => 
+        f.startsWith('/wormhole0/') && 
+        !f.includes('/desktop/') && 
+        !f.includes('/mobile/') && 
+        !f.includes('/vr/') && 
+        !f.includes('/arcore/') && 
+        matches(f)
+      );
+      if (gWormholeRoot.length > 0) {
         const og = document.createElement('optgroup');
-        og.label = '⭐ Featured 3D Model Folders';
-        featured.forEach(f => {
+        og.label = '🌌 Wormhole Scene Images';
+        gWormholeRoot.forEach(f => {
           const opt = document.createElement('option');
           opt.value = f;
-          opt.textContent = f + (f === '/meshy_test_0/models' ? ' (Default)' : '');
+          opt.textContent = f + (f === DEFAULT_DEST_DIR ? ' (Default)' : '');
           og.appendChild(opt);
         });
         selectElem.appendChild(og);
       }
 
-      // 2. Custom Added Quick Links
+      // Group 2: 🖥️ Wormhole Desktop Images
+      const gDesktop = IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/desktop/') && matches(f));
+      if (gDesktop.length > 0) {
+        const og = document.createElement('optgroup');
+        og.label = '🖥️ Wormhole Desktop Images';
+        gDesktop.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          og.appendChild(opt);
+        });
+        selectElem.appendChild(og);
+      }
+
+      // Group 3: 📱 Wormhole Mobile Images
+      const gMobile = IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/mobile/') && matches(f));
+      if (gMobile.length > 0) {
+        const og = document.createElement('optgroup');
+        og.label = '📱 Wormhole Mobile Images';
+        gMobile.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          og.appendChild(opt);
+        });
+        selectElem.appendChild(og);
+      }
+
+      // Group 4: 🥽 Wormhole VR Images
+      const gVR = IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/vr/') && matches(f));
+      if (gVR.length > 0) {
+        const og = document.createElement('optgroup');
+        og.label = '🥽 Wormhole VR Images';
+        gVR.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          og.appendChild(opt);
+        });
+        selectElem.appendChild(og);
+      }
+
+      // Group 5: 📲 Wormhole ARCore Images
+      const gARCore = IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/arcore/') && matches(f));
+      if (gARCore.length > 0) {
+        const og = document.createElement('optgroup');
+        og.label = '📲 Wormhole ARCore Images';
+        gARCore.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          og.appendChild(opt);
+        });
+        selectElem.appendChild(og);
+      }
+
+      // Group 6: 📂 Admin Temp Stage Image Folders
+      const gAdmin = IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/admin/') && matches(f));
+      if (gAdmin.length > 0) {
+        const og = document.createElement('optgroup');
+        og.label = '📂 Admin Staging Image Folders';
+        gAdmin.forEach(f => {
+          const opt = document.createElement('option');
+          opt.value = f;
+          opt.textContent = f;
+          og.appendChild(opt);
+        });
+        selectElem.appendChild(og);
+      }
+
+      // Group 7: 📌 Custom Quick Links (Added by You)
       const filteredCustom = customList.filter(matches);
       if (filteredCustom.length > 0) {
         const og = document.createElement('optgroup');
@@ -1779,33 +1632,19 @@
         selectElem.appendChild(og);
       }
 
-      // 3. All CalmChessGames Subfolders
-      const allFiltered = ALL_CALMCHESS_FOLDERS.filter(f => matches(f) && !featured.includes(f));
-      if (allFiltered.length > 0) {
-        const og = document.createElement('optgroup');
-        og.label = `📁 All CalmChessGames Folders (${ALL_CALMCHESS_FOLDERS.length})`;
-        allFiltered.forEach(f => {
-          const opt = document.createElement('option');
-          opt.value = f;
-          opt.textContent = f;
-          og.appendChild(opt);
-        });
-        selectElem.appendChild(og);
-      }
-
       if (selectElem.options.length === 0) {
         const opt = document.createElement('option');
         opt.value = '';
         opt.disabled = true;
-        opt.textContent = `No folders matching "${filterText}"`;
+        opt.textContent = `No image folders matching "${filterText}"`;
         selectElem.appendChild(opt);
       }
 
-      // Select target or default
+      // Preserve selection or default
       if (selectedVal) {
         selectElem.value = selectedVal;
-      } else if (!selectElem.value && selectElem.querySelector('option[value="/meshy_test_0/models"]')) {
-        selectElem.value = '/meshy_test_0/models';
+      } else if (!selectElem.value && selectElem.querySelector(`option[value="${DEFAULT_DEST_DIR}"]`)) {
+        selectElem.value = DEFAULT_DEST_DIR;
       }
     }
 
@@ -1822,16 +1661,16 @@
     const panelBtnAddQuicklink = document.getElementById('panel-btn-add-quicklink');
 
     function renderAllQuickLinkSelects(preferredSelection = '') {
-      const totalCount = ALL_CALMCHESS_FOLDERS.length + getCustomQuickLinks().length;
-      if (modalFolderCount) modalFolderCount.textContent = `${totalCount} Folders`;
-      if (panelFolderCount) panelFolderCount.textContent = `${totalCount} Folders`;
+      const totalCount = IMAGE_QUICK_FOLDERS.length + getCustomQuickLinks().length;
+      if (modalFolderCount) modalFolderCount.textContent = `${totalCount} Image Folders`;
+      if (panelFolderCount) panelFolderCount.textContent = `${totalCount} Image Folders`;
 
       const searchVal = modalFolderSearch ? modalFolderSearch.value : '';
-      renderSelectOptions(modalQuickLinksSelect, searchVal, preferredSelection);
-      renderSelectOptions(panelQuickLinksSelect, '', preferredSelection);
+      renderSelectOptions(modalQuickLinksSelect, searchVal, preferredSelection || DEFAULT_DEST_DIR);
+      renderSelectOptions(panelQuickLinksSelect, '', preferredSelection || DEFAULT_DEST_DIR);
     }
 
-    renderAllQuickLinkSelects('/meshy_test_0/models');
+    renderAllQuickLinkSelects(DEFAULT_DEST_DIR);
 
     // Search filter event listener
     if (modalFolderSearch) {
@@ -1852,7 +1691,7 @@
       const val = inputElem ? inputElem.value.trim() : '';
       if (!val) {
         if (feedbackElem) {
-          feedbackElem.textContent = 'Please enter a valid folder path (e.g. /models/custom)';
+          feedbackElem.textContent = 'Please enter a valid folder path (e.g. /wormhole0/assets_images)';
           feedbackElem.style.color = '#f87171';
         }
         return;
@@ -1865,7 +1704,6 @@
           feedbackElem.style.color = '#34d399';
           setTimeout(() => { feedbackElem.textContent = ''; }, 3500);
         }
-        // Update destination path if modal is open
         updateDestPathFromFolder(added);
       }
     }
@@ -1906,7 +1744,7 @@
     const modalObjMatGroup = document.getElementById('modal-obj-mat-group');
     const modalObjMatInput = document.getElementById('modal-obj-mat-input');
 
-    let pendingLoad = null; // { file: File|null, rawUrl: string, fileName: string, ext: string, sizeStr: string, blobUrl: string|null, materialUrl: string }
+    let pendingLoad = null;
 
     function formatBytes(bytes) {
       if (!bytes || bytes === 0) return '0 B';
@@ -1934,9 +1772,9 @@
 
     function updateDestPreview() {
       let rawVal = modalDestPathInput.value.trim().replace(/\\/g, '/');
-      rawVal = rawVal.replace(/^\/+/, ''); // strip leading slash
+      rawVal = rawVal.replace(/^\/+/, '');
       if (!rawVal && pendingLoad) {
-        rawVal = 'meshy_test_0/models/' + pendingLoad.fileName;
+        rawVal = DEFAULT_DEST_DIR.replace(/^\/+/, '') + '/' + pendingLoad.fileName;
       }
       modalDestPreviewUrl.textContent = `https://calmchessgames.com/${rawVal}`;
     }
@@ -2014,7 +1852,7 @@
     function cancelLoad() {
       closeApprovalModal();
       pendingLoad = null;
-      localFilePicker.value = ''; // reset so same file can be picked again
+      localFilePicker.value = '';
       setStatus('Ready', 'ready');
       setMessage('Load cancelled by user.', '');
     }
@@ -2436,7 +2274,7 @@
 
         carModel = object3D;
 
-        // Auto-scale to WebXR physical scale (~3.8m length for race car / vehicular scales)
+        // Auto-scale to WebXR physical scale
         const bbox = new THREE.Box3().setFromObject(carModel);
         const center = bbox.getCenter(new THREE.Vector3());
         const size = bbox.getSize(new THREE.Vector3());
@@ -2522,7 +2360,6 @@
       const blobUrl = URL.createObjectURL(file);
       const ext = getExt(file.name);
 
-      // Open Destination Approval Modal for user approval
       openApprovalModal({
         file: file,
         fileName: file.name,
@@ -2565,13 +2402,13 @@
     });
 
     btnQuickCar.addEventListener('click', () => {
-      modelFileInput.value = 'meshy_test_0/models/red_race_car.glb';
+      modelFileInput.value = 'models/red_race_car.glb';
       materialFileInput.value = '';
       openApprovalModal({
         rawUrl: 'models/red_race_car.glb',
         fileName: 'red_race_car.glb',
         ext: 'glb',
-        suggestedPath: 'meshy_test_0/models/red_race_car.glb'
+        suggestedPath: DEFAULT_DEST_DIR.replace(/^\/+/, '') + '/red_race_car.glb'
       });
     });
 
@@ -2762,7 +2599,7 @@
     });
 
     // Initial Model Load
-    loadModel('models/red_race_car.glb', '', 'red_race_car.glb', 'meshy_test_0/models/red_race_car.glb');
+    loadModel('models/red_race_car.glb', '', 'red_race_car.glb', DEFAULT_DEST_DIR.replace(/^\/+/, '') + '/red_race_car.glb');
   </script>
 </body>
 </html>

@@ -105,7 +105,25 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
     const cachedObj = cached3DAssetModels.get(url);
     if (onLoaded) {
       try {
-        onLoaded(cachedObj.clone(true));
+        const cloned = cachedObj.clone(true);
+        cloned.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(m => {
+                if (m) {
+                  m.wireframe = false;
+                  m.needsUpdate = true;
+                }
+              });
+            }
+          } else if (child.isLine || child.isLineSegments) {
+            child.visible = false;
+          }
+        });
+        onLoaded(cloned);
       } catch (cloneErr) {
         if (onLoaded) onLoaded(cachedObj);
       }
@@ -122,6 +140,23 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
     objLoader.load(
       fetchUrl,
       (obj) => {
+        obj.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(m => {
+                if (m) {
+                  m.wireframe = false;
+                  m.needsUpdate = true;
+                }
+              });
+            }
+          } else if (child.isLine || child.isLineSegments) {
+            child.visible = false;
+          }
+        });
         cached3DAssetModels.set(url, obj);
         if (onLoaded) onLoaded(obj.clone(true));
       },
@@ -137,6 +172,24 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
       fetchUrl,
       (gltf) => {
         const scene = gltf.scene || gltf.scenes[0] || gltf;
+        // Cleanse model hierarchy: disable wireframe on all materials and hide any line segments or bounding helpers
+        scene.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(m => {
+                if (m) {
+                  m.wireframe = false;
+                  m.needsUpdate = true;
+                }
+              });
+            }
+          } else if (child.isLine || child.isLineSegments) {
+            child.visible = false;
+          }
+        });
         cached3DAssetModels.set(url, scene);
         if (onLoaded) onLoaded(scene.clone(true));
       },
@@ -2570,10 +2623,15 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
                 ae.mesh.remove(ae.mesh.userData.loadedAsset);
                 try { disposeMeshHierarchy(ae.mesh.userData.loadedAsset); } catch (e) {}
               }
-              const proxyPlaceholder = ae.mesh.getObjectByName('enemy_proxy_placeholder');
-              if (proxyPlaceholder) ae.mesh.remove(proxyPlaceholder);
-              const proxyCore = ae.mesh.getObjectByName('enemy_proxy_core');
-              if (proxyCore) ae.mesh.remove(proxyCore);
+              // Strip all existing procedural placeholders, hulls, toruses, wireframes, and rings so ONLY the 3D model is visible
+              for (let ci = ae.mesh.children.length - 1; ci >= 0; ci--) {
+                const c = ae.mesh.children[ci];
+                if (c && !c.isLight && c !== newModel) {
+                  ae.mesh.remove(c);
+                  try { disposeMeshHierarchy(c); } catch (e) {}
+                }
+              }
+              ae.mesh.userData.spinRing = null;
 
               const box = new THREE.Box3().setFromObject(newModel);
               const center = new THREE.Vector3();
@@ -2592,6 +2650,17 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
                 if (child.isMesh) {
                   child.castShadow = true;
                   child.receiveShadow = true;
+                  if (child.material) {
+                    const mats = Array.isArray(child.material) ? child.material : [child.material];
+                    mats.forEach(m => {
+                      if (m) {
+                        m.wireframe = false;
+                        m.needsUpdate = true;
+                      }
+                    });
+                  }
+                } else if (child.isLine || child.isLineSegments) {
+                  child.visible = false;
                 }
               });
 
@@ -2741,6 +2810,11 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
       // Custom Image Asset URL
       if (activeEnv.image_asset_url && activeEnv.image_asset_url.trim()) {
         applyCustomEnvironmentImageAsset(activeEnv.image_asset_url.trim(), activeEnv.image_asset_type || 'corona_sprite');
+      }
+
+      // Custom 3D Model Asset URL for Environment Singularity
+      if (activeEnv.model_3d_url && activeEnv.model_3d_url.trim()) {
+        applyCustomEnvironment3DModel(activeEnv.model_3d_url.trim(), activeEnv);
       }
 
       // Quick Special Effects for Wormhole Singularity
@@ -7416,7 +7490,65 @@ function create3DPowerupMesh(pConfig) {
   let coreMesh = null;
   let spinRing = null;
 
-  if (modelType === 'icosahedron') {
+  const customModelUrl = (pConfig.model_3d_url || '').trim();
+  const isCustomModel = customModelUrl !== '' ||
+    modelType.startsWith('custom') ||
+    modelType === 'glb' ||
+    modelType === 'gltf' ||
+    modelType === 'obj';
+
+  if (isCustomModel && customModelUrl) {
+    load3DAssetModel(
+      customModelUrl,
+      (loadedModel) => {
+        try {
+          for (let ci = group.children.length - 1; ci >= 0; ci--) {
+            const c = group.children[ci];
+            if (c && !c.isLight && c !== loadedModel) {
+              group.remove(c);
+              try { disposeMeshHierarchy(c); } catch (e) {}
+            }
+          }
+          const box = new THREE.Box3().setFromObject(loadedModel);
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          loadedModel.position.sub(center);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+          const targetSpan = (userRadius * 2.2) * userScale;
+          const autoScale = targetSpan / maxDim;
+          loadedModel.scale.set(autoScale, autoScale, autoScale);
+          loadedModel.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              if (child.material) {
+                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                mats.forEach(m => {
+                  if (m) {
+                    m.wireframe = false;
+                    m.needsUpdate = true;
+                  }
+                });
+              }
+            } else if (child.isLine || child.isLineSegments) {
+              child.visible = false;
+            }
+          });
+          group.add(loadedModel);
+          group.userData.loadedAsset = loadedModel;
+        } catch (e) {
+          console.warn('[PowerUp] Error processing 3D asset model:', e);
+        }
+      },
+      (err) => {
+        console.warn('[PowerUp] 3D Asset loading failed for:', customModelUrl, err);
+        const fb = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius, 0), solidMat);
+        group.add(fb);
+      }
+    );
+  } else if (modelType === 'icosahedron') {
     meshBody = new THREE.Mesh(new THREE.IcosahedronGeometry(userRadius, 0), wireMat);
     coreMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(userRadius * 0.5), coreGlowMat);
     group.add(meshBody);
@@ -7458,37 +7590,11 @@ function create3DPowerupMesh(pConfig) {
     coreMesh = new THREE.Mesh(new THREE.CylinderGeometry(capRadius * 0.45, capRadius * 0.45, capHeight * 0.85, 8), coreGlowMat);
     group.add(meshBody);
     group.add(coreMesh);
-  } else if (modelType.startsWith('custom') || modelType === 'gltf' || modelType === 'glb' || modelType === 'obj' || pConfig.model_3d_url) {
-    const assetUrl = (pConfig.model_3d_url || '').trim();
-    if (assetUrl) {
-      load3DAssetModel(
-        assetUrl,
-        (loadedModel) => {
-          try {
-            const box = new THREE.Box3().setFromObject(loadedModel);
-            const center = new THREE.Vector3();
-            box.getCenter(center);
-            loadedModel.position.sub(center);
-            const size = new THREE.Vector3();
-            box.getSize(size);
-            const maxDim = Math.max(size.x, size.y, size.z, 0.001);
-            const targetSpan = (userRadius * 2.2) * userScale;
-            const autoScale = targetSpan / maxDim;
-            loadedModel.scale.set(autoScale, autoScale, autoScale);
-            group.add(loadedModel);
-          } catch (e) {
-            console.warn('[PowerUp] Error processing 3D asset model:', e);
-          }
-        },
-        (err) => {
-          console.warn('[PowerUp] 3D Asset loading failed for:', assetUrl, err);
-          const fb = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius, 0), solidMat);
-          group.add(fb);
-        }
-      );
-    } else {
-      meshBody = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius, 0), solidMat);
-      coreMesh = new THREE.Mesh(new THREE.SphereGeometry(userRadius * 0.4, 12, 12), coreGlowMat);
+  } else if (modelType.startsWith('custom') || modelType === 'gltf' || modelType === 'glb' || modelType === 'obj') {
+    meshBody = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius, 0), solidMat);
+    coreMesh = new THREE.Mesh(new THREE.SphereGeometry(userRadius * 0.4, 12, 12), coreGlowMat);
+    group.add(meshBody);
+    group.add(coreMesh);
       group.add(meshBody);
       group.add(coreMesh);
     }
@@ -8162,6 +8268,16 @@ function create3DEnemyMesh(config) {
       customModelUrl,
       (loadedModel) => {
         try {
+          // Remove all procedural placeholders, hulls, toruses, wireframes, and rings so ONLY the clean 3D model is visible
+          for (let ci = group.children.length - 1; ci >= 0; ci--) {
+            const c = group.children[ci];
+            if (c && !c.isLight && c !== loadedModel) {
+              group.remove(c);
+              try { disposeMeshHierarchy(c); } catch (e) {}
+            }
+          }
+          group.userData.spinRing = null;
+
           // Auto-center model at its bounding box center
           const box = new THREE.Box3().setFromObject(loadedModel);
           const center = new THREE.Vector3();
@@ -8176,17 +8292,25 @@ function create3DEnemyMesh(config) {
           const autoScale = targetSpan / maxDim;
           loadedModel.scale.set(autoScale, autoScale, autoScale);
 
-          // Configure shadows & meshes
+          // Configure shadows & meshes - strictly ensure wireframe = false and hide lines
           loadedModel.traverse((child) => {
             if (child.isMesh) {
               child.castShadow = true;
               child.receiveShadow = true;
+              if (child.material) {
+                const mats = Array.isArray(child.material) ? child.material : [child.material];
+                mats.forEach(m => {
+                  if (m) {
+                    m.wireframe = false;
+                    m.needsUpdate = true;
+                  }
+                });
+              }
+            } else if (child.isLine || child.isLineSegments) {
+              child.visible = false;
             }
           });
 
-          // Remove proxy placeholder meshes and add the loaded 3D asset model
-          group.remove(proxyHull);
-          group.remove(coreProxy);
           group.add(loadedModel);
           group.userData.loadedAsset = loadedModel;
         } catch (procErr) {
@@ -8322,8 +8446,8 @@ function create3DEnemyMesh(config) {
     radius: userRadius
   };
 
-  // Attach configured Quick Special Effects (Plasma Aura, Sparks, Tachyon Trail, etc.)
-  if (typeof attachQuickEffectsToMesh === 'function') {
+  // Attach configured Quick Special Effects (Plasma Aura, Sparks, Tachyon Trail, etc.) only for procedural models
+  if (typeof attachQuickEffectsToMesh === 'function' && !isCustomModel) {
     attachQuickEffectsToMesh(group, config);
   }
 
@@ -9686,7 +9810,7 @@ function createQuickEffectObject(effectName, colorHex, intensity, speed, dims) {
       color: colorHex,
       transparent: true,
       opacity: 0.32 * intensity,
-      wireframe: true,
+      wireframe: false,
       blending: THREE.AdditiveBlending
     });
     const mesh = new THREE.Mesh(geom, mat);
@@ -9769,7 +9893,7 @@ function createQuickEffectObject(effectName, colorHex, intensity, speed, dims) {
     const geom = new THREE.IcosahedronGeometry(r * 1.25, 1);
     const mat = new THREE.MeshBasicMaterial({
       color: colorHex,
-      wireframe: true,
+      wireframe: false,
       transparent: true,
       opacity: 0.45 * intensity,
       blending: THREE.AdditiveBlending
@@ -9999,6 +10123,74 @@ function applyCustomEnvironmentImageAsset(rawImageUrl, role = 'corona_sprite') {
     undefined,
     (err) => {
       console.warn(`[Environment] Failed to load image asset '${imageUrl}':`, err);
+    }
+  );
+}
+
+let customEnvironmentModelGroup = null;
+
+function applyCustomEnvironment3DModel(rawModelUrl, activeEnv = {}) {
+  if (!rawModelUrl || !scene) return;
+  const modelUrl = normalizeAssetUrl(rawModelUrl);
+
+  if (!customEnvironmentModelGroup) {
+    customEnvironmentModelGroup = new THREE.Group();
+    customEnvironmentModelGroup.name = 'wormhole_custom_environment_model';
+    scene.add(customEnvironmentModelGroup);
+  }
+
+  // Clear existing model from group
+  while (customEnvironmentModelGroup.children.length > 0) {
+    const c = customEnvironmentModelGroup.children[0];
+    customEnvironmentModelGroup.remove(c);
+    try { disposeMeshHierarchy(c); } catch (e) {}
+  }
+
+  load3DAssetModel(
+    modelUrl,
+    (loadedModel) => {
+      try {
+        // Cleanse model hierarchy: disable wireframe on all materials, hide lines/helpers
+        loadedModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(m => {
+                if (m) {
+                  m.wireframe = false;
+                  m.needsUpdate = true;
+                }
+              });
+            }
+          } else if (child.isLine || child.isLineSegments) {
+            child.visible = false;
+          }
+        });
+
+        // Center and scale to event horizon dimensions
+        const box = new THREE.Box3().setFromObject(loadedModel);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        loadedModel.position.sub(center);
+
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+        const targetRadius = (activeEnv.event_horizon_radius || 7.5) * (activeEnv.scale || 1.0);
+        const autoScale = (targetRadius * 2.0) / maxDim;
+        loadedModel.scale.set(autoScale, autoScale, autoScale);
+
+        customEnvironmentModelGroup.position.set(0, 0, 0);
+        customEnvironmentModelGroup.add(loadedModel);
+        console.log(`[Environment] Applied custom 3D environment model '${modelUrl}'`);
+      } catch (err) {
+        console.warn('[Environment] Error attaching custom 3D environment model:', err);
+      }
+    },
+    (err) => {
+      console.warn(`[Environment] Failed loading custom 3D model '${modelUrl}':`, err);
     }
   );
 }

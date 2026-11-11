@@ -1,0 +1,14 @@
+{
+    "model": "red_race_car.glb",
+    "baseName": "red_race_car",
+    "exported_at": "2026-11-11T04:44:43+00:00",
+    "destination": "/[wormhole0/warp_origin_images",
+    "companion_files": [
+        "red_race_car.mtl",
+        "texture_0_base_color.png",
+        "texture_0_metallic.png",
+        "texture_0_normal.png",
+        "texture_0_roughness.png",
+        "thumbnail.png"
+    ]
+}

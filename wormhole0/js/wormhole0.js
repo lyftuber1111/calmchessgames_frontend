@@ -14,6 +14,11 @@ import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFa
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
+// Expose THREE globally on window for dynamic stage modules and decoupled enemy systems
+if (typeof window !== 'undefined' && !window.THREE) {
+  window.THREE = THREE;
+}
+
 const gltfLoader = new GLTFLoader();
 const objLoader = new OBJLoader();
 
@@ -2840,11 +2845,48 @@ async function syncGameManagerFromDatabase(stageLevel = null, deviceType = null)
   return false;
 }
 
-function triggerAcquireEvent(eventName) {
+// Decoupled Stage Handlers (populated by active stage profile)
+let activeEnemyMovementHandler = null;
+let activeEnemyWeaponHandler = null;
+let activeStageEventHandlers = null;
+let activeStageEventHandler = null;
+
+function triggerAcquireEvent(eventName, eventData = null) {
   if (!eventName) return;
   if (!state.unlockedEvents) state.unlockedEvents = {};
   state.unlockedEvents[eventName] = true;
 
+  // 1. Dispatch to decoupled stage event handlers from active stage .js file
+  const api = (typeof getEngineApi === 'function') ? getEngineApi() : null;
+  if (typeof activeStageEventHandler === 'function') {
+    try {
+      activeStageEventHandler(eventName, api, eventData);
+    } catch (e) {
+      console.warn('[StageEventHandler Error]', e);
+    }
+  } else if (activeStageEventHandlers && typeof activeStageEventHandlers[eventName] === 'function') {
+    try {
+      activeStageEventHandlers[eventName](api, eventData);
+    } catch (e) {
+      console.warn('[StageEvent Error]', e);
+    }
+  } else if (activeStageModule) {
+    if (typeof activeStageModule.handleStageEvent === 'function') {
+      try {
+        activeStageModule.handleStageEvent(eventName, api, eventData);
+      } catch (e) {
+        console.warn('[StageModule handleStageEvent Error]', e);
+      }
+    } else if (activeStageModule.stageEvents && typeof activeStageModule.stageEvents[eventName] === 'function') {
+      try {
+        activeStageModule.stageEvents[eventName](api, eventData);
+      } catch (e) {
+        console.warn('[StageModule stageEvents Error]', e);
+      }
+    }
+  }
+
+  // 2. Unlock weapons mapped to this event
   if (state.acquirableEvents && state.acquirableEvents[eventName]) {
     const wid = state.acquirableEvents[eventName];
     if (weaponsSystem && weaponsSystem.weapons[wid]) {
@@ -2857,7 +2899,7 @@ function triggerAcquireEvent(eventName) {
     }
   }
 
-  // Trigger any powerups configured to appear on this event
+  // 3. Trigger any powerups configured to appear on this event
   if (typeof checkEventPowerupAppearance === 'function') {
     checkEventPowerupAppearance(eventName);
   }
@@ -4640,7 +4682,17 @@ function getEngineApi() {
       }
       const enabled = audioConfig.enableCoilAudio !== false && audioConfig.spin180Sound !== null;
       if (audioMgr) audioMgr.setSpinAudioEnabled(enabled);
-    }
+    },
+    THREE,
+    setEnemyMovementHandler: (fn) => { activeEnemyMovementHandler = fn; },
+    setEnemyWeaponHandler: (fn) => { activeEnemyWeaponHandler = fn; },
+    setStageEventHandlers: (handlers) => { activeStageEventHandlers = handlers; },
+    setStageEventHandler: (fn) => { activeStageEventHandler = fn; },
+    getEnemyBolts: () => enemyBolts,
+    getActiveEnemies: () => active3DEnemies,
+    checkEventPowerupAppearance: (eventName) => { if (typeof checkEventPowerupAppearance === 'function') checkEventPowerupAppearance(eventName); },
+    triggerStageEvent: (eventName, data) => triggerAcquireEvent(eventName, data),
+    triggerAcquireEvent: (eventName, data) => triggerAcquireEvent(eventName, data)
   };
 }
 
@@ -4672,11 +4724,34 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     }
     activeStageModule = mod;
     activeVrFrameHook = null;
+    activeEnemyMovementHandler = null;
+    activeEnemyWeaponHandler = null;
+    activeStageEventHandlers = null;
+    activeStageEventHandler = null;
+
     const api = getEngineApi();
     if (mod && typeof mod.applyStage === 'function') {
       mod.applyStage(api);
     } else if (mod && mod.default && typeof mod.default.applyStage === 'function') {
       mod.default.applyStage(api);
+    }
+
+    // Auto-bind exported stage handlers if not already registered during applyStage
+    if (!activeEnemyMovementHandler && mod) {
+      if (typeof mod.updateEnemyMovement === 'function') activeEnemyMovementHandler = mod.updateEnemyMovement;
+      else if (mod.default && typeof mod.default.updateEnemyMovement === 'function') activeEnemyMovementHandler = mod.default.updateEnemyMovement;
+    }
+    if (!activeEnemyWeaponHandler && mod) {
+      if (typeof mod.fireEnemyWeapon === 'function') activeEnemyWeaponHandler = mod.fireEnemyWeapon;
+      else if (mod.default && typeof mod.default.fireEnemyWeapon === 'function') activeEnemyWeaponHandler = mod.default.fireEnemyWeapon;
+    }
+    if (!activeStageEventHandlers && mod) {
+      if (mod.stageEvents) activeStageEventHandlers = mod.stageEvents;
+      else if (mod.default && mod.default.stageEvents) activeStageEventHandlers = mod.default.stageEvents;
+    }
+    if (!activeStageEventHandler && mod) {
+      if (typeof mod.handleStageEvent === 'function') activeStageEventHandler = mod.handleStageEvent;
+      else if (mod.default && typeof mod.default.handleStageEvent === 'function') activeStageEventHandler = mod.default.handleStageEvent;
     }
 
     // At level change: check all admin console game manager database values and update the game values
@@ -4733,6 +4808,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     // Reset stage combat counters and apply stage objectives
     state.stageKills = 0;
     state.isWarpReady = false;
+    state.completedObjectiveEvents = {};
     if (typeof despawnAllActiveEnemies === 'function') {
       despawnAllActiveEnemies();
     }
@@ -8567,6 +8643,119 @@ function spawnEnemyFromWormhole() {
   spawnEnemySwarmFromWormhole();
 }
 
+function defaultEnemyMovement(e, delta, context) {
+  if (!e || !e.mesh) return false;
+  const now = (context && context.now) || performance.now();
+  const playerPos = (context && context.playerPos) || { x: 0, y: 0, z: 0 };
+  const laserBolts = (context && context.laserBolts) || [];
+  const activeEnemies = (context && context.activeEnemies) || [];
+  const enemyIndex = (context && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
+  const distToPlayer = e.mesh.position.distanceTo(playerPos);
+
+  const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
+  const distTraveled = e.mesh.position.z - spawnZ;
+  const totalDist = Math.max(30, (playerPos.z - (e.targetStopDist || 23.8)) - spawnZ);
+  const progress = Math.max(0, Math.min(1.0, distTraveled / totalDist));
+  const curScale = THREE.MathUtils.lerp(0.1, e.baseScale || 1.0, progress);
+  e.mesh.scale.set(curScale, curScale, curScale);
+
+  if (e.phase === 'RUSH_OUT') {
+    e.mesh.position.z += (e.speed || 40) * delta;
+    e.mesh.position.x += (playerPos.x + (e.targetScatterX || 0) * 0.25 - e.mesh.position.x) * delta * 0.45;
+    e.mesh.position.y += (playerPos.y + (e.targetScatterY || 0) * 0.25 - e.mesh.position.y) * delta * 0.45;
+
+    if (distToPlayer <= (e.targetStopDist || 23.8) || e.mesh.position.z >= (playerPos.z - (e.targetStopDist || 23.8))) {
+      e.phase = 'SCATTER_AND_EVADE';
+      e.stoppedTime = now;
+    }
+  } else {
+    const desiredZ = playerPos.z - (e.targetStopDist || 23.8);
+    e.mesh.position.z += (desiredZ - e.mesh.position.z) * delta * 2.8;
+
+    const screenTargetX = playerPos.x + (e.targetScatterX || 0);
+    const screenTargetY = playerPos.y + (e.targetScatterY || 0);
+    e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.4;
+    e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.4;
+
+    if (now > (e.scatterRetargetTime || 0)) {
+      e.scatterRetargetTime = now + 4200 + Math.random() * 4500;
+      const newAng = Math.random() * Math.PI * 2;
+      const newRad = 7.5 + Math.random() * 16.5;
+      e.targetScatterX = Math.cos(newAng) * newRad;
+      e.targetScatterY = Math.sin(newAng) * (newRad * 0.75);
+    }
+
+    const t = (now - (e.stoppedTime || now)) * 0.001;
+    const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0);
+    const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.5);
+    const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.8);
+    e.mesh.position.x += evaVx * delta;
+    e.mesh.position.y += evaVy * delta;
+    e.mesh.position.z += evaVz * delta;
+
+    if (now >= (e.nextJukeTime || 0)) {
+      e.nextJukeTime = now + 1200 + Math.random() * 2000;
+      e.jukeEndTime = now + 350 + Math.random() * 350;
+      e.jukeVelocity.set(
+        (Math.random() - 0.5) * 32,
+        (Math.random() - 0.5) * 24,
+        (Math.random() - 0.5) * 8
+      );
+    }
+    if (e.jukeVelocity) {
+      if (now < e.jukeEndTime) {
+        e.mesh.position.addScaledVector(e.jukeVelocity, delta);
+      } else {
+        e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
+      }
+    }
+
+    for (let li = 0; li < laserBolts.length; li++) {
+      const lbolt = laserBolts[li];
+      if (!lbolt || !lbolt.mesh) continue;
+      const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
+      if (ldist < 6.8) {
+        const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
+        dodgeDir.z = 0;
+        if (dodgeDir.lengthSq() > 0.001) {
+          dodgeDir.normalize();
+          e.mesh.position.addScaledVector(dodgeDir, 18.0 * delta);
+        }
+        break;
+      }
+    }
+
+    const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
+    const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
+    const netVx = (screenTargetX - e.mesh.position.x) * 1.2 + jukeVx;
+    const netVy = (screenTargetY - e.mesh.position.y) * 1.2 + jukeVy;
+    e.mesh.rotation.z = -THREE.MathUtils.clamp(netVx * 0.05, -0.65, 0.65);
+    e.mesh.rotation.x = THREE.MathUtils.clamp(netVy * 0.05, -0.45, 0.45);
+    e.mesh.rotation.y = THREE.MathUtils.clamp(-netVx * 0.03, -0.4, 0.4);
+    if (e.mesh.userData && e.mesh.userData.spinRing) {
+      e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
+    }
+  }
+
+  for (let j = 0; j < activeEnemies.length; j++) {
+    if (j === enemyIndex) continue;
+    const other = activeEnemies[j];
+    if (!other || !other.mesh) continue;
+    const sepVec = new THREE.Vector3().subVectors(e.mesh.position, other.mesh.position);
+    const sepDist = sepVec.length();
+    const otherScale = (other.mesh.scale && typeof other.mesh.scale.x === 'number') ? other.mesh.scale.x : 1.0;
+    const curScaleX = (e.mesh.scale && typeof e.mesh.scale.x === 'number') ? e.mesh.scale.x : 1.0;
+    const minSafeSep = Math.max(5.0, (curScaleX + otherScale) * 2.4);
+    if (sepDist < minSafeSep && sepDist > 0.01) {
+      const overlapFactor = (minSafeSep - sepDist) / minSafeSep;
+      const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 16.0 * delta);
+      e.mesh.position.add(repulse);
+    }
+  }
+
+  return true;
+}
+
 function updateEnemiesCombat(delta) {
   if (!state.hasStarted || state.isPaused || state.isGameOver) return;
   const now = performance.now();
@@ -8590,114 +8779,81 @@ function updateEnemiesCombat(delta) {
     const e = active3DEnemies[i];
     const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
-    // Scale dynamically from small (0.1) at wormhole mouth up to baseScale as they traverse corridor
-    const distTraveled = e.mesh.position.z - e.spawnPos.z;
-    const totalDist = Math.max(30, (playerPos.z - e.targetStopDist) - e.spawnPos.z);
-    const progress = Math.max(0, Math.min(1.0, distTraveled / totalDist));
-    const curScale = THREE.MathUtils.lerp(0.1, e.baseScale, progress);
-    e.mesh.scale.set(curScale, curScale, curScale);
+    // Context bundle for decoupled stage movement and weapon handlers
+    const enemyCtx = {
+      delta,
+      now,
+      playerPos,
+      activeEnemies: active3DEnemies,
+      enemyIndex: i,
+      laserBolts,
+      scene,
+      camera,
+      cameraRig,
+      state,
+      CONFIG,
+      THREE,
+      audioMgr,
+      enemyBolts,
+      engineApi: getEngineApi()
+    };
 
-    if (e.phase === 'RUSH_OUT') {
-      // Rush out from wormhole mouth along Z axis towards player
-      e.mesh.position.z += e.speed * delta;
-      e.mesh.position.x += (playerPos.x + e.targetScatterX * 0.25 - e.mesh.position.x) * delta * 0.45;
-      e.mesh.position.y += (playerPos.y + e.targetScatterY * 0.25 - e.mesh.position.y) * delta * 0.45;
-
-      // Stop condition: Stop exactly 10,000 km away from the player
-      if (distToPlayer <= e.targetStopDist || e.mesh.position.z >= (playerPos.z - e.targetStopDist)) {
-        e.phase = 'SCATTER_AND_EVADE';
-        e.stoppedTime = now;
+    // Execute decoupled enemy movement logic (from active stage profile .js file)
+    let moved = false;
+    if (typeof activeEnemyMovementHandler === 'function') {
+      try {
+        moved = activeEnemyMovementHandler(e, delta, enemyCtx);
+      } catch (err) {
+        console.warn('[EnemyMovementHandler Error]', err);
       }
-    } else {
-      // Phase: 'SCATTER_AND_EVADE'
-      // 1. Maintain standoff distance 10,000 km away from player along Z
-      const desiredZ = playerPos.z - e.targetStopDist;
-      e.mesh.position.z += (desiredZ - e.mesh.position.z) * delta * 2.8;
-
-      // 2. Scatter randomly all over the screen (top, bottom, left, right, quadrants)
-      const screenTargetX = playerPos.x + e.targetScatterX;
-      const screenTargetY = playerPos.y + e.targetScatterY;
-      e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.4;
-      e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.4;
-
-      // Periodically re-scatter across screen to keep combat field unpredictable
-      if (now > e.scatterRetargetTime) {
-        e.scatterRetargetTime = now + 4200 + Math.random() * 4500;
-        const newAng = Math.random() * Math.PI * 2;
-        const newRad = 7.5 + Math.random() * 16.5;
-        e.targetScatterX = Math.cos(newAng) * newRad;
-        e.targetScatterY = Math.sin(newAng) * (newRad * 0.75);
-      }
-
-      // 3. Random Evasive Maneuvers (Multi-harmonic oscillations so they can't be destroyed the instant they stop)
-      const t = (now - e.stoppedTime) * 0.001;
-      const evaVx = Math.sin(t * e.evaFreqX + e.evaPhaseX) * e.evaAmpX;
-      const evaVy = Math.cos(t * e.evaFreqY + e.evaPhaseY) * e.evaAmpY;
-      const evaVz = Math.sin(t * e.evaFreqZ + e.evaPhaseZ) * e.evaAmpZ;
-      e.mesh.position.x += evaVx * delta;
-      e.mesh.position.y += evaVy * delta;
-      e.mesh.position.z += evaVz * delta;
-
-      // 4. Sudden lateral jukes & thruster dodges
-      if (now >= e.nextJukeTime) {
-        e.nextJukeTime = now + 1200 + Math.random() * 2000;
-        e.jukeEndTime = now + 350 + Math.random() * 350;
-        e.jukeVelocity.set(
-          (Math.random() - 0.5) * 32,
-          (Math.random() - 0.5) * 24,
-          (Math.random() - 0.5) * 8
-        );
-      }
-      if (now < e.jukeEndTime) {
-        e.mesh.position.addScaledVector(e.jukeVelocity, delta);
-      } else {
-        e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
-      }
-
-      // 5. Reactive dodge against incoming player laser bolts
-      for (let li = 0; li < laserBolts.length; li++) {
-        const lbolt = laserBolts[li];
-        const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
-        if (ldist < 6.8) {
-          const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
-          dodgeDir.z = 0;
-          if (dodgeDir.lengthSq() > 0.001) {
-            dodgeDir.normalize();
-            e.mesh.position.addScaledVector(dodgeDir, 18.0 * delta);
-          }
-          break;
+    } else if (activeStageModule) {
+      if (typeof activeStageModule.updateEnemyMovement === 'function') {
+        try {
+          moved = activeStageModule.updateEnemyMovement(e, delta, enemyCtx);
+        } catch (err) {
+          console.warn('[StageModule updateEnemyMovement Error]', err);
+        }
+      } else if (activeStageModule.default && typeof activeStageModule.default.updateEnemyMovement === 'function') {
+        try {
+          moved = activeStageModule.default.updateEnemyMovement(e, delta, enemyCtx);
+        } catch (err) {
+          console.warn('[StageModule.default updateEnemyMovement Error]', err);
         }
       }
-
-      // 6. Dynamic Banking and Attitude Control
-      const netVx = (screenTargetX - e.mesh.position.x) * 1.2 + e.jukeVelocity.x;
-      const netVy = (screenTargetY - e.mesh.position.y) * 1.2 + e.jukeVelocity.y;
-      e.mesh.rotation.z = -THREE.MathUtils.clamp(netVx * 0.05, -0.65, 0.65);
-      e.mesh.rotation.x = THREE.MathUtils.clamp(netVy * 0.05, -0.45, 0.45);
-      e.mesh.rotation.y = THREE.MathUtils.clamp(-netVx * 0.03, -0.4, 0.4);
-      if (e.mesh.userData && e.mesh.userData.spinRing) {
-        e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
-      }
     }
 
-    // 7. Proximity Detection: Anti-collision avoidance so enemies don't run into each other
-    for (let j = 0; j < active3DEnemies.length; j++) {
-      if (j === i) continue;
-      const other = active3DEnemies[j];
-      const sepVec = new THREE.Vector3().subVectors(e.mesh.position, other.mesh.position);
-      const sepDist = sepVec.length();
-      const minSafeSep = Math.max(5.0, (e.mesh.scale.x + other.mesh.scale.x) * 2.4);
-      if (sepDist < minSafeSep && sepDist > 0.01) {
-        const overlapFactor = (minSafeSep - sepDist) / minSafeSep;
-        const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 16.0 * delta);
-        e.mesh.position.add(repulse);
-      }
+    if (!moved) {
+      defaultEnemyMovement(e, delta, enemyCtx);
     }
 
-    // Enemy Weapon Firing: when timer expires
+    // Decoupled Enemy Weapon Firing: when shot timer expires
     if (now >= e.nextShotTime) {
       e.nextShotTime = now + (e.fireRate * 1000) * (0.85 + Math.random() * 0.5);
-      fireEnemyWeaponBolt(e);
+      let fired = false;
+      if (typeof activeEnemyWeaponHandler === 'function') {
+        try {
+          fired = activeEnemyWeaponHandler(e, enemyCtx);
+        } catch (err) {
+          console.warn('[EnemyWeaponHandler Error]', err);
+        }
+      } else if (activeStageModule) {
+        if (typeof activeStageModule.fireEnemyWeapon === 'function') {
+          try {
+            fired = activeStageModule.fireEnemyWeapon(e, enemyCtx);
+          } catch (err) {
+            console.warn('[StageModule fireEnemyWeapon Error]', err);
+          }
+        } else if (activeStageModule.default && typeof activeStageModule.default.fireEnemyWeapon === 'function') {
+          try {
+            fired = activeStageModule.default.fireEnemyWeapon(e, enemyCtx);
+          } catch (err) {
+            console.warn('[StageModule.default fireEnemyWeapon Error]', err);
+          }
+        }
+      }
+      if (!fired) {
+        fireEnemyWeaponBolt(e);
+      }
     }
 
     // Despawn safeguard if pushed far behind player (and dispose mesh hierarchy to prevent leaks)
@@ -10437,6 +10593,45 @@ function evaluateWarpReadiness(distKm) {
   // Warp authorization requires completing the required mission objectives (kills & distance threshold)
   const isReady = killsMet && distMet;
   state.isWarpReady = isReady;
+
+  // Trigger stage objective completion events when transitioning to completed
+  if (!state.completedObjectiveEvents) state.completedObjectiveEvents = {};
+  const stagePrefix = `s${currentActiveStage}_`;
+
+  if (killsMet && !state.completedObjectiveEvents[stagePrefix + 'kills']) {
+    state.completedObjectiveEvents[stagePrefix + 'kills'] = true;
+    triggerAcquireEvent('objective_kills_complete', { stageLevel: currentActiveStage, kills: state.stageKills, target: state.stageRequiredKills });
+    triggerAcquireEvent('kills', { stageLevel: currentActiveStage });
+  }
+
+  if (distMet && !state.completedObjectiveEvents[stagePrefix + 'distance']) {
+    state.completedObjectiveEvents[stagePrefix + 'distance'] = true;
+    triggerAcquireEvent('objective_distance_complete', { stageLevel: currentActiveStage, distanceKm: distKm, target: state.stageTargetDistance });
+    triggerAcquireEvent('distance', { stageLevel: currentActiveStage });
+  }
+
+  if (currentActiveStage === 1) {
+    if (state.scanProgress >= 1.0 && !state.completedObjectiveEvents[stagePrefix + 'scan']) {
+      state.completedObjectiveEvents[stagePrefix + 'scan'] = true;
+      triggerAcquireEvent('objective_scan_complete', { stageLevel: currentActiveStage });
+      triggerAcquireEvent('scan', { stageLevel: currentActiveStage });
+    }
+    if (state.coils && state.coils.filter(c => c).length === 3 && !state.completedObjectiveEvents[stagePrefix + 'coils']) {
+      state.completedObjectiveEvents[stagePrefix + 'coils'] = true;
+      triggerAcquireEvent('objective_coils_complete', { stageLevel: currentActiveStage });
+      triggerAcquireEvent('coils', { stageLevel: currentActiveStage });
+    }
+  }
+
+  if (isReady && !state.completedObjectiveEvents[stagePrefix + 'all_ready']) {
+    state.completedObjectiveEvents[stagePrefix + 'all_ready'] = true;
+    triggerAcquireEvent('all_required_objectives_complete', { stageLevel: currentActiveStage });
+    const stageRec = STAGE_REGISTRY[currentActiveStage];
+    const endEv = (stageRec && stageRec.endLevelEvent) || (activeStageModule && activeStageModule.stageConfig && activeStageModule.stageConfig.end_level_event);
+    if (endEv) {
+      triggerAcquireEvent(endEv, { stageLevel: currentActiveStage });
+    }
+  }
 
   if (warpBtn) {
     if (isReady) {

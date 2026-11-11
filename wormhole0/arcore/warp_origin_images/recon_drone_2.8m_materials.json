@@ -1,7 +1,7 @@
 {
     "model": "recon_drone_2.8m.glb",
     "base_name": "recon_drone_2.8m",
-    "exported_at": "2026-11-11T13:22:11.026Z",
+    "exported_at": "2026-11-11T14:25:14.110Z",
     "color_palette": [
         "#FFFFFF"
     ],
@@ -23,11 +23,5 @@
             }
         }
     ],
-    "companion_files": [
-        "texture_0_base_color.png",
-        "texture_0_metallic.png",
-        "texture_0_normal.png",
-        "texture_0_roughness.png",
-        "thumbnail.png"
-    ]
+    "companion_files": []
 }

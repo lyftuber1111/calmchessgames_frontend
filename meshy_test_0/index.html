@@ -126,6 +126,39 @@
       flex-shrink: 0;
     }
 
+    .nav-links-pills {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      pointer-events: auto;
+    }
+
+    .nav-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      text-decoration: none;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .nav-pill:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .nav-pill.active {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.18);
+      border-color: #38bdf8;
+    }
+
     /* Fixed Bottom Dock Bar with Tabs */
     .bottom-dock {
       position: fixed;
@@ -1280,6 +1313,10 @@
       <h1 id="brand-title">🏎️ Meshy 3D Viewer</h1>
       <span class="pill">WebXR Studio</span>
     </div>
+    <div class="nav-links-pills">
+      <a href="index.html" class="nav-pill" id="nav-link-index" title="Full 3D Viewer (index.html)">index.html</a>
+      <a href="xr_test.html" class="nav-pill" id="nav-link-xr" title="WebXR Viewer (xr_test.html)">xr_test.html</a>
+    </div>
     <div class="xr-status-tag" id="xr-support-status">
       <span class="dot"></span>
       <span id="xr-status-text">Checking Hardware...</span>
@@ -1605,6 +1642,20 @@
     import { STLLoader } from 'three/addons/loaders/STLLoader.js';
     import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 
+    // Active navigation pill detection between index.html and xr_test.html
+    const curPath = window.location.pathname.toLowerCase();
+    const navIndex = document.getElementById('nav-link-index');
+    const navXr = document.getElementById('nav-link-xr');
+    if (navIndex && navXr) {
+      if (curPath.endsWith('xr_test.html')) {
+        navXr.classList.add('active');
+        navIndex.classList.remove('active');
+      } else {
+        navIndex.classList.add('active');
+        navXr.classList.remove('active');
+      }
+    }
+
     // =========================================================================
     // QUICK PATHS DATABASE (IMAGE FOLDERS ONLY) & CHECKLIST LOGIC
     // =========================================================================
@@ -1671,8 +1722,9 @@
       "/admin/temp_stage_0/arcore/nebula_outpost_images",
       "/admin/temp_stage_0/arcore/quantum_realm_images",
       "/admin/temp_stage_0/arcore/singularity_core_images",
-      "/admin/temp_stage_0/arcore/warp_origin_images"
-    ].filter(f => f.toLowerCase().includes('images'));
+      "/admin/temp_stage_0/arcore/warp_origin_images",
+      "/meshy_test_0/models"
+    ].filter(f => f.toLowerCase().includes('images') || f.toLowerCase().includes('models'));
 
     const selectedFolderPaths = new Set([DEFAULT_DEST_DIR]);
 
@@ -1767,7 +1819,7 @@
           if (res.ok) {
             const data = await res.json();
             if (Array.isArray(data) && data.length > 0) {
-              IMAGE_QUICK_FOLDERS = data.filter(f => f.toLowerCase().includes('images'));
+              IMAGE_QUICK_FOLDERS = data.filter(f => f.toLowerCase().includes('images') || f.toLowerCase().includes('models'));
               renderChecklist();
               break;
             }
@@ -2098,9 +2150,22 @@
         const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
         const targetPath = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
 
+        let mirrorBadge = '';
+        if (cleanFolder.startsWith('admin/temp_stage_0/')) {
+          const feSub = cleanFolder.substring('admin/temp_stage_0/'.length);
+          const feTarget = feSub ? `wormhole0/${feSub}/${fileName}` : `wormhole0/${fileName}`;
+          mirrorBadge = `<div style="font-size:0.68rem; color:#38bdf8; margin-top:2px; margin-left:14px;">⇄ Mirrors to Frontend: /${feTarget}</div>`;
+        } else if (cleanFolder.startsWith('wormhole0/')) {
+          const beSub = cleanFolder.substring('wormhole0/'.length);
+          const beTarget = beSub ? `admin/temp_stage_0/${beSub}/${fileName}` : `admin/temp_stage_0/${fileName}`;
+          mirrorBadge = `<div style="font-size:0.68rem; color:#a78bfa; margin-top:2px; margin-left:14px;">⇄ Mirrors to Staging: /${beTarget}</div>`;
+        } else if (cleanFolder.startsWith('meshy_test_0/')) {
+          mirrorBadge = `<div style="font-size:0.68rem; color:#34d399; margin-top:2px; margin-left:14px;">⇄ Mirrored across Backend & Frontend: /${targetPath}</div>`;
+        }
+
         const item = document.createElement('div');
         item.className = 'dest-preview-item';
-        item.innerHTML = `<span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span> <span style="font-size:0.65rem; color:#6ee7b7;">${compLabel}</span>`;
+        item.innerHTML = `<div><span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span> <span style="font-size:0.65rem; color:#6ee7b7;">${compLabel}</span></div>${mirrorBadge}`;
         panelDestPreviewList.appendChild(item);
       });
 
@@ -2187,6 +2252,10 @@
         {
           label: '📂 Admin Staging Image Folders',
           items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/admin/') && matches(f))
+        },
+        {
+          label: '🚀 Meshy Staging Folders',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/meshy_test_0/') && matches(f))
         },
         {
           label: '📌 Custom Quick Links (Added by You)',
@@ -2416,8 +2485,18 @@
           const compCount = data.companion_count || (data.companion_files_moved ? data.companion_files_moved.length : 0);
           const compText = compCount > 0 ? ` + ${compCount} companion material(s)/texture(s)` : '';
           const folderText = data.moved_count === 1 ? '1 destination folder' : `${data.moved_count} destination folders`;
-          const feGitText = data.frontend_git_synced ? ' (synced to frontend git server)' : '';
-          setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText} on backend server${feGitText}!`, 'success');
+          const feGitText = data.frontend_git_synced ? ' (synced to frontend mirror)' : '';
+          let pushSummary = '';
+          if (data.git_commits) {
+            const pushedRepos = [];
+            for (const [repo, info] of Object.entries(data.git_commits)) {
+              if (info && info.pushed) pushedRepos.push(repo);
+            }
+            if (pushedRepos.length > 0) {
+              pushSummary = ` 🚀 Git Pushed: ${pushedRepos.join(', ')}`;
+            }
+          }
+          setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText} on backend server${feGitText}!${pushSummary}`, 'success');
         } else {
           setMoveMessage(`Error: ${data?.error || 'Failed to move asset'}`, 'error');
         }

@@ -1742,6 +1742,9 @@
           if (res.ok) {
             const data = await res.json();
             return data;
+          } else {
+            const errData = await res.json().catch(() => null);
+            lastErr = new Error(errData?.error || `HTTP ${res.status}: ${res.statusText}`);
           }
         } catch (err) {
           lastErr = err;
@@ -2416,10 +2419,10 @@
           const feGitText = data.frontend_git_synced ? ' (synced to frontend git server)' : '';
           setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText} on backend server${feGitText}!`, 'success');
         } else {
-          setMoveMessage(`Notice: ${data.error || 'Request completed'} (Active in viewer)`, 'success');
+          setMoveMessage(`Error: ${data?.error || 'Failed to move asset'}`, 'error');
         }
       } catch (err) {
-        setMoveMessage(`✓ Approved destination: calmchessgames.com/${destPaths[0]} (Viewer updated with materials & textures)`, 'success');
+        setMoveMessage(`Error moving asset: ${err.message || 'Server error'}`, 'error');
       }
     }
 

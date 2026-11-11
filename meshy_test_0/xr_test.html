@@ -1287,6 +1287,203 @@
       font-size: 0.85rem;
       color: var(--text-muted);
     }
+
+    /* =========================================================================
+       SYMFONY PROCESS GIT PUSH TOAST NOTIFICATION & DIALOG
+       ========================================================================= */
+    .git-push-toast {
+      position: fixed;
+      top: 1.25rem;
+      right: 1.25rem;
+      max-width: 480px;
+      width: calc(100vw - 2.5rem);
+      background: rgba(14, 18, 28, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 24px rgba(0, 240, 255, 0.12);
+      z-index: 999999;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: inherit;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    .git-push-toast.active {
+      display: flex;
+      transform: translateY(0);
+      opacity: 1;
+    }
+    .git-push-toast.loading {
+      border-color: rgba(56, 189, 248, 0.55);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 24px rgba(56, 189, 248, 0.25);
+    }
+    .git-push-toast.success {
+      border-color: rgba(52, 211, 153, 0.55);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 24px rgba(52, 211, 153, 0.25);
+    }
+    .git-push-toast.error {
+      border-color: rgba(248, 113, 113, 0.65);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7), 0 0 24px rgba(248, 113, 113, 0.3);
+    }
+    .git-push-toast-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.85rem 1rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .git-toast-icon-wrap {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      background: rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+    .git-push-toast.loading .git-toast-icon-wrap {
+      background: rgba(56, 189, 248, 0.15);
+      color: #38bdf8;
+    }
+    .git-push-toast.success .git-toast-icon-wrap {
+      background: rgba(52, 211, 153, 0.15);
+      color: #34d399;
+    }
+    .git-push-toast.error .git-toast-icon-wrap {
+      background: rgba(248, 113, 113, 0.15);
+      color: #f87171;
+    }
+    .git-toast-title-wrap {
+      flex: 1;
+      min-width: 0;
+    }
+    .git-toast-title {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .git-toast-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .git-push-toast-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      font-size: 1.1rem;
+      border-radius: 6px;
+      line-height: 1;
+      transition: all 0.2s;
+    }
+    .git-push-toast-close:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .git-push-toast-body {
+      padding: 0.9rem 1.1rem;
+      font-size: 0.82rem;
+      color: #cbd5e1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      max-height: 65vh;
+      overflow-y: auto;
+    }
+    .git-badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+    }
+    .git-pill-badge {
+      font-size: 0.7rem;
+      padding: 0.22rem 0.55rem;
+      border-radius: 6px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      letter-spacing: 0.3px;
+    }
+    .git-pill-badge.runner {
+      background: rgba(168, 85, 247, 0.2);
+      color: #c084fc;
+      border: 1px solid rgba(168, 85, 247, 0.35);
+    }
+    .git-pill-badge.branch {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+    .git-pill-badge.status-ok {
+      background: rgba(52, 211, 153, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.35);
+    }
+    .git-pill-badge.status-err {
+      background: rgba(248, 113, 113, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(248, 113, 113, 0.35);
+    }
+    .git-notice-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 0.65rem 0.8rem;
+      font-size: 0.77rem;
+      line-height: 1.45;
+    }
+    .git-code-snippet {
+      display: block;
+      margin-top: 0.4rem;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.77rem;
+      color: #38bdf8;
+      user-select: all;
+    }
+    .git-output-pre {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 0.5rem 0.65rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.72rem;
+      color: #94a3b8;
+      max-height: 120px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .loading-spinner-sm {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
   </style>
 
   <!-- Import maps polyfill for ES module browser support -->
@@ -1301,6 +1498,21 @@
   </script>
 </head>
 <body>
+
+  <!-- Symfony Git Push Floating Toast & Modal Alert -->
+  <div id="git-push-toast" class="git-push-toast" role="alert" aria-live="assertive">
+    <div class="git-push-toast-header">
+      <div class="git-toast-icon-wrap" id="git-toast-icon-wrap">
+        <span id="git-toast-icon">🚀</span>
+      </div>
+      <div class="git-toast-title-wrap">
+        <div class="git-toast-title" id="git-toast-title">Symfony Git Runner</div>
+        <div class="git-toast-subtitle" id="git-toast-subtitle">Ready</div>
+      </div>
+      <button type="button" class="git-push-toast-close" id="git-toast-close" aria-label="Close notification">✕</button>
+    </div>
+    <div class="git-push-toast-body" id="git-toast-body"></div>
+  </div>
 
   <!-- 3D WebGL Canvas Container -->
   <div id="canvas-container"></div>
@@ -2500,6 +2712,56 @@
     const btnApproveMove = document.getElementById('btn-approve-move');
     const btnCancelMove = document.getElementById('btn-cancel-move');
 
+    let toastDismissTimer = null;
+
+    function closeGitPushToast() {
+      const toast = document.getElementById('git-push-toast');
+      if (toast) toast.classList.remove('active');
+      if (toastDismissTimer) {
+        clearTimeout(toastDismissTimer);
+        toastDismissTimer = null;
+      }
+    }
+
+    function showGitPushToast(type, title, subtitle, detailsHtml = '', autoDismissTimeout = 0) {
+      const toast = document.getElementById('git-push-toast');
+      const iconWrap = document.getElementById('git-toast-icon-wrap');
+      const iconElem = document.getElementById('git-toast-icon');
+      const titleElem = document.getElementById('git-toast-title');
+      const subElem = document.getElementById('git-toast-subtitle');
+      const bodyElem = document.getElementById('git-toast-body');
+
+      if (!toast) return;
+
+      if (toastDismissTimer) {
+        clearTimeout(toastDismissTimer);
+        toastDismissTimer = null;
+      }
+
+      toast.className = `git-push-toast active ${type}`;
+      
+      let icon = '🚀';
+      if (type === 'loading') icon = '⏳';
+      else if (type === 'success') icon = '✓';
+      else if (type === 'error') icon = '✕';
+
+      if (iconElem) iconElem.textContent = icon;
+      if (titleElem) titleElem.textContent = title;
+      if (subElem) subElem.textContent = subtitle;
+      if (bodyElem) bodyElem.innerHTML = detailsHtml;
+
+      if (autoDismissTimeout > 0) {
+        toastDismissTimer = setTimeout(() => {
+          closeGitPushToast();
+        }, autoDismissTimeout);
+      }
+    }
+
+    const toastCloseBtn = document.getElementById('git-toast-close');
+    if (toastCloseBtn) {
+      toastCloseBtn.addEventListener('click', closeGitPushToast);
+    }
+
     function setMoveMessage(msg, type = '') {
       moveStatusMsg.textContent = msg;
       moveStatusMsg.className = 'feedback-msg' + (type ? ` ${type}` : '');
@@ -2508,6 +2770,7 @@
     async function approveAndMoveAsset() {
       if (!currentLoadedAsset) {
         setMoveMessage('Please load a 3D model first before approving move.', 'error');
+        showGitPushToast('error', 'No Model Loaded', 'Please load a 3D model first before approving move.', '<p>Select or upload a 3D model in the viewer before approving.</p>', 6000);
         return;
       }
 
@@ -2546,10 +2809,25 @@
 
       if (destPaths.length === 0) {
         setMoveMessage('Please check at least 1 image folder or type a destination path.', 'error');
+        showGitPushToast('error', 'Destination Required', 'Please select at least 1 destination folder or enter a path.', '', 6000);
         return;
       }
 
-      setMoveMessage(`Moving '${fileName}', companion materials, textures & colors into cloned frontend repository (/var/www/calmchessgames_front_end) across ${destPaths.length} destination path(s) and pushing with Git...`, 'loading');
+      // UI Loading state with Symfony Process indicators
+      btnApproveMove.disabled = true;
+      btnApproveMove.style.opacity = '0.75';
+      const prevBtnHtml = approveBtnLabel.innerHTML;
+      approveBtnLabel.innerHTML = '<span class="loading-spinner-sm"></span> Pushing with Symfony Process...';
+
+      const loadingMsg = `Moving '${fileName}' & companions into /var/www/calmchessgames_front_end and pushing with Symfony Process...`;
+      setMoveMessage(loadingMsg, 'loading');
+      showGitPushToast('loading', 'Symfony Process: Git Push in Progress', `Deploying '${fileName}' across ${destPaths.length} destination folder(s)...`, `
+        <div class="git-badge-row">
+          <span class="git-pill-badge runner">Runner: Symfony Process</span>
+          <span class="git-pill-badge branch">Target: /var/www/calmchessgames_front_end</span>
+        </div>
+        <p style="margin:0.25rem 0 0 0; color:#94a3b8;">Executing git pull --rebase, git add, git commit, and git push to GitHub origin main. Please wait...</p>
+      `);
 
       const formData = new FormData();
       formData.append('destination_paths', JSON.stringify(destPaths));
@@ -2591,22 +2869,78 @@
           const folderText = data.moved_count === 1 ? '1 destination folder' : `${data.moved_count} destination folders`;
           const feRepo = data.frontend_repo || '/var/www/calmchessgames_front_end';
           const feGitText = data.frontend_git_synced ? ` into ${feRepo}` : '';
-          let pushSummary = '';
+
+          let runnerName = 'Symfony Process';
+          let pushedRepos = [];
+          let pushOutputSummary = '';
+
           if (data.git_commits) {
-            const pushedRepos = [];
             for (const [repo, info] of Object.entries(data.git_commits)) {
-              if (info && info.pushed) pushedRepos.push(`${repo} (${info.branch || 'main'})`);
-            }
-            if (pushedRepos.length > 0) {
-              pushSummary = ` 🚀 Git Pushed: ${pushedRepos.join(', ')}`;
+              if (info) {
+                if (info.runner === 'symfony_process') runnerName = 'Symfony Process';
+                if (info.pushed) {
+                  pushedRepos.push(`${repo} (${info.branch || 'main'})`);
+                }
+                if (info.push_output) {
+                  for (const [remoteName, rOut] of Object.entries(info.push_output)) {
+                    if (rOut) pushOutputSummary += `[${repo} ${remoteName}]: ${rOut}\n`;
+                  }
+                }
+              }
             }
           }
+
+          let pushSummary = pushedRepos.length > 0 ? ` 🚀 Git Pushed: ${pushedRepos.join(', ')}` : '';
           setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText}${feGitText}!${pushSummary}`, 'success');
+
+          // Build rich Symfony Process confirmation dialog/toast
+          const successHtml = `
+            <div class="git-badge-row">
+              <span class="git-pill-badge runner">Runner: ${runnerName}</span>
+              <span class="git-pill-badge status-ok">✓ Push Succeeded</span>
+              <span class="git-pill-badge branch">Branch: main</span>
+            </div>
+            <div style="font-weight:600; color:#f8fafc;">
+              Asset '${data.file_name}'${compText} moved to cloned frontend repo:
+            </div>
+            <div style="font-size:0.75rem; color:#94a3b8; font-family:monospace; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:4px;">
+              ${feRepo}
+            </div>
+            <div class="git-notice-box">
+              <strong>💡 To view newly moved files in your other local clone folders:</strong><br>
+              The files are pushed to GitHub repository (<code style="color:#7dd3fc;">origin/main</code>). In your local computer terminal or other clone folder (e.g. <code style="color:#7dd3fc;">Desktop\\HTML\\updated_html_js_0\\calmchessgames_frontend</code>), run:
+              <span class="git-code-snippet">git pull origin main</span>
+            </div>
+            ${pushOutputSummary ? `<div style="font-size:0.72rem; color:#94a3b8; margin-top:2px;">Git Output:</div><pre class="git-output-pre">${pushOutputSummary.trim()}</pre>` : ''}
+          `;
+
+          showGitPushToast('success', '✓ Symfony Process: Git Push Succeeded!', `Asset '${data.file_name}' moved & pushed to origin/main`, successHtml, 20000);
         } else {
-          setMoveMessage(`Error: ${data?.error || 'Failed to move asset'}`, 'error');
+          const errMsg = data?.error || 'Failed to move asset';
+          setMoveMessage(`Error: ${errMsg}`, 'error');
+
+          let errDetails = '';
+          if (data?.details) {
+            errDetails = Array.isArray(data.details) ? data.details.join('\n') : JSON.stringify(data.details);
+          }
+          const errorHtml = `
+            <div class="git-badge-row">
+              <span class="git-pill-badge runner">Runner: Symfony Process</span>
+              <span class="git-pill-badge status-err">✕ Error</span>
+            </div>
+            <div style="font-weight:600; color:#fca5a5;">${errMsg}</div>
+            ${errDetails ? `<pre class="git-output-pre">${errDetails}</pre>` : ''}
+          `;
+          showGitPushToast('error', '✕ Symfony Process / Move Error', errMsg, errorHtml, 0);
         }
       } catch (err) {
-        setMoveMessage(`Error moving asset: ${err.message || 'Server error'}`, 'error');
+        const errMsg = err.message || 'Server error';
+        setMoveMessage(`Error moving asset: ${errMsg}`, 'error');
+        showGitPushToast('error', '✕ Symfony Process Request Failed', errMsg, `<div class="git-badge-row"><span class="git-pill-badge status-err">✕ Network/Server Error</span></div><p style="color:#fca5a5; margin-top:4px;">${errMsg}</p>`, 0);
+      } finally {
+        btnApproveMove.disabled = false;
+        btnApproveMove.style.opacity = '1';
+        approveBtnLabel.innerHTML = prevBtnHtml || 'Approve & Move Asset';
       }
     }
 
@@ -3104,9 +3438,14 @@
       const fileName = modelVal.split('/').pop() || 'model.glb';
       const ext = getExt(fileName);
 
+      let srcPath = modelVal;
+      if (!srcPath.includes('/') && !srcPath.includes('\\')) {
+        srcPath = 'meshy_test_0/models/' + fileName;
+      }
+
       currentLoadedAsset = {
         file: null,
-        sourcePath: modelVal,
+        sourcePath: srcPath,
         fileName: fileName,
         ext: ext,
         sizeStr: 'Server Asset'
@@ -3115,7 +3454,7 @@
       updateLoadedAssetUI();
 
       // The model JUST GETS LOADED directly into the viewer!
-      loadModel(modelVal, matVal, fileName, modelVal);
+      loadModel(modelVal, matVal, fileName, srcPath);
     }
 
     btnLoadModel.addEventListener('click', triggerDirectLoad);

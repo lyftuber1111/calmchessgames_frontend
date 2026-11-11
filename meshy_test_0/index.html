@@ -2078,6 +2078,61 @@
       throw lastErr || new Error('Backend server move endpoint unreachable');
     }
 
+    // Helper to issue git pull request for origin main on frontend repository via Symfony Process
+    async function triggerFrontendPullOriginMain() {
+      showGitPushToast('loading', 'Symfony Process: Frontend Pull Request', 'Issuing git pull request for origin main on the front end...', `
+        <div class="git-badge-row">
+          <span class="git-pill-badge runner">Runner: Symfony Process</span>
+          <span class="git-pill-badge branch">Target: Frontend origin/main</span>
+        </div>
+        <p style="margin:0.25rem 0 0 0; color:#94a3b8;">Executing git pull --rebase -X ours origin main on frontend repository. Please wait...</p>
+      `);
+      try {
+        const endpoints = getBackendEndpoints('move_asset.php');
+        const isFileOrOpaque = (typeof window !== 'undefined' && window.location && (window.location.protocol === 'file:' || window.location.origin === 'null'));
+        const defaultCreds = isFileOrOpaque ? 'omit' : 'same-origin';
+        let result = null;
+
+        for (const ep of endpoints) {
+          try {
+            const sep = ep.includes('?') ? '&' : '?';
+            const url = `${ep}${sep}action=pull_frontend&_t=${Date.now()}`;
+            const res = await fetch(url, { method: 'POST', credentials: defaultCreds, mode: 'cors' });
+            if (res.ok) {
+              const d = await res.json();
+              if (d && d.success) {
+                result = d;
+                break;
+              }
+            }
+          } catch (e) {
+            // cascade
+          }
+        }
+
+        if (result) {
+          let pullLogs = '';
+          if (result.results) {
+            for (const [rKey, rInfo] of Object.entries(result.results)) {
+              pullLogs += `[${rKey}]: ${rInfo.pull_output || 'Already up to date'}\n`;
+            }
+          }
+          showGitPushToast('success', '✓ Frontend Pull Request Succeeded!', 'Frontend successfully pulled origin/main', `
+            <div class="git-badge-row">
+              <span class="git-pill-badge runner">Runner: Symfony Process</span>
+              <span class="git-pill-badge status-ok">✓ Pull Succeeded</span>
+              <span class="git-pill-badge branch">Target: origin/main</span>
+            </div>
+            ${pullLogs ? `<pre class="git-output-pre">${pullLogs.trim()}</pre>` : ''}
+          `, 15000);
+        } else {
+          showGitPushToast('error', '✕ Pull Request Failed', 'Could not complete frontend pull request for origin main.', '', 0);
+        }
+      } catch (err) {
+        showGitPushToast('error', '✕ Pull Request Failed', err.message || 'Network error', '', 0);
+      }
+    }
+
     // Load folder quick links with fallback across local and backend server
     const imageFolderUrls = [
       'image_folders.json',
@@ -2817,16 +2872,17 @@
       btnApproveMove.disabled = true;
       btnApproveMove.style.opacity = '0.75';
       const prevBtnHtml = approveBtnLabel.innerHTML;
-      approveBtnLabel.innerHTML = '<span class="loading-spinner-sm"></span> Pushing with Symfony Process...';
+      approveBtnLabel.innerHTML = '<span class="loading-spinner-sm"></span> Syncing with Symfony Process...';
 
-      const loadingMsg = `Moving '${fileName}' & companions into /var/www/calmchessgames_front_end and pushing with Symfony Process...`;
+      const loadingMsg = `Moving '${fileName}' & companions: issuing backend push request for origin main, then frontend pull request for origin main with Symfony Process...`;
       setMoveMessage(loadingMsg, 'loading');
-      showGitPushToast('loading', 'Symfony Process: Git Push in Progress', `Deploying '${fileName}' across ${destPaths.length} destination folder(s)...`, `
+      showGitPushToast('loading', 'Symfony Process: Git Sync in Progress', `Deploying '${fileName}' across ${destPaths.length} destination folder(s)...`, `
         <div class="git-badge-row">
           <span class="git-pill-badge runner">Runner: Symfony Process</span>
-          <span class="git-pill-badge branch">Target: /var/www/calmchessgames_front_end</span>
+          <span class="git-pill-badge branch">Backend: Push origin main</span>
+          <span class="git-pill-badge branch">Frontend: Pull origin main</span>
         </div>
-        <p style="margin:0.25rem 0 0 0; color:#94a3b8;">Executing git pull --rebase, git add, git commit, and git push to GitHub origin main. Please wait...</p>
+        <p style="margin:0.25rem 0 0 0; color:#94a3b8;">1. Backend: git commit & push request for origin main.<br>2. Frontend: git pull request for origin main, then mirror & push. Please wait...</p>
       `);
 
       const formData = new FormData();
@@ -2873,48 +2929,61 @@
           let runnerName = 'Symfony Process';
           let pushedRepos = [];
           let pushOutputSummary = '';
+          let backendPushedOk = false;
+          let frontendPulledOk = false;
 
           if (data.git_commits) {
             for (const [repo, info] of Object.entries(data.git_commits)) {
               if (info) {
                 if (info.runner === 'symfony_process') runnerName = 'Symfony Process';
+                if (info.role === 'backend' && info.pushed) backendPushedOk = true;
+                if (info.role === 'frontend' && info.pulled) frontendPulledOk = true;
                 if (info.pushed) {
                   pushedRepos.push(`${repo} (${info.branch || 'main'})`);
                 }
+                if (info.pull_output) {
+                  for (const [pName, pOut] of Object.entries(info.pull_output)) {
+                    if (pOut) pushOutputSummary += `[Pull ${repo} ${pName}]: ${pOut}\n`;
+                  }
+                }
                 if (info.push_output) {
                   for (const [remoteName, rOut] of Object.entries(info.push_output)) {
-                    if (rOut) pushOutputSummary += `[${repo} ${remoteName}]: ${rOut}\n`;
+                    if (rOut) pushOutputSummary += `[Push ${repo} ${remoteName}]: ${rOut}\n`;
                   }
                 }
               }
             }
           }
 
-          let pushSummary = pushedRepos.length > 0 ? ` 🚀 Git Pushed: ${pushedRepos.join(', ')}` : '';
+          let pushSummary = pushedRepos.length > 0 ? ` 🚀 Git Synced: ${pushedRepos.join(', ')}` : '';
           setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText}${feGitText}!${pushSummary}`, 'success');
 
           // Build rich Symfony Process confirmation dialog/toast
           const successHtml = `
             <div class="git-badge-row">
               <span class="git-pill-badge runner">Runner: ${runnerName}</span>
-              <span class="git-pill-badge status-ok">✓ Push Succeeded</span>
+              <span class="git-pill-badge status-ok">✓ Backend Push: origin main</span>
+              <span class="git-pill-badge status-ok">✓ Frontend Pull: origin main</span>
               <span class="git-pill-badge branch">Branch: main</span>
             </div>
-            <div style="font-weight:600; color:#f8fafc;">
-              Asset '${data.file_name}'${compText} moved to cloned frontend repo:
+            <div style="font-weight:600; color:#f8fafc; margin-top:4px;">
+              Asset '${data.file_name}'${compText} moved & synchronized:
             </div>
-            <div style="font-size:0.75rem; color:#94a3b8; font-family:monospace; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:4px;">
+            <div style="font-size:0.75rem; color:#94a3b8; font-family:monospace; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:4px; margin-top:2px;">
               ${feRepo}
             </div>
             <div class="git-notice-box">
               <strong>💡 To view newly moved files in your other local clone folders:</strong><br>
-              The files are pushed to GitHub repository (<code style="color:#7dd3fc;">origin/main</code>). In your local computer terminal or other clone folder (e.g. <code style="color:#7dd3fc;">Desktop\\HTML\\updated_html_js_0\\calmchessgames_frontend</code>), run:
+              Backend pushed to <code style="color:#7dd3fc;">origin/main</code> and frontend issued pull request for <code style="color:#7dd3fc;">origin/main</code>. In your local terminal, run:
               <span class="git-code-snippet">git pull origin main</span>
+              <div style="margin-top:6px;">
+                <button type="button" class="btn btn-sm btn-outline-info" style="font-size:0.75rem; padding:2px 8px; border-radius:4px; cursor:pointer;" onclick="triggerFrontendPullOriginMain()">🔄 Issue Pull Request on Frontend Again</button>
+              </div>
             </div>
             ${pushOutputSummary ? `<div style="font-size:0.72rem; color:#94a3b8; margin-top:2px;">Git Output:</div><pre class="git-output-pre">${pushOutputSummary.trim()}</pre>` : ''}
           `;
 
-          showGitPushToast('success', '✓ Symfony Process: Git Push Succeeded!', `Asset '${data.file_name}' moved & pushed to origin/main`, successHtml, 20000);
+          showGitPushToast('success', '✓ Symfony Process: Backend Push & Frontend Pull Succeeded!', `Asset '${data.file_name}' pushed & pulled for origin/main`, successHtml, 20000);
         } else {
           const errMsg = data?.error || 'Failed to move asset';
           setMoveMessage(`Error: ${errMsg}`, 'error');

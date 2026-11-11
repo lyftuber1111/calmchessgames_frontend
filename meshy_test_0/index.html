@@ -1795,8 +1795,13 @@
           const res = await fetch(url, { credentials: defaultCreds, mode: 'cors' });
           if (res.ok) {
             const data = await res.json();
-            if (data && data.success && Array.isArray(data.companions)) {
-              return data.companions;
+            if (data && data.success) {
+              if (currentLoadedAsset) {
+                currentLoadedAsset.existsOnServer = true;
+              }
+              if (Array.isArray(data.companions)) {
+                return data.companions;
+              }
             }
           }
         } catch (e) {
@@ -2164,23 +2169,35 @@
       renderMaterialsAndColorsUI(currentModelMaterials, paletteList);
 
       currentCompanionFiles = [];
+      const localComps = (currentLoadedAsset && currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0)
+        ? currentLoadedAsset.companionFiles.map(f => ({
+            name: f.name,
+            size: f.size,
+            type: getExt(f.name) === 'mtl' ? 'material' : 'texture'
+          }))
+        : [];
 
-      if (currentLoadedAsset && currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0) {
-        currentCompanionFiles = currentLoadedAsset.companionFiles.map(f => ({
-          name: f.name,
-          size: f.size,
-          type: getExt(f.name) === 'mtl' ? 'material' : 'texture'
-        }));
-        renderCompanionFilesUI(currentCompanionFiles, baseName);
-      } else if (sourcePathDesc && !sourcePathDesc.startsWith('blob:')) {
-        checkBackendCompanions(sourcePathDesc).then(companions => {
-          currentCompanionFiles = companions || [];
+      const checkSource = (sourcePathDesc && !sourcePathDesc.startsWith('blob:'))
+        ? sourcePathDesc
+        : (currentLoadedAsset && currentLoadedAsset.sourcePath ? currentLoadedAsset.sourcePath : '');
+
+      if (checkSource) {
+        checkBackendCompanions(checkSource).then(companions => {
+          const merged = [...localComps];
+          (companions || []).forEach(sc => {
+            if (!merged.some(m => m.name === sc.name)) {
+              merged.push(sc);
+            }
+          });
+          currentCompanionFiles = merged;
           renderCompanionFilesUI(currentCompanionFiles, baseName);
         }).catch(() => {
-          renderCompanionFilesUI([], baseName);
+          currentCompanionFiles = localComps;
+          renderCompanionFilesUI(currentCompanionFiles, baseName);
         });
       } else {
-        renderCompanionFilesUI([], baseName);
+        currentCompanionFiles = localComps;
+        renderCompanionFilesUI(currentCompanionFiles, baseName);
       }
     }
 
@@ -2226,13 +2243,13 @@
         if (cleanFolder.toLowerCase().startsWith('admin/temp_stage_0/')) {
           const feSub = cleanFolder.substring('admin/temp_stage_0/'.length);
           const feTarget = feSub ? `wormhole0/${feSub}/${fileName}` : `wormhole0/${fileName}`;
-          mirrorBadge = `<div style="font-size:0.68rem; color:#38bdf8; margin-top:2px; margin-left:14px;">⇄ Mirrors to Frontend: /${feTarget}</div>`;
+          mirrorBadge = `<div style="font-size:0.68rem; color:#38bdf8; margin-top:2px; margin-left:14px;">⇄ Moves to Cloned Frontend Repo: /var/www/calmchessgames_front_end/${feTarget} (git push origin main)</div>`;
         } else if (cleanFolder.toLowerCase().startsWith('wormhole0/')) {
           const beSub = cleanFolder.substring('wormhole0/'.length);
           const beTarget = beSub ? `admin/temp_stage_0/${beSub}/${fileName}` : `admin/temp_stage_0/${fileName}`;
-          mirrorBadge = `<div style="font-size:0.68rem; color:#a78bfa; margin-top:2px; margin-left:14px;">⇄ Mirrors to Staging: /${beTarget}</div>`;
+          mirrorBadge = `<div style="font-size:0.68rem; color:#a78bfa; margin-top:2px; margin-left:14px;">⇄ Moves to Cloned Frontend Repo: /var/www/calmchessgames_front_end/${targetPath} & Staging: /${beTarget}</div>`;
         } else if (cleanFolder.toLowerCase().startsWith('meshy_test_0/')) {
-          mirrorBadge = `<div style="font-size:0.68rem; color:#34d399; margin-top:2px; margin-left:14px;">⇄ Mirrored across Backend & Frontend: /${targetPath}</div>`;
+          mirrorBadge = `<div style="font-size:0.68rem; color:#34d399; margin-top:2px; margin-left:14px;">⇄ Moves to Cloned Frontend Repo: /var/www/calmchessgames_front_end/${targetPath} (git push origin main)</div>`;
         }
 
         const item = document.createElement('div');
@@ -2532,15 +2549,14 @@
         return;
       }
 
-      setMoveMessage(`Moving asset, companion materials, textures & colors to ${destPaths.length} destination path(s)...`, 'loading');
+      setMoveMessage(`Moving '${fileName}', companion materials, textures & colors into cloned frontend repository (/var/www/calmchessgames_front_end) across ${destPaths.length} destination path(s) and pushing with Git...`, 'loading');
 
       const formData = new FormData();
       formData.append('destination_paths', JSON.stringify(destPaths));
+      formData.append('source_path', currentLoadedAsset.sourcePath || ('meshy_test_0/models/' + fileName));
 
-      if (currentLoadedAsset.file) {
+      if (currentLoadedAsset.file && !currentLoadedAsset.existsOnServer) {
         formData.append('model_file', currentLoadedAsset.file);
-      } else {
-        formData.append('source_path', currentLoadedAsset.sourcePath);
       }
 
       // Material, Texture & Color options
@@ -2560,8 +2576,8 @@
       };
       formData.append('materials_json', JSON.stringify(materialsPayload));
 
-      // Append local companion files if any
-      if (currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0) {
+      // Append local companion files only if not already on server
+      if (currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0 && !currentLoadedAsset.existsOnServer) {
         currentLoadedAsset.companionFiles.forEach(file => {
           formData.append('companion_files[]', file);
         });
@@ -2573,18 +2589,19 @@
           const compCount = data.companion_count || (data.companion_files_moved ? data.companion_files_moved.length : 0);
           const compText = compCount > 0 ? ` + ${compCount} companion material(s)/texture(s)` : '';
           const folderText = data.moved_count === 1 ? '1 destination folder' : `${data.moved_count} destination folders`;
-          const feGitText = data.frontend_git_synced ? ' (synced to frontend mirror)' : '';
+          const feRepo = data.frontend_repo || '/var/www/calmchessgames_front_end';
+          const feGitText = data.frontend_git_synced ? ` into ${feRepo}` : '';
           let pushSummary = '';
           if (data.git_commits) {
             const pushedRepos = [];
             for (const [repo, info] of Object.entries(data.git_commits)) {
-              if (info && info.pushed) pushedRepos.push(repo);
+              if (info && info.pushed) pushedRepos.push(`${repo} (${info.branch || 'main'})`);
             }
             if (pushedRepos.length > 0) {
               pushSummary = ` 🚀 Git Pushed: ${pushedRepos.join(', ')}`;
             }
           }
-          setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText} on backend server${feGitText}!${pushSummary}`, 'success');
+          setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText}${feGitText}!${pushSummary}`, 'success');
         } else {
           setMoveMessage(`Error: ${data?.error || 'Failed to move asset'}`, 'error');
         }

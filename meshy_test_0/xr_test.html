@@ -766,6 +766,18 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       font-size: 0.76rem;
+      text-transform: none !important;
+    }
+
+    .quick-links-checklist,
+    .checklist-item,
+    .checklist-group-header,
+    .dest-preview-card,
+    .dest-preview-list,
+    .dest-preview-item,
+    #panel-dest-path-input,
+    #panel-add-quicklink-input {
+      text-transform: none !important;
     }
 
     .checklist-tag {
@@ -1848,9 +1860,17 @@
     function addCustomQuickLink(rawPath) {
       if (!rawPath || !rawPath.trim()) return false;
       let clean = rawPath.trim().replace(/\\/g, '/');
-      if (!clean.startsWith('/')) clean = '/' + clean;
-      clean = clean.replace(/\/+/g, '/').replace(/\/$/, '');
-      if (!clean) clean = '/';
+      clean = clean.replace(/^[\[\]"'\s]+|[\[\]"'\s]+$/g, '');
+      clean = clean.replace(/^\/+/, '').replace(/\/+$/, '');
+      const cleanLower = clean.toLowerCase();
+      if (cleanLower.startsWith('admin/temp_stage_0/')) {
+        clean = 'admin/temp_stage_0/' + clean.substring('admin/temp_stage_0/'.length);
+      } else if (cleanLower.startsWith('wormhole0/')) {
+        clean = 'wormhole0/' + clean.substring('wormhole0/'.length);
+      } else if (cleanLower.startsWith('meshy_test_0/')) {
+        clean = 'meshy_test_0/' + clean.substring('meshy_test_0/'.length);
+      }
+      clean = '/' + clean;
 
       const customList = getCustomQuickLinks();
       if (!customList.includes(clean) && !IMAGE_QUICK_FOLDERS.includes(clean)) {
@@ -2147,19 +2167,27 @@
       const compLabel = compCount > 0 ? ` (+${compCount} materials & textures)` : '';
 
       paths.forEach(folder => {
-        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+        let cleanFolder = folder.replace(/\\/g, '/').replace(/^[\[\]"'\s]+|[\[\]"'\s]+$/g, '').replace(/^\/+/, '').replace(/\/+$/, '');
+        const cleanLower = cleanFolder.toLowerCase();
+        if (cleanLower.startsWith('admin/temp_stage_0/')) {
+          cleanFolder = 'admin/temp_stage_0/' + cleanFolder.substring('admin/temp_stage_0/'.length);
+        } else if (cleanLower.startsWith('wormhole0/')) {
+          cleanFolder = 'wormhole0/' + cleanFolder.substring('wormhole0/'.length);
+        } else if (cleanLower.startsWith('meshy_test_0/')) {
+          cleanFolder = 'meshy_test_0/' + cleanFolder.substring('meshy_test_0/'.length);
+        }
         const targetPath = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
 
         let mirrorBadge = '';
-        if (cleanFolder.startsWith('admin/temp_stage_0/')) {
+        if (cleanFolder.toLowerCase().startsWith('admin/temp_stage_0/')) {
           const feSub = cleanFolder.substring('admin/temp_stage_0/'.length);
           const feTarget = feSub ? `wormhole0/${feSub}/${fileName}` : `wormhole0/${fileName}`;
           mirrorBadge = `<div style="font-size:0.68rem; color:#38bdf8; margin-top:2px; margin-left:14px;">⇄ Mirrors to Frontend: /${feTarget}</div>`;
-        } else if (cleanFolder.startsWith('wormhole0/')) {
+        } else if (cleanFolder.toLowerCase().startsWith('wormhole0/')) {
           const beSub = cleanFolder.substring('wormhole0/'.length);
           const beTarget = beSub ? `admin/temp_stage_0/${beSub}/${fileName}` : `admin/temp_stage_0/${fileName}`;
           mirrorBadge = `<div style="font-size:0.68rem; color:#a78bfa; margin-top:2px; margin-left:14px;">⇄ Mirrors to Staging: /${beTarget}</div>`;
-        } else if (cleanFolder.startsWith('meshy_test_0/')) {
+        } else if (cleanFolder.toLowerCase().startsWith('meshy_test_0/')) {
           mirrorBadge = `<div style="font-size:0.68rem; color:#34d399; margin-top:2px; margin-left:14px;">⇄ Mirrored across Backend & Frontend: /${targetPath}</div>`;
         }
 
@@ -2428,13 +2456,29 @@
 
       // 1. Gather checked quick links
       selectedFolderPaths.forEach(folder => {
-        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+        let cleanFolder = folder.replace(/\\/g, '/').replace(/^[\[\]"'\s]+|[\[\]"'\s]+$/g, '').replace(/^\/+/, '').replace(/\/+$/, '');
+        const cleanLower = cleanFolder.toLowerCase();
+        if (cleanLower.startsWith('admin/temp_stage_0/')) {
+          cleanFolder = 'admin/temp_stage_0/' + cleanFolder.substring('admin/temp_stage_0/'.length);
+        } else if (cleanLower.startsWith('wormhole0/')) {
+          cleanFolder = 'wormhole0/' + cleanFolder.substring('wormhole0/'.length);
+        } else if (cleanLower.startsWith('meshy_test_0/')) {
+          cleanFolder = 'meshy_test_0/' + cleanFolder.substring('meshy_test_0/'.length);
+        }
         const target = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
         if (!destPaths.includes(target)) destPaths.push(target);
       });
 
       // 2. Gather typed path if present
-      const typed = panelDestPathInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+      let typed = panelDestPathInput.value.trim().replace(/\\/g, '/').replace(/^[\[\]"'\s]+|[\[\]"'\s]+$/g, '').replace(/^\/+/, '');
+      const typedLower = typed.toLowerCase();
+      if (typedLower.startsWith('admin/temp_stage_0/')) {
+        typed = 'admin/temp_stage_0/' + typed.substring('admin/temp_stage_0/'.length);
+      } else if (typedLower.startsWith('wormhole0/')) {
+        typed = 'wormhole0/' + typed.substring('wormhole0/'.length);
+      } else if (typedLower.startsWith('meshy_test_0/')) {
+        typed = 'meshy_test_0/' + typed.substring('meshy_test_0/'.length);
+      }
       if (typed && !destPaths.includes(typed)) {
         destPaths.unshift(typed);
       }

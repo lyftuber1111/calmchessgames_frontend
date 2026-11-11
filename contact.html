@@ -1,0 +1,2004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <title>Contact & Book Consultation | Brian Berry - Calm Chess Games</title>
+    <!-- Favicon & Web Icons -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="theme-color" content="#0b0f19">
+    <meta name="description" content="Contact Brian Berry and schedule a strategy, chess engine, or custom game development consultation appointment with Calm Chess Games.">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #131b2e;
+            --panel-card: #18223a;
+            --gold-primary: #ffd700;
+            --gold-glow: #ffae00;
+            --gold-dark: #b89700;
+            --divider-red: #8b0000;
+            --accent-blue: #4a90e2;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --error-red: #ef4444;
+            --success-green: #2ecc71;
+            --border-subtle: rgba(255, 215, 0, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+            width: 100%;
+            background-color: var(--bg-color, #0b0f19);
+            scrollbar-color: #5a3721 #131b2e;
+            scrollbar-width: thin;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131b2e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #5a3721;
+            border-radius: 3px;
+            border: 1px solid #7a5a22;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            width: 100%;
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+        }
+
+        header {
+            width: 100%;
+            background: linear-gradient(135deg, #10172a, #1e293b);
+            padding: clamp(14px, 3vw, 24px) clamp(16px, 4vw, 32px);
+            padding-top: calc(clamp(14px, 3vw, 24px) + env(safe-area-inset-top, 0px));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-bottom: 2px solid var(--divider-red);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+
+        .header-banner {
+            max-width: min(100%, 850px);
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+        }
+
+        nav.top-nav {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: clamp(10px, 2.5vw, 20px);
+        }
+
+        nav.top-nav a {
+            color: var(--gold-primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: clamp(0.9rem, 2.2vw, 1rem);
+            padding: 8px 14px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        nav.top-nav a:hover, nav.top-nav a.active {
+            color: #ffffff;
+            text-shadow: 0 0 8px var(--gold-glow);
+            background: rgba(255, 215, 0, 0.12);
+            border-bottom: 2px solid var(--gold-primary);
+        }
+
+        main {
+            max-width: 1100px;
+            width: 100%;
+            padding: clamp(20px, 3.5vw, 40px) clamp(14px, 2.5vw, 24px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(24px, 4vw, 36px);
+            box-sizing: border-box;
+            flex: 1;
+        }
+
+        /* Profile & Intro Card */
+        .profile-card {
+            width: 100%;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            padding: clamp(20px, 4vw, 32px);
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: linear-gradient(to bottom, var(--gold-primary), var(--divider-red));
+        }
+
+        .profile-avatar-wrap {
+            position: relative;
+            width: 88px;
+            height: 88px;
+            border-radius: 50%;
+            padding: 3px;
+            background: linear-gradient(135deg, var(--gold-primary), #4a90e2);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+            background-clip: padding-box;
+        }
+
+        .profile-avatar {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: contain;
+            box-sizing: border-box;
+            padding: 6px;
+            background: #0b0f19;
+            display: block;
+        }
+
+        .profile-details h1 {
+            color: var(--gold-primary);
+            font-size: clamp(1.4rem, 3vw, 1.85rem);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .profile-badge {
+            background: rgba(46, 204, 113, 0.15);
+            color: #2ecc71;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .profile-title {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 10px;
+        }
+
+        .profile-meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .email-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 215, 0, 0.08);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 8px;
+            padding: 6px 12px;
+            color: var(--gold-primary);
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .email-pill:hover {
+            background: rgba(255, 215, 0, 0.18);
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.25);
+        }
+
+        .btn-copy {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            transition: color 0.2s;
+        }
+
+        .btn-copy:hover {
+            color: var(--gold-primary);
+        }
+
+        .profile-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn-schedule-quick {
+            background: linear-gradient(135deg, #ffd700, #ffae00);
+            color: #0b0f19;
+            font-weight: bold;
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            white-space: nowrap;
+        }
+
+        .btn-schedule-quick:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 215, 0, 0.45);
+        }
+
+        .btn-message-quick {
+            background: rgba(255, 215, 0, 0.08);
+            color: var(--gold-primary);
+            border: 1px solid var(--gold-primary);
+            font-weight: bold;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 0.9rem;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .btn-message-quick:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            border-color: #3b82f6;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.45);
+        }
+
+        .nav-msg-link {
+            border: 1px solid rgba(255, 215, 0, 0.4) !important;
+            background: rgba(255, 215, 0, 0.08) !important;
+        }
+
+        .nav-msg-link:hover {
+            border-color: var(--gold-primary) !important;
+            background: rgba(255, 215, 0, 0.22) !important;
+        }
+
+        @media (max-width: 768px) {
+            .profile-card {
+                grid-template-columns: 1fr;
+                text-align: center;
+                justify-items: center;
+            }
+            .profile-card::before {
+                width: 100%;
+                height: 4px;
+            }
+            .profile-meta-row {
+                justify-content: center;
+            }
+            .profile-actions {
+                width: 100%;
+            }
+        }
+
+        /* Tabs Container */
+        .tabs-container {
+            width: 100%;
+            background: var(--panel-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .tab-headers {
+            display: flex;
+            background: rgba(16, 23, 42, 0.7);
+            border-bottom: 1px solid var(--border-subtle);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 16px 20px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            border-bottom: 3px solid transparent;
+            white-space: nowrap;
+        }
+
+        .tab-btn:hover {
+            color: var(--gold-primary);
+            background: rgba(255, 215, 0, 0.04);
+        }
+
+        .tab-btn.active {
+            color: var(--gold-primary);
+            border-bottom: 3px solid var(--gold-primary);
+            background: rgba(255, 215, 0, 0.08);
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .tab-content {
+            padding: clamp(20px, 3.5vw, 36px);
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Consultation Booking Grid */
+        .booking-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+        }
+
+        @media (max-width: 860px) {
+            .booking-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .calendar-card {
+            background: var(--panel-card);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .calendar-title {
+            color: var(--gold-primary);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .cal-nav-btn {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            color: var(--gold-primary);
+            width: 34px;
+            height: 34px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .cal-nav-btn:hover {
+            background: var(--gold-primary);
+            color: #000;
+        }
+
+        .cal-days-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 6px;
+        }
+
+        .cal-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid transparent;
+            transition: all 0.15s;
+        }
+
+        .cal-day:hover:not(.disabled) {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: var(--gold-primary);
+            color: #fff;
+        }
+
+        .cal-day.active {
+            background: var(--gold-primary) !important;
+            color: #0b0f19 !important;
+            font-weight: bold;
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+        }
+
+        .cal-day.disabled {
+            color: #475569;
+            cursor: not-allowed;
+            background: transparent;
+        }
+
+        .cal-day.today {
+            border: 1px dashed var(--gold-primary);
+        }
+
+        /* Time Slots Selection */
+        .time-slots-section {
+            margin-top: 20px;
+        }
+
+        .slots-title {
+            color: var(--text-main);
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slots-tz-badge {
+            font-size: 0.8rem;
+            color: var(--accent-blue);
+            background: rgba(74, 144, 226, 0.12);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid rgba(74, 144, 226, 0.3);
+        }
+
+        .slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .slot-btn {
+            padding: 9px 8px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.15s;
+        }
+
+        .slot-btn:hover:not(:disabled) {
+            background: rgba(255, 215, 0, 0.15);
+            border-color: var(--gold-primary);
+            color: #fff;
+        }
+
+        .slot-btn.selected {
+            background: var(--gold-primary);
+            color: #0b0f19;
+            border-color: var(--gold-primary);
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+        }
+
+        .slot-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.01);
+            text-decoration: line-through;
+        }
+
+        /* Form Styles */
+        .form-card {
+            background: var(--panel-card);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        }
+
+        .form-title {
+            color: var(--gold-primary);
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .form-subtitle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .form-label .req {
+            color: var(--error-red);
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 11px 14px;
+            background: #0f172a;
+            border: 1px solid rgba(255, 215, 0, 0.25);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: var(--gold-primary);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.25);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 95px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            cursor: pointer;
+            user-select: none;
+            line-height: 1.4;
+            margin-top: 10px;
+        }
+
+        .checkbox-label input[type="checkbox"] {
+            margin-top: 3px;
+            accent-color: var(--gold-primary);
+            width: 16px;
+            height: 16px;
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, #ffd700, #ffae00);
+            color: #0b0f19;
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 13px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(255, 215, 0, 0.3);
+            margin-top: 18px;
+        }
+
+        .btn-submit:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.45);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .honeypot-field {
+            position: absolute !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            left: -9999px !important;
+        }
+
+        /* Success & Status Banners */
+        .status-box {
+            display: none;
+            padding: 14px 18px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .status-box.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid var(--error-red);
+            color: #fca5a5;
+        }
+
+        .status-box.success {
+            background: rgba(46, 204, 113, 0.15);
+            border: 1px solid var(--success-green);
+            color: #86efac;
+        }
+
+        .booking-confirmed-card {
+            display: none;
+            background: rgba(46, 204, 113, 0.1);
+            border: 1px solid var(--success-green);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            margin-top: 16px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .booking-confirmed-card h3 {
+            color: var(--success-green);
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+
+        .booking-confirmed-details {
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 8px;
+            padding: 14px;
+            margin: 16px auto;
+            max-width: 450px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+
+        .booking-confirmed-details p {
+            margin: 6px 0;
+        }
+
+        .calendar-export-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .btn-export {
+            background: rgba(255, 215, 0, 0.15);
+            color: var(--gold-primary);
+            border: 1px solid var(--gold-primary);
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-export:hover {
+            background: var(--gold-primary);
+            color: #000;
+        }
+
+        /* Industry Standard Highlights Section */
+        .highlights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
+        }
+
+        .highlight-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-subtle);
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+
+        .highlight-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--gold-primary);
+        }
+
+        .highlight-icon {
+            font-size: 1.7rem;
+            color: var(--gold-primary);
+            background: rgba(255, 215, 0, 0.1);
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .highlight-info h3 {
+            color: var(--gold-primary);
+            font-size: 1.05rem;
+            margin-bottom: 4px;
+        }
+
+        .highlight-info p {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            line-height: 1.5;
+        }
+
+        footer {
+            width: 100%;
+            background: #060911;
+            padding: 24px 16px;
+            text-align: center;
+            border-top: 1px solid rgba(255,215,0,0.15);
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-top: auto;
+        }
+
+        footer a {
+            color: var(--gold-primary);
+            text-decoration: underline;
+            margin: 0 8px;
+        }
+        /* Rotation Prompt Badge (When rotated horizontal to use keyboard, then back vertical) */
+        .wood-kb-rotate-badge {
+            position: fixed;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100002;
+            background: linear-gradient(135deg, rgba(24, 34, 58, 0.98), rgba(11, 15, 25, 0.98));
+            border: 2px solid var(--gold-primary, #ffd700);
+            border-radius: 10px;
+            padding: 8px 14px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 16px rgba(255, 215, 0, 0.35);
+            max-width: 92vw;
+            width: auto;
+            box-sizing: border-box;
+            animation: badgeSlideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes badgeSlideDown {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -15px);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, 0);
+            }
+        }
+        .rotate-badge-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .rotate-badge-icon {
+            font-size: 1.25rem;
+        }
+        .rotate-badge-text {
+            color: #f1f5f9;
+            font-size: clamp(0.78rem, 2.2vw, 0.88rem);
+            font-weight: 600;
+        }
+        .rotate-badge-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+        .badge-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 5px 12px;
+            font-size: clamp(0.72rem, 2vw, 0.82rem);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .badge-btn-close {
+            background: linear-gradient(135deg, #8b0000, #b91c1c);
+            color: #ffffff;
+            border: 1px solid #ef4444;
+        }
+        .badge-btn-close:hover, .badge-btn-close:active {
+            background: #dc2626;
+            transform: scale(1.03);
+        }
+        .badge-btn-keep {
+            background: rgba(255, 255, 255, 0.12);
+            color: var(--gold-primary, #ffd700);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+        }
+        .badge-btn-keep:hover, .badge-btn-keep:active {
+            background: rgba(255, 215, 0, 0.22);
+            transform: scale(1.03);
+        }
+        /* System Keyboard & Speech-to-Text Input Mode Controls */
+        .input-mode-controls {
+            display: inline-flex;
+            gap: 6px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .btn-system-input-toggle {
+            background: rgba(255, 255, 255, 0.08);
+            color: #cbd5e1;
+            border: 1px solid #475569;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-system-input-toggle:hover {
+            background: rgba(255, 255, 255, 0.16);
+            color: #ffffff;
+            border-color: #94a3b8;
+        }
+        .btn-system-input-toggle.is-active {
+            background: linear-flex;
+            background: rgba(59, 130, 246, 0.22);
+            color: #60a5fa;
+            border-color: #3b82f6;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.35);
+        }
+        .btn-dictate-prompt {
+            background: rgba(255, 215, 0, 0.1);
+            color: #ffd700;
+            border: 1px solid #cfa860;
+            border-radius: 6px;
+            padding: 4px 9px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-dictate-prompt:hover {
+            background: rgba(255, 215, 0, 0.22);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+        }
+        .btn-dictate-prompt.is-dictating,
+        .wood-pill-btn.is-dictating {
+            background: linear-gradient(135deg, #b91c1c, #ef4444) !important;
+            color: #ffffff !important;
+            border-color: #fca5a5 !important;
+            animation: pulseDictating 1.2s infinite ease-in-out !important;
+        }
+        @keyframes pulseDictating {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+        }
+        .btn-system-kb {
+            border-color: #3b82f6 !important;
+            color: #93c5fd !important;
+        }
+        .btn-system-kb:hover {
+            background: rgba(59, 130, 246, 0.25) !important;
+            color: #ffffff !important;
+        }
+        .btn-dictate {
+            border-color: #ffd700 !important;
+            color: #ffd700 !important;
+        }
+        .btn-dictate:hover {
+            background: rgba(255, 215, 0, 0.25) !important;
+        }
+        /* Mobile auto-rotate adjustments for system kb button */
+        body.mobile-auto-rotate .btn-system-kb,
+        body.mobile-auto-rotate .btn-dictate {
+            display: inline-flex !important;
+            padding: 1px 5px !important;
+            font-size: 0.65rem !important;
+        }
+    </style>
+
+    <!-- Wooden Mechanical Keyboard Styles -->
+    <style>
+        :root {
+            --chassis-main: #3a2215;
+            --chassis-rim: #24140b;
+            --chassis-inner: #190e07;
+            --chassis-highlight: #613b24;
+            --key-top-start: #5a3721;
+            --key-top-end: #3f2516;
+            --key-bevel: #28160c;
+            --key-shadow: #140904;
+            --glyph-color: #ebd7bd;
+            --glyph-engrave: rgba(26, 13, 6, 0.9);
+            --glyph-glow: rgba(255, 220, 160, 0.3);
+            --brass-gold: #cfa860;
+            --brass-dark: #7a5a22;
+            --brass-shine: #fff2c7;
+            --parchment-bg: #f5eedb;
+            --parchment-text: #2c1d11;
+            --parchment-border: #442a18;
+        }
+
+        .wood-kb-container[data-wood="oak"] {
+            --chassis-main: #4a341e;
+            --chassis-rim: #2e1f10;
+            --chassis-inner: #201409;
+            --chassis-highlight: #775532;
+            --key-top-start: #6f4e2c;
+            --key-top-end: #4e351c;
+            --key-bevel: #342211;
+            --key-shadow: #180e06;
+            --glyph-color: #f7e6ce;
+        }
+
+        .wood-kb-container[data-wood="teak"] {
+            --chassis-main: #361f13;
+            --chassis-rim: #1f1109;
+            --chassis-inner: #140a04;
+            --chassis-highlight: #5b3621;
+            --key-top-start: #532f1b;
+            --key-top-end: #381e10;
+            --key-bevel: #221108;
+            --key-shadow: #0f0602;
+            --glyph-color: #f3dbc2;
+        }
+
+        /* Modal Overlay */
+        .wood-kb-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px);
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .wood-kb-container {
+            width: 100%;
+            max-width: 980px;
+            background: #1e140d;
+            border: 2px solid var(--brass-gold);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 25px rgba(207, 168, 96, 0.25);
+            padding: 10px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            color: #d8c2aa;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .wood-kb-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(207, 168, 96, 0.3);
+            padding-bottom: 6px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .wood-kb-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .wood-dropdown {
+            background: #2a180d;
+            color: #ebd7bd;
+            border: 1px solid var(--brass-gold);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.78rem;
+        }
+
+        .volume-range {
+            accent-color: var(--brass-gold);
+            cursor: pointer;
+            width: 60px;
+        }
+
+        .wood-pill-btn {
+            background: linear-gradient(180deg, #442a18, #2a180d);
+            border: 1px solid var(--brass-gold);
+            color: #ebd7bd;
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+        }
+        .wood-pill-btn:hover {
+            background: #5a3721;
+            color: #fff;
+        }
+
+        .wood-pill-btn.btn-send-message {
+            background: linear-gradient(135deg, #ffd700, #b8860b);
+            color: #0b0f19;
+            font-weight: 700;
+            border-color: #ffd700;
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.4);
+        }
+        .wood-pill-btn.btn-send-message:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .wood-pill-btn.close-btn {
+            background: #7f1d1d;
+            border-color: #ef4444;
+            color: #fff;
+        }
+
+        /* Display plaque & parchment */
+        .wood-kb-display-plaque {
+            background: #24140b;
+            border: 1px solid var(--brass-dark);
+            border-radius: 8px;
+            padding: 6px 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .parchment-frame {
+            background: var(--parchment-bg);
+            border: 2px solid var(--parchment-border);
+            border-radius: 6px;
+            padding: 6px 8px;
+            box-shadow: inset 0 2px 6px rgba(0,0,0,0.25);
+        }
+
+        .display-textarea {
+            width: 100%;
+            border: none;
+            outline: none;
+            background: transparent;
+            color: var(--parchment-text);
+            font-family: "Courier New", Courier, monospace, serif;
+            font-size: 0.92rem;
+            line-height: 1.4;
+            resize: none;
+            box-sizing: border-box;
+            caret-color: var(--parchment-text);
+        }
+
+        /* Keyboard Chassis */
+        .keyboard-chassis {
+            position: relative;
+            background: linear-gradient(180deg, var(--chassis-highlight) 0%, var(--chassis-main) 10%, var(--chassis-rim) 100%);
+            border: 3px solid var(--chassis-rim);
+            border-radius: 10px;
+            padding: 8px;
+            box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.15), 0 8px 20px rgba(0, 0, 0, 0.8);
+        }
+
+        .keybed-recess {
+            background: var(--chassis-inner);
+            border-radius: 6px;
+            padding: 6px;
+            box-shadow: inset 0 4px 10px rgba(0, 0, 0, 0.9);
+            border: 1px solid #1a0f07;
+            overflow-x: auto;
+        }
+
+        .keyboard-grid {
+            display: flex;
+            flex-direction: column;
+            gap: clamp(3px, 0.5vw, 6px);
+            width: 100%;
+        }
+
+        .keyboard-row {
+            display: flex;
+            width: 100%;
+            gap: clamp(2px, 0.4vw, 5px);
+            justify-content: space-between;
+        }
+
+        .wood-key {
+            position: relative;
+            height: clamp(32px, 4.2vw, 48px);
+            background: transparent;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .key-cap {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, var(--key-top-start) 0%, var(--key-top-end) 100%);
+            border-radius: 5px;
+            border-top: 1px solid rgba(255, 255, 255, 0.22);
+            border-left: 1px solid rgba(255, 255, 255, 0.12);
+            border-bottom: 3px solid var(--key-bevel);
+            box-shadow: 0 3px 5px var(--key-shadow);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.04s ease, border-bottom 0.04s ease, box-shadow 0.04s ease;
+        }
+
+        .wood-key.is-pressed .key-cap {
+            transform: translateY(2px);
+            border-bottom: 1px solid var(--key-bevel);
+            box-shadow: 0 1px 2px var(--key-shadow);
+            filter: brightness(0.92);
+        }
+
+        .wood-key.is-active-modifier .key-cap {
+            background: linear-gradient(180deg, #7c4826 0%, #522d17 100%);
+            border-top: 1px solid var(--brass-gold);
+            box-shadow: 0 0 8px rgba(207, 168, 96, 0.4);
+        }
+
+        .caps-indicator-dot {
+            position: absolute;
+            top: 4px;
+            left: 5px;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #2a1508;
+            border: 1px solid #55331a;
+        }
+        .caps-indicator-dot.lit {
+            background: #39ff14;
+            box-shadow: 0 0 6px #39ff14;
+        }
+
+        .key-label-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--glyph-color);
+            font-family: Georgia, "Times New Roman", serif;
+            font-weight: bold;
+            font-size: clamp(0.72rem, 1.2vw, 0.95rem);
+            pointer-events: none;
+            line-height: 1.1;
+        }
+
+        .shift-glyph {
+            font-size: 0.65em;
+            opacity: 0.8;
+        }
+
+        .key-icon {
+            width: clamp(12px, 1.6vw, 18px);
+            height: clamp(12px, 1.6vw, 18px);
+        }
+
+        .icon-label-text {
+            font-size: 0.65rem;
+            margin-top: 1px;
+        }
+
+        /* SVG Brass Brackets */
+        .corner-bracket {
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .corner-top-left { top: 3px; left: 3px; }
+        .corner-top-right { top: 3px; right: 3px; transform: rotate(90deg); }
+        .corner-bottom-left { bottom: 3px; left: 3px; transform: rotate(270deg); }
+        .corner-bottom-right { bottom: 3px; right: 3px; transform: rotate(180deg); }
+
+        .chassis-screw {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffd700 0%, #7a5a22 100%);
+            box-shadow: inset 0 1px 1px #fff, 0 1px 2px rgba(0,0,0,0.8);
+            z-index: 2;
+        }
+        .screw-tl { top: 7px; left: 7px; }
+        .screw-tr { top: 7px; right: 7px; }
+        .screw-bl { bottom: 7px; left: 7px; }
+        .screw-br { bottom: 7px; right: 7px; }
+
+        /* ==========================================================================
+           MOBILE AUTOMATIC ROTATION FOR MODAL (90° HORIZONTAL ROTATION)
+           ========================================================================== */
+        @media screen and (max-width: 850px) and (orientation: portrait) {
+            html {
+                background-color: #0b0f19 !important;
+                scrollbar-color: #5a3721 #131b2e !important;
+                scrollbar-width: thin !important;
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            body {
+                overflow-x: hidden !important;
+                overflow-y: auto !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            html.wood-kb-open,
+            body.wood-kb-open {
+                background-color: #0b0f19 !important;
+                overflow: hidden !important;
+                height: 100% !important;
+                position: fixed !important;
+                width: 100% !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-modal-overlay {
+                background: rgba(11, 15, 25, 0.98) !important;
+                width: 100vw !important;
+                height: 100dvh !important;
+                overflow: hidden !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-container {
+                overflow: hidden !important;
+                position: fixed !important;
+                width: 100dvh !important;
+                height: 100dvw !important;
+                min-width: 0 !important;
+                max-width: 100dvh !important;
+                min-height: 0 !important;
+                max-height: 100dvw !important;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) rotate(90deg) !important;
+                transform-origin: center center !important;
+                margin: 0 !important;
+                padding: 4px 6px !important;
+                border-radius: 0 !important;
+                gap: 3px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: flex-start !important;
+                align-items: stretch !important;
+                box-sizing: border-box !important;
+                background: #1e140d !important;
+            }
+
+            /* Sleek compact header retaining Rotate and Close buttons */
+            body.mobile-auto-rotate .wood-kb-header {
+                display: flex !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                height: 22px !important;
+                min-height: 0 !important;
+                padding: 1px 4px !important;
+                margin-bottom: 0 !important;
+                border-bottom: 1px solid rgba(207, 168, 96, 0.2) !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-header > div:first-child strong {
+                font-size: 0.74rem !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-controls {
+                gap: 4px !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-controls > div {
+                display: none !important;
+            }
+
+            /* Compact display plaque containing text and action buttons */
+            body.mobile-auto-rotate .wood-kb-display-plaque {
+                padding: 2px 5px !important;
+                margin-bottom: 0 !important;
+                flex: 0 0 auto !important;
+                height: auto !important;
+                max-height: 56px !important;
+                width: 100% !important;
+                min-height: 0 !important;
+                box-sizing: border-box !important;
+                border-radius: 4px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                gap: 2px !important;
+            }
+
+            body.mobile-auto-rotate .wood-kb-display-plaque > div:first-child {
+                margin-bottom: 0 !important;
+                gap: 4px !important;
+            }
+
+            body.mobile-auto-rotate #wood-kb-title-label {
+                font-size: 0.74rem !important;
+            }
+
+            /* Hide decorative text in plaque footer */
+            body.mobile-auto-rotate .wood-kb-display-plaque > div:last-child {
+                display: none !important;
+            }
+
+            body.mobile-auto-rotate .parchment-frame {
+                padding: 1px 4px !important;
+                border-width: 1px !important;
+                border-radius: 3px !important;
+            }
+
+            body.mobile-auto-rotate .display-textarea {
+                font-size: 0.74rem !important;
+                height: 1.4em !important;
+                min-height: 1.4em !important;
+                max-height: 1.4em !important;
+                line-height: 1.2 !important;
+            }
+
+            body.mobile-auto-rotate .wood-pill-btn {
+                padding: 1px 5px !important;
+                font-size: 0.65rem !important;
+                border-radius: 8px !important;
+            }
+
+            /* Keyboard Chassis: Takes all remaining height and full width */
+            body.mobile-auto-rotate .keyboard-chassis {
+                padding: 2px !important;
+                flex: 1 1 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                min-height: 0 !important;
+                height: auto !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                box-sizing: border-box !important;
+                margin: 0 !important;
+                border-radius: 5px !important;
+            }
+
+            body.mobile-auto-rotate .keybed-recess {
+                padding: 2px !important;
+                flex: 1 1 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                min-height: 0 !important;
+                height: 100% !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+                border-radius: 3px !important;
+                scrollbar-width: none !important;
+            }
+
+            body.mobile-auto-rotate .keybed-recess::-webkit-scrollbar {
+                display: none !important;
+            }
+
+            body.mobile-auto-rotate .keyboard-grid {
+                min-width: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                gap: 2px !important;
+                flex: 1 1 0 !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: space-between !important;
+                min-height: 0 !important;
+                height: 100% !important;
+                box-sizing: border-box !important;
+            }
+
+            body.mobile-auto-rotate .keyboard-row {
+                gap: 2px !important;
+                flex: 1 1 0 !important;
+                min-height: 0 !important;
+                width: 100% !important;
+                display: flex !important;
+                align-items: stretch !important;
+                box-sizing: border-box !important;
+            }
+
+            body.mobile-auto-rotate .wood-key {
+                height: 100% !important;
+                min-height: 0 !important;
+                max-height: unset !important;
+            }
+
+            body.mobile-auto-rotate .key-cap {
+                height: 100% !important;
+                padding: 1px 2px !important;
+                display: flex !important;
+                flex-direction: column !important;
+                justify-content: center !important;
+                align-items: center !important;
+                border-radius: 3px !important;
+            }
+
+            body.mobile-auto-rotate .key-primary {
+                font-size: clamp(0.58rem, 1.8vh, 0.78rem) !important;
+                line-height: 1 !important;
+            }
+
+            body.mobile-auto-rotate .key-sub {
+                font-size: 0.48rem !important;
+                line-height: 1 !important;
+            }
+
+            body.mobile-auto-rotate .key-icon {
+                width: clamp(10px, 1.6vh, 13px) !important;
+                height: clamp(10px, 1.6vh, 13px) !important;
+            }
+
+            body.mobile-auto-rotate .corner-bracket,
+            body.mobile-auto-rotate .chassis-screw {
+                display: none !important;
+            }
+        }
+    </style>
+
+</head>
+<body>
+    <div id="a11y-announcer" class="sr-only" aria-live="polite" aria-atomic="true" style="position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;"></div>
+
+
+    <header id="siteHeader">
+        <a href="https://calmchessgames.com" class="header-banner-link" style="display: block; text-decoration: none; max-width: min(100%, 850px); width: 100%;" aria-label="Calm Chess Computers & Games Home">
+            <img src="header000.png" alt="Calm Chess Computers & Games" class="header-banner">
+        </a>
+        <nav class="top-nav" onclick="event.stopPropagation();">
+            <a href="index.html">Home</a>
+            <a href="index.html#games">Games</a>
+            <a href="#tabContentBooking" onclick="event.preventDefault(); switchToBookingTab();" class="nav-booking-link active">&#128197; Book Consultation</a>
+            <a href="#tabContentContact" onclick="event.preventDefault(); switchToContactTab();" class="nav-msg-link">&#9993; Send a Message</a>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Founder Profile Card -->
+        <section class="profile-card">
+            <div class="profile-avatar-wrap">
+                <img src="knight_left0.png" alt="Brian Berry" class="profile-avatar">
+            </div>
+            <div class="profile-details">
+                <h1>
+                    Brian Berry
+                    <span class="profile-badge">Founder &amp; Principal Architect</span>
+                </h1>
+                <p class="profile-title">Calm Chess Computers &bull; Game Engine Architect &bull; Strategic Technical Advisory</p>
+                <div class="profile-meta-row">
+                    <a href="mailto:bberry@calmchessgames.com" class="email-pill" title="Click to send direct email">
+                        <span>&#9993;</span>
+                        <span>bberry@calmchessgames.com</span>
+                    </a>
+                    <button class="btn-copy" onclick="copyEmailToClipboard()" title="Copy email address">
+                        <span id="copyEmailText">&#128203; Copy</span>
+                    </button>
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">
+                        &#128337; Response Time: Within 24 Hours
+                    </span>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <button class="btn-schedule-quick" onclick="switchToBookingTab()" title="Scroll down to book a consultation">
+                    &#128197; Book Consultation
+                </button>
+                <button class="btn-message-quick" onclick="switchToContactTab()" title="Scroll down to send a direct message">
+                    &#9993; Send a Message
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Tabbed Interface: Consultation Appointment & Contact Inquiry -->
+        <section class="tabs-container">
+            <div class="tab-headers">
+                <button class="tab-btn active" id="tabBtnBooking" onclick="switchTab('booking')">
+                    &#128197; Book Consultation Appointment
+                </button>
+                <button class="tab-btn" id="tabBtnContact" onclick="switchTab('contact')">
+                    &#9993; Send a Direct Message
+                </button>
+            </div>
+
+            <!-- TAB 1: CONSULTATION APPOINTMENT BOOKING -->
+            <div class="tab-content active" id="tabContentBooking">
+                <div id="bookingStatusBox" class="status-box"></div>
+
+                <div class="booking-layout" id="bookingInputGrid">
+                    <!-- Column 1: Interactive Calendar & Time Slots -->
+                    <div class="calendar-card">
+                        <div class="calendar-header">
+                            <button class="cal-nav-btn" onclick="prevMonth()" title="Previous Month">&lsaquo;</button>
+                            <span class="calendar-title" id="calMonthYearLabel">Month Year</span>
+                            <button class="cal-nav-btn" onclick="nextMonth()" title="Next Month">&rsaquo;</button>
+                        </div>
+                        
+                        <div class="cal-days-header">
+                            <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
+                        </div>
+                        
+                        <div class="cal-grid" id="calendarDaysGrid">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+
+                        <div class="time-slots-section">
+                            <div class="slots-title">
+                                <span>Select Time Slot (<span id="selectedDateDisplay">Choose a date</span>)</span>
+                                <span class="slots-tz-badge" id="detectedTzBadge">EST</span>
+                            </div>
+                            <div class="slots-grid" id="slotsGrid">
+                                <p style="color: var(--text-muted); font-size: 0.85rem; grid-column: 1 / -1; text-align: center; padding: 12px;">
+                                    Please select a date on the calendar above to view available time slots.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Attendee Information & Agenda Form -->
+                    <div class="form-card">
+                        <h2 class="form-title">Consultation Details</h2>
+                        <p class="form-subtitle">Appointments include automated email reminders sent to both you and Brian Berry at bberry@calmchessgames.com.</p>
+
+                        <form id="appointmentForm" onsubmit="handleAppointmentSubmit(event)">
+                            <!-- Anti-bot honeypot -->
+                            <input type="text" name="company_website" class="honeypot-field" tabindex="-1" autocomplete="off">
+                            <input type="text" name="fax_number" class="honeypot-field" tabindex="-1" autocomplete="off">
+
+                            <div class="form-group">
+                                <label class="form-label" for="bookingName">Your Full Name <span class="req">*</span></label>
+                                <input type="text" id="bookingName" class="form-input" placeholder="e.g. Alexander Vance" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="bookingEmail">Email Address <span class="req">*</span></label>
+                                <input type="email" id="bookingEmail" class="form-input" placeholder="e.g. alexander@example.com" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="bookingPhone">Phone / Mobile (Optional)</label>
+                                <input type="tel" id="bookingPhone" class="form-input" placeholder="e.g. +1 (555) 019-2834">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="bookingTopic">Consultation Topic <span class="req">*</span></label>
+                                <select id="bookingTopic" class="form-select" required>
+                                    <option value="Game Architecture & Engine Design">Game Architecture &amp; Engine Design</option>
+                                    <option value="Custom Chess Engine / AI Simulation">Custom Chess Engine / AI Simulation</option>
+                                    <option value="Multi-seat Game Integration">Multi-seat Game Integration</option>
+                                    <option value="Security, Encryption & Financial Compliance">Security, Encryption &amp; Financial Compliance</option>
+                                    <option value="Strategic Partnership & Licensing">Strategic Partnership &amp; Licensing</option>
+                                    <option value="General Technical Advisory">General Technical Advisory</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                                    <label class="form-label" for="bookingNotes" style="margin-bottom: 0;">Agenda / Questions for Brian</label>
+                                    <div class="input-mode-controls">
+                                        <button type="button" id="btnToggleSystemKbBooking" class="btn-system-input-toggle" title="Switch to System Input Field &amp; Keyboard" aria-label="Use System Keyboard and Input Field">
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
+                                            <span class="system-kb-btn-text">📱 System Keyboard</span>
+                                        </button>
+                                        <button type="button" id="btnDictateBooking" class="btn-dictate-prompt" title="Speech to Text Dictation" aria-label="Speech to Text Voice Dictation">
+                                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.38-1.14-1-1.14z"/></svg>
+                                            <span class="dictate-btn-text">🎙️ Dictate</span>
+                                        </button>
+                                        <button type="button" id="btnOpenWoodKeyboardBooking" class="btn-wood-prompt" style="background: linear-gradient(135deg, #5a3721, #3f2516); color: #ffd700; border: 1px solid #cfa860; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+                                            ⌨️ Wooden Keyboard
+                                        </button>
+                                    </div>
+                                </div>
+                                <textarea id="bookingNotes" class="form-textarea" placeholder="Briefly outline what you'd like to discuss or accomplish during our session, or tap above to type with our acoustic wooden mechanical keyboard..."></textarea>
+                            </div>
+
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="bookingReminder" checked>
+                                <span>Send automated email reminders prior to appointment to my email and bberry@calmchessgames.com</span>
+                            </label>
+
+                            <button type="submit" class="btn-submit" id="btnSubmitBooking">
+                                <span id="bookingBtnText">&#128197; Confirm Consultation Appointment</span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Confirmed Booking Card (Shown upon successful scheduling) -->
+                <div class="booking-confirmed-card" id="bookingConfirmedCard">
+                    <h3>&#10004; Consultation Successfully Scheduled!</h3>
+                    <p style="color: var(--text-main); font-size: 0.95rem;">
+                        Your consultation appointment with Brian Berry has been confirmed. Confirmation and reminder emails have been dispatched.
+                    </p>
+                    <div class="booking-confirmed-details" id="bookingConfirmedDetails"></div>
+                    <div class="calendar-export-actions">
+                        <button class="btn-export" onclick="downloadIcsFile()">
+                            &#128197; Download .ICS Calendar Invite
+                        </button>
+                        <a href="#" target="_blank" rel="noopener noreferrer" class="btn-export" id="btnGoogleCalendar">
+                            &#128198; Add to Google Calendar
+                        </a>
+                        <button class="btn-export" onclick="resetBookingForm()" style="background: rgba(255,255,255,0.08); border-color: var(--text-muted); color: var(--text-main);">
+                            &#8635; Book Another Appointment
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: GENERAL CONTACT INQUIRY -->
+            <div class="tab-content" id="tabContentContact">
+                <div id="contactStatusBox" class="status-box"></div>
+
+                <div class="form-card" style="max-width: 680px; margin: 0 auto;">
+                    <h2 class="form-title">Send a Direct Message to Brian Berry</h2>
+                    <p class="form-subtitle">Have an inquiry regarding Calm Chess games, custom engine licensing, or collaborations? Inquiries are dispatched directly to bberry@calmchessgames.com.</p>
+
+                    <form id="contactForm" onsubmit="handleContactSubmit(event)">
+                        <!-- Anti-bot honeypot -->
+                        <input type="text" name="company_website" class="honeypot-field" tabindex="-1" autocomplete="off">
+                        <input type="text" name="fax_number" class="honeypot-field" tabindex="-1" autocomplete="off">
+
+                        <div class="form-group">
+                            <label class="form-label" for="contactName">Your Name <span class="req">*</span></label>
+                            <input type="text" id="contactName" class="form-input" placeholder="Your name" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="contactEmail">Your Email Address <span class="req">*</span></label>
+                            <input type="email" id="contactEmail" class="form-input" placeholder="you@domain.com" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="contactSubject">Subject <span class="req">*</span></label>
+                            <input type="text" id="contactSubject" class="form-input" placeholder="e.g. Strategic Inquiry / Custom Engine" required>
+                        </div>
+
+                        <div class="form-group">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; flex-wrap: wrap; gap: 6px;">
+                                <label class="form-label" for="contactMessage" style="margin-bottom: 0;">Message <span class="req">*</span></label>
+                                <div class="input-mode-controls">
+                                    <button type="button" id="btnToggleSystemKbContact" class="btn-system-input-toggle" title="Switch to System Input Field &amp; Keyboard" aria-label="Use System Keyboard and Input Field">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>
+                                        <span class="system-kb-btn-text">📱 System Keyboard</span>
+                                    </button>
+                                    <button type="button" id="btnDictateContact" class="btn-dictate-prompt" title="Speech to Text Dictation" aria-label="Speech to Text Voice Dictation">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true" style="vertical-align: -2px;"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.38-1.14-1-1.14z"/></svg>
+                                        <span class="dictate-btn-text">🎙️ Dictate</span>
+                                    </button>
+                                    <button type="button" id="btnOpenWoodKeyboard" class="btn-wood-prompt" style="background: linear-gradient(135deg, #5a3721, #3f2516); color: #ffd700; border: 1px solid #cfa860; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; font-weight: 600;">
+                                        ⌨️ Wooden Keyboard
+                                    </button>
+                                </div>
+                            </div>
+                            <textarea id="contactMessage" class="form-textarea" style="min-height: 140px;" placeholder="Write your message here, or tap above to type with our acoustic wooden mechanical keyboard..." required></textarea>
+                        </div>
+
+                        <button type="submit" class="btn-submit" id="btnSubmitContact">
+                            <span id="contactBtnText">&#9993; Send Message to Brian Berry</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Industry Standard Consultation Highlights -->
+        <section class="highlights-grid">
+            <div class="highlight-card">
+                <div class="highlight-icon">&#128187;</div>
+                <div class="highlight-info">
+                    <h3>Direct Architect Access</h3>
+                    <p>Consult one-on-one directly with Brian Berry, founder and lead architect behind Calm Chess Computers strategy and engine systems.</p>
+                </div>
+            </div>
+
+            <div class="highlight-card">
+                <div class="highlight-icon">&#128274;</div>
+                <div class="highlight-info">
+                    <h3>Confidential &amp; Encrypted</h3>
+                    <p>All inquiries and consultations are strictly confidential and transmitted end-to-end using AES-256-GCM encryption standards.</p>
+                </div>
+            </div>
+
+            <div class="highlight-card">
+                <div class="highlight-icon">&#128337;</div>
+                <div class="highlight-info">
+                    <h3>Flexible Scheduling &amp; Reminders</h3>
+                    <p>Select your preferred timezone and date. Automated calendar invites and email reminders keep both parties in sync.</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p class="site-tos-disclosure" style="margin-bottom: 8px; font-size: 0.82rem; color: #cbd5e1; max-width: 850px; margin-left: auto; margin-right: auto; line-height: 1.45;">Credits have no cash value. Winnings cannot be redeemed for cash or prizes.</p>
+        <p>&copy; 2026 Calm Chess Computers &bull; Brian Berry. All rights reserved.</p>
+        <p style="margin-top: 8px; font-size: 0.85rem;">
+            <a href="index.html">Home</a>
+            <a href="contact.html">Contact &amp; Consultation</a>
+            <a href="terms.html">Terms of Service</a>
+            <a href="privacy.html">Privacy &amp; Cookies Policy</a>
+            <a href="password_reset.html">Password Reset</a>
+            <a href="delete_account.html">Account &amp; Data Deletion</a>
+        </p>
+    </footer>
+
+    <!-- Secure In-Transit Encryption & API Layer -->
+    <script src="js/crypto_transport.js"></script>
+    <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
+    <script src="js/contact.js"></script>
+    <script>
+        (function() {
+            var hdr = document.getElementById('siteHeader') || document.querySelector('header');
+            if (hdr) {
+                hdr.addEventListener('click', function(e) {
+                    if (!e.target.closest('nav') && !e.target.closest('a') && !e.target.closest('button')) {
+                        window.location.href = 'https://calmchessgames.com';
+                    }
+                });
+            }
+        })();
+    </script>
+
+    <!-- SVG Filters & Brass Corner Asset Definitions -->
+    <svg class="svg-definitions" style="display: none;" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <filter id="woodGrainFilter" x="0%" y="0%" width="100%" height="100%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.04 0.008" numOctaves="3" result="noise" />
+                <feColorMatrix type="matrix" values="0.3 0 0 0 0.15 0 0.2 0 0 0.08 0 0 0.1 0 0.04 0 0 0 0.25 0" in="noise" result="coloredNoise" />
+                <feBlend mode="multiply" in="SourceGraphic" in2="coloredNoise" result="blend" />
+            </filter>
+            <g id="brass-corner-bracket">
+                <path d="M 0 0 L 28 0 C 28 10 20 18 10 20 L 10 28 L 0 28 Z" fill="url(#brassGrad)" stroke="#523916" stroke-width="1"/>
+                <circle cx="8" cy="8" r="3" fill="#301e0d" stroke="#cfa860" stroke-width="0.8"/>
+                <line x1="6.5" y1="6.5" x2="9.5" y2="9.5" stroke="#cfa860" stroke-width="0.8"/>
+            </g>
+            <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fff0c2"/>
+                <stop offset="35%" stop-color="#cfa860"/>
+                <stop offset="70%" stop-color="#936d32"/>
+                <stop offset="100%" stop-color="#5a3d16"/>
+            </linearGradient>
+        </defs>
+    </svg>
+
+    <!-- WOODEN MECHANICAL KEYBOARD MODAL OVERLAY -->
+    <div id="woodKeyboardModal" class="wood-kb-modal-overlay" style="display: none;">
+        <!-- Rotation Prompt Badge (Shown when user rotates horizontal to type, then back to vertical) -->
+        <div id="wood-kb-rotate-badge" class="wood-kb-rotate-badge" style="display: none;">
+            <div class="rotate-badge-content">
+                <span class="rotate-badge-icon">📱</span>
+                <span class="rotate-badge-text">Phone rotated vertical. Close wooden keyboard?</span>
+                <div class="rotate-badge-actions">
+                    <button type="button" id="btnBadgeCloseKb" class="badge-btn badge-btn-close">✕ Close Keyboard</button>
+                    <button type="button" id="btnBadgeKeepKb" class="badge-btn badge-btn-keep">Keep Open</button>
+                </div>
+            </div>
+        </div>
+        <div class="wood-kb-container" data-wood="walnut">
+            <!-- Header with controls -->
+            <div class="wood-kb-header">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 1.25rem;">🪵</span>
+                    <strong style="color: var(--brass-gold); font-size: 0.95rem;">Acoustic Wooden Keyboard</strong>
+                </div>
+                <div class="wood-kb-controls">
+                    <div style="display: flex; align-items: center; gap: 4px;">
+                        <label for="wood-select-contact" style="font-size: 0.76rem; color: #cbd5e1;">Timber:</label>
+                        <select id="wood-select-contact" class="wood-dropdown">
+                            <option value="walnut">Dark Walnut</option>
+                            <option value="oak">Solid Oak</option>
+                            <option value="teak">Acoustic Teak</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 3px;">
+                        <label for="volume-slider-contact" style="font-size: 0.8rem;">🔊</label>
+                        <input type="range" id="volume-slider-contact" class="volume-range" min="0" max="1" step="0.05" value="0.85" title="Volume slider">
+                    </div>
+                    <button type="button" id="mute-btn-contact" class="wood-pill-btn" title="Toggle Mute">🔊</button>
+                    <button type="button" id="rotate-btn-contact" class="wood-pill-btn" title="Rotate Keyboard for Mobile">🔄 Rotate</button>
+                    <button type="button" id="switch-to-system-kb-btn" class="wood-pill-btn btn-system-kb" title="Switch to System Input Field &amp; Keyboard" aria-label="Switch to System Keyboard and Input Field">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="vertical-align: -2px; margin-right: 3px;" aria-hidden="true"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>📱 System KB
+                    </button>
+                    <button type="button" id="speech-dictate-modal-btn" class="wood-pill-btn btn-dictate" title="Speech to Text / Voice Dictation" aria-label="Speech to Text Voice Dictation">
+                        <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="vertical-align: -2px; margin-right: 3px;" aria-hidden="true"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.38-1.14-1-1.14z"/></svg>🎙️ Dictate
+                    </button>
+                    <button type="button" id="close-keyboard-btn" class="wood-pill-btn close-btn" title="Close Keyboard">✕ Close</button>
+                </div>
+            </div>
+
+            <!-- Parchment Text Display Area -->
+            <div class="wood-kb-display-plaque">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 6px;">
+                    <span id="wood-kb-title-label" style="font-size: 0.82rem; color: #ffd700; font-weight: 700;">Message to Brian Berry:</span>
+                    <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                        <button type="button" id="plaque-system-kb-btn" class="wood-pill-btn btn-system-kb" title="Switch to System Input Field &amp; Keyboard" aria-label="Use System Keyboard">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor" style="vertical-align: -1px; margin-right: 2px;" aria-hidden="true"><path d="M20 5H4c-1.1 0-1.99.9-1.99 2L2 17c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/></svg>📱 System KB
+                        </button>
+                        <button type="button" id="copy-kb-btn" class="wood-pill-btn" title="Copy text to clipboard">📋 Copy</button>
+                        <button type="button" id="clear-kb-btn" class="wood-pill-btn" title="Clear message text">🗑️ Clear</button>
+                        <button type="button" id="send-kb-btn" class="wood-pill-btn btn-send-message" title="Send Message to Brian Berry">✉️ Send Message</button>
+                    </div>
+                </div>
+                <div class="parchment-frame">
+                    <textarea id="wood-kb-textarea" class="display-textarea" rows="2" readonly inputmode="none" virtualkeyboardpolicy="manual" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Tap any wooden key below, or type with your physical keyboard to compose your message..."></textarea>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; color: var(--brass-gold); margin-top: 2px;">
+                    <div>Characters: <span id="kb-char-count">0</span> | Words: <span id="kb-word-count">0</span></div>
+                    <div style="font-size: 0.7rem; opacity: 0.85;">Acoustic Mechanical Wooden Switch Engine</div>
+                </div>
+            </div>
+
+            <!-- Keyboard Chassis -->
+            <div class="keyboard-chassis">
+                <svg class="corner-bracket corner-top-left" viewBox="0 0 32 32"><use href="#brass-corner-bracket"/></svg>
+                <svg class="corner-bracket corner-top-right" viewBox="0 0 32 32"><use href="#brass-corner-bracket"/></svg>
+                <svg class="corner-bracket corner-bottom-left" viewBox="0 0 32 32"><use href="#brass-corner-bracket"/></svg>
+                <svg class="corner-bracket corner-bottom-right" viewBox="0 0 32 32"><use href="#brass-corner-bracket"/></svg>
+
+                <div class="chassis-screw screw-tl"></div>
+                <div class="chassis-screw screw-tr"></div>
+                <div class="chassis-screw screw-bl"></div>
+                <div class="chassis-screw screw-br"></div>
+
+                <div class="keybed-recess">
+                    <div id="contact-virtual-keyboard" class="keyboard-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Tab & Scroll Helpers -->
+    <script>
+        if (typeof window.switchToBookingTab !== 'function') {
+            window.switchToBookingTab = function () {
+                if (typeof window.switchTab === 'function') window.switchTab('booking');
+                const target = document.getElementById('tabContentBooking') || document.querySelector('.tabs-container');
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            };
+        }
+        if (typeof window.switchToContactTab !== 'function') {
+            window.switchToContactTab = function () {
+                if (typeof window.switchTab === 'function') window.switchTab('contact');
+                const target = document.getElementById('tabContentContact') || document.querySelector('.tabs-container');
+                if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setTimeout(function() {
+                    const nameInput = document.getElementById('contactName');
+                    if (nameInput && window.innerWidth > 850) nameInput.focus({ preventScroll: true });
+                }, 350);
+            };
+        }
+    </script>
+
+    <!-- Wooden Mechanical Keyboard Audio & Controller Scripts -->
+    <script src="js/audio.js"></script>
+    <script src="js/contact_keyboard.js"></script>
+
+</body>
+</html>

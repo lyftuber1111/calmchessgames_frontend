@@ -1,0 +1,3250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Meshy 3D - WebXR Model Viewer</title>
+  <style>
+    :root {
+      --bg: #0b0d13;
+      --panel-bg: rgba(18, 22, 32, 0.95);
+      --dock-bg: rgba(15, 18, 26, 0.88);
+      --accent: #ff2a3b;
+      --accent-glow: rgba(255, 42, 59, 0.35);
+      --accent-green: #10b981;
+      --accent-green-glow: rgba(16, 185, 129, 0.35);
+      --text: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border: rgba(255, 255, 255, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      touch-action: none;
+    }
+
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* UI Header Overlay */
+    header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 0.85rem 1.25rem;
+      padding-top: max(0.85rem, env(safe-area-inset-top));
+      z-index: 15;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      background: linear-gradient(180deg, rgba(11, 13, 19, 0.92) 0%, rgba(11, 13, 19, 0) 100%);
+      pointer-events: none;
+    }
+
+    .brand {
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .brand h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 260px;
+    }
+
+    .pill {
+      font-size: 0.68rem;
+      padding: 0.18rem 0.5rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      background: var(--accent-glow);
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      flex-shrink: 0;
+    }
+
+    .xr-status-tag {
+      font-size: 0.75rem;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      pointer-events: auto;
+      flex-shrink: 0;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .xr-status-tag.active {
+      border-color: #10b981;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.15);
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+    }
+
+    .nav-links-pills {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      pointer-events: auto;
+    }
+
+    .nav-pill {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      text-decoration: none;
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .nav-pill:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .nav-pill.active {
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.18);
+      border-color: #38bdf8;
+    }
+
+    /* Fixed Bottom Dock Bar with Tabs */
+    .bottom-dock {
+      position: fixed;
+      bottom: max(0.85rem, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: var(--dock-bg);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.6rem;
+      border-radius: 9999px;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+      max-width: calc(100vw - 1.5rem);
+    }
+
+    .dock-tab {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.45rem 0.85rem;
+      border-radius: 9999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    .dock-tab:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .dock-tab.active {
+      background: var(--accent);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.3);
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+
+    .dock-icon {
+      font-size: 0.95rem;
+    }
+
+    /* Slide-out Panel Backdrop */
+    .slide-panel-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .slide-panel-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Slide-out Panel */
+    .slide-panel {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translate(-50%, 105%);
+      width: 100%;
+      max-width: 630px;
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-bottom: none;
+      border-radius: 20px 20px 0 0;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.65);
+      z-index: 100;
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      max-height: 86vh;
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+
+    .slide-panel.open {
+      transform: translate(-50%, 0);
+    }
+
+    .sheet-handle-bar {
+      width: 100%;
+      padding: 0.6rem 0 0.3rem 0;
+      display: flex;
+      justify-content: center;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .sheet-handle {
+      width: 44px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.25);
+      border-radius: 9999px;
+    }
+
+    .sheet-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.4rem 1.25rem 0.8rem 1.25rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sheet-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .sheet-icon {
+      font-size: 1.15rem;
+    }
+
+    .sheet-header h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #fff;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-close-sheet {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-close-sheet:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+    }
+
+    /* Sheet Body & Tab Content */
+    .sheet-body {
+      padding: 1.1rem 1.25rem;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      gap: 0.85rem;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .section-subtitle {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .section-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.08);
+      margin: 0.5rem 0;
+    }
+
+    /* Loaded Asset Badge Card */
+    .loaded-asset-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: rgba(255, 42, 59, 0.08);
+      border: 1px solid rgba(255, 42, 59, 0.25);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+    }
+
+    .badge-format {
+      font-size: 0.68rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 6px;
+      background: var(--accent-glow);
+      color: #ff8591;
+      border: 1px solid var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    /* Form Inputs */
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .input-group label, .section-label-row label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .input-with-action {
+      display: flex;
+      gap: 0.4rem;
+      align-items: center;
+    }
+
+    input[type="text"], select {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 0.6rem 0.75rem;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .dest-input-wrap {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .dest-input-wrap:focus-within {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent-glow);
+    }
+
+    .dest-prefix {
+      background: rgba(255, 42, 59, 0.15);
+      color: #ff8591;
+      padding: 0.6rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .dest-input-wrap input {
+      border: none;
+      background: transparent;
+      box-shadow: none !important;
+      padding: 0.6rem 0.75rem;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: #fff;
+      padding: 0.6rem 0.85rem;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      font-weight: 600;
+      gap: 0.35rem;
+      white-space: nowrap;
+      transition: background 0.2s, border-color 0.2s;
+      touch-action: manipulation;
+    }
+
+    .btn-icon:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .loader-actions {
+      display: flex;
+      gap: 0.6rem;
+      margin-top: 0.2rem;
+    }
+
+    .btn {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+      border: 1px solid var(--border);
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      touch-action: manipulation;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .btn-primary-accent {
+      flex: 2;
+      background: linear-gradient(135deg, #ff2a3b 0%, #d81224 100%);
+      color: #fff;
+      border: 1px solid #ff5967;
+      box-shadow: 0 3px 12px rgba(255, 42, 59, 0.35);
+    }
+
+    .btn-primary-accent:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ff4352 0%, #eb1e31 100%);
+      box-shadow: 0 4px 16px rgba(255, 42, 59, 0.55);
+    }
+
+    .btn-subtle {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
+    }
+
+    .btn-approve {
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      border: 1px solid #34d399;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);
+      padding: 0.7rem 1.5rem;
+      font-weight: 700;
+    }
+
+    .btn-approve:hover {
+      background: linear-gradient(135deg, #059669 0%, #047857 100%);
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+    }
+
+    .btn-cancel {
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      border: 1px solid var(--border);
+      padding: 0.7rem 1.25rem;
+    }
+
+    .btn-cancel:hover {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: #ef4444;
+      color: #fff;
+    }
+
+    .approve-actions-row {
+      display: flex;
+      gap: 0.65rem;
+      align-items: center;
+      margin-top: 0.4rem;
+    }
+
+    .card-badge {
+      font-size: 0.68rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .card-badge.loading {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .card-badge.error {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.3);
+    }
+
+    .count-badge {
+      font-size: 0.68rem;
+      padding: 0.15rem 0.55rem;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #94a3b8;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .count-badge.active {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .model-msg {
+      font-size: 0.75rem;
+      min-height: 1.1rem;
+      color: var(--text-muted);
+      overflow-wrap: break-word;
+      word-break: break-all;
+    }
+
+    .model-msg.success, .feedback-msg.success {
+      color: #34d399;
+    }
+
+    .model-msg.error, .feedback-msg.error {
+      color: #f87171;
+    }
+
+    .feedback-msg {
+      font-size: 0.74rem;
+      min-height: 1rem;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    /* Checkbox Checklist Styling */
+    .checklist-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .checklist-actions {
+      display: flex;
+      gap: 0.35rem;
+      flex-shrink: 0;
+    }
+
+    .btn-tiny {
+      font-size: 0.68rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-tiny:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      border-color: rgba(255, 255, 255, 0.35);
+    }
+
+    .quick-links-checklist {
+      height: 185px;
+      background: rgba(12, 15, 24, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #e2e8f0;
+      padding: 0.45rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.78rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .checklist-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      margin-bottom: 0.3rem;
+    }
+
+    .checklist-group-header {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #ff8591;
+      padding: 0.3rem 0.5rem;
+      background: rgba(255, 42, 59, 0.1);
+      border-radius: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .checklist-group-toggle {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      text-decoration: underline;
+      background: transparent;
+      border: none;
+      padding: 0.1rem 0.3rem;
+    }
+
+    .checklist-group-toggle:hover {
+      color: #fff;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.35rem 0.55rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .checklist-item:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .checklist-item.checked {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    .checklist-item input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border: 1.5px solid rgba(255, 255, 255, 0.3);
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.4);
+      cursor: pointer;
+      display: grid;
+      place-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+
+    .checklist-item input[type="checkbox"]:checked {
+      background: #10b981;
+      border-color: #34d399;
+    }
+
+    .checklist-item input[type="checkbox"]:checked::before {
+      content: "✓";
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .checklist-path {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.76rem;
+    }
+
+    .checklist-tag {
+      font-size: 0.65rem;
+      padding: 0.1rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(255, 42, 59, 0.2);
+      color: #ff8591;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    /* Destination Preview Card with Multi-destinations */
+    .dest-preview-card {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px dashed rgba(16, 185, 129, 0.35);
+      border-radius: 8px;
+      padding: 0.6rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-lbl {
+      font-size: 0.68rem;
+      font-weight: 600;
+      color: #6ee7b7;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .dest-preview-list {
+      max-height: 90px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .dest-preview-item {
+      font-size: 0.74rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #a7f3d0;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      word-break: break-all;
+    }
+
+    .dest-preview-bullet {
+      color: #10b981;
+      font-weight: 800;
+    }
+
+    .search-filter-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.2rem 0.6rem;
+      gap: 0.4rem;
+    }
+
+    .search-filter-box input {
+      border: none;
+      background: transparent;
+      padding: 0.4rem 0.2rem;
+      font-size: 0.8rem;
+      color: #fff;
+      box-shadow: none !important;
+    }
+
+    .search-icon {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .btn-clear-search {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      padding: 0.2rem;
+    }
+
+    .btn-clear-search:hover {
+      color: #fff;
+    }
+
+    /* Materials, Textures & Colors Inspection Card */
+    .materials-inspect-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 10px;
+      padding: 0.7rem 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      position: relative;
+    }
+
+    .materials-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-minilabel {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      margin-bottom: 0.3rem;
+    }
+
+    /* Color Palette Swatches */
+    .color-palette-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .color-swatch-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 0.2rem 0.45rem;
+      font-size: 0.7rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #e2e8f0;
+      user-select: text;
+    }
+
+    .color-swatch-box {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      flex-shrink: 0;
+    }
+
+    /* Materials Breakdown */
+    .materials-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .mat-item-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      padding: 0.35rem 0.55rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    .mat-item-left {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .mat-item-name {
+      font-weight: 600;
+      color: #fff;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .mat-item-meta {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+    }
+
+    .mat-item-badges {
+      display: flex;
+      align-items: center;
+      gap: 0.25rem;
+      flex-shrink: 0;
+    }
+
+    .mat-badge-tag {
+      font-size: 0.62rem;
+      padding: 0.1rem 0.35rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .mat-badge-tag.has-tex {
+      background: rgba(16, 185, 129, 0.2);
+      color: #6ee7b7;
+    }
+
+    /* Companion Files List */
+    .companion-files-group {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .companion-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .companion-files-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .companion-file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.25rem 0.4rem;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 0.72rem;
+    }
+
+    .companion-file-left {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .companion-file-name {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #e2e8f0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .companion-file-size {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    /* Move Options Checkboxes */
+    .move-options-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.2rem;
+      padding-top: 0.4rem;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .checkbox-option {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.73rem;
+      color: #cbd5e1;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .checkbox-option input[type="checkbox"] {
+      width: 14px;
+      height: 14px;
+      accent-color: #10b981;
+      cursor: pointer;
+    }
+
+    /* Specs Tab Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 10px;
+      padding: 0.65rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .stat-card .stat-lbl {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .stat-card .stat-val {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .stat-badge-fps {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+    }
+
+    .specs-footer-tags {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-top: 0.2rem;
+    }
+
+    .tech-tag {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    /* Controls Tab */
+    .controls-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .controls-subgroup {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .subgroup-title {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      font-weight: 600;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .btn-row .btn {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .btn-xr {
+      background: linear-gradient(135deg, #ff2a3b 0%, #e01124 100%);
+      border: 1px solid #ff5967;
+      box-shadow: 0 4px 14px rgba(255, 42, 59, 0.4);
+    }
+
+    .btn-xr:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ff4352 0%, #eb1e31 100%);
+      box-shadow: 0 6px 20px rgba(255, 42, 59, 0.6);
+    }
+
+    .btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .gesture-hints {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      padding: 0.6rem 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .hint-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Loading Overlay */
+    #loader {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 13, 19, 0.85);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    #loader.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Drag & Drop Visual Overlay */
+    #drop-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 13, 19, 0.92);
+      border: 3px dashed var(--accent);
+      z-index: 250;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 1rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      backdrop-filter: blur(8px);
+    }
+
+    #drop-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drop-overlay-icon {
+      font-size: 3.5rem;
+      animation: float 2s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .drop-overlay-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .drop-overlay-sub {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+  </style>
+
+  <!-- Import maps polyfill for ES module browser support -->
+  <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Loading Overlay -->
+  <div id="loader">
+    <div class="spinner"></div>
+    <div id="loader-title" style="font-weight: 600; font-size: 0.95rem; letter-spacing: 0.5px;">Loading 3D Model...</div>
+    <div id="load-progress" style="font-size: 0.8rem; color: var(--text-muted);">0%</div>
+  </div>
+
+  <!-- Drag & Drop Zone Overlay -->
+  <div id="drop-overlay">
+    <div class="drop-overlay-icon">📦</div>
+    <div class="drop-overlay-title">Drop 3D Model Here</div>
+    <div class="drop-overlay-sub">Model will load immediately into 3D viewer</div>
+  </div>
+
+  <!-- UI Top Header Overlay -->
+  <header>
+    <div class="brand">
+      <h1 id="brand-title">🏎️ Meshy 3D Viewer</h1>
+      <span class="pill">WebXR Studio</span>
+    </div>
+    <div class="nav-links-pills">
+      <a href="index.html" class="nav-pill" id="nav-link-index" title="Full 3D Viewer (index.html)">index.html</a>
+      <a href="xr_test.html" class="nav-pill" id="nav-link-xr" title="WebXR Viewer (xr_test.html)">xr_test.html</a>
+    </div>
+    <div class="xr-status-tag" id="xr-support-status">
+      <span class="dot"></span>
+      <span id="xr-status-text">Checking Hardware...</span>
+    </div>
+  </header>
+
+  <!-- Bottom Navigation Dock Bar -->
+  <nav class="bottom-dock" aria-label="Viewer Controls">
+    <button class="dock-tab" id="dock-btn-model" data-tab="model" type="button">
+      <span class="dock-icon">📁</span>
+      <span class="dock-label">Model File</span>
+    </button>
+    <button class="dock-tab" id="dock-btn-specs" data-tab="specs" type="button">
+      <span class="dock-icon">📊</span>
+      <span class="dock-label">File Specs</span>
+    </button>
+    <button class="dock-tab" id="dock-btn-controls" data-tab="controls" type="button">
+      <span class="dock-icon">🎮</span>
+      <span class="dock-label">Controls</span>
+    </button>
+  </nav>
+
+  <!-- Slide-out Panel Backdrop -->
+  <div class="slide-panel-backdrop" id="panel-backdrop"></div>
+
+  <!-- Slide-out Bottom Sheet Panel -->
+  <div class="slide-panel" id="slide-panel" role="region" aria-label="Viewer Panel">
+    <div class="sheet-handle-bar" id="sheet-handle-bar">
+      <div class="sheet-handle"></div>
+    </div>
+    <div class="sheet-header">
+      <div class="sheet-title-group">
+        <span class="sheet-icon" id="sheet-header-icon">📁</span>
+        <h3 id="sheet-header-title">Select 3D Model</h3>
+      </div>
+      <button class="btn-close-sheet" id="btn-close-sheet" type="button" aria-label="Close Panel">✕</button>
+    </div>
+
+    <div class="sheet-body">
+      <!-- Tab 1: Selecting File & Loading Model -->
+      <div class="tab-content active" id="tab-content-model">
+        <div class="panel-section-header">
+          <span class="section-subtitle">Load from meshy_test_0 root or meshy_test_0/models</span>
+          <span class="card-badge" id="model-status-badge">Ready</span>
+        </div>
+
+        <!-- 1. Direct Model Loading Controls -->
+        <div class="input-group">
+          <label for="model-file-input">Model File Name / Path (meshy_test_0/ or models/)</label>
+          <div class="input-with-action">
+            <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/red_race_car.glb or red_race_car.glb" value="models/red_race_car.glb" spellcheck="false" autocomplete="off" />
+            <label for="local-file-picker" class="btn-icon" title="Browse 3D file, materials & textures from meshy_test_0/models or device">
+              <span>📁 Browse</span>
+              <input type="file" id="local-file-picker" accept=".glb,.gltf,.obj,.mtl,.bin,.fbx,.stl,.png,.jpg,.jpeg,.webp" multiple style="display:none;" />
+            </label>
+          </div>
+          <datalist id="model-presets">
+            <option value="models/red_race_car.glb">models/red_race_car.glb (GLB)</option>
+            <option value="models/red_race_car.obj">models/red_race_car.obj (OBJ)</option>
+            <option value="models/red_race_car.fbx">models/red_race_car.fbx (FBX)</option>
+            <option value="models/red_race_car.stl">models/red_race_car.stl (STL)</option>
+            <option value="red_race_car.glb">red_race_car.glb (Root)</option>
+          </datalist>
+        </div>
+
+        <div class="input-group">
+          <label for="material-file-input">Material / MTL File (Optional for OBJ)</label>
+          <input type="text" id="material-file-input" placeholder="e.g. models/red_race_car.mtl" spellcheck="false" autocomplete="off" />
+        </div>
+
+        <div class="loader-actions">
+          <button id="btn-load-model" class="btn btn-primary-accent" type="button">
+            <span>⚡</span> <span>Load Model</span>
+          </button>
+          <button id="btn-quick-car" class="btn btn-subtle" type="button" title="Load default Red Race Car">
+            <span>🏎️</span> <span>Default Car</span>
+          </button>
+        </div>
+
+        <div id="model-load-msg" class="model-msg">Current: models/red_race_car.glb</div>
+
+        <!-- Divider -->
+        <div class="section-divider"></div>
+
+        <!-- 2. Approve & Move Loaded Asset Section -->
+        <div class="panel-section-header">
+          <div style="display:flex; align-items:center; gap:0.4rem;">
+            <span style="font-size:1.1rem;">📦</span>
+            <div>
+              <span class="subgroup-title" style="font-size:0.8rem; color:#fff;">Approve & Move Loaded Asset</span>
+              <div class="section-subtitle">Move to typed path or checked image folders</div>
+            </div>
+          </div>
+          <span class="count-badge active" id="panel-selected-badge">1 Folder Selected</span>
+        </div>
+
+        <!-- Currently Loaded Asset Status Badge -->
+        <div class="loaded-asset-badge">
+          <span id="loaded-asset-icon" style="font-size:1.4rem;">🧊</span>
+          <div style="flex:1; min-width:0;">
+            <div id="loaded-asset-name" style="font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">red_race_car.glb</div>
+            <div id="loaded-asset-source" style="font-size:0.68rem; color:var(--text-muted);">Source: meshy_test_0/models/red_race_car.glb</div>
+          </div>
+          <span class="badge-format" id="loaded-asset-ext">GLB</span>
+        </div>
+
+        <!-- Materials, Textures & Colors Inspection & Move Options -->
+        <div class="materials-inspect-card" id="materials-inspect-card">
+          <div class="materials-card-header">
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+              <span style="font-size:1.15rem;">🎨</span>
+              <div>
+                <span class="subgroup-title" style="font-size:0.8rem; color:#fff;">Materials, Textures & Colors</span>
+                <div class="section-subtitle" id="mat-summary-subtitle">Analyzing asset materials & textures...</div>
+              </div>
+            </div>
+            <span class="count-badge active" id="mat-count-badge">0 Materials</span>
+          </div>
+
+          <!-- Color Palette Swatches -->
+          <div>
+            <div class="card-minilabel">Detected Asset Color Palette:</div>
+            <div class="color-palette-row" id="model-color-palette">
+              <!-- Swatches rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Materials Breakdown -->
+          <div>
+            <div class="card-minilabel">Meshes & Materials Breakdown:</div>
+            <div class="materials-list" id="model-materials-list">
+              <!-- Material cards rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Companion Files to Move (MTL, Textures, BIN, JSON) -->
+          <div class="companion-files-group">
+            <div class="companion-header">
+              <span class="card-minilabel">📦 Companion Files to Move:</span>
+              <span class="count-badge active" id="companion-count-badge">0 Files</span>
+            </div>
+            <div class="companion-files-list" id="companion-files-list">
+              <!-- Companion file items rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- Move Options Checkboxes -->
+          <div class="move-options-row">
+            <label class="checkbox-option">
+              <input type="checkbox" id="chk-move-materials-textures" checked />
+              <span>✓ Move Companion Materials (.mtl, .bin) & Textures (.png, .jpg)</span>
+            </label>
+            <label class="checkbox-option">
+              <input type="checkbox" id="chk-move-colors-json" checked />
+              <span>✓ Move Material Colors Config (<span id="json-model-basename">red_race_car</span>_materials.json)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Typed Destination Path Input -->
+        <div class="input-group">
+          <label for="panel-dest-path-input">Destination Path (Starting from calmchessgames.com root)</label>
+          <div class="dest-input-wrap">
+            <span class="dest-prefix">calmchessgames.com/</span>
+            <input type="text" id="panel-dest-path-input" placeholder="wormhole0/warp_origin_images/red_race_car.glb" autocomplete="off" />
+          </div>
+        </div>
+
+        <!-- Quick Links Checkboxes -->
+        <div class="input-group">
+          <div class="section-label-row">
+            <label>⚡ Quick Links (Checkboxes - Select More Than 1)</label>
+          </div>
+
+          <div class="checklist-toolbar">
+            <div class="search-filter-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="panel-folder-search" placeholder="Filter image folders..." autocomplete="off" />
+              <button type="button" id="panel-clear-folder-search" class="btn-clear-search" title="Clear filter">✕</button>
+            </div>
+            <div class="checklist-actions">
+              <button type="button" class="btn-tiny" id="panel-btn-select-all">✓ All</button>
+              <button type="button" class="btn-tiny" id="panel-btn-clear-all">✕ Clear</button>
+            </div>
+          </div>
+
+          <div class="quick-links-checklist" id="panel-quick-links-checklist">
+            <!-- Dynamic checklist items -->
+          </div>
+        </div>
+
+        <!-- Add Path to Quick Links -->
+        <div class="input-group">
+          <label for="panel-add-quicklink-input">➕ Add Path to Quick Links</label>
+          <div class="input-with-action">
+            <input type="text" id="panel-add-quicklink-input" placeholder="e.g. /wormhole0/custom_images" autocomplete="off" />
+            <button type="button" id="panel-btn-add-quicklink" class="btn btn-subtle">
+              <span>➕ Add</span>
+            </button>
+          </div>
+          <div id="panel-add-feedback" class="feedback-msg"></div>
+        </div>
+
+        <!-- Target Destination URLs Preview -->
+        <div class="dest-preview-card">
+          <div class="preview-header">
+            <span class="preview-lbl">Target URL(s) to Move Asset:</span>
+            <span class="count-badge active" id="preview-count-badge">1 Target</span>
+          </div>
+          <div class="dest-preview-list" id="panel-dest-preview-list">
+            <!-- Target URL items -->
+          </div>
+        </div>
+
+        <!-- Approve & Move Button + Cancel Button -->
+        <div class="approve-actions-row">
+          <button id="btn-cancel-move" class="btn btn-cancel" type="button" style="flex:1;">
+            <span>✕</span> <span>Cancel</span>
+          </button>
+          <button id="btn-approve-move" class="btn btn-approve" type="button" style="flex:2;">
+            <span>✓</span> <span id="approve-btn-label">Approve & Move Asset</span>
+          </button>
+        </div>
+
+        <div id="move-status-msg" class="feedback-msg" style="font-size:0.8rem; font-weight:600;"></div>
+      </div>
+
+      <!-- Tab 2: File Info & Specs -->
+      <div class="tab-content" id="tab-content-specs">
+        <div class="panel-section-header">
+          <span class="section-subtitle">Real-time geometry and rendering metrics</span>
+          <span class="stat-badge-fps"><span id="fps-counter">60</span> FPS</span>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-lbl">Format</span>
+            <span class="stat-val" id="format-spec">GLB</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-lbl">Triangles</span>
+            <span class="stat-val" id="poly-count">-</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-lbl">Vertices</span>
+            <span class="stat-val" id="vert-count">-</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-lbl">Real Length</span>
+            <span class="stat-val" id="spec-length">-</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-lbl">Real Width</span>
+            <span class="stat-val" id="spec-width">-</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-lbl">Real Height</span>
+            <span class="stat-val" id="spec-height">-</span>
+          </div>
+        </div>
+
+        <div class="specs-footer-tags">
+          <span class="tech-tag">✓ PBR Shader</span>
+          <span class="tech-tag">✓ Ground Shadow</span>
+          <span class="tech-tag">✓ WebXR Scale ~3.8m</span>
+        </div>
+      </div>
+
+      <!-- Tab 3: Interactive Viewport & WebXR Controls -->
+      <div class="tab-content" id="tab-content-controls">
+        <div class="panel-section-header">
+          <span class="section-subtitle">Immersive Headset & Viewport Tools</span>
+        </div>
+
+        <div class="controls-grid">
+          <div class="controls-subgroup">
+            <span class="subgroup-title">WebXR Modes</span>
+            <div class="btn-row">
+              <button id="btn-vr" class="btn btn-xr" disabled type="button">
+                <span>🥽</span> <span id="vr-btn-label">Enter VR</span>
+              </button>
+              <button id="btn-ar" class="btn" disabled type="button">
+                <span>📱</span> <span id="ar-btn-label">Enter AR</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="controls-subgroup">
+            <span class="subgroup-title">Display & Camera</span>
+            <div class="btn-row">
+              <button id="btn-auto-rotate" class="btn" type="button">
+                <span>🔄</span> <span id="rotate-label">Rotate</span>
+              </button>
+              <button id="btn-wireframe" class="btn" type="button">
+                <span>🕸️</span> <span id="wireframe-label">Wireframe</span>
+              </button>
+              <button id="btn-reset-cam" class="btn" type="button">
+                <span>🎯</span> <span>Reset View</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="gesture-hints">
+          <div class="hint-item">
+            <span>👆</span> <span>Orbit: 1-finger drag or left mouse button</span>
+          </div>
+          <div class="hint-item">
+            <span>✌️</span> <span>Zoom / Pan: 2-finger pinch/drag or scroll wheel</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+    import { MTLLoader } from 'three/addons/loaders/MTLLoader.js';
+    import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
+    import { STLLoader } from 'three/addons/loaders/STLLoader.js';
+    import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
+
+    // Active navigation pill detection between index.html and xr_test.html
+    const curPath = window.location.pathname.toLowerCase();
+    const navIndex = document.getElementById('nav-link-index');
+    const navXr = document.getElementById('nav-link-xr');
+    if (navIndex && navXr) {
+      if (curPath.endsWith('xr_test.html')) {
+        navXr.classList.add('active');
+        navIndex.classList.remove('active');
+      } else {
+        navIndex.classList.add('active');
+        navXr.classList.remove('active');
+      }
+    }
+
+    // =========================================================================
+    // QUICK PATHS DATABASE (IMAGE FOLDERS ONLY) & CHECKLIST LOGIC
+    // =========================================================================
+    const STORAGE_KEY_CUSTOM_LINKS = 'calmchess_model_custom_quick_links';
+    const DEFAULT_DEST_DIR = '/wormhole0/warp_origin_images';
+
+    let IMAGE_QUICK_FOLDERS = [
+      "/wormhole0/event_horizon_images",
+      "/wormhole0/final_boss_stage_images",
+      "/wormhole0/nebula_outpost_images",
+      "/wormhole0/quantum_realm_images",
+      "/wormhole0/singularity_core_images",
+      "/wormhole0/warp_origin_images",
+      "/wormhole0/desktop/event_horizon_images",
+      "/wormhole0/desktop/final_boss_stage_images",
+      "/wormhole0/desktop/nebula_outpost_images",
+      "/wormhole0/desktop/quantum_realm_images",
+      "/wormhole0/desktop/singularity_core_images",
+      "/wormhole0/desktop/warp_origin_images",
+      "/wormhole0/mobile/event_horizon_images",
+      "/wormhole0/mobile/final_boss_stage_images",
+      "/wormhole0/mobile/nebula_outpost_images",
+      "/wormhole0/mobile/quantum_realm_images",
+      "/wormhole0/mobile/singularity_core_images",
+      "/wormhole0/mobile/warp_origin_images",
+      "/wormhole0/vr/event_horizon_images",
+      "/wormhole0/vr/final_boss_stage_images",
+      "/wormhole0/vr/nebula_outpost_images",
+      "/wormhole0/vr/quantum_realm_images",
+      "/wormhole0/vr/singularity_core_images",
+      "/wormhole0/vr/warp_origin_images",
+      "/wormhole0/arcore/event_horizon_images",
+      "/wormhole0/arcore/final_boss_stage_images",
+      "/wormhole0/arcore/nebula_outpost_images",
+      "/wormhole0/arcore/quantum_realm_images",
+      "/wormhole0/arcore/singularity_core_images",
+      "/wormhole0/arcore/warp_origin_images",
+      "/admin/temp_stage_0/event_horizon_images",
+      "/admin/temp_stage_0/final_boss_stage_images",
+      "/admin/temp_stage_0/nebula_outpost_images",
+      "/admin/temp_stage_0/quantum_realm_images",
+      "/admin/temp_stage_0/singularity_core_images",
+      "/admin/temp_stage_0/warp_origin_images",
+      "/admin/temp_stage_0/desktop/event_horizon_images",
+      "/admin/temp_stage_0/desktop/final_boss_stage_images",
+      "/admin/temp_stage_0/desktop/nebula_outpost_images",
+      "/admin/temp_stage_0/desktop/quantum_realm_images",
+      "/admin/temp_stage_0/desktop/singularity_core_images",
+      "/admin/temp_stage_0/desktop/warp_origin_images",
+      "/admin/temp_stage_0/mobile/event_horizon_images",
+      "/admin/temp_stage_0/mobile/final_boss_stage_images",
+      "/admin/temp_stage_0/mobile/nebula_outpost_images",
+      "/admin/temp_stage_0/mobile/quantum_realm_images",
+      "/admin/temp_stage_0/mobile/singularity_core_images",
+      "/admin/temp_stage_0/mobile/warp_origin_images",
+      "/admin/temp_stage_0/vr/event_horizon_images",
+      "/admin/temp_stage_0/vr/final_boss_stage_images",
+      "/admin/temp_stage_0/vr/nebula_outpost_images",
+      "/admin/temp_stage_0/vr/quantum_realm_images",
+      "/admin/temp_stage_0/vr/singularity_core_images",
+      "/admin/temp_stage_0/vr/warp_origin_images",
+      "/admin/temp_stage_0/arcore/event_horizon_images",
+      "/admin/temp_stage_0/arcore/final_boss_stage_images",
+      "/admin/temp_stage_0/arcore/nebula_outpost_images",
+      "/admin/temp_stage_0/arcore/quantum_realm_images",
+      "/admin/temp_stage_0/arcore/singularity_core_images",
+      "/admin/temp_stage_0/arcore/warp_origin_images",
+      "/meshy_test_0/models"
+    ].filter(f => f.toLowerCase().includes('images') || f.toLowerCase().includes('models'));
+
+    const selectedFolderPaths = new Set([DEFAULT_DEST_DIR]);
+
+    // Backend Server URL Resolution (Connects frontend on Git to backend PHP servers)
+    const BACKEND_BASE = (function () {
+      if (typeof window !== 'undefined' && window.location) {
+        if (window.CC_BACKEND_BASE) return window.CC_BACKEND_BASE;
+        const host = window.location.hostname;
+        if (host === 'api.calmchessgames.com') {
+          return window.location.origin;
+        }
+        if ((host === 'localhost' || host === '127.0.0.1') && (window.location.port === '' || window.location.port === '80' || window.location.port === '443')) {
+          return window.location.origin;
+        }
+      }
+      return 'https://api.calmchessgames.com';
+    })();
+
+    // Candidate PHP endpoints across backend servers
+    function getBackendEndpoints(scriptName = 'move_asset.php') {
+      const endpoints = [
+        `${BACKEND_BASE}/meshy_test_0/${scriptName}`,
+        `https://api.calmchessgames.com/meshy_test_0/${scriptName}`,
+        `${BACKEND_BASE}/${scriptName}`,
+        `https://api.calmchessgames.com/${scriptName}`,
+        `https://calmchessgames.com/meshy_test_0/${scriptName}`,
+        `https://calmchessgames.com/${scriptName}`,
+        `./${scriptName}`,
+        scriptName
+      ];
+      return [...new Set(endpoints)];
+    }
+
+    // Helper to query backend PHP check endpoint
+    async function checkBackendCompanions(sourcePathDesc) {
+      const endpoints = getBackendEndpoints('move_asset.php');
+      for (const ep of endpoints) {
+        try {
+          const sep = ep.includes('?') ? '&' : '?';
+          const url = `${ep}${sep}check=1&source_path=${encodeURIComponent(sourcePathDesc)}&_t=${Date.now()}`;
+          const res = await fetch(url, { credentials: 'include', mode: 'cors' });
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.success && Array.isArray(data.companions)) {
+              return data.companions;
+            }
+          }
+        } catch (e) {
+          // cascade to next candidate endpoint
+        }
+      }
+      return [];
+    }
+
+    // Helper to post asset approval to backend PHP servers
+    async function postBackendMoveAsset(formData) {
+      const endpoints = getBackendEndpoints('move_asset.php');
+      let lastErr = null;
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url, {
+            method: 'POST',
+            body: formData,
+            credentials: 'include',
+            mode: 'cors'
+          });
+          if (res.ok) {
+            const data = await res.json();
+            return data;
+          } else {
+            const errData = await res.json().catch(() => null);
+            lastErr = new Error(errData?.error || `HTTP ${res.status}: ${res.statusText}`);
+          }
+        } catch (err) {
+          lastErr = err;
+        }
+      }
+      throw lastErr || new Error('Backend server move endpoint unreachable');
+    }
+
+    // Load folder quick links with fallback across local and backend server
+    const imageFolderUrls = [
+      'image_folders.json',
+      './image_folders.json',
+      `${BACKEND_BASE}/meshy_test_0/image_folders.json`,
+      'https://calmchessgames.com/meshy_test_0/image_folders.json'
+    ];
+    (async function loadImageFolders() {
+      for (const url of imageFolderUrls) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data) && data.length > 0) {
+              IMAGE_QUICK_FOLDERS = data.filter(f => f.toLowerCase().includes('images') || f.toLowerCase().includes('models'));
+              renderChecklist();
+              break;
+            }
+          }
+        } catch (e) {}
+      }
+    })();
+
+    function getCustomQuickLinks() {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY_CUSTOM_LINKS);
+        return stored ? JSON.parse(stored) : [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    function saveCustomQuickLinks(links) {
+      try {
+        localStorage.setItem(STORAGE_KEY_CUSTOM_LINKS, JSON.stringify(links));
+      } catch (e) {
+        console.warn('LocalStorage save failed:', e);
+      }
+    }
+
+    function addCustomQuickLink(rawPath) {
+      if (!rawPath || !rawPath.trim()) return false;
+      let clean = rawPath.trim().replace(/\\/g, '/');
+      if (!clean.startsWith('/')) clean = '/' + clean;
+      clean = clean.replace(/\/+/g, '/').replace(/\/$/, '');
+      if (!clean) clean = '/';
+
+      const customList = getCustomQuickLinks();
+      if (!customList.includes(clean) && !IMAGE_QUICK_FOLDERS.includes(clean)) {
+        customList.push(clean);
+        customList.sort();
+        saveCustomQuickLinks(customList);
+      }
+      selectedFolderPaths.add(clean);
+      renderChecklist();
+      updateDestPreview();
+      return clean;
+    }
+
+    // Currently loaded asset state
+    let currentLoadedAsset = {
+      file: null,
+      sourcePath: 'meshy_test_0/models/red_race_car.glb',
+      fileName: 'red_race_car.glb',
+      ext: 'glb',
+      sizeStr: 'Default Model'
+    };
+
+    function formatBytes(bytes) {
+      if (!bytes || bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function getExt(filename) {
+      const clean = (filename || '').split('?')[0].split('#')[0];
+      return clean.includes('.') ? clean.split('.').pop().toLowerCase() : 'glb';
+    }
+
+    function getFormatIcon(ext) {
+      switch (ext) {
+        case 'glb': return '🧊';
+        case 'gltf': return '📦';
+        case 'obj': return '🎨';
+        case 'fbx': return '🎬';
+        case 'stl': return '📐';
+        default: return '📁';
+      }
+    }
+
+    const loadedAssetIcon = document.getElementById('loaded-asset-icon');
+    const loadedAssetName = document.getElementById('loaded-asset-name');
+    const loadedAssetSource = document.getElementById('loaded-asset-source');
+    const loadedAssetExt = document.getElementById('loaded-asset-ext');
+    const panelDestPathInput = document.getElementById('panel-dest-path-input');
+    const panelDestPreviewList = document.getElementById('panel-dest-preview-list');
+    const panelSelectedBadge = document.getElementById('panel-selected-badge');
+    const previewCountBadge = document.getElementById('preview-count-badge');
+    const approveBtnLabel = document.getElementById('approve-btn-label');
+    const moveStatusMsg = document.getElementById('move-status-msg');
+
+    // Materials, Textures & Colors Inspection State & UI elements
+    let currentModelMaterials = [];
+    let currentModelPalette = [];
+    let currentCompanionFiles = [];
+
+    const matSummarySubtitle = document.getElementById('mat-summary-subtitle');
+    const matCountBadge = document.getElementById('mat-count-badge');
+    const modelColorPalette = document.getElementById('model-color-palette');
+    const modelMaterialsList = document.getElementById('model-materials-list');
+    const companionCountBadge = document.getElementById('companion-count-badge');
+    const companionFilesList = document.getElementById('companion-files-list');
+    const chkMoveMaterialsTextures = document.getElementById('chk-move-materials-textures');
+    const chkMoveColorsJson = document.getElementById('chk-move-colors-json');
+    const jsonModelBasename = document.getElementById('json-model-basename');
+
+    function renderMaterialsAndColorsUI(materials, palette) {
+      if (!modelColorPalette || !modelMaterialsList) return;
+
+      // Render Palette Swatches
+      modelColorPalette.innerHTML = '';
+      if (!palette || palette.length === 0) {
+        palette = ['#E52521', '#111827', '#E2E8F0'];
+      }
+      currentModelPalette = palette;
+
+      palette.forEach(col => {
+        const badge = document.createElement('div');
+        badge.className = 'color-swatch-badge';
+        badge.title = `Hex Color: ${col}`;
+        badge.innerHTML = `<span class="color-swatch-box" style="background:${col};"></span><span>${col}</span>`;
+        modelColorPalette.appendChild(badge);
+      });
+
+      // Render Materials List
+      modelMaterialsList.innerHTML = '';
+      if (!materials || materials.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.fontSize = '0.73rem';
+        empty.style.color = 'var(--text-muted)';
+        empty.style.padding = '0.3rem 0';
+        empty.textContent = 'Standard PBR Surface Material';
+        modelMaterialsList.appendChild(empty);
+      } else {
+        materials.forEach(mat => {
+          const item = document.createElement('div');
+          item.className = 'mat-item-card';
+
+          const texKeys = Object.keys(mat.textures || {});
+          const texCount = texKeys.length;
+          const texBadgeHtml = texCount > 0 
+            ? `<span class="mat-badge-tag has-tex" title="${texKeys.join(', ')}">🖼️ ${texCount} Tex</span>`
+            : `<span class="mat-badge-tag">Solid Color</span>`;
+
+          item.innerHTML = `
+            <div class="mat-item-left">
+              <span class="color-swatch-box" style="background:${mat.color};"></span>
+              <div style="min-width:0; overflow:hidden;">
+                <div class="mat-item-name">${mat.name}</div>
+                <div class="mat-item-meta">${mat.type}${mat.roughness !== null ? ` • R:${mat.roughness}` : ''}${mat.metalness !== null ? ` • M:${mat.metalness}` : ''}</div>
+              </div>
+            </div>
+            <div class="mat-item-badges">
+              ${texBadgeHtml}
+              <span class="mat-badge-tag" style="color:${mat.color}; font-family:monospace;">${mat.color}</span>
+            </div>
+          `;
+          modelMaterialsList.appendChild(item);
+        });
+      }
+
+      if (matCountBadge) {
+        matCountBadge.textContent = materials.length === 1 ? '1 Material' : `${materials.length} Materials`;
+      }
+    }
+
+    function renderCompanionFilesUI(companions, baseName) {
+      if (!companionFilesList) return;
+      companionFilesList.innerHTML = '';
+
+      if (jsonModelBasename) jsonModelBasename.textContent = baseName || 'model';
+
+      const allItems = [...(companions || [])];
+
+      allItems.push({
+        name: `${baseName || 'model'}_materials.json`,
+        type: 'materials_colors_json',
+        size: 0,
+        autoGen: true
+      });
+
+      allItems.forEach(file => {
+        const item = document.createElement('div');
+        item.className = 'companion-file-item';
+
+        let icon = '📦';
+        let typeLabel = 'File';
+        if (file.type === 'material') { icon = '📄'; typeLabel = 'MTL Material'; }
+        else if (file.type === 'texture') { icon = '🖼️'; typeLabel = 'Texture Map'; }
+        else if (file.type === 'buffer') { icon = '💾'; typeLabel = 'GLTF Buffer'; }
+        else if (file.type === 'materials_colors_json') { icon = '📊'; typeLabel = 'Colors & Properties JSON'; }
+
+        const sizeStr = file.autoGen ? 'Auto-Generated' : (file.size ? formatBytes(file.size) : 'Companion File');
+
+        item.innerHTML = `
+          <div class="companion-file-left">
+            <span>${icon}</span>
+            <span class="companion-file-name" title="${file.name}">${file.name}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.4rem;">
+            <span class="mat-badge-tag" style="font-size:0.6rem;">${typeLabel}</span>
+            <span class="companion-file-size">${sizeStr}</span>
+          </div>
+        `;
+        companionFilesList.appendChild(item);
+      });
+
+      if (companionCountBadge) {
+        companionCountBadge.textContent = `${allItems.length} Files to Move`;
+      }
+
+      if (matSummarySubtitle) {
+        const matCount = currentModelMaterials.length;
+        const palCount = currentModelPalette.length;
+        const compCount = companions.length;
+        matSummarySubtitle.textContent = `${matCount} Material(s), ${palCount} Color(s), ${compCount} Companion File(s)`;
+      }
+
+      updateDestPreview();
+    }
+
+    function analyzeModelMaterialsAndColors(object3D, displayName, sourcePathDesc) {
+      const baseName = (displayName || 'model').replace(/\.[^/.]+$/, "");
+      if (jsonModelBasename) jsonModelBasename.textContent = baseName;
+
+      const matMap = new Map();
+      const paletteSet = new Set();
+
+      if (object3D) {
+        object3D.traverse((child) => {
+          if (child.isMesh && child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach((m) => {
+              if (!m) return;
+              const matKey = m.name || m.uuid;
+              if (!matMap.has(matKey)) {
+                const hexColor = m.color ? ('#' + m.color.getHexString().toUpperCase()) : '#FFFFFF';
+                const emissiveHex = (m.emissive && m.emissive.getHex() !== 0) ? ('#' + m.emissive.getHexString().toUpperCase()) : null;
+                if (m.color) paletteSet.add(hexColor);
+                if (emissiveHex) paletteSet.add(emissiveHex);
+
+                const texObj = {};
+                if (m.map) {
+                  const texSrc = m.map.name || (m.map.image && m.map.image.src ? m.map.image.src.split('/').pop().split('?')[0] : 'texture_0_base_color.png');
+                  texObj.base_color = texSrc;
+                }
+                if (m.normalMap) {
+                  const texSrc = m.normalMap.name || (m.normalMap.image && m.normalMap.image.src ? m.normalMap.image.src.split('/').pop().split('?')[0] : 'texture_0_normal.png');
+                  texObj.normal = texSrc;
+                }
+                if (m.roughnessMap) {
+                  texObj.roughness = m.roughnessMap.name || 'texture_0_roughness.png';
+                }
+                if (m.metalnessMap) {
+                  texObj.metallic = m.metalnessMap.name || 'texture_0_metallic.png';
+                }
+                if (m.aoMap) {
+                  texObj.ambient_occlusion = m.aoMap.name || 'ao_map.png';
+                }
+
+                matMap.set(matKey, {
+                  name: m.name || ('Material_' + (matMap.size + 1)),
+                  type: m.type || 'MeshStandardMaterial',
+                  color: hexColor,
+                  emissive: emissiveHex,
+                  roughness: m.roughness !== undefined ? Number(m.roughness.toFixed(2)) : null,
+                  metalness: m.metalness !== undefined ? Number(m.metalness.toFixed(2)) : null,
+                  opacity: m.opacity !== undefined ? Number(m.opacity.toFixed(2)) : 1.0,
+                  wireframe: !!m.wireframe,
+                  textures: texObj
+                });
+              }
+            });
+          }
+        });
+      }
+
+      currentModelMaterials = Array.from(matMap.values());
+      const paletteList = Array.from(paletteSet);
+
+      renderMaterialsAndColorsUI(currentModelMaterials, paletteList);
+
+      currentCompanionFiles = [];
+
+      if (currentLoadedAsset && currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0) {
+        currentCompanionFiles = currentLoadedAsset.companionFiles.map(f => ({
+          name: f.name,
+          size: f.size,
+          type: getExt(f.name) === 'mtl' ? 'material' : 'texture'
+        }));
+        renderCompanionFilesUI(currentCompanionFiles, baseName);
+      } else if (sourcePathDesc && !sourcePathDesc.startsWith('blob:')) {
+        checkBackendCompanions(sourcePathDesc).then(companions => {
+          currentCompanionFiles = companions || [];
+          renderCompanionFilesUI(currentCompanionFiles, baseName);
+        }).catch(() => {
+          renderCompanionFilesUI([], baseName);
+        });
+      } else {
+        renderCompanionFilesUI([], baseName);
+      }
+    }
+
+    function updateLoadedAssetUI() {
+      if (!currentLoadedAsset) return;
+      loadedAssetIcon.textContent = getFormatIcon(currentLoadedAsset.ext);
+      loadedAssetName.textContent = currentLoadedAsset.fileName;
+      loadedAssetSource.textContent = `Source: ${currentLoadedAsset.sourcePath} (${currentLoadedAsset.sizeStr})`;
+      loadedAssetExt.textContent = currentLoadedAsset.ext.toUpperCase();
+      updateDestPreview();
+    }
+
+    function updateDestPreview() {
+      const fileName = currentLoadedAsset ? currentLoadedAsset.fileName : 'model.glb';
+      panelDestPreviewList.innerHTML = '';
+
+      if (selectedFolderPaths.size === 0) {
+        const item = document.createElement('div');
+        item.className = 'dest-preview-item';
+        item.style.color = '#f87171';
+        item.textContent = '⚠️ Check at least 1 image folder or type a destination above.';
+        panelDestPreviewList.appendChild(item);
+        return;
+      }
+
+      const paths = Array.from(selectedFolderPaths);
+      const compCount = (currentCompanionFiles ? currentCompanionFiles.length : 0) + (chkMoveColorsJson && chkMoveColorsJson.checked ? 1 : 0);
+      const compLabel = compCount > 0 ? ` (+${compCount} materials & textures)` : '';
+
+      paths.forEach(folder => {
+        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+        const targetPath = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
+
+        let mirrorBadge = '';
+        if (cleanFolder.startsWith('admin/temp_stage_0/')) {
+          const feSub = cleanFolder.substring('admin/temp_stage_0/'.length);
+          const feTarget = feSub ? `wormhole0/${feSub}/${fileName}` : `wormhole0/${fileName}`;
+          mirrorBadge = `<div style="font-size:0.68rem; color:#38bdf8; margin-top:2px; margin-left:14px;">⇄ Mirrors to Frontend: /${feTarget}</div>`;
+        } else if (cleanFolder.startsWith('wormhole0/')) {
+          const beSub = cleanFolder.substring('wormhole0/'.length);
+          const beTarget = beSub ? `admin/temp_stage_0/${beSub}/${fileName}` : `admin/temp_stage_0/${fileName}`;
+          mirrorBadge = `<div style="font-size:0.68rem; color:#a78bfa; margin-top:2px; margin-left:14px;">⇄ Mirrors to Staging: /${beTarget}</div>`;
+        } else if (cleanFolder.startsWith('meshy_test_0/')) {
+          mirrorBadge = `<div style="font-size:0.68rem; color:#34d399; margin-top:2px; margin-left:14px;">⇄ Mirrored across Backend & Frontend: /${targetPath}</div>`;
+        }
+
+        const item = document.createElement('div');
+        item.className = 'dest-preview-item';
+        item.innerHTML = `<div><span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span> <span style="font-size:0.65rem; color:#6ee7b7;">${compLabel}</span></div>${mirrorBadge}`;
+        panelDestPreviewList.appendChild(item);
+      });
+
+      // Update the typed input with the first selected path
+      const firstFolder = paths[0].replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+      panelDestPathInput.value = firstFolder ? `${firstFolder}/${fileName}` : fileName;
+
+      const count = paths.length;
+      panelSelectedBadge.textContent = count === 1 ? '1 Folder Selected' : `${count} Folders Selected`;
+      previewCountBadge.textContent = count === 1 ? '1 Target' : `${count} Targets`;
+      approveBtnLabel.textContent = count <= 1 ? 'Approve & Move Asset, Materials & Textures' : `Approve & Move to ${count} Folders (with Materials & Textures)`;
+    }
+
+    if (chkMoveMaterialsTextures) {
+      chkMoveMaterialsTextures.addEventListener('change', updateDestPreview);
+    }
+    if (chkMoveColorsJson) {
+      chkMoveColorsJson.addEventListener('change', updateDestPreview);
+    }
+
+    panelDestPathInput.addEventListener('input', () => {
+      const typed = panelDestPathInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+      if (typed) {
+        const item = document.createElement('div');
+        item.className = 'dest-preview-item';
+        item.innerHTML = `<span class="dest-preview-bullet" style="color:#ff8591;">★</span> <span>https://calmchessgames.com/${typed} (Custom Typed)</span>`;
+        if (panelDestPreviewList.firstChild) {
+          panelDestPreviewList.insertBefore(item, panelDestPreviewList.firstChild);
+        } else {
+          panelDestPreviewList.appendChild(item);
+        }
+      }
+    });
+
+    // Render Checklist into panel container
+    const panelChecklist = document.getElementById('panel-quick-links-checklist');
+    const panelFolderSearch = document.getElementById('panel-folder-search');
+    const panelClearFolderSearch = document.getElementById('panel-clear-folder-search');
+    const panelBtnSelectAll = document.getElementById('panel-btn-select-all');
+    const panelBtnClearAll = document.getElementById('panel-btn-clear-all');
+    const panelAddQuicklinkInput = document.getElementById('panel-add-quicklink-input');
+    const panelBtnAddQuicklink = document.getElementById('panel-btn-add-quicklink');
+    const panelAddFeedback = document.getElementById('panel-add-feedback');
+
+    function renderChecklist(filterText = '') {
+      if (!panelChecklist) return;
+      panelChecklist.innerHTML = '';
+      const customList = getCustomQuickLinks();
+      const query = (filterText || '').trim().toLowerCase();
+
+      function matches(p) {
+        if (!query) return true;
+        return p.toLowerCase().includes(query);
+      }
+
+      const groups = [
+        {
+          label: '🌌 Wormhole Scene Images',
+          items: IMAGE_QUICK_FOLDERS.filter(f => 
+            f.startsWith('/wormhole0/') && 
+            !f.includes('/desktop/') && 
+            !f.includes('/mobile/') && 
+            !f.includes('/vr/') && 
+            !f.includes('/arcore/') && 
+            matches(f)
+          )
+        },
+        {
+          label: '🖥️ Wormhole Desktop Images',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/desktop/') && matches(f))
+        },
+        {
+          label: '📱 Wormhole Mobile Images',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/mobile/') && matches(f))
+        },
+        {
+          label: '🥽 Wormhole VR Images',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/vr/') && matches(f))
+        },
+        {
+          label: '📲 Wormhole ARCore Images',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/wormhole0/arcore/') && matches(f))
+        },
+        {
+          label: '📂 Admin Staging Image Folders',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/admin/') && matches(f))
+        },
+        {
+          label: '🚀 Meshy Staging Folders',
+          items: IMAGE_QUICK_FOLDERS.filter(f => f.startsWith('/meshy_test_0/') && matches(f))
+        },
+        {
+          label: '📌 Custom Quick Links (Added by You)',
+          items: customList.filter(matches),
+          isCustom: true
+        }
+      ];
+
+      let countRendered = 0;
+
+      groups.forEach(g => {
+        if (g.items.length === 0) return;
+        countRendered += g.items.length;
+
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'checklist-group';
+
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'checklist-group-header';
+        
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = `${g.label} (${g.items.length})`;
+        headerDiv.appendChild(titleSpan);
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.type = 'button';
+        toggleBtn.className = 'checklist-group-toggle';
+        toggleBtn.textContent = 'Toggle Group';
+        toggleBtn.addEventListener('click', (ev) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          const allInGroupChecked = g.items.every(p => selectedFolderPaths.has(p));
+          g.items.forEach(p => {
+            if (allInGroupChecked) {
+              selectedFolderPaths.delete(p);
+            } else {
+              selectedFolderPaths.add(p);
+            }
+          });
+          renderChecklist(filterText);
+          updateDestPreview();
+        });
+        headerDiv.appendChild(toggleBtn);
+        groupDiv.appendChild(headerDiv);
+
+        g.items.forEach(path => {
+          const isChecked = selectedFolderPaths.has(path);
+          const itemLabel = document.createElement('label');
+          itemLabel.className = 'checklist-item' + (isChecked ? ' checked' : '');
+
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.value = path;
+          cb.checked = isChecked;
+
+          cb.addEventListener('change', () => {
+            if (cb.checked) {
+              selectedFolderPaths.add(path);
+            } else {
+              selectedFolderPaths.delete(path);
+            }
+            renderChecklist(filterText);
+            updateDestPreview();
+          });
+
+          const pathSpan = document.createElement('span');
+          pathSpan.className = 'checklist-path';
+          pathSpan.textContent = path;
+
+          itemLabel.appendChild(cb);
+          itemLabel.appendChild(pathSpan);
+
+          if (path === DEFAULT_DEST_DIR) {
+            const tag = document.createElement('span');
+            tag.className = 'checklist-tag';
+            tag.textContent = 'Default';
+            itemLabel.appendChild(tag);
+          } else if (g.isCustom) {
+            const tag = document.createElement('span');
+            tag.className = 'checklist-tag';
+            tag.style.background = 'rgba(56, 189, 248, 0.2)';
+            tag.style.color = '#7dd3fc';
+            tag.textContent = 'Custom';
+            itemLabel.appendChild(tag);
+          }
+
+          groupDiv.appendChild(itemLabel);
+        });
+
+        panelChecklist.appendChild(groupDiv);
+      });
+
+      if (countRendered === 0) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.style.padding = '0.8rem';
+        emptyDiv.style.color = 'var(--text-muted)';
+        emptyDiv.style.textAlign = 'center';
+        emptyDiv.textContent = `No image folders matching "${filterText}"`;
+        panelChecklist.appendChild(emptyDiv);
+      }
+    }
+
+    renderChecklist();
+    updateLoadedAssetUI();
+
+    if (panelFolderSearch) {
+      panelFolderSearch.addEventListener('input', (e) => {
+        renderChecklist(e.target.value);
+      });
+    }
+
+    if (panelClearFolderSearch) {
+      panelClearFolderSearch.addEventListener('click', () => {
+        panelFolderSearch.value = '';
+        renderChecklist('');
+      });
+    }
+
+    if (panelBtnSelectAll) {
+      panelBtnSelectAll.addEventListener('click', () => {
+        const visibleCbs = panelChecklist.querySelectorAll('input[type="checkbox"]');
+        visibleCbs.forEach(cb => selectedFolderPaths.add(cb.value));
+        renderChecklist(panelFolderSearch ? panelFolderSearch.value : '');
+        updateDestPreview();
+      });
+    }
+
+    if (panelBtnClearAll) {
+      panelBtnClearAll.addEventListener('click', () => {
+        selectedFolderPaths.clear();
+        renderChecklist(panelFolderSearch ? panelFolderSearch.value : '');
+        updateDestPreview();
+      });
+    }
+
+    if (panelBtnAddQuicklink) {
+      panelBtnAddQuicklink.addEventListener('click', () => {
+        const val = panelAddQuicklinkInput.value.trim();
+        if (!val) return;
+        const added = addCustomQuickLink(val);
+        if (added) {
+          panelAddQuicklinkInput.value = '';
+          panelAddFeedback.textContent = `✓ Added "${added}" to checklist & checked!`;
+          panelAddFeedback.style.color = '#34d399';
+          setTimeout(() => { panelAddFeedback.textContent = ''; }, 3500);
+        }
+      });
+    }
+
+    // =========================================================================
+    // APPROVE & MOVE ASSET ACTION
+    // =========================================================================
+    const btnApproveMove = document.getElementById('btn-approve-move');
+    const btnCancelMove = document.getElementById('btn-cancel-move');
+
+    function setMoveMessage(msg, type = '') {
+      moveStatusMsg.textContent = msg;
+      moveStatusMsg.className = 'feedback-msg' + (type ? ` ${type}` : '');
+    }
+
+    async function approveAndMoveAsset() {
+      if (!currentLoadedAsset) {
+        setMoveMessage('Please load a 3D model first before approving move.', 'error');
+        return;
+      }
+
+      const fileName = currentLoadedAsset.fileName || 'model.glb';
+      const baseName = fileName.replace(/\.[^/.]+$/, "");
+      const destPaths = [];
+
+      // 1. Gather checked quick links
+      selectedFolderPaths.forEach(folder => {
+        const cleanFolder = folder.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+        const target = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
+        if (!destPaths.includes(target)) destPaths.push(target);
+      });
+
+      // 2. Gather typed path if present
+      const typed = panelDestPathInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
+      if (typed && !destPaths.includes(typed)) {
+        destPaths.unshift(typed);
+      }
+
+      if (destPaths.length === 0) {
+        setMoveMessage('Please check at least 1 image folder or type a destination path.', 'error');
+        return;
+      }
+
+      setMoveMessage(`Moving asset, companion materials, textures & colors to ${destPaths.length} destination path(s)...`, 'loading');
+
+      const formData = new FormData();
+      formData.append('destination_paths', JSON.stringify(destPaths));
+
+      if (currentLoadedAsset.file) {
+        formData.append('model_file', currentLoadedAsset.file);
+      } else {
+        formData.append('source_path', currentLoadedAsset.sourcePath);
+      }
+
+      // Material, Texture & Color options
+      const moveMaterials = chkMoveMaterialsTextures ? chkMoveMaterialsTextures.checked : true;
+      const moveColors = chkMoveColorsJson ? chkMoveColorsJson.checked : true;
+      formData.append('move_materials_textures', moveMaterials ? '1' : '0');
+      formData.append('move_colors_json', moveColors ? '1' : '0');
+
+      // Send materials and colors metadata JSON
+      const materialsPayload = {
+        model: fileName,
+        base_name: baseName,
+        exported_at: new Date().toISOString(),
+        color_palette: currentModelPalette || [],
+        materials: currentModelMaterials || [],
+        companion_files: (currentCompanionFiles || []).map(c => c.name || c)
+      };
+      formData.append('materials_json', JSON.stringify(materialsPayload));
+
+      // Append local companion files if any
+      if (currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0) {
+        currentLoadedAsset.companionFiles.forEach(file => {
+          formData.append('companion_files[]', file);
+        });
+      }
+
+      try {
+        const data = await postBackendMoveAsset(formData);
+        if (data && data.success) {
+          const compCount = data.companion_count || (data.companion_files_moved ? data.companion_files_moved.length : 0);
+          const compText = compCount > 0 ? ` + ${compCount} companion material(s)/texture(s)` : '';
+          const folderText = data.moved_count === 1 ? '1 destination folder' : `${data.moved_count} destination folders`;
+          const feGitText = data.frontend_git_synced ? ' (synced to frontend mirror)' : '';
+          let pushSummary = '';
+          if (data.git_commits) {
+            const pushedRepos = [];
+            for (const [repo, info] of Object.entries(data.git_commits)) {
+              if (info && info.pushed) pushedRepos.push(repo);
+            }
+            if (pushedRepos.length > 0) {
+              pushSummary = ` 🚀 Git Pushed: ${pushedRepos.join(', ')}`;
+            }
+          }
+          setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText} on backend server${feGitText}!${pushSummary}`, 'success');
+        } else {
+          setMoveMessage(`Error: ${data?.error || 'Failed to move asset'}`, 'error');
+        }
+      } catch (err) {
+        setMoveMessage(`Error moving asset: ${err.message || 'Server error'}`, 'error');
+      }
+    }
+
+    btnApproveMove.addEventListener('click', approveAndMoveAsset);
+
+    btnCancelMove.addEventListener('click', () => {
+      selectedFolderPaths.clear();
+      selectedFolderPaths.add(DEFAULT_DEST_DIR);
+      renderChecklist();
+      updateDestPreview();
+      setMoveMessage('Move selection reset to default.', '');
+    });
+
+    // =========================================================================
+    // THREE.JS SCENE SETUP & LIGHTING
+    // =========================================================================
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0e1118);
+    scene.fog = new THREE.FogExp2(0x0e1118, 0.08);
+
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(2.8, 1.4, 3.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.xr.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    // Orbit Controls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, 0.5, 0);
+    controls.maxPolarAngle = Math.PI / 2 - 0.01;
+    controls.minDistance = 1.2;
+    controls.maxDistance = 15;
+
+    // Lighting (Studio PBR)
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x223344, 0.7);
+    scene.add(hemiLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    keyLight.position.set(4, 5, 3);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.bias = -0.0001;
+    keyLight.shadow.camera.near = 0.5;
+    keyLight.shadow.camera.far = 15;
+    keyLight.shadow.camera.left = -3;
+    keyLight.shadow.camera.right = 3;
+    keyLight.shadow.camera.top = 3;
+    keyLight.shadow.camera.bottom = -3;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0x7799bb, 1.2);
+    fillLight.position.set(-4, 3, -2);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xff3344, 1.5);
+    rimLight.position.set(0, 2, -4);
+    scene.add(rimLight);
+
+    // Ground Environment with Grid and Shadow Receiver
+    const floorGeo = new THREE.PlaneGeometry(30, 30);
+    const floorMat = new THREE.ShadowMaterial({ opacity: 0.45 });
+    const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+    floorMesh.rotation.x = -Math.PI / 2;
+    floorMesh.receiveShadow = true;
+    scene.add(floorMesh);
+
+    const gridHelper = new THREE.GridHelper(20, 40, 0xff2a3b, 0x232938);
+    gridHelper.position.y = 0.001;
+    scene.add(gridHelper);
+
+    const glowGeo = new THREE.RingGeometry(0.01, 3.5, 64);
+    const glowMat = new THREE.MeshBasicMaterial({ color: 0x1f2430, side: THREE.DoubleSide });
+    const glowMesh = new THREE.Mesh(glowGeo, glowMat);
+    glowMesh.rotation.x = -Math.PI / 2;
+    glowMesh.position.y = -0.001;
+    scene.add(glowMesh);
+
+    // Model Root Group
+    const carRoot = new THREE.Group();
+    scene.add(carRoot);
+
+    // WebXR Controllers Setup
+    const controllerFactory = new XRControllerModelFactory();
+    const controllers = [];
+    for (let i = 0; i < 2; i++) {
+      const controller = renderer.xr.getController(i);
+      scene.add(controller);
+
+      const controllerGrip = renderer.xr.getControllerGrip(i);
+      controllerGrip.add(controllerFactory.createControllerModel(controllerGrip));
+      scene.add(controllerGrip);
+
+      const rayGeo = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(0, 0, -2)
+      ]);
+      const rayMat = new THREE.LineBasicMaterial({ color: 0xff3344, transparent: true, opacity: 0.7 });
+      const rayLine = new THREE.Line(rayGeo, rayMat);
+      controller.add(rayLine);
+
+      controllers.push(controller);
+    }
+
+    // Loaders
+    const gltfLoader = new GLTFLoader();
+    const objLoader = new OBJLoader();
+    const mtlLoader = new MTLLoader();
+    const fbxLoader = new FBXLoader();
+    const stlLoader = new STLLoader();
+
+    let carModel = null;
+    let autoRotate = false;
+    let isWireframe = false;
+
+    // UI Elements
+    const loaderElem = document.getElementById('loader');
+    const loaderTitle = document.getElementById('loader-title');
+    const loadProgress = document.getElementById('load-progress');
+    const statusBadge = document.getElementById('model-status-badge');
+    const modelMsg = document.getElementById('model-load-msg');
+    const brandTitle = document.getElementById('brand-title');
+
+    const modelFileInput = document.getElementById('model-file-input');
+    const materialFileInput = document.getElementById('material-file-input');
+    const btnLoadModel = document.getElementById('btn-load-model');
+    const btnQuickCar = document.getElementById('btn-quick-car');
+    const localFilePicker = document.getElementById('local-file-picker');
+
+    // Slide-out Panel Logic
+    let activeTab = null;
+    const slidePanel = document.getElementById('slide-panel');
+    const panelBackdrop = document.getElementById('panel-backdrop');
+    const dockTabs = document.querySelectorAll('.dock-tab');
+    const tabContents = document.querySelectorAll('.tab-content');
+    const sheetHeaderTitle = document.getElementById('sheet-header-title');
+    const sheetHeaderIcon = document.getElementById('sheet-header-icon');
+    const btnCloseSheet = document.getElementById('btn-close-sheet');
+    const sheetHandleBar = document.getElementById('sheet-handle-bar');
+
+    const tabMeta = {
+      model: { title: 'Select 3D Model', icon: '📁' },
+      specs: { title: 'Model & Scene Specs', icon: '📊' },
+      controls: { title: 'Viewport & WebXR Controls', icon: '🎮' }
+    };
+
+    function openTab(tabName) {
+      if (activeTab === tabName && slidePanel.classList.contains('open')) {
+        closePanel();
+        return;
+      }
+
+      activeTab = tabName;
+      dockTabs.forEach(t => {
+        t.classList.toggle('active', t.getAttribute('data-tab') === tabName);
+      });
+
+      tabContents.forEach(c => {
+        c.classList.toggle('active', c.id === `tab-content-${tabName}`);
+      });
+
+      if (tabMeta[tabName]) {
+        sheetHeaderTitle.textContent = tabMeta[tabName].title;
+        sheetHeaderIcon.textContent = tabMeta[tabName].icon;
+      }
+
+      slidePanel.classList.add('open');
+      panelBackdrop.classList.add('open');
+    }
+
+    function closePanel() {
+      slidePanel.classList.remove('open');
+      panelBackdrop.classList.remove('open');
+      activeTab = null;
+      dockTabs.forEach(t => t.classList.remove('active'));
+    }
+
+    dockTabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tab = btn.getAttribute('data-tab');
+        openTab(tab);
+      });
+    });
+
+    btnCloseSheet.addEventListener('click', closePanel);
+    panelBackdrop.addEventListener('click', closePanel);
+
+    // Touch drag-down to dismiss
+    let touchStartY = 0;
+    let touchDiff = 0;
+    sheetHandleBar.addEventListener('touchstart', (e) => {
+      touchStartY = e.touches[0].clientY;
+      touchDiff = 0;
+    }, { passive: true });
+
+    sheetHandleBar.addEventListener('touchmove', (e) => {
+      const currentY = e.touches[0].clientY;
+      touchDiff = currentY - touchStartY;
+      if (touchDiff > 0) {
+        slidePanel.style.transform = `translate(-50%, ${touchDiff}px)`;
+      }
+    }, { passive: true });
+
+    sheetHandleBar.addEventListener('touchend', () => {
+      slidePanel.style.transform = '';
+      if (touchDiff > 70) {
+        closePanel();
+      }
+    });
+
+    function setStatus(text, state) {
+      statusBadge.textContent = text;
+      statusBadge.className = 'card-badge' + (state ? ` ${state}` : '');
+    }
+
+    function setMessage(text, type = '') {
+      modelMsg.textContent = text;
+      modelMsg.className = 'model-msg' + (type ? ` ${type}` : '');
+    }
+
+    function showLoader(title) {
+      loaderTitle.textContent = title || 'Loading 3D Model...';
+      loadProgress.textContent = '0%';
+      loaderElem.classList.add('active');
+    }
+
+    function hideLoader() {
+      loaderElem.classList.remove('active');
+    }
+
+    function onProgress(xhr) {
+      if (xhr.lengthComputable && xhr.total > 0) {
+        const percent = Math.round((xhr.loaded / xhr.total) * 100);
+        loadProgress.textContent = `${percent}%`;
+      }
+    }
+
+    function disposeHierarchy(node) {
+      if (!node) return;
+      node.traverse((child) => {
+        if (child.isMesh) {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(m => {
+              for (const key in m) {
+                if (m[key] && m[key].isTexture) {
+                  m[key].dispose();
+                }
+              }
+              m.dispose();
+            });
+          }
+        }
+      });
+    }
+
+    // Resolves model URL from meshy_test_0 root directory or meshy_test_0/models
+    function resolveModelUrl(pathStr) {
+      if (!pathStr) return '';
+      if (
+        pathStr.startsWith('http://') ||
+        pathStr.startsWith('https://') ||
+        pathStr.startsWith('blob:') ||
+        pathStr.startsWith('data:') ||
+        pathStr.startsWith('/') ||
+        pathStr.startsWith('./') ||
+        pathStr.startsWith('../')
+      ) {
+        return pathStr;
+      }
+      if (pathStr.startsWith('models/') || pathStr.startsWith('meshy_test_0/')) {
+        return pathStr;
+      }
+      // Accessible from models/ or meshy_test_0 root
+      return 'models/' + pathStr;
+    }
+
+    // =========================================================================
+    // CORE MODEL LOADING (Directly Loads from meshy_test_0 or models/ Browse)
+    // =========================================================================
+    async function loadModel(modelInputVal, materialInputVal = '', customName = '', sourcePathDesc = '') {
+      const rawUrl = resolveModelUrl(modelInputVal);
+      if (!rawUrl) {
+        setStatus('Empty Input', 'error');
+        setMessage('Please enter a model file name or path.', 'error');
+        return;
+      }
+
+      const cleanExt = (customName || rawUrl).split('?')[0].split('#')[0];
+      const ext = cleanExt.includes('.') ? cleanExt.split('.').pop().toLowerCase() : 'glb';
+      const displayName = customName || rawUrl.split('/').pop();
+
+      setStatus('Loading...', 'loading');
+      setMessage(`Loading ${displayName}...`);
+      showLoader(`Loading ${displayName}...`);
+
+      try {
+        let object3D = null;
+
+        if (ext === 'glb' || ext === 'gltf') {
+          const gltf = await new Promise((resolve, reject) => {
+            gltfLoader.load(rawUrl, resolve, onProgress, reject);
+          });
+          object3D = gltf.scene;
+        } else if (ext === 'obj') {
+          const resolvedMtl = resolveModelUrl(materialInputVal);
+          if (resolvedMtl) {
+            try {
+              const materials = await new Promise((resolve, reject) => {
+                mtlLoader.load(resolvedMtl, resolve, undefined, reject);
+              });
+              materials.preload();
+              objLoader.setMaterials(materials);
+            } catch (mtlErr) {
+              console.warn('Could not load MTL file, loading OBJ with default material:', mtlErr);
+              objLoader.setMaterials(null);
+            }
+          } else {
+            objLoader.setMaterials(null);
+          }
+          object3D = await new Promise((resolve, reject) => {
+            objLoader.load(rawUrl, resolve, onProgress, reject);
+          });
+        } else if (ext === 'fbx') {
+          object3D = await new Promise((resolve, reject) => {
+            fbxLoader.load(rawUrl, resolve, onProgress, reject);
+          });
+        } else if (ext === 'stl') {
+          const geom = await new Promise((resolve, reject) => {
+            stlLoader.load(rawUrl, resolve, onProgress, reject);
+          });
+          const mat = new THREE.MeshStandardMaterial({
+            color: 0xff2a3b,
+            metalness: 0.65,
+            roughness: 0.35
+          });
+          object3D = new THREE.Mesh(geom, mat);
+        } else {
+          const gltf = await new Promise((resolve, reject) => {
+            gltfLoader.load(rawUrl, resolve, onProgress, reject);
+          });
+          object3D = gltf.scene;
+        }
+
+        if (!object3D) {
+          throw new Error('Loader returned empty object.');
+        }
+
+        if (carModel) {
+          carRoot.remove(carModel);
+          disposeHierarchy(carModel);
+          carModel = null;
+        }
+
+        carModel = object3D;
+
+        // Auto-scale to physical WebXR scale
+        const bbox = new THREE.Box3().setFromObject(carModel);
+        const center = bbox.getCenter(new THREE.Vector3());
+        const size = bbox.getSize(new THREE.Vector3());
+
+        const maxHoriz = Math.max(size.x, size.z);
+        const maxOverall = Math.max(maxHoriz, size.y);
+        let scaleFactor = 1;
+        if (maxOverall > 0.0001) {
+          const targetLength = 3.8;
+          scaleFactor = targetLength / (maxHoriz > 0.1 ? maxHoriz : maxOverall);
+        }
+        carModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
+
+        bbox.setFromObject(carModel);
+        const scaledBottomY = bbox.min.y;
+
+        carModel.position.x = -center.x * scaleFactor;
+        carModel.position.y = -scaledBottomY;
+        carModel.position.z = -center.z * scaleFactor;
+
+        let totalTriangles = 0;
+        let totalVertices = 0;
+
+        carModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(m => {
+                m.envMapIntensity = 1.2;
+                if (isWireframe) m.wireframe = true;
+                m.needsUpdate = true;
+              });
+            }
+            if (child.geometry) {
+              const geom = child.geometry;
+              if (geom.index) {
+                totalTriangles += geom.index.count / 3;
+              } else if (geom.attributes && geom.attributes.position) {
+                totalTriangles += geom.attributes.position.count / 3;
+              }
+              if (geom.attributes && geom.attributes.position) {
+                totalVertices += geom.attributes.position.count;
+              }
+            }
+          }
+        });
+
+        carRoot.add(carModel);
+
+        const finalBbox = new THREE.Box3().setFromObject(carModel);
+        const finalSize = finalBbox.getSize(new THREE.Vector3());
+
+        document.getElementById('format-spec').textContent = ext.toUpperCase();
+        document.getElementById('poly-count').textContent = Math.round(totalTriangles).toLocaleString();
+        document.getElementById('vert-count').textContent = Math.round(totalVertices).toLocaleString();
+        document.getElementById('spec-length').textContent = `~${finalSize.z.toFixed(2)} m`;
+        document.getElementById('spec-width').textContent = `~${finalSize.x.toFixed(2)} m`;
+        document.getElementById('spec-height').textContent = `~${finalSize.y.toFixed(2)} m`;
+        brandTitle.textContent = `🏎️ ${displayName}`;
+
+        setStatus('Ready', 'ready');
+        setMessage(`✓ Loaded: ${displayName}. Choose path/quick links and click Approve to move asset, materials & textures.`, 'success');
+        hideLoader();
+
+        // Inspect and display materials, textures, and color swatches
+        analyzeModelMaterialsAndColors(carModel, displayName, sourcePathDesc);
+      } catch (err) {
+        console.error('Failed to load model:', err);
+        setStatus('Error', 'error');
+        setMessage(`Load error: ${err.message || 'Check file path'}`, 'error');
+        hideLoader();
+      }
+    }
+
+    // =========================================================================
+    // DIRECT ASSET LOADING TRIGGERS (Root Directory or meshy_test_0/models Browse)
+    // =========================================================================
+
+    // 1. Browse Button (Browse from meshy_test_0/models or device, supporting materials & textures)
+    localFilePicker.addEventListener('change', (e) => {
+      const files = e.target.files ? Array.from(e.target.files) : [];
+      if (files.length === 0) return;
+
+      const modelExts = ['glb', 'gltf', 'obj', 'fbx', 'stl', 'usdz', 'dae'];
+      let mainFile = files.find(f => modelExts.includes(getExt(f.name)));
+      if (!mainFile) mainFile = files[0];
+
+      const companionFiles = files.filter(f => f !== mainFile);
+      const ext = getExt(mainFile.name);
+      const blobUrl = URL.createObjectURL(mainFile);
+
+      let mtlVal = materialFileInput.value.trim();
+      const mtlFile = companionFiles.find(f => getExt(f.name) === 'mtl');
+      if (mtlFile && ext === 'obj') {
+        mtlVal = URL.createObjectURL(mtlFile);
+      }
+
+      modelFileInput.value = mainFile.name;
+
+      currentLoadedAsset = {
+        file: mainFile,
+        companionFiles: companionFiles,
+        sourcePath: 'meshy_test_0/models/' + mainFile.name,
+        fileName: mainFile.name,
+        ext: ext,
+        sizeStr: formatBytes(mainFile.size),
+        blobUrl: blobUrl
+      };
+
+      updateLoadedAssetUI();
+
+      // The model JUST GETS LOADED directly into the viewer!
+      loadModel(blobUrl, mtlVal, mainFile.name, 'meshy_test_0/models/' + mainFile.name);
+    });
+
+    // 2. Load Model Button / Enter Key (From meshy_test_0 root or models/)
+    function triggerDirectLoad() {
+      const modelVal = modelFileInput.value.trim();
+      const matVal = materialFileInput.value.trim();
+      if (!modelVal) {
+        setStatus('Empty Input', 'error');
+        setMessage('Please enter a model file name or path.', 'error');
+        return;
+      }
+      const fileName = modelVal.split('/').pop() || 'model.glb';
+      const ext = getExt(fileName);
+
+      currentLoadedAsset = {
+        file: null,
+        sourcePath: modelVal,
+        fileName: fileName,
+        ext: ext,
+        sizeStr: 'Server Asset'
+      };
+
+      updateLoadedAssetUI();
+
+      // The model JUST GETS LOADED directly into the viewer!
+      loadModel(modelVal, matVal, fileName, modelVal);
+    }
+
+    btnLoadModel.addEventListener('click', triggerDirectLoad);
+
+    modelFileInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') triggerDirectLoad();
+    });
+
+    materialFileInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') triggerDirectLoad();
+    });
+
+    // 3. Quick Default Car Button
+    btnQuickCar.addEventListener('click', () => {
+      modelFileInput.value = 'models/red_race_car.glb';
+      materialFileInput.value = '';
+
+      currentLoadedAsset = {
+        file: null,
+        sourcePath: 'meshy_test_0/models/red_race_car.glb',
+        fileName: 'red_race_car.glb',
+        ext: 'glb',
+        sizeStr: 'Default Model'
+      };
+
+      updateLoadedAssetUI();
+      loadModel('models/red_race_car.glb', '', 'red_race_car.glb', 'meshy_test_0/models/red_race_car.glb');
+    });
+
+    // 4. Drag & Drop Direct Load
+    const dropOverlay = document.getElementById('drop-overlay');
+    let dragCounter = 0;
+
+    window.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      dragCounter++;
+      dropOverlay.classList.add('active');
+    });
+
+    window.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dragCounter--;
+      if (dragCounter <= 0) {
+        dropOverlay.classList.remove('active');
+        dragCounter = 0;
+      }
+    });
+
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dragCounter = 0;
+      dropOverlay.classList.remove('active');
+
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length > 0) {
+        const files = Array.from(dt.files);
+        const modelExts = ['glb', 'gltf', 'obj', 'fbx', 'stl', 'usdz', 'dae'];
+        let mainFile = files.find(f => modelExts.includes(getExt(f.name)));
+        if (!mainFile) mainFile = files[0];
+
+        const companionFiles = files.filter(f => f !== mainFile);
+        const ext = getExt(mainFile.name);
+        const blobUrl = URL.createObjectURL(mainFile);
+
+        let mtlVal = materialFileInput.value.trim();
+        const mtlFile = companionFiles.find(f => getExt(f.name) === 'mtl');
+        if (mtlFile && ext === 'obj') {
+          mtlVal = URL.createObjectURL(mtlFile);
+        }
+
+        modelFileInput.value = mainFile.name;
+
+        currentLoadedAsset = {
+          file: mainFile,
+          companionFiles: companionFiles,
+          sourcePath: 'meshy_test_0/models/' + mainFile.name,
+          fileName: mainFile.name,
+          ext: ext,
+          sizeStr: formatBytes(mainFile.size),
+          blobUrl: blobUrl
+        };
+
+        updateLoadedAssetUI();
+        loadModel(blobUrl, mtlVal, mainFile.name, 'meshy_test_0/models/' + mainFile.name);
+      }
+    });
+
+    // View Controls
+    const btnAutoRotate = document.getElementById('btn-auto-rotate');
+    btnAutoRotate.addEventListener('click', () => {
+      autoRotate = !autoRotate;
+      btnAutoRotate.style.background = autoRotate ? 'var(--accent)' : 'rgba(255,255,255,0.08)';
+    });
+
+    const btnWireframe = document.getElementById('btn-wireframe');
+    btnWireframe.addEventListener('click', () => {
+      isWireframe = !isWireframe;
+      if (carModel) {
+        carModel.traverse((child) => {
+          if (child.isMesh && child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(m => {
+              m.wireframe = isWireframe;
+            });
+          }
+        });
+      }
+      btnWireframe.style.background = isWireframe ? 'var(--accent)' : 'rgba(255,255,255,0.08)';
+    });
+
+    const btnResetCam = document.getElementById('btn-reset-cam');
+    btnResetCam.addEventListener('click', () => {
+      camera.position.set(2.8, 1.4, 3.2);
+      controls.target.set(0, 0.5, 0);
+      controls.update();
+    });
+
+    // WebXR Hardware & Session Management
+    const btnVR = document.getElementById('btn-vr');
+    const btnAR = document.getElementById('btn-ar');
+    const xrStatusTag = document.getElementById('xr-support-status');
+    const xrStatusText = document.getElementById('xr-status-text');
+
+    let currentXRSession = null;
+
+    if ('xr' in navigator) {
+      navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+        if (supported) {
+          btnVR.disabled = false;
+          xrStatusTag.classList.add('active');
+          xrStatusText.textContent = 'VR Headset Detected / Supported';
+        }
+      });
+
+      navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
+        if (supported) {
+          btnAR.disabled = false;
+          xrStatusTag.classList.add('active');
+          xrStatusText.textContent = 'WebXR AR / VR Supported';
+        }
+      });
+
+      navigator.xr.isSessionSupported('immersive-vr').then(vr => {
+        navigator.xr.isSessionSupported('immersive-ar').then(ar => {
+          if (!vr && !ar) {
+            xrStatusText.textContent = 'Desktop / Mobile 3D';
+          }
+        });
+      });
+    } else {
+      xrStatusText.textContent = 'WebXR Not Available (Browser)';
+    }
+
+    async function toggleXRSession(mode) {
+      if (currentXRSession) {
+        await currentXRSession.end();
+        return;
+      }
+
+      try {
+        const sessionInit = { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] };
+        const session = await navigator.xr.requestSession(mode, sessionInit);
+        renderer.xr.setSession(session);
+        currentXRSession = session;
+
+        closePanel();
+
+        if (mode === 'immersive-vr') {
+          document.getElementById('vr-btn-label').textContent = 'Exit VR';
+          scene.background = new THREE.Color(0x0e1118);
+          gridHelper.visible = true;
+          glowMesh.visible = true;
+        } else {
+          document.getElementById('ar-btn-label').textContent = 'Exit AR';
+          scene.background = null;
+          gridHelper.visible = false;
+          glowMesh.visible = false;
+        }
+
+        session.addEventListener('end', () => {
+          currentXRSession = null;
+          document.getElementById('vr-btn-label').textContent = 'Enter VR';
+          document.getElementById('ar-btn-label').textContent = 'Enter AR';
+          scene.background = new THREE.Color(0x0e1118);
+          gridHelper.visible = true;
+          glowMesh.visible = true;
+        });
+      } catch (err) {
+        console.error('Error starting WebXR session:', err);
+        alert('Could not start WebXR session: ' + err.message);
+      }
+    }
+
+    btnVR.addEventListener('click', () => toggleXRSession('immersive-vr'));
+    btnAR.addEventListener('click', () => toggleXRSession('immersive-ar'));
+
+    // FPS Meter
+    let frameCount = 0;
+    let lastFpsTime = performance.now();
+    const fpsElem = document.getElementById('fps-counter');
+
+    // Resize handling
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Render Loop
+    renderer.setAnimationLoop((timestamp, frame) => {
+      if (autoRotate && carModel && !renderer.xr.isPresenting) {
+        carRoot.rotation.y += 0.007;
+      }
+
+      if (!renderer.xr.isPresenting) {
+        controls.update();
+      }
+
+      renderer.render(scene, camera);
+
+      frameCount++;
+      if (timestamp - lastFpsTime >= 1000) {
+        fpsElem.textContent = Math.round((frameCount * 1000) / (timestamp - lastFpsTime));
+        frameCount = 0;
+        lastFpsTime = timestamp;
+      }
+    });
+
+    // Initial Model Load
+    loadModel('models/red_race_car.glb', '', 'red_race_car.glb', 'meshy_test_0/models/red_race_car.glb');
+  </script>
+</body>
+</html>

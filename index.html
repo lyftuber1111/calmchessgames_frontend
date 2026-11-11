@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <title>Calm Chess Computers & Games</title>
+    <!-- Favicon & Web Icons -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="shortcut icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="48x48" href="favicon-48x48.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="theme-color" content="#0b0f19">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --panel-bg: #131b2e;
+            --gold-primary: #ffd700;
+            --gold-glow: #ffae00;
+            --divider-red: #8b0000;
+            --accent-blue: #4a90e2;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --error-red: #ef4444;
+            --success-green: #2ecc71;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+            width: 100%;
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+        }
+
+        header {
+            width: 100%;
+            background: linear-gradient(135deg, #10172a, #1e293b);
+            padding: clamp(14px, 3vw, 24px) clamp(16px, 4vw, 32px);
+            padding-top: calc(clamp(14px, 3vw, 24px) + env(safe-area-inset-top, 0px));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            border-bottom: 2px solid var(--divider-red);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+
+        .header-banner {
+            max-width: min(100%, 850px);
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+        }
+
+        nav.top-nav {
+            margin-top: 15px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: clamp(10px, 3vw, 24px);
+        }
+
+        nav.top-nav a {
+            color: var(--gold-primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: clamp(0.95rem, 2.5vw, 1.05rem);
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: color 0.2s, background-color 0.2s;
+            min-height: 44px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        nav.top-nav a:hover, nav.top-nav a:active {
+            color: #ffffff;
+            text-shadow: 0 0 8px var(--gold-glow);
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        main {
+            max-width: 1200px;
+            width: 100%;
+            padding: clamp(24px, 4vw, 44px) clamp(12px, 3vw, 24px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(32px, 6vw, 60px);
+            box-sizing: border-box;
+        }
+
+        .ring-container-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: clamp(12px, 3vw, 18px);
+            padding: clamp(16px, 4vw, 36px) clamp(10px, 3vw, 24px);
+            width: 100%;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .ring-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+            box-sizing: border-box;
+        }
+
+        .center-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 24%;
+            height: 24%;
+            max-width: 120px;
+            max-height: 120px;
+            object-fit: contain;
+            transform: translate(-50%, -50%) scaleX(-1);
+            filter: drop-shadow(0 0 10px rgba(255, 215, 0, 0.5));
+            z-index: 10;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.2s;
+            pointer-events: auto;
+        }
+
+        .center-logo:active {
+            transform: translate(-50%, -50%) scaleX(-1) scale(0.95);
+        }
+
+        svg.navigation-rings {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .ring-segment {
+            cursor: pointer;
+            transition: fill 0.3s, filter 0.3s;
+            stroke: var(--divider-red);
+            stroke-width: 3px;
+            outline: none;
+        }
+
+        .ring-segment:hover, .ring-segment:focus-visible {
+            fill: #fff3b0;
+            filter: drop-shadow(0 0 10px var(--gold-glow));
+        }
+
+        .ring-segment:active {
+            fill: #ffffff !important;
+            filter: drop-shadow(0 0 18px #38bdf8) !important;
+            transition: none !important;
+        }
+
+        .ring-text {
+            font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+            font-size: 10pt;
+            fill: #ffffff;
+            color: #ffffff;
+            font-weight: bold;
+            letter-spacing: 0.2px;
+            pointer-events: none;
+            user-select: none;
+            paint-order: stroke fill;
+            stroke: #0b0f19;
+            stroke-width: 2.5px;
+            stroke-linejoin: round;
+            filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95));
+            transition: font-size 0.2s ease, fill 0.2s ease;
+        }
+
+        @media (max-width: 768px) {
+            .ring-text {
+                font-size: 14pt;
+                fill: #ffffff;
+                color: #ffffff;
+                paint-order: stroke fill;
+                stroke: #0b0f19;
+                stroke-width: 2.5px;
+                stroke-linejoin: round;
+                filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.95));
+            }
+        }
+
+        .ring-id-label {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 11px;
+            font-weight: 900;
+            fill: #ffffff;
+            stroke: #000000;
+            stroke-width: 2.5px;
+            paint-order: stroke fill;
+            stroke-linejoin: round;
+            pointer-events: none;
+            user-select: none;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.95));
+        }
+
+        .section-title {
+            font-size: clamp(1.35rem, 4vw, 2rem);
+            color: var(--gold-primary);
+            margin-bottom: 20px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: clamp(1px, 0.3vw, 2px);
+            line-height: 1.25;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+            gap: clamp(16px, 3vw, 25px);
+            width: 100%;
+        }
+
+        .game-card {
+            background: var(--panel-bg);
+            border-radius: 12px;
+            padding: clamp(18px, 3vw, 25px);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .game-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px rgba(74, 144, 226, 0.2);
+            border-color: var(--gold-primary);
+        }
+
+        .game-card h3 {
+            color: var(--gold-primary);
+            margin-bottom: 10px;
+            font-size: clamp(1.15rem, 3vw, 1.35rem);
+        }
+
+        .game-card p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--accent-blue), #2b6cb0);
+            color: white;
+            padding: 10px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.92rem;
+            transition: opacity 0.2s, transform 0.1s;
+            border: none;
+            cursor: pointer;
+            min-height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn:hover { opacity: 0.92; }
+        .btn:active { transform: scale(0.98); }
+        .btn-gold { background: linear-gradient(135deg, var(--gold-primary), #d4af37); color: #111; font-weight: 700; }
+        .btn-danger { background: linear-gradient(135deg, var(--error-red), #991b1b); color: white; }
+        .btn-warn { background: linear-gradient(135deg, #e67e22, #b95d00); color: white; }
+        .btn-success { background: linear-gradient(135deg, var(--success-green), #1b8a4b); color: white; }
+        .btn-sm { padding: 6px 10px; font-size: 0.8rem; min-height: 30px; }
+
+        .admin-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: clamp(10px, 3vw, 20px);
+            box-sizing: border-box;
+        }
+
+        .admin-content {
+            background: var(--panel-bg);
+            padding: clamp(16px, 3vw, 26px);
+            border-radius: 12px;
+            width: 100%;
+            max-width: min(96vw, 1180px);
+            max-height: 92vh;
+            max-height: 92dvh;
+            overflow-y: auto;
+            border: 2px solid var(--gold-primary);
+            box-sizing: border-box;
+        }
+
+        .table-scroll-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            background: rgba(0, 0, 0, 0.35);
+            border-radius: 8px;
+            border: 1px solid #334155;
+            margin-top: 8px;
+            scrollbar-width: thin;
+            scrollbar-color: #ffd700 #1e293b;
+        }
+        .table-scroll-container::-webkit-scrollbar {
+            height: 9px;
+        }
+        .table-scroll-container::-webkit-scrollbar-track {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .table-scroll-container::-webkit-scrollbar-thumb {
+            background: #ffd700;
+            border-radius: 4px;
+        }
+        .table-scroll-container::-webkit-scrollbar-thumb:hover {
+            background: #ffae00;
+        }
+
+        .store-ledger-table {
+            width: 100%;
+            min-width: 1200px;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        .field-scroll-cell {
+            max-width: 250px;
+            min-width: 180px;
+            overflow-x: auto;
+            white-space: nowrap;
+            scrollbar-width: thin;
+            scrollbar-color: #64748b rgba(255, 255, 255, 0.05);
+            padding: 2px 0;
+        }
+        .field-scroll-cell::-webkit-scrollbar {
+            height: 4px;
+        }
+        .field-scroll-cell::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 2px;
+        }
+        .field-scroll-cell::-webkit-scrollbar-thumb {
+            background: #64748b;
+            border-radius: 2px;
+        }
+        .field-scroll-cell::-webkit-scrollbar-thumb:hover {
+            background: #ffd700;
+        }
+
+        .admin-content h2 {
+            color: var(--gold-primary);
+            font-size: clamp(1.15rem, 3vw, 1.45rem);
+        }
+
+        /* Admin Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+            padding-bottom: 8px;
+        }
+
+        .admin-tab-btn {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-tab-btn.active {
+            background: var(--gold-primary);
+            color: #0b0f19;
+            border-color: var(--gold-primary);
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-color);
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--gold-primary);
+            outline: none;
+        }
+
+        /* User Grid & Cards */
+        .user-mgmt-header {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .user-mgmt-header input {
+            flex: 1;
+            min-width: 200px;
+            padding: 9px 14px;
+            background: var(--bg-color);
+            border: 1.5px solid rgba(255, 215, 0, 0.4);
+            color: #fff;
+            border-radius: 6px;
+            font-size: 0.95rem;
+        }
+
+        .user-card {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .user-card.banned {
+            border-color: var(--error-red);
+            background: rgba(239, 68, 68, 0.08);
+        }
+
+        .user-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+            border-bottom: 1px dashed rgba(255, 255, 255, 0.1);
+            padding-bottom: 6px;
+        }
+
+        .badge-status {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            text-align: center;
+            line-height: 1.2;
+        }
+        .badge-gateway {
+            min-width: 140px;
+        }
+        .badge-active { background: rgba(46, 204, 113, 0.2); color: var(--success-green); border: 1px solid var(--success-green); min-width: 90px; }
+        .badge-banned { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid var(--error-red); min-width: 90px; }
+
+        .user-card-inputs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 8px;
+        }
+
+        .user-card-inputs label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .user-card-inputs input {
+            width: 100%;
+            padding: 6px 8px;
+            background: var(--bg-color);
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.88rem;
+        }
+
+        .user-card-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        /* Store & Billing Settings Cards */
+        .store-setting-card {
+            background: rgba(0, 0, 0, 0.35);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .store-setting-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .store-setting-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 0.98rem;
+            margin-bottom: 4px;
+            flex-wrap: wrap;
+        }
+        .store-setting-desc {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+        }
+        .store-setting-details {
+            background: rgba(0, 0, 0, 0.25);
+            border-left: 3px solid var(--gold-primary);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.82rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .mode-state-desc {
+            color: #e2e8f0;
+        }
+        .mode-state-note {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            line-height: 1.4;
+        }
+        .toggle-switch-label {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .toggle-switch-label input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .toggle-switch-slider {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #334155;
+            border-radius: 26px;
+            transition: 0.25s;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .toggle-switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: 0.25s;
+        }
+        .toggle-switch-label input:checked + .toggle-switch-slider {
+            background-color: var(--success-green);
+        }
+        .toggle-switch-label input:checked + .toggle-switch-slider:before {
+            transform: translateX(22px);
+        }
+        .badge-live {
+            background: rgba(241, 196, 15, 0.18);
+            color: var(--gold-primary);
+            border: 1px solid var(--gold-primary);
+        }
+        .badge-sim {
+            background: rgba(46, 204, 113, 0.18);
+            color: var(--success-green);
+            border: 1px solid var(--success-green);
+        }
+        .badge-gplay {
+            background: rgba(45, 212, 191, 0.18);
+            color: #2dd4bf;
+            border: 1px solid #2dd4bf;
+        }
+        .badge-paypal {
+            background: rgba(56, 189, 248, 0.18);
+            color: #38bdf8;
+            border: 1px solid #38bdf8;
+        }
+        .filter-pill {
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid #334155;
+            background: rgba(0, 0, 0, 0.35);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-pill.active {
+            background: rgba(255, 215, 0, 0.2);
+            color: var(--gold-primary);
+            border-color: var(--gold-primary);
+        }
+        .purchase-detail-row {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            padding: 8px 12px;
+            border-radius: 6px;
+        }
+        .purchase-detail-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+        }
+        .purchase-detail-val {
+            font-size: 0.9rem;
+            color: #f1f5f9;
+            word-break: break-all;
+        }
+        .copy-chip-btn {
+            background: rgba(255, 215, 0, 0.15);
+            color: var(--gold-primary);
+            border: 1px solid var(--gold-primary);
+            padding: 2px 7px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.72rem;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+        .copy-chip-btn:hover {
+            background: var(--gold-primary);
+            color: #000;
+        }
+
+        footer {
+            width: 100%;
+            background: #080c14;
+            padding: clamp(20px, 4vw, 30px);
+            padding-bottom: calc(clamp(20px, 4vw, 30px) + env(safe-area-inset-bottom, 0px));
+            text-align: center;
+            color: var(--text-muted);
+            border-top: 1px solid #1e293b;
+            margin-top: auto;
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+        }
+
+        @media (max-height: 600px) and (orientation: landscape) {
+            .ring-wrapper {
+                max-width: min(75vh, 420px);
+            }
+            main {
+                gap: 25px;
+                padding: 16px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header id="siteHeader">
+        <a href="https://calmchessgames.com" class="header-banner-link" style="display: block; text-decoration: none; max-width: min(100%, 850px); width: 100%;" aria-label="Calm Chess Computers & Games Home">
+            <img src="header000.png" alt="Calm Chess Computers & Games" class="header-banner">
+        </a>
+        <nav class="top-nav" onclick="event.stopPropagation();">
+            <a href="#games">Games</a>
+            <a href="#about">About</a>
+            <a href="contact.html">Book Consultation &amp; Contact</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="ring-container-section">
+            <div class="ring-wrapper">
+               <img src="knight_left0.png" alt="Calm Chess Knight" class="center-logo" id="centerLogo" title="Calm Chess Knight Logo (Single click: navigate)" role="button" tabindex="0" aria-label="Calm Chess Logo">
+                <svg class="navigation-rings" id="ringSvg" viewBox="0 0 500 500"></svg>
+            </div>
+        </section>
+
+        <section id="games" style="width: 100%;">
+            <h2 class="section-title">Featured Chess & Strategy Games</h2>
+            <div class="games-grid" id="gamesGrid"></div>
+        </section>
+
+        <section id="about" style="width: 100%; background: var(--panel-bg); padding: clamp(20px, 4vw, 40px); border-radius: 12px; border: 1px solid rgba(255,215,0,0.1);">
+            <h2 class="section-title">About Calm Chess Computers</h2>
+            <p style="line-height: 1.6; color: var(--text-muted); margin-bottom: 20px; font-size: clamp(0.95rem, 2vw, 1.05rem);">
+                Calm Chess Computers is dedicated to crafting immersive, polished browser-based chess engines, tactical game simulations, and streamlined multi-seat gaming experiences. Built with precision and a passion for classical strategy.
+            </p>
+            <div style="background: rgba(255,215,0,0.06); border: 1px solid rgba(255,215,0,0.25); border-radius: 10px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h3 style="color: var(--gold-primary); font-size: 1.1rem; margin-bottom: 4px;">Schedule a Consultation with Brian Berry</h3>
+                    <p style="color: var(--text-muted); font-size: 0.9rem; margin: 0;">Discuss chess engine development, strategic integrations, or custom gaming advisory.</p>
+                </div>
+                <a href="contact.html" style="background: linear-gradient(135deg, #ffd700, #ffae00); color: #0b0f19; font-weight: bold; text-decoration: none; padding: 10px 20px; border-radius: 6px; font-size: 0.9rem; box-shadow: 0 4px 12px rgba(255,215,0,0.3); display: inline-flex; align-items: center; gap: 8px;">
+                    &#128197; Book Consultation
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p class="site-tos-disclosure" style="margin-bottom: 8px; font-size: 0.82rem; color: #cbd5e1; max-width: 850px; margin-left: auto; margin-right: auto; line-height: 1.45;">Credits have no cash value. Winnings cannot be redeemed for cash or prizes.</p>
+        <p>&copy; 2026 Calm Chess Computers &bull; Brian Berry. All rights reserved.</p>
+        <p style="margin-top: 6px; font-size: 0.85rem;">
+            <a href="contact.html" style="color: var(--gold-primary); text-decoration: underline; margin-right: 15px;">Book Consultation &amp; Contact</a>
+            <a href="terms.html" style="color: var(--gold-primary); text-decoration: underline; margin-right: 15px;">Terms of Service</a>
+            <a href="privacy.html" style="color: var(--gold-primary); text-decoration: underline; margin-right: 15px;">Privacy &amp; Cookies Policy</a>
+            <a href="password_reset.html" style="color: var(--gold-primary); text-decoration: underline; margin-right: 15px;">Password Reset Portal</a>
+            <a href="delete_account.html" style="color: var(--gold-primary); text-decoration: underline;">Request Account &amp; Data Deletion</a>
+        </p>
+    </footer>
+
+    <script src="js/crypto_transport.js"></script>
+    <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
+    <script src="js/index.js"></script>
+</body>
+</html>

@@ -1,28 +1,8 @@
 {
     "model": "recon_drone_2.8m.glb",
-    "base_name": "recon_drone_2.8m",
-    "exported_at": "2026-11-11T13:22:11.026Z",
-    "color_palette": [
-        "#FFFFFF"
-    ],
-    "materials": [
-        {
-            "name": "Material_1",
-            "type": "MeshStandardMaterial",
-            "color": "#FFFFFF",
-            "emissive": null,
-            "roughness": 1,
-            "metalness": 1,
-            "opacity": 1,
-            "wireframe": false,
-            "textures": {
-                "base_color": "texture_0_base_color.png",
-                "normal": "texture_0_normal.png",
-                "roughness": "texture_0_roughness.png",
-                "metallic": "texture_0_metallic.png"
-            }
-        }
-    ],
+    "baseName": "recon_drone_2.8m",
+    "exported_at": "2026-11-11T13:47:20+00:00",
+    "destination": "/wormhole0/warp_origin_images",
     "companion_files": [
         "texture_0_base_color.png",
         "texture_0_metallic.png",

@@ -7595,9 +7595,6 @@ function create3DPowerupMesh(pConfig) {
     coreMesh = new THREE.Mesh(new THREE.SphereGeometry(userRadius * 0.4, 12, 12), coreGlowMat);
     group.add(meshBody);
     group.add(coreMesh);
-      group.add(meshBody);
-      group.add(coreMesh);
-    }
   } else if (modelType === 'icon_sprite') {
     // Icon sprite billboard only
   } else {

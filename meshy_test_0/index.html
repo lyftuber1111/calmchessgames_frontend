@@ -2822,6 +2822,19 @@
       moveStatusMsg.className = 'feedback-msg' + (type ? ` ${type}` : '');
     }
 
+    // Reset the approval form so the next Approve press starts clean
+    let approvalFormWasReset = false;
+    function resetApprovalForm() {
+      selectedFolderPaths.clear();
+      selectedFolderPaths.add(DEFAULT_DEST_DIR);
+      if (panelDestPathInput) panelDestPathInput.value = '';
+      if (chkMoveMaterialsTextures) chkMoveMaterialsTextures.checked = true;
+      if (chkMoveColorsJson) chkMoveColorsJson.checked = true;
+      renderChecklist();
+      updateDestPreview();
+      approvalFormWasReset = true;
+    }
+
     async function approveAndMoveAsset() {
       if (!currentLoadedAsset) {
         setMoveMessage('Please load a 3D model first before approving move.', 'error');
@@ -2829,6 +2842,7 @@
         return;
       }
 
+      approvalFormWasReset = false;
       const fileName = currentLoadedAsset.fileName || 'model.glb';
       const baseName = fileName.replace(/\.[^/.]+$/, "");
       const destPaths = [];
@@ -2984,6 +2998,7 @@
           `;
 
           showGitPushToast('success', '✓ Symfony Process: Backend Push & Frontend Pull Succeeded!', `Asset '${data.file_name}' pushed & pulled for origin/main`, successHtml, 20000);
+          resetApprovalForm();
         } else {
           const errMsg = data?.error || 'Failed to move asset';
           setMoveMessage(`Error: ${errMsg}`, 'error');
@@ -3009,7 +3024,7 @@
       } finally {
         btnApproveMove.disabled = false;
         btnApproveMove.style.opacity = '1';
-        approveBtnLabel.innerHTML = prevBtnHtml || 'Approve & Move Asset';
+        if (approvalFormWasReset) { updateDestPreview(); } else { approveBtnLabel.innerHTML = prevBtnHtml || 'Approve & Move Asset'; }
       }
     }
 

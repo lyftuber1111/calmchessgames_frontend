@@ -1,0 +1,28 @@
+{
+    "model": "white_armored_drone_phase_interceptor_2.glb",
+    "base_name": "white_armored_drone_phase_interceptor_2",
+    "exported_at": "2026-11-12T19:14:24.633Z",
+    "color_palette": [
+        "#FFFFFF"
+    ],
+    "materials": [
+        {
+            "name": "Material_1",
+            "type": "MeshStandardMaterial",
+            "color": "#FFFFFF",
+            "emissive": null,
+            "roughness": 0.8,
+            "metalness": 0,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": {
+                "base_color": "texture_0_base_color.png"
+            }
+        }
+    ],
+    "companion_files": [
+        "white_armored_drone_phase_interceptor_2.mtl",
+        "texture_0_base_color.png",
+        "thumbnail.png"
+    ]
+}

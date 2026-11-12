@@ -2,5 +2,12 @@
   "name": "phase_interceptor",
   "scale": 0.75,
   "textures": "./phase_interceptor_textures",
-  "prompt": "White armored Phase Interceptor, high-agility corridor skirmisher, sleek white armor plating, equipped with a polarized light cyan energy shield, sci-fi, full body, game-ready character"
+  "prompt": "White armored Phase Interceptor, high-agility corridor skirmisher, sleek white armor plating, equipped with a polarized light cyan energy shield, sci-fi, full body, game-ready character",
+  "scale_applied_to_glb": 0.75,
+  "reference_dimensions_m_unused": {
+    "x": 4.2,
+    "y": 1.3,
+    "z": 3.4,
+    "circumference": 5.0
+  }
 }

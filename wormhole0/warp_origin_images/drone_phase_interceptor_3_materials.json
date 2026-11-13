@@ -1,7 +1,7 @@
 {
     "model": "drone_phase_interceptor_3.glb",
     "base_name": "drone_phase_interceptor_3",
-    "exported_at": "2026-11-13T04:17:37.756Z",
+    "exported_at": "2026-11-13T04:19:55.586Z",
     "color_palette": [
         "#FFFFFF"
     ],
@@ -23,6 +23,9 @@
     "companion_files": [
         "drone_phase_interceptor_3.mtl",
         "texture_0_base_color.png",
+        "texture_0_metallic.png",
+        "texture_0_normal.png",
+        "texture_0_roughness.png",
         "thumbnail.png"
     ]
 }

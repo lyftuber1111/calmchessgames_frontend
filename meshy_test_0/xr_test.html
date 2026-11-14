@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>Meshy 3D - WebXR Model Viewer</title>
   <style>
     :root {
@@ -2015,7 +2018,15 @@
 
       // NOTE: We NEVER append static calmchessgames.com GitHub Pages host for POST/PHP endpoints,
       // because GitHub Pages rejects HTTP POST with 405 Method Not Allowed and causes CORS Failed to Fetch!
-      return [...new Set(endpoints)];
+      const unique = [...new Set(endpoints)];
+      return unique.filter(ep => {
+        try {
+          const u = new URL(ep, typeof window !== 'undefined' && window.location ? window.location.href : 'https://api.calmchessgames.com');
+          return u.hostname !== 'calmchessgames.com' && !u.hostname.endsWith('.github.io');
+        } catch (_) {
+          return true;
+        }
+      });
     }
 
     // Helper to query backend PHP check endpoint

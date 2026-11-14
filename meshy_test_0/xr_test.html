@@ -2057,7 +2057,13 @@
           }
 
           if (res.ok) {
-            const data = await res.json();
+            const rawText = await res.text().catch(() => '');
+            let data = null;
+            try {
+              data = JSON.parse(rawText);
+            } catch (parseErr) {
+              throw new Error(`Invalid JSON from ${url}: ${rawText.slice(0, 180) || parseErr.message}`);
+            }
             return data;
           } else {
             const rawText = await res.text().catch(() => '');
@@ -2065,14 +2071,16 @@
             try { errJson = JSON.parse(rawText); } catch (_) {}
             const errMsg = errJson?.error || errJson?.message || `HTTP ${res.status}: ${res.statusText}`;
             console.warn(`[MoveAsset] Server returned error from ${url}:`, errMsg, rawText);
-            lastErr = new Error(errMsg);
+            if (!lastErr || res.status !== 404) {
+              lastErr = new Error(errMsg);
+            }
             if (errJson && errJson.success === false) {
               return errJson;
             }
           }
         } catch (err) {
           console.warn(`[MoveAsset] Connection failed for ${url}:`, err);
-          lastErr = err;
+          if (!lastErr) lastErr = err;
         }
       }
       throw lastErr || new Error('Backend server move endpoint unreachable');
@@ -2147,6 +2155,7 @@
         showGitPushToast('error', '✕ Pull Request Failed', err.message || 'Network error', '', 0);
       }
     }
+    window.triggerFrontendPullOriginMain = triggerFrontendPullOriginMain;
 
     // Load folder quick links with fallback across local and backend server
     const imageFolderUrls = [
@@ -2413,14 +2422,20 @@
                 if (m.color) paletteSet.add(hexColor);
                 if (emissiveHex) paletteSet.add(emissiveHex);
 
+                const safeTexName = (tex, fallbackName) => {
+                  if (tex && tex.name) return tex.name;
+                  const src = tex && tex.image && typeof tex.image.src === 'string' ? tex.image.src : '';
+                  if (src && !src.startsWith('data:') && !src.startsWith('blob:')) {
+                    return src.split('/').pop().split('?')[0] || fallbackName;
+                  }
+                  return fallbackName;
+                };
                 const texObj = {};
                 if (m.map) {
-                  const texSrc = m.map.name || (m.map.image && m.map.image.src ? m.map.image.src.split('/').pop().split('?')[0] : 'texture_0_base_color.png');
-                  texObj.base_color = texSrc;
+                  texObj.base_color = safeTexName(m.map, 'texture_0_base_color.png');
                 }
                 if (m.normalMap) {
-                  const texSrc = m.normalMap.name || (m.normalMap.image && m.normalMap.image.src ? m.normalMap.image.src.split('/').pop().split('?')[0] : 'texture_0_normal.png');
-                  texObj.normal = texSrc;
+                  texObj.normal = safeTexName(m.normalMap, 'texture_0_normal.png');
                 }
                 if (m.roughnessMap) {
                   texObj.roughness = m.roughnessMap.name || 'texture_0_roughness.png';
@@ -2457,6 +2472,10 @@
       const modelExt = getExt(displayName || (currentLoadedAsset && currentLoadedAsset.fileName) || '');
       currentCompanionFiles = [];
 
+      const checkSource = (sourcePathDesc && !sourcePathDesc.startsWith('blob:'))
+        ? sourcePathDesc
+        : (currentLoadedAsset && currentLoadedAsset.sourcePath ? currentLoadedAsset.sourcePath : '');
+
       // When uploading .glb, don't include textures assets or .mtl files
       if (modelExt === 'glb') {
         if (chkMoveMaterialsTextures) {
@@ -2464,6 +2483,9 @@
           chkMoveMaterialsTextures.disabled = true;
         }
         renderCompanionFilesUI([], baseName, 'glb');
+        if (checkSource) {
+          checkBackendCompanions(checkSource).catch(() => {});
+        }
         return;
       }
 
@@ -2483,10 +2505,6 @@
             };
           })
         : [];
-
-      const checkSource = (sourcePathDesc && !sourcePathDesc.startsWith('blob:'))
-        ? sourcePathDesc
-        : (currentLoadedAsset && currentLoadedAsset.sourcePath ? currentLoadedAsset.sourcePath : '');
 
       if (checkSource) {
         checkBackendCompanions(checkSource).then(companions => {
@@ -3029,6 +3047,7 @@
           let runnerName = 'Symfony Process';
           let pushedRepos = [];
           let pushOutputSummary = '';
+          let gitErrors = [];
           let backendPushedOk = false;
           let frontendPulledOk = false;
 
@@ -3040,6 +3059,14 @@
                 if (info.role === 'frontend' && info.pulled) frontendPulledOk = true;
                 if (info.pushed) {
                   pushedRepos.push(`${repo} (${info.branch || 'main'})`);
+                }
+                if (info.push_error) {
+                  gitErrors.push(`[${repo}] ${info.push_error}`);
+                  pushOutputSummary += `[Error ${repo}]: ${info.push_error}\n`;
+                }
+                if (info.skip_reason) {
+                  gitErrors.push(`[${repo}] ${info.skip_reason}`);
+                  pushOutputSummary += `[Skipped ${repo}]: ${info.skip_reason}\n`;
                 }
                 if (info.pull_output) {
                   for (const [pName, pOut] of Object.entries(info.pull_output)) {
@@ -3059,11 +3086,17 @@
           setMoveMessage(`✓ Approved & moved '${data.file_name}'${compText} to ${folderText}${feGitText}!${pushSummary}`, 'success');
 
           // Build rich Symfony Process confirmation dialog/toast
+          const backendBadge = backendPushedOk
+            ? '<span class="git-pill-badge status-ok">✓ Backend Push: origin main</span>'
+            : '<span class="git-pill-badge status-err">⚠ Backend Push: Pending/Error</span>';
+          const frontendBadge = frontendPulledOk
+            ? '<span class="git-pill-badge status-ok">✓ Frontend Pull: origin main</span>'
+            : '<span class="git-pill-badge status-err">⚠ Frontend Pull: Skipped/Error</span>';
           const successHtml = `
             <div class="git-badge-row">
               <span class="git-pill-badge runner">Runner: ${runnerName}</span>
-              <span class="git-pill-badge status-ok">✓ Backend Push: origin main</span>
-              <span class="git-pill-badge status-ok">✓ Frontend Pull: origin main</span>
+              ${backendBadge}
+              ${frontendBadge}
               <span class="git-pill-badge branch">Branch: main</span>
             </div>
             <div style="font-weight:600; color:#f8fafc; margin-top:4px;">

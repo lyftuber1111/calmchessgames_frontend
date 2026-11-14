@@ -209,9 +209,12 @@ export const stageConfig = {
 /**
  * Stage 1 Enemy Movement Handler:
  * - Emerges small from the black hole mouth, scaling gradually up as it rushes towards the player.
- * - Stops at exactly 10,000 KM (23.81 units) from the player where scaled big enough to be clearly visible.
- * - Faces forward towards the player with nose slightly tilted down (top of 3D model clearly visible).
- * - Executes dynamic evasive maneuvers and proximity detection to prevent collisions with other enemies.
+ * - Stops initially at 10,000 KM (23.81 units) from the player with nose tilted forward (~0.22 rad / 12.6 deg).
+ * - Randomly levels off (pitch -> 0.0) and fires weapon ONLY when level.
+ * - Tilts back forward (pitch -> 0.22) then flies forward to 5,000 KM from player, scaling 2% bigger as it gets closer.
+ * - Holds at 5,000 KM for 3 seconds.
+ * - Flies back to 10,000 KM from player, scaling back down by 2% as it gets farther away.
+ * - Continuously executes dynamic evasive maneuvers and proximity detection across all phases.
  */
 export function updateEnemyMovement(e, delta, context) {
   if (!e || !e.mesh) return false;
@@ -225,18 +228,16 @@ export function updateEnemyMovement(e, delta, context) {
   const enemyIndex = (context && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
   const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
-  // Exact 10,000 KM stop distance: at 420 KM per Three.js unit = 23.81 units from player
-  const stopDist = 10000 / 420; // ~23.8095
-  const targetStopDist = e.targetStopDist || stopDist;
-  const targetZ = playerPos.z - targetStopDist;
+  // Exact distance definitions: at 420 KM per Three.js unit
+  const dist10k = 10000 / 420; // ~23.8095 units
+  const dist5k = 5000 / 420;   // ~11.9048 units
+  const targetZ10k = playerPos.z - dist10k;
+  const targetZ5k = playerPos.z - dist5k;
   const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
+  const baseScale = e.baseScale || 1.3;
 
-  // Slowly get larger as those approach the player
-  const totalDist = Math.max(10, targetZ - spawnZ);
-  const distTraveled = e.mesh.position.z - spawnZ;
-  const progress = THREE.MathUtils.clamp(distTraveled / totalDist, 0.0, 1.0);
-  const curScale = THREE.MathUtils.lerp(0.12, e.baseScale || 1.3, progress);
-  e.mesh.scale.set(curScale, curScale, curScale);
+  // Baseline forward posture: nose tilted down (~0.22 rad / 12.6 deg) so top of 3D model is visible
+  const basePitchDown = 0.22;
 
   // Requirement: Ensure custom 3D model asset maintains its front-facing orientation:
   // recon_drone_2.8m.glb: 0 rad (rotated 90 deg counter-clockwise)
@@ -255,103 +256,252 @@ export function updateEnemyMovement(e, delta, context) {
     }
   }
 
-  // Baseline forward posture: nose slightly tilted down (~0.22 rad / 12.6 deg) so top of 3D model is clearly visible
-  const basePitchDown = 0.22;
+  // Initialize tactical maneuver state machine
+  if (!e.maneuverState) {
+    e.maneuverState = (e.phase === 'RUSH_OUT') ? 'RUSH_OUT' : 'CRUISE_10K';
+    e.levelPitchProgress = 0.0; // 0.0 = full forward tilt (0.22 rad), 1.0 = level (0.0 rad)
+    e.isLevel = false;
+    e.hasFiredThisLevel = false;
+    e.nextLevelTime = now + 1500 + Math.random() * 3500;
+  }
 
-  if (e.phase === 'RUSH_OUT') {
-    // Fly out of the black hole mouth towards player
+  if (e.phase === 'RUSH_OUT' || e.maneuverState === 'RUSH_OUT') {
+    // Fly out of the black hole mouth towards player stopping at 10,000 KM
     e.mesh.position.z += (e.speed || 45) * delta;
     e.mesh.position.x += (playerPos.x + (e.targetScatterX || 0) * 0.25 - e.mesh.position.x) * delta * 0.55;
     e.mesh.position.y += (playerPos.y + (e.targetScatterY || 0) * 0.25 - e.mesh.position.y) * delta * 0.55;
 
-    // Face forward with nose tilted down
+    // Scale up as approaching 10,000 KM
+    const totalDist = Math.max(10, targetZ10k - spawnZ);
+    const distTraveled = e.mesh.position.z - spawnZ;
+    const rushProgress = THREE.MathUtils.clamp(distTraveled / totalDist, 0.0, 1.0);
+    const curScale = THREE.MathUtils.lerp(0.12, baseScale, rushProgress);
+    e.mesh.scale.set(curScale, curScale, curScale);
+
+    // Tilted forward posture
+    e.levelPitchProgress = 0.0;
+    e.isLevel = false;
     e.mesh.rotation.set(basePitchDown, 0, 0);
 
-    if (e.mesh.position.z >= targetZ || distToPlayer <= targetStopDist) {
-      e.mesh.position.z = targetZ;
+    if (e.mesh.position.z >= targetZ10k || distToPlayer <= dist10k) {
+      e.mesh.position.z = targetZ10k;
       e.phase = 'SCATTER_AND_EVADE';
+      e.maneuverState = 'CRUISE_10K';
       e.stoppedTime = now;
+      e.nextLevelTime = now + 1500 + Math.random() * 3500;
     }
-  } else {
-    // Stopping at 10,000 KM from player: lock Z proximity around targetZ
-    e.mesh.position.z += (targetZ - e.mesh.position.z) * delta * 3.2;
+    return true;
+  }
 
-    // Scatter towards assigned viewport screen position
-    const screenTargetX = playerPos.x + (e.targetScatterX || 0);
-    const screenTargetY = playerPos.y + (e.targetScatterY || 0);
-    e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
-    e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
+  // --- Dynamic Evasive Maneuvers & Screen Scatter Targeting ---
+  const screenTargetX = playerPos.x + (e.targetScatterX || 0);
+  const screenTargetY = playerPos.y + (e.targetScatterY || 0);
+  e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
+  e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
 
-    if (now > (e.scatterRetargetTime || 0)) {
-      e.scatterRetargetTime = now + 4000 + Math.random() * 4000;
-      const newAng = Math.random() * Math.PI * 2;
-      const newRad = 6.5 + Math.random() * 15.0;
-      e.targetScatterX = Math.cos(newAng) * newRad;
-      e.targetScatterY = Math.sin(newAng) * (newRad * 0.72);
+  if (now > (e.scatterRetargetTime || 0)) {
+    e.scatterRetargetTime = now + 4000 + Math.random() * 4000;
+    const newAng = Math.random() * Math.PI * 2;
+    const newRad = 6.5 + Math.random() * 15.0;
+    e.targetScatterX = Math.cos(newAng) * newRad;
+    e.targetScatterY = Math.sin(newAng) * (newRad * 0.72);
+  }
+
+  // Multi-frequency sinusoidal evasive weaves
+  const t = (now - (e.stoppedTime || now)) * 0.001;
+  const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0);
+  const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.4);
+  const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.6);
+  e.mesh.position.x += evaVx * delta;
+  e.mesh.position.y += evaVy * delta;
+  e.mesh.position.z += evaVz * delta;
+
+  // Tactical thruster bursts / jukes
+  if (now >= (e.nextJukeTime || 0)) {
+    e.nextJukeTime = now + 1400 + Math.random() * 2000;
+    e.jukeEndTime = now + 350 + Math.random() * 350;
+    if (e.jukeVelocity && typeof e.jukeVelocity.set === 'function') {
+      e.jukeVelocity.set(
+        (Math.random() - 0.5) * 30,
+        (Math.random() - 0.5) * 22,
+        (Math.random() - 0.5) * 6
+      );
     }
-
-    // Evasive maneuvers: multi-frequency sinusoidal weaves
-    const t = (now - (e.stoppedTime || now)) * 0.001;
-    const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0);
-    const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.4);
-    const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.6);
-    e.mesh.position.x += evaVx * delta;
-    e.mesh.position.y += evaVy * delta;
-    e.mesh.position.z += evaVz * delta;
-
-    // Tactical thruster bursts / jukes
-    if (now >= (e.nextJukeTime || 0)) {
-      e.nextJukeTime = now + 1400 + Math.random() * 2000;
-      e.jukeEndTime = now + 350 + Math.random() * 350;
-      if (e.jukeVelocity && typeof e.jukeVelocity.set === 'function') {
-        e.jukeVelocity.set(
-          (Math.random() - 0.5) * 30,
-          (Math.random() - 0.5) * 22,
-          (Math.random() - 0.5) * 6
-        );
-      }
-    }
-    if (e.jukeVelocity) {
-      if (now < e.jukeEndTime) {
-        e.mesh.position.addScaledVector(e.jukeVelocity, delta);
-      } else {
-        e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
-      }
-    }
-
-    // Reactive dodging of incoming player laser fire
-    for (let li = 0; li < laserBolts.length; li++) {
-      const lbolt = laserBolts[li];
-      if (!lbolt || !lbolt.mesh) continue;
-      const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
-      if (ldist < 7.2) {
-        const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
-        dodgeDir.z = 0;
-        if (dodgeDir.lengthSq() > 0.001) {
-          dodgeDir.normalize();
-          e.mesh.position.addScaledVector(dodgeDir, 20.0 * delta);
-        }
-        break;
-      }
-    }
-
-    // Banking and orientation: Facing forward towards player with nose slightly tilted down
-    const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
-    const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
-    const netVx = (screenTargetX - e.mesh.position.x) * 1.1 + jukeVx + evaVx;
-    const netVy = (screenTargetY - e.mesh.position.y) * 1.1 + jukeVy + evaVy;
-
-    const roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65);
-    const yaw = THREE.MathUtils.clamp(-netVx * 0.025, -0.35, 0.35);
-    const pitch = basePitchDown + THREE.MathUtils.clamp(netVy * 0.04, -0.22, 0.22);
-    e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
-
-    if (e.mesh.userData && e.mesh.userData.spinRing) {
-      e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
+  }
+  if (e.jukeVelocity) {
+    if (now < e.jukeEndTime) {
+      e.mesh.position.addScaledVector(e.jukeVelocity, delta);
+    } else {
+      e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
     }
   }
 
-  // Proximity detection to other enemies: smooth repulsion so enemies don't run into each other
+  // Reactive dodging of incoming player laser fire
+  for (let li = 0; li < laserBolts.length; li++) {
+    const lbolt = laserBolts[li];
+    if (!lbolt || !lbolt.mesh) continue;
+    const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
+    if (ldist < 7.2) {
+      const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
+      dodgeDir.z = 0;
+      if (dodgeDir.lengthSq() > 0.001) {
+        dodgeDir.normalize();
+        e.mesh.position.addScaledVector(dodgeDir, 20.0 * delta);
+      }
+      break;
+    }
+  }
+
+  // --- Tactical State Machine: Level Off, Fire Weapon, Tilt Forward, Fly to 5000 KM (+2% Scale), Hold 3s, Return to 10000 KM (-2% Scale) ---
+  switch (e.maneuverState) {
+    case 'CRUISE_10K': {
+      // Locking Z proximity around 10,000 KM
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 0) - delta * 3.0);
+      e.isLevel = false;
+
+      // Base scale at 10,000 KM
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+
+      // Random trigger to level off
+      if (now >= (e.nextLevelTime || 0)) {
+        e.maneuverState = 'LEVELING_OFF';
+        e.hasFiredThisLevel = false;
+      }
+      break;
+    }
+
+    case 'LEVELING_OFF': {
+      // Smoothly transition pitch to level (levelPitchProgress -> 1.0)
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 2.8);
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+
+      if (e.levelPitchProgress >= 0.96) {
+        e.levelPitchProgress = 1.0;
+        e.isLevel = true;
+        e.maneuverState = 'LEVEL_FIRING';
+        e.levelFireEndTime = now + 600; // ~600ms firing window while level
+
+        // Only fire weapon when level
+        if (!e.hasFiredThisLevel) {
+          e.hasFiredThisLevel = true;
+          fireEnemyWeapon(e, context);
+        }
+      }
+      break;
+    }
+
+    case 'LEVEL_FIRING': {
+      // Maintain level orientation and allow weapon fire
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = 1.0;
+      e.isLevel = true;
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+
+      if (now >= (e.levelFireEndTime || 0)) {
+        e.isLevel = false;
+        e.maneuverState = 'TILTING_FORWARD';
+      }
+      break;
+    }
+
+    case 'TILTING_FORWARD': {
+      // Smoothly tilt back forward (levelPitchProgress -> 0.0)
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 2.8);
+      e.isLevel = false;
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+
+      if (e.levelPitchProgress <= 0.04) {
+        e.levelPitchProgress = 0.0;
+        e.maneuverState = 'ADVANCE_5K';
+      }
+      break;
+    }
+
+    case 'ADVANCE_5K': {
+      // Fly forward to 5,000 KM from player, scaling 2% bigger as it gets closer
+      e.levelPitchProgress = 0.0;
+      e.isLevel = false;
+
+      // Smooth flight forward towards targetZ5k
+      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+
+      const advanceProgress = THREE.MathUtils.clamp((e.mesh.position.z - targetZ10k) / (targetZ5k - targetZ10k), 0.0, 1.0);
+      const scaleFactor = 1.0 + 0.02 * advanceProgress; // 2% bigger as it gets closer
+      const curScale = baseScale * scaleFactor;
+      e.mesh.scale.set(curScale, curScale, curScale);
+
+      if (advanceProgress >= 0.98 || Math.abs(targetZ5k - e.mesh.position.z) < 0.2) {
+        e.mesh.position.z = targetZ5k;
+        e.maneuverState = 'HOLD_5K';
+        e.hold5kEndTime = now + 3000; // Hold for 3 seconds
+      }
+      break;
+    }
+
+    case 'HOLD_5K': {
+      // Maintain position at 5,000 KM for 3 seconds, staying 2% bigger and tilted forward
+      e.levelPitchProgress = 0.0;
+      e.isLevel = false;
+      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+
+      const curScale = baseScale * 1.02; // Stays 2% bigger
+      e.mesh.scale.set(curScale, curScale, curScale);
+
+      if (now >= (e.hold5kEndTime || 0)) {
+        e.maneuverState = 'RETREAT_10K';
+      }
+      break;
+    }
+
+    case 'RETREAT_10K': {
+      // Fly back to 10,000 KM from player, scaling back down by 2% as it gets farther away
+      e.levelPitchProgress = 0.0;
+      e.isLevel = false;
+
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 2.8;
+
+      const retreatProgress = THREE.MathUtils.clamp((targetZ5k - e.mesh.position.z) / (targetZ5k - targetZ10k), 0.0, 1.0);
+      const scaleFactor = 1.02 - 0.02 * retreatProgress; // Scales back down by 2%
+      const curScale = baseScale * scaleFactor;
+      e.mesh.scale.set(curScale, curScale, curScale);
+
+      if (retreatProgress >= 0.98 || Math.abs(targetZ10k - e.mesh.position.z) < 0.2) {
+        e.mesh.position.z = targetZ10k;
+        e.mesh.scale.set(baseScale, baseScale, baseScale);
+        e.maneuverState = 'CRUISE_10K';
+        e.nextLevelTime = now + 2500 + Math.random() * 4500; // Random next cycle
+      }
+      break;
+    }
+
+    default: {
+      e.maneuverState = 'CRUISE_10K';
+      break;
+    }
+  }
+
+  // --- Banking, Pitch, and Orientation ---
+  const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
+  const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
+  const netVx = (screenTargetX - e.mesh.position.x) * 1.1 + jukeVx + evaVx;
+  const netVy = (screenTargetY - e.mesh.position.y) * 1.1 + jukeVy + evaVy;
+
+  const roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65);
+  const yaw = THREE.MathUtils.clamp(-netVx * 0.025, -0.35, 0.35);
+
+  // Transition between forward tilt (~0.22 rad) and level (0.0 rad)
+  const effectiveBasePitch = basePitchDown * (1.0 - (e.levelPitchProgress || 0));
+  const pitch = effectiveBasePitch + THREE.MathUtils.clamp(netVy * 0.04, -0.22, 0.22);
+  e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
+
+  if (e.mesh.userData && e.mesh.userData.spinRing) {
+    e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
+  }
+
+  // --- Proximity Detection & Repulsion: Smoothly prevent collisions between enemies ---
   for (let j = 0; j < activeEnemies.length; j++) {
     if (j === enemyIndex) continue;
     const other = activeEnemies[j];
@@ -376,6 +526,7 @@ export function updateEnemyMovement(e, delta, context) {
  * - Emanates directly from the 3D model's front muzzles/cannons rather than the object center.
  * - Scaled proportionally relative to the size/scale of the firing ship model.
  * - Utilizes weapon damage, speed, color, and name configured from database/.js files.
+ * - Only fires when enemy is leveled off.
  */
 export function fireEnemyWeapon(enemyObj, context) {
   if (!enemyObj || !enemyObj.mesh) return false;
@@ -386,6 +537,11 @@ export function fireEnemyWeapon(enemyObj, context) {
   const enemyBolts = (context && context.enemyBolts) || window.enemyBolts;
   const audioMgr = (context && context.audioMgr) || window.audioMgr;
   if (!THREE || !scene || !enemyBolts) return false;
+
+  // Strict requirement: Only fire weapon when level
+  if (!enemyObj.isLevel) {
+    return true; // Mark as handled so engine doesn't fire fallback weapon bolt
+  }
 
   const cfg = enemyObj.config || {};
   const wpnName = (cfg.weapon_name || enemyObj.weaponName || 'Dual Ion Cannon').toLowerCase();

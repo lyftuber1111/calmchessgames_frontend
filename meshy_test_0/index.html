@@ -2350,7 +2350,21 @@
       if (jsonModelBasename) jsonModelBasename.textContent = baseName || 'model';
 
       const isGlb = (modelExt || (currentLoadedAsset && currentLoadedAsset.ext) || '').toLowerCase() === 'glb';
-      const allItems = isGlb ? [] : [...(companions || [])];
+      const allItems = [];
+
+      // Primary Model File (Explicitly shown so the user sees the model itself is moved)
+      const primaryFileName = (currentLoadedAsset && currentLoadedAsset.fileName) || (isGlb ? `${baseName}.glb` : `${baseName}.${modelExt || 'obj'}`);
+      const primaryExt = getExt(primaryFileName);
+      allItems.push({
+        name: primaryFileName,
+        type: primaryExt === 'glb' ? 'model_glb' : 'model_primary',
+        size: (currentLoadedAsset && currentLoadedAsset.file) ? currentLoadedAsset.file.size : 0,
+        isPrimary: true
+      });
+
+      if (!isGlb && Array.isArray(companions)) {
+        companions.forEach(c => allItems.push(c));
+      }
 
       allItems.push({
         name: `${baseName || 'model'}_materials.json`,
@@ -2365,13 +2379,15 @@
 
         let icon = '📦';
         let typeLabel = 'File';
-        if (file.type === 'material') { icon = '📄'; typeLabel = 'MTL Material'; }
+        if (file.type === 'model_glb') { icon = '🧊'; typeLabel = 'Primary 3D Model (GLB)'; }
+        else if (file.type === 'model_primary') { icon = '🎨'; typeLabel = `Primary 3D Model (${getExt(file.name).toUpperCase()})`; }
+        else if (file.type === 'material') { icon = '📄'; typeLabel = 'MTL Material'; }
         else if (file.type === 'texture') { icon = '🖼️'; typeLabel = 'Texture Map'; }
         else if (file.type === 'buffer') { icon = '💾'; typeLabel = 'GLTF Buffer'; }
         else if (file.type === 'materials_colors_json') { icon = '📊'; typeLabel = 'Colors & Properties JSON'; }
 
         const displayFileName = file.rel_sub ? `${file.rel_sub}/${file.name}` : file.name;
-        const sizeStr = file.autoGen ? 'Auto-Generated' : (file.size ? formatBytes(file.size) : 'Companion File');
+        const sizeStr = file.autoGen ? 'Auto-Generated' : (file.size ? formatBytes(file.size) : (file.isPrimary ? 'Loaded Model' : 'Companion File'));
 
         item.innerHTML = `
           <div class="companion-file-left">
@@ -2395,7 +2411,7 @@
         const palCount = currentModelPalette.length;
         const compCount = isGlb ? 0 : (companions ? companions.length : 0);
         matSummarySubtitle.textContent = isGlb
-          ? `${matCount} Embedded Material(s), ${palCount} Color(s) (GLB self-contained: no external .mtl/textures)`
+          ? `${matCount} Embedded Material(s), ${palCount} Color(s) (GLB model + materials JSON)`
           : `${matCount} Material(s), ${palCount} Color(s), ${compCount} Companion File(s)`;
       }
 
@@ -2533,10 +2549,32 @@
 
     function updateLoadedAssetUI() {
       if (!currentLoadedAsset) return;
-      loadedAssetIcon.textContent = getFormatIcon(currentLoadedAsset.ext);
-      loadedAssetName.textContent = currentLoadedAsset.fileName;
-      loadedAssetSource.textContent = `Source: ${currentLoadedAsset.sourcePath} (${currentLoadedAsset.sizeStr})`;
-      loadedAssetExt.textContent = currentLoadedAsset.ext.toUpperCase();
+      const fileName = currentLoadedAsset.fileName || 'model.glb';
+      const baseName = fileName.replace(/\.[^/.]+$/, "");
+      const ext = currentLoadedAsset.ext || getExt(fileName);
+
+      if (loadedAssetIcon) loadedAssetIcon.textContent = getFormatIcon(ext);
+      if (loadedAssetName) loadedAssetName.textContent = fileName;
+      if (loadedAssetSource) loadedAssetSource.textContent = `Source: ${currentLoadedAsset.sourcePath} (${currentLoadedAsset.sizeStr || 'Ready'})`;
+      if (loadedAssetExt) loadedAssetExt.textContent = ext.toUpperCase();
+
+      if (jsonModelBasename) {
+        jsonModelBasename.textContent = baseName;
+      }
+
+      // Automatically sync destination path input to match the loaded asset filename
+      if (panelDestPathInput) {
+        const curVal = (panelDestPathInput.value || '').trim();
+        if (!curVal) {
+          panelDestPathInput.value = `wormhole0/warp_origin_images/${fileName}`;
+        } else {
+          const hasExt = /\.(glb|gltf|obj|fbx|stl|usdz|dae)$/i.test(curVal);
+          const dir = hasExt ? curVal.substring(0, curVal.lastIndexOf('/')) : curVal.replace(/\/+$/, '');
+          panelDestPathInput.value = dir ? `${dir}/${fileName}` : fileName;
+        }
+        panelDestPathInput.placeholder = panelDestPathInput.value;
+      }
+
       updateDestPreview();
     }
 
@@ -2566,7 +2604,8 @@
       const typedClean = normalizeClientDestPath(typedRaw).replace(/\/+$/, '');
       if (typedClean) {
         const hasModelExt = /\.(glb|gltf|obj|fbx|stl|usdz|dae)$/i.test(typedClean);
-        const typedTarget = hasModelExt ? typedClean : `${typedClean}/${fileName}`;
+        const dirPart = hasModelExt ? typedClean.substring(0, typedClean.lastIndexOf('/')) : typedClean;
+        const typedTarget = dirPart ? `${dirPart}/${fileName}` : fileName;
         seenTargets.add(typedTarget);
         previewTargets.push({ targetPath: typedTarget, isTyped: true });
       }
@@ -2972,7 +3011,8 @@
       let typed = normalizeClientDestPath(panelDestPathInput.value).replace(/\/+$/, '');
       if (typed) {
         const hasModelExt = /\.(glb|gltf|obj|fbx|stl|usdz|dae)$/i.test(typed);
-        const typedTarget = hasModelExt ? typed : `${typed}/${fileName}`;
+        const dirPart = hasModelExt ? typed.substring(0, typed.lastIndexOf('/')) : typed;
+        const typedTarget = dirPart ? `${dirPart}/${fileName}` : fileName;
         if (!destPaths.includes(typedTarget)) {
           destPaths.unshift(typedTarget);
         }
@@ -3005,7 +3045,7 @@
       formData.append('destination_paths', JSON.stringify(destPaths));
       formData.append('source_path', currentLoadedAsset.sourcePath || ('meshy_test_0/models/' + fileName));
 
-      if (currentLoadedAsset.file && !currentLoadedAsset.existsOnServer) {
+      if (currentLoadedAsset.file) {
         formData.append('model_file', currentLoadedAsset.file);
       }
 
@@ -3028,8 +3068,8 @@
       };
       formData.append('materials_json', JSON.stringify(materialsPayload));
 
-      // Append local companion files only if not .glb and not already on server
-      if (!isGlb && currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0 && !currentLoadedAsset.existsOnServer) {
+      // Append local companion files only if not .glb
+      if (!isGlb && currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0) {
         currentLoadedAsset.companionFiles.forEach(file => {
           formData.append('companion_files[]', file);
         });

@@ -1,9 +1,24 @@
 {
     "model": "phase_interceptor.glb",
-    "baseName": "phase_interceptor",
-    "exported_at": "2026-11-14T03:10:25+00:00",
-    "destination": "/admin/temp_stage_0/event_horizon_images",
-    "companion_files": [
-        "phase_interceptor_materials.json"
-    ]
+    "base_name": "phase_interceptor",
+    "exported_at": "2026-11-14T08:48:19.406Z",
+    "color_palette": [
+        "#FFFFFF"
+    ],
+    "materials": [
+        {
+            "name": "Material_1",
+            "type": "MeshStandardMaterial",
+            "color": "#FFFFFF",
+            "emissive": null,
+            "roughness": 0.8,
+            "metalness": 0,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": {
+                "base_color": "texture_0_base_color.png"
+            }
+        }
+    ],
+    "companion_files": []
 }

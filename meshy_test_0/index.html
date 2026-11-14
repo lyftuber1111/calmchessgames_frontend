@@ -2071,14 +2071,16 @@
             try { errJson = JSON.parse(rawText); } catch (_) {}
             const errMsg = errJson?.error || errJson?.message || `HTTP ${res.status}: ${res.statusText}`;
             console.warn(`[MoveAsset] Server returned error from ${url}:`, errMsg, rawText);
-            lastErr = new Error(errMsg);
+            if (!lastErr || res.status !== 404) {
+              lastErr = new Error(errMsg);
+            }
             if (errJson && errJson.success === false) {
               return errJson;
             }
           }
         } catch (err) {
           console.warn(`[MoveAsset] Connection failed for ${url}:`, err);
-          lastErr = err;
+          if (!lastErr) lastErr = err;
         }
       }
       throw lastErr || new Error('Backend server move endpoint unreachable');
@@ -2420,14 +2422,20 @@
                 if (m.color) paletteSet.add(hexColor);
                 if (emissiveHex) paletteSet.add(emissiveHex);
 
+                const safeTexName = (tex, fallbackName) => {
+                  if (tex && tex.name) return tex.name;
+                  const src = tex && tex.image && typeof tex.image.src === 'string' ? tex.image.src : '';
+                  if (src && !src.startsWith('data:') && !src.startsWith('blob:')) {
+                    return src.split('/').pop().split('?')[0] || fallbackName;
+                  }
+                  return fallbackName;
+                };
                 const texObj = {};
                 if (m.map) {
-                  const texSrc = m.map.name || (m.map.image && m.map.image.src ? m.map.image.src.split('/').pop().split('?')[0] : 'texture_0_base_color.png');
-                  texObj.base_color = texSrc;
+                  texObj.base_color = safeTexName(m.map, 'texture_0_base_color.png');
                 }
                 if (m.normalMap) {
-                  const texSrc = m.normalMap.name || (m.normalMap.image && m.normalMap.image.src ? m.normalMap.image.src.split('/').pop().split('?')[0] : 'texture_0_normal.png');
-                  texObj.normal = texSrc;
+                  texObj.normal = safeTexName(m.normalMap, 'texture_0_normal.png');
                 }
                 if (m.roughnessMap) {
                   texObj.roughness = m.roughnessMap.name || 'texture_0_roughness.png';
@@ -2464,6 +2472,10 @@
       const modelExt = getExt(displayName || (currentLoadedAsset && currentLoadedAsset.fileName) || '');
       currentCompanionFiles = [];
 
+      const checkSource = (sourcePathDesc && !sourcePathDesc.startsWith('blob:'))
+        ? sourcePathDesc
+        : (currentLoadedAsset && currentLoadedAsset.sourcePath ? currentLoadedAsset.sourcePath : '');
+
       // When uploading .glb, don't include textures assets or .mtl files
       if (modelExt === 'glb') {
         if (chkMoveMaterialsTextures) {
@@ -2471,6 +2483,9 @@
           chkMoveMaterialsTextures.disabled = true;
         }
         renderCompanionFilesUI([], baseName, 'glb');
+        if (checkSource) {
+          checkBackendCompanions(checkSource).catch(() => {});
+        }
         return;
       }
 
@@ -2490,10 +2505,6 @@
             };
           })
         : [];
-
-      const checkSource = (sourcePathDesc && !sourcePathDesc.startsWith('blob:'))
-        ? sourcePathDesc
-        : (currentLoadedAsset && currentLoadedAsset.sourcePath ? currentLoadedAsset.sourcePath : '');
 
       if (checkSource) {
         checkBackendCompanions(checkSource).then(companions => {

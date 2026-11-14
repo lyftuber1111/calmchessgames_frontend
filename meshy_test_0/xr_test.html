@@ -1628,6 +1628,9 @@
           <button id="btn-quick-car" class="btn btn-subtle" type="button" title="Load default Red Race Car">
             <span>🏎️</span> <span>Default Car</span>
           </button>
+          <button id="btn-quick-stretch" class="btn btn-subtle" type="button" title="Load Seated Figure 4 Stretch Animation">
+            <span>🧘</span> <span>Figure 4 Stretch</span>
+          </button>
         </div>
 
         <div id="model-load-msg" class="model-msg">Current: models/red_race_car.glb</div>
@@ -1854,6 +1857,30 @@
               <button id="btn-reset-cam" class="btn" type="button">
                 <span>🎯</span> <span>Reset View</span>
               </button>
+            </div>
+          </div>
+
+          <div class="controls-subgroup" id="animation-controls-group" style="display: none;">
+            <span class="subgroup-title">Animation Controls</span>
+            <div class="btn-row">
+              <button id="btn-play-pause-anim" class="btn btn-primary-accent" type="button">
+                <span id="anim-play-icon">⏸️</span> <span id="anim-play-label">Pause</span>
+              </button>
+              <button id="btn-stop-anim" class="btn" type="button">
+                <span>⏹️</span> <span>Reset</span>
+              </button>
+              <select id="anim-speed-select" class="btn" style="padding: 4px 8px; font-size: 0.82rem; cursor: pointer; flex: 0.8;" title="Playback Speed">
+                <option value="0.25">0.25x</option>
+                <option value="0.5">0.5x</option>
+                <option value="1.0" selected>1.0x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2.0">2.0x</option>
+              </select>
+            </div>
+            <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.25); padding: 4px 8px; border-radius: 6px;">
+              <span id="anim-time-current" style="font-size: 0.75rem; opacity: 0.85; font-variant-numeric: tabular-nums; min-width: 28px;">0:00</span>
+              <input type="range" id="anim-timeline-slider" min="0" max="100" value="0" step="0.05" style="flex: 1; cursor: pointer; accent-color: #38bdf8;" />
+              <span id="anim-time-duration" style="font-size: 0.75rem; opacity: 0.85; font-variant-numeric: tabular-nums; min-width: 28px; text-align: right;">0:00</span>
             </div>
           </div>
         </div>
@@ -3407,7 +3434,16 @@
     const materialFileInput = document.getElementById('material-file-input');
     const btnLoadModel = document.getElementById('btn-load-model');
     const btnQuickCar = document.getElementById('btn-quick-car');
+    const btnQuickStretch = document.getElementById('btn-quick-stretch');
     const localFilePicker = document.getElementById('local-file-picker');
+
+    // Animation Player State
+    let animationMixer = null;
+    let currentAnimAction = null;
+    let currentAnimClip = null;
+    let isAnimPlaying = false;
+    let isUserScrubbing = false;
+    const animClock = new THREE.Clock();
 
     // Slide-out Panel Logic
     let activeTab = null;
@@ -3579,12 +3615,16 @@
 
       try {
         let object3D = null;
+        let gltfAnimations = null;
 
         if (ext === 'glb' || ext === 'gltf') {
           const gltf = await new Promise((resolve, reject) => {
             gltfLoader.load(rawUrl, resolve, onProgress, reject);
           });
           object3D = gltf.scene;
+          if (gltf.animations && gltf.animations.length > 0) {
+            gltfAnimations = gltf.animations;
+          }
         } else if (ext === 'obj') {
           const objLoadingManager = new THREE.LoadingManager();
           const localComps = (currentLoadedAsset && Array.isArray(currentLoadedAsset.companionFiles)) ? currentLoadedAsset.companionFiles : [];
@@ -3840,6 +3880,9 @@
             gltfLoader.load(rawUrl, resolve, onProgress, reject);
           });
           object3D = gltf.scene;
+          if (gltf.animations && gltf.animations.length > 0) {
+            gltfAnimations = gltf.animations;
+          }
         }
 
         if (!object3D) {
@@ -3847,6 +3890,7 @@
         }
 
         if (carModel) {
+          clearAnimationMixer();
           carRoot.remove(carModel);
           disposeHierarchy(carModel);
           carModel = null;
@@ -3905,6 +3949,12 @@
         });
 
         carRoot.add(carModel);
+
+        if (gltfAnimations && gltfAnimations.length > 0) {
+          setupAnimationMixer(gltfAnimations, carModel);
+        } else {
+          clearAnimationMixer();
+        }
 
         const finalBbox = new THREE.Box3().setFromObject(carModel);
         const finalSize = finalBbox.getSize(new THREE.Vector3());
@@ -4237,8 +4287,153 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
+    // =========================================================================
+    // SKELETAL ANIMATION CONTROLS & TIMELINE
+    // =========================================================================
+
+    function clearAnimationMixer() {
+      if (animationMixer) {
+        try {
+          animationMixer.stopAllAction();
+        } catch (_) {}
+        animationMixer = null;
+      }
+      currentAnimAction = null;
+      currentAnimClip = null;
+      isAnimPlaying = false;
+      const animGroup = document.getElementById('animation-controls-group');
+      if (animGroup) animGroup.style.display = 'none';
+    }
+
+    function setupAnimationMixer(animations, root) {
+      clearAnimationMixer();
+      if (!animations || animations.length === 0 || !root) return;
+
+      animationMixer = new THREE.AnimationMixer(root);
+      const clip = animations[0];
+      currentAnimClip = clip;
+      currentAnimAction = animationMixer.clipAction(clip);
+      currentAnimAction.setLoop(THREE.LoopRepeat);
+      currentAnimAction.clampWhenFinished = false;
+      currentAnimAction.play();
+      isAnimPlaying = true;
+
+      const animGroup = document.getElementById('animation-controls-group');
+      if (animGroup) animGroup.style.display = 'flex';
+
+      const playLabel = document.getElementById('anim-play-label');
+      const playIcon = document.getElementById('anim-play-icon');
+      if (playLabel) playLabel.textContent = 'Pause';
+      if (playIcon) playIcon.textContent = '⏸️';
+
+      const durElem = document.getElementById('anim-time-duration');
+      if (durElem) durElem.textContent = formatTime(clip.duration);
+
+      const slider = document.getElementById('anim-timeline-slider');
+      if (slider) {
+        slider.min = '0';
+        slider.max = clip.duration.toString();
+        slider.value = '0';
+      }
+
+      const speedSelect = document.getElementById('anim-speed-select');
+      if (speedSelect) speedSelect.value = '1.0';
+
+      animClock.start();
+    }
+
+    function formatTime(seconds) {
+      if (!seconds || isNaN(seconds)) return '0:00';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
+
+    function updateAnimationTimeline() {
+      if (!currentAnimAction || !currentAnimClip || isUserScrubbing) return;
+      const duration = currentAnimClip.duration || 1;
+      const curTime = (currentAnimAction.time % duration);
+      const curElem = document.getElementById('anim-time-current');
+      if (curElem) curElem.textContent = formatTime(curTime);
+
+      const slider = document.getElementById('anim-timeline-slider');
+      if (slider) slider.value = curTime.toFixed(2);
+    }
+
+    if (btnQuickStretch) {
+      btnQuickStretch.addEventListener('click', () => {
+        modelFileInput.value = 'models/seated_figure4_stretch/seated_figure4_stretch_animated.glb';
+        materialFileInput.value = '';
+        loadModel(
+          'models/seated_figure4_stretch/seated_figure4_stretch_animated.glb',
+          '',
+          'seated_figure4_stretch_animated.glb',
+          'meshy_test_0/models/seated_figure4_stretch/seated_figure4_stretch_animated.glb'
+        );
+      });
+    }
+
+    const btnPlayPauseAnim = document.getElementById('btn-play-pause-anim');
+    if (btnPlayPauseAnim) {
+      btnPlayPauseAnim.addEventListener('click', () => {
+        if (!currentAnimAction) return;
+        isAnimPlaying = !isAnimPlaying;
+        currentAnimAction.paused = !isAnimPlaying;
+        const playLabel = document.getElementById('anim-play-label');
+        const playIcon = document.getElementById('anim-play-icon');
+        if (playLabel) playLabel.textContent = isAnimPlaying ? 'Pause' : 'Play';
+        if (playIcon) playIcon.textContent = isAnimPlaying ? '⏸️' : '▶️';
+      });
+    }
+
+    const btnStopAnim = document.getElementById('btn-stop-anim');
+    if (btnStopAnim) {
+      btnStopAnim.addEventListener('click', () => {
+        if (!currentAnimAction) return;
+        currentAnimAction.time = 0;
+        if (animationMixer) animationMixer.setTime(0);
+        const slider = document.getElementById('anim-timeline-slider');
+        if (slider) slider.value = '0';
+        const curElem = document.getElementById('anim-time-current');
+        if (curElem) curElem.textContent = '0:00';
+      });
+    }
+
+    const animSpeedSelect = document.getElementById('anim-speed-select');
+    if (animSpeedSelect) {
+      animSpeedSelect.addEventListener('change', (e) => {
+        const speed = parseFloat(e.target.value) || 1.0;
+        if (currentAnimAction) {
+          currentAnimAction.setEffectiveTimeScale(speed);
+        }
+      });
+    }
+
+    const animTimelineSlider = document.getElementById('anim-timeline-slider');
+    if (animTimelineSlider) {
+      animTimelineSlider.addEventListener('input', (e) => {
+        isUserScrubbing = true;
+        const val = parseFloat(e.target.value);
+        if (currentAnimAction) {
+          currentAnimAction.time = val;
+          if (animationMixer) animationMixer.setTime(val);
+        }
+        const curElem = document.getElementById('anim-time-current');
+        if (curElem) curElem.textContent = formatTime(val);
+      });
+      animTimelineSlider.addEventListener('change', () => {
+        isUserScrubbing = false;
+      });
+    }
+
     // Render Loop
     renderer.setAnimationLoop((timestamp, frame) => {
+      const delta = animClock.getDelta();
+      if (animationMixer) {
+        animationMixer.update(delta);
+        updateAnimationTimeline();
+      }
+
       if (autoRotate && carModel && !renderer.xr.isPresenting) {
         carRoot.rotation.y += 0.007;
       }

@@ -3418,60 +3418,138 @@
           const objLoadingManager = new THREE.LoadingManager();
           const localComps = (currentLoadedAsset && Array.isArray(currentLoadedAsset.companionFiles)) ? currentLoadedAsset.companionFiles : [];
           const localBlobMap = new Map();
+          const knownBlobUrls = new Set();
+          if (rawUrl.startsWith('blob:')) knownBlobUrls.add(rawUrl);
+          if (materialInputVal && materialInputVal.startsWith('blob:')) knownBlobUrls.add(materialInputVal);
+          const serverCompMap = new Map();
+          const companionEntries = [];
+          const addCompanionEntry = (name, url) => {
+            if (!name || !url) return;
+            const key = name.toLowerCase();
+            if (!companionEntries.some(e => e.name.toLowerCase() === key)) {
+              companionEntries.push({ name, url });
+            }
+          };
+
           localComps.forEach(cf => {
             if (cf && cf.name) {
-              localBlobMap.set(cf.name.toLowerCase(), URL.createObjectURL(cf));
+              const bUrl = URL.createObjectURL(cf);
+              localBlobMap.set(cf.name.toLowerCase(), bUrl);
+              knownBlobUrls.add(bUrl);
+              addCompanionEntry(cf.name, bUrl);
             }
           });
-          if (localBlobMap.size > 0) {
-            objLoadingManager.setURLModifier((url) => {
-              if (!url || url.startsWith('blob:') || url.startsWith('data:')) return url;
-              const cleanBase = url.split('?')[0].split('#')[0].replace(/\\/g, '/').split('/').pop().toLowerCase();
-              return localBlobMap.get(cleanBase) || url;
-            });
-          }
 
           let resolvedMtl = resolveModelUrl(materialInputVal);
           const baseName = displayName.replace(/\.[^/.]+$/, '');
           const modelDir = rawUrl.includes('/') ? rawUrl.substring(0, rawUrl.lastIndexOf('/') + 1) : '';
 
-          // Auto-discover .mtl file and textures when loading an .obj without explicit material input
+          // Auto-discover .mtl file and textures from backend or local companions
+          if (localComps.length === 0 || (!rawUrl.startsWith('blob:') && !rawUrl.startsWith('data:'))) {
+            if (!rawUrl.startsWith('blob:') && !rawUrl.startsWith('data:')) {
+              try {
+                const comps = await checkBackendCompanions(sourcePathDesc || rawUrl);
+                (comps || []).forEach(c => {
+                  const subPrefix = c.rel_sub ? `${c.rel_sub}/` : '';
+                  const cUrl = `${modelDir}${subPrefix}${c.name}`;
+                  serverCompMap.set(c.name.toLowerCase(), cUrl);
+                  addCompanionEntry(c.name, cUrl);
+                  if (!resolvedMtl && getExt(c.name) === 'mtl') {
+                    resolvedMtl = cUrl;
+                    if (materialFileInput) materialFileInput.value = resolvedMtl;
+                  }
+                });
+              } catch (_) {}
+            }
+          }
+
           if (!resolvedMtl) {
             const localMtl = localComps.find(f => getExt(f.name) === 'mtl');
             if (localMtl) {
               resolvedMtl = localBlobMap.get(localMtl.name.toLowerCase()) || URL.createObjectURL(localMtl);
               if (materialFileInput) materialFileInput.value = localMtl.name;
             } else if (!rawUrl.startsWith('blob:') && !rawUrl.startsWith('data:')) {
-              try {
-                const comps = await checkBackendCompanions(sourcePathDesc || rawUrl);
-                const mtlComp = (comps || []).find(c => getExt(c.name) === 'mtl');
-                if (mtlComp) {
-                  const subPrefix = mtlComp.rel_sub ? `${mtlComp.rel_sub}/` : '';
-                  resolvedMtl = `${modelDir}${subPrefix}${mtlComp.name}`;
-                  if (materialFileInput) materialFileInput.value = resolvedMtl;
-                }
-              } catch (_) {}
-
               // Fallback probe in <baseName>_texture/, <baseName>_textures/, and same directory
-              if (!resolvedMtl) {
-                const mtlCandidates = [
-                  `${modelDir}${baseName}_texture/${baseName}.mtl`,
-                  `${modelDir}${baseName}_textures/${baseName}.mtl`,
-                  `${modelDir}${baseName}.mtl`
-                ];
-                for (const cand of mtlCandidates) {
-                  try {
-                    const probe = await fetch(cand, { method: 'HEAD' });
-                    if (probe.ok) {
-                      resolvedMtl = cand;
-                      if (materialFileInput) materialFileInput.value = cand;
-                      break;
-                    }
-                  } catch (_) {}
-                }
+              const mtlCandidates = [
+                `${modelDir}${baseName}_texture/${baseName}.mtl`,
+                `${modelDir}${baseName}_textures/${baseName}.mtl`,
+                `${modelDir}${baseName}.mtl`
+              ];
+              for (const cand of mtlCandidates) {
+                try {
+                  const probe = await fetch(cand, { method: 'HEAD' });
+                  if (probe.ok) {
+                    resolvedMtl = cand;
+                    if (materialFileInput) materialFileInput.value = cand;
+                    break;
+                  }
+                } catch (_) {}
               }
             }
           }
+
+          // Fallback probe for PBR textures on server if none discovered yet
+          const imageExts = new Set(['png', 'jpg', 'jpeg', 'webp', 'bmp', 'tga']);
+          const hasAnyTexEntry = companionEntries.some(e => imageExts.has(getExt(e.name)) && !/^thumbnail\./i.test(e.name));
+          if (!hasAnyTexEntry && !rawUrl.startsWith('blob:') && !rawUrl.startsWith('data:')) {
+            const texDirs = [`${modelDir}${baseName}_textures/`, `${modelDir}${baseName}_texture/`, `${modelDir}textures/`, modelDir];
+            const texSuffixes = ['base_color', 'metallic', 'normal', 'roughness'];
+            for (const tDir of texDirs) {
+              let foundInDir = false;
+              await Promise.all(texSuffixes.map(async (suf) => {
+                const fileName = `texture_0_${suf}.png`;
+                const cand = `${tDir}${fileName}`;
+                try {
+                  const probe = await fetch(cand, { method: 'HEAD' });
+                  if (probe.ok) {
+                    foundInDir = true;
+                    serverCompMap.set(fileName.toLowerCase(), cand);
+                    addCompanionEntry(fileName, cand);
+                  }
+                } catch (_) {}
+              }));
+              if (foundInDir) break;
+            }
+          }
+
+          // Classify PBR companion textures (base_color, metallic, normal, roughness, ao, emissive)
+          const pbrMaps = { baseColor: null, metallic: null, normal: null, roughness: null, ao: null, emissive: null };
+          companionEntries.forEach(entry => {
+            const extLower = getExt(entry.name);
+            if (!imageExts.has(extLower)) return;
+            const lower = entry.name.toLowerCase();
+            if (lower === 'thumbnail.png' || lower.endsWith('_thumbnail.png')) return;
+
+            if (!pbrMaps.metallic && (lower.includes('metallic') || lower.includes('metalness') || lower.includes('_metal.'))) {
+              pbrMaps.metallic = entry;
+            } else if (!pbrMaps.normal && (lower.includes('normal') || lower.includes('_norm.') || lower.includes('_nrm.'))) {
+              pbrMaps.normal = entry;
+            } else if (!pbrMaps.roughness && (lower.includes('roughness') || lower.includes('_rough.'))) {
+              pbrMaps.roughness = entry;
+            } else if (!pbrMaps.ao && (lower.includes('ambient_occlusion') || lower.includes('_ao.') || lower.includes('occlusion'))) {
+              pbrMaps.ao = entry;
+            } else if (!pbrMaps.emissive && (lower.includes('emissive') || lower.includes('emission'))) {
+              pbrMaps.emissive = entry;
+            } else if (!pbrMaps.baseColor && (lower.includes('base_color') || lower.includes('basecolor') || lower.includes('albedo') || lower.includes('diffuse') || lower.includes('_color.'))) {
+              pbrMaps.baseColor = entry;
+            }
+          });
+          if (!pbrMaps.baseColor) {
+            const fallbackTex = companionEntries.find(e => imageExts.has(getExt(e.name)) && /^texture_0\./i.test(e.name));
+            if (fallbackTex) pbrMaps.baseColor = fallbackTex;
+          }
+
+          objLoadingManager.setURLModifier((url) => {
+            if (!url || url.startsWith('data:') || knownBlobUrls.has(url)) return url;
+            const cleanBase = url.split('?')[0].split('#')[0].replace(/\\/g, '/').split('/').pop().toLowerCase();
+            if (localBlobMap.has(cleanBase)) return localBlobMap.get(cleanBase);
+            if (serverCompMap.has(cleanBase)) return serverCompMap.get(cleanBase);
+            // Redirect missing generic MTL map_Kd (e.g. texture_0.png) to discovered base_color texture
+            if (pbrMaps.baseColor && /^(texture_0|diffuse|albedo|base_?color)\.(png|jpe?g|webp|tga|bmp)$/i.test(cleanBase)) {
+              return pbrMaps.baseColor.url;
+            }
+            return url;
+          });
 
           const objLoaderInst = new OBJLoader(objLoadingManager);
           if (resolvedMtl) {
@@ -3496,6 +3574,82 @@
           object3D = await new Promise((resolve, reject) => {
             objLoaderInst.load(rawUrl, resolve, onProgress, reject);
           });
+
+          // Upgrade OBJ materials to MeshStandardMaterial and apply PBR companion maps
+          if (pbrMaps.baseColor || pbrMaps.metallic || pbrMaps.normal || pbrMaps.roughness || pbrMaps.ao || pbrMaps.emissive) {
+            const texLoaderInst = new THREE.TextureLoader(objLoadingManager);
+            const loadPbrTex = (entry, isColor) => {
+              if (!entry) return Promise.resolve(null);
+              return new Promise((resolve) => {
+                texLoaderInst.load(
+                  entry.url,
+                  (tex) => {
+                    tex.colorSpace = isColor ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+                    tex.name = entry.name;
+                    resolve(tex);
+                  },
+                  undefined,
+                  () => resolve(null)
+                );
+              });
+            };
+
+            const [baseTex, metalTex, normTex, roughTex, aoTex, emissiveTex] = await Promise.all([
+              loadPbrTex(pbrMaps.baseColor, true),
+              loadPbrTex(pbrMaps.metallic, false),
+              loadPbrTex(pbrMaps.normal, false),
+              loadPbrTex(pbrMaps.roughness, false),
+              loadPbrTex(pbrMaps.ao, false),
+              loadPbrTex(pbrMaps.emissive, true)
+            ]);
+
+            if (baseTex || metalTex || normTex || roughTex || aoTex || emissiveTex) {
+              object3D.traverse((child) => {
+                if (!child.isMesh) return;
+                const oldMats = Array.isArray(child.material) ? child.material : [child.material];
+                const newMats = oldMats.map((om) => {
+                  const std = new THREE.MeshStandardMaterial({
+                    name: (om && om.name) ? om.name : 'OBJ_PBR_Material',
+                    color: (om && om.color) ? om.color.clone() : new THREE.Color(0xffffff),
+                    transparent: om ? !!om.transparent : false,
+                    opacity: (om && om.opacity !== undefined) ? om.opacity : 1.0,
+                    alphaTest: (om && om.alphaTest !== undefined) ? om.alphaTest : 0,
+                    side: (om && om.side !== undefined) ? om.side : THREE.FrontSide,
+                    wireframe: om ? !!om.wireframe : false,
+                    roughness: (om && om.roughness !== undefined) ? om.roughness : 0.6,
+                    metalness: (om && om.metalness !== undefined) ? om.metalness : 0.1
+                  });
+
+                  if (om && om.map && om.map.image) {
+                    std.map = om.map;
+                    std.map.colorSpace = THREE.SRGBColorSpace;
+                    if (!std.map.name && pbrMaps.baseColor) std.map.name = pbrMaps.baseColor.name;
+                    std.color.setHex(0xffffff);
+                  } else if (baseTex) {
+                    std.map = baseTex;
+                    std.color.setHex(0xffffff);
+                  }
+                  if (normTex) std.normalMap = normTex;
+                  if (roughTex) {
+                    std.roughnessMap = roughTex;
+                    std.roughness = 1.0;
+                  }
+                  if (metalTex) {
+                    std.metalnessMap = metalTex;
+                    std.metalness = 1.0;
+                  }
+                  if (aoTex) std.aoMap = aoTex;
+                  if (emissiveTex) {
+                    std.emissiveMap = emissiveTex;
+                    std.emissive.setHex(0xffffff);
+                  }
+                  std.needsUpdate = true;
+                  return std;
+                });
+                child.material = Array.isArray(child.material) ? newMats : newMats[0];
+              });
+            }
+          }
         } else if (ext === 'fbx') {
           object3D = await new Promise((resolve, reject) => {
             fbxLoader.load(rawUrl, resolve, onProgress, reject);

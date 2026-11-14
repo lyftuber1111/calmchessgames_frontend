@@ -1,0 +1,26 @@
+{
+    "model": "drone_phase_interceptor_3.obj",
+    "base_name": "drone_phase_interceptor_3",
+    "exported_at": "2026-11-14T02:18:37.532Z",
+    "color_palette": [
+        "#FFFFFF"
+    ],
+    "materials": [
+        {
+            "name": "Material",
+            "type": "MeshPhongMaterial",
+            "color": "#FFFFFF",
+            "emissive": null,
+            "roughness": null,
+            "metalness": null,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": []
+        }
+    ],
+    "companion_files": [
+        "drone_phase_interceptor_3.mtl",
+        "texture_0_base_color.png",
+        "thumbnail.png"
+    ]
+}

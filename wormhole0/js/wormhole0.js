@@ -177,7 +177,7 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
       fetchUrl,
       (gltf) => {
         const scene = gltf.scene || gltf.scenes[0] || gltf;
-        // Cleanse model hierarchy: disable wireframe on all materials and hide any line segments or bounding helpers
+        // Cleanse model hierarchy: disable wireframe on all materials, calibrate PBR for crisp appearance
         scene.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
@@ -187,6 +187,20 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
               mats.forEach(m => {
                 if (m) {
                   m.wireframe = false;
+                  // Enhance PBR materials so .glb models render as crisp textured ships, never dark shadows
+                  if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+                    if (m.metalness > 0.45) m.metalness = 0.25;
+                    if (m.roughness > 0.8) m.roughness = 0.55;
+                    if (m.map) {
+                      m.map.colorSpace = THREE.SRGBColorSpace;
+                      m.map.needsUpdate = true;
+                    }
+                    if (m.map && (!m.emissive || (m.emissive.r === 0 && m.emissive.g === 0 && m.emissive.b === 0))) {
+                      m.emissive = new THREE.Color(0x334455);
+                      m.emissiveMap = m.map;
+                      m.emissiveIntensity = 0.38;
+                    }
+                  }
                   m.needsUpdate = true;
                 }
               });
@@ -637,8 +651,8 @@ if (!camera) {
   cameraRig.add(camera);
 }
 
-// Lighting
-const ambientLight = new THREE.AmbientLight(0x02111c, 0.4);
+// Lighting - Enhanced high-fidelity illumination for crisp 3D models and space atmosphere
+const ambientLight = new THREE.AmbientLight(0xa0c8e0, 1.35);
 scene.add(ambientLight);
 
 const wormholeCoreLight = new THREE.PointLight(0x00f0ff, 4.5, 500, 1.2);
@@ -648,6 +662,23 @@ scene.add(wormholeCoreLight);
 const secondaryLight = new THREE.PointLight(0x0066aa, 2.5, 300, 1.5);
 secondaryLight.position.set(0, 0, -20);
 scene.add(secondaryLight);
+
+// Key directional sunlight for crisp highlights and hull textures
+const keySunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+keySunLight.position.set(30, 50, 60);
+keySunLight.name = 'stage1_sunlight';
+scene.add(keySunLight);
+
+// Hemisphere fill light for deep space ambient reflections
+const hemiSpaceLight = new THREE.HemisphereLight(0xaad8ff, 0x112233, 1.25);
+hemiSpaceLight.name = 'stage1_hemilight';
+scene.add(hemiSpaceLight);
+
+// Front cockpit fill headlight so oncoming ships are brightly illuminated facing the player
+const cockpitHeadlight = new THREE.DirectionalLight(0xe0f8ff, 1.8);
+cockpitHeadlight.position.set(0, 1.5, 4);
+cockpitHeadlight.name = 'stage1_headlight';
+camera.add(cockpitHeadlight);
 
 // =============================================================================
 // CUSTOM GLSL SHADERS - ACCRETION DISK & EVENT HORIZON
@@ -8365,7 +8396,7 @@ function create3DEnemyMesh(config) {
           const autoScale = targetSpan / maxDim;
           loadedModel.scale.set(autoScale, autoScale, autoScale);
 
-          // Configure shadows & meshes - strictly ensure wireframe = false and hide lines
+          // Configure shadows & meshes - calibrate PBR materials for crisp appearance
           loadedModel.traverse((child) => {
             if (child.isMesh) {
               child.castShadow = true;
@@ -8375,6 +8406,20 @@ function create3DEnemyMesh(config) {
                 mats.forEach(m => {
                   if (m) {
                     m.wireframe = false;
+                    // Enhance PBR materials so .glb models render as crisp textured ships, never dark shadows
+                    if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+                      if (m.metalness > 0.45) m.metalness = 0.25;
+                      if (m.roughness > 0.8) m.roughness = 0.55;
+                      if (m.map) {
+                        m.map.colorSpace = THREE.SRGBColorSpace;
+                        m.map.needsUpdate = true;
+                      }
+                      if (m.map && (!m.emissive || (m.emissive.r === 0 && m.emissive.g === 0 && m.emissive.b === 0))) {
+                        m.emissive = new THREE.Color(0x334455);
+                        m.emissiveMap = m.map;
+                        m.emissiveIntensity = 0.38;
+                      }
+                    }
                     m.needsUpdate = true;
                   }
                 });
@@ -8652,55 +8697,74 @@ function defaultEnemyMovement(e, delta, context) {
   const enemyIndex = (context && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
   const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
+  // Exact 10,000 KM stop distance: at 420 KM per Three.js unit = 23.81 units from player
+  const stopDist = 10000 / 420; // ~23.8095 units
+  const targetStopDist = e.targetStopDist || stopDist;
+  const targetZ = playerPos.z - targetStopDist;
   const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
+
+  // Slowly get larger as those approach the player
+  const totalDist = Math.max(10, targetZ - spawnZ);
   const distTraveled = e.mesh.position.z - spawnZ;
-  const totalDist = Math.max(30, (playerPos.z - (e.targetStopDist || 23.8)) - spawnZ);
-  const progress = Math.max(0, Math.min(1.0, distTraveled / totalDist));
-  const curScale = THREE.MathUtils.lerp(0.1, e.baseScale || 1.0, progress);
+  const progress = THREE.MathUtils.clamp(distTraveled / totalDist, 0.0, 1.0);
+  const curScale = THREE.MathUtils.lerp(0.12, e.baseScale || 1.3, progress);
   e.mesh.scale.set(curScale, curScale, curScale);
 
-  if (e.phase === 'RUSH_OUT') {
-    e.mesh.position.z += (e.speed || 40) * delta;
-    e.mesh.position.x += (playerPos.x + (e.targetScatterX || 0) * 0.25 - e.mesh.position.x) * delta * 0.45;
-    e.mesh.position.y += (playerPos.y + (e.targetScatterY || 0) * 0.25 - e.mesh.position.y) * delta * 0.45;
+  // Baseline forward posture: nose slightly tilted down (~0.22 rad / 12.6 deg) so top of 3D model is clearly visible
+  const basePitchDown = 0.22;
 
-    if (distToPlayer <= (e.targetStopDist || 23.8) || e.mesh.position.z >= (playerPos.z - (e.targetStopDist || 23.8))) {
+  if (e.phase === 'RUSH_OUT') {
+    // Fly out of the black hole mouth towards player
+    e.mesh.position.z += (e.speed || 45) * delta;
+    e.mesh.position.x += (playerPos.x + (e.targetScatterX || 0) * 0.25 - e.mesh.position.x) * delta * 0.55;
+    e.mesh.position.y += (playerPos.y + (e.targetScatterY || 0) * 0.25 - e.mesh.position.y) * delta * 0.55;
+
+    // Face forward with nose tilted down
+    e.mesh.rotation.set(basePitchDown, 0, 0);
+
+    if (e.mesh.position.z >= targetZ || distToPlayer <= targetStopDist) {
+      e.mesh.position.z = targetZ;
       e.phase = 'SCATTER_AND_EVADE';
       e.stoppedTime = now;
     }
   } else {
-    const desiredZ = playerPos.z - (e.targetStopDist || 23.8);
-    e.mesh.position.z += (desiredZ - e.mesh.position.z) * delta * 2.8;
+    // Stopping at 10,000 KM from player: lock Z proximity around targetZ
+    e.mesh.position.z += (targetZ - e.mesh.position.z) * delta * 3.2;
 
+    // Scatter towards assigned viewport screen position
     const screenTargetX = playerPos.x + (e.targetScatterX || 0);
     const screenTargetY = playerPos.y + (e.targetScatterY || 0);
-    e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.4;
-    e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.4;
+    e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
+    e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
 
     if (now > (e.scatterRetargetTime || 0)) {
-      e.scatterRetargetTime = now + 4200 + Math.random() * 4500;
+      e.scatterRetargetTime = now + 4000 + Math.random() * 4000;
       const newAng = Math.random() * Math.PI * 2;
-      const newRad = 7.5 + Math.random() * 16.5;
+      const newRad = 6.5 + Math.random() * 15.0;
       e.targetScatterX = Math.cos(newAng) * newRad;
-      e.targetScatterY = Math.sin(newAng) * (newRad * 0.75);
+      e.targetScatterY = Math.sin(newAng) * (newRad * 0.72);
     }
 
+    // Evasive maneuvers: multi-frequency sinusoidal weaves
     const t = (now - (e.stoppedTime || now)) * 0.001;
     const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0);
-    const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.5);
-    const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.8);
+    const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.4);
+    const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.6);
     e.mesh.position.x += evaVx * delta;
     e.mesh.position.y += evaVy * delta;
     e.mesh.position.z += evaVz * delta;
 
+    // Tactical thruster bursts / jukes
     if (now >= (e.nextJukeTime || 0)) {
-      e.nextJukeTime = now + 1200 + Math.random() * 2000;
+      e.nextJukeTime = now + 1400 + Math.random() * 2000;
       e.jukeEndTime = now + 350 + Math.random() * 350;
-      e.jukeVelocity.set(
-        (Math.random() - 0.5) * 32,
-        (Math.random() - 0.5) * 24,
-        (Math.random() - 0.5) * 8
-      );
+      if (e.jukeVelocity && typeof e.jukeVelocity.set === 'function') {
+        e.jukeVelocity.set(
+          (Math.random() - 0.5) * 30,
+          (Math.random() - 0.5) * 22,
+          (Math.random() - 0.5) * 6
+        );
+      }
     }
     if (e.jukeVelocity) {
       if (now < e.jukeEndTime) {
@@ -8710,33 +8774,39 @@ function defaultEnemyMovement(e, delta, context) {
       }
     }
 
+    // Reactive dodging of incoming player laser fire
     for (let li = 0; li < laserBolts.length; li++) {
       const lbolt = laserBolts[li];
       if (!lbolt || !lbolt.mesh) continue;
       const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
-      if (ldist < 6.8) {
+      if (ldist < 7.2) {
         const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
         dodgeDir.z = 0;
         if (dodgeDir.lengthSq() > 0.001) {
           dodgeDir.normalize();
-          e.mesh.position.addScaledVector(dodgeDir, 18.0 * delta);
+          e.mesh.position.addScaledVector(dodgeDir, 20.0 * delta);
         }
         break;
       }
     }
 
+    // Banking and orientation: Facing forward towards player with nose slightly tilted down
     const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
     const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
-    const netVx = (screenTargetX - e.mesh.position.x) * 1.2 + jukeVx;
-    const netVy = (screenTargetY - e.mesh.position.y) * 1.2 + jukeVy;
-    e.mesh.rotation.z = -THREE.MathUtils.clamp(netVx * 0.05, -0.65, 0.65);
-    e.mesh.rotation.x = THREE.MathUtils.clamp(netVy * 0.05, -0.45, 0.45);
-    e.mesh.rotation.y = THREE.MathUtils.clamp(-netVx * 0.03, -0.4, 0.4);
+    const netVx = (screenTargetX - e.mesh.position.x) * 1.1 + jukeVx + evaVx;
+    const netVy = (screenTargetY - e.mesh.position.y) * 1.1 + jukeVy + evaVy;
+
+    const roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65);
+    const yaw = THREE.MathUtils.clamp(-netVx * 0.025, -0.35, 0.35);
+    const pitch = basePitchDown + THREE.MathUtils.clamp(netVy * 0.04, -0.22, 0.22);
+    e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
+
     if (e.mesh.userData && e.mesh.userData.spinRing) {
       e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
     }
   }
 
+  // Proximity detection to other enemies: smooth repulsion so enemies don't run into each other
   for (let j = 0; j < activeEnemies.length; j++) {
     if (j === enemyIndex) continue;
     const other = activeEnemies[j];
@@ -8745,10 +8815,10 @@ function defaultEnemyMovement(e, delta, context) {
     const sepDist = sepVec.length();
     const otherScale = (other.mesh.scale && typeof other.mesh.scale.x === 'number') ? other.mesh.scale.x : 1.0;
     const curScaleX = (e.mesh.scale && typeof e.mesh.scale.x === 'number') ? e.mesh.scale.x : 1.0;
-    const minSafeSep = Math.max(5.0, (curScaleX + otherScale) * 2.4);
-    if (sepDist < minSafeSep && sepDist > 0.01) {
+    const minSafeSep = Math.max(5.5, (curScaleX + otherScale) * 2.8);
+    if (sepDist < minSafeSep && sepDist > 0.001) {
       const overlapFactor = (minSafeSep - sepDist) / minSafeSep;
-      const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 16.0 * delta);
+      const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 20.0 * delta);
       e.mesh.position.add(repulse);
     }
   }
@@ -8951,11 +9021,27 @@ function fireEnemyWeaponBolt(enemyObj) {
     || modelType === 'dreadnought'
     || (modelType === 'singularity_probe' && Math.random() > 0.45);
 
-  const spawnOrigin = enemyObj.mesh.position.clone();
+  const shipScale = (enemyObj.mesh.scale && typeof enemyObj.mesh.scale.x === 'number') ? enemyObj.mesh.scale.x : 1.0;
+  const cfgDepth = (parseFloat(cfg.depth) || 3.0) * shipScale;
+  const cfgLength = (parseFloat(cfg.length) || 3.0) * shipScale;
+
+  // Emanating from front of model / weapon emitters
+  enemyObj.lastGunSide = (enemyObj.lastGunSide === 1) ? -1 : 1;
+  const isDualCannon = /dual|twin|interceptor/i.test(wpnName) || /interceptor/i.test(cfg.enemy_id || '');
+  const lateralOffset = isDualCannon ? (enemyObj.lastGunSide * cfgLength * 0.32) : 0;
+  const forwardOffset = cfgDepth * 0.48; // front nose / muzzle
+  const verticalOffset = -0.15 * shipScale; // slightly down along tilted nose
+
+  const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffset);
+  const spawnOrigin = enemyObj.mesh.position.clone().add(localMuzzle.applyQuaternion(enemyObj.mesh.quaternion));
+
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
   const direction = new THREE.Vector3().subVectors(playerPos, spawnOrigin).normalize();
-  const weaponBoltColor = enemyObj.weaponColor || '#ff0055';
-  const boltColorHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0xff0055;
+  const weaponBoltColor = cfg.weapon_color || enemyObj.weaponColor || '#38bdf8';
+  const boltColorHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0x38bdf8;
+
+  // Weapon fire scaled relative to the size of the model
+  const boltScale = THREE.MathUtils.clamp(shipScale * 0.85, 0.6, 2.5);
 
   let mesh;
   let geometryList = [];
@@ -9014,10 +9100,11 @@ function fireEnemyWeaponBolt(enemyObj) {
     missileGroup.add(plumeMesh);
 
     // Radiant point light
-    const light = new THREE.PointLight(boltColorHex, 4.0, 32);
+    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 32 * boltScale);
     light.position.set(0, 0, 0);
     missileGroup.add(light);
 
+    missileGroup.scale.set(boltScale, boltScale, boltScale);
     missileGroup.position.copy(spawnOrigin);
     missileGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     scene.add(missileGroup);
@@ -9027,7 +9114,7 @@ function fireEnemyWeaponBolt(enemyObj) {
     materialList = [bodyMat, tipMat, finMat, plumeMat];
 
     // Visible flight speed: travels across ~24 units in ~1.0 second
-    boltSpeed = Math.max(22, Math.min(34, (enemyObj.weaponSpeed || 480) * 0.065));
+    boltSpeed = Math.max(22, Math.min(36, (parseInt(cfg.weapon_speed || enemyObj.weaponSpeed || 480)) * 0.065));
 
     if (audioMgr && typeof audioMgr.playEnemyMissile === 'function') {
       audioMgr.playEnemyMissile();
@@ -9063,10 +9150,11 @@ function fireEnemyWeaponBolt(enemyObj) {
     beamGroup.add(coreMesh);
 
     // Radiant point light
-    const light = new THREE.PointLight(boltColorHex, 4.0, 36);
+    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
     light.position.set(0, 0, 0);
     beamGroup.add(light);
 
+    beamGroup.scale.set(boltScale, boltScale, boltScale);
     beamGroup.position.copy(spawnOrigin);
     beamGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     scene.add(beamGroup);
@@ -9076,7 +9164,7 @@ function fireEnemyWeaponBolt(enemyObj) {
     materialList = [sheathMat, coreMat];
 
     // Visible flight speed: travels across ~24 units in ~0.8 second
-    boltSpeed = Math.max(28, Math.min(42, (enemyObj.weaponSpeed || 480) * 0.075));
+    boltSpeed = Math.max(28, Math.min(44, (parseInt(cfg.weapon_speed || enemyObj.weaponSpeed || 480)) * 0.075));
 
     if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
       audioMgr.playEnemyLaser();

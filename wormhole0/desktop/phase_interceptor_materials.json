@@ -1,0 +1,9 @@
+{
+    "model": "phase_interceptor.glb",
+    "baseName": "phase_interceptor",
+    "exported_at": "2026-11-14T04:42:53+00:00",
+    "destination": "/admin/temp_stage_0/desktop",
+    "companion_files": [
+        "phase_interceptor_materials.json"
+    ]
+}

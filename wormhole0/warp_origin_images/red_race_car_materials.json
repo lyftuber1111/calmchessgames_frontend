@@ -1,0 +1,9 @@
+{
+    "model": "red_race_car.glb",
+    "baseName": "red_race_car",
+    "exported_at": "2026-11-14T02:05:29+00:00",
+    "destination": "/admin/temp_stage_0/warp_origin_images",
+    "companion_files": [
+        "red_race_car_materials.json"
+    ]
+}

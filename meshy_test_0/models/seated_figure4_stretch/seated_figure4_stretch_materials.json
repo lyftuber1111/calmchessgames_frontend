@@ -1,0 +1,28 @@
+{
+  "name": "seated_figure4_stretch",
+  "scale": 1.0,
+  "textures": "./seated_figure4_stretch_textures",
+  "relative_link_skill_invariant": "./meshy_test_0/models/seated_figure4_stretch/seated_figure4_stretch_textures",
+  "meshy_yest_0_storage": "./meshy_yest_0/models/seated_figure4_stretch/seated_figure4_stretch_textures",
+  "prompt": "Seated figure 4 stretch: Sit upright at edge of office chair with tall spine, cross right ankle over left knee creating a 4 shape, hinge gently forward at hips with flat back, hold to open hip rotators, switch legs",
+  "preview_task_id": "01a1d955-d339-72ba-ba80-9fe90ffdf011",
+  "refine_task_id": "01a1d956-7442-77f1-b5cf-bfec85d60f66",
+  "rig_task_id": "01a1d956-db86-77b9-a1dc-fe4ff7fb7a3b",
+  "animation_task_id": "01a1d957-10f3-77cf-a690-5a33e5de6586",
+  "motion_task_id": "01a1d954-feb6-743e-ba32-86b49cf2d10f",
+  "files": {
+    "animated_glb": "seated_figure4_stretch_animated.glb",
+    "animated_fbx": "seated_figure4_stretch_animated.fbx",
+    "motion_clip_fbx": "seated_figure4_stretch_motion_clip.fbx",
+    "static_glb": "seated_figure4_stretch.glb",
+    "static_obj": "seated_figure4_stretch.obj",
+    "static_mtl": "seated_figure4_stretch.mtl",
+    "static_fbx": "seated_figure4_stretch.fbx"
+  },
+  "stages": {
+    "A": "Sit upright at the edge of your office chair with spine tall.",
+    "B": "Cross your right ankle over your left knee, creating a '4' shape.",
+    "C": "Hinge gently forward at your hips while keeping your back completely flat.",
+    "D": "Hold for 30 seconds to open hip rotator, then switch legs."
+  }
+}

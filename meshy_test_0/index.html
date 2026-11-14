@@ -1634,7 +1634,7 @@
               <div class="section-subtitle">Move to typed path or checked image folders</div>
             </div>
           </div>
-          <span class="count-badge active" id="panel-selected-badge">1 Folder Selected</span>
+          <span class="count-badge" id="panel-selected-badge">0 Quick Links</span>
         </div>
 
         <!-- Currently Loaded Asset Status Badge -->
@@ -1705,7 +1705,7 @@
           <label for="panel-dest-path-input">Destination Path (Starting from calmchessgames.com root)</label>
           <div class="dest-input-wrap">
             <span class="dest-prefix">calmchessgames.com/</span>
-            <input type="text" id="panel-dest-path-input" placeholder="wormhole0/warp_origin_images/red_race_car.glb" autocomplete="off" />
+            <input type="text" id="panel-dest-path-input" value="wormhole0/warp_origin_images/red_race_car.glb" placeholder="wormhole0/warp_origin_images/red_race_car.glb" autocomplete="off" />
           </div>
         </div>
 
@@ -1950,7 +1950,7 @@
       "/meshy_test_0/models"
     ].filter(f => f.toLowerCase().includes('images') || f.toLowerCase().includes('models'));
 
-    const selectedFolderPaths = new Set([DEFAULT_DEST_DIR]);
+    const selectedFolderPaths = new Set();
 
     // Backend Server URL Resolution (Connects frontend on Git to backend PHP servers)
     const BACKEND_BASE = (function () {
@@ -2319,13 +2319,14 @@
       }
     }
 
-    function renderCompanionFilesUI(companions, baseName) {
+    function renderCompanionFilesUI(companions, baseName, modelExt = '') {
       if (!companionFilesList) return;
       companionFilesList.innerHTML = '';
 
       if (jsonModelBasename) jsonModelBasename.textContent = baseName || 'model';
 
-      const allItems = [...(companions || [])];
+      const isGlb = (modelExt || (currentLoadedAsset && currentLoadedAsset.ext) || '').toLowerCase() === 'glb';
+      const allItems = isGlb ? [] : [...(companions || [])];
 
       allItems.push({
         name: `${baseName || 'model'}_materials.json`,
@@ -2345,12 +2346,13 @@
         else if (file.type === 'buffer') { icon = '💾'; typeLabel = 'GLTF Buffer'; }
         else if (file.type === 'materials_colors_json') { icon = '📊'; typeLabel = 'Colors & Properties JSON'; }
 
+        const displayFileName = file.rel_sub ? `${file.rel_sub}/${file.name}` : file.name;
         const sizeStr = file.autoGen ? 'Auto-Generated' : (file.size ? formatBytes(file.size) : 'Companion File');
 
         item.innerHTML = `
           <div class="companion-file-left">
             <span>${icon}</span>
-            <span class="companion-file-name" title="${file.name}">${file.name}</span>
+            <span class="companion-file-name" title="${displayFileName}">${displayFileName}</span>
           </div>
           <div style="display:flex; align-items:center; gap:0.4rem;">
             <span class="mat-badge-tag" style="font-size:0.6rem;">${typeLabel}</span>
@@ -2361,14 +2363,16 @@
       });
 
       if (companionCountBadge) {
-        companionCountBadge.textContent = `${allItems.length} Files to Move`;
+        companionCountBadge.textContent = `${allItems.length} File${allItems.length === 1 ? '' : 's'} to Move`;
       }
 
       if (matSummarySubtitle) {
         const matCount = currentModelMaterials.length;
         const palCount = currentModelPalette.length;
-        const compCount = companions.length;
-        matSummarySubtitle.textContent = `${matCount} Material(s), ${palCount} Color(s), ${compCount} Companion File(s)`;
+        const compCount = isGlb ? 0 : (companions ? companions.length : 0);
+        matSummarySubtitle.textContent = isGlb
+          ? `${matCount} Embedded Material(s), ${palCount} Color(s) (GLB self-contained: no external .mtl/textures)`
+          : `${matCount} Material(s), ${palCount} Color(s), ${compCount} Companion File(s)`;
       }
 
       updateDestPreview();
@@ -2435,13 +2439,34 @@
 
       renderMaterialsAndColorsUI(currentModelMaterials, paletteList);
 
+      const modelExt = getExt(displayName || (currentLoadedAsset && currentLoadedAsset.fileName) || '');
       currentCompanionFiles = [];
+
+      // When uploading .glb, don't include textures assets or .mtl files
+      if (modelExt === 'glb') {
+        if (chkMoveMaterialsTextures) {
+          chkMoveMaterialsTextures.checked = false;
+          chkMoveMaterialsTextures.disabled = true;
+        }
+        renderCompanionFilesUI([], baseName, 'glb');
+        return;
+      }
+
+      if (chkMoveMaterialsTextures) {
+        chkMoveMaterialsTextures.disabled = false;
+        chkMoveMaterialsTextures.checked = true;
+      }
+
       const localComps = (currentLoadedAsset && currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0)
-        ? currentLoadedAsset.companionFiles.map(f => ({
-            name: f.name,
-            size: f.size,
-            type: getExt(f.name) === 'mtl' ? 'material' : 'texture'
-          }))
+        ? currentLoadedAsset.companionFiles.map(f => {
+            const cExt = getExt(f.name);
+            return {
+              name: f.name,
+              rel_sub: cExt === 'mtl' ? `${baseName}_texture` : '',
+              size: f.size,
+              type: cExt === 'mtl' ? 'material' : 'texture'
+            };
+          })
         : [];
 
       const checkSource = (sourcePathDesc && !sourcePathDesc.startsWith('blob:'))
@@ -2452,19 +2477,24 @@
         checkBackendCompanions(checkSource).then(companions => {
           const merged = [...localComps];
           (companions || []).forEach(sc => {
-            if (!merged.some(m => m.name === sc.name)) {
-              merged.push(sc);
+            const scExt = getExt(sc.name);
+            const normalizedSc = {
+              ...sc,
+              rel_sub: scExt === 'mtl' ? `${baseName}_texture` : (sc.rel_sub || '')
+            };
+            if (!merged.some(m => m.name === normalizedSc.name)) {
+              merged.push(normalizedSc);
             }
           });
           currentCompanionFiles = merged;
-          renderCompanionFilesUI(currentCompanionFiles, baseName);
+          renderCompanionFilesUI(currentCompanionFiles, baseName, modelExt);
         }).catch(() => {
           currentCompanionFiles = localComps;
-          renderCompanionFilesUI(currentCompanionFiles, baseName);
+          renderCompanionFilesUI(currentCompanionFiles, baseName, modelExt);
         });
       } else {
         currentCompanionFiles = localComps;
-        renderCompanionFilesUI(currentCompanionFiles, baseName);
+        renderCompanionFilesUI(currentCompanionFiles, baseName, modelExt);
       }
     }
 
@@ -2477,62 +2507,105 @@
       updateDestPreview();
     }
 
+    function normalizeClientDestPath(raw) {
+      let clean = (raw || '').trim().replace(/\\/g, '/').replace(/^[\[\]"'\s]+|[\[\]"'\s]+$/g, '').replace(/^\/+/, '');
+      const cleanLower = clean.toLowerCase();
+      if (cleanLower.startsWith('admin/temp_stage_0/')) {
+        clean = 'admin/temp_stage_0/' + clean.substring('admin/temp_stage_0/'.length);
+      } else if (cleanLower.startsWith('wormhole0/')) {
+        clean = 'wormhole0/' + clean.substring('wormhole0/'.length);
+      } else if (cleanLower.startsWith('meshy_test_0/')) {
+        clean = 'meshy_test_0/' + clean.substring('meshy_test_0/'.length);
+      }
+      return clean;
+    }
+
     function updateDestPreview() {
       const fileName = currentLoadedAsset ? currentLoadedAsset.fileName : 'model.glb';
+      const isGlb = getExt(fileName) === 'glb';
       panelDestPreviewList.innerHTML = '';
 
-      if (selectedFolderPaths.size === 0) {
+      const previewTargets = [];
+      const seenTargets = new Set();
+
+      // 1. Default / Typed Input Path Box
+      const typedRaw = panelDestPathInput ? panelDestPathInput.value : '';
+      const typedClean = normalizeClientDestPath(typedRaw).replace(/\/+$/, '');
+      if (typedClean) {
+        const hasModelExt = /\.(glb|gltf|obj|fbx|stl|usdz|dae)$/i.test(typedClean);
+        const typedTarget = hasModelExt ? typedClean : `${typedClean}/${fileName}`;
+        seenTargets.add(typedTarget);
+        previewTargets.push({ targetPath: typedTarget, isTyped: true });
+      }
+
+      // 2. Checked Quick Links
+      selectedFolderPaths.forEach(folder => {
+        const cleanFolder = normalizeClientDestPath(folder).replace(/\/+$/, '');
+        const targetPath = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
+        if (!seenTargets.has(targetPath)) {
+          seenTargets.add(targetPath);
+          previewTargets.push({ targetPath, isTyped: false });
+        }
+      });
+
+      const quickCount = selectedFolderPaths.size;
+      if (panelSelectedBadge) {
+        panelSelectedBadge.textContent = quickCount === 1 ? '1 Quick Link' : `${quickCount} Quick Links`;
+        panelSelectedBadge.classList.toggle('active', quickCount > 0);
+      }
+
+      if (previewTargets.length === 0) {
         const item = document.createElement('div');
         item.className = 'dest-preview-item';
         item.style.color = '#f87171';
-        item.textContent = '⚠️ Check at least 1 image folder or type a destination above.';
+        item.textContent = '⚠️ No destination path entered or quick link selected. Enter a path above or check at least 1 quick link.';
         panelDestPreviewList.appendChild(item);
+        if (previewCountBadge) {
+          previewCountBadge.textContent = '0 Targets';
+          previewCountBadge.classList.remove('active');
+        }
+        approveBtnLabel.textContent = 'Approve & Move Asset';
         return;
       }
 
-      const paths = Array.from(selectedFolderPaths);
-      const compCount = (currentCompanionFiles ? currentCompanionFiles.length : 0) + (chkMoveColorsJson && chkMoveColorsJson.checked ? 1 : 0);
-      const compLabel = compCount > 0 ? ` (+${compCount} materials & textures)` : '';
+      const includeComps = !isGlb && (!chkMoveMaterialsTextures || chkMoveMaterialsTextures.checked);
+      const compCount = (includeComps && currentCompanionFiles ? currentCompanionFiles.length : 0) + (chkMoveColorsJson && chkMoveColorsJson.checked ? 1 : 0);
+      const compLabel = compCount > 0 ? ` (+${compCount} companion${compCount === 1 ? '' : 's'})` : '';
 
-      paths.forEach(folder => {
-        let cleanFolder = folder.replace(/\\/g, '/').replace(/^[\[\]"'\s]+|[\[\]"'\s]+$/g, '').replace(/^\/+/, '').replace(/\/+$/, '');
-        const cleanLower = cleanFolder.toLowerCase();
-        if (cleanLower.startsWith('admin/temp_stage_0/')) {
-          cleanFolder = 'admin/temp_stage_0/' + cleanFolder.substring('admin/temp_stage_0/'.length);
-        } else if (cleanLower.startsWith('wormhole0/')) {
-          cleanFolder = 'wormhole0/' + cleanFolder.substring('wormhole0/'.length);
-        } else if (cleanLower.startsWith('meshy_test_0/')) {
-          cleanFolder = 'meshy_test_0/' + cleanFolder.substring('meshy_test_0/'.length);
-        }
-        const targetPath = cleanFolder ? `${cleanFolder}/${fileName}` : fileName;
-
+      previewTargets.forEach(({ targetPath, isTyped }) => {
         let mirrorBadge = '';
-        if (cleanFolder.toLowerCase().startsWith('admin/temp_stage_0/')) {
-          const feSub = cleanFolder.substring('admin/temp_stage_0/'.length);
-          const feTarget = feSub ? `wormhole0/${feSub}/${fileName}` : `wormhole0/${fileName}`;
+        const targetLower = targetPath.toLowerCase();
+        if (targetLower.startsWith('admin/temp_stage_0/')) {
+          const feTarget = 'wormhole0/' + targetPath.substring('admin/temp_stage_0/'.length);
           mirrorBadge = `<div style="font-size:0.68rem; color:#38bdf8; margin-top:2px; margin-left:14px;">⇄ Moves to Cloned Frontend Repo: /var/www/calmchessgames_front_end/${feTarget} (git push origin main)</div>`;
-        } else if (cleanFolder.toLowerCase().startsWith('wormhole0/')) {
-          const beSub = cleanFolder.substring('wormhole0/'.length);
-          const beTarget = beSub ? `admin/temp_stage_0/${beSub}/${fileName}` : `admin/temp_stage_0/${fileName}`;
+        } else if (targetLower.startsWith('wormhole0/')) {
+          const beTarget = 'admin/temp_stage_0/' + targetPath.substring('wormhole0/'.length);
           mirrorBadge = `<div style="font-size:0.68rem; color:#a78bfa; margin-top:2px; margin-left:14px;">⇄ Moves to Cloned Frontend Repo: /var/www/calmchessgames_front_end/${targetPath} & Staging: /${beTarget}</div>`;
-        } else if (cleanFolder.toLowerCase().startsWith('meshy_test_0/')) {
+        } else if (targetLower.startsWith('meshy_test_0/')) {
           mirrorBadge = `<div style="font-size:0.68rem; color:#34d399; margin-top:2px; margin-left:14px;">⇄ Moves to Cloned Frontend Repo: /var/www/calmchessgames_front_end/${targetPath} (git push origin main)</div>`;
         }
 
+        const bulletHtml = isTyped
+          ? '<span class="dest-preview-bullet" style="color:#ff8591;">★</span>'
+          : '<span class="dest-preview-bullet">•</span>';
+        const tagHtml = isTyped ? ' <span style="font-size:0.65rem; color:#93c5fd;">(Input Path)</span>' : '';
+
         const item = document.createElement('div');
         item.className = 'dest-preview-item';
-        item.innerHTML = `<div><span class="dest-preview-bullet">•</span> <span>https://calmchessgames.com/${targetPath}</span> <span style="font-size:0.65rem; color:#6ee7b7;">${compLabel}</span></div>${mirrorBadge}`;
+        item.innerHTML = `<div>${bulletHtml} <span>https://calmchessgames.com/${targetPath}</span>${tagHtml} <span style="font-size:0.65rem; color:#6ee7b7;">${compLabel}</span></div>${mirrorBadge}`;
         panelDestPreviewList.appendChild(item);
       });
 
-      // Update the typed input with the first selected path
-      const firstFolder = paths[0].replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
-      panelDestPathInput.value = firstFolder ? `${firstFolder}/${fileName}` : fileName;
-
-      const count = paths.length;
-      panelSelectedBadge.textContent = count === 1 ? '1 Folder Selected' : `${count} Folders Selected`;
-      previewCountBadge.textContent = count === 1 ? '1 Target' : `${count} Targets`;
-      approveBtnLabel.textContent = count <= 1 ? 'Approve & Move Asset, Materials & Textures' : `Approve & Move to ${count} Folders (with Materials & Textures)`;
+      const count = previewTargets.length;
+      if (previewCountBadge) {
+        previewCountBadge.textContent = count === 1 ? '1 Target' : `${count} Targets`;
+        previewCountBadge.classList.add('active');
+      }
+      if (isGlb) {
+        approveBtnLabel.textContent = count <= 1 ? 'Approve & Move GLB Asset' : `Approve & Move GLB to ${count} Folders`;
+      } else {
+        approveBtnLabel.textContent = count <= 1 ? 'Approve & Move Asset, Materials & Textures' : `Approve & Move to ${count} Folders (with Materials & Textures)`;
+      }
     }
 
     if (chkMoveMaterialsTextures) {
@@ -2542,19 +2615,9 @@
       chkMoveColorsJson.addEventListener('change', updateDestPreview);
     }
 
-    panelDestPathInput.addEventListener('input', () => {
-      const typed = panelDestPathInput.value.trim().replace(/\\/g, '/').replace(/^\/+/, '');
-      if (typed) {
-        const item = document.createElement('div');
-        item.className = 'dest-preview-item';
-        item.innerHTML = `<span class="dest-preview-bullet" style="color:#ff8591;">★</span> <span>https://calmchessgames.com/${typed} (Custom Typed)</span>`;
-        if (panelDestPreviewList.firstChild) {
-          panelDestPreviewList.insertBefore(item, panelDestPreviewList.firstChild);
-        } else {
-          panelDestPreviewList.appendChild(item);
-        }
-      }
-    });
+    if (panelDestPathInput) {
+      panelDestPathInput.addEventListener('input', updateDestPreview);
+    }
 
     // Render Checklist into panel container
     const panelChecklist = document.getElementById('panel-quick-links-checklist');
@@ -2824,11 +2887,21 @@
 
     // Reset the approval form so the next Approve press starts clean
     let approvalFormWasReset = false;
+    let pendingSelectedAsset = null;
     function resetApprovalForm() {
       selectedFolderPaths.clear();
-      selectedFolderPaths.add(DEFAULT_DEST_DIR);
+      pendingSelectedAsset = null;
       if (panelDestPathInput) panelDestPathInput.value = '';
-      if (chkMoveMaterialsTextures) chkMoveMaterialsTextures.checked = true;
+      if (panelFolderSearch) panelFolderSearch.value = '';
+      if (panelAddQuicklinkInput) panelAddQuicklinkInput.value = '';
+      if (modelFileInput) modelFileInput.value = '';
+      if (materialFileInput) materialFileInput.value = '';
+      if (localFilePicker) localFilePicker.value = '';
+      const isGlb = currentLoadedAsset && getExt(currentLoadedAsset.fileName) === 'glb';
+      if (chkMoveMaterialsTextures) {
+        chkMoveMaterialsTextures.checked = !isGlb;
+        chkMoveMaterialsTextures.disabled = !!isGlb;
+      }
       if (chkMoveColorsJson) chkMoveColorsJson.checked = true;
       renderChecklist();
       updateDestPreview();
@@ -2863,22 +2936,18 @@
       });
 
       // 2. Gather typed path if present
-      let typed = panelDestPathInput.value.trim().replace(/\\/g, '/').replace(/^[\[\]"'\s]+|[\[\]"'\s]+$/g, '').replace(/^\/+/, '');
-      const typedLower = typed.toLowerCase();
-      if (typedLower.startsWith('admin/temp_stage_0/')) {
-        typed = 'admin/temp_stage_0/' + typed.substring('admin/temp_stage_0/'.length);
-      } else if (typedLower.startsWith('wormhole0/')) {
-        typed = 'wormhole0/' + typed.substring('wormhole0/'.length);
-      } else if (typedLower.startsWith('meshy_test_0/')) {
-        typed = 'meshy_test_0/' + typed.substring('meshy_test_0/'.length);
-      }
-      if (typed && !destPaths.includes(typed)) {
-        destPaths.unshift(typed);
+      let typed = normalizeClientDestPath(panelDestPathInput.value).replace(/\/+$/, '');
+      if (typed) {
+        const hasModelExt = /\.(glb|gltf|obj|fbx|stl|usdz|dae)$/i.test(typed);
+        const typedTarget = hasModelExt ? typed : `${typed}/${fileName}`;
+        if (!destPaths.includes(typedTarget)) {
+          destPaths.unshift(typedTarget);
+        }
       }
 
       if (destPaths.length === 0) {
-        setMoveMessage('Please check at least 1 image folder or type a destination path.', 'error');
-        showGitPushToast('error', 'Destination Required', 'Please select at least 1 destination folder or enter a path.', '', 6000);
+        setMoveMessage('Error: Please enter a destination path in the input box or select at least 1 quick link.', 'error');
+        showGitPushToast('error', 'Destination Required', 'Please enter a destination path in the input box or select at least 1 quick link.', '', 6000);
         return;
       }
 
@@ -2907,8 +2976,10 @@
         formData.append('model_file', currentLoadedAsset.file);
       }
 
-      // Material, Texture & Color options
-      const moveMaterials = chkMoveMaterialsTextures ? chkMoveMaterialsTextures.checked : true;
+      // Material, Texture & Color options (exclude textures and .mtl for .glb)
+      const assetExt = getExt(fileName);
+      const isGlb = assetExt === 'glb';
+      const moveMaterials = isGlb ? false : (chkMoveMaterialsTextures ? chkMoveMaterialsTextures.checked : true);
       const moveColors = chkMoveColorsJson ? chkMoveColorsJson.checked : true;
       formData.append('move_materials_textures', moveMaterials ? '1' : '0');
       formData.append('move_colors_json', moveColors ? '1' : '0');
@@ -2920,12 +2991,12 @@
         exported_at: new Date().toISOString(),
         color_palette: currentModelPalette || [],
         materials: currentModelMaterials || [],
-        companion_files: (currentCompanionFiles || []).map(c => c.name || c)
+        companion_files: isGlb ? [] : (currentCompanionFiles || []).map(c => c.name || c)
       };
       formData.append('materials_json', JSON.stringify(materialsPayload));
 
-      // Append local companion files only if not already on server
-      if (currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0 && !currentLoadedAsset.existsOnServer) {
+      // Append local companion files only if not .glb and not already on server
+      if (!isGlb && currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0 && !currentLoadedAsset.existsOnServer) {
         currentLoadedAsset.companionFiles.forEach(file => {
           formData.append('companion_files[]', file);
         });
@@ -3032,10 +3103,13 @@
 
     btnCancelMove.addEventListener('click', () => {
       selectedFolderPaths.clear();
-      selectedFolderPaths.add(DEFAULT_DEST_DIR);
+      const fileName = currentLoadedAsset ? currentLoadedAsset.fileName : 'red_race_car.glb';
+      if (panelDestPathInput) {
+        panelDestPathInput.value = `wormhole0/warp_origin_images/${fileName}`;
+      }
       renderChecklist();
       updateDestPreview();
-      setMoveMessage('Move selection reset to default.', '');
+      setMoveMessage('Destination reset to default input path.', '');
     });
 
     // =========================================================================
@@ -3341,23 +3415,86 @@
           });
           object3D = gltf.scene;
         } else if (ext === 'obj') {
-          const resolvedMtl = resolveModelUrl(materialInputVal);
+          const objLoadingManager = new THREE.LoadingManager();
+          const localComps = (currentLoadedAsset && Array.isArray(currentLoadedAsset.companionFiles)) ? currentLoadedAsset.companionFiles : [];
+          const localBlobMap = new Map();
+          localComps.forEach(cf => {
+            if (cf && cf.name) {
+              localBlobMap.set(cf.name.toLowerCase(), URL.createObjectURL(cf));
+            }
+          });
+          if (localBlobMap.size > 0) {
+            objLoadingManager.setURLModifier((url) => {
+              if (!url || url.startsWith('blob:') || url.startsWith('data:')) return url;
+              const cleanBase = url.split('?')[0].split('#')[0].replace(/\\/g, '/').split('/').pop().toLowerCase();
+              return localBlobMap.get(cleanBase) || url;
+            });
+          }
+
+          let resolvedMtl = resolveModelUrl(materialInputVal);
+          const baseName = displayName.replace(/\.[^/.]+$/, '');
+          const modelDir = rawUrl.includes('/') ? rawUrl.substring(0, rawUrl.lastIndexOf('/') + 1) : '';
+
+          // Auto-discover .mtl file and textures when loading an .obj without explicit material input
+          if (!resolvedMtl) {
+            const localMtl = localComps.find(f => getExt(f.name) === 'mtl');
+            if (localMtl) {
+              resolvedMtl = localBlobMap.get(localMtl.name.toLowerCase()) || URL.createObjectURL(localMtl);
+              if (materialFileInput) materialFileInput.value = localMtl.name;
+            } else if (!rawUrl.startsWith('blob:') && !rawUrl.startsWith('data:')) {
+              try {
+                const comps = await checkBackendCompanions(sourcePathDesc || rawUrl);
+                const mtlComp = (comps || []).find(c => getExt(c.name) === 'mtl');
+                if (mtlComp) {
+                  const subPrefix = mtlComp.rel_sub ? `${mtlComp.rel_sub}/` : '';
+                  resolvedMtl = `${modelDir}${subPrefix}${mtlComp.name}`;
+                  if (materialFileInput) materialFileInput.value = resolvedMtl;
+                }
+              } catch (_) {}
+
+              // Fallback probe in <baseName>_texture/, <baseName>_textures/, and same directory
+              if (!resolvedMtl) {
+                const mtlCandidates = [
+                  `${modelDir}${baseName}_texture/${baseName}.mtl`,
+                  `${modelDir}${baseName}_textures/${baseName}.mtl`,
+                  `${modelDir}${baseName}.mtl`
+                ];
+                for (const cand of mtlCandidates) {
+                  try {
+                    const probe = await fetch(cand, { method: 'HEAD' });
+                    if (probe.ok) {
+                      resolvedMtl = cand;
+                      if (materialFileInput) materialFileInput.value = cand;
+                      break;
+                    }
+                  } catch (_) {}
+                }
+              }
+            }
+          }
+
+          const objLoaderInst = new OBJLoader(objLoadingManager);
           if (resolvedMtl) {
             try {
+              const mtlLoaderInst = new MTLLoader(objLoadingManager);
+              if (!resolvedMtl.startsWith('blob:') && !resolvedMtl.startsWith('data:') && resolvedMtl.includes('/')) {
+                const mtlDir = resolvedMtl.substring(0, resolvedMtl.lastIndexOf('/') + 1);
+                mtlLoaderInst.setResourcePath(mtlDir);
+              }
               const materials = await new Promise((resolve, reject) => {
-                mtlLoader.load(resolvedMtl, resolve, undefined, reject);
+                mtlLoaderInst.load(resolvedMtl, resolve, undefined, reject);
               });
               materials.preload();
-              objLoader.setMaterials(materials);
+              objLoaderInst.setMaterials(materials);
             } catch (mtlErr) {
               console.warn('Could not load MTL file, loading OBJ with default material:', mtlErr);
-              objLoader.setMaterials(null);
+              objLoaderInst.setMaterials(null);
             }
           } else {
-            objLoader.setMaterials(null);
+            objLoaderInst.setMaterials(null);
           }
           object3D = await new Promise((resolve, reject) => {
-            objLoader.load(rawUrl, resolve, onProgress, reject);
+            objLoaderInst.load(rawUrl, resolve, onProgress, reject);
           });
         } else if (ext === 'fbx') {
           object3D = await new Promise((resolve, reject) => {
@@ -3473,44 +3610,53 @@
     // DIRECT ASSET LOADING TRIGGERS (Root Directory or meshy_test_0/models Browse)
     // =========================================================================
 
-    // 1. Browse Button (Browse from meshy_test_0/models or device, supporting materials & textures)
-    localFilePicker.addEventListener('change', (e) => {
-      const files = e.target.files ? Array.from(e.target.files) : [];
-      if (files.length === 0) return;
+    function stageSelectedLocalFiles(files) {
+      if (!files || files.length === 0) return;
 
       const modelExts = ['glb', 'gltf', 'obj', 'fbx', 'stl', 'usdz', 'dae'];
       let mainFile = files.find(f => modelExts.includes(getExt(f.name)));
       if (!mainFile) mainFile = files[0];
 
-      const companionFiles = files.filter(f => f !== mainFile);
       const ext = getExt(mainFile.name);
+      // When selecting .glb, don't include textures assets or .mtl files
+      const companionFiles = ext === 'glb' ? [] : files.filter(f => f !== mainFile);
       const blobUrl = URL.createObjectURL(mainFile);
 
-      let mtlVal = materialFileInput.value.trim();
+      let mtlVal = '';
       const mtlFile = companionFiles.find(f => getExt(f.name) === 'mtl');
       if (mtlFile && ext === 'obj') {
         mtlVal = URL.createObjectURL(mtlFile);
+        if (materialFileInput) materialFileInput.value = mtlFile.name;
+      } else if (materialFileInput) {
+        materialFileInput.value = '';
       }
 
       modelFileInput.value = mainFile.name;
 
-      currentLoadedAsset = {
+      pendingSelectedAsset = {
         file: mainFile,
         companionFiles: companionFiles,
         sourcePath: 'meshy_test_0/models/' + mainFile.name,
         fileName: mainFile.name,
         ext: ext,
         sizeStr: formatBytes(mainFile.size),
-        blobUrl: blobUrl
+        blobUrl: blobUrl,
+        mtlVal: mtlVal
       };
 
-      updateLoadedAssetUI();
+      setStatus('Selected', '');
+      setMessage(`Selected "${mainFile.name}". Press "Load Model" to load into viewer.`, '');
+    }
 
-      // The model JUST GETS LOADED directly into the viewer!
-      loadModel(blobUrl, mtlVal, mainFile.name, 'meshy_test_0/models/' + mainFile.name);
+    // 1. Browse Button (Choose asset file without auto-loading; user must press Load Model)
+    localFilePicker.addEventListener('change', (e) => {
+      const files = e.target.files ? Array.from(e.target.files) : [];
+      if (files.length === 0) return;
+      stageSelectedLocalFiles(files);
+      localFilePicker.value = '';
     });
 
-    // 2. Load Model Button / Enter Key (From meshy_test_0 root or models/)
+    // 2. Load Model Button / Enter Key (Loads staged local file or server path)
     function triggerDirectLoad() {
       const modelVal = modelFileInput.value.trim();
       const matVal = materialFileInput.value.trim();
@@ -3519,6 +3665,28 @@
         setMessage('Please enter a model file name or path.', 'error');
         return;
       }
+
+      if (pendingSelectedAsset && modelVal === pendingSelectedAsset.fileName) {
+        const staged = pendingSelectedAsset;
+        pendingSelectedAsset = null;
+        currentLoadedAsset = {
+          file: staged.file,
+          companionFiles: staged.companionFiles,
+          sourcePath: staged.sourcePath,
+          fileName: staged.fileName,
+          ext: staged.ext,
+          sizeStr: staged.sizeStr,
+          blobUrl: staged.blobUrl
+        };
+        if (panelDestPathInput && (!panelDestPathInput.value.trim() || panelDestPathInput.value.trim().startsWith('wormhole0/warp_origin_images/'))) {
+          panelDestPathInput.value = `wormhole0/warp_origin_images/${staged.fileName}`;
+        }
+        updateLoadedAssetUI();
+        loadModel(staged.blobUrl, staged.mtlVal || matVal, staged.fileName, staged.sourcePath);
+        return;
+      }
+
+      pendingSelectedAsset = null;
       const fileName = modelVal.split('/').pop() || 'model.glb';
       const ext = getExt(fileName);
 
@@ -3534,6 +3702,10 @@
         ext: ext,
         sizeStr: 'Server Asset'
       };
+
+      if (panelDestPathInput && (!panelDestPathInput.value.trim() || panelDestPathInput.value.trim().startsWith('wormhole0/warp_origin_images/'))) {
+        panelDestPathInput.value = `wormhole0/warp_origin_images/${fileName}`;
+      }
 
       updateLoadedAssetUI();
 
@@ -3599,34 +3771,10 @@
       const dt = e.dataTransfer;
       if (dt && dt.files && dt.files.length > 0) {
         const files = Array.from(dt.files);
-        const modelExts = ['glb', 'gltf', 'obj', 'fbx', 'stl', 'usdz', 'dae'];
-        let mainFile = files.find(f => modelExts.includes(getExt(f.name)));
-        if (!mainFile) mainFile = files[0];
-
-        const companionFiles = files.filter(f => f !== mainFile);
-        const ext = getExt(mainFile.name);
-        const blobUrl = URL.createObjectURL(mainFile);
-
-        let mtlVal = materialFileInput.value.trim();
-        const mtlFile = companionFiles.find(f => getExt(f.name) === 'mtl');
-        if (mtlFile && ext === 'obj') {
-          mtlVal = URL.createObjectURL(mtlFile);
+        stageSelectedLocalFiles(files);
+        if (!slidePanel.classList.contains('open') || activeTab !== 'model') {
+          openTab('model');
         }
-
-        modelFileInput.value = mainFile.name;
-
-        currentLoadedAsset = {
-          file: mainFile,
-          companionFiles: companionFiles,
-          sourcePath: 'meshy_test_0/models/' + mainFile.name,
-          fileName: mainFile.name,
-          ext: ext,
-          sizeStr: formatBytes(mainFile.size),
-          blobUrl: blobUrl
-        };
-
-        updateLoadedAssetUI();
-        loadModel(blobUrl, mtlVal, mainFile.name, 'meshy_test_0/models/' + mainFile.name);
       }
     });
 

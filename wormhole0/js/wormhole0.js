@@ -98,6 +98,23 @@ function normalizeAssetUrl(url) {
   return url;
 }
 
+function getCustomModelRotationY(urlOrId) {
+  const s = String(urlOrId || '').toLowerCase();
+  if (s.includes('recon_drone_2.8m') || s.includes('recon_drone') || s.includes('void_recon_drone')) {
+    // recon_drone_2.8m.glb rotated 90 degrees counter-clockwise (-PI/2 + PI/2 = 0)
+    return 0;
+  }
+  if (s.includes('drone_phase_interceptor_3') || s.includes('phase_interceptor') || s.includes('interceptor')) {
+    // drone_phase_interceptor_3.glb rotated 180 degrees clockwise (-PI/2 - PI = -3PI/2 = PI/2)
+    return Math.PI / 2;
+  }
+  // Default fallback for any other models (90 degrees clockwise)
+  return -Math.PI / 2;
+}
+if (typeof window !== 'undefined') {
+  window.getCustomModelRotationY = getCustomModelRotationY;
+}
+
 function load3DAssetModel(rawUrl, onLoaded, onError) {
   const url = normalizeAssetUrl(rawUrl);
   if (!url) {
@@ -177,7 +194,7 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
       fetchUrl,
       (gltf) => {
         const scene = gltf.scene || gltf.scenes[0] || gltf;
-        // Cleanse model hierarchy: disable wireframe on all materials and hide any line segments or bounding helpers
+        // Cleanse model hierarchy: disable wireframe on all materials, calibrate PBR for crisp appearance
         scene.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
@@ -187,6 +204,20 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
               mats.forEach(m => {
                 if (m) {
                   m.wireframe = false;
+                  // Enhance PBR materials so .glb models render as crisp textured ships, never dark shadows
+                  if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+                    if (m.metalness > 0.45) m.metalness = 0.25;
+                    if (m.roughness > 0.8) m.roughness = 0.55;
+                    if (m.map) {
+                      m.map.colorSpace = THREE.SRGBColorSpace;
+                      m.map.needsUpdate = true;
+                    }
+                    if (m.map && (!m.emissive || (m.emissive.r === 0 && m.emissive.g === 0 && m.emissive.b === 0))) {
+                      m.emissive = new THREE.Color(0x334455);
+                      m.emissiveMap = m.map;
+                      m.emissiveIntensity = 0.38;
+                    }
+                  }
                   m.needsUpdate = true;
                 }
               });
@@ -637,8 +668,8 @@ if (!camera) {
   cameraRig.add(camera);
 }
 
-// Lighting
-const ambientLight = new THREE.AmbientLight(0x02111c, 0.4);
+// Lighting - Enhanced high-fidelity illumination for crisp 3D models and space atmosphere
+const ambientLight = new THREE.AmbientLight(0xa0c8e0, 1.35);
 scene.add(ambientLight);
 
 const wormholeCoreLight = new THREE.PointLight(0x00f0ff, 4.5, 500, 1.2);
@@ -648,6 +679,23 @@ scene.add(wormholeCoreLight);
 const secondaryLight = new THREE.PointLight(0x0066aa, 2.5, 300, 1.5);
 secondaryLight.position.set(0, 0, -20);
 scene.add(secondaryLight);
+
+// Key directional sunlight for crisp highlights and hull textures
+const keySunLight = new THREE.DirectionalLight(0xffffff, 2.0);
+keySunLight.position.set(30, 50, 60);
+keySunLight.name = 'stage1_sunlight';
+scene.add(keySunLight);
+
+// Hemisphere fill light for deep space ambient reflections
+const hemiSpaceLight = new THREE.HemisphereLight(0xaad8ff, 0x112233, 1.25);
+hemiSpaceLight.name = 'stage1_hemilight';
+scene.add(hemiSpaceLight);
+
+// Front cockpit fill headlight so oncoming ships are brightly illuminated facing the player
+const cockpitHeadlight = new THREE.DirectionalLight(0xe0f8ff, 1.8);
+cockpitHeadlight.position.set(0, 1.5, 4);
+cockpitHeadlight.name = 'stage1_headlight';
+camera.add(cockpitHeadlight);
 
 // =============================================================================
 // CUSTOM GLSL SHADERS - ACCRETION DISK & EVENT HORIZON
@@ -2642,6 +2690,14 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
               const center = new THREE.Vector3();
               box.getCenter(center);
               newModel.position.sub(center);
+
+              // Requirement: Per-model orientation so front natively faces the player (+Z):
+              // recon_drone_2.8m.glb rotated 90 deg counter-clockwise (0 rad)
+              // drone_phase_interceptor_3.glb rotated 180 deg clockwise (Math.PI / 2 rad)
+              const targetRotY = getCustomModelRotationY(matchingCfg.model_3d_url || matchingCfg.id);
+              newModel.rotation.y = targetRotY;
+              newModel.userData.targetRotY = targetRotY;
+              ae.mesh.userData.modelUrl = normUrl;
 
               const size = new THREE.Vector3();
               box.getSize(size);
@@ -8357,6 +8413,14 @@ function create3DEnemyMesh(config) {
           box.getCenter(center);
           loadedModel.position.sub(center);
 
+          // Requirement: Per-model orientation so front natively faces the player (+Z):
+          // recon_drone_2.8m.glb rotated 90 deg counter-clockwise (0 rad)
+          // drone_phase_interceptor_3.glb rotated 180 deg clockwise (Math.PI / 2 rad)
+          const targetRotY = getCustomModelRotationY(customModelUrl || config.model_3d_url || config.id);
+          loadedModel.rotation.y = targetRotY;
+          loadedModel.userData.targetRotY = targetRotY;
+          group.userData.modelUrl = customModelUrl;
+
           // Compute target span and auto-scale
           const size = new THREE.Vector3();
           box.getSize(size);
@@ -8365,7 +8429,7 @@ function create3DEnemyMesh(config) {
           const autoScale = targetSpan / maxDim;
           loadedModel.scale.set(autoScale, autoScale, autoScale);
 
-          // Configure shadows & meshes - strictly ensure wireframe = false and hide lines
+          // Configure shadows & meshes - calibrate PBR materials for crisp appearance
           loadedModel.traverse((child) => {
             if (child.isMesh) {
               child.castShadow = true;
@@ -8375,6 +8439,20 @@ function create3DEnemyMesh(config) {
                 mats.forEach(m => {
                   if (m) {
                     m.wireframe = false;
+                    // Enhance PBR materials so .glb models render as crisp textured ships, never dark shadows
+                    if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+                      if (m.metalness > 0.45) m.metalness = 0.25;
+                      if (m.roughness > 0.8) m.roughness = 0.55;
+                      if (m.map) {
+                        m.map.colorSpace = THREE.SRGBColorSpace;
+                        m.map.needsUpdate = true;
+                      }
+                      if (m.map && (!m.emissive || (m.emissive.r === 0 && m.emissive.g === 0 && m.emissive.b === 0))) {
+                        m.emissive = new THREE.Color(0x334455);
+                        m.emissiveMap = m.map;
+                        m.emissiveIntensity = 0.38;
+                      }
+                    }
                     m.needsUpdate = true;
                   }
                 });
@@ -8583,11 +8661,15 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
     // Target stop distance: 10,000 KM from player (at 420 km/unit = 23.81 units, with slight tactical depth spread)
     const targetStopDist = 23.8 + (Math.random() - 0.5) * 3.6;
 
-    // Scatter angle and spread across viewport display screen
-    const scatterAngle = (idx / swarmCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.65;
-    const scatterRadius = 8.0 + (idx % 4) * 4.2 + Math.random() * 2.8; // 8 to ~22 units screen span
-    const targetScatterX = Math.cos(scatterAngle) * scatterRadius;
-    const targetScatterY = Math.sin(scatterAngle) * (scatterRadius * 0.75);
+    // Scatter position aligned to snap grid cells across viewport
+    const gridCols = (typeof snapGrid !== 'undefined' && snapGrid.cols) ? snapGrid.cols : 15;
+    const gridRows = (typeof snapGrid !== 'undefined' && snapGrid.rows) ? snapGrid.rows : 7;
+    const cellW = 48.8 / gridCols;
+    const cellH = 27.5 / gridRows;
+    const colSlot = ((idx % 2 === 0 ? 1 : -1) * (2 + Math.floor((idx / 2) % (Math.floor(gridCols / 2) - 1))));
+    const rowSlot = Math.floor((((idx * 3) % gridRows) - Math.floor(gridRows / 2)) * 0.85);
+    const targetScatterX = colSlot * cellW;
+    const targetScatterY = rowSlot * cellH;
 
     const hits = parseInt(cfg.hits_to_destroy || cfg.hits || 2);
     const weaponDmg = parseInt(cfg.weapon_damage || cfg.attack_damage || 6);
@@ -8652,91 +8734,321 @@ function defaultEnemyMovement(e, delta, context) {
   const enemyIndex = (context && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
   const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
+  // Exact distance definitions: at 420 KM per Three.js unit
+  const dist10k = 10000 / 420; // ~23.8095 units
+  const dist5k = 5000 / 420;   // ~11.9048 units
+  const targetZ10k = playerPos.z - dist10k;
+  const targetZ5k = playerPos.z - dist5k;
   const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
-  const distTraveled = e.mesh.position.z - spawnZ;
-  const totalDist = Math.max(30, (playerPos.z - (e.targetStopDist || 23.8)) - spawnZ);
-  const progress = Math.max(0, Math.min(1.0, distTraveled / totalDist));
-  const curScale = THREE.MathUtils.lerp(0.1, e.baseScale || 1.0, progress);
-  e.mesh.scale.set(curScale, curScale, curScale);
+  const baseScale = e.baseScale || 1.3;
 
-  if (e.phase === 'RUSH_OUT') {
-    e.mesh.position.z += (e.speed || 40) * delta;
-    e.mesh.position.x += (playerPos.x + (e.targetScatterX || 0) * 0.25 - e.mesh.position.x) * delta * 0.45;
-    e.mesh.position.y += (playerPos.y + (e.targetScatterY || 0) * 0.25 - e.mesh.position.y) * delta * 0.45;
+  // Baseline forward posture: nose tilted down (~0.22 rad / 12.6 deg) so top of 3D model is clearly visible
+  const basePitchDown = 0.22;
 
-    if (distToPlayer <= (e.targetStopDist || 23.8) || e.mesh.position.z >= (playerPos.z - (e.targetStopDist || 23.8))) {
-      e.phase = 'SCATTER_AND_EVADE';
-      e.stoppedTime = now;
-    }
-  } else {
-    const desiredZ = playerPos.z - (e.targetStopDist || 23.8);
-    e.mesh.position.z += (desiredZ - e.mesh.position.z) * delta * 2.8;
-
-    const screenTargetX = playerPos.x + (e.targetScatterX || 0);
-    const screenTargetY = playerPos.y + (e.targetScatterY || 0);
-    e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.4;
-    e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.4;
-
-    if (now > (e.scatterRetargetTime || 0)) {
-      e.scatterRetargetTime = now + 4200 + Math.random() * 4500;
-      const newAng = Math.random() * Math.PI * 2;
-      const newRad = 7.5 + Math.random() * 16.5;
-      e.targetScatterX = Math.cos(newAng) * newRad;
-      e.targetScatterY = Math.sin(newAng) * (newRad * 0.75);
-    }
-
-    const t = (now - (e.stoppedTime || now)) * 0.001;
-    const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0);
-    const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.5);
-    const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.8);
-    e.mesh.position.x += evaVx * delta;
-    e.mesh.position.y += evaVy * delta;
-    e.mesh.position.z += evaVz * delta;
-
-    if (now >= (e.nextJukeTime || 0)) {
-      e.nextJukeTime = now + 1200 + Math.random() * 2000;
-      e.jukeEndTime = now + 350 + Math.random() * 350;
-      e.jukeVelocity.set(
-        (Math.random() - 0.5) * 32,
-        (Math.random() - 0.5) * 24,
-        (Math.random() - 0.5) * 8
-      );
-    }
-    if (e.jukeVelocity) {
-      if (now < e.jukeEndTime) {
-        e.mesh.position.addScaledVector(e.jukeVelocity, delta);
-      } else {
-        e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
-      }
-    }
-
-    for (let li = 0; li < laserBolts.length; li++) {
-      const lbolt = laserBolts[li];
-      if (!lbolt || !lbolt.mesh) continue;
-      const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
-      if (ldist < 6.8) {
-        const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
-        dodgeDir.z = 0;
-        if (dodgeDir.lengthSq() > 0.001) {
-          dodgeDir.normalize();
-          e.mesh.position.addScaledVector(dodgeDir, 18.0 * delta);
-        }
-        break;
-      }
-    }
-
-    const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
-    const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
-    const netVx = (screenTargetX - e.mesh.position.x) * 1.2 + jukeVx;
-    const netVy = (screenTargetY - e.mesh.position.y) * 1.2 + jukeVy;
-    e.mesh.rotation.z = -THREE.MathUtils.clamp(netVx * 0.05, -0.65, 0.65);
-    e.mesh.rotation.x = THREE.MathUtils.clamp(netVy * 0.05, -0.45, 0.45);
-    e.mesh.rotation.y = THREE.MathUtils.clamp(-netVx * 0.03, -0.4, 0.4);
-    if (e.mesh.userData && e.mesh.userData.spinRing) {
-      e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
+  // Requirement: Ensure custom 3D model asset maintains its front-facing orientation:
+  // recon_drone_2.8m.glb: 0 rad (rotated 90 deg CCW)
+  // drone_phase_interceptor_3.glb: Math.PI / 2 rad (rotated 180 deg CW)
+  if (e.mesh.userData && e.mesh.userData.loadedAsset) {
+    const asset = e.mesh.userData.loadedAsset;
+    const targetRotY = (asset.userData && typeof asset.userData.targetRotY === 'number')
+      ? asset.userData.targetRotY
+      : getCustomModelRotationY((e.config && e.config.model_3d_url) || e.model_3d_url || (e.mesh.userData && e.mesh.userData.modelUrl) || (e.config && e.config.id) || e.id || e.enemy_id);
+    if (Math.abs(asset.rotation.y - targetRotY) > 0.001) {
+      asset.rotation.y = targetRotY;
     }
   }
 
+  // Initialize tactical maneuver state machine
+  if (!e.maneuverState) {
+    e.maneuverState = (e.phase === 'RUSH_OUT') ? 'RUSH_OUT' : 'CRUISE_10K';
+    e.levelPitchProgress = 0.0; // 0.0 = full forward tilt (0.22 rad), 1.0 = level (0.0 rad)
+    e.isLevel = false;
+    e.hasFiredThisLevel = false;
+    e.nextLevelTime = now + 1500 + Math.random() * 3500;
+  }
+
+  if (e.phase === 'RUSH_OUT' || e.maneuverState === 'RUSH_OUT') {
+    // Fly out of the black hole mouth towards player stopping at 10,000 KM
+    e.mesh.position.z += (e.speed || 45) * delta;
+    e.mesh.position.x += (playerPos.x + (e.targetScatterX || 0) * 0.25 - e.mesh.position.x) * delta * 0.55;
+    e.mesh.position.y += (playerPos.y + (e.targetScatterY || 0) * 0.25 - e.mesh.position.y) * delta * 0.55;
+
+    // Scale up as approaching 10,000 KM
+    const totalDist = Math.max(10, targetZ10k - spawnZ);
+    const distTraveled = e.mesh.position.z - spawnZ;
+    const rushProgress = THREE.MathUtils.clamp(distTraveled / totalDist, 0.0, 1.0);
+    const curScale = THREE.MathUtils.lerp(0.12, baseScale, rushProgress);
+    e.mesh.scale.set(curScale, curScale, curScale);
+
+    // Tilted forward posture oriented towards player
+    const rushDx = playerPos.x - e.mesh.position.x;
+    const rushDy = playerPos.y - e.mesh.position.y;
+    const rushDz = Math.max(5.0, playerPos.z - e.mesh.position.z);
+    const rushLookYaw = THREE.MathUtils.clamp(Math.atan2(rushDx, rushDz), -0.35, 0.35);
+    const rushLookPitch = THREE.MathUtils.clamp(-Math.atan2(rushDy, rushDz), -0.20, 0.20);
+    e.levelPitchProgress = 0.0;
+    e.isLevel = false;
+    e.mesh.rotation.set(basePitchDown + rushLookPitch, rushLookYaw, 0, 'YXZ');
+
+    if (e.mesh.position.z >= targetZ10k || distToPlayer <= dist10k) {
+      e.mesh.position.z = targetZ10k;
+      e.phase = 'SCATTER_AND_EVADE';
+      e.maneuverState = 'CRUISE_10K';
+      e.stoppedTime = now;
+      e.nextLevelTime = now + 1500 + Math.random() * 3500;
+    }
+    return true;
+  }
+
+  // --- Dynamic Evasive Maneuvers & Snap Grid Screen Scatter Targeting ---
+  const grid = (context && context.snapGrid) || (typeof window !== 'undefined' && window.snapGrid);
+  const cols = (grid && grid.cols) ? grid.cols : 15;
+  const rows = (grid && grid.rows) ? grid.rows : 7;
+  const cellW = 48.8 / cols;
+  const cellH = 27.5 / rows;
+
+  if (now > (e.scatterRetargetTime || 0)) {
+    e.scatterRetargetTime = now + 4000 + Math.random() * 4000;
+    const maxCol = Math.max(2, Math.floor(cols / 2) - 1);
+    const maxRow = Math.max(1, Math.floor(rows / 2) - 1);
+    const signX = Math.random() > 0.5 ? 1 : -1;
+    // Align scatter targets to snap grid columns and rows across viewport
+    const colSlot = signX * (1 + Math.floor(Math.random() * maxCol));
+    const rowSlot = Math.floor((Math.random() * 2 - 1) * maxRow);
+    e.targetScatterX = colSlot * cellW;
+    e.targetScatterY = rowSlot * cellH;
+  }
+
+  const screenTargetX = playerPos.x + (e.targetScatterX || 0);
+  const screenTargetY = playerPos.y + (e.targetScatterY || 0);
+  e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
+  e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
+
+  // Multi-frequency sinusoidal evasive weaves
+  const t = (now - (e.stoppedTime || now)) * 0.001;
+  const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0);
+  const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.4);
+  const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.6);
+  e.mesh.position.x += evaVx * delta;
+  e.mesh.position.y += evaVy * delta;
+  e.mesh.position.z += evaVz * delta;
+
+  // Tactical thruster bursts / jukes
+  if (now >= (e.nextJukeTime || 0)) {
+    e.nextJukeTime = now + 1400 + Math.random() * 2000;
+    e.jukeEndTime = now + 350 + Math.random() * 350;
+    if (e.jukeVelocity && typeof e.jukeVelocity.set === 'function') {
+      e.jukeVelocity.set(
+        (Math.random() - 0.5) * 30,
+        (Math.random() - 0.5) * 22,
+        (Math.random() - 0.5) * 6
+      );
+    }
+  }
+  if (e.jukeVelocity) {
+    if (now < e.jukeEndTime) {
+      e.mesh.position.addScaledVector(e.jukeVelocity, delta);
+    } else {
+      e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
+    }
+  }
+
+  // Reactive dodging of incoming player laser fire
+  for (let li = 0; li < laserBolts.length; li++) {
+    const lbolt = laserBolts[li];
+    if (!lbolt || !lbolt.mesh) continue;
+    const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
+    if (ldist < 7.2) {
+      const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
+      dodgeDir.z = 0;
+      if (dodgeDir.lengthSq() > 0.001) {
+        dodgeDir.normalize();
+        e.mesh.position.addScaledVector(dodgeDir, 20.0 * delta);
+      }
+      break;
+    }
+  }
+
+  // --- Tactical State Machine: Level Off, Fire Weapon, Tilt Forward, Fly to 5000 KM (+2% Scale), Hold 3s, Return to 10000 KM (-2% Scale) ---
+  switch (e.maneuverState) {
+    case 'CRUISE_10K': {
+      // Locking Z proximity around 10,000 KM
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 0) - delta * 3.0);
+      e.isLevel = false;
+
+      // Base scale at 10,000 KM
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+
+      // Random trigger to level off
+      if (now >= (e.nextLevelTime || 0)) {
+        e.maneuverState = 'LEVELING_OFF';
+        e.hasFiredThisLevel = false;
+      }
+      break;
+    }
+
+    case 'LEVELING_OFF': {
+      // Smoothly transition pitch to level (levelPitchProgress -> 1.0)
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 2.8);
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+
+      if (e.levelPitchProgress >= 0.96) {
+        e.levelPitchProgress = 1.0;
+        e.isLevel = true;
+        e.maneuverState = 'LEVEL_FIRING';
+        e.levelFireEndTime = now + 600; // ~600ms firing window while level
+
+        // Only fire weapon when level
+        if (!e.hasFiredThisLevel) {
+          e.hasFiredThisLevel = true;
+          if (typeof activeEnemyWeaponHandler === 'function') {
+            try { activeEnemyWeaponHandler(e, context); } catch (err) {}
+          } else {
+            fireEnemyWeaponBolt(e);
+          }
+        }
+      }
+      break;
+    }
+
+    case 'LEVEL_FIRING': {
+      // Maintain level orientation and allow weapon fire
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = 1.0;
+      e.isLevel = true;
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+
+      if (now >= (e.levelFireEndTime || 0)) {
+        e.isLevel = false;
+        e.maneuverState = 'TILTING_FORWARD';
+      }
+      break;
+    }
+
+    case 'TILTING_FORWARD': {
+      // Smoothly tilt back forward (levelPitchProgress -> 0.0)
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 2.8);
+      e.isLevel = false;
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+
+      if (e.levelPitchProgress <= 0.04) {
+        e.levelPitchProgress = 0.0;
+        e.maneuverState = 'ADVANCE_5K';
+      }
+      break;
+    }
+
+    case 'ADVANCE_5K': {
+      // Fly forward to 5,000 KM from player, scaling 2% bigger as it gets closer
+      e.levelPitchProgress = 0.0;
+      e.isLevel = false;
+
+      // Smooth flight forward towards targetZ5k
+      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+
+      const advanceProgress = THREE.MathUtils.clamp((e.mesh.position.z - targetZ10k) / (targetZ5k - targetZ10k), 0.0, 1.0);
+      const scaleFactor = 1.0 + 0.02 * advanceProgress; // 2% bigger as it gets closer
+      const curScale = baseScale * scaleFactor;
+      e.mesh.scale.set(curScale, curScale, curScale);
+
+      if (advanceProgress >= 0.98 || Math.abs(targetZ5k - e.mesh.position.z) < 0.2) {
+        e.mesh.position.z = targetZ5k;
+        e.maneuverState = 'HOLD_5K';
+        e.hold5kEndTime = now + 3000; // Hold for 3 seconds
+      }
+      break;
+    }
+
+    case 'HOLD_5K': {
+      // Maintain position at 5,000 KM for 3 seconds, staying 2% bigger and tilted forward
+      e.levelPitchProgress = 0.0;
+      e.isLevel = false;
+      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+
+      const curScale = baseScale * 1.02; // Stays 2% bigger
+      e.mesh.scale.set(curScale, curScale, curScale);
+
+      if (now >= (e.hold5kEndTime || 0)) {
+        e.maneuverState = 'RETREAT_10K';
+      }
+      break;
+    }
+
+    case 'RETREAT_10K': {
+      // Fly back to 10,000 KM from player, scaling back down by 2% as it gets farther away
+      e.levelPitchProgress = 0.0;
+      e.isLevel = false;
+
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 2.8;
+
+      const retreatProgress = THREE.MathUtils.clamp((targetZ5k - e.mesh.position.z) / (targetZ5k - targetZ10k), 0.0, 1.0);
+      const scaleFactor = 1.02 - 0.02 * retreatProgress; // Scales back down by 2%
+      const curScale = baseScale * scaleFactor;
+      e.mesh.scale.set(curScale, curScale, curScale);
+
+      if (retreatProgress >= 0.98 || Math.abs(targetZ10k - e.mesh.position.z) < 0.2) {
+        e.mesh.position.z = targetZ10k;
+        e.mesh.scale.set(baseScale, baseScale, baseScale);
+        e.maneuverState = 'CRUISE_10K';
+        e.nextLevelTime = now + 2500 + Math.random() * 4500; // Random next cycle
+      }
+      break;
+    }
+
+    default: {
+      e.maneuverState = 'CRUISE_10K';
+      break;
+    }
+  }
+
+  // --- Look-At Player Orientation & Snap Grid Alignment ---
+  // Vector from enemy to player position
+  const dx = playerPos.x - e.mesh.position.x;
+  const dy = playerPos.y - e.mesh.position.y;
+  const dz = Math.max(5.0, playerPos.z - e.mesh.position.z);
+
+  // Exact bearing angles towards player
+  const rawLookYaw = Math.atan2(dx, dz);
+  const rawLookPitch = -Math.atan2(dy, dz);
+
+  // Angular resolution of each snap grid cell at stop distance
+  const gridYawStep = cellW / dist10k;   // ~0.136 rad (~7.8 deg)
+  const gridPitchStep = cellH / dist10k; // ~0.165 rad (~9.4 deg)
+  const snappedYaw = Math.round(rawLookYaw / gridYawStep) * gridYawStep;
+  const snappedPitch = Math.round(rawLookPitch / gridPitchStep) * gridPitchStep;
+
+  // Rotate smoothly so models always look at player, softly aligned to snap grid cells
+  const lookYaw = THREE.MathUtils.clamp(
+    THREE.MathUtils.lerp(rawLookYaw, snappedYaw, 0.45),
+    -0.45, 0.45
+  );
+  const lookPitch = THREE.MathUtils.clamp(
+    THREE.MathUtils.lerp(rawLookPitch, snappedPitch, 0.45),
+    -0.28, 0.28
+  );
+
+  // --- Banking, Pitch, and Orientation ---
+  const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
+  const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
+  const netVx = (screenTargetX - e.mesh.position.x) * 1.1 + jukeVx + evaVx;
+  const netVy = (screenTargetY - e.mesh.position.y) * 1.1 + jukeVy + evaVy;
+
+  const roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65);
+  const yaw = lookYaw + THREE.MathUtils.clamp(-netVx * 0.02, -0.22, 0.22);
+
+  // Transition between forward tilt (~0.22 rad) and level (0.0 rad), plus look-at pitch to player
+  const effectiveBasePitch = basePitchDown * (1.0 - (e.levelPitchProgress || 0));
+  const pitch = effectiveBasePitch + lookPitch + THREE.MathUtils.clamp(netVy * 0.035, -0.18, 0.18);
+  e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
+
+  if (e.mesh.userData && e.mesh.userData.spinRing) {
+    e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
+  }
+
+  // --- Proximity Detection & Repulsion: Smoothly prevent collisions between enemies ---
   for (let j = 0; j < activeEnemies.length; j++) {
     if (j === enemyIndex) continue;
     const other = activeEnemies[j];
@@ -8745,10 +9057,10 @@ function defaultEnemyMovement(e, delta, context) {
     const sepDist = sepVec.length();
     const otherScale = (other.mesh.scale && typeof other.mesh.scale.x === 'number') ? other.mesh.scale.x : 1.0;
     const curScaleX = (e.mesh.scale && typeof e.mesh.scale.x === 'number') ? e.mesh.scale.x : 1.0;
-    const minSafeSep = Math.max(5.0, (curScaleX + otherScale) * 2.4);
-    if (sepDist < minSafeSep && sepDist > 0.01) {
+    const minSafeSep = Math.max(5.5, (curScaleX + otherScale) * 2.8);
+    if (sepDist < minSafeSep && sepDist > 0.001) {
       const overlapFactor = (minSafeSep - sepDist) / minSafeSep;
-      const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 16.0 * delta);
+      const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 20.0 * delta);
       e.mesh.position.add(repulse);
     }
   }
@@ -8795,7 +9107,8 @@ function updateEnemiesCombat(delta) {
       THREE,
       audioMgr,
       enemyBolts,
-      engineApi: getEngineApi()
+      engineApi: getEngineApi(),
+      snapGrid
     };
 
     // Execute decoupled enemy movement logic (from active stage profile .js file)
@@ -8943,6 +9256,8 @@ function updateEnemiesCombat(delta) {
 
 function fireEnemyWeaponBolt(enemyObj) {
   if (!state.hasStarted || state.isPaused || state.isGameOver || !scene) return;
+  // Strict requirement: Only fire weapon when level
+  if (enemyObj.isLevel === false) return;
   const cfg = enemyObj.config || {};
   const wpnName = (cfg.weapon_name || enemyObj.weaponName || '').toLowerCase();
   const modelType = (cfg.model_3d_type || '').toLowerCase();
@@ -8951,11 +9266,27 @@ function fireEnemyWeaponBolt(enemyObj) {
     || modelType === 'dreadnought'
     || (modelType === 'singularity_probe' && Math.random() > 0.45);
 
-  const spawnOrigin = enemyObj.mesh.position.clone();
+  const shipScale = (enemyObj.mesh.scale && typeof enemyObj.mesh.scale.x === 'number') ? enemyObj.mesh.scale.x : 1.0;
+  const cfgDepth = (parseFloat(cfg.depth) || 3.0) * shipScale;
+  const cfgLength = (parseFloat(cfg.length) || 3.0) * shipScale;
+
+  // Emanating from front of model / weapon emitters
+  enemyObj.lastGunSide = (enemyObj.lastGunSide === 1) ? -1 : 1;
+  const isDualCannon = /dual|twin|interceptor/i.test(wpnName) || /interceptor/i.test(cfg.enemy_id || '');
+  const lateralOffset = isDualCannon ? (enemyObj.lastGunSide * cfgLength * 0.32) : 0;
+  const forwardOffset = cfgDepth * 0.48; // front nose / muzzle
+  const verticalOffset = -0.15 * shipScale; // slightly down along tilted nose
+
+  const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffset);
+  const spawnOrigin = enemyObj.mesh.position.clone().add(localMuzzle.applyQuaternion(enemyObj.mesh.quaternion));
+
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
   const direction = new THREE.Vector3().subVectors(playerPos, spawnOrigin).normalize();
-  const weaponBoltColor = enemyObj.weaponColor || '#ff0055';
-  const boltColorHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0xff0055;
+  const weaponBoltColor = cfg.weapon_color || enemyObj.weaponColor || '#38bdf8';
+  const boltColorHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0x38bdf8;
+
+  // Weapon fire scaled relative to the size of the model
+  const boltScale = THREE.MathUtils.clamp(shipScale * 0.85, 0.6, 2.5);
 
   let mesh;
   let geometryList = [];
@@ -9014,10 +9345,11 @@ function fireEnemyWeaponBolt(enemyObj) {
     missileGroup.add(plumeMesh);
 
     // Radiant point light
-    const light = new THREE.PointLight(boltColorHex, 4.0, 32);
+    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 32 * boltScale);
     light.position.set(0, 0, 0);
     missileGroup.add(light);
 
+    missileGroup.scale.set(boltScale, boltScale, boltScale);
     missileGroup.position.copy(spawnOrigin);
     missileGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     scene.add(missileGroup);
@@ -9027,7 +9359,7 @@ function fireEnemyWeaponBolt(enemyObj) {
     materialList = [bodyMat, tipMat, finMat, plumeMat];
 
     // Visible flight speed: travels across ~24 units in ~1.0 second
-    boltSpeed = Math.max(22, Math.min(34, (enemyObj.weaponSpeed || 480) * 0.065));
+    boltSpeed = Math.max(22, Math.min(36, (parseInt(cfg.weapon_speed || enemyObj.weaponSpeed || 480)) * 0.065));
 
     if (audioMgr && typeof audioMgr.playEnemyMissile === 'function') {
       audioMgr.playEnemyMissile();
@@ -9063,10 +9395,11 @@ function fireEnemyWeaponBolt(enemyObj) {
     beamGroup.add(coreMesh);
 
     // Radiant point light
-    const light = new THREE.PointLight(boltColorHex, 4.0, 36);
+    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
     light.position.set(0, 0, 0);
     beamGroup.add(light);
 
+    beamGroup.scale.set(boltScale, boltScale, boltScale);
     beamGroup.position.copy(spawnOrigin);
     beamGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     scene.add(beamGroup);
@@ -9076,7 +9409,7 @@ function fireEnemyWeaponBolt(enemyObj) {
     materialList = [sheathMat, coreMat];
 
     // Visible flight speed: travels across ~24 units in ~0.8 second
-    boltSpeed = Math.max(28, Math.min(42, (enemyObj.weaponSpeed || 480) * 0.075));
+    boltSpeed = Math.max(28, Math.min(44, (parseInt(cfg.weapon_speed || enemyObj.weaponSpeed || 480)) * 0.075));
 
     if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
       audioMgr.playEnemyLaser();
@@ -9220,6 +9553,10 @@ let countdownCompletionTimeout = null;
  * 3. Once rotated to landscape (or if already in landscape), launches the 5-second countdown timer before engaging gameplay.
  */
 function startCountdownAndLaunchGame(isRestart = false) {
+  if (isRestart) {
+    restartGame();
+    return;
+  }
   if (countdownTimerInterval) {
     clearInterval(countdownTimerInterval);
     countdownTimerInterval = null;
@@ -9458,13 +9795,29 @@ function restartGame() {
     countdownCompletionTimeout = null;
   }
 
+  // Dismiss and hide any countdown overlay
+  const countdownOverlay = document.getElementById('game-countdown-overlay');
+  if (countdownOverlay) {
+    countdownOverlay.classList.remove('active');
+    countdownOverlay.style.display = 'none';
+  }
+
+  // Dismiss and hide any rotate orientation prompt to prevent freeze/lockout
+  const rotatePrompt = document.getElementById('landscape-rotate-prompt');
+  if (rotatePrompt) {
+    rotatePrompt.classList.remove('active');
+    rotatePrompt.classList.add('dismissed');
+    rotatePrompt.style.display = 'none';
+  }
+  document.body.classList.add('portrait-dismissed');
+
   // Completely reset pause & game over states across entire game
   state.isGameOver = false;
   state.isPaused = false;
-  state.hasStarted = false;
+  state.hasStarted = true;
   state.isCountdownActive = false;
   document.body.classList.remove('game-paused');
-  document.body.classList.remove('game-in-flight');
+  document.body.classList.add('game-in-flight');
   const btnQuickPause = document.getElementById('btn-quick-pause');
   if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
 
@@ -9531,17 +9884,22 @@ function restartGame() {
 
   // Reset to Stage 1 and re-sync
   currentActiveStage = 1;
-  syncGameManagerFromDatabase(1, currentActiveDeviceType);
 
   updatePlayerDefenseHUD();
   renderStageObjectivesUI();
   centerWormholeOnScreen(true);
 
+  // Spawn fresh hostile swarm immediately so action resumes smoothly with zero freeze
+  lastEnemySpawnCheckTime = 0;
+  spawnEnemySwarmFromWormhole();
+
   // Reset frame timestamp to prevent delta time explosion
   state.lastFrameTime = performance.now();
 
-  // Launch the 5-second countdown to prepare the player before hostiles spawn
-  startCountdownAndLaunchGame(true);
+  // Request crosshair capture if on desktop
+  if (!isMobileInUse()) {
+    requestCrosshairCapture(true);
+  }
 }
 
 function quitGame() {
@@ -11374,7 +11732,6 @@ if (renderer) {
 
     // During 5-second countdown, render the scene smoothly while holding combat and flight
     if (state.isCountdownActive) {
-      centerWormholeOnScreen();
       updateCrosshairPosition(delta);
       if (!state.postProcessingEnabled) {
         renderer.render(scene, camera);
@@ -11813,9 +12170,6 @@ if (btnRestartGame) {
   btnRestartGame.addEventListener('click', (e) => {
     e.preventDefault();
     restartGame();
-    if (!isMobileInUse()) {
-      requestCrosshairCapture(true);
-    }
   });
 }
 
@@ -11833,9 +12187,6 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyR' || e.code === 'Enter' || e.code === 'Space') {
       e.preventDefault();
       restartGame();
-      if (!isMobileInUse()) {
-        requestCrosshairCapture(true);
-      }
     } else if (e.code === 'Escape' || e.code === 'KeyQ') {
       e.preventDefault();
       quitGame();

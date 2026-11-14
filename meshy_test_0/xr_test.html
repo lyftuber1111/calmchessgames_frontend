@@ -2092,21 +2092,35 @@
         const isFileOrOpaque = (typeof window !== 'undefined' && window.location && (window.location.protocol === 'file:' || window.location.origin === 'null'));
         const defaultCreds = isFileOrOpaque ? 'omit' : 'same-origin';
         let result = null;
+        let lastErr = null;
 
         for (const ep of endpoints) {
           try {
             const sep = ep.includes('?') ? '&' : '?';
             const url = `${ep}${sep}action=pull_frontend&_t=${Date.now()}`;
-            const res = await fetch(url, { method: 'POST', credentials: defaultCreds, mode: 'cors' });
+            let res = null;
+            try {
+              res = await fetch(url, { method: 'POST', credentials: defaultCreds, mode: 'cors' });
+            } catch (fetchErr) {
+              if (defaultCreds !== 'omit') {
+                res = await fetch(url, { method: 'POST', credentials: 'omit', mode: 'cors' });
+              } else {
+                throw fetchErr;
+              }
+            }
             if (res.ok) {
               const d = await res.json();
               if (d && d.success) {
                 result = d;
                 break;
+              } else if (d && d.error) {
+                lastErr = new Error(d.error);
               }
+            } else {
+              lastErr = new Error(`HTTP ${res.status}: ${res.statusText}`);
             }
           } catch (e) {
-            // cascade
+            lastErr = e;
           }
         }
 
@@ -2126,7 +2140,8 @@
             ${pullLogs ? `<pre class="git-output-pre">${pullLogs.trim()}</pre>` : ''}
           `, 15000);
         } else {
-          showGitPushToast('error', '✕ Pull Request Failed', 'Could not complete frontend pull request for origin main.', '', 0);
+          const errDetail = lastErr?.message ? ` (${lastErr.message})` : '';
+          showGitPushToast('error', '✕ Pull Request Failed', `Could not complete frontend pull request for origin main.${errDetail}`, '', 0);
         }
       } catch (err) {
         showGitPushToast('error', '✕ Pull Request Failed', err.message || 'Network error', '', 0);

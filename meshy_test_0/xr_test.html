@@ -1600,6 +1600,13 @@
           <datalist id="model-presets">
             <option value="models/red_race_car.glb">models/red_race_car.glb (GLB)</option>
             <option value="models/red_race_car.obj">models/red_race_car.obj (OBJ)</option>
+            <option value="models/phase_interceptor/phase_interceptor.glb">models/phase_interceptor/phase_interceptor.glb (GLB)</option>
+            <option value="models/phase_interceptor/phase_interceptor.obj">models/phase_interceptor/phase_interceptor.obj (OBJ)</option>
+            <option value="models/drone_phase_interceptor_3/drone_phase_interceptor_3.glb">models/drone_phase_interceptor_3/drone_phase_interceptor_3.glb (GLB)</option>
+            <option value="models/drone_phase_interceptor_3/drone_phase_interceptor_3.obj">models/drone_phase_interceptor_3/drone_phase_interceptor_3.obj (OBJ)</option>
+            <option value="models/drone_phase_interceptor_3/recon_drone_2.8m.glb">models/drone_phase_interceptor_3/recon_drone_2.8m.glb (GLB)</option>
+            <option value="models/phase_interceptor_2/phase_interceptor_2.glb">models/phase_interceptor_2/phase_interceptor_2.glb (GLB)</option>
+            <option value="models/phase_interceptor_2/phase_interceptor_2.obj">models/phase_interceptor_2/phase_interceptor_2.obj (OBJ)</option>
             <option value="models/red_race_car.fbx">models/red_race_car.fbx (FBX)</option>
             <option value="models/red_race_car.stl">models/red_race_car.stl (STL)</option>
             <option value="red_race_car.glb">red_race_car.glb (Root)</option>
@@ -1689,6 +1696,10 @@
 
           <!-- Move Options Checkboxes -->
           <div class="move-options-row">
+            <label class="checkbox-option">
+              <input type="checkbox" id="chk-move-primary-model" checked disabled />
+              <span>✓ Move Primary 3D Model (<span id="model-move-primary-name">red_race_car.glb</span>)</span>
+            </label>
             <label class="checkbox-option">
               <input type="checkbox" id="chk-move-materials-textures" checked />
               <span>✓ Move Companion Materials (.mtl, .bin) & Textures (.png, .jpg)</span>
@@ -2558,6 +2569,9 @@
       if (loadedAssetSource) loadedAssetSource.textContent = `Source: ${currentLoadedAsset.sourcePath} (${currentLoadedAsset.sizeStr || 'Ready'})`;
       if (loadedAssetExt) loadedAssetExt.textContent = ext.toUpperCase();
 
+      const primaryNameEl = document.getElementById('model-move-primary-name');
+      if (primaryNameEl) primaryNameEl.textContent = fileName;
+
       if (jsonModelBasename) {
         jsonModelBasename.textContent = baseName;
       }
@@ -2963,7 +2977,10 @@
     function resetApprovalForm() {
       selectedFolderPaths.clear();
       pendingSelectedAsset = null;
-      if (panelDestPathInput) panelDestPathInput.value = '';
+      const fileName = currentLoadedAsset ? currentLoadedAsset.fileName : 'red_race_car.glb';
+      if (panelDestPathInput) {
+        panelDestPathInput.value = `wormhole0/warp_origin_images/${fileName}`;
+      }
       if (panelFolderSearch) panelFolderSearch.value = '';
       if (panelAddQuicklinkInput) panelAddQuicklinkInput.value = '';
       if (modelFileInput) modelFileInput.value = '';
@@ -2981,6 +2998,19 @@
     }
 
     async function approveAndMoveAsset() {
+      if (pendingSelectedAsset && (!currentLoadedAsset || currentLoadedAsset.fileName !== pendingSelectedAsset.fileName)) {
+        currentLoadedAsset = {
+          file: pendingSelectedAsset.file,
+          companionFiles: pendingSelectedAsset.companionFiles,
+          sourcePath: pendingSelectedAsset.sourcePath,
+          fileName: pendingSelectedAsset.fileName,
+          ext: pendingSelectedAsset.ext,
+          sizeStr: pendingSelectedAsset.sizeStr,
+          blobUrl: pendingSelectedAsset.blobUrl
+        };
+        updateLoadedAssetUI();
+      }
+
       if (!currentLoadedAsset) {
         setMoveMessage('Please load a 3D model first before approving move.', 'error');
         showGitPushToast('error', 'No Model Loaded', 'Please load a 3D model first before approving move.', '<p>Select or upload a 3D model in the viewer before approving.</p>', 6000);
@@ -3886,8 +3916,21 @@
         mtlVal: mtlVal
       };
 
-      setStatus('Selected', '');
-      setMessage(`Selected "${mainFile.name}". Press "Load Model" to load into viewer.`, '');
+      currentLoadedAsset = {
+        file: mainFile,
+        companionFiles: companionFiles,
+        sourcePath: 'meshy_test_0/models/' + mainFile.name,
+        fileName: mainFile.name,
+        ext: ext,
+        sizeStr: formatBytes(mainFile.size),
+        blobUrl: blobUrl
+      };
+
+      updateLoadedAssetUI();
+      loadModel(blobUrl, mtlVal, mainFile.name, 'meshy_test_0/models/' + mainFile.name);
+
+      setStatus('Ready', 'ready');
+      setMessage(`✓ Loaded "${mainFile.name}" into viewer. Ready to approve and move.`, 'success');
     }
 
     // 1. Browse Button (Choose asset file without auto-loading; user must press Load Model)

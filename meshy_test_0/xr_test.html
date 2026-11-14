@@ -5892,15 +5892,7 @@ const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffs
       );
       selectedTriangleGroup.add(normalArrow);
 
-      // 5. Billboard Label Sprite hovering at centroid
-      const labelSprite = createBillboardLabel(
-        `Tri #${faceData.faceIndex} [${centroid.x.toFixed(2)}, ${centroid.y.toFixed(2)}, ${centroid.z.toFixed(2)}]`,
-        '#ffea00',
-        'rgba(10, 20, 30, 0.90)'
-      );
-      labelSprite.position.copy(centroid).add(normal.clone().multiplyScalar(0.12));
-      selectedTriangleGroup.add(labelSprite);
-
+      // Note: 3D billboard text badge over triangle removed as user prefers viewing coordinates in details panel
       carModel.add(selectedTriangleGroup);
     }
 

@@ -1,6 +1,7 @@
 {
   "name": "seated_figure4_stretch",
-  "scale": 1.0,
+  "scale": 0.75,
+  "scale_applied_to_glb": 0.75,
   "textures": "./seated_figure4_stretch_textures",
   "relative_link_skill_invariant": "./meshy_test_0/models/seated_figure4_stretch/seated_figure4_stretch_textures",
   "meshy_yest_0_storage": "./meshy_yest_0/models/seated_figure4_stretch/seated_figure4_stretch_textures",

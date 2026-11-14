@@ -665,6 +665,32 @@
       border-color: rgba(255, 255, 255, 0.35);
     }
 
+    .btn-scale-preset {
+      flex: 1;
+      padding: 4px 6px;
+      font-size: 0.74rem;
+      min-width: 55px;
+      text-align: center;
+      transition: all 0.15s ease;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .btn-scale-preset:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+    }
+
+    .btn-scale-preset.active {
+      background: #38bdf8 !important;
+      color: #0f172a !important;
+      font-weight: 700 !important;
+      border-color: #38bdf8 !important;
+    }
+
     .quick-links-checklist {
       height: 185px;
       background: rgba(12, 15, 24, 0.95);
@@ -1633,6 +1659,19 @@
           </button>
         </div>
 
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:8px; padding:6px 10px; background:rgba(255,255,255,0.04); border:1px solid var(--border); border-radius:6px;">
+          <span style="font-size:0.75rem; color:var(--text-muted); display:flex; align-items:center; gap:4px;">
+            <span>📐</span> <span>Default Scale:</span>
+          </span>
+          <select id="initial-scale-select" style="background:#0f172a; color:#38bdf8; border:1px solid #334155; border-radius:5px; padding:3px 8px; font-size:0.75rem; font-weight:600; cursor:pointer;" title="Choose initial scale for any model/animation loaded">
+            <option value="0.5">0.50x (Compact)</option>
+            <option value="0.75" selected>0.75x (Mobile Default)</option>
+            <option value="1.0">1.00x (Standard)</option>
+            <option value="1.25">1.25x</option>
+            <option value="1.5">1.50x</option>
+          </select>
+        </div>
+
         <div id="model-load-msg" class="model-msg">Current: models/red_race_car.glb</div>
 
         <!-- Divider -->
@@ -1857,6 +1896,24 @@
               <button id="btn-reset-cam" class="btn" type="button">
                 <span>🎯</span> <span>Reset View</span>
               </button>
+            </div>
+          </div>
+
+          <div class="controls-subgroup" id="scale-controls-group">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="subgroup-title">Dynamic Scale</span>
+              <span id="model-scale-val" style="font-size: 0.8rem; font-weight: 700; color: #38bdf8; font-variant-numeric: tabular-nums;">0.75x</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 0.72rem; opacity: 0.7;">0.1x</span>
+              <input type="range" id="model-scale-slider" min="0.1" max="2.5" step="0.05" value="0.75" style="flex: 1; cursor: pointer; accent-color: #38bdf8;" />
+              <span style="font-size: 0.72rem; opacity: 0.7;">2.5x</span>
+            </div>
+            <div class="btn-row" style="margin-top: 2px;">
+              <button type="button" class="btn btn-scale-preset" data-scale="0.5">0.5x</button>
+              <button type="button" class="btn btn-scale-preset active" data-scale="0.75">0.75x (Mobile)</button>
+              <button type="button" class="btn btn-scale-preset" data-scale="1.0">1.0x</button>
+              <button type="button" class="btn btn-scale-preset" data-scale="1.5">1.5x</button>
             </div>
           </div>
 
@@ -3445,6 +3502,10 @@
     let isUserScrubbing = false;
     const animClock = new THREE.Clock();
 
+    // Dynamic Scale State (Default 0.75x for mobile & desktop)
+    let dynamicScaleMultiplier = 0.75;
+    let baseScaleFactor = 1.0;
+
     // Slide-out Panel Logic
     let activeTab = null;
     const slidePanel = document.getElementById('slide-panel');
@@ -3898,26 +3959,29 @@
 
         carModel = object3D;
 
-        // Auto-scale to physical WebXR scale
-        const bbox = new THREE.Box3().setFromObject(carModel);
-        const center = bbox.getCenter(new THREE.Vector3());
-        const size = bbox.getSize(new THREE.Vector3());
+        // Auto-scale base geometry
+        const rawBbox = new THREE.Box3().setFromObject(carModel);
+        const rawCenter = rawBbox.getCenter(new THREE.Vector3());
+        const rawSize = rawBbox.getSize(new THREE.Vector3());
 
-        const maxHoriz = Math.max(size.x, size.z);
-        const maxOverall = Math.max(maxHoriz, size.y);
-        let scaleFactor = 1;
-        if (maxOverall > 0.0001) {
-          const targetLength = 3.8;
-          scaleFactor = targetLength / (maxHoriz > 0.1 ? maxHoriz : maxOverall);
+        const maxHoriz = Math.max(rawSize.x, rawSize.z);
+        const maxOverall = Math.max(maxHoriz, rawSize.y);
+        
+        // Humanoid / stretch animations ~ 1.5m base, vehicle / drone ~ 3.5m base
+        const isHumanoid = displayName.toLowerCase().includes('figure') || 
+                           displayName.toLowerCase().includes('stretch') || 
+                           displayName.toLowerCase().includes('human') || 
+                           displayName.toLowerCase().includes('char');
+        const targetLength = isHumanoid ? 1.5 : 3.5;
+        baseScaleFactor = maxOverall > 0.0001 ? (targetLength / (maxHoriz > 0.1 ? maxHoriz : maxOverall)) : 1.0;
+
+        // Read selected initial scale or mobile default (0.75x)
+        const initialScaleElem = document.getElementById('initial-scale-select');
+        if (initialScaleElem && initialScaleElem.value) {
+          dynamicScaleMultiplier = parseFloat(initialScaleElem.value) || 0.75;
         }
-        carModel.scale.set(scaleFactor, scaleFactor, scaleFactor);
 
-        bbox.setFromObject(carModel);
-        const scaledBottomY = bbox.min.y;
-
-        carModel.position.x = -center.x * scaleFactor;
-        carModel.position.y = -scaledBottomY;
-        carModel.position.z = -center.z * scaleFactor;
+        applyDynamicScale(dynamicScaleMultiplier);
 
         let totalTriangles = 0;
         let totalVertices = 0;
@@ -3956,6 +4020,8 @@
           clearAnimationMixer();
         }
 
+        applyDynamicScale(dynamicScaleMultiplier);
+
         const finalBbox = new THREE.Box3().setFromObject(carModel);
         const finalSize = finalBbox.getSize(new THREE.Vector3());
 
@@ -3965,7 +4031,8 @@
         document.getElementById('spec-length').textContent = `~${finalSize.z.toFixed(2)} m`;
         document.getElementById('spec-width').textContent = `~${finalSize.x.toFixed(2)} m`;
         document.getElementById('spec-height').textContent = `~${finalSize.y.toFixed(2)} m`;
-        brandTitle.textContent = `🏎️ ${displayName}`;
+        const icon = (displayName.toLowerCase().includes('figure') || displayName.toLowerCase().includes('stretch')) ? '🧘' : ((displayName.toLowerCase().includes('drone') || displayName.toLowerCase().includes('interceptor')) ? '🛸' : '🏎️');
+        brandTitle.textContent = `${icon} ${displayName}`;
 
         setStatus('Ready', 'ready');
         setMessage(`✓ Loaded: ${displayName}. Choose path/quick links and click Approve to move asset, materials & textures.`, 'success');
@@ -4423,6 +4490,77 @@
       });
       animTimelineSlider.addEventListener('change', () => {
         isUserScrubbing = false;
+      });
+    }
+
+    // =========================================================================
+    // DYNAMIC MODEL & ANIMATION SCALE CONTROLLER
+    // =========================================================================
+
+    function applyDynamicScale(multiplier) {
+      dynamicScaleMultiplier = Math.max(0.05, Math.min(3.0, parseFloat(multiplier) || 0.75));
+      if (!carModel) return;
+
+      const totalScale = baseScaleFactor * dynamicScaleMultiplier;
+      carModel.scale.set(totalScale, totalScale, totalScale);
+
+      // Re-center horizontally and keep bottom grounded flat at y = 0
+      const curBbox = new THREE.Box3().setFromObject(carModel);
+      const curCenter = curBbox.getCenter(new THREE.Vector3());
+      carModel.position.x -= curCenter.x;
+      carModel.position.z -= curCenter.z;
+      carModel.position.y -= curBbox.min.y;
+
+      // Update UI elements
+      const scaleSlider = document.getElementById('model-scale-slider');
+      if (scaleSlider) scaleSlider.value = dynamicScaleMultiplier.toString();
+
+      const scaleValElem = document.getElementById('model-scale-val');
+      if (scaleValElem) scaleValElem.textContent = `${dynamicScaleMultiplier.toFixed(2)}x`;
+
+      const initialScaleElem = document.getElementById('initial-scale-select');
+      if (initialScaleElem && Array.from(initialScaleElem.options).some(o => Math.abs(parseFloat(o.value) - dynamicScaleMultiplier) < 0.01)) {
+        initialScaleElem.value = dynamicScaleMultiplier.toString();
+      }
+
+      document.querySelectorAll('.btn-scale-preset').forEach(btn => {
+        const pVal = parseFloat(btn.dataset.scale);
+        if (Math.abs(pVal - dynamicScaleMultiplier) < 0.02) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // Update dimension specs
+      const finalBbox = new THREE.Box3().setFromObject(carModel);
+      const finalSize = finalBbox.getSize(new THREE.Vector3());
+      const lenElem = document.getElementById('spec-length');
+      const widElem = document.getElementById('spec-width');
+      const hgtElem = document.getElementById('spec-height');
+      if (lenElem) lenElem.textContent = `~${finalSize.z.toFixed(2)} m`;
+      if (widElem) widElem.textContent = `~${finalSize.x.toFixed(2)} m`;
+      if (hgtElem) hgtElem.textContent = `~${finalSize.y.toFixed(2)} m`;
+    }
+
+    const modelScaleSlider = document.getElementById('model-scale-slider');
+    if (modelScaleSlider) {
+      modelScaleSlider.addEventListener('input', (e) => {
+        applyDynamicScale(e.target.value);
+      });
+    }
+
+    document.querySelectorAll('.btn-scale-preset').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const val = parseFloat(e.currentTarget.dataset.scale);
+        applyDynamicScale(val);
+      });
+    });
+
+    const initialScaleSelect = document.getElementById('initial-scale-select');
+    if (initialScaleSelect) {
+      initialScaleSelect.addEventListener('change', (e) => {
+        applyDynamicScale(e.target.value);
       });
     }
 

@@ -1,13 +1,13 @@
 {
-    "model": "red_race_car.obj",
+    "model": "red_race_car.glb",
     "base_name": "red_race_car",
-    "exported_at": "2026-11-14T02:10:12.446Z",
+    "exported_at": "2026-11-14T02:11:10.421Z",
     "color_palette": [
         "#FFFFFF"
     ],
     "materials": [
         {
-            "name": "Material.002",
+            "name": "Material_1",
             "type": "MeshStandardMaterial",
             "color": "#FFFFFF",
             "emissive": null,
@@ -23,12 +23,5 @@
             }
         }
     ],
-    "companion_files": [
-        "red_race_car.mtl",
-        "texture_0_base_color.png",
-        "texture_0_metallic.png",
-        "texture_0_normal.png",
-        "texture_0_roughness.png",
-        "thumbnail.png"
-    ]
+    "companion_files": []
 }

@@ -1,15 +1,3 @@
 {
-    "model": "red_race_car.obj",
-    "baseName": "red_race_car",
-    "exported_at": "2026-11-14T03:09:43+00:00",
-    "destination": "/admin/temp_stage_0/warp_origin_images",
-    "companion_files": [
-        "red_race_car_texture/red_race_car.mtl",
-        "texture_0_base_color.png",
-        "texture_0_metallic.png",
-        "texture_0_normal.png",
-        "texture_0_roughness.png",
-        "thumbnail.png",
-        "red_race_car_materials.json"
-    ]
+    "raw_materials": "{\\"
 }

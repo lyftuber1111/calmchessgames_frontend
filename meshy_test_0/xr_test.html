@@ -5225,39 +5225,75 @@
     window.modelGizmoRoot = modelGizmoRoot;
     window.manualModelEuler = manualModelEuler;
 
-    // Helpers to create text billboard sprites for 3D coordinate point labels
-    function createBillboardLabel(text, textColor = '#ffffff', bgColor = 'rgba(10, 16, 26, 0.85)') {
+    // Dynamic text billboard sprites: measures text width to prevent truncation of ID and (x,y,z) coordinates
+    function createBillboardLabel(text, textColor = '#ffffff', bgColor = 'rgba(10, 16, 26, 0.90)') {
       const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 64;
       const ctx = canvas.getContext('2d');
+      
+      const fontSize = 26;
+      const fontSpec = `bold ${fontSize}px ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace`;
+      
+      let canvasW = 280;
+      let canvasH = 56;
+      
       if (ctx) {
+        ctx.font = fontSpec;
+        const textMetrics = ctx.measureText(text);
+        const textWidth = Math.ceil(textMetrics.width);
+        const padX = 24; // Generous horizontal padding on both sides
+        canvasW = Math.max(120, textWidth + padX * 2);
+        canvasH = 56;
+        
+        canvas.width = canvasW;
+        canvas.height = canvasH;
+        
+        // Context is reset upon width/height change; re-apply font
+        ctx.font = fontSpec;
+        
+        // Draw background pill/badge
         ctx.fillStyle = bgColor;
+        const radius = Math.min(10, canvasH / 2);
         if (typeof ctx.roundRect === 'function') {
           ctx.beginPath();
-          ctx.roundRect(4, 4, 248, 56, 12);
+          ctx.roundRect(3, 3, canvasW - 6, canvasH - 6, radius);
           ctx.fill();
         } else {
-          ctx.fillRect(4, 4, 248, 56);
+          ctx.fillRect(3, 3, canvasW - 6, canvasH - 6);
         }
+        
+        // Draw border
         ctx.strokeStyle = textColor;
-        ctx.lineWidth = 3;
-        ctx.stroke();
-
-        ctx.font = 'bold 24px monospace';
+        ctx.lineWidth = 2.5;
+        if (typeof ctx.roundRect === 'function') {
+          ctx.beginPath();
+          ctx.roundRect(3, 3, canvasW - 6, canvasH - 6, radius);
+          ctx.stroke();
+        } else {
+          ctx.strokeRect(3, 3, canvasW - 6, canvasH - 6);
+        }
+        
+        // Draw centered text with full ID and all (x,y,z) coordinates
         ctx.fillStyle = textColor;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(text, 128, 32);
+        ctx.fillText(text, canvasW / 2, canvasH / 2 + 1);
+      } else {
+        canvas.width = canvasW;
+        canvas.height = canvasH;
       }
 
       const texture = new THREE.CanvasTexture(canvas);
       texture.minFilter = THREE.LinearFilter;
       const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
       const sprite = new THREE.Sprite(mat);
-      sprite.scale.set(0.65, 0.16, 1.0);
+      
+      // Scale sprite proportionally in 3D world units: height = 0.16m, width = height * (W / H)
+      const baseH = 0.16;
+      const baseW = baseH * (canvasW / canvasH);
+      sprite.scale.set(baseW, baseH, 1.0);
       return sprite;
     }
+    window.createBillboardLabel = createBillboardLabel;
 
     // Clear previous gizmos cleanly
     function clearGizmos() {
@@ -5307,7 +5343,7 @@
 
       const labelsGroup = new THREE.Group();
       labelsGroup.name = 'labelsGroup';
-      labelsGroup.visible = gizmoConfig.showLabels;
+      labelsGroup.visible = (gizmoConfig.showLabels && gizmoConfig.showAxes);
 
       // -----------------------------------------------------------------------
       // 1. BOUNDING BOX WIREFRAME & CAD CORNER BRACKETS
@@ -5684,7 +5720,46 @@ const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffs
 
     setupGizmoToggle('btn-toggle-ref-box', 'showBox', 'label-ref-box', 'Box', 'btn-hud-toggle-box');
     setupGizmoToggle('btn-toggle-ref-points', 'showPoints', 'label-ref-points', 'Points', 'btn-hud-toggle-pts');
-    setupGizmoToggle('btn-toggle-ref-axes', 'showAxes', 'label-ref-axes', 'Axes', 'btn-hud-toggle-axes');
+
+    // Unified XYZ Axes & Reference Badges Visibility Controller
+    // When XYZ Axes Gizmo is toggled off, all reference badges (such as -X Wing L, +Z Nose, etc.) toggle off too
+    function setAxesGizmoVisibility(visible) {
+      gizmoConfig.showAxes = visible;
+      gizmoConfig.showLabels = visible; // Toggle off all badges when XYZ gizmo is off so model is clear
+
+      const axesGrp = modelGizmoRoot.getObjectByName('axesGroup');
+      if (axesGrp) axesGrp.visible = visible;
+
+      const labelsGrp = modelGizmoRoot.getObjectByName('labelsGroup');
+      if (labelsGrp) labelsGrp.visible = visible;
+
+      // If a triangle face is highlighted, toggle its badge / highlight in sync
+      if (selectedTriangleGroup) {
+        selectedTriangleGroup.visible = visible;
+      }
+
+      // Sync XYZ Axes button in panel & HUD
+      const btnAxes = document.getElementById('btn-toggle-ref-axes');
+      const labelAxes = document.getElementById('label-ref-axes');
+      if (btnAxes) btnAxes.classList.toggle('active', visible);
+      if (labelAxes) labelAxes.textContent = `XYZ Axes: ${visible ? 'ON' : 'OFF'}`;
+
+      const hudBtnAxes = document.getElementById('btn-hud-toggle-axes');
+      if (hudBtnAxes) hudBtnAxes.classList.toggle('active', visible);
+
+      // Sync 3D Labels button in panel
+      const btnLabels = document.getElementById('btn-toggle-ref-labels');
+      const labelLabels = document.getElementById('label-ref-labels');
+      if (btnLabels) btnLabels.classList.toggle('active', visible);
+      if (labelLabels) labelLabels.textContent = `3D Labels: ${visible ? 'ON' : 'OFF'}`;
+    }
+
+    document.getElementById('btn-toggle-ref-axes')?.addEventListener('click', () => {
+      setAxesGizmoVisibility(!gizmoConfig.showAxes);
+    });
+    document.getElementById('btn-hud-toggle-axes')?.addEventListener('click', () => {
+      setAxesGizmoVisibility(!gizmoConfig.showAxes);
+    });
 
     document.getElementById('btn-toggle-ref-labels')?.addEventListener('click', () => {
       gizmoConfig.showLabels = !gizmoConfig.showLabels;
@@ -5696,6 +5771,8 @@ const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffs
       const grp = modelGizmoRoot.getObjectByName('labelsGroup');
       if (grp) grp.visible = val;
     });
+
+    window.setAxesGizmoVisibility = setAxesGizmoVisibility;
 
     // HUD overlay toggle and minimize
     const orientationHud = document.getElementById('orientation-hud');

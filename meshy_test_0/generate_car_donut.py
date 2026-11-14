@@ -3,11 +3,14 @@ import bmesh
 import math
 import mathutils
 import os
+import struct
+import json
+import shutil
 
-print("=== Red Race Car Donut Animation Generator ===")
+print("=== Red Race Car Donut Animation Generator (Black Tires Only) ===")
 bpy.ops.wm.read_factory_settings(use_empty=True)
 
-fbx_input = r"C:\Users\lyftu\gemini_3\updated_html_js_0\calmchessgames_frontend\meshy_test_0\models\red_race_car.fbx"
+fbx_input = r"C:\Users\lyftu\gemini_3\updated_html_js_0\calmchessgames_frontend\meshy_test_0\models\original_red_race_car.fbx"
 print(f"Importing base FBX: {fbx_input}...")
 bpy.ops.import_scene.fbx(filepath=fbx_input)
 
@@ -15,39 +18,87 @@ car = bpy.data.objects.get("Mesh_0")
 if not car:
     raise RuntimeError("Mesh_0 not found in FBX")
 
-# Keep reference to materials
-original_materials = [slot.material for slot in car.material_slots if slot.material]
-print(f"Found {len(original_materials)} materials.")
+# Load base texture for UV color sampling (ensures red wheel wells stay with body)
+tex_path = r"C:\Users\lyftu\gemini_3\updated_html_js_0\calmchessgames_frontend\meshy_test_0\models\texture_0_base_color.png"
+tex_img = bpy.data.images.load(tex_path)
+w_img, h_img = tex_img.size
+pixels = list(tex_img.pixels)
+
+mesh = car.data
+uv_layer = mesh.uv_layers.active.data
 
 # Wheel definitions: (Name, center, y_min, y_max)
 wheel_defs = {
-    "Wheel_FL": (mathutils.Vector((-0.571, -0.351, -0.076)), -0.44, -0.26),
-    "Wheel_FR": (mathutils.Vector((-0.572, 0.354, -0.081)), 0.26, 0.44),
-    "Wheel_RL": (mathutils.Vector((0.613, -0.362, -0.067)), -0.44, -0.26),
-    "Wheel_RR": (mathutils.Vector((0.610, 0.363, -0.069)), 0.26, 0.44),
+    "Wheel_FL": (mathutils.Vector((-0.571, -0.351, -0.076)), -0.415, -0.285),
+    "Wheel_FR": (mathutils.Vector((-0.572, 0.354, -0.081)), 0.285, 0.415),
+    "Wheel_RL": (mathutils.Vector((0.613, -0.362, -0.067)), -0.415, -0.285),
+    "Wheel_RR": (mathutils.Vector((0.610, 0.363, -0.069)), 0.285, 0.415),
 }
+
+def is_tire_face(poly, center, y_min, y_max):
+    c = poly.center
+    dist_xz = ((c.x - center.x)**2 + (c.z - center.z)**2)**0.5
+    # Strict tire tread outer radius limit (~0.188m)
+    if dist_xz > 0.188:
+        return False
+    # Strict lateral boundaries for tire
+    if not (y_min <= c.y <= y_max):
+        return False
+    # Check texture color (MUST NOT be red wheel well/body)
+    uv_coords = [uv_layer[loop_idx].uv for loop_idx in poly.loop_indices]
+    avg_u = sum(uv.x for uv in uv_coords) / len(uv_coords) % 1.0
+    avg_v = sum(uv.y for uv in uv_coords) / len(uv_coords) % 1.0
+    px = int(avg_u * w_img) % w_img
+    py = int(avg_v * h_img) % h_img
+    idx = (py * w_img + px) * 4
+    r = pixels[idx]
+    g = pixels[idx+1]
+    b = pixels[idx+2]
+    # Red car body/wheel well detection
+    is_red = (r > 0.35 and r > 1.5 * max(g, b)) or (r > 0.40 and g < 0.20 and b < 0.20)
+    if is_red:
+        return False
+    # Check surface normal: tread and rim point outward; wheel well cavity points inward
+    if dist_xz > 0.12:
+        radial = mathutils.Vector((c.x - center.x, 0, c.z - center.z)).normalized()
+        dot_rad = poly.normal.x * radial.x + poly.normal.z * radial.z
+        if dot_rad < -0.2:
+            return False
+    return True
+
+# Map face indices for each wheel
+wheel_face_indices = {}
+all_tire_face_indices = set()
+
+for w_name, (w_center, y_min, y_max) in wheel_defs.items():
+    t_faces = set()
+    for poly in mesh.polygons:
+        if is_tire_face(poly, w_center, y_min, y_max):
+            t_faces.add(poly.index)
+            all_tire_face_indices.add(poly.index)
+    wheel_face_indices[w_name] = t_faces
+    print(f"{w_name}: selected {len(t_faces)} pure black tire/rim faces (red wheel wells excluded)")
 
 wheel_objects = {}
 
+# Extract each black tire into its own object
 for w_name, (w_center, y_min, y_max) in wheel_defs.items():
     new_mesh = car.data.copy()
     new_mesh.name = f"{w_name}_Mesh"
     w_obj = bpy.data.objects.new(w_name, new_mesh)
     bpy.context.scene.collection.objects.link(w_obj)
     
+    keep_indices = wheel_face_indices[w_name]
     bm = bmesh.new()
     bm.from_mesh(new_mesh)
-    faces_to_remove = []
-    for f in bm.faces:
-        c = f.calc_center_median()
-        dist_xz = ((c.x - w_center.x)**2 + (c.z - w_center.z)**2)**0.5
-        if not (dist_xz <= 0.22 and y_min <= c.y <= y_max):
-            faces_to_remove.append(f)
-    bmesh.ops.delete(bm, geom=faces_to_remove, context='FACES_ONLY')
+    bm.faces.ensure_lookup_table()
+    
+    faces_to_delete = [f for f in bm.faces if f.index not in keep_indices]
+    bmesh.ops.delete(bm, geom=faces_to_delete, context='FACES_ONLY')
     isolated_verts = [v for v in bm.verts if not v.link_faces]
     bmesh.ops.delete(bm, geom=isolated_verts, context='VERTS')
     
-    # Translate geometry so origin is at center
+    # Translate mesh geometry so object origin is at exact wheel center
     bmesh.ops.translate(bm, vec=-w_center, verts=bm.verts)
     bm.to_mesh(new_mesh)
     bm.free()
@@ -55,19 +106,14 @@ for w_name, (w_center, y_min, y_max) in wheel_defs.items():
     
     w_obj.location = w_center
     wheel_objects[w_name] = w_obj
-    print(f"Extracted {w_name} ({len(w_obj.data.vertices)} verts)")
+    print(f"Created {w_name} ({len(w_obj.data.vertices)} verts) at {w_center}")
 
-# Clean chassis mesh
+# Clean chassis: remove ONLY tire faces, keeping ALL red wheel wells and body
 bm = bmesh.new()
 bm.from_mesh(car.data)
-chassis_faces_to_remove = []
-for f in bm.faces:
-    c = f.calc_center_median()
-    for w_name, (w_center, y_min, y_max) in wheel_defs.items():
-        dist_xz = ((c.x - w_center.x)**2 + (c.z - w_center.z)**2)**0.5
-        if dist_xz <= 0.22 and y_min <= c.y <= y_max:
-            chassis_faces_to_remove.append(f)
-            break
+bm.faces.ensure_lookup_table()
+
+chassis_faces_to_remove = [f for f in bm.faces if f.index in all_tire_face_indices]
 bmesh.ops.delete(bm, geom=chassis_faces_to_remove, context='FACES_ONLY')
 isolated_verts = [v for v in bm.verts if not v.link_faces]
 bmesh.ops.delete(bm, geom=isolated_verts, context='VERTS')
@@ -75,6 +121,7 @@ bm.to_mesh(car.data)
 bm.free()
 car.data.update()
 car.name = "Car_Chassis"
+print(f"Car_Chassis updated: {len(car.data.vertices)} vertices (all red wheel wells preserved)")
 
 # Create Steering Rack object at front axle center
 front_axle_center = mathutils.Vector((-0.5715, 0.0, -0.0785))
@@ -90,7 +137,11 @@ donut_root.empty_display_type = 'PLAIN_AXES'
 donut_root.empty_display_size = 0.5
 bpy.context.scene.collection.objects.link(donut_root)
 
-# Parent hierarchy
+# Parent hierarchy:
+# Car_Chassis -> Donut_Root
+# Steering_Rack -> Car_Chassis
+# Wheel_FL, Wheel_FR -> Steering_Rack (front tires turn on steering rack)
+# Wheel_RL, Wheel_RR -> Car_Chassis (rear tires mounted on chassis)
 car.parent = donut_root
 steering_rack.parent = car
 wheel_objects["Wheel_FL"].parent = steering_rack
@@ -137,8 +188,10 @@ smoke_puffs_rl = []
 smoke_puffs_rr = []
 
 for i in range(num_puffs):
-    p_rl = bpy.data.objects.new(f"Smoke_RL_{i:02d}", smoke_mesh)
-    p_rr = bpy.data.objects.new(f"Smoke_RR_{i:02d}", smoke_mesh)
+    mesh_copy_rl = smoke_mesh.copy()
+    mesh_copy_rr = smoke_mesh.copy()
+    p_rl = bpy.data.objects.new(f"Smoke_RL_{i:02d}", mesh_copy_rl)
+    p_rr = bpy.data.objects.new(f"Smoke_RR_{i:02d}", mesh_copy_rr)
     bpy.context.scene.collection.objects.link(p_rl)
     bpy.context.scene.collection.objects.link(p_rr)
     smoke_puffs_rl.append(p_rl)
@@ -183,19 +236,13 @@ for frame in range(1, TOTAL_FRAMES + 1):
     dx = xf - xr
     dy = yf - yr
     yaw = math.atan2(dy, dx)
-    
-    # Chassis position: put car origin at midpoint
-    # Car forward axis is -X, so rotation yaw needs alignment:
-    # If local -X points along (dx, dy), then yaw_rot = yaw + pi
     yaw_rot = yaw + math.pi
     
-    # Centrifugal roll (lean away from center) and power squat
+    # Centrifugal roll and power squat
     roll = math.radians(3.2)  # lean outward
     squat = math.radians(1.4) # rear squats down
     
     # Car chassis placement
-    # Front axle is at local x = -0.5715, rear axle at local x = +0.6115
-    # World position of car origin:
     t_mid = 0.5715 / L
     x_car = xf - t_mid * dx
     y_car = yf - t_mid * dy
@@ -207,7 +254,6 @@ for frame in range(1, TOTAL_FRAMES + 1):
     car.keyframe_insert(data_path="rotation_euler", frame=frame)
     
     # Front wheels roll (spin around local Y axis matching travel speed)
-    # Front axle traveled circumference ~ 2.51m, radius ~0.18m
     front_roll_angle = - 2.0 * math.pi * 2.22 * u
     wheel_objects["Wheel_FL"].rotation_euler = (0, front_roll_angle, 0)
     wheel_objects["Wheel_FR"].rotation_euler = (0, front_roll_angle, 0)
@@ -222,11 +268,9 @@ for frame in range(1, TOTAL_FRAMES + 1):
     wheel_objects["Wheel_RR"].keyframe_insert(data_path="rotation_euler", frame=frame)
     
     # Compute world coordinates of the rear tire contact patches at this frame
-    # Car rotation matrix
     mat_rot = mathutils.Euler((squat, roll, yaw_rot)).to_matrix()
     pos_car = mathutils.Vector((x_car, y_car, z_car))
     
-    # Local positions of rear tires at ground contact
     rl_ground = mathutils.Vector((0.613, -0.362, -0.255))
     rr_ground = mathutils.Vector((0.610, 0.363, -0.255))
     
@@ -242,27 +286,19 @@ for i in range(num_puffs):
     p_rl = smoke_puffs_rl[i]
     p_rr = smoke_puffs_rr[i]
     
-    # Birth frame offset (staggered evenly)
     spawn_frame = int(round(i * (TOTAL_FRAMES / float(num_puffs)))) + 1
     
     for frame in range(1, TOTAL_FRAMES + 1):
-        # Calculate age in frames modulo TOTAL_FRAMES
         age = (frame - spawn_frame) % TOTAL_FRAMES
         
         if age < puff_lifespan:
-            tau = age / float(puff_lifespan) # 0 to 1
-            
-            # Expansion curve: quickly grows, then slowly billows
+            tau = age / float(puff_lifespan)
             scale_factor = 0.15 + 1.65 * math.sin(tau * math.pi * 0.95)
-            
-            # Position: spawned at the tire's position at spawn_frame
             birth_idx = (spawn_frame - 1) % TOTAL_FRAMES
             rl_birth = rl_world_pos_list[birth_idx]
             rr_birth = rr_world_pos_list[birth_idx]
             
-            # Add centrifugal outward drift and upward billowing rise
             drift_dist = 0.35 * tau
-            # Outward vector from center (0, 0)
             rl_radial = mathutils.Vector((rl_birth.x, rl_birth.y, 0)).normalized()
             rr_radial = mathutils.Vector((rr_birth.x, rr_birth.y, 0)).normalized()
             
@@ -274,10 +310,8 @@ for i in range(num_puffs):
             p_rl.scale = (scale_factor, scale_factor, scale_factor)
             p_rr.scale = (scale_factor, scale_factor, scale_factor)
         else:
-            # Inactive / hidden
             p_rl.scale = (0.001, 0.001, 0.001)
             p_rr.scale = (0.001, 0.001, 0.001)
-            # Park at ground
             birth_idx = (spawn_frame - 1) % TOTAL_FRAMES
             p_rl.location = rl_world_pos_list[birth_idx]
             p_rr.location = rr_world_pos_list[birth_idx]
@@ -291,7 +325,6 @@ print("Keyframes successfully generated.")
 
 # Add Burnout Skid Mark Ring on Ground
 bm = bmesh.new()
-# Circular ribbon for rear tire donut mark
 skid_segs = 64
 r_in = R_rear - 0.25
 r_out = R_rear + 0.25
@@ -354,10 +387,51 @@ bpy.ops.export_scene.gltf(
     export_current_frame=False
 )
 
+# Merge animations into single unified "Donut_Drift_Smoke" clip for GLB
+with open(glb_out, 'rb') as f:
+    header = f.read(12)
+    magic, ver, total_len = struct.unpack('<4sII', header)
+    chunk0_len, chunk0_type = struct.unpack('<I4s', f.read(8))
+    json_data = f.read(chunk0_len)
+    gltf = json.loads(json_data.decode('utf-8'))
+    bin_chunk = f.read()
+
+merged_channels = []
+merged_samplers = []
+for anim in gltf.get('animations', []):
+    offset = len(merged_samplers)
+    for s in anim.get('samplers', []):
+        merged_samplers.append(s)
+    for c in anim.get('channels', []):
+        c_copy = dict(c)
+        c_copy['sampler'] = c['sampler'] + offset
+        merged_channels.append(c_copy)
+
+gltf['animations'] = [{
+    'name': 'Donut_Drift_Smoke',
+    'channels': merged_channels,
+    'samplers': merged_samplers
+}]
+
+new_json_bytes = json.dumps(gltf, separators=(',', ':')).encode('utf-8')
+pad = (4 - (len(new_json_bytes) % 4)) % 4
+new_json_bytes += b' ' * pad
+
+new_total_len = 12 + 8 + len(new_json_bytes) + len(bin_chunk)
+new_header = struct.pack('<4sII', magic, ver, new_total_len)
+new_chunk0_header = struct.pack('<I4s', len(new_json_bytes), chunk0_type)
+
+with open(glb_out, 'wb') as f:
+    f.write(new_header)
+    f.write(new_chunk0_header)
+    f.write(new_json_bytes)
+    f.write(bin_chunk)
+
+print("Unified GLB animation clip 'Donut_Drift_Smoke' generated.")
+
 # Also update red_race_car.fbx and red_race_car.glb for direct compatibility
 main_fbx = os.path.join(out_dir, "red_race_car.fbx")
 main_glb = os.path.join(out_dir, "red_race_car.glb")
-import shutil
 shutil.copy2(fbx_out, main_fbx)
 shutil.copy2(glb_out, main_glb)
 print("Updated primary red_race_car.fbx and red_race_car.glb")
@@ -369,7 +443,6 @@ os.makedirs(sub_tex_dir, exist_ok=True)
 shutil.copy2(fbx_out, os.path.join(sub_model_dir, "red_race_car.fbx"))
 shutil.copy2(glb_out, os.path.join(sub_model_dir, "red_race_car.glb"))
 
-# Copy textures to sub_tex_dir
 for item in os.listdir(out_dir):
     if item.endswith(".png") or item.endswith(".jpg"):
         shutil.copy2(os.path.join(out_dir, item), os.path.join(sub_tex_dir, item))

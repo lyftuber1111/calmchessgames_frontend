@@ -1,26 +1,24 @@
 {
-    "model": "phase_interceptor.obj",
+    "model": "phase_interceptor.glb",
     "base_name": "phase_interceptor",
-    "exported_at": "2026-11-14T02:26:01.383Z",
+    "exported_at": "2026-11-14T02:44:32.822Z",
     "color_palette": [
         "#FFFFFF"
     ],
     "materials": [
         {
-            "name": "Material.004",
-            "type": "MeshPhongMaterial",
+            "name": "Material_1",
+            "type": "MeshStandardMaterial",
             "color": "#FFFFFF",
             "emissive": null,
-            "roughness": null,
-            "metalness": null,
+            "roughness": 0.8,
+            "metalness": 0,
             "opacity": 1,
             "wireframe": false,
-            "textures": []
+            "textures": {
+                "base_color": "texture_0_base_color.png"
+            }
         }
     ],
-    "companion_files": [
-        "phase_interceptor.mtl",
-        "texture_0_base_color.png",
-        "thumbnail.png"
-    ]
+    "companion_files": []
 }

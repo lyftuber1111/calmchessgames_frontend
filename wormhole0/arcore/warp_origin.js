@@ -142,7 +142,7 @@ export const stageConfig = {
       "weapon_damage": 1,
       "weapon_speed": 550,
       "weapon_color": "#38bdf8",
-      "fire_rate": 1.8,
+      "fire_rate": 0.85,
       "score": 250,
       "threat": "Medium",
       "piercing": "red_laser",
@@ -180,7 +180,7 @@ export const stageConfig = {
       "weapon_damage": 5,
       "weapon_speed": 450,
       "weapon_color": "#ff2255",
-      "fire_rate": 2,
+      "fire_rate": 0.85,
       "score": 100,
       "threat": "Low",
       "piercing": "any",
@@ -252,7 +252,11 @@ export function updateEnemyMovement(e, delta, context) {
     e.levelPitchProgress = 0.0; // 0.0 = full forward tilt (0.22 rad), 1.0 = level (0.0 rad)
     e.isLevel = false;
     e.hasFiredThisLevel = false;
-    e.nextLevelTime = now + 1500 + Math.random() * 3500;
+    e.shotsFiredInLevel = 0;
+    e.nextBurstShotTime = 0;
+    e.shotsFiredAt5k = 0;
+    e.nextBurstShotTime5k = 0;
+    e.nextLevelTime = now + 800 + Math.random() * 1200;
   }
 
   if (e.phase === 'RUSH_OUT' || e.maneuverState === 'RUSH_OUT') {
@@ -283,7 +287,7 @@ export function updateEnemyMovement(e, delta, context) {
       e.phase = 'SCATTER_AND_EVADE';
       e.maneuverState = 'CRUISE_10K';
       e.stoppedTime = now;
-      e.nextLevelTime = now + 1500 + Math.random() * 3500;
+      e.nextLevelTime = now + 800 + Math.random() * 1200;
     }
     return true;
   }
@@ -357,7 +361,7 @@ export function updateEnemyMovement(e, delta, context) {
     }
   }
 
-  // --- Tactical State Machine: Level Off, Fire Weapon, Tilt Forward, Fly to 5000 KM (+2% Scale), Hold 3s, Return to 10000 KM (-2% Scale) ---
+  // --- Tactical State Machine: Frequent Firing at 10,000 KM & 5,000 KM ---
   switch (e.maneuverState) {
     case 'CRUISE_10K': {
       // Locking Z proximity around 10,000 KM
@@ -368,10 +372,12 @@ export function updateEnemyMovement(e, delta, context) {
       // Base scale at 10,000 KM
       e.mesh.scale.set(baseScale, baseScale, baseScale);
 
-      // Random trigger to level off
+      // Trigger to level off and fire frequently at 10,000 KM
       if (now >= (e.nextLevelTime || 0)) {
         e.maneuverState = 'LEVELING_OFF';
         e.hasFiredThisLevel = false;
+        e.shotsFiredInLevel = 0;
+        e.nextBurstShotTime = now + 80;
       }
       break;
     }
@@ -379,32 +385,36 @@ export function updateEnemyMovement(e, delta, context) {
     case 'LEVELING_OFF': {
       // Smoothly transition pitch to level (levelPitchProgress -> 1.0)
       e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
-      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 2.8);
+      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 3.5);
       e.mesh.scale.set(baseScale, baseScale, baseScale);
 
-      if (e.levelPitchProgress >= 0.96) {
+      if (e.levelPitchProgress >= 0.94) {
         e.levelPitchProgress = 1.0;
         e.isLevel = true;
         e.maneuverState = 'LEVEL_FIRING';
-        e.levelFireEndTime = now + 600; // ~600ms firing window while level
-
-        // Only fire weapon when level
-        if (!e.hasFiredThisLevel) {
-          e.hasFiredThisLevel = true;
-          fireEnemyWeapon(e, context);
-        }
+        e.levelFireEndTime = now + 1300; // Firing window while level at 10,000 KM
+        e.shotsFiredInLevel = 0;
+        e.nextBurstShotTime = now;
       }
       break;
     }
 
     case 'LEVEL_FIRING': {
-      // Maintain level orientation and allow weapon fire
+      // Maintain level orientation and fire weapons more often at 10,000 KM
       e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
       e.levelPitchProgress = 1.0;
       e.isLevel = true;
       e.mesh.scale.set(baseScale, baseScale, baseScale);
 
-      if (now >= (e.levelFireEndTime || 0)) {
+      // Fire weapon more often: alternating dual cannon bursts every 280ms
+      if (now >= (e.nextBurstShotTime || 0)) {
+        e.nextBurstShotTime = now + 280;
+        e.shotsFiredInLevel = (e.shotsFiredInLevel || 0) + 1;
+        e.hasFiredThisLevel = true;
+        fireEnemyWeapon(e, context);
+      }
+
+      if (now >= (e.levelFireEndTime || 0) && (e.shotsFiredInLevel || 0) >= 3) {
         e.isLevel = false;
         e.maneuverState = 'TILTING_FORWARD';
       }
@@ -414,7 +424,7 @@ export function updateEnemyMovement(e, delta, context) {
     case 'TILTING_FORWARD': {
       // Smoothly tilt back forward (levelPitchProgress -> 0.0)
       e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
-      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 2.8);
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 3.2);
       e.isLevel = false;
       e.mesh.scale.set(baseScale, baseScale, baseScale);
 
@@ -438,24 +448,63 @@ export function updateEnemyMovement(e, delta, context) {
       const curScale = baseScale * scaleFactor;
       e.mesh.scale.set(curScale, curScale, curScale);
 
-      if (advanceProgress >= 0.98 || Math.abs(targetZ5k - e.mesh.position.z) < 0.2) {
+      if (advanceProgress >= 0.98 || Math.abs(targetZ5k - e.mesh.position.z) < 0.25) {
         e.mesh.position.z = targetZ5k;
-        e.maneuverState = 'HOLD_5K';
-        e.hold5kEndTime = now + 3000; // Hold for 3 seconds
+        e.maneuverState = 'LEVELING_OFF_5K';
       }
       break;
     }
 
-    case 'HOLD_5K': {
-      // Maintain position at 5,000 KM for 3 seconds, staying 2% bigger and tilted forward
-      e.levelPitchProgress = 0.0;
-      e.isLevel = false;
+    case 'LEVELING_OFF_5K': {
+      // Smoothly transition pitch to level at 5,000 KM
       e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
-
+      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 3.5);
       const curScale = baseScale * 1.02; // Stays 2% bigger
       e.mesh.scale.set(curScale, curScale, curScale);
 
-      if (now >= (e.hold5kEndTime || 0)) {
+      if (e.levelPitchProgress >= 0.94) {
+        e.levelPitchProgress = 1.0;
+        e.isLevel = true;
+        e.maneuverState = 'LEVEL_FIRING_5K';
+        e.levelFireEndTime5k = now + 3000; // 3 seconds engagement window at 5,000 KM
+        e.shotsFiredAt5k = 0;
+        e.nextBurstShotTime5k = now;
+      }
+      break;
+    }
+
+    case 'LEVEL_FIRING_5K': {
+      // Hold position at 5,000 KM and actively fire weapons repeatedly at close range!
+      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      e.levelPitchProgress = 1.0;
+      e.isLevel = true;
+      const curScale = baseScale * 1.02; // Stays 2% bigger
+      e.mesh.scale.set(curScale, curScale, curScale);
+
+      // Fire weapon more often at 5,000 KM: bursts every 300ms from both wingtips
+      if (now >= (e.nextBurstShotTime5k || 0)) {
+        e.nextBurstShotTime5k = now + 300;
+        e.shotsFiredAt5k = (e.shotsFiredAt5k || 0) + 1;
+        fireEnemyWeapon(e, context);
+      }
+
+      if (now >= (e.levelFireEndTime5k || 0) && (e.shotsFiredAt5k || 0) >= 4) {
+        e.isLevel = false;
+        e.maneuverState = 'TILTING_FORWARD_5K';
+      }
+      break;
+    }
+
+    case 'TILTING_FORWARD_5K': {
+      // Smoothly tilt forward before retreating back to 10,000 KM
+      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 3.2);
+      e.isLevel = false;
+      const curScale = baseScale * 1.02;
+      e.mesh.scale.set(curScale, curScale, curScale);
+
+      if (e.levelPitchProgress <= 0.04) {
+        e.levelPitchProgress = 0.0;
         e.maneuverState = 'RETREAT_10K';
       }
       break;
@@ -473,11 +522,11 @@ export function updateEnemyMovement(e, delta, context) {
       const curScale = baseScale * scaleFactor;
       e.mesh.scale.set(curScale, curScale, curScale);
 
-      if (retreatProgress >= 0.98 || Math.abs(targetZ10k - e.mesh.position.z) < 0.2) {
+      if (retreatProgress >= 0.98 || Math.abs(targetZ10k - e.mesh.position.z) < 0.25) {
         e.mesh.position.z = targetZ10k;
         e.mesh.scale.set(baseScale, baseScale, baseScale);
         e.maneuverState = 'CRUISE_10K';
-        e.nextLevelTime = now + 2500 + Math.random() * 4500; // Random next cycle
+        e.nextLevelTime = now + 1000 + Math.random() * 1500; // Quick cadence to fire again!
       }
       break;
     }
@@ -557,7 +606,7 @@ export function updateEnemyMovement(e, delta, context) {
  * - Emanates directly from the 3D model's front muzzles/cannons rather than the object center.
  * - Scaled proportionally relative to the size/scale of the firing ship model.
  * - Utilizes weapon damage, speed, color, and name configured from database/.js files.
- * - Only fires when enemy is leveled off.
+ * - Fires weapon more often: both when enemies are at 10,000 KM and 5,000 KM from the player.
  */
 
 export function fireEnemyWeapon(enemyObj, context) {
@@ -570,8 +619,14 @@ export function fireEnemyWeapon(enemyObj, context) {
   const audioMgr = (context && context.audioMgr) || window.audioMgr;
   if (!THREE || !scene || !enemyBolts) return false;
 
-  // Strict requirement: Only fire weapon when level
-  if (!enemyObj.isLevel) {
+  // Requirement: Enemy fires weapon more often, both at 10,000 KM and 5,000 KM from player
+  const playerPos = (state && state.isXR && cameraRig) ? cameraRig.position : ((state && state.position) ? state.position : new THREE.Vector3(0, 0, 220));
+  const distZ = Math.abs(playerPos.z - enemyObj.mesh.position.z);
+  const isNear10k = Math.abs(distZ - (10000 / 420)) < 5.0; // ~23.8 units
+  const isNear5k = Math.abs(distZ - (5000 / 420)) < 4.5;   // ~11.9 units
+  const isFiringState = (enemyObj.maneuverState === 'LEVEL_FIRING' || enemyObj.maneuverState === 'LEVEL_FIRING_5K');
+
+  if (!enemyObj.isLevel && !isFiringState && !isNear10k && !isNear5k) {
     return true; // Mark as handled so engine does not fire fallback weapon bolt
   }
 
@@ -592,7 +647,6 @@ export function fireEnemyWeapon(enemyObj, context) {
   const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffset);
   const spawnOrigin = enemyObj.mesh.position.clone().add(localMuzzle.applyQuaternion(enemyObj.mesh.quaternion));
 
-  const playerPos = (state && state.isXR && cameraRig) ? cameraRig.position : ((state && state.position) ? state.position : new THREE.Vector3(0, 0, 220));
   const direction = new THREE.Vector3().subVectors(playerPos, spawnOrigin).normalize();
   const weaponBoltColor = cfg.weapon_color || enemyObj.weaponColor || '#38bdf8';
   const boltColorHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0x38bdf8;

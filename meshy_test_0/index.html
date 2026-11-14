@@ -1513,6 +1513,204 @@
       vertical-align: middle;
       margin-right: 6px;
     }
+
+    /* =========================================================================
+       ORIENTATION GIZMO & COORDINATES HUD STYLES
+       ========================================================================= */
+    .orientation-hud {
+      position: fixed;
+      top: 4.6rem;
+      right: 1rem;
+      z-index: 85;
+      width: 320px;
+      max-width: calc(100vw - 2rem);
+      background: rgba(10, 16, 26, 0.90);
+      border: 1px solid rgba(0, 240, 255, 0.40);
+      border-radius: 12px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 16px rgba(0, 240, 255, 0.15);
+      font-size: 0.78rem;
+      color: #e2e8f0;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      user-select: none;
+    }
+    .orientation-hud.minimized .hud-body {
+      display: none;
+    }
+    .orientation-hud.hidden {
+      display: none !important;
+    }
+    .hud-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 240, 255, 0.08);
+      border-radius: 12px 12px 0 0;
+      cursor: pointer;
+    }
+    .hud-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-weight: 700;
+      color: #00f0ff;
+      letter-spacing: 0.4px;
+    }
+    .hud-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .hud-btn-sm {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e1;
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .hud-btn-sm:hover {
+      background: rgba(0, 240, 255, 0.25);
+      color: #fff;
+    }
+    .hud-body {
+      padding: 0.65rem 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .hud-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.74rem;
+    }
+    .hud-label {
+      color: #94a3b8;
+      font-family: inherit;
+    }
+    .hud-value {
+      color: #f1f5f9;
+      font-weight: 600;
+      font-family: inherit;
+      font-variant-numeric: tabular-nums;
+    }
+    .hud-value-accent {
+      color: #38bdf8;
+      font-weight: 700;
+      font-family: inherit;
+      font-variant-numeric: tabular-nums;
+    }
+    .hud-value-cyan {
+      color: #00f0ff;
+      font-weight: 700;
+      font-family: inherit;
+      font-variant-numeric: tabular-nums;
+    }
+    .hud-divider {
+      height: 1px;
+      background: rgba(255, 255, 255, 0.07);
+      margin: 0.2rem 0;
+    }
+    .hud-actions-row {
+      display: flex;
+      gap: 0.35rem;
+      margin-top: 0.4rem;
+      flex-wrap: wrap;
+    }
+    .btn-hud-action {
+      background: rgba(0, 240, 255, 0.12);
+      border: 1px solid rgba(0, 240, 255, 0.3);
+      color: #38bdf8;
+      padding: 0.3rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      flex: 1;
+      text-align: center;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn-hud-action:hover {
+      background: rgba(0, 240, 255, 0.25);
+      color: #fff;
+      border-color: #00f0ff;
+    }
+    .btn-hud-action.active {
+      background: #00f0ff;
+      color: #020e1a;
+      border-color: #00f0ff;
+    }
+
+    /* Ref Points Table in Tab */
+    .ref-points-table-wrap {
+      max-height: 190px;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.25);
+      margin-top: 0.5rem;
+    }
+    .ref-points-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.73rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    .ref-points-table th {
+      position: sticky;
+      top: 0;
+      background: #151d2a;
+      color: #94a3b8;
+      text-align: left;
+      padding: 0.35rem 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.7rem;
+    }
+    .ref-points-table td {
+      padding: 0.3rem 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+    }
+    .ref-points-table tr:hover td {
+      background: rgba(0, 240, 255, 0.08);
+      color: #fff;
+    }
+    .point-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .angle-slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      background: rgba(0, 0, 0, 0.2);
+      padding: 0.5rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      margin-bottom: 0.4rem;
+    }
+    .angle-slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
   </style>
 
   <!-- Import maps polyfill for ES module browser support -->
@@ -1576,6 +1774,54 @@
     </div>
   </header>
 
+  <!-- Floating Real-time Model Alignment & Coordinates HUD -->
+  <div id="orientation-hud" class="orientation-hud" role="region" aria-label="Orientation & Coordinates HUD">
+    <div class="hud-header" id="hud-header-toggle">
+      <div class="hud-title-group">
+        <span class="hud-icon">📐</span>
+        <span class="hud-title">3D Orientation & Alignment</span>
+      </div>
+      <div class="hud-actions">
+        <button type="button" id="btn-toggle-hud-body" class="hud-btn-sm" title="Minimize/Maximize HUD">_</button>
+        <button type="button" id="btn-close-hud" class="hud-btn-sm" title="Hide HUD">✕</button>
+      </div>
+    </div>
+    <div id="hud-content-body" class="hud-body">
+      <div class="hud-row">
+        <span class="hud-label">Rotation (Euler):</span>
+        <span id="hud-rot-deg" class="hud-value-accent">P: 0.0° | Y: 0.0° | R: 0.0°</span>
+      </div>
+      <div class="hud-row">
+        <span class="hud-label">Rotation (Rad):</span>
+        <span id="hud-rot-rad" class="hud-value">P: 0.000 | Y: 0.000 | R: 0.000</span>
+      </div>
+      <div class="hud-row">
+        <span class="hud-label">Heading Vector:</span>
+        <span id="hud-forward-vec" class="hud-value">[0.00, 0.00, 1.00]</span>
+      </div>
+      <div class="hud-divider"></div>
+      <div class="hud-row">
+        <span class="hud-label">Dimensions (m):</span>
+        <span id="hud-dim-box" class="hud-value">W: ~0.00m | H: ~0.00m | L: ~0.00m</span>
+      </div>
+      <div class="hud-row">
+        <span class="hud-label">Wormhole0 Offsets:</span>
+        <span id="hud-stage-offsets" class="hud-value-cyan">fwd: 0.00 | lat: ±0.00 | vert: 0.00</span>
+      </div>
+      <div class="hud-divider"></div>
+      <div class="hud-row">
+        <span class="hud-label">Muzzles / Wingtips:</span>
+        <span id="hud-weapon-coords" class="hud-value">L: [0,0,0] | R: [0,0,0]</span>
+      </div>
+      <div class="hud-actions-row">
+        <button type="button" id="btn-hud-copy-js" class="btn-hud-action">📋 Copy Stage JS</button>
+        <button type="button" id="btn-hud-toggle-box" class="btn-hud-action active">📦 Box</button>
+        <button type="button" id="btn-hud-toggle-axes" class="btn-hud-action active">🧭 Axes</button>
+        <button type="button" id="btn-hud-toggle-pts" class="btn-hud-action active">🎯 Points</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Bottom Navigation Dock Bar -->
   <nav class="bottom-dock" aria-label="Viewer Controls">
     <button class="dock-tab" id="dock-btn-model" data-tab="model" type="button">
@@ -1589,6 +1835,10 @@
     <button class="dock-tab" id="dock-btn-controls" data-tab="controls" type="button">
       <span class="dock-icon">🎮</span>
       <span class="dock-label">Controls</span>
+    </button>
+    <button class="dock-tab" id="dock-btn-gizmo" data-tab="gizmo" type="button">
+      <span class="dock-icon">📐</span>
+      <span class="dock-label">Gizmos & Align</span>
     </button>
   </nav>
 
@@ -1948,6 +2198,133 @@
           </div>
           <div class="hint-item">
             <span>✌️</span> <span>Zoom: 2-finger pinch or scroll wheel</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 4: Debug & Orientation Gizmos for Wormhole0 XR Games -->
+      <div class="tab-content" id="tab-content-gizmo">
+        <div class="panel-section-header">
+          <span class="section-subtitle">Reference Box, Coordinate Anchors & Wormhole0 Stage Align</span>
+        </div>
+
+        <div class="controls-grid">
+          <!-- 1. Reference Displays Toggles -->
+          <div class="controls-subgroup">
+            <span class="subgroup-title">3D Visual Gizmos & Overlays</span>
+            <div class="btn-row" style="flex-wrap: wrap;">
+              <button id="btn-toggle-ref-box" class="btn active" type="button">
+                <span>📦</span> <span id="label-ref-box">Box: ON</span>
+              </button>
+              <button id="btn-toggle-ref-points" class="btn active" type="button">
+                <span>🎯</span> <span id="label-ref-points">Points: ON</span>
+              </button>
+              <button id="btn-toggle-ref-axes" class="btn active" type="button">
+                <span>🧭</span> <span id="label-ref-axes">XYZ Axes: ON</span>
+              </button>
+              <button id="btn-toggle-ref-labels" class="btn active" type="button">
+                <span>🏷️</span> <span id="label-ref-labels">3D Labels: ON</span>
+              </button>
+              <button id="btn-toggle-hud-overlay" class="btn active" type="button">
+                <span>📊</span> <span id="label-hud-overlay">HUD: ON</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. Dynamic Orientation / Rotation Controller -->
+          <div class="controls-subgroup">
+            <span class="subgroup-title">Model Orientation Calibration (Updates Gizmos Live)</span>
+            
+            <!-- Yaw (Y Axis) -->
+            <div class="angle-slider-group">
+              <div class="angle-slider-header">
+                <span style="color: #4ade80;">Yaw (Y Axis / Bearing Heading):</span>
+                <span id="slider-yaw-val" style="font-family: monospace; color: #4ade80;">0.0° (0.000 rad)</span>
+              </div>
+              <input type="range" id="slider-rot-yaw" min="-180" max="180" step="1" value="0" style="accent-color: #4ade80; cursor: pointer;" />
+              <div class="btn-row" style="margin-top: 4px;">
+                <button type="button" class="btn btn-sm" id="btn-yaw-m90">-90°</button>
+                <button type="button" class="btn btn-sm" id="btn-yaw-0">0° (Forward)</button>
+                <button type="button" class="btn btn-sm" id="btn-yaw-p90">+90°</button>
+                <button type="button" class="btn btn-sm" id="btn-yaw-180">180°</button>
+              </div>
+            </div>
+
+            <!-- Pitch (X Axis) -->
+            <div class="angle-slider-group">
+              <div class="angle-slider-header">
+                <span style="color: #f87171;">Pitch (X Axis / Elevation Tilt):</span>
+                <span id="slider-pitch-val" style="font-family: monospace; color: #f87171;">0.0° (0.000 rad)</span>
+              </div>
+              <input type="range" id="slider-rot-pitch" min="-90" max="90" step="0.5" value="0" style="accent-color: #f87171; cursor: pointer;" />
+              <div class="btn-row" style="margin-top: 4px;">
+                <button type="button" class="btn btn-sm" id="btn-pitch-level">0° (Level Stance)</button>
+                <button type="button" class="btn btn-sm" id="btn-pitch-stage1-tilt">+12.6° (0.22 rad Tilt)</button>
+                <button type="button" class="btn btn-sm" id="btn-pitch-up">-15° (Climb)</button>
+              </div>
+            </div>
+
+            <!-- Roll (Z Axis) -->
+            <div class="angle-slider-group">
+              <div class="angle-slider-header">
+                <span style="color: #60a5fa;">Roll (Z Axis / Wing Banking):</span>
+                <span id="slider-roll-val" style="font-family: monospace; color: #60a5fa;">0.0° (0.000 rad)</span>
+              </div>
+              <input type="range" id="slider-rot-roll" min="-180" max="180" step="1" value="0" style="accent-color: #60a5fa; cursor: pointer;" />
+              <div class="btn-row" style="margin-top: 4px;">
+                <button type="button" class="btn btn-sm" id="btn-roll-m30">-30° Bank</button>
+                <button type="button" class="btn btn-sm" id="btn-roll-0">0° Level</button>
+                <button type="button" class="btn btn-sm" id="btn-roll-p30">+30° Bank</button>
+              </div>
+            </div>
+
+            <!-- Wormhole0 Game Alignment Presets -->
+            <div style="margin-top: 6px;">
+              <span class="subgroup-title" style="font-size: 0.72rem; color: #94a3b8;">Wormhole0 Stage 1 Orientation Presets</span>
+              <div class="btn-row" style="flex-wrap: wrap; margin-top: 4px;">
+                <button type="button" class="btn btn-sm" id="preset-align-interceptor" style="border-color: #38bdf8; color: #38bdf8;">
+                  🚀 Phase Interceptor (Math.PI / 2)
+                </button>
+                <button type="button" class="btn btn-sm" id="preset-align-recon" style="border-color: #00f0ff; color: #00f0ff;">
+                  🛸 Void Recon Drone (0 rad)
+                </button>
+                <button type="button" class="btn btn-sm" id="preset-align-reset">
+                  🔄 Reset (0,0,0)
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. Wormhole0 Calculated Offsets Snippet Generator -->
+          <div class="controls-subgroup">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="subgroup-title">Wormhole0 Stage 1 JavaScript Reference Snippet</span>
+              <button type="button" id="btn-copy-stage-js" class="btn btn-sm btn-primary-accent" style="padding: 2px 8px; font-size: 0.72rem;">
+                📋 Copy Code Snippet
+              </button>
+            </div>
+            <pre id="stage-js-preview" style="background: rgba(0,0,0,0.35); padding: 8px; border-radius: 6px; font-family: monospace; font-size: 0.72rem; color: #38bdf8; overflow-x: auto; white-space: pre-wrap; margin: 4px 0 0 0; border: 1px solid rgba(56, 189, 248, 0.2);"></pre>
+          </div>
+
+          <!-- 4. Key Points of Reference Matrix -->
+          <div class="controls-subgroup">
+            <span class="subgroup-title">Key Points of Reference Matrix (Model Local Coordinates)</span>
+            <div class="ref-points-table-wrap">
+              <table class="ref-points-table">
+                <thead>
+                  <tr>
+                    <th>Point of Reference</th>
+                    <th>X (m)</th>
+                    <th>Y (m)</th>
+                    <th>Z (m)</th>
+                    <th>Stage Role</th>
+                  </tr>
+                </thead>
+                <tbody id="ref-points-table-body">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -3469,6 +3846,8 @@
     // Model Root Group
     const carRoot = new THREE.Group();
     scene.add(carRoot);
+    window.carRoot = carRoot;
+    window.scene = scene;
 
     // WebXR Controllers Setup
     const controllerFactory = new XRControllerModelFactory();
@@ -3544,7 +3923,8 @@
     const tabMeta = {
       model: { title: 'Select 3D Model', icon: '📁' },
       specs: { title: 'Model & Scene Specs', icon: '📊' },
-      controls: { title: 'Viewport & WebXR Controls', icon: '🎮' }
+      controls: { title: 'Viewport & WebXR Controls', icon: '🎮' },
+      gizmo: { title: 'Debug & Orientation Gizmos', icon: '📐' }
     };
 
     function openTab(tabName) {
@@ -3985,6 +4365,7 @@
         }
 
         carModel = object3D;
+        window.carModel = carModel;
 
         // Auto-scale base geometry
         const rawBbox = new THREE.Box3().setFromObject(carModel);
@@ -4581,7 +4962,13 @@
       targetFloorMinY = Math.max(0.08, targetCenter.y * 0.35);
       controls.target.set(0, modelCenterY, 0);
       controls.update();
+
+      // Synchronize 3D reference box, orientation gizmo, and coordinate matrices
+      updateReferenceGizmos();
     }
+
+    window.updateReferenceGizmos = updateReferenceGizmos;
+    window.applyManualModelRotation = applyManualModelRotation;
 
     const modelScaleSlider = document.getElementById('model-scale-slider');
     if (modelScaleSlider) {
@@ -4604,6 +4991,532 @@
       });
     }
 
+    // =========================================================================
+    // 3D DEBUG & ORIENTATION GIZMOS SYSTEM (WORMHOLE0 REFERENCE ENGINE)
+    // =========================================================================
+    const gizmoConfig = {
+      showBox: true,
+      showPoints: true,
+      showAxes: true,
+      showLabels: true,
+      showHud: true
+    };
+
+    const manualModelEuler = { yaw: 0, pitch: 0, roll: 0 };
+    const modelGizmoRoot = new THREE.Group();
+    modelGizmoRoot.name = 'modelGizmoRoot';
+    carRoot.add(modelGizmoRoot);
+    window.modelGizmoRoot = modelGizmoRoot;
+    window.manualModelEuler = manualModelEuler;
+
+    // Helpers to create text billboard sprites for 3D coordinate point labels
+    function createBillboardLabel(text, textColor = '#ffffff', bgColor = 'rgba(10, 16, 26, 0.85)') {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = bgColor;
+        if (typeof ctx.roundRect === 'function') {
+          ctx.beginPath();
+          ctx.roundRect(4, 4, 248, 56, 12);
+          ctx.fill();
+        } else {
+          ctx.fillRect(4, 4, 248, 56);
+        }
+        ctx.strokeStyle = textColor;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.font = 'bold 24px monospace';
+        ctx.fillStyle = textColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(text, 128, 32);
+      }
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(0.65, 0.16, 1.0);
+      return sprite;
+    }
+
+    // Clear previous gizmos cleanly
+    function clearGizmos() {
+      while (modelGizmoRoot.children.length > 0) {
+        const obj = modelGizmoRoot.children[0];
+        modelGizmoRoot.remove(obj);
+        obj.traverse((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(m => {
+                if (m.map) m.map.dispose();
+                m.dispose();
+              });
+            } else {
+              if (child.material.map) child.material.map.dispose();
+              child.material.dispose();
+            }
+          }
+        });
+      }
+    }
+
+    // Main routine: builds Bounding Box, CAD brackets, Points of Reference, XYZ Axes Gizmo, and Stage Code
+    function updateReferenceGizmos() {
+      clearGizmos();
+      if (!carModel) return;
+
+      const bbox = new THREE.Box3().setFromObject(carModel);
+      const center = bbox.getCenter(new THREE.Vector3());
+      const size = bbox.getSize(new THREE.Vector3());
+      const min = bbox.min;
+      const max = bbox.max;
+
+      // Group containers for selective toggles
+      const boxGroup = new THREE.Group();
+      boxGroup.name = 'boxGroup';
+      boxGroup.visible = gizmoConfig.showBox;
+
+      const pointsGroup = new THREE.Group();
+      pointsGroup.name = 'pointsGroup';
+      pointsGroup.visible = gizmoConfig.showPoints;
+
+      const axesGroup = new THREE.Group();
+      axesGroup.name = 'axesGroup';
+      axesGroup.visible = gizmoConfig.showAxes;
+
+      const labelsGroup = new THREE.Group();
+      labelsGroup.name = 'labelsGroup';
+      labelsGroup.visible = gizmoConfig.showLabels;
+
+      // -----------------------------------------------------------------------
+      // 1. BOUNDING BOX WIREFRAME & CAD CORNER BRACKETS
+      // -----------------------------------------------------------------------
+      const boxEdges = [
+        // Bottom rectangle
+        new THREE.Vector3(min.x, min.y, min.z), new THREE.Vector3(max.x, min.y, min.z),
+        new THREE.Vector3(max.x, min.y, min.z), new THREE.Vector3(max.x, min.y, max.z),
+        new THREE.Vector3(max.x, min.y, max.z), new THREE.Vector3(min.x, min.y, max.z),
+        new THREE.Vector3(min.x, min.y, max.z), new THREE.Vector3(min.x, min.y, min.z),
+        // Top rectangle
+        new THREE.Vector3(min.x, max.y, min.z), new THREE.Vector3(max.x, max.y, min.z),
+        new THREE.Vector3(max.x, max.y, min.z), new THREE.Vector3(max.x, max.y, max.z),
+        new THREE.Vector3(max.x, max.y, max.z), new THREE.Vector3(min.x, max.y, max.z),
+        new THREE.Vector3(min.x, max.y, max.z), new THREE.Vector3(min.x, max.y, min.z),
+        // 4 Vertical uprights
+        new THREE.Vector3(min.x, min.y, min.z), new THREE.Vector3(min.x, max.y, min.z),
+        new THREE.Vector3(max.x, min.y, min.z), new THREE.Vector3(max.x, max.y, min.z),
+        new THREE.Vector3(max.x, min.y, max.z), new THREE.Vector3(max.x, max.y, max.z),
+        new THREE.Vector3(min.x, min.y, max.z), new THREE.Vector3(min.x, max.y, max.z)
+      ];
+
+      const boxLineGeo = new THREE.BufferGeometry().setFromPoints(boxEdges);
+      const boxLineMat = new THREE.LineBasicMaterial({
+        color: 0x00f0ff,
+        transparent: true,
+        opacity: 0.85
+      });
+      const boxWireMesh = new THREE.LineSegments(boxLineGeo, boxLineMat);
+      boxGroup.add(boxWireMesh);
+
+      // Corner CAD brackets (triad brackets at each corner)
+      const bracketArm = Math.min(size.x, Math.min(size.y, size.z)) * 0.18;
+      const cornerPts = [
+        new THREE.Vector3(min.x, min.y, min.z), new THREE.Vector3(max.x, min.y, min.z),
+        new THREE.Vector3(min.x, max.y, min.z), new THREE.Vector3(max.x, max.y, min.z),
+        new THREE.Vector3(min.x, min.y, max.z), new THREE.Vector3(max.x, min.y, max.z),
+        new THREE.Vector3(min.x, max.y, max.z), new THREE.Vector3(max.x, max.y, max.z)
+      ];
+      const bracketLines = [];
+      cornerPts.forEach(pt => {
+        const sx = pt.x >= center.x ? -1 : 1;
+        const sy = pt.y >= center.y ? -1 : 1;
+        const sz = pt.z >= center.z ? -1 : 1;
+        bracketLines.push(pt, new THREE.Vector3(pt.x + sx * bracketArm, pt.y, pt.z));
+        bracketLines.push(pt, new THREE.Vector3(pt.x, pt.y + sy * bracketArm, pt.z));
+        bracketLines.push(pt, new THREE.Vector3(pt.x, pt.y, pt.z + sz * bracketArm));
+      });
+      const bracketGeo = new THREE.BufferGeometry().setFromPoints(bracketLines);
+      const bracketMat = new THREE.LineBasicMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.95 });
+      const bracketMesh = new THREE.LineSegments(bracketGeo, bracketMat);
+      boxGroup.add(bracketMesh);
+
+      // Floor ground alignment grid crosshair
+      const floorCrossPts = [
+        new THREE.Vector3(min.x, min.y, center.z), new THREE.Vector3(max.x, min.y, center.z),
+        new THREE.Vector3(center.x, min.y, min.z), new THREE.Vector3(center.x, min.y, max.z)
+      ];
+      const floorCrossGeo = new THREE.BufferGeometry().setFromPoints(floorCrossPts);
+      const floorCrossMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.5 });
+      boxGroup.add(new THREE.LineSegments(floorCrossGeo, floorCrossMat));
+
+      // -----------------------------------------------------------------------
+      // 2. POINTS OF REFERENCE (8 Corners, 6 Faces, Center, Pivot, Guns)
+      // -----------------------------------------------------------------------
+      const markerRadius = Math.max(0.025, Math.min(size.x, Math.min(size.y, size.z)) * 0.024);
+      const sphereGeo = new THREE.SphereGeometry(markerRadius, 12, 12);
+
+      const refPointList = [
+        // Front & Rear Cannons/Muzzles/Thrusters
+        { name: 'Nose / Front Muzzle (+Z)', pos: new THREE.Vector3(center.x, center.y, max.z), color: 0x00f0ff, role: 'Front Targeting (+Z forwardOffset)', label: '+Z Nose' },
+        { name: 'Thrusters / Rear (-Z)', pos: new THREE.Vector3(center.x, center.y, min.z), color: 0xf97316, role: 'Engine Thrust / Exhaust Anchor', label: '-Z Thrusters' },
+        // Wingtips
+        { name: 'Left Wingtip (-X)', pos: new THREE.Vector3(min.x, center.y, center.z), color: 0x38bdf8, role: 'Port Wingtip / lateralOffset -X', label: '-X Wing L' },
+        { name: 'Right Wingtip (+X)', pos: new THREE.Vector3(max.x, center.y, center.z), color: 0x38bdf8, role: 'Starboard Wingtip / lateralOffset +X', label: '+X Wing R' },
+        // Vertical Extents
+        { name: 'Dorsal Canopy (+Y)', pos: new THREE.Vector3(center.x, max.y, center.z), color: 0xc084fc, role: 'Top Apex / Dorsal Cannon Anchor', label: '+Y Apex' },
+        { name: 'Ventral Keel / Ground (-Y)', pos: new THREE.Vector3(center.x, min.y, center.z), color: 0xeab308, role: 'Bottom Keel / Floor Clearance', label: '-Y Keel' },
+        // Center of Object
+        { name: 'Model Center', pos: center.clone(), color: 0xffffff, role: 'Geometric Center of Mass', label: 'Center' },
+        // World Origin / Ground Pivot (0, 0, 0)
+        { name: 'Model Pivot (0, 0, 0)', pos: new THREE.Vector3(0, 0, 0), color: 0xec4899, role: 'Stage 1 Rotation / Flight Pivot', label: 'Pivot (0,0,0)' },
+        // Stage 1 Dual Ion/Plasma Cannons (at ±32% wingspan, -15% height, 48% depth)
+        {
+          name: 'Stage 1 Dual Gun Left',
+          pos: new THREE.Vector3(center.x - size.x * 0.32, center.y - size.y * 0.15, max.z),
+          color: 0xff2255,
+          role: 'Alternating Left Cannon (lastGunSide -1)',
+          label: 'Gun L (-X)'
+        },
+        {
+          name: 'Stage 1 Dual Gun Right',
+          pos: new THREE.Vector3(center.x + size.x * 0.32, center.y - size.y * 0.15, max.z),
+          color: 0xff2255,
+          role: 'Alternating Right Cannon (lastGunSide +1)',
+          label: 'Gun R (+X)'
+        },
+        // 8 Corners of Bounding Box
+        { name: 'Corner Front-Top-Left', pos: new THREE.Vector3(min.x, max.y, max.z), color: 0xa855f7, role: 'Bounding Vertex [FTL]', label: 'FTL' },
+        { name: 'Corner Front-Top-Right', pos: new THREE.Vector3(max.x, max.y, max.z), color: 0xa855f7, role: 'Bounding Vertex [FTR]', label: 'FTR' },
+        { name: 'Corner Front-Bottom-Left', pos: new THREE.Vector3(min.x, min.y, max.z), color: 0xa855f7, role: 'Bounding Vertex [FBL]', label: 'FBL' },
+        { name: 'Corner Front-Bottom-Right', pos: new THREE.Vector3(max.x, min.y, max.z), color: 0xa855f7, role: 'Bounding Vertex [FBR]', label: 'FBR' },
+        { name: 'Corner Back-Top-Left', pos: new THREE.Vector3(min.x, max.y, min.z), color: 0xa855f7, role: 'Bounding Vertex [BTL]', label: 'BTL' },
+        { name: 'Corner Back-Top-Right', pos: new THREE.Vector3(max.x, max.y, min.z), color: 0xa855f7, role: 'Bounding Vertex [BTR]', label: 'BTR' },
+        { name: 'Corner Back-Bottom-Left', pos: new THREE.Vector3(min.x, min.y, min.z), color: 0xa855f7, role: 'Bounding Vertex [BBL]', label: 'BBL' },
+        { name: 'Corner Back-Bottom-Right', pos: new THREE.Vector3(max.x, min.y, min.z), color: 0xa855f7, role: 'Bounding Vertex [BBR]', label: 'BBR' }
+      ];
+
+      refPointList.forEach(pt => {
+        const mat = new THREE.MeshBasicMaterial({ color: pt.color });
+        const sphereMesh = new THREE.Mesh(sphereGeo, mat);
+        sphereMesh.position.copy(pt.pos);
+        pointsGroup.add(sphereMesh);
+
+        // Add 3D text label sprite hovering near the point
+        if (pt.label) {
+          const hexStr = '#' + pt.color.toString(16).padStart(6, '0');
+          const sprite = createBillboardLabel(pt.label, hexStr);
+          sprite.position.copy(pt.pos).add(new THREE.Vector3(0, markerRadius * 2.2, 0));
+          labelsGroup.add(sprite);
+        }
+      });
+
+      // -----------------------------------------------------------------------
+      // 3. DYNAMIC XYZ ORIENTATION AXES GIZMO
+      // -----------------------------------------------------------------------
+      const axisLen = Math.max(1.0, Math.max(size.x, Math.max(size.y, size.z)) * 0.65);
+      const shaftR = axisLen * 0.018;
+      const coneR = axisLen * 0.055;
+      const coneLen = axisLen * 0.20;
+
+      // Function to make 3D arrow mesh
+      const makeArrow = (dir, colorHex, labelText) => {
+        const group = new THREE.Group();
+        const cylGeo = new THREE.CylinderGeometry(shaftR, shaftR, axisLen - coneLen, 8);
+        const cylMat = new THREE.MeshBasicMaterial({ color: colorHex });
+        const cylMesh = new THREE.Mesh(cylGeo, cylMat);
+        cylMesh.position.y = (axisLen - coneLen) / 2;
+        group.add(cylMesh);
+
+        const coneGeo = new THREE.ConeGeometry(coneR, coneLen, 12);
+        const coneMat = new THREE.MeshBasicMaterial({ color: colorHex });
+        const coneMesh = new THREE.Mesh(coneGeo, coneMat);
+        coneMesh.position.y = axisLen - coneLen / 2;
+        group.add(coneMesh);
+
+        // Label sprite at tip
+        const arrowLabel = createBillboardLabel(labelText, '#' + colorHex.toString(16).padStart(6, '0'));
+        arrowLabel.position.y = axisLen + 0.12;
+        group.add(arrowLabel);
+
+        // Orient group from +Y to target direction
+        group.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+        return group;
+      };
+
+      // Axes Origin is set to model center and aligned to model rotation
+      const axesPivot = new THREE.Group();
+      axesPivot.position.copy(center);
+      axesPivot.quaternion.copy(carModel.quaternion);
+
+      // +X (Red / Starboard / Width)
+      axesPivot.add(makeArrow(new THREE.Vector3(1, 0, 0), 0xef4444, '+X (Right)'));
+      // +Y (Green / Dorsal / Height)
+      axesPivot.add(makeArrow(new THREE.Vector3(0, 1, 0), 0x22c55e, '+Y (Up)'));
+      // +Z (Blue / Nose / Depth)
+      axesPivot.add(makeArrow(new THREE.Vector3(0, 0, 1), 0x3b82f6, '+Z (Forward)'));
+
+      // Subdued negative axes guidelines (-X, -Y, -Z)
+      const negAxisPts = [
+        new THREE.Vector3(0, 0, 0), new THREE.Vector3(-axisLen * 0.6, 0, 0),
+        new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -axisLen * 0.6, 0),
+        new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -axisLen * 0.6)
+      ];
+      const negLineGeo = new THREE.BufferGeometry().setFromPoints(negAxisPts);
+      const negLineMat = new THREE.LineDashedMaterial({ color: 0x64748b, dashSize: 0.1, gapSize: 0.05, opacity: 0.6, transparent: true });
+      const negLine = new THREE.LineSegments(negLineGeo, negLineMat);
+      negLine.computeLineDistances();
+      axesPivot.add(negLine);
+
+      axesGroup.add(axesPivot);
+
+      // Add all component groups to modelGizmoRoot
+      modelGizmoRoot.add(boxGroup);
+      modelGizmoRoot.add(pointsGroup);
+      modelGizmoRoot.add(axesGroup);
+      modelGizmoRoot.add(labelsGroup);
+
+      // -----------------------------------------------------------------------
+      // 4. POPULATE POINTS TABLE & STAGE 1 SNIPPET
+      // -----------------------------------------------------------------------
+      const tbody = document.getElementById('ref-points-table-body');
+      if (tbody) {
+        tbody.innerHTML = '';
+        refPointList.forEach(pt => {
+          const tr = document.createElement('tr');
+          const hex = '#' + pt.color.toString(16).padStart(6, '0');
+          tr.innerHTML = `
+            <td><span class="point-dot" style="background:${hex};"></span>${pt.name}</td>
+            <td style="color:${pt.pos.x >= 0 ? '#38bdf8' : '#f87171'}">${pt.pos.x.toFixed(3)}</td>
+            <td style="color:#4ade80">${pt.pos.y.toFixed(3)}</td>
+            <td style="color:${pt.pos.z >= 0 ? '#00f0ff' : '#f97316'}">${pt.pos.z.toFixed(3)}</td>
+            <td style="color:#94a3b8; font-size: 0.68rem;">${pt.role}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Generate Stage 1 JS Offsets Snippet
+      const cfgDepth = size.z.toFixed(2);
+      const cfgLength = size.x.toFixed(2);
+      const cfgHeight = size.y.toFixed(2);
+      const forwardOffset = (size.z * 0.48).toFixed(3);
+      const lateralOffset = (size.x * 0.32).toFixed(3);
+      const verticalOffset = (-0.15).toFixed(3);
+
+      const stageSnippet = `// Wormhole0 Stage 1 Warp Origin Config Offsets
+// Model Bounds: Length(Z)=${cfgDepth}m, Width(X)=${cfgLength}m, Height(Y)=${cfgHeight}m
+"scale": ${(dynamicScaleMultiplier || 1.0).toFixed(2)},
+"length": ${cfgLength}, // Wingspan (X)
+"depth": ${cfgDepth},   // Fore-Aft Depth (Z)
+"height": ${cfgHeight}, // Height (Y)
+
+// Stage 1 In-Game Muzzle Offsets:
+const shipScale = enemyObj.mesh.scale.x;
+const cfgDepth = (parseFloat(cfg.depth) || ${cfgDepth}) * shipScale;
+const cfgLength = (parseFloat(cfg.length) || ${cfgLength}) * shipScale;
+const lateralOffset = (enemyObj.lastGunSide === 1 ? 1 : -1) * (cfgLength * 0.32); // ±${lateralOffset}m
+const forwardOffset = cfgDepth * 0.48; // +${forwardOffset}m
+const verticalOffset = -0.15 * shipScale; // ${verticalOffset}m
+const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffset);`;
+
+      const snippetElem = document.getElementById('stage-js-preview');
+      if (snippetElem) snippetElem.textContent = stageSnippet;
+
+      // Update HUD static readouts
+      const hudDim = document.getElementById('hud-dim-box');
+      if (hudDim) hudDim.textContent = `W: ~${cfgLength}m | H: ~${cfgHeight}m | L: ~${cfgDepth}m`;
+
+      const hudOffsets = document.getElementById('hud-stage-offsets');
+      if (hudOffsets) hudOffsets.textContent = `fwd: +${forwardOffset} | lat: ±${lateralOffset} | vert: ${verticalOffset}`;
+
+      const hudWeapons = document.getElementById('hud-weapon-coords');
+      if (hudWeapons) hudWeapons.textContent = `L: [-${lateralOffset}, ${verticalOffset}, +${forwardOffset}] | R: [+${lateralOffset}, ${verticalOffset}, +${forwardOffset}]`;
+    }
+
+    // Interactive orientation controls & presets
+    function applyManualModelRotation(yawDeg, pitchDeg, rollDeg) {
+      if (!carModel) return;
+      manualModelEuler.yaw = (yawDeg || 0) * Math.PI / 180;
+      manualModelEuler.pitch = (pitchDeg || 0) * Math.PI / 180;
+      manualModelEuler.roll = (rollDeg || 0) * Math.PI / 180;
+
+      carModel.rotation.set(manualModelEuler.pitch, manualModelEuler.yaw, manualModelEuler.roll, 'YXZ');
+
+      // Update slider positions & labels
+      const sYaw = document.getElementById('slider-rot-yaw');
+      const sPitch = document.getElementById('slider-rot-pitch');
+      const sRoll = document.getElementById('slider-rot-roll');
+      if (sYaw) sYaw.value = yawDeg.toString();
+      if (sPitch) sPitch.value = pitchDeg.toString();
+      if (sRoll) sRoll.value = rollDeg.toString();
+
+      const lYaw = document.getElementById('slider-yaw-val');
+      const lPitch = document.getElementById('slider-pitch-val');
+      const lRoll = document.getElementById('slider-roll-val');
+      if (lYaw) lYaw.textContent = `${parseFloat(yawDeg).toFixed(1)}° (${manualModelEuler.yaw.toFixed(3)} rad)`;
+      if (lPitch) lPitch.textContent = `${parseFloat(pitchDeg).toFixed(1)}° (${manualModelEuler.pitch.toFixed(3)} rad)`;
+      if (lRoll) lRoll.textContent = `${parseFloat(rollDeg).toFixed(1)}° (${manualModelEuler.roll.toFixed(3)} rad)`;
+
+      // Update HUD readouts immediately
+      const hudDeg = document.getElementById('hud-rot-deg');
+      if (hudDeg) hudDeg.textContent = `P: ${parseFloat(pitchDeg).toFixed(1)}° | Y: ${parseFloat(yawDeg).toFixed(1)}° | R: ${parseFloat(rollDeg).toFixed(1)}°`;
+      const hudRad = document.getElementById('hud-rot-rad');
+      if (hudRad) hudRad.textContent = `P: ${manualModelEuler.pitch.toFixed(3)} | Y: ${manualModelEuler.yaw.toFixed(3)} | R: ${manualModelEuler.roll.toFixed(3)}`;
+      const fwdVec = new THREE.Vector3(0, 0, 1).applyEuler(carModel.rotation).applyEuler(carRoot.rotation);
+      const hudFwd = document.getElementById('hud-forward-vec');
+      if (hudFwd) hudFwd.textContent = `[${fwdVec.x.toFixed(2)}, ${fwdVec.y.toFixed(2)}, ${fwdVec.z.toFixed(2)}]`;
+
+      updateReferenceGizmos();
+    }
+
+    window.updateReferenceGizmos = updateReferenceGizmos;
+    window.applyManualModelRotation = applyManualModelRotation;
+
+    // Sliders event listeners
+    const sliderYaw = document.getElementById('slider-rot-yaw');
+    if (sliderYaw) {
+      sliderYaw.addEventListener('input', (e) => {
+        const pDeg = parseFloat(document.getElementById('slider-rot-pitch')?.value || 0);
+        const rDeg = parseFloat(document.getElementById('slider-rot-roll')?.value || 0);
+        applyManualModelRotation(parseFloat(e.target.value), pDeg, rDeg);
+      });
+    }
+
+    const sliderPitch = document.getElementById('slider-rot-pitch');
+    if (sliderPitch) {
+      sliderPitch.addEventListener('input', (e) => {
+        const yDeg = parseFloat(document.getElementById('slider-rot-yaw')?.value || 0);
+        const rDeg = parseFloat(document.getElementById('slider-rot-roll')?.value || 0);
+        applyManualModelRotation(yDeg, parseFloat(e.target.value), rDeg);
+      });
+    }
+
+    const sliderRoll = document.getElementById('slider-rot-roll');
+    if (sliderRoll) {
+      sliderRoll.addEventListener('input', (e) => {
+        const yDeg = parseFloat(document.getElementById('slider-rot-yaw')?.value || 0);
+        const pDeg = parseFloat(document.getElementById('slider-rot-pitch')?.value || 0);
+        applyManualModelRotation(yDeg, pDeg, parseFloat(e.target.value));
+      });
+    }
+
+    // Preset button shortcuts
+    document.getElementById('btn-yaw-m90')?.addEventListener('click', () => applyManualModelRotation(-90, parseFloat(document.getElementById('slider-rot-pitch')?.value || 0), parseFloat(document.getElementById('slider-rot-roll')?.value || 0)));
+    document.getElementById('btn-yaw-0')?.addEventListener('click', () => applyManualModelRotation(0, parseFloat(document.getElementById('slider-rot-pitch')?.value || 0), parseFloat(document.getElementById('slider-rot-roll')?.value || 0)));
+    document.getElementById('btn-yaw-p90')?.addEventListener('click', () => applyManualModelRotation(90, parseFloat(document.getElementById('slider-rot-pitch')?.value || 0), parseFloat(document.getElementById('slider-rot-roll')?.value || 0)));
+    document.getElementById('btn-yaw-180')?.addEventListener('click', () => applyManualModelRotation(180, parseFloat(document.getElementById('slider-rot-pitch')?.value || 0), parseFloat(document.getElementById('slider-rot-roll')?.value || 0)));
+
+    document.getElementById('btn-pitch-level')?.addEventListener('click', () => applyManualModelRotation(parseFloat(document.getElementById('slider-rot-yaw')?.value || 0), 0, parseFloat(document.getElementById('slider-rot-roll')?.value || 0)));
+    document.getElementById('btn-pitch-stage1-tilt')?.addEventListener('click', () => applyManualModelRotation(parseFloat(document.getElementById('slider-rot-yaw')?.value || 0), 12.6, parseFloat(document.getElementById('slider-rot-roll')?.value || 0)));
+    document.getElementById('btn-pitch-up')?.addEventListener('click', () => applyManualModelRotation(parseFloat(document.getElementById('slider-rot-yaw')?.value || 0), -15, parseFloat(document.getElementById('slider-rot-roll')?.value || 0)));
+
+    document.getElementById('btn-roll-m30')?.addEventListener('click', () => applyManualModelRotation(parseFloat(document.getElementById('slider-rot-yaw')?.value || 0), parseFloat(document.getElementById('slider-rot-pitch')?.value || 0), -30));
+    document.getElementById('btn-roll-0')?.addEventListener('click', () => applyManualModelRotation(parseFloat(document.getElementById('slider-rot-yaw')?.value || 0), parseFloat(document.getElementById('slider-rot-pitch')?.value || 0), 0));
+    document.getElementById('btn-roll-p30')?.addEventListener('click', () => applyManualModelRotation(parseFloat(document.getElementById('slider-rot-yaw')?.value || 0), parseFloat(document.getElementById('slider-rot-pitch')?.value || 0), 30));
+
+    // Wormhole0 Stage 1 Game Presets
+    document.getElementById('preset-align-interceptor')?.addEventListener('click', () => {
+      // Phase Interceptor model orientation: Math.PI / 2 (90 deg)
+      applyManualModelRotation(90, 0, 0);
+      showToast('🚀 Oriented for Drone Phase Interceptor (+90° / Math.PI/2)');
+    });
+
+    document.getElementById('preset-align-recon')?.addEventListener('click', () => {
+      // Void Recon Drone model orientation: 0 rad
+      applyManualModelRotation(0, 0, 0);
+      showToast('🛸 Oriented for Void Recon Drone (0 rad)');
+    });
+
+    document.getElementById('preset-align-reset')?.addEventListener('click', () => {
+      applyManualModelRotation(0, 0, 0);
+      showToast('🔄 Alignment Reset to (0, 0, 0)');
+    });
+
+    // Toggle Buttons for Gizmos
+    function setupGizmoToggle(btnId, configKey, labelId, labelPrefix, hudBtnId) {
+      const toggle = () => {
+        gizmoConfig[configKey] = !gizmoConfig[configKey];
+        const val = gizmoConfig[configKey];
+        const btn = document.getElementById(btnId);
+        const label = document.getElementById(labelId);
+        if (btn) btn.classList.toggle('active', val);
+        if (label) label.textContent = `${labelPrefix}: ${val ? 'ON' : 'OFF'}`;
+        const hudBtn = hudBtnId ? document.getElementById(hudBtnId) : null;
+        if (hudBtn) hudBtn.classList.toggle('active', val);
+
+        const groupMap = {
+          showBox: 'boxGroup',
+          showPoints: 'pointsGroup',
+          showAxes: 'axesGroup',
+          showLabels: 'labelsGroup'
+        };
+        const grpName = groupMap[configKey];
+        if (grpName) {
+          const grp = modelGizmoRoot.getObjectByName(grpName);
+          if (grp) grp.visible = val;
+        }
+      };
+
+      document.getElementById(btnId)?.addEventListener('click', toggle);
+      if (hudBtnId) document.getElementById(hudBtnId)?.addEventListener('click', toggle);
+    }
+
+    setupGizmoToggle('btn-toggle-ref-box', 'showBox', 'label-ref-box', 'Box', 'btn-hud-toggle-box');
+    setupGizmoToggle('btn-toggle-ref-points', 'showPoints', 'label-ref-points', 'Points', 'btn-hud-toggle-pts');
+    setupGizmoToggle('btn-toggle-ref-axes', 'showAxes', 'label-ref-axes', 'Axes', 'btn-hud-toggle-axes');
+
+    document.getElementById('btn-toggle-ref-labels')?.addEventListener('click', () => {
+      gizmoConfig.showLabels = !gizmoConfig.showLabels;
+      const val = gizmoConfig.showLabels;
+      const btn = document.getElementById('btn-toggle-ref-labels');
+      const label = document.getElementById('label-ref-labels');
+      if (btn) btn.classList.toggle('active', val);
+      if (label) label.textContent = `3D Labels: ${val ? 'ON' : 'OFF'}`;
+      const grp = modelGizmoRoot.getObjectByName('labelsGroup');
+      if (grp) grp.visible = val;
+    });
+
+    // HUD overlay toggle and minimize
+    const orientationHud = document.getElementById('orientation-hud');
+    document.getElementById('btn-toggle-hud-overlay')?.addEventListener('click', () => {
+      gizmoConfig.showHud = !gizmoConfig.showHud;
+      const val = gizmoConfig.showHud;
+      document.getElementById('btn-toggle-hud-overlay')?.classList.toggle('active', val);
+      const l = document.getElementById('label-hud-overlay');
+      if (l) l.textContent = `HUD: ${val ? 'ON' : 'OFF'}`;
+      if (orientationHud) orientationHud.classList.toggle('hidden', !val);
+    });
+
+    document.getElementById('btn-close-hud')?.addEventListener('click', () => {
+      gizmoConfig.showHud = false;
+      document.getElementById('btn-toggle-hud-overlay')?.classList.remove('active');
+      const l = document.getElementById('label-hud-overlay');
+      if (l) l.textContent = 'HUD: OFF';
+      if (orientationHud) orientationHud.classList.add('hidden');
+    });
+
+    document.getElementById('btn-toggle-hud-body')?.addEventListener('click', () => {
+      if (orientationHud) orientationHud.classList.toggle('minimized');
+    });
+
+    // Copy Stage JS snippet button
+    const copyStageJsHandler = () => {
+      const snippet = document.getElementById('stage-js-preview')?.textContent || '';
+      if (!snippet) return;
+      navigator.clipboard.writeText(snippet).then(() => {
+        showToast('✓ Wormhole0 Stage 1 Offsets copied to clipboard!');
+      }).catch(() => {
+        showToast('✓ Offsets generated in specs & panel.');
+      });
+    };
+    document.getElementById('btn-copy-stage-js')?.addEventListener('click', copyStageJsHandler);
+    document.getElementById('btn-hud-copy-js')?.addEventListener('click', copyStageJsHandler);
+
     // Render Loop
     renderer.setAnimationLoop((timestamp, frame) => {
       const delta = animClock.getDelta();
@@ -4618,6 +5531,30 @@
 
       if (!renderer.xr.isPresenting) {
         controls.update();
+      }
+
+      // Real-time Orientation HUD and Coordinates Update
+      if (gizmoConfig.showHud && orientationHud && !orientationHud.classList.contains('hidden') && !orientationHud.classList.contains('minimized')) {
+        const rotY = ((carModel ? carModel.rotation.y : 0) + carRoot.rotation.y);
+        const rotX = ((carModel ? carModel.rotation.x : 0) + carRoot.rotation.x);
+        const rotZ = ((carModel ? carModel.rotation.z : 0) + carRoot.rotation.z);
+
+        const degX = (rotX * 180 / Math.PI) % 360;
+        const degY = (rotY * 180 / Math.PI) % 360;
+        const degZ = (rotZ * 180 / Math.PI) % 360;
+
+        const hudDeg = document.getElementById('hud-rot-deg');
+        if (hudDeg) hudDeg.textContent = `P: ${degX.toFixed(1)}° | Y: ${degY.toFixed(1)}° | R: ${degZ.toFixed(1)}°`;
+
+        const hudRad = document.getElementById('hud-rot-rad');
+        if (hudRad) hudRad.textContent = `P: ${rotX.toFixed(3)} | Y: ${rotY.toFixed(3)} | R: ${rotZ.toFixed(3)}`;
+
+        // Calculate heading forward vector
+        const fwdVec = new THREE.Vector3(0, 0, 1)
+          .applyEuler(carModel ? carModel.rotation : new THREE.Euler())
+          .applyEuler(carRoot.rotation);
+        const hudFwd = document.getElementById('hud-forward-vec');
+        if (hudFwd) hudFwd.textContent = `[${fwdVec.x.toFixed(2)}, ${fwdVec.y.toFixed(2)}, ${fwdVec.z.toFixed(2)}]`;
       }
 
       renderer.render(scene, camera);

@@ -8661,11 +8661,15 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
     // Target stop distance: 10,000 KM from player (at 420 km/unit = 23.81 units, with slight tactical depth spread)
     const targetStopDist = 23.8 + (Math.random() - 0.5) * 3.6;
 
-    // Scatter angle and spread across viewport display screen
-    const scatterAngle = (idx / swarmCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.65;
-    const scatterRadius = 8.0 + (idx % 4) * 4.2 + Math.random() * 2.8; // 8 to ~22 units screen span
-    const targetScatterX = Math.cos(scatterAngle) * scatterRadius;
-    const targetScatterY = Math.sin(scatterAngle) * (scatterRadius * 0.75);
+    // Scatter position aligned to snap grid cells across viewport
+    const gridCols = (typeof snapGrid !== 'undefined' && snapGrid.cols) ? snapGrid.cols : 15;
+    const gridRows = (typeof snapGrid !== 'undefined' && snapGrid.rows) ? snapGrid.rows : 7;
+    const cellW = 48.8 / gridCols;
+    const cellH = 27.5 / gridRows;
+    const colSlot = ((idx % 2 === 0 ? 1 : -1) * (2 + Math.floor((idx / 2) % (Math.floor(gridCols / 2) - 1))));
+    const rowSlot = Math.floor((((idx * 3) % gridRows) - Math.floor(gridRows / 2)) * 0.85);
+    const targetScatterX = colSlot * cellW;
+    const targetScatterY = rowSlot * cellH;
 
     const hits = parseInt(cfg.hits_to_destroy || cfg.hits || 2);
     const weaponDmg = parseInt(cfg.weapon_damage || cfg.attack_damage || 6);
@@ -8776,10 +8780,15 @@ function defaultEnemyMovement(e, delta, context) {
     const curScale = THREE.MathUtils.lerp(0.12, baseScale, rushProgress);
     e.mesh.scale.set(curScale, curScale, curScale);
 
-    // Tilted forward posture
+    // Tilted forward posture oriented towards player
+    const rushDx = playerPos.x - e.mesh.position.x;
+    const rushDy = playerPos.y - e.mesh.position.y;
+    const rushDz = Math.max(5.0, playerPos.z - e.mesh.position.z);
+    const rushLookYaw = THREE.MathUtils.clamp(Math.atan2(rushDx, rushDz), -0.35, 0.35);
+    const rushLookPitch = THREE.MathUtils.clamp(-Math.atan2(rushDy, rushDz), -0.20, 0.20);
     e.levelPitchProgress = 0.0;
     e.isLevel = false;
-    e.mesh.rotation.set(basePitchDown, 0, 0);
+    e.mesh.rotation.set(basePitchDown + rushLookPitch, rushLookYaw, 0, 'YXZ');
 
     if (e.mesh.position.z >= targetZ10k || distToPlayer <= dist10k) {
       e.mesh.position.z = targetZ10k;
@@ -8791,19 +8800,29 @@ function defaultEnemyMovement(e, delta, context) {
     return true;
   }
 
-  // --- Dynamic Evasive Maneuvers & Screen Scatter Targeting ---
+  // --- Dynamic Evasive Maneuvers & Snap Grid Screen Scatter Targeting ---
+  const grid = (context && context.snapGrid) || (typeof window !== 'undefined' && window.snapGrid);
+  const cols = (grid && grid.cols) ? grid.cols : 15;
+  const rows = (grid && grid.rows) ? grid.rows : 7;
+  const cellW = 48.8 / cols;
+  const cellH = 27.5 / rows;
+
+  if (now > (e.scatterRetargetTime || 0)) {
+    e.scatterRetargetTime = now + 4000 + Math.random() * 4000;
+    const maxCol = Math.max(2, Math.floor(cols / 2) - 1);
+    const maxRow = Math.max(1, Math.floor(rows / 2) - 1);
+    const signX = Math.random() > 0.5 ? 1 : -1;
+    // Align scatter targets to snap grid columns and rows across viewport
+    const colSlot = signX * (1 + Math.floor(Math.random() * maxCol));
+    const rowSlot = Math.floor((Math.random() * 2 - 1) * maxRow);
+    e.targetScatterX = colSlot * cellW;
+    e.targetScatterY = rowSlot * cellH;
+  }
+
   const screenTargetX = playerPos.x + (e.targetScatterX || 0);
   const screenTargetY = playerPos.y + (e.targetScatterY || 0);
   e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
   e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
-
-  if (now > (e.scatterRetargetTime || 0)) {
-    e.scatterRetargetTime = now + 4000 + Math.random() * 4000;
-    const newAng = Math.random() * Math.PI * 2;
-    const newRad = 6.5 + Math.random() * 15.0;
-    e.targetScatterX = Math.cos(newAng) * newRad;
-    e.targetScatterY = Math.sin(newAng) * (newRad * 0.72);
-  }
 
   // Multi-frequency sinusoidal evasive weaves
   const t = (now - (e.stoppedTime || now)) * 0.001;
@@ -8985,6 +9004,32 @@ function defaultEnemyMovement(e, delta, context) {
     }
   }
 
+  // --- Look-At Player Orientation & Snap Grid Alignment ---
+  // Vector from enemy to player position
+  const dx = playerPos.x - e.mesh.position.x;
+  const dy = playerPos.y - e.mesh.position.y;
+  const dz = Math.max(5.0, playerPos.z - e.mesh.position.z);
+
+  // Exact bearing angles towards player
+  const rawLookYaw = Math.atan2(dx, dz);
+  const rawLookPitch = -Math.atan2(dy, dz);
+
+  // Angular resolution of each snap grid cell at stop distance
+  const gridYawStep = cellW / dist10k;   // ~0.136 rad (~7.8 deg)
+  const gridPitchStep = cellH / dist10k; // ~0.165 rad (~9.4 deg)
+  const snappedYaw = Math.round(rawLookYaw / gridYawStep) * gridYawStep;
+  const snappedPitch = Math.round(rawLookPitch / gridPitchStep) * gridPitchStep;
+
+  // Rotate smoothly so models always look at player, softly aligned to snap grid cells
+  const lookYaw = THREE.MathUtils.clamp(
+    THREE.MathUtils.lerp(rawLookYaw, snappedYaw, 0.45),
+    -0.45, 0.45
+  );
+  const lookPitch = THREE.MathUtils.clamp(
+    THREE.MathUtils.lerp(rawLookPitch, snappedPitch, 0.45),
+    -0.28, 0.28
+  );
+
   // --- Banking, Pitch, and Orientation ---
   const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
   const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
@@ -8992,11 +9037,11 @@ function defaultEnemyMovement(e, delta, context) {
   const netVy = (screenTargetY - e.mesh.position.y) * 1.1 + jukeVy + evaVy;
 
   const roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65);
-  const yaw = THREE.MathUtils.clamp(-netVx * 0.025, -0.35, 0.35);
+  const yaw = lookYaw + THREE.MathUtils.clamp(-netVx * 0.02, -0.22, 0.22);
 
-  // Transition between forward tilt (~0.22 rad) and level (0.0 rad)
+  // Transition between forward tilt (~0.22 rad) and level (0.0 rad), plus look-at pitch to player
   const effectiveBasePitch = basePitchDown * (1.0 - (e.levelPitchProgress || 0));
-  const pitch = effectiveBasePitch + THREE.MathUtils.clamp(netVy * 0.04, -0.22, 0.22);
+  const pitch = effectiveBasePitch + lookPitch + THREE.MathUtils.clamp(netVy * 0.035, -0.18, 0.18);
   e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
 
   if (e.mesh.userData && e.mesh.userData.spinRing) {
@@ -9062,7 +9107,8 @@ function updateEnemiesCombat(delta) {
       THREE,
       audioMgr,
       enemyBolts,
-      engineApi: getEngineApi()
+      engineApi: getEngineApi(),
+      snapGrid
     };
 
     // Execute decoupled enemy movement logic (from active stage profile .js file)

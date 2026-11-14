@@ -1966,12 +1966,12 @@
     // Backend Server URL Resolution (Connects frontend on Git to backend PHP servers)
     const BACKEND_BASE = (function () {
       if (typeof window !== 'undefined' && window.location) {
-        if (window.CC_BACKEND_BASE) return window.CC_BACKEND_BASE;
+        if (window.CC_BACKEND_BASE) return window.CC_BACKEND_BASE.replace(/\/+$/, '');
         const host = window.location.hostname;
         if (host === 'api.calmchessgames.com') {
           return window.location.origin;
         }
-        if (host === 'localhost' || host === '127.0.0.1' || /^192\.168\./.test(host) || /^10\./.test(host) || /^100\./.test(host)) {
+        if (host === 'localhost' || host === '127.0.0.1') {
           return window.location.origin;
         }
       }
@@ -1982,22 +1982,35 @@
     function getBackendEndpoints(scriptName = 'move_asset.php') {
       const endpoints = [];
 
-      // 1. If running on a local development server or api subdomain, test local first
+      // 1. Explicit user override if configured
+      if (typeof window !== 'undefined' && window.CC_BACKEND_BASE) {
+        endpoints.push(`${window.CC_BACKEND_BASE.replace(/\/+$/, '')}/meshy_test_0/${scriptName}`);
+        endpoints.push(`${window.CC_BACKEND_BASE.replace(/\/+$/, '')}/${scriptName}`);
+      }
+
+      // 2. If running directly on api.calmchessgames.com, use same-origin first
+      if (typeof window !== 'undefined' && window.location && window.location.hostname === 'api.calmchessgames.com') {
+        endpoints.push(`${window.location.origin}/meshy_test_0/${scriptName}`);
+        endpoints.push(`${window.location.origin}/${scriptName}`);
+      }
+
+      // 3. Primary production Apache/PHP API server (always trusted Let's Encrypt SSL)
+      endpoints.push(`https://api.calmchessgames.com/meshy_test_0/${scriptName}`);
+      endpoints.push(`https://api.calmchessgames.com/${scriptName}`);
+
+      // 4. Localhost dev fallback
       if (typeof window !== 'undefined' && window.location) {
         const host = window.location.hostname;
-        if (host === 'localhost' || host === '127.0.0.1' || /^192\.168\./.test(host) || /^10\./.test(host) || /^100\./.test(host) || host === 'api.calmchessgames.com') {
+        if (host === 'localhost' || host === '127.0.0.1') {
           endpoints.push(`${window.location.origin}/meshy_test_0/${scriptName}`);
           endpoints.push(`${window.location.origin}/${scriptName}`);
         }
       }
 
-      // 2. Production Apache/PHP API server (primary backend)
-      endpoints.push(`https://api.calmchessgames.com/meshy_test_0/${scriptName}`);
-      endpoints.push(`https://api.calmchessgames.com/${scriptName}`);
-
-      // 3. Any explicitly configured backend base
-      if (BACKEND_BASE && !endpoints.includes(`${BACKEND_BASE}/meshy_test_0/${scriptName}`)) {
+      // 5. Configured BACKEND_BASE fallback
+      if (BACKEND_BASE) {
         endpoints.push(`${BACKEND_BASE}/meshy_test_0/${scriptName}`);
+        endpoints.push(`${BACKEND_BASE}/${scriptName}`);
       }
 
       // NOTE: We NEVER append static calmchessgames.com GitHub Pages host for POST/PHP endpoints,
@@ -2035,30 +2048,51 @@
     }
 
     // Helper to post asset approval to backend PHP servers
-    async function postBackendMoveAsset(formData) {
+    async function postBackendMoveAsset(formDataOrFactory) {
       const endpoints = getBackendEndpoints('move_asset.php');
       let lastErr = null;
 
       const isFileOrOpaque = (typeof window !== 'undefined' && window.location && (window.location.protocol === 'file:' || window.location.origin === 'null'));
       const defaultCreds = isFileOrOpaque ? 'omit' : 'same-origin';
 
+      // Always produce a fresh FormData per attempt so File/Blob streams are never disturbed/consumed across retries
+      const getFreshFormData = () => {
+        if (typeof formDataOrFactory === 'function') {
+          return formDataOrFactory();
+        }
+        if (typeof FormData !== 'undefined' && formDataOrFactory instanceof FormData) {
+          try {
+            const clone = new FormData();
+            for (const [key, value] of formDataOrFactory.entries()) {
+              clone.append(key, value);
+            }
+            return clone;
+          } catch (_) {
+            return formDataOrFactory;
+          }
+        }
+        return formDataOrFactory;
+      };
+
       for (const url of endpoints) {
         try {
           console.log(`[MoveAsset] Posting asset to: ${url}`);
           let res = null;
+          const fd = getFreshFormData();
           try {
             res = await fetch(url, {
               method: 'POST',
-              body: formData,
+              body: fd,
               credentials: defaultCreds,
               mode: 'cors'
             });
           } catch (fetchErr) {
             if (defaultCreds !== 'omit') {
               console.warn(`[MoveAsset] Fetch error with '${defaultCreds}', retrying with 'omit' for ${url}:`, fetchErr);
+              const retryFd = getFreshFormData();
               res = await fetch(url, {
                 method: 'POST',
-                body: formData,
+                body: retryFd,
                 credentials: 'omit',
                 mode: 'cors'
               });
@@ -3071,42 +3105,45 @@
         <p style="margin:0.25rem 0 0 0; color:#94a3b8;">1. Backend: git commit & push request for origin main.<br>2. Frontend: git pull request for origin main, then mirror & push. Please wait...</p>
       `);
 
-      const formData = new FormData();
-      formData.append('destination_paths', JSON.stringify(destPaths));
-      formData.append('source_path', currentLoadedAsset.sourcePath || ('meshy_test_0/models/' + fileName));
+      const buildFormData = () => {
+        const formData = new FormData();
+        formData.append('destination_paths', JSON.stringify(destPaths));
+        formData.append('source_path', currentLoadedAsset.sourcePath || ('meshy_test_0/models/' + fileName));
 
-      if (currentLoadedAsset.file) {
-        formData.append('model_file', currentLoadedAsset.file);
-      }
+        if (currentLoadedAsset.file) {
+          formData.append('model_file', currentLoadedAsset.file);
+        }
 
-      // Material, Texture & Color options (exclude textures and .mtl for .glb)
-      const assetExt = getExt(fileName);
-      const isGlb = assetExt === 'glb';
-      const moveMaterials = isGlb ? false : (chkMoveMaterialsTextures ? chkMoveMaterialsTextures.checked : true);
-      const moveColors = chkMoveColorsJson ? chkMoveColorsJson.checked : true;
-      formData.append('move_materials_textures', moveMaterials ? '1' : '0');
-      formData.append('move_colors_json', moveColors ? '1' : '0');
+        // Material, Texture & Color options (exclude textures and .mtl for .glb)
+        const assetExt = getExt(fileName);
+        const isGlb = assetExt === 'glb';
+        const moveMaterials = isGlb ? false : (chkMoveMaterialsTextures ? chkMoveMaterialsTextures.checked : true);
+        const moveColors = chkMoveColorsJson ? chkMoveColorsJson.checked : true;
+        formData.append('move_materials_textures', moveMaterials ? '1' : '0');
+        formData.append('move_colors_json', moveColors ? '1' : '0');
 
-      // Send materials and colors metadata JSON
-      const materialsPayload = {
-        model: fileName,
-        base_name: baseName,
-        exported_at: new Date().toISOString(),
-        color_palette: currentModelPalette || [],
-        materials: currentModelMaterials || [],
-        companion_files: isGlb ? [] : (currentCompanionFiles || []).map(c => c.name || c)
+        // Send materials and colors metadata JSON
+        const materialsPayload = {
+          model: fileName,
+          base_name: baseName,
+          exported_at: new Date().toISOString(),
+          color_palette: currentModelPalette || [],
+          materials: currentModelMaterials || [],
+          companion_files: isGlb ? [] : (currentCompanionFiles || []).map(c => c.name || c)
+        };
+        formData.append('materials_json', JSON.stringify(materialsPayload));
+
+        // Append local companion files only if not .glb
+        if (!isGlb && currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0) {
+          currentLoadedAsset.companionFiles.forEach(file => {
+            formData.append('companion_files[]', file);
+          });
+        }
+        return formData;
       };
-      formData.append('materials_json', JSON.stringify(materialsPayload));
-
-      // Append local companion files only if not .glb
-      if (!isGlb && currentLoadedAsset.companionFiles && currentLoadedAsset.companionFiles.length > 0) {
-        currentLoadedAsset.companionFiles.forEach(file => {
-          formData.append('companion_files[]', file);
-        });
-      }
 
       try {
-        const data = await postBackendMoveAsset(formData);
+        const data = await postBackendMoveAsset(buildFormData);
         if (data && data.success) {
           const compCount = data.companion_count || (data.companion_files_moved ? data.companion_files_moved.length : 0);
           const compText = compCount > 0 ? ` + ${compCount} companion material(s)/texture(s)` : '';

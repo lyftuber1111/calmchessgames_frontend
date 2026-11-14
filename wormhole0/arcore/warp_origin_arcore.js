@@ -229,6 +229,13 @@ export function updateEnemyMovement(e, delta, context) {
   const curScale = THREE.MathUtils.lerp(0.12, e.baseScale || 1.3, progress);
   e.mesh.scale.set(curScale, curScale, curScale);
 
+  // Requirement: Rotate custom 3D model asset clockwise 90 degrees around Y so front natively faces the player (+Z)
+  if (e.mesh.userData && e.mesh.userData.loadedAsset) {
+    if (e.mesh.userData.loadedAsset.rotation.y !== -Math.PI / 2) {
+      e.mesh.userData.loadedAsset.rotation.y = -Math.PI / 2;
+    }
+  }
+
   const basePitchDown = 0.22;
 
   if (e.phase === 'RUSH_OUT') {

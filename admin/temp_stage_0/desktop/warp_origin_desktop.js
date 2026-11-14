@@ -238,6 +238,13 @@ export function updateEnemyMovement(e, delta, context) {
   const curScale = THREE.MathUtils.lerp(0.12, e.baseScale || 1.3, progress);
   e.mesh.scale.set(curScale, curScale, curScale);
 
+  // Requirement: Rotate custom 3D model asset clockwise 90 degrees around Y so front natively faces the player (+Z)
+  if (e.mesh.userData && e.mesh.userData.loadedAsset) {
+    if (e.mesh.userData.loadedAsset.rotation.y !== -Math.PI / 2) {
+      e.mesh.userData.loadedAsset.rotation.y = -Math.PI / 2;
+    }
+  }
+
   // Baseline forward posture: nose slightly tilted down (~0.22 rad / 12.6 deg) so top of 3D model is clearly visible
   const basePitchDown = 0.22;
 

@@ -2674,6 +2674,9 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
               box.getCenter(center);
               newModel.position.sub(center);
 
+              // Requirement: Rotate 90 degrees clockwise around Y so the front natively faces the player (+Z)
+              newModel.rotation.y = -Math.PI / 2;
+
               const size = new THREE.Vector3();
               box.getSize(size);
               const maxDim = Math.max(size.x, size.y, size.z, 0.001);
@@ -8388,6 +8391,9 @@ function create3DEnemyMesh(config) {
           box.getCenter(center);
           loadedModel.position.sub(center);
 
+          // Requirement: Rotate 90 degrees clockwise around Y so the front natively faces the player (+Z)
+          loadedModel.rotation.y = -Math.PI / 2;
+
           // Compute target span and auto-scale
           const size = new THREE.Vector3();
           box.getSize(size);
@@ -8709,6 +8715,13 @@ function defaultEnemyMovement(e, delta, context) {
   const progress = THREE.MathUtils.clamp(distTraveled / totalDist, 0.0, 1.0);
   const curScale = THREE.MathUtils.lerp(0.12, e.baseScale || 1.3, progress);
   e.mesh.scale.set(curScale, curScale, curScale);
+
+  // Requirement: Ensure custom 3D model asset is rotated clockwise 90 degrees around Y so front faces the player (+Z)
+  if (e.mesh.userData && e.mesh.userData.loadedAsset) {
+    if (e.mesh.userData.loadedAsset.rotation.y !== -Math.PI / 2) {
+      e.mesh.userData.loadedAsset.rotation.y = -Math.PI / 2;
+    }
+  }
 
   // Baseline forward posture: nose slightly tilted down (~0.22 rad / 12.6 deg) so top of 3D model is clearly visible
   const basePitchDown = 0.22;
@@ -9308,6 +9321,10 @@ let countdownCompletionTimeout = null;
  * 3. Once rotated to landscape (or if already in landscape), launches the 5-second countdown timer before engaging gameplay.
  */
 function startCountdownAndLaunchGame(isRestart = false) {
+  if (isRestart) {
+    restartGame();
+    return;
+  }
   if (countdownTimerInterval) {
     clearInterval(countdownTimerInterval);
     countdownTimerInterval = null;
@@ -9546,13 +9563,29 @@ function restartGame() {
     countdownCompletionTimeout = null;
   }
 
+  // Dismiss and hide any countdown overlay
+  const countdownOverlay = document.getElementById('game-countdown-overlay');
+  if (countdownOverlay) {
+    countdownOverlay.classList.remove('active');
+    countdownOverlay.style.display = 'none';
+  }
+
+  // Dismiss and hide any rotate orientation prompt to prevent freeze/lockout
+  const rotatePrompt = document.getElementById('landscape-rotate-prompt');
+  if (rotatePrompt) {
+    rotatePrompt.classList.remove('active');
+    rotatePrompt.classList.add('dismissed');
+    rotatePrompt.style.display = 'none';
+  }
+  document.body.classList.add('portrait-dismissed');
+
   // Completely reset pause & game over states across entire game
   state.isGameOver = false;
   state.isPaused = false;
-  state.hasStarted = false;
+  state.hasStarted = true;
   state.isCountdownActive = false;
   document.body.classList.remove('game-paused');
-  document.body.classList.remove('game-in-flight');
+  document.body.classList.add('game-in-flight');
   const btnQuickPause = document.getElementById('btn-quick-pause');
   if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
 
@@ -9619,17 +9652,22 @@ function restartGame() {
 
   // Reset to Stage 1 and re-sync
   currentActiveStage = 1;
-  syncGameManagerFromDatabase(1, currentActiveDeviceType);
 
   updatePlayerDefenseHUD();
   renderStageObjectivesUI();
   centerWormholeOnScreen(true);
 
+  // Spawn fresh hostile swarm immediately so action resumes smoothly with zero freeze
+  lastEnemySpawnCheckTime = 0;
+  spawnEnemySwarmFromWormhole();
+
   // Reset frame timestamp to prevent delta time explosion
   state.lastFrameTime = performance.now();
 
-  // Launch the 5-second countdown to prepare the player before hostiles spawn
-  startCountdownAndLaunchGame(true);
+  // Request crosshair capture if on desktop
+  if (!isMobileInUse()) {
+    requestCrosshairCapture(true);
+  }
 }
 
 function quitGame() {
@@ -11462,7 +11500,6 @@ if (renderer) {
 
     // During 5-second countdown, render the scene smoothly while holding combat and flight
     if (state.isCountdownActive) {
-      centerWormholeOnScreen();
       updateCrosshairPosition(delta);
       if (!state.postProcessingEnabled) {
         renderer.render(scene, camera);
@@ -11901,9 +11938,6 @@ if (btnRestartGame) {
   btnRestartGame.addEventListener('click', (e) => {
     e.preventDefault();
     restartGame();
-    if (!isMobileInUse()) {
-      requestCrosshairCapture(true);
-    }
   });
 }
 
@@ -11921,9 +11955,6 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyR' || e.code === 'Enter' || e.code === 'Space') {
       e.preventDefault();
       restartGame();
-      if (!isMobileInUse()) {
-        requestCrosshairCapture(true);
-      }
     } else if (e.code === 'Escape' || e.code === 'KeyQ') {
       e.preventDefault();
       quitGame();

@@ -229,10 +229,20 @@ export function updateEnemyMovement(e, delta, context) {
   const curScale = THREE.MathUtils.lerp(0.12, e.baseScale || 1.3, progress);
   e.mesh.scale.set(curScale, curScale, curScale);
 
-  // Requirement: Rotate custom 3D model asset clockwise 90 degrees around Y so front natively faces the player (+Z)
+  // Requirement: Ensure custom 3D model asset maintains its front-facing orientation:
+  // recon_drone_2.8m.glb: 0 rad (rotated 90 deg counter-clockwise)
+  // drone_phase_interceptor_3.glb: Math.PI / 2 rad (rotated 180 deg clockwise)
   if (e.mesh.userData && e.mesh.userData.loadedAsset) {
-    if (e.mesh.userData.loadedAsset.rotation.y !== -Math.PI / 2) {
-      e.mesh.userData.loadedAsset.rotation.y = -Math.PI / 2;
+    const asset = e.mesh.userData.loadedAsset;
+    let targetRotY = -Math.PI / 2;
+    const mUrl = String((e.config && e.config.model_3d_url) || e.model_3d_url || (e.mesh.userData && e.mesh.userData.modelUrl) || (e.config && e.config.id) || e.id || e.enemy_id || '').toLowerCase();
+    if (mUrl.includes('recon_drone_2.8m') || mUrl.includes('recon_drone') || mUrl.includes('void_recon_drone')) {
+      targetRotY = 0;
+    } else if (mUrl.includes('drone_phase_interceptor_3') || mUrl.includes('phase_interceptor') || mUrl.includes('interceptor')) {
+      targetRotY = Math.PI / 2;
+    }
+    if (Math.abs(asset.rotation.y - targetRotY) > 0.001) {
+      asset.rotation.y = targetRotY;
     }
   }
 

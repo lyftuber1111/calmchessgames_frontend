@@ -98,6 +98,23 @@ function normalizeAssetUrl(url) {
   return url;
 }
 
+function getCustomModelRotationY(urlOrId) {
+  const s = String(urlOrId || '').toLowerCase();
+  if (s.includes('recon_drone_2.8m') || s.includes('recon_drone') || s.includes('void_recon_drone')) {
+    // recon_drone_2.8m.glb rotated 90 degrees counter-clockwise (-PI/2 + PI/2 = 0)
+    return 0;
+  }
+  if (s.includes('drone_phase_interceptor_3') || s.includes('phase_interceptor') || s.includes('interceptor')) {
+    // drone_phase_interceptor_3.glb rotated 180 degrees clockwise (-PI/2 - PI = -3PI/2 = PI/2)
+    return Math.PI / 2;
+  }
+  // Default fallback for any other models (90 degrees clockwise)
+  return -Math.PI / 2;
+}
+if (typeof window !== 'undefined') {
+  window.getCustomModelRotationY = getCustomModelRotationY;
+}
+
 function load3DAssetModel(rawUrl, onLoaded, onError) {
   const url = normalizeAssetUrl(rawUrl);
   if (!url) {
@@ -2674,8 +2691,13 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
               box.getCenter(center);
               newModel.position.sub(center);
 
-              // Requirement: Rotate 90 degrees clockwise around Y so the front natively faces the player (+Z)
-              newModel.rotation.y = -Math.PI / 2;
+              // Requirement: Per-model orientation so front natively faces the player (+Z):
+              // recon_drone_2.8m.glb rotated 90 deg counter-clockwise (0 rad)
+              // drone_phase_interceptor_3.glb rotated 180 deg clockwise (Math.PI / 2 rad)
+              const targetRotY = getCustomModelRotationY(matchingCfg.model_3d_url || matchingCfg.id);
+              newModel.rotation.y = targetRotY;
+              newModel.userData.targetRotY = targetRotY;
+              ae.mesh.userData.modelUrl = normUrl;
 
               const size = new THREE.Vector3();
               box.getSize(size);
@@ -8391,8 +8413,13 @@ function create3DEnemyMesh(config) {
           box.getCenter(center);
           loadedModel.position.sub(center);
 
-          // Requirement: Rotate 90 degrees clockwise around Y so the front natively faces the player (+Z)
-          loadedModel.rotation.y = -Math.PI / 2;
+          // Requirement: Per-model orientation so front natively faces the player (+Z):
+          // recon_drone_2.8m.glb rotated 90 deg counter-clockwise (0 rad)
+          // drone_phase_interceptor_3.glb rotated 180 deg clockwise (Math.PI / 2 rad)
+          const targetRotY = getCustomModelRotationY(customModelUrl || config.model_3d_url || config.id);
+          loadedModel.rotation.y = targetRotY;
+          loadedModel.userData.targetRotY = targetRotY;
+          group.userData.modelUrl = customModelUrl;
 
           // Compute target span and auto-scale
           const size = new THREE.Vector3();
@@ -8716,10 +8743,16 @@ function defaultEnemyMovement(e, delta, context) {
   const curScale = THREE.MathUtils.lerp(0.12, e.baseScale || 1.3, progress);
   e.mesh.scale.set(curScale, curScale, curScale);
 
-  // Requirement: Ensure custom 3D model asset is rotated clockwise 90 degrees around Y so front faces the player (+Z)
+  // Requirement: Ensure custom 3D model asset maintains its front-facing orientation:
+  // recon_drone_2.8m.glb: 0 rad (rotated 90 deg CCW)
+  // drone_phase_interceptor_3.glb: Math.PI / 2 rad (rotated 180 deg CW)
   if (e.mesh.userData && e.mesh.userData.loadedAsset) {
-    if (e.mesh.userData.loadedAsset.rotation.y !== -Math.PI / 2) {
-      e.mesh.userData.loadedAsset.rotation.y = -Math.PI / 2;
+    const asset = e.mesh.userData.loadedAsset;
+    const targetRotY = (asset.userData && typeof asset.userData.targetRotY === 'number')
+      ? asset.userData.targetRotY
+      : getCustomModelRotationY((e.config && e.config.model_3d_url) || e.model_3d_url || (e.mesh.userData && e.mesh.userData.modelUrl) || (e.config && e.config.id) || e.id || e.enemy_id);
+    if (Math.abs(asset.rotation.y - targetRotY) > 0.001) {
+      asset.rotation.y = targetRotY;
     }
   }
 

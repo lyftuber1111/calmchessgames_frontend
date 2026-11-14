@@ -3950,6 +3950,9 @@
           object3D = await new Promise((resolve, reject) => {
             fbxLoader.load(rawUrl, resolve, onProgress, reject);
           });
+          if (object3D && object3D.animations && object3D.animations.length > 0) {
+            gltfAnimations = object3D.animations;
+          }
         } else if (ext === 'stl') {
           const geom = await new Promise((resolve, reject) => {
             stlLoader.load(rawUrl, resolve, onProgress, reject);
@@ -4459,13 +4462,13 @@
 
     if (btnQuickStretch) {
       btnQuickStretch.addEventListener('click', () => {
-        modelFileInput.value = 'models/phase_interceptor_destroyed/phase_interceptor_destroyed_animated.glb';
+        modelFileInput.value = 'models/phase_interceptor/phase_interceptor.glb';
         materialFileInput.value = '';
         loadModel(
-          'models/phase_interceptor_destroyed/phase_interceptor_destroyed_animated.glb',
+          'models/phase_interceptor/phase_interceptor.glb',
           '',
-          'phase_interceptor_destroyed_animated.glb',
-          'meshy_test_0/models/phase_interceptor_destroyed/phase_interceptor_destroyed_animated.glb'
+          'phase_interceptor.glb',
+          'meshy_test_0/models/phase_interceptor/phase_interceptor.glb'
         );
       });
     }

@@ -1947,7 +1947,7 @@
             <span>👆</span> <span>Orbit: 1-finger drag or left mouse button</span>
           </div>
           <div class="hint-item">
-            <span>✌️</span> <span>Zoom / Pan: 2-finger pinch/drag or scroll wheel</span>
+            <span>✌️</span> <span>Zoom: 2-finger pinch or scroll wheel</span>
           </div>
         </div>
       </div>
@@ -3394,8 +3394,32 @@
     controls.dampingFactor = 0.05;
     controls.target.set(0, 0.5, 0);
     controls.maxPolarAngle = Math.PI / 2 - 0.01;
-    controls.minDistance = 1.2;
-    controls.maxDistance = 15;
+    controls.minDistance = 0.25;
+    controls.maxDistance = 20;
+
+    // Safety floor clamp: ensure controls target never sinks into the floor plane
+    let targetFloorMinY = 0.15;
+    controls.addEventListener('change', () => {
+      if (controls.target.y < targetFloorMinY) {
+        controls.target.y = targetFloorMinY;
+      }
+    });
+
+    // Touch gesture disambiguation:
+    // When 2 fingers touch (pinch-to-zoom), temporarily disable OrbitControls panning
+    // so midpoint translation drift cannot accidentally drag controls.target downward
+    // into the floor. This keeps 2-finger gestures strictly as a smooth model zoom (dolly).
+    renderer.domElement.addEventListener('touchstart', (e) => {
+      if (e.touches && e.touches.length >= 2) {
+        controls.enablePan = false;
+      }
+    }, { passive: true });
+
+    renderer.domElement.addEventListener('touchend', (e) => {
+      if (!e.touches || e.touches.length < 2) {
+        controls.enablePan = true;
+      }
+    }, { passive: true });
 
     // Lighting (Studio PBR)
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x223344, 0.7);
@@ -4258,8 +4282,13 @@
 
     const btnResetCam = document.getElementById('btn-reset-cam');
     btnResetCam.addEventListener('click', () => {
-      camera.position.set(2.8, 1.4, 3.2);
-      controls.target.set(0, 0.5, 0);
+      let targetY = 0.5;
+      if (carModel) {
+        const box = new THREE.Box3().setFromObject(carModel);
+        targetY = Math.max(0.15, box.getCenter(new THREE.Vector3()).y);
+      }
+      camera.position.set(2.8, targetY + 0.9, 3.2);
+      controls.target.set(0, targetY, 0);
       controls.update();
     });
 
@@ -4541,6 +4570,13 @@
       if (lenElem) lenElem.textContent = `~${finalSize.z.toFixed(2)} m`;
       if (widElem) widElem.textContent = `~${finalSize.x.toFixed(2)} m`;
       if (hgtElem) hgtElem.textContent = `~${finalSize.y.toFixed(2)} m`;
+
+      // Keep controls target centered vertically on the model and update floor safety threshold
+      const targetCenter = finalBbox.getCenter(new THREE.Vector3());
+      const modelCenterY = Math.max(0.15, targetCenter.y);
+      targetFloorMinY = Math.max(0.08, targetCenter.y * 0.35);
+      controls.target.set(0, modelCenterY, 0);
+      controls.update();
     }
 
     const modelScaleSlider = document.getElementById('model-scale-slider');

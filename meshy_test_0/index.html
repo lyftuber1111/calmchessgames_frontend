@@ -2131,6 +2131,11 @@
       throw lastErr || new Error('Backend server move endpoint unreachable');
     }
 
+    // Expose helpers on window for Chrome console testing & debugging
+    window.getBackendEndpoints = getBackendEndpoints;
+    window.checkBackendCompanions = checkBackendCompanions;
+    window.postBackendMoveAsset = postBackendMoveAsset;
+
     // Helper to issue git pull request for origin main on frontend repository via Symfony Process
     async function triggerFrontendPullOriginMain() {
       showGitPushToast('loading', 'Symfony Process: Frontend Pull Request', 'Issuing git pull request for origin main on the front end...', `

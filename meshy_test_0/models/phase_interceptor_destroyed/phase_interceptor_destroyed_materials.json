@@ -1,0 +1,19 @@
+{
+  "name": "phase_interceptor_destroyed",
+  "scale": 0.75,
+  "scale_applied_to_glb": 0.75,
+  "textures": "./phase_interceptor_destroyed_textures",
+  "relative_link_skill_invariant": "./meshy_test_0/models/phase_interceptor_destroyed/phase_interceptor_destroyed_textures",
+  "meshy_yest_0_storage": "./meshy_yest_0/models/phase_interceptor_destroyed/phase_interceptor_destroyed_textures",
+  "prompt": "A dramatic exploding sci-fi white armored phase interceptor starfighter shattered into pieces with fiery debris",
+  "preview_task_id": "01a1d998-6d77-75ca-a503-c747453a6c6a",
+  "refine_task_id": "01a1d999-ee26-7597-91b1-cf2dd3101f51",
+  "files": {
+    "static_glb": "phase_interceptor_destroyed.glb",
+    "animated_glb": "phase_interceptor_destroyed_animated.glb",
+    "static_obj": "phase_interceptor_destroyed.obj",
+    "static_mtl": "phase_interceptor_destroyed.mtl",
+    "static_fbx": "phase_interceptor_destroyed.fbx"
+  },
+  "animation_description": "Meshy animated Phase Interceptor dramatically being destroyed: white armor hull breach, exploding plasma core, shrapnel debris violently blasting outward with intense angular spin and dissipating smoke"
+}

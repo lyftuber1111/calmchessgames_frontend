@@ -1,0 +1,27 @@
+{
+  "id": "01a1d998-6d77-75ca-a503-c747453a6c6a",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 1948287726,
+  "prompt": "A dramatic exploding sci-fi white armored phase interceptor starfighter shattered into pieces with fiery debris",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1794652010396,
+  "progress": 100,
+  "started_at": 1794652010409,
+  "finished_at": 1794652097444,
+  "task_error": null,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1d998-6d77-75ca-a503-c747453a6c6a/output/model.glb?Expires=4948214400&Signature=fC-GUeIY5RUBeygJNrqnlCdK7isuH8ITDybhIK3y36svwM-2fYDp-fM3UlmlXeI603BpB6tpLSUXU0~BOewTSsyi4vgJMLMbWxXdgQ6ejGP3VYbJPRRwvWeu1lcD0gP8mH3bFmWrWsWGxtuzUFzfclGlaW49d5Qs6Cw2aTktthPFVVCjoXNN0ykxrstaa0PUAyLC0ko9DhDzoUizG1wbjo7py6lfHsKIqgTFz9NMufP6OgVzVSK2OnUNO20b~v7kJtymf7-YPavefgwXZbejvSwR6NjXmtHsM0GxG8Cp~wPHP-PqdI3VHNXB9TEseoj--NgQIAyr~vWcqsYIqEexqw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1d998-6d77-75ca-a503-c747453a6c6a/output/model.fbx?Expires=4948214400&Signature=PkHRb01VXNqtQrxIOzbrDKMCxUmyhZX9IRz5tQIn9FRC~5Hedu5j8SMv7ow8uii-e74~gOTqCKYYQgpx8K08cvRQCrgsB11KggG153Qjb9uvXE~rtd1HHvsF4K1Zk-8Uam43iXSu72UCCbA5TRaq9O5tJ7x5fKKa43hFBpOC-4pMEuobv3zK5iL0-mTABxym4NMI7CABNIrRdhN5JhvWMWzfogI~7mQxewRJ6FkUuBFLeBvRT6Z8qnjVn6pW8jwwtowxv5mUg5KIQIXyrzUE0SpdZ5ChYctMdC51UbS1e4C15wIQX9ebDFWak-Df6tluxxK6xKtXWOUjGHLtfz2FjA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1d998-6d77-75ca-a503-c747453a6c6a/output/model.usdz?Expires=4948214400&Signature=blTuegLU7crzn6Q4Wesw0jGZefQfBdgCsOkocgv63HTITGSn5w-3fNB8wxZIxiMqi9SyF-iEOdUHVdwPM2gpbSQrzvjx6W-4BzNS8w8EfF7uPE5lCV3qAIu8FqvV4UJvL6uUb43jAkNHHRzvIfHS~srfTAzuHm0bajyCUdJNMe9g5nMarXBoxKHyYdokw6sjSHOpCeWEcNf3O~2Zm21GVAfsR1x1USVR5zb6l8T3t4KT7oUe4ZZfOOADIJT8YGZrbqHUHy8rhg8m3m7jTVud-Q7Esll65z6ju5PUS7svIeSFJVpKzItGFAT6a~pkKciuD5KkNNGYTSBZHEtZ0hZFVA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1d998-6d77-75ca-a503-c747453a6c6a/output/model.obj?Expires=4948214400&Signature=pxrzR8zv2aH72LSify1CivrsreUFdpjiMJGrZFwy6jMf5XNWigeE2gApXTHOZc-LKWape2oFiCKnTzn1KKP1LPU~~Mo0qWgLTLb1dy1q9MwZZJEKJNJDdyvu7Z3xPFUPVhOzayfQf4Wp5TdcOo8Id0IuMIgeohKnTZOTp9Ac5XlrXhWIheK~nDjVKLKwRuKTbiqPEUDBQU2IX7Lvrd4uZsqvoygqAFhBPih5bVXOi3~PWcokOW8kAVguHmOM4Jp0a7DXYlbQyf19jNK2BCWmrsIt1BUFRIwvQYS7N9rGCAjzNwQBSqiBW4j0ifAM9e89wkpGtZiwXsJt5fCgHmEFLg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1d998-6d77-75ca-a503-c747453a6c6a/output/model.stl?Expires=4948214400&Signature=GrjiAJ58zzy3pb4cjGgVvebhMya-KNqgaSTNF4gzFmLGqLGvd31RfB73j65Ks7n-X0oEVxUQ~HhLLspKK1NBX75tbdKt5P~IyvApkE9TPkRq1J4E7xfBg9Cfp8ekFA1MH-0R3bKdYg-Co5L7Jo6~FYPYRg4Q7Xf6muelR1pls2yVo6-WeUWXjpw4q~A1bTa9lUFmk-eNtvODjZ8103HQV-BHkzBeJCjFoh7HG2t3ShZSwnKNjd5Y6GtGPM~QEBOxNXAsHsPGm3KkVfxvb9vhkq1l3EIxgYFMLDUmdDIO3f328Icqh-No~NWZyYuOp8Hap1rwg2mwW~sZgkqmxdka2A__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1d998-6d77-75ca-a503-c747453a6c6a/output/preview.png?Expires=4948214400&Signature=EXH-9NpiW1aJl0RtS-CmKVXAb04-YUnNK1fJsl~AEThY15cHb-bdk19GyME0uActHw1fbQFda-A~Ck88egqFL~0SEyMTPAkBlR4SvzZQjyL2zCHRBKnB2ih1ZxEmZoEHrpli8bmvLK2RFK6boGXhaYoeB-NaO7DCSljBLC0sWvg0aHlbwZcV4XfENiryChkStjXlA~625wbiiuxz66x1E-oBkKcKK0NV28K4v3te0bDs9GEXed61pBRx~iYbdFfbAyQEIPJRgHypDp5DeQ-aX7wbo1cUeal~dYoTPwBpJxVPZthPAVJdpWNaxLvtHXYCx8z~6pUZsNQ8EW6xV~6eDw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20
+}

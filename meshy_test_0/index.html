@@ -1654,8 +1654,8 @@
           <button id="btn-quick-car" class="btn btn-subtle" type="button" title="Load default Red Race Car">
             <span>🏎️</span> <span>Default Car</span>
           </button>
-          <button id="btn-quick-stretch" class="btn btn-subtle" type="button" title="Load Seated Figure 4 Stretch Animation">
-            <span>🧘</span> <span>Figure 4 Stretch</span>
+          <button id="btn-quick-destroyed" class="btn btn-subtle" type="button" title="Load Meshy Animated Destroyed Phase Interceptor">
+            <span>💥</span> <span>Destroyed Interceptor</span>
           </button>
         </div>
 
@@ -3515,7 +3515,7 @@
     const materialFileInput = document.getElementById('material-file-input');
     const btnLoadModel = document.getElementById('btn-load-model');
     const btnQuickCar = document.getElementById('btn-quick-car');
-    const btnQuickStretch = document.getElementById('btn-quick-stretch');
+    const btnQuickStretch = document.getElementById('btn-quick-destroyed') || document.getElementById('btn-quick-stretch');
     const localFilePicker = document.getElementById('local-file-picker');
 
     // Animation Player State
@@ -4055,7 +4055,8 @@
         document.getElementById('spec-length').textContent = `~${finalSize.z.toFixed(2)} m`;
         document.getElementById('spec-width').textContent = `~${finalSize.x.toFixed(2)} m`;
         document.getElementById('spec-height').textContent = `~${finalSize.y.toFixed(2)} m`;
-        const icon = (displayName.toLowerCase().includes('figure') || displayName.toLowerCase().includes('stretch')) ? '🧘' : ((displayName.toLowerCase().includes('drone') || displayName.toLowerCase().includes('interceptor')) ? '🛸' : '🏎️');
+        const isDestroyed = displayName.toLowerCase().includes('destroy') || displayName.toLowerCase().includes('explod');
+        const icon = isDestroyed ? '💥' : ((displayName.toLowerCase().includes('figure') || displayName.toLowerCase().includes('stretch')) ? '🧘' : ((displayName.toLowerCase().includes('drone') || displayName.toLowerCase().includes('interceptor')) ? '🛸' : '🏎️'));
         brandTitle.textContent = `${icon} ${displayName}`;
 
         setStatus('Ready', 'ready');
@@ -4458,13 +4459,13 @@
 
     if (btnQuickStretch) {
       btnQuickStretch.addEventListener('click', () => {
-        modelFileInput.value = 'models/seated_figure4_stretch/seated_figure4_stretch_animated.glb';
+        modelFileInput.value = 'models/phase_interceptor_destroyed/phase_interceptor_destroyed_animated.glb';
         materialFileInput.value = '';
         loadModel(
-          'models/seated_figure4_stretch/seated_figure4_stretch_animated.glb',
+          'models/phase_interceptor_destroyed/phase_interceptor_destroyed_animated.glb',
           '',
-          'seated_figure4_stretch_animated.glb',
-          'meshy_test_0/models/seated_figure4_stretch/seated_figure4_stretch_animated.glb'
+          'phase_interceptor_destroyed_animated.glb',
+          'meshy_test_0/models/phase_interceptor_destroyed/phase_interceptor_destroyed_animated.glb'
         );
       });
     }

@@ -4539,13 +4539,23 @@ if (btnCloseRotateTop) {
 }
 
 function handleOrientationPromptUpdate() {
-  // Seamless portrait & landscape support: keep rotate prompt hidden and portrait layout active
-  if (landscapePrompt) {
-    landscapePrompt.classList.remove('active');
-    landscapePrompt.classList.add('dismissed');
-    landscapePrompt.style.display = 'none';
+  const isLandscape = isDeviceInLandscape();
+  if (isLandscape) {
+    if (landscapePrompt) {
+      landscapePrompt.classList.remove('active');
+      landscapePrompt.style.display = 'none';
+    }
+    document.body.classList.remove('portrait-dismissed');
+    if (state.hasStarted) {
+      centerWormholeOnScreen();
+    }
+  } else {
+    // If during active gameplay flight the user rotates back to portrait, show rotate prompt unless dismissed
+    if (state.hasStarted && landscapePrompt && !landscapePrompt.classList.contains('dismissed')) {
+      landscapePrompt.classList.add('active');
+      landscapePrompt.style.display = 'flex';
+    }
   }
-  document.body.classList.add('portrait-dismissed');
 }
 
 window.addEventListener('resize', handleOrientationPromptUpdate);
@@ -5826,6 +5836,7 @@ if (touchStickZone) {
       }
     }
     if (!audioMgr.isInitialized) audioMgr.init();
+    lockLandscape();
   }, { passive: false });
 
   window.addEventListener('touchmove', (e) => {
@@ -6001,6 +6012,7 @@ if (aimStickZone) {
       }
     }
     if (!audioMgr.isInitialized) audioMgr.init();
+    lockLandscape();
   }, { passive: false });
 
   window.addEventListener('touchmove', (e) => {
@@ -7086,8 +7098,9 @@ if (touchBtnWarp) {
 }
 
 function lockLandscape() {
-  // Mobile devices are fully supported in both vertical (portrait) and horizontal (landscape) orientations.
-  // Never force-lock orientation to prevent touch lag and orientation thrashing.
+  if (screen.orientation && typeof screen.orientation.lock === 'function') {
+    screen.orientation.lock('landscape').catch(() => {});
+  }
 }
 
 // =============================================================================
@@ -9959,7 +9972,7 @@ function startCountdownAndLaunchGame(isRestart = false) {
   const btnQuickPause = document.getElementById('btn-quick-pause');
   if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
 
-  // Dismiss beginning splash screen immediately
+  // Dismiss beginning splash screen immediately so it doesn't block the rotate prompt or game
   const splashEl = document.getElementById('wormhole-splash-screen');
   if (splashEl && splashEl.parentNode) {
     splashEl.classList.add('splash-fade-out');
@@ -9968,16 +9981,85 @@ function startCountdownAndLaunchGame(isRestart = false) {
     }, 400);
   }
 
-  // Dismiss and hide any rotate orientation prompt so both portrait and landscape are fully supported
-  const rotatePrompt = document.getElementById('landscape-rotate-prompt');
-  if (rotatePrompt) {
-    rotatePrompt.classList.remove('active');
-    rotatePrompt.classList.add('dismissed');
-    rotatePrompt.style.display = 'none';
-  }
-  document.body.classList.add('portrait-dismissed');
+  // Determine if on mobile/touch device in portrait mode
+  const isPortraitMobile = isDeviceInPortrait() && (
+    /Android|iPhone|iPad|iPod|Mobile|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    ('ontouchstart' in window) ||
+    (navigator.maxTouchPoints > 0) ||
+    (window.innerWidth < window.innerHeight)
+  );
 
-  // Launch countdown directly without blocking in portrait mode
+  const rotatePrompt = document.getElementById('landscape-rotate-prompt');
+
+  if (isPortraitMobile) {
+    // Display the rotate phone screen
+    if (rotatePrompt) {
+      rotatePrompt.classList.remove('dismissed');
+      rotatePrompt.classList.add('active');
+      rotatePrompt.style.display = 'flex';
+    }
+    document.body.classList.remove('portrait-dismissed');
+
+    let hasLaunched = false;
+    const launchAfterRotate = () => {
+      if (hasLaunched) return;
+      hasLaunched = true;
+
+      window.removeEventListener('resize', checkOrientationWithDelays);
+      window.removeEventListener('orientationchange', checkOrientationWithDelays);
+      if (screen.orientation && typeof screen.orientation.removeEventListener === 'function') {
+        screen.orientation.removeEventListener('change', checkOrientationWithDelays);
+      }
+
+      if (rotatePrompt) {
+        rotatePrompt.classList.remove('active');
+        rotatePrompt.classList.add('dismissed');
+        rotatePrompt.style.display = 'none';
+      }
+      document.body.classList.add('portrait-dismissed');
+
+      // Start the 5-second mission countdown timer after rotating to landscape
+      executeMissionCountdown(isRestart);
+    };
+
+    const checkOrientation = () => {
+      if (isDeviceInLandscape()) {
+        launchAfterRotate();
+      }
+    };
+
+    const checkOrientationWithDelays = () => {
+      checkOrientation();
+      setTimeout(checkOrientation, 100);
+      setTimeout(checkOrientation, 250);
+      setTimeout(checkOrientation, 500);
+    };
+
+    window.addEventListener('resize', checkOrientationWithDelays);
+    window.addEventListener('orientationchange', checkOrientationWithDelays);
+    if (screen.orientation && typeof screen.orientation.addEventListener === 'function') {
+      screen.orientation.addEventListener('change', checkOrientationWithDelays);
+    }
+
+    // If player taps 'Continue in Portrait' or 'X', dismiss prompt and start 5-second countdown
+    const btnDismissRotate = document.getElementById('btn-dismiss-rotate');
+    const btnCloseRotateTop = document.getElementById('btn-close-rotate-top');
+    if (btnDismissRotate) {
+      btnDismissRotate.onclick = (e) => {
+        if (e) e.preventDefault();
+        launchAfterRotate();
+      };
+    }
+    if (btnCloseRotateTop) {
+      btnCloseRotateTop.onclick = (e) => {
+        if (e) e.preventDefault();
+        launchAfterRotate();
+      };
+    }
+    return;
+  }
+
+  // If already in landscape or on desktop, proceed directly to 5-second countdown
   executeMissionCountdown(isRestart);
 }
 
@@ -10007,6 +10089,7 @@ function executeMissionCountdown(isRestart = false) {
   if (audioMgr && !audioMgr.isInitialized) {
     try { audioMgr.init(); } catch (e) {}
   }
+  lockLandscape();
   requestDeviceOrientation();
   centerWormholeOnScreen(true);
 
@@ -10246,7 +10329,6 @@ function restartGame() {
     camera.position.set(0, 0, respawnDistance);
     camera.rotation.set(0, 0, 0);
     camera.fov = 75;
-    camera.aspect = window.innerWidth / Math.max(1, window.innerHeight);
     camera.updateProjectionMatrix();
   } else if (cameraRig) {
     cameraRig.position.set(0, 0, respawnDistance);
@@ -10268,14 +10350,6 @@ function restartGame() {
   // Reset weapons system to initial state (energy restored, overheat cleared, red laser selected)
   if (weaponsSystem && typeof weaponsSystem.resetForMission === 'function') {
     weaponsSystem.resetForMission();
-  }
-
-  // Ensure viewport and mobile controls match orientation immediately (portrait or landscape)
-  if (typeof handleViewportResize === 'function') {
-    handleViewportResize();
-  }
-  if (typeof updateMobileControlsVisibility === 'function') {
-    updateMobileControlsVisibility();
   }
 
   // Reset to Stage 1 and re-sync from the beginning
@@ -12300,79 +12374,34 @@ if (renderer) {
 
 }
 
-// Smooth Resize & Orientation Change Handler
-let resizeRafId = null;
-function handleViewportResize() {
+// Resize Handler
+window.addEventListener('resize', () => {
   const w = window.innerWidth;
   const h = window.innerHeight;
-  const dpr = Math.min(window.devicePixelRatio || 1.0, 2.0);
+  const dpr = Math.min(window.devicePixelRatio, 2.0);
 
-  if (camera) {
-    camera.aspect = w / Math.max(1, h);
-    camera.updateProjectionMatrix();
-  }
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
 
-  if (renderer) {
-    renderer.setSize(w, h);
-    renderer.setPixelRatio(dpr);
-  }
+  renderer.setSize(w, h);
+  renderer.setPixelRatio(dpr);
 
-  const targetW = Math.floor(w * dpr);
-  const targetH = Math.floor(h * dpr);
-  if (sceneRenderTarget && (sceneRenderTarget.width !== targetW || sceneRenderTarget.height !== targetH)) {
-    sceneRenderTarget.setSize(targetW, targetH);
-  }
-  const halfW = Math.floor(w * 0.5);
-  const halfH = Math.floor(h * 0.5);
-  if (renderTargetA && (renderTargetA.width !== halfW || renderTargetA.height !== halfH)) {
-    renderTargetA.setSize(halfW, halfH);
-  }
-  if (renderTargetB && (renderTargetB.width !== halfW || renderTargetB.height !== halfH)) {
-    renderTargetB.setSize(halfW, halfH);
-  }
+  sceneRenderTarget.setSize(w * dpr, h * dpr);
+  renderTargetA.setSize(w * 0.5, h * 0.5);
+  renderTargetB.setSize(w * 0.5, h * 0.5);
 
-  if (blurShader && blurShader.uniforms && blurShader.uniforms.uResolution) {
-    blurShader.uniforms.uResolution.value.set(halfW, halfH);
-  }
-  if (compositeShader && compositeShader.uniforms && compositeShader.uniforms.uAspect) {
-    compositeShader.uniforms.uAspect.value = w / Math.max(1, h);
-  }
+  blurShader.uniforms.uResolution.value.set(w * 0.5, h * 0.5);
+  compositeShader.uniforms.uAspect.value = w / h;
 
-  if (typeof updateMobileSnapGrid === 'function') {
-    updateMobileSnapGrid();
-  }
+  updateMobileSnapGrid();
 
-  if (state.crosshair) {
+  const isLandscape = (w > h);
+  if (isLandscape && state.hasStarted) {
+    centerWormholeOnScreen();
+  } else {
     state.crosshair.x = Math.max(20, Math.min(w - 20, state.crosshair.x));
     state.crosshair.y = Math.max(20, Math.min(h - 20, state.crosshair.y));
-
-    const centerCrosshairEl = document.getElementById('center-crosshair');
-    if (centerCrosshairEl) {
-      centerCrosshairEl.style.left = `${state.crosshair.x}px`;
-      centerCrosshairEl.style.top = `${state.crosshair.y}px`;
-      centerCrosshairEl.style.transform = 'translate(-50%, -50%)';
-    }
-    const vectorRing = document.getElementById('vector-alignment-ring');
-    if (vectorRing) {
-      vectorRing.style.left = `${state.crosshair.x}px`;
-      vectorRing.style.top = `${state.crosshair.y}px`;
-      vectorRing.style.transform = 'translate(-50%, -50%)';
-    }
   }
-}
-
-window.addEventListener('resize', () => {
-  if (resizeRafId) cancelAnimationFrame(resizeRafId);
-  resizeRafId = requestAnimationFrame(handleViewportResize);
-});
-
-window.addEventListener('orientationchange', () => {
-  if (resizeRafId) cancelAnimationFrame(resizeRafId);
-  resizeRafId = requestAnimationFrame(() => {
-    handleViewportResize();
-    setTimeout(handleViewportResize, 100);
-    setTimeout(handleViewportResize, 300);
-  });
 });
 
 // Splash Screen & Multi-Platform Runtime Verification Runner
@@ -12560,18 +12589,13 @@ async function runStartupDiagnosticsAndSplashScreen() {
       startBtn.title = 'Click or press Enter/Space to launch mission';
       startBtn.classList.add('btn-ready');
 
-      const launchGame = (e) => {
-        if (e) {
-          e.preventDefault();
-          e.stopPropagation();
-        }
+      const launchGame = () => {
         if (startBtn.dataset.launched) return;
         startBtn.dataset.launched = 'true';
         startCountdownAndLaunchGame(false);
       };
 
       startBtn.addEventListener('click', launchGame);
-      startBtn.addEventListener('touchend', launchGame);
       window.addEventListener('keydown', (e) => {
         if ((e.code === 'Enter' || e.code === 'Space') && splashEl && splashEl.parentNode) {
           launchGame();
@@ -12702,15 +12726,11 @@ if (btnSplashExit) {
 // Restart button & keyboard shortcut listener for Game Over screen
 const btnRestartGame = document.getElementById('btn-restart-game');
 if (btnRestartGame) {
-  let isRestarting = false;
   const onRestart = (e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    if (isRestarting) return;
-    isRestarting = true;
-    setTimeout(() => { isRestarting = false; }, 600);
     restartGame();
   };
   btnRestartGame.addEventListener('click', onRestart);

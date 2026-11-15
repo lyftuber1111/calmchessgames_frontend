@@ -9559,7 +9559,6 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     lifetime: 4.8
   });
 }
-}
 
 function applyDamageToPlayer(rawDamage) {
   if (!state.hasStarted || state.isHyperWarping || state.isInvulnerable || state.isGameOver) return;
@@ -10009,6 +10008,20 @@ function restartGame() {
   // Despawn combat entities
   despawnAllActiveEnemies();
   despawnAllActivePowerups();
+  for (let i = laserBolts.length - 1; i >= 0; i--) {
+    const bolt = laserBolts[i];
+    if (bolt && bolt.mesh && scene) {
+      scene.remove(bolt.mesh);
+      if (bolt.geometry && bolt.geometry.dispose) bolt.geometry.dispose();
+      if (bolt.material && bolt.material.dispose) bolt.material.dispose();
+      if (bolt.coreGeom && bolt.coreGeom.dispose) bolt.coreGeom.dispose();
+      if (bolt.coreMat && bolt.coreMat.dispose) bolt.coreMat.dispose();
+      if (bolt.light) bolt.mesh.remove(bolt.light);
+    }
+    laserBolts.splice(i, 1);
+  }
+  const damageVignette = document.getElementById('damage-vignette');
+  if (damageVignette) damageVignette.style.opacity = '0';
   if (typeof triggeredPowerupEventSet !== 'undefined') {
     triggeredPowerupEventSet.clear();
   }
@@ -12298,19 +12311,29 @@ if (btnSplashExit) {
 // Restart button & keyboard shortcut listener for Game Over screen
 const btnRestartGame = document.getElementById('btn-restart-game');
 if (btnRestartGame) {
-  btnRestartGame.addEventListener('click', (e) => {
-    e.preventDefault();
+  const onRestart = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     restartGame();
-  });
+  };
+  btnRestartGame.addEventListener('click', onRestart);
+  btnRestartGame.addEventListener('touchend', onRestart);
 }
 
 // Quit button listener for Game Over screen (returns to calmchessgames.com)
 const btnQuitGame = document.getElementById('btn-quit-game');
 if (btnQuitGame) {
-  btnQuitGame.addEventListener('click', (e) => {
-    e.preventDefault();
+  const onQuit = (e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     quitGame();
-  });
+  };
+  btnQuitGame.addEventListener('click', onQuit);
+  btnQuitGame.addEventListener('touchend', onQuit);
 }
 
 window.addEventListener('keydown', (e) => {

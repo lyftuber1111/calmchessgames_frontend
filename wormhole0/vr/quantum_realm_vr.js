@@ -230,16 +230,16 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   let boltSpeed = Math.max(24, Math.min(48, rawSpd * 0.075));
   const boltDamage = parseInt((activeWpn && activeWpn.damage) ? activeWpn.damage : (cfg.weapon_damage || cfg.attack_damage || enemyObj.weaponDmg || 5));
 
-  // 2. Weapon Graphic Object (.glb / .obj / .gltf) handling with scale and size
+  // 2. Weapon Dimensions & Graphic Object (.glb / .obj / .gltf) handling with scale and size
+  const wScale = (parseFloat(activeWpn?.scale !== undefined ? activeWpn.scale : (cfg.weapon_scale !== undefined ? cfg.weapon_scale : 1.0)) || 1.0) * boltScale;
+  const wSizeX = parseFloat(activeWpn?.size_x !== undefined ? activeWpn.size_x : (cfg.weapon_size_x !== undefined ? cfg.weapon_size_x : 1.0)) || 1.0;
+  const wSizeY = parseFloat(activeWpn?.size_y !== undefined ? activeWpn.size_y : (cfg.weapon_size_y !== undefined ? cfg.weapon_size_y : 1.0)) || 1.0;
+  const wSizeZ = parseFloat(activeWpn?.size_z !== undefined ? activeWpn.size_z : (cfg.weapon_size_z !== undefined ? cfg.weapon_size_z : 1.0)) || 1.0;
   const wpnModelUrl = (activeWpn && (activeWpn.model_url || activeWpn.graphic_object || activeWpn.model_3d_url)) ? (activeWpn.model_url || activeWpn.graphic_object || activeWpn.model_3d_url).trim() : '';
 
   if (wpnModelUrl && (typeof window.load3DAssetModel === 'function' || typeof load3DAssetModel === 'function')) {
     const loaderFn = (typeof window.load3DAssetModel === 'function') ? window.load3DAssetModel : load3DAssetModel;
     const weaponGroup = new THREE.Group();
-    const wScale = (parseFloat(activeWpn.scale) || 1.0) * boltScale;
-    const wSizeX = parseFloat(activeWpn.size_x) || 1.0;
-    const wSizeY = parseFloat(activeWpn.size_y) || 1.0;
-    const wSizeZ = parseFloat(activeWpn.size_z) || 1.0;
 
     const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
     weaponGroup.add(light);
@@ -274,7 +274,7 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
 
     const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 32 * boltScale);
     missileGroup.add(light);
-    missileGroup.scale.set(boltScale, boltScale, boltScale);
+    missileGroup.scale.set(wScale * wSizeX, wScale * wSizeY, wScale * wSizeZ);
     missileGroup.position.copy(spawnOrigin);
     missileGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     scene.add(missileGroup);
@@ -301,7 +301,7 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
 
     const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
     beamGroup.add(light);
-    beamGroup.scale.set(boltScale, boltScale, boltScale);
+    beamGroup.scale.set(wScale * wSizeX, wScale * wSizeY, wScale * wSizeZ);
     beamGroup.position.copy(spawnOrigin);
     beamGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     scene.add(beamGroup);

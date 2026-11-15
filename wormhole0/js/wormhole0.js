@@ -7277,11 +7277,17 @@ window.addEventListener('mousedown', (e) => {
   // When left mouse button is pressed, fire active weapon ONE SHOT at a time
   if (e.button === 0) {
     state.isLeftMouseDown = true;
+    state.isMouseDown = true;
+    state.lastMouseX = e.clientX;
+    state.lastMouseY = e.clientY;
     fireLaserBeam();
     state.flightLockoutUntil = performance.now() + 2000;
   } else if (e.button === 2) {
     // When right mouse button is pressed, rapid fire active weapon
     state.isRightMouseDown = true;
+    state.isMouseDown = true;
+    state.lastMouseX = e.clientX;
+    state.lastMouseY = e.clientY;
     fireLaserBeam();
     state.flightLockoutUntil = performance.now() + 2000;
   }
@@ -7459,6 +7465,14 @@ window.addEventListener('mousemove', (e) => {
     state.crosshair.x += e.movementX * speedScale;
     state.crosshair.y += e.movementY * speedScale;
 
+    // Smoothly turn/aim ship when crosshair is captured
+    touchLookYaw -= e.movementX * CONFIG.yawSpeed * 0.9;
+    touchLookPitch -= e.movementY * CONFIG.pitchSpeed * 0.9;
+    touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
+    state.yaw = lastGyroYaw + touchLookYaw;
+    state.pitch = lastGyroPitch + touchLookPitch;
+    state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
+
     // Clamp crosshair to viewport bounds
     const margin = 10;
     state.crosshair.x = Math.max(margin, Math.min(window.innerWidth - margin, state.crosshair.x));
@@ -7517,20 +7531,20 @@ window.addEventListener('mousemove', (e) => {
         vectorRing.style.left = `${state.crosshair.x}px`;
         vectorRing.style.top = `${state.crosshair.y}px`;
       }
-    }
 
-    if (state.isMouseDown && !isMouseAim) {
-      const deltaX = e.clientX - state.lastMouseX;
-      const deltaY = e.clientY - state.lastMouseY;
-      state.lastMouseX = e.clientX;
-      state.lastMouseY = e.clientY;
+      if (state.isMouseDown || state.isLeftMouseDown) {
+        const deltaX = e.clientX - (state.lastMouseX !== undefined ? state.lastMouseX : e.clientX);
+        const deltaY = e.clientY - (state.lastMouseY !== undefined ? state.lastMouseY : e.clientY);
+        state.lastMouseX = e.clientX;
+        state.lastMouseY = e.clientY;
 
-      touchLookYaw -= deltaX * CONFIG.yawSpeed;
-      touchLookPitch -= deltaY * CONFIG.pitchSpeed;
-      touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
-      state.yaw = lastGyroYaw + touchLookYaw;
-      state.pitch = lastGyroPitch + touchLookPitch;
-      state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
+        touchLookYaw -= deltaX * CONFIG.yawSpeed;
+        touchLookPitch -= deltaY * CONFIG.pitchSpeed;
+        touchLookPitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, touchLookPitch));
+        state.yaw = lastGyroYaw + touchLookYaw;
+        state.pitch = lastGyroPitch + touchLookPitch;
+        state.pitch = Math.max(-Math.PI * 0.48, Math.min(Math.PI * 0.48, state.pitch));
+      }
     }
   }
 });
@@ -9461,16 +9475,16 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
   let boltSpeed;
   let weaponType;
 
-  // Weapon Graphic Object (.glb / .obj / .gltf) handling
+  // 2. Weapon Dimensions & Graphic Object (.glb / .obj / .gltf) handling with scale and size
+  const wScale = (parseFloat(wpn?.scale !== undefined ? wpn.scale : (cfg.weapon_scale !== undefined ? cfg.weapon_scale : 1.0)) || 1.0) * boltScale;
+  const wSizeX = parseFloat(wpn?.size_x !== undefined ? wpn.size_x : (cfg.weapon_size_x !== undefined ? cfg.weapon_size_x : 1.0)) || 1.0;
+  const wSizeY = parseFloat(wpn?.size_y !== undefined ? wpn.size_y : (cfg.weapon_size_y !== undefined ? cfg.weapon_size_y : 1.0)) || 1.0;
+  const wSizeZ = parseFloat(wpn?.size_z !== undefined ? wpn.size_z : (cfg.weapon_size_z !== undefined ? cfg.weapon_size_z : 1.0)) || 1.0;
   const wpnModelUrl = (wpn && (wpn.model_url || wpn.graphic_object || wpn.model_3d_url)) ? (wpn.model_url || wpn.graphic_object || wpn.model_3d_url).trim() : '';
 
   if (wpnModelUrl && typeof load3DAssetModel === 'function') {
     weaponType = 'custom_model';
     const weaponGroup = new THREE.Group();
-    const wScale = (parseFloat(wpn.scale) || 1.0) * boltScale;
-    const wSizeX = parseFloat(wpn.size_x) || 1.0;
-    const wSizeY = parseFloat(wpn.size_y) || 1.0;
-    const wSizeZ = parseFloat(wpn.size_z) || 1.0;
 
     const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
     weaponGroup.add(light);
@@ -9546,7 +9560,7 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     light.position.set(0, 0, 0);
     missileGroup.add(light);
 
-    missileGroup.scale.set(boltScale, boltScale, boltScale);
+    missileGroup.scale.set(wScale * wSizeX, wScale * wSizeY, wScale * wSizeZ);
     missileGroup.position.copy(spawnOrigin);
     missileGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     scene.add(missileGroup);
@@ -9596,7 +9610,7 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     light.position.set(0, 0, 0);
     beamGroup.add(light);
 
-    beamGroup.scale.set(boltScale, boltScale, boltScale);
+    beamGroup.scale.set(wScale * wSizeX, wScale * wSizeY, wScale * wSizeZ);
     beamGroup.position.copy(spawnOrigin);
     beamGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     scene.add(beamGroup);
@@ -9909,6 +9923,53 @@ function executeMissionCountdown(isRestart = false) {
   const totalSeconds = 5;
   const circumference = 408;
 
+  const finishCountdown = () => {
+    countdownCompletionTimeout = null;
+    if (countdownOverlay) {
+      countdownOverlay.classList.remove('active');
+      countdownOverlay.style.display = 'none';
+    }
+    state.isCountdownActive = false;
+    state.hasStarted = true;
+    document.body.classList.add('game-in-flight');
+    state.lastFrameTime = performance.now();
+    centerWormholeOnScreen(true);
+
+    // Ensure keyboard focus is restored and request crosshair capture if on desktop
+    try {
+      if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
+      }
+      window.focus();
+      if (container) {
+        container.tabIndex = 0;
+        if (container.focus) container.focus();
+      }
+    } catch (e) {}
+    if (!isMobileInUse() && !state.isPointerLocked) {
+      requestCrosshairCapture(true);
+    }
+  };
+
+  const skipCountdown = () => {
+    if (state.isCountdownActive && remaining > 0) {
+      remaining = 0;
+      if (countdownTimerInterval) {
+        clearInterval(countdownTimerInterval);
+        countdownTimerInterval = null;
+      }
+      updateCountdownDisplay();
+      if (countdownCompletionTimeout) {
+        clearTimeout(countdownCompletionTimeout);
+      }
+      countdownCompletionTimeout = setTimeout(finishCountdown, 150);
+    }
+  };
+
+  if (countdownOverlay) {
+    countdownOverlay.onclick = skipCountdown;
+  }
+
   const updateCountdownDisplay = () => {
     if (countdownText) {
       countdownText.textContent = remaining > 0 ? String(remaining) : 'GO!';
@@ -9941,30 +10002,7 @@ function executeMissionCountdown(isRestart = false) {
       countdownTimerInterval = null;
       updateCountdownDisplay(); // Shows 'GO!'
 
-      countdownCompletionTimeout = setTimeout(() => {
-        countdownCompletionTimeout = null;
-        if (countdownOverlay) {
-          countdownOverlay.classList.remove('active');
-          countdownOverlay.style.display = 'none';
-        }
-        state.isCountdownActive = false;
-        state.hasStarted = true;
-        document.body.classList.add('game-in-flight');
-        state.lastFrameTime = performance.now();
-        centerWormholeOnScreen(true);
-
-        // Ensure keyboard focus is restored and request crosshair capture if on desktop
-        try {
-          if (document.activeElement && document.activeElement.blur) {
-            document.activeElement.blur();
-          }
-          window.focus();
-          if (container && container.focus) container.focus();
-        } catch (e) {}
-        if (!isMobileInUse() && !state.isPointerLocked) {
-          requestCrosshairCapture(true);
-        }
-      }, 500);
+      countdownCompletionTimeout = setTimeout(finishCountdown, 500);
     }
   }, 1000);
 }
@@ -9979,7 +10017,10 @@ function restartGame() {
       document.activeElement.blur();
     }
     window.focus();
-    if (container && container.focus) container.focus();
+    if (container) {
+      container.tabIndex = 0;
+      if (container.focus) container.focus();
+    }
   } catch (e) {}
 
   // Cancel any lingering countdown intervals or timeouts
@@ -9990,13 +10031,6 @@ function restartGame() {
   if (countdownCompletionTimeout) {
     clearTimeout(countdownCompletionTimeout);
     countdownCompletionTimeout = null;
-  }
-
-  // Dismiss and hide any countdown overlay
-  const countdownOverlay = document.getElementById('game-countdown-overlay');
-  if (countdownOverlay) {
-    countdownOverlay.classList.remove('active');
-    countdownOverlay.style.display = 'none';
   }
 
   // Dismiss and hide any rotate orientation prompt to prevent freeze/lockout
@@ -10011,10 +10045,10 @@ function restartGame() {
   // Completely reset pause & game over states across entire game
   state.isGameOver = false;
   state.isPaused = false;
-  state.hasStarted = true;
+  state.hasStarted = false; // Flight holds until mission re-engagement countdown concludes
   state.isCountdownActive = false;
   document.body.classList.remove('game-paused');
-  document.body.classList.add('game-in-flight');
+  document.body.classList.remove('game-in-flight');
   const btnQuickPause = document.getElementById('btn-quick-pause');
   if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
 
@@ -10070,7 +10104,7 @@ function restartGame() {
   state.pitch = 0;
   state.yaw = 0;
   state.roll = 0;
-  stopThrottle();
+  state.throttleValue = 0.35; // Cruising impulse speed to ensure immediate forward motion
 
   // Despawn combat entities
   despawnAllActiveEnemies();
@@ -10100,17 +10134,15 @@ function restartGame() {
   renderStageObjectivesUI();
   centerWormholeOnScreen(true);
 
-  // Spawn fresh hostile swarm immediately so action resumes smoothly with zero freeze
+  // Spawn fresh hostile swarm immediately
   lastEnemySpawnCheckTime = 0;
   spawnEnemySwarmFromWormhole();
 
   // Reset frame timestamp to prevent delta time explosion
   state.lastFrameTime = performance.now();
 
-  // Request crosshair capture if on desktop
-  if (!isMobileInUse()) {
-    requestCrosshairCapture(true);
-  }
+  // Launch smooth 5-second MISSION RE-ENGAGEMENT countdown
+  executeMissionCountdown(true);
 }
 
 function quitGame() {

@@ -45,7 +45,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
           length: 3.0,
           height: 1.5,
           depth: 3.0,
-          pool_size: 20
+          pool_size: 200
         }
       ],
       ...stageConfig

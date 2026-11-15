@@ -4770,15 +4770,41 @@ Thank you for reaching out to Calm Chess Games. `;
   // =========================================================================
   let activeEnemyWeapons = [];
 
-  function createDefaultEnemyWeapon(name = 'Plasma Pulse', type = 'beam', mount = 'dual_wingtip', timesPerSec = 2.0, intervalMs = 500, damage = 5, speed = 450, color = '#ff0055') {
+  function createDefaultEnemyWeapon(
+      name = 'Plasma Pulse',
+      type = 'beam',
+      mount = 'dual_wingtip',
+      timesPerSec = 2.0,
+      intervalMs = 500,
+      damage = 5,
+      speed = 450,
+      color = '#ff0055',
+      modelUrl = '',
+      firePointX = 0.0,
+      firePointY = -0.15,
+      firePointZ = 1.5,
+      scale = 1.0,
+      sizeX = 1.0,
+      sizeY = 1.0,
+      sizeZ = 1.0
+  ) {
       const times = parseFloat(timesPerSec) || 2.0;
       const ms = parseInt(intervalMs) || Math.max(20, Math.round(1000 / times));
       const sec = (ms / 1000).toFixed(3);
       return {
           id: 'ew_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
           name: name,
-          type: type, // 'beam' | 'missile' | 'torpedo' | 'rapid_plasma' | 'heavy_cannon'
-          mount: mount, // 'dual_wingtip' | 'center' | 'turret' | 'left' | 'right'
+          type: type, // 'beam' | 'missile' | 'torpedo' | 'rapid_plasma' | 'heavy_cannon' | 'custom_model'
+          mount: mount, // 'dual_wingtip' | 'center' | 'turret' | 'left' | 'right' | 'custom_offset'
+          model_url: modelUrl || '',
+          model_type: modelUrl ? (detect3DModelFormat(modelUrl)?.format || 'custom') : '',
+          fire_point_x: parseFloat(firePointX !== undefined ? firePointX : 0.0) || 0.0,
+          fire_point_y: parseFloat(firePointY !== undefined ? firePointY : -0.15) || 0.0,
+          fire_point_z: parseFloat(firePointZ !== undefined ? firePointZ : 1.5) || 0.0,
+          scale: parseFloat(scale) || 1.0,
+          size_x: parseFloat(sizeX) || 1.0,
+          size_y: parseFloat(sizeY) || 1.0,
+          size_z: parseFloat(sizeZ) || 1.0,
           fire_rate_times_per_sec: times,
           fire_interval_ms: ms,
           fire_rate_seconds: parseFloat(sec),
@@ -4787,6 +4813,135 @@ Thank you for reaching out to Calm Chess Games. `;
           color: color || '#ff0055',
           is_enabled: 1
       };
+  }
+
+  async function fetchGraphicObjectJsonMetadata(modelUrl) {
+      if (!modelUrl) return null;
+      let clean = modelUrl.trim().replace(/\\/g, '/');
+      if (clean.startsWith('./')) clean = clean.substring(2);
+
+      // 1. Try server admin API
+      try {
+          const res = await callAdminWormholeApi('get_model_json_metadata', 'GET', { model_url: clean });
+          if (res && res.success && res.data) {
+              return res.data;
+          }
+      } catch (e) {
+          console.warn('[Admin] Server get_model_json_metadata fallback:', e);
+      }
+
+      // 2. Direct fetch fallback for relative paths
+      const baseName = clean.substring(clean.lastIndexOf('/') + 1).replace(/\.(glb|gltf|obj)$/i, '');
+      const dir = clean.substring(0, clean.lastIndexOf('/'));
+      const candidates = [
+          (dir ? dir + '/' : '') + baseName + '_materials.json',
+          (dir ? dir + '/' : '') + baseName + '.json',
+          (dir ? dir + '/' : '') + 'materials.json',
+          (dir ? dir + '/' : '') + 'final_result.json',
+          (dir ? dir + '/' : '') + 'preview_result.json'
+      ];
+
+      for (const cand of candidates) {
+          try {
+              const fetchUrl = cand.startsWith('/') ? cand : ('/' + cand);
+              const r = await fetch(fetchUrl, { cache: 'no-cache' });
+              if (r.ok) {
+                  const j = await r.json();
+                  if (j) {
+                      let scale = 1.0;
+                      if (j.scale !== undefined && !isNaN(parseFloat(j.scale))) scale = parseFloat(j.scale);
+                      else if (j.scale_applied_to_glb !== undefined) scale = parseFloat(j.scale_applied_to_glb);
+
+                      let sx = 1.0, sy = 1.0, sz = 1.0;
+                      const dims = j.reference_dimensions_m_unused || j.dimensions || j.size || null;
+                      if (dims) {
+                          if (dims.x) sx = parseFloat(dims.x);
+                          if (dims.y) sy = parseFloat(dims.y);
+                          if (dims.z) sz = parseFloat(dims.z);
+                          if (dims.length) sx = parseFloat(dims.length);
+                          if (dims.height) sy = parseFloat(dims.height);
+                          if (dims.depth) sz = parseFloat(dims.depth);
+                      }
+                      return {
+                          found: true,
+                          scale: scale,
+                          size_x: sx,
+                          size_y: sy,
+                          size_z: sz,
+                          json_file: cand,
+                          data: j
+                      };
+                  }
+              }
+          } catch (ign) {}
+      }
+
+      const mMatch = clean.match(/(\d+(?:\.\d+)?)\s*m/i);
+      if (mMatch) {
+          const val = parseFloat(mMatch[1]);
+          return { found: true, scale: 1.0, size_x: val, size_y: val, size_z: val, json_file: 'regex_filename' };
+      }
+
+      return { found: false, scale: 1.0, size_x: 1.0, size_y: 1.0, size_z: 1.0 };
+  }
+
+  async function autoDetectWeaponModelJson(weaponId, directModelUrl = null) {
+      const w = activeEnemyWeapons.find(item => item.id === weaponId);
+      if (!w) return;
+
+      const url = directModelUrl || w.model_url || document.getElementById(`weaponModelUrl_${weaponId}`)?.value || '';
+      if (!url) return;
+
+      const meta = await fetchGraphicObjectJsonMetadata(url);
+      if (meta && (meta.found || meta.scale !== undefined || meta.size_x !== undefined)) {
+          w.scale = meta.scale !== undefined ? parseFloat(meta.scale) : (w.scale || 1.0);
+          w.size_x = meta.size_x !== undefined ? parseFloat(meta.size_x) : (w.size_x || 1.0);
+          w.size_y = meta.size_y !== undefined ? parseFloat(meta.size_y) : (w.size_y || 1.0);
+          w.size_z = meta.size_z !== undefined ? parseFloat(meta.size_z) : (w.size_z || 1.0);
+
+          const scaleInput = document.getElementById(`weaponScale_${weaponId}`);
+          const sxInput = document.getElementById(`weaponSizeX_${weaponId}`);
+          const syInput = document.getElementById(`weaponSizeY_${weaponId}`);
+          const szInput = document.getElementById(`weaponSizeZ_${weaponId}`);
+
+          if (scaleInput) scaleInput.value = w.scale;
+          if (sxInput) sxInput.value = w.size_x;
+          if (syInput) syInput.value = w.size_y;
+          if (szInput) szInput.value = w.size_z;
+
+          const badge = document.getElementById(`weaponJsonBadge_${weaponId}`);
+          if (badge) {
+              badge.textContent = `✔ Initialized from .json (Scale: ${w.scale}x | Size: ${w.size_x}×${w.size_y}×${w.size_z}m)`;
+              badge.style.display = 'inline-block';
+              badge.style.color = '#10b981';
+          }
+          syncEnemyWeaponsMirrorInputs();
+      }
+  }
+
+  async function handleWeaponModelUrlChange(weaponId, newUrl) {
+      const w = activeEnemyWeapons.find(item => item.id === weaponId);
+      if (!w) return;
+      w.model_url = (newUrl || '').trim();
+      const detected = detect3DModelFormat(w.model_url);
+      if (detected) w.model_type = `custom_${detected.format}`;
+      await autoDetectWeaponModelJson(weaponId, w.model_url);
+      syncEnemyWeaponsMirrorInputs();
+  }
+
+  function setEnemyWeaponFirePointPreset(weaponId, x, y, z) {
+      const w = activeEnemyWeapons.find(item => item.id === weaponId);
+      if (!w) return;
+      w.fire_point_x = parseFloat(x);
+      w.fire_point_y = parseFloat(y);
+      w.fire_point_z = parseFloat(z);
+      const ix = document.getElementById(`weaponFirePointX_${weaponId}`);
+      const iy = document.getElementById(`weaponFirePointY_${weaponId}`);
+      const iz = document.getElementById(`weaponFirePointZ_${weaponId}`);
+      if (ix) ix.value = x;
+      if (iy) iy.value = y;
+      if (iz) iz.value = z;
+      syncEnemyWeaponsMirrorInputs();
   }
 
   function syncEnemyWeaponsMirrorInputs() {
@@ -4825,19 +4980,22 @@ Thank you for reaching out to Calm Chess Games. `;
           const timesPerSec = parseFloat(w.fire_rate_times_per_sec) || 2.0;
           const intervalMs = parseInt(w.fire_interval_ms) || Math.max(20, Math.round(1000 / timesPerSec));
           const secPerShot = (intervalMs / 1000).toFixed(3);
+          const modelUrlVal = w.model_url || '';
+          const formatDetected = detect3DModelFormat(modelUrlVal);
 
           return `
-              <div class="enemy-weapon-card" style="background: rgba(15,23,42,0.85); border: 1.5px solid ${isPrimary ? '#ef476f' : 'rgba(239,68,111,0.35)'}; border-radius: 8px; padding: 12px 14px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 12px;">
+              <div class="enemy-weapon-card" style="background: rgba(15,23,42,0.92); border: 1.5px solid ${isPrimary ? '#ef476f' : 'rgba(239,68,111,0.35)'}; border-radius: 8px; padding: 14px; position: relative; box-shadow: 0 4px 18px rgba(0,0,0,0.4); margin-bottom: 14px;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
                       <div style="display: flex; align-items: center; gap: 8px;">
                           <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${escapeHtml(w.color || '#ff0055')}; box-shadow: 0 0 8px ${escapeHtml(w.color || '#ff0055')};"></span>
-                          <strong style="color: #fff; font-size: 0.9rem;">${isPrimary ? '⭐ Primary Weapon (Slot 1)' : `⚔️ Secondary Weapon (Slot ${idx + 1})`}</strong>
+                          <strong style="color: #fff; font-size: 0.92rem;">${isPrimary ? '⭐ Primary Weapon (Slot 1)' : `⚔️ Secondary Weapon (Slot ${idx + 1})`}</strong>
                           <span style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; background: rgba(239,68,111,0.2); border: 1px solid #ef476f; color: #ff6b8b; text-transform: uppercase;">${escapeHtml(w.type || 'beam')}</span>
+                          ${modelUrlVal ? `<span style="font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: rgba(0,240,255,0.18); border: 1px solid #00f0ff; color: #00f0ff; font-weight: bold;">📦 3D Mesh</span>` : ''}
                       </div>
                       <div style="display: flex; gap: 6px; align-items: center;">
                           ${!isPrimary ? `
-                              <button type="button" onclick="removeEnemyWeaponCard('${weaponId}')" style="background: rgba(239,68,111,0.2); border: 1px solid #ef476f; color: #ff4d6d; border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;" title="Remove this weapon slot">🗑️ Remove</button>
-                          ` : '<span style="font-size:0.72rem; color: #94a3b8; font-style: italic;">Default Primary</span>'}
+                              <button type="button" onclick="removeEnemyWeaponCard('${weaponId}')" style="background: rgba(239,68,111,0.2); border: 1px solid #ef476f; color: #ff4d6d; border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;" title="Remove this weapon slot">🗑️ Remove Slot</button>
+                          ` : '<span style="font-size:0.72rem; color: #94a3b8; font-style: italic;">Primary Hardpoint</span>'}
                       </div>
                   </div>
 
@@ -4849,30 +5007,102 @@ Thank you for reaching out to Calm Chess Games. `;
                       </div>
                       <div>
                           <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px;">Type</label>
-                          <select onchange="updateEnemyWeaponField('${weaponId}', 'type', this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                          <select onchange="updateEnemyWeaponField('${weaponId}', 'type', this.value, true)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
                               <option value="beam" ${w.type === 'beam' ? 'selected' : ''}>⚡ Beam Laser</option>
                               <option value="missile" ${w.type === 'missile' ? 'selected' : ''}>🚀 Homing Missile</option>
                               <option value="torpedo" ${w.type === 'torpedo' ? 'selected' : ''}>💣 Heavy Torpedo</option>
                               <option value="rapid_plasma" ${w.type === 'rapid_plasma' ? 'selected' : ''}>🔥 Rapid Plasma Pulse</option>
                               <option value="heavy_cannon" ${w.type === 'heavy_cannon' ? 'selected' : ''}>💥 Heavy Particle Cannon</option>
+                              <option value="custom_model" ${w.type === 'custom_model' ? 'selected' : ''}>📦 3D Graphic Mesh Model</option>
                           </select>
                       </div>
                       <div>
                           <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px;">Hardpoint Mount</label>
-                          <select onchange="updateEnemyWeaponField('${weaponId}', 'mount', this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                          <select onchange="updateEnemyWeaponField('${weaponId}', 'mount', this.value, true)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
                               <option value="dual_wingtip" ${w.mount === 'dual_wingtip' ? 'selected' : ''}>Dual Wingtips (Port & Starboard)</option>
                               <option value="center" ${w.mount === 'center' ? 'selected' : ''}>Center Nose Emitter</option>
                               <option value="turret" ${w.mount === 'turret' ? 'selected' : ''}>Dorsal Rotating Turret</option>
                               <option value="left" ${w.mount === 'left' ? 'selected' : ''}>Left Wing Hardpoint</option>
                               <option value="right" ${w.mount === 'right' ? 'selected' : ''}>Right Wing Hardpoint</option>
+                              <option value="custom_offset" ${w.mount === 'custom_offset' ? 'selected' : ''}>🎯 Custom (X, Y, Z Point Below)</option>
                           </select>
                       </div>
                   </div>
 
-                  <!-- Row 2: Fire Cadence: Times per Second, Milliseconds Interval, Seconds per Shot -->
+                  <!-- Row 2: Weapon Graphic Object .glb / .obj with Browse Button -->
+                  <div style="background: rgba(0, 240, 255, 0.06); border: 1px solid rgba(0, 240, 255, 0.28); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                          <div style="font-weight: bold; color: #00f0ff; font-size: 0.82rem; display: flex; align-items: center; gap: 6px;">
+                              <span>🛸 Weapon Graphic Object (<span style="color:#00f0ff;">.glb</span>, <span style="color:#ffd700;">.obj</span>, <span style="color:#10b981;">.gltf</span>)</span>
+                          </div>
+                          <span id="weaponJsonBadge_${weaponId}" style="font-size: 0.7rem; color: #10b981; font-family: monospace;"></span>
+                      </div>
+                      <div style="display: flex; gap: 8px; align-items: center;">
+                          <input type="text" id="weaponModelUrl_${weaponId}" value="${escapeHtml(modelUrlVal)}" onchange="handleWeaponModelUrlChange('${weaponId}', this.value)" style="flex: 1; padding: 7px 10px; background: rgba(0,0,0,0.5); border: 1px solid #38bdf8; border-radius: 6px; color: #fff; font-size: 0.82rem;" placeholder="e.g. mobile/event_horizon_images/recon_drone_2.8m.glb or .obj">
+                          <button type="button" class="admin-tab-btn" onclick="openGameAssetBrowser('weaponModelUrl_${weaponId}', 'model')" style="padding: 7px 12px; background: rgba(56,189,248,0.22); border: 1px solid #38bdf8; color: #38bdf8; font-weight: bold; font-size: 0.8rem; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;" title="Browse server or local 3D models (.glb, .obj, .gltf)">📂 Browse...</button>
+                          <button type="button" class="admin-tab-btn" onclick="autoDetectWeaponModelJson('${weaponId}')" style="padding: 7px 10px; background: rgba(16,185,129,0.18); border: 1px solid #10b981; color: #10b981; font-weight: bold; font-size: 0.78rem; cursor: pointer; white-space: nowrap;" title="Sync initial size and scale from companion .json file">📄 Sync .json</button>
+                      </div>
+                  </div>
+
+                  <!-- Row 3: Graphic Scale and Size of Weapons Graphic Object -->
+                  <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.28); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;">
+                      <div style="font-weight: bold; color: #10b981; font-size: 0.82rem; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                          <span>📐 Weapon Graphic Scale &amp; Size (Set from .json / User Editable)</span>
+                          <span style="font-size: 0.7rem; color: var(--text-muted);">Loaded on game start &amp; each level start</span>
+                      </div>
+                      <div style="display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: 8px;">
+                          <div>
+                              <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">Graphic Scale</label>
+                              <input type="number" step="0.05" min="0.05" max="20" id="weaponScale_${weaponId}" value="${parseFloat(w.scale) || 1.0}" onchange="updateEnemyWeaponField('${weaponId}', 'scale', parseFloat(this.value)||1.0)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #10b981; color: #10b981; font-weight: bold; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                          </div>
+                          <div>
+                              <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">Size X / Width (m)</label>
+                              <input type="number" step="0.1" min="0.05" max="50" id="weaponSizeX_${weaponId}" value="${parseFloat(w.size_x) || 1.0}" onchange="updateEnemyWeaponField('${weaponId}', 'size_x', parseFloat(this.value)||1.0)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #334155; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                          </div>
+                          <div>
+                              <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">Size Y / Height (m)</label>
+                              <input type="number" step="0.1" min="0.05" max="50" id="weaponSizeY_${weaponId}" value="${parseFloat(w.size_y) || 1.0}" onchange="updateEnemyWeaponField('${weaponId}', 'size_y', parseFloat(this.value)||1.0)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #334155; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                          </div>
+                          <div>
+                              <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">Size Z / Depth (m)</label>
+                              <input type="number" step="0.1" min="0.05" max="50" id="weaponSizeZ_${weaponId}" value="${parseFloat(w.size_z) || 1.0}" onchange="updateEnemyWeaponField('${weaponId}', 'size_z', parseFloat(this.value)||1.0)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #334155; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Row 4: Firing Origin Point on Model (X, Y, Z coordinates) -->
+                  <div style="background: rgba(168, 85, 247, 0.06); border: 1px solid rgba(168, 85, 247, 0.28); border-radius: 6px; padding: 10px 12px; margin-bottom: 10px;">
+                      <div style="font-weight: bold; color: #c084fc; font-size: 0.82rem; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                          <span>🎯 Firing Origin Point on Model (X, Y, Z point where weapon is fired from)</span>
+                          <span style="font-size: 0.7rem; color: var(--text-muted);">Relative model coordinates (meters)</span>
+                      </div>
+                      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                          <div>
+                              <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">Fire Point X (Lateral +/-)</label>
+                              <input type="number" step="0.05" min="-50" max="50" id="weaponFirePointX_${weaponId}" value="${parseFloat(w.fire_point_x !== undefined ? w.fire_point_x : 0.0)}" onchange="updateEnemyWeaponField('${weaponId}', 'fire_point_x', parseFloat(this.value)||0.0)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #c084fc; color: #c084fc; font-weight: bold; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                          </div>
+                          <div>
+                              <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">Fire Point Y (Vertical +/-)</label>
+                              <input type="number" step="0.05" min="-50" max="50" id="weaponFirePointY_${weaponId}" value="${parseFloat(w.fire_point_y !== undefined ? w.fire_point_y : -0.15)}" onchange="updateEnemyWeaponField('${weaponId}', 'fire_point_y', parseFloat(this.value)||0.0)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #c084fc; color: #c084fc; font-weight: bold; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                          </div>
+                          <div>
+                              <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">Fire Point Z (Forward +/-)</label>
+                              <input type="number" step="0.05" min="-50" max="50" id="weaponFirePointZ_${weaponId}" value="${parseFloat(w.fire_point_z !== undefined ? w.fire_point_z : 1.5)}" onchange="updateEnemyWeaponField('${weaponId}', 'fire_point_z', parseFloat(this.value)||0.0)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #c084fc; color: #c084fc; font-weight: bold; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                          </div>
+                      </div>
+                      <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                          <span style="font-size: 0.7rem; color: var(--text-muted);">Quick Presets:</span>
+                          <button type="button" class="admin-tab-btn" onclick="setEnemyWeaponFirePointPreset('${weaponId}', 0.0, -0.15, 1.5)" style="padding: 2px 7px; font-size: 0.72rem; background: rgba(192,132,252,0.15); border: 1px solid rgba(192,132,252,0.4); color: #c084fc; border-radius: 4px; cursor: pointer;">Nose (0, -0.15, 1.5)</button>
+                          <button type="button" class="admin-tab-btn" onclick="setEnemyWeaponFirePointPreset('${weaponId}', -1.2, -0.15, 1.0)" style="padding: 2px 7px; font-size: 0.72rem; background: rgba(192,132,252,0.15); border: 1px solid rgba(192,132,252,0.4); color: #c084fc; border-radius: 4px; cursor: pointer;">Port Wing (-1.2, -0.15, 1.0)</button>
+                          <button type="button" class="admin-tab-btn" onclick="setEnemyWeaponFirePointPreset('${weaponId}', 1.2, -0.15, 1.0)" style="padding: 2px 7px; font-size: 0.72rem; background: rgba(192,132,252,0.15); border: 1px solid rgba(192,132,252,0.4); color: #c084fc; border-radius: 4px; cursor: pointer;">Starboard (1.2, -0.15, 1.0)</button>
+                          <button type="button" class="admin-tab-btn" onclick="setEnemyWeaponFirePointPreset('${weaponId}', 0.0, 0.45, 0.2)" style="padding: 2px 7px; font-size: 0.72rem; background: rgba(192,132,252,0.15); border: 1px solid rgba(192,132,252,0.4); color: #c084fc; border-radius: 4px; cursor: pointer;">Dorsal Turret (0, 0.45, 0.2)</button>
+                      </div>
+                  </div>
+
+                  <!-- Row 5: Fire Cadence: Times per Second, Milliseconds Interval, Seconds per Shot -->
                   <div style="background: rgba(239,68,111,0.08); border: 1px dashed rgba(239,68,111,0.35); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px;">
                       <div style="font-size: 0.72rem; font-weight: bold; color: #ff6b8b; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
-                          <span>⏱️ Firing Cadence & Rate (Times/sec & Milliseconds)</span>
+                          <span>⏱️ Firing Cadence &amp; Rate (Times/sec &amp; Milliseconds)</span>
                           <span id="rateSummary_${weaponId}" style="color: #00f0ff; font-family: monospace; font-size: 0.75rem;">${timesPerSec} shots/sec (${intervalMs}ms)</span>
                       </div>
                       <div style="display: grid; grid-template-columns: 1.4fr 1.4fr 1.2fr; gap: 8px;">
@@ -4900,7 +5130,7 @@ Thank you for reaching out to Calm Chess Games. `;
                       </div>
                   </div>
 
-                  <!-- Row 3: Damage, Projectile Speed, Color -->
+                  <!-- Row 6: Damage, Projectile Speed, Color -->
                   <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 10px;">
                       <div>
                           <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px;">Damage Per Hit</label>
@@ -4965,12 +5195,14 @@ Thank you for reaching out to Calm Chess Games. `;
       syncEnemyWeaponsMirrorInputs();
   }
 
-  function updateEnemyWeaponField(weaponId, field, value) {
+  function updateEnemyWeaponField(weaponId, field, value, shouldRerender = false) {
       const w = activeEnemyWeapons.find(item => item.id === weaponId);
       if (!w) return;
       w[field] = value;
       syncEnemyWeaponsMirrorInputs();
-      renderEnemyWeaponsCards();
+      if (shouldRerender) {
+          renderEnemyWeaponsCards();
+      }
   }
 
   function addCustomEnemyWeaponCard() {
@@ -4983,7 +5215,15 @@ Thank you for reaching out to Calm Chess Games. `;
           400,
           8,
           500,
-          '#00f0ff'
+          '#00f0ff',
+          '',
+          slotNum % 2 === 0 ? -1.2 : 1.2,
+          -0.15,
+          1.0,
+          1.0,
+          1.0,
+          1.0,
+          1.0
       );
       activeEnemyWeapons.push(newW);
       renderEnemyWeaponsCards();
@@ -4999,7 +5239,15 @@ Thank you for reaching out to Calm Chess Games. `;
           2000,
           25,
           320,
-          '#ffaa00'
+          '#ffaa00',
+          '',
+          0.0,
+          -0.15,
+          1.5,
+          1.2,
+          1.2,
+          0.8,
+          2.2
       );
       activeEnemyWeapons.push(newW);
       renderEnemyWeaponsCards();
@@ -5181,9 +5429,25 @@ Thank you for reaching out to Calm Chess Games. `;
       }
       activeEnemyWeapons = parsedWeapons.map((w, idx) => ({
           ...w,
-          id: w.id || ('ew_' + idx + '_' + Math.random().toString(36).substring(2, 6))
+          id: w.id || ('ew_' + idx + '_' + Math.random().toString(36).substring(2, 6)),
+          model_url: w.model_url || '',
+          model_type: w.model_type || (w.model_url ? (detect3DModelFormat(w.model_url)?.format || 'custom') : ''),
+          fire_point_x: w.fire_point_x !== undefined ? parseFloat(w.fire_point_x) : 0.0,
+          fire_point_y: w.fire_point_y !== undefined ? parseFloat(w.fire_point_y) : -0.15,
+          fire_point_z: w.fire_point_z !== undefined ? parseFloat(w.fire_point_z) : 1.5,
+          scale: w.scale !== undefined && w.scale !== null ? parseFloat(w.scale) : 1.0,
+          size_x: w.size_x !== undefined && w.size_x !== null ? parseFloat(w.size_x) : 1.0,
+          size_y: w.size_y !== undefined && w.size_y !== null ? parseFloat(w.size_y) : 1.0,
+          size_z: w.size_z !== undefined && w.size_z !== null ? parseFloat(w.size_z) : 1.0
       }));
       renderEnemyWeaponsCards();
+
+      // Set/sync initial graphic size and scale from graphics object .json file when editing an existing enemy
+      activeEnemyWeapons.forEach(w => {
+          if (w.model_url) {
+              autoDetectWeaponModelJson(w.id, w.model_url);
+          }
+      });
 
       const modal = document.getElementById('editGameEnemyModal');
       if (modal) modal.style.display = 'flex';
@@ -6263,6 +6527,10 @@ Thank you for reaching out to Calm Chess Games. `;
   global.syncEnemyWeaponTiming = syncEnemyWeaponTiming;
   global.updateEnemyWeaponField = updateEnemyWeaponField;
   global.renderEnemyWeaponsCards = renderEnemyWeaponsCards;
+  global.fetchGraphicObjectJsonMetadata = fetchGraphicObjectJsonMetadata;
+  global.autoDetectWeaponModelJson = autoDetectWeaponModelJson;
+  global.handleWeaponModelUrlChange = handleWeaponModelUrlChange;
+  global.setEnemyWeaponFirePointPreset = setEnemyWeaponFirePointPreset;
   global.seedDefaultGameEnemies = seedDefaultGameEnemies;
   global.populateEnemyPiercingWeaponDropdown = populateEnemyPiercingWeaponDropdown;
   global.populateCloneEnemyDropdown = populateCloneEnemyDropdown;
@@ -7172,6 +7440,12 @@ Thank you for reaching out to Calm Chess Games. `;
 
               if (currentAssetBrowserTargetInput === 'enemy3DModelUrlInput' && typeof updateEnemy3DModelFormatStatus === 'function') {
                   updateEnemy3DModelFormatStatus();
+              }
+              if (currentAssetBrowserTargetInput && currentAssetBrowserTargetInput.startsWith('weaponModelUrl_')) {
+                  const weaponId = currentAssetBrowserTargetInput.replace('weaponModelUrl_', '');
+                  if (typeof handleWeaponModelUrlChange === 'function') {
+                      handleWeaponModelUrlChange(weaponId, path);
+                  }
               }
           }
       } else {

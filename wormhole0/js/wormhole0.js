@@ -229,6 +229,10 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.load3DAssetModel = load3DAssetModel;
+}
+
 // =============================================================================
 // STATE & CONFIGURATION
 // =============================================================================
@@ -2662,6 +2666,15 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
           name: e.weapon_name || 'Plasma Pulse',
           type: (e.weapon_name && (e.weapon_name.toLowerCase().includes('missile') || e.weapon_name.toLowerCase().includes('torpedo'))) ? 'missile' : 'beam',
           mount: 'dual_wingtip',
+          model_url: '',
+          model_type: '',
+          fire_point_x: 0.0,
+          fire_point_y: -0.15,
+          fire_point_z: 1.5,
+          scale: 1.0,
+          size_x: 1.0,
+          size_y: 1.0,
+          size_z: 1.0,
           fire_rate_times_per_sec: frTimes,
           fire_interval_ms: frMs,
           fire_rate_seconds: frSec,
@@ -2680,6 +2693,15 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
             name: w.name || e.weapon_name || 'Plasma Pulse',
             type: w.type || 'beam',
             mount: w.mount || 'dual_wingtip',
+            model_url: w.model_url || '',
+            model_type: w.model_type || '',
+            fire_point_x: w.fire_point_x !== undefined ? parseFloat(w.fire_point_x) : 0.0,
+            fire_point_y: w.fire_point_y !== undefined ? parseFloat(w.fire_point_y) : -0.15,
+            fire_point_z: w.fire_point_z !== undefined ? parseFloat(w.fire_point_z) : 1.5,
+            scale: w.scale !== undefined && w.scale !== null ? parseFloat(w.scale) : 1.0,
+            size_x: w.size_x !== undefined && w.size_x !== null ? parseFloat(w.size_x) : 1.0,
+            size_y: w.size_y !== undefined && w.size_y !== null ? parseFloat(w.size_y) : 1.0,
+            size_z: w.size_z !== undefined && w.size_z !== null ? parseFloat(w.size_z) : 1.0,
             fire_rate_times_per_sec: wTimes,
             fire_interval_ms: wMs,
             fire_rate_seconds: parseFloat((wMs / 1000).toFixed(3)),
@@ -9385,27 +9407,42 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
   const cfgDepth = (parseFloat(cfg.depth) || 3.0) * shipScale;
   const cfgLength = (parseFloat(cfg.length) || 3.0) * shipScale;
 
-  // Emanating from front of model / weapon emitters
-  enemyObj.lastGunSide = (enemyObj.lastGunSide === 1) ? -1 : 1;
-  let lateralOffset = 0;
-  let verticalOffset = -0.15 * shipScale;
+  // Emanating from precise X, Y, Z firing origin point on model
+  let localMuzzle;
+  const hasCustomFirePoint = (
+    wpn.fire_point_x !== undefined || 
+    wpn.fire_point_y !== undefined || 
+    wpn.fire_point_z !== undefined ||
+    cfg.fire_point_x !== undefined ||
+    cfg.fire_point_y !== undefined ||
+    cfg.fire_point_z !== undefined
+  );
 
-  if (wpnMount === 'dual_wingtip') {
-    lateralOffset = enemyObj.lastGunSide * cfgLength * 0.32;
-  } else if (wpnMount === 'left') {
-    lateralOffset = -cfgLength * 0.35;
-  } else if (wpnMount === 'right') {
-    lateralOffset = cfgLength * 0.35;
-  } else if (wpnMount === 'turret') {
-    lateralOffset = 0;
-    verticalOffset = 0.25 * shipScale;
-  } else { // 'center'
-    lateralOffset = 0;
+  if (hasCustomFirePoint) {
+    const fx = parseFloat(wpn.fire_point_x !== undefined ? wpn.fire_point_x : (cfg.fire_point_x !== undefined ? cfg.fire_point_x : 0.0)) || 0.0;
+    const fy = parseFloat(wpn.fire_point_y !== undefined ? wpn.fire_point_y : (cfg.fire_point_y !== undefined ? cfg.fire_point_y : -0.15)) || 0.0;
+    const fz = parseFloat(wpn.fire_point_z !== undefined ? wpn.fire_point_z : (cfg.fire_point_z !== undefined ? cfg.fire_point_z : 1.5)) || 0.0;
+    localMuzzle = new THREE.Vector3(fx * shipScale, fy * shipScale, fz * shipScale);
+  } else {
+    enemyObj.lastGunSide = (enemyObj.lastGunSide === 1) ? -1 : 1;
+    let lateralOffset = 0;
+    let verticalOffset = -0.15 * shipScale;
+    if (wpnMount === 'dual_wingtip') {
+      lateralOffset = enemyObj.lastGunSide * cfgLength * 0.32;
+    } else if (wpnMount === 'left') {
+      lateralOffset = -cfgLength * 0.35;
+    } else if (wpnMount === 'right') {
+      lateralOffset = cfgLength * 0.35;
+    } else if (wpnMount === 'turret') {
+      lateralOffset = 0;
+      verticalOffset = 0.25 * shipScale;
+    } else { // 'center'
+      lateralOffset = 0;
+    }
+    const forwardOffset = cfgDepth * 0.48; // front nose / muzzle
+    localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffset);
   }
 
-  const forwardOffset = cfgDepth * 0.48; // front nose / muzzle
-
-  const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffset);
   const spawnOrigin = enemyObj.mesh.position.clone().add(localMuzzle.applyQuaternion(enemyObj.mesh.quaternion));
 
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
@@ -9424,7 +9461,37 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
   let boltSpeed;
   let weaponType;
 
-  if (isMissile) {
+  // Weapon Graphic Object (.glb / .obj / .gltf) handling
+  const wpnModelUrl = (wpn && (wpn.model_url || wpn.graphic_object || wpn.model_3d_url)) ? (wpn.model_url || wpn.graphic_object || wpn.model_3d_url).trim() : '';
+
+  if (wpnModelUrl && typeof load3DAssetModel === 'function') {
+    weaponType = 'custom_model';
+    const weaponGroup = new THREE.Group();
+    const wScale = (parseFloat(wpn.scale) || 1.0) * boltScale;
+    const wSizeX = parseFloat(wpn.size_x) || 1.0;
+    const wSizeY = parseFloat(wpn.size_y) || 1.0;
+    const wSizeZ = parseFloat(wpn.size_z) || 1.0;
+
+    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
+    weaponGroup.add(light);
+    weaponGroup.scale.set(wScale * wSizeX, wScale * wSizeY, wScale * wSizeZ);
+    weaponGroup.position.copy(spawnOrigin);
+    weaponGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+
+    load3DAssetModel(wpnModelUrl, (clonedMesh) => {
+      if (clonedMesh) {
+        weaponGroup.add(clonedMesh);
+      }
+    });
+
+    scene.add(weaponGroup);
+    mesh = weaponGroup;
+    boltSpeed = Math.max(20, Math.min(44, weaponSpeedVal * 0.07));
+
+    if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
+      audioMgr.playEnemyLaser();
+    }
+  } else if (isMissile) {
     weaponType = 'missile';
     // 3D Guided Missile / Torpedo assembly
     const missileGroup = new THREE.Group();

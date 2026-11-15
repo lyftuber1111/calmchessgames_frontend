@@ -373,7 +373,7 @@ export class StageObjectPool {
 
       if (this.enemyPools.has(primaryKey)) continue;
 
-      const poolSize = enemyCfg.pool_size || 100;
+      const poolSize = Math.max(15, Math.min(enemyCfg.pool_size || 30, 35));
       const pool = new MeshPool(
         this.scene,
         null,

@@ -20,7 +20,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
       stage_slug: 'warp_origin',
       environment_theme: 'Warp Cyan Corridor',
       initial_weapon_pool_size: 300,
-      initial_enemy_pool_size: 100,
+      initial_enemy_pool_size: 30,
       waves: [
         {
           wave_number: 1,
@@ -59,7 +59,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
           length: 4.2,
           height: 1.3,
           depth: 3.4,
-          pool_size: 100
+          pool_size: 30
         },
         {
           id: 'void_recon_drone',
@@ -72,7 +72,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
           length: 3.0,
           height: 1.5,
           depth: 3.0,
-          pool_size: 100
+          pool_size: 30
         }
       ],
       ...stageConfig

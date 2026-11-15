@@ -27,6 +27,8 @@ const objLoader = new OBJLoader();
 
 // Global cache for 3D asset models (.glb, .gltf, .obj) to prevent duplicate downloads
 const cached3DAssetModels = new Map();
+const inFlight3DAssetLoads = new Map();
+const sessionAssetVersion = '20261115_glb_v2';
 
 function normalizeAssetUrl(url) {
   if (!url) return '';
@@ -40,6 +42,16 @@ function normalizeAssetUrl(url) {
   // Strip leading ./
   if (url.startsWith('./')) {
     url = url.substring(2);
+  }
+
+  // Handle known models and redirect to active device directory
+  if (url.includes('recon_drone_2.8m.glb')) {
+    const dev = (typeof currentActiveDeviceType !== 'undefined' && currentActiveDeviceType) ? currentActiveDeviceType : 'desktop';
+    return `${dev}/warp_origin_images/recon_drone_2.8m.glb`;
+  }
+  if (url.includes('drone_phase_interceptor_3.glb')) {
+    const dev = (typeof currentActiveDeviceType !== 'undefined' && currentActiveDeviceType) ? currentActiveDeviceType : 'desktop';
+    return `${dev}/warp_origin_images/drone_phase_interceptor_3.glb`;
   }
 
   // If path starts with meshy_test_0/ without leading slash, add leading slash so it resolves from domain root
@@ -83,14 +95,16 @@ function normalizeAssetUrl(url) {
   for (const [folderKey, folderTarget] of Object.entries(stageFolderMap)) {
     const reg = new RegExp(`^${folderKey}(_images)?(\\/.*)?$`, 'i');
     if (reg.test(workingPath)) {
-      workingPath = workingPath.replace(reg, `${folderTarget}$2`);
-      return `mobile/${workingPath}`;
+      const rest = workingPath.replace(reg, '$2');
+      const dev = (typeof currentActiveDeviceType !== 'undefined' && currentActiveDeviceType) ? currentActiveDeviceType : (isMobilePrefix ? 'mobile' : 'desktop');
+      return `${dev}/${folderTarget}${rest}`;
     }
   }
 
   // Bare filenames without directory (e.g. "red_recon_drone.glb" or "recon_drone.glb")
   if (/^[a-zA-Z0-9_\-\.]+\.(glb|gltf|obj|png|jpg|jpeg|webp|svg)$/i.test(workingPath)) {
-    return `mobile/event_horizon_images/${workingPath}`;
+    const dev = (typeof currentActiveDeviceType !== 'undefined' && currentActiveDeviceType) ? currentActiveDeviceType : 'desktop';
+    return `${dev}/warp_origin_images/${workingPath}`;
   }
 
   if (isMobilePrefix) {
@@ -109,6 +123,62 @@ if (typeof window !== 'undefined') {
   window.getCustomModelRotationY = getCustomModelRotationY;
 }
 
+function cloneAssetModel(source) {
+  const cloned = source.clone(true);
+  cloned.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+      if (child.material) {
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach(m => {
+          if (m) {
+            m.wireframe = false;
+            m.needsUpdate = true;
+          }
+        });
+      }
+    } else if (child.isLine || child.isLineSegments) {
+      child.visible = false;
+    }
+  });
+  return cloned;
+}
+
+function setupLoadedModelHierarchy(scene) {
+  scene.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = true;
+      child.receiveShadow = true;
+      if (child.material) {
+        const mats = Array.isArray(child.material) ? child.material : [child.material];
+        mats.forEach(m => {
+          if (m) {
+            m.wireframe = false;
+            // Enhance PBR materials so .glb models render as crisp textured ships, never dark shadows
+            if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+              if (m.metalness > 0.45) m.metalness = 0.25;
+              if (m.roughness > 0.8) m.roughness = 0.55;
+              if (m.map) {
+                m.map.colorSpace = THREE.SRGBColorSpace;
+                m.map.needsUpdate = true;
+              }
+              if (m.map && (!m.emissive || (m.emissive.r === 0 && m.emissive.g === 0 && m.emissive.b === 0))) {
+                m.emissive = new THREE.Color(0x334455);
+                m.emissiveMap = m.map;
+                m.emissiveIntensity = 0.38;
+              }
+            }
+            m.needsUpdate = true;
+          }
+        });
+      }
+    } else if (child.isLine || child.isLineSegments) {
+      child.visible = false;
+    }
+  });
+}
+
 function load3DAssetModel(rawUrl, onLoaded, onError) {
   const url = normalizeAssetUrl(rawUrl);
   if (!url) {
@@ -116,124 +186,92 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
     return;
   }
 
-  // Fast memory clone if already loaded
+  // 1. Fast memory clone if already loaded
   if (cached3DAssetModels.has(url)) {
     const cachedObj = cached3DAssetModels.get(url);
     if (onLoaded) {
       try {
-        const cloned = cachedObj.clone(true);
-        cloned.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            if (child.material) {
-              const mats = Array.isArray(child.material) ? child.material : [child.material];
-              mats.forEach(m => {
-                if (m) {
-                  m.wireframe = false;
-                  m.needsUpdate = true;
-                }
-              });
-            }
-          } else if (child.isLine || child.isLineSegments) {
-            child.visible = false;
-          }
-        });
-        onLoaded(cloned);
+        onLoaded(cloneAssetModel(cachedObj));
       } catch (cloneErr) {
-        if (onLoaded) onLoaded(cachedObj);
+        onLoaded(cachedObj.clone(true));
       }
     }
     return;
   }
 
-  // Cache-busting URL parameter guarantees fresh network asset load on asset edits
-  const fetchUrl = url.includes('?') ? `${url}&_v=${Date.now()}` : `${url}?_v=${Date.now()}`;
+  // 2. If load is already in-flight, await existing load to prevent duplicate network calls
+  if (inFlight3DAssetLoads.has(url)) {
+    inFlight3DAssetLoads.get(url)
+      .then((scene) => {
+        if (onLoaded) onLoaded(cloneAssetModel(scene));
+      })
+      .catch((err) => {
+        if (onError) onError(err);
+      });
+    return;
+  }
+
+  // 3. Initiate single network request with stable session version tag (NOT Date.now() per request!)
+  const fetchUrl = url.includes('?') ? `${url}&_v=${sessionAssetVersion}` : `${url}?_v=${sessionAssetVersion}`;
   const cleanUrl = url.split('?')[0].split('#')[0].toLowerCase();
   const isObj = cleanUrl.endsWith('.obj');
 
-  if (isObj) {
-    objLoader.load(
-      fetchUrl,
-      (obj) => {
-        obj.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            if (child.material) {
-              const mats = Array.isArray(child.material) ? child.material : [child.material];
-              mats.forEach(m => {
-                if (m) {
-                  m.wireframe = false;
-                  m.needsUpdate = true;
-                }
-              });
-            }
-          } else if (child.isLine || child.isLineSegments) {
-            child.visible = false;
-          }
-        });
-        cached3DAssetModels.set(url, obj);
-        if (onLoaded) onLoaded(obj.clone(true));
-      },
-      undefined,
-      (err) => {
-        console.warn(`[3DAsset] Failed to load .OBJ model from '${url}' (fetch: ${fetchUrl}):`, err);
-        if (onError) onError(err);
-      }
-    );
-  } else {
-    // Both .glb and .gltf are handled seamlessly by Three.js GLTFLoader
-    gltfLoader.load(
-      fetchUrl,
-      (gltf) => {
-        const scene = gltf.scene || gltf.scenes[0] || gltf;
-        // Cleanse model hierarchy: disable wireframe on all materials, calibrate PBR for crisp appearance
-        scene.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            if (child.material) {
-              const mats = Array.isArray(child.material) ? child.material : [child.material];
-              mats.forEach(m => {
-                if (m) {
-                  m.wireframe = false;
-                  // Enhance PBR materials so .glb models render as crisp textured ships, never dark shadows
-                  if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
-                    if (m.metalness > 0.45) m.metalness = 0.25;
-                    if (m.roughness > 0.8) m.roughness = 0.55;
-                    if (m.map) {
-                      m.map.colorSpace = THREE.SRGBColorSpace;
-                      m.map.needsUpdate = true;
-                    }
-                    if (m.map && (!m.emissive || (m.emissive.r === 0 && m.emissive.g === 0 && m.emissive.b === 0))) {
-                      m.emissive = new THREE.Color(0x334455);
-                      m.emissiveMap = m.map;
-                      m.emissiveIntensity = 0.38;
-                    }
-                  }
-                  m.needsUpdate = true;
-                }
-              });
-            }
-          } else if (child.isLine || child.isLineSegments) {
-            child.visible = false;
-          }
-        });
-        cached3DAssetModels.set(url, scene);
-        if (onLoaded) onLoaded(scene.clone(true));
-      },
-      undefined,
-      (err) => {
-        console.warn(`[3DAsset] Failed to load GLTF/GLB model from '${url}' (fetch: ${fetchUrl}):`, err);
-        if (onError) onError(err);
-      }
-    );
-  }
+  const loadPromise = new Promise((resolve, reject) => {
+    if (isObj) {
+      objLoader.load(
+        fetchUrl,
+        (obj) => {
+          setupLoadedModelHierarchy(obj);
+          cached3DAssetModels.set(url, obj);
+          resolve(obj);
+        },
+        undefined,
+        (err) => {
+          inFlight3DAssetLoads.delete(url);
+          console.warn(`[3DAsset] Failed to load .OBJ model from '${url}' (fetch: ${fetchUrl}):`, err);
+          reject(err);
+        }
+      );
+    } else {
+      gltfLoader.load(
+        fetchUrl,
+        (gltf) => {
+          const scene = gltf.scene || gltf.scenes[0] || gltf;
+          setupLoadedModelHierarchy(scene);
+          cached3DAssetModels.set(url, scene);
+          resolve(scene);
+        },
+        undefined,
+        (err) => {
+          inFlight3DAssetLoads.delete(url);
+          console.warn(`[3DAsset] Failed to load GLTF/GLB model from '${url}' (fetch: ${fetchUrl}):`, err);
+          reject(err);
+        }
+      );
+    }
+  });
+
+  inFlight3DAssetLoads.set(url, loadPromise);
+
+  loadPromise
+    .then((scene) => {
+      if (onLoaded) onLoaded(cloneAssetModel(scene));
+    })
+    .catch((err) => {
+      if (onError) onError(err);
+    });
+}
+
+function preload3DAssetModel(rawUrl) {
+  return new Promise((resolve) => {
+    load3DAssetModel(rawUrl, (model) => resolve(model), (err) => resolve(null));
+  });
 }
 
 if (typeof window !== 'undefined') {
   window.load3DAssetModel = load3DAssetModel;
+  window.preload3DAssetModel = preload3DAssetModel;
+  window.cached3DAssetModels = cached3DAssetModels;
 }
 
 // =============================================================================
@@ -2760,8 +2798,7 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
     });
     state.stageEnemies = window.activeStageEnemies;
 
-    // Clear 3D model cache so updated model URLs reload fresh assets immediately
-    cached3DAssetModels.clear();
+    // Retain 3D model cache to prevent repeated re-downloads during routine level sync
 
     // Hot-update already spawned enemies on screen if their threat profile graphic asset changed
     if (typeof active3DEnemies !== 'undefined' && Array.isArray(active3DEnemies) && active3DEnemies.length > 0) {
@@ -5018,6 +5055,37 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     state.waveCompleted = false;
     if (typeof renderStageObjectivesUI === 'function') {
       renderStageObjectivesUI();
+    }
+
+    // -------------------------------------------------------------------------
+    // PRELOAD CUSTOM 3D MODELS BEFORE POOL PRE-ALLOCATION
+    // Guarantees all GLB models are cached in memory BEFORE pool pre-allocation
+    // so every pooled instance has the actual .glb model attached immediately,
+    // avoiding network saturation, memory thrashing, blue squares, and white dots.
+    // -------------------------------------------------------------------------
+    try {
+      const enemiesToPreload = (activeCfg && activeCfg.enemies) ||
+        (window.activeStageEnemies) ||
+        (STAGE_REGISTRY[stage.level] && STAGE_REGISTRY[stage.level].enemies) ||
+        [];
+      const preloadUrls = [];
+      for (const ec of enemiesToPreload) {
+        if (ec && ec.model_3d_url) preloadUrls.push(ec.model_3d_url);
+      }
+      if (stage.level === 1) {
+        preloadUrls.push(
+          `${deviceType}/warp_origin_images/drone_phase_interceptor_3.glb`,
+          `${deviceType}/warp_origin_images/recon_drone_2.8m.glb`
+        );
+      }
+      const uniquePreloadUrls = [...new Set(preloadUrls.filter(Boolean))];
+      if (uniquePreloadUrls.length > 0) {
+        console.log(`[Wormhole XR Engine] Preloading ${uniquePreloadUrls.length} custom 3D models for Stage ${stage.level}...`);
+        await Promise.all(uniquePreloadUrls.map(u => preload3DAssetModel(u)));
+        console.log(`[Wormhole XR Engine] All 3D models preloaded and cached for Stage ${stage.level}.`);
+      }
+    } catch (preloadErr) {
+      console.warn('[Wormhole XR Engine] 3D model preloading warning:', preloadErr);
     }
 
     // -------------------------------------------------------------------------
@@ -8794,95 +8862,107 @@ function create3DEnemyMesh(config) {
     modelType === 'obj';
 
   if (isCustomModel && customModelUrl) {
-    // 1. Build a procedural proxy placeholder while the 3D asset loads asynchronously
-    const proxyHull = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius), hullMat);
-    proxyHull.name = 'enemy_proxy_placeholder';
-    group.add(proxyHull);
+    const normUrl = normalizeAssetUrl(customModelUrl);
 
-    const coreProxy = new THREE.Mesh(new THREE.SphereGeometry(userRadius * 0.4, 12, 12), glowMat);
-    coreProxy.name = 'enemy_proxy_core';
-    group.add(coreProxy);
+    const attachLoadedModel = (loadedModel) => {
+      try {
+        // Auto-center model at its bounding box center using pivot sub-group
+        const box = new THREE.Box3().setFromObject(loadedModel);
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        loadedModel.position.sub(center);
 
-    // 2. Load the custom .glb, .obj, or .gltf model
-    load3DAssetModel(
-      customModelUrl,
-      (loadedModel) => {
-        try {
-          // Remove all procedural placeholders, hulls, toruses, wireframes, and rings so ONLY the clean 3D model is visible
-          for (let ci = group.children.length - 1; ci >= 0; ci--) {
-            const c = group.children[ci];
-            if (c && !c.isLight && c !== loadedModel) {
-              group.remove(c);
-              try { disposeMeshHierarchy(c); } catch (e) {}
-            }
+        // Requirement: Front natively faces the player (+Z):
+        const targetRotY = getCustomModelRotationY(normUrl || config.model_3d_url || config.id);
+        loadedModel.rotation.y = targetRotY;
+        loadedModel.userData.targetRotY = targetRotY;
+        group.userData.modelUrl = normUrl;
+
+        // Compute target span and auto-scale
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+        const targetSpan = (userLength || (userRadius * 2.4)) * userScale;
+        const autoScale = targetSpan / maxDim;
+
+        const pivot = new THREE.Group();
+        pivot.name = 'enemy_model_pivot';
+        pivot.add(loadedModel);
+        pivot.scale.set(autoScale, autoScale, autoScale);
+
+        // Remove procedural placeholders so ONLY the clean 3D GLB model is visible
+        for (let ci = group.children.length - 1; ci >= 0; ci--) {
+          const c = group.children[ci];
+          if (c && !c.isLight && c !== pivot && c !== loadedModel) {
+            group.remove(c);
+            try { disposeMeshHierarchy(c); } catch (e) {}
           }
-          group.userData.spinRing = null;
-
-          // Auto-center model at its bounding box center
-          const box = new THREE.Box3().setFromObject(loadedModel);
-          const center = new THREE.Vector3();
-          box.getCenter(center);
-          loadedModel.position.sub(center);
-
-          // Requirement: Per-model orientation so front natively faces the player (+Z):
-          // recon_drone_2.8m.glb rotated 90 deg counter-clockwise (0 rad)
-          // drone_phase_interceptor_3.glb rotated 180 deg clockwise (Math.PI / 2 rad)
-          const targetRotY = getCustomModelRotationY(customModelUrl || config.model_3d_url || config.id);
-          loadedModel.rotation.y = targetRotY;
-          loadedModel.userData.targetRotY = targetRotY;
-          group.userData.modelUrl = customModelUrl;
-
-          // Compute target span and auto-scale
-          const size = new THREE.Vector3();
-          box.getSize(size);
-          const maxDim = Math.max(size.x, size.y, size.z, 0.001);
-          const targetSpan = (userLength || (userRadius * 2.4)) * userScale;
-          const autoScale = targetSpan / maxDim;
-          loadedModel.scale.set(autoScale, autoScale, autoScale);
-
-          // Configure shadows & meshes - calibrate PBR materials for crisp appearance
-          loadedModel.traverse((child) => {
-            if (child.isMesh) {
-              child.castShadow = true;
-              child.receiveShadow = true;
-              if (child.material) {
-                const mats = Array.isArray(child.material) ? child.material : [child.material];
-                mats.forEach(m => {
-                  if (m) {
-                    m.wireframe = false;
-                    // Enhance PBR materials so .glb models render as crisp textured ships, never dark shadows
-                    if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
-                      if (m.metalness > 0.45) m.metalness = 0.25;
-                      if (m.roughness > 0.8) m.roughness = 0.55;
-                      if (m.map) {
-                        m.map.colorSpace = THREE.SRGBColorSpace;
-                        m.map.needsUpdate = true;
-                      }
-                      if (m.map && (!m.emissive || (m.emissive.r === 0 && m.emissive.g === 0 && m.emissive.b === 0))) {
-                        m.emissive = new THREE.Color(0x334455);
-                        m.emissiveMap = m.map;
-                        m.emissiveIntensity = 0.38;
-                      }
-                    }
-                    m.needsUpdate = true;
-                  }
-                });
-              }
-            } else if (child.isLine || child.isLineSegments) {
-              child.visible = false;
-            }
-          });
-
-          group.add(loadedModel);
-          group.userData.loadedAsset = loadedModel;
-        } catch (procErr) {
-          console.warn('[Enemy 3D] Error attaching loaded model:', procErr);
         }
-      },
-      (err) => {
-        console.warn(`[Enemy 3D] Failed loading asset '${customModelUrl}', keeping procedural proxy:`, err);
+        group.userData.spinRing = null;
+
+        // Configure shadows & meshes - calibrate PBR materials for crisp appearance
+        loadedModel.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach(m => {
+                if (m) {
+                  m.wireframe = false;
+                  // Enhance PBR materials so .glb models render as crisp textured ships, never dark shadows
+                  if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
+                    if (m.metalness > 0.45) m.metalness = 0.25;
+                    if (m.roughness > 0.8) m.roughness = 0.55;
+                    if (m.map) {
+                      m.map.colorSpace = THREE.SRGBColorSpace;
+                      m.map.needsUpdate = true;
+                    }
+                    if (m.map && (!m.emissive || (m.emissive.r === 0 && m.emissive.g === 0 && m.emissive.b === 0))) {
+                      m.emissive = new THREE.Color(0x334455);
+                      m.emissiveMap = m.map;
+                      m.emissiveIntensity = 0.38;
+                    }
+                  }
+                  m.needsUpdate = true;
+                }
+              });
+            }
+          } else if (child.isLine || child.isLineSegments) {
+            child.visible = false;
+          }
+        });
+
+        group.add(pivot);
+        group.userData.loadedAsset = loadedModel;
+        group.userData.modelPivot = pivot;
+      } catch (procErr) {
+        console.warn('[Enemy 3D] Error attaching loaded model:', procErr);
       }
-    );
+    };
+
+    if (cached3DAssetModels.has(normUrl)) {
+      // Model is already preloaded & cached: attach immediately without any placeholders!
+      load3DAssetModel(normUrl, attachLoadedModel);
+    } else {
+      // 1. Build a procedural proxy placeholder while the 3D asset loads asynchronously
+      const proxyHull = new THREE.Mesh(new THREE.OctahedronGeometry(userRadius), hullMat);
+      proxyHull.name = 'enemy_proxy_placeholder';
+      group.add(proxyHull);
+
+      const coreProxy = new THREE.Mesh(new THREE.SphereGeometry(userRadius * 0.4, 12, 12), glowMat);
+      coreProxy.name = 'enemy_proxy_core';
+      group.add(coreProxy);
+
+      // 2. Load the custom .glb, .obj, or .gltf model
+      load3DAssetModel(
+        normUrl,
+        attachLoadedModel,
+        (err) => {
+          console.warn(`[Enemy 3D] Failed loading asset '${normUrl}', keeping procedural proxy:`, err);
+        }
+      );
+    }
   } else if (modelType === 'interceptor') {
     // 3D Delta-Wing Fighter using configured length (wingspan), height, depth, circumference
     const bodyGeom = new THREE.ConeGeometry(Math.max(0.25, userRadius * 0.7), userDepth, 4);

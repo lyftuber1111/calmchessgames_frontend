@@ -218,7 +218,7 @@ server.listen(PORT, '127.0.0.1', async () => {
     await evaluate(`document.getElementById('btn-restart-game')?.click()`);
     await new Promise(r => setTimeout(r, 500));
 
-    // Verify Restart countdown is active and flight holds
+    // Verify Restart countdown is active, throttle is 0, knobs are centered, and flight holds
     const duringCountdown = await evaluate(`({
       isGameOver: window.state?.isGameOver,
       hasStarted: window.state?.hasStarted,
@@ -229,6 +229,9 @@ server.listen(PORT, '127.0.0.1', async () => {
       countdownDisplay: window.getComputedStyle(document.getElementById('game-countdown-overlay')).display,
       countdownHeader: document.getElementById('countdown-header-label')?.textContent,
       throttleValue: window.state?.throttleValue,
+      customThrottleSliderValue: document.getElementById('custom-throttle-slider')?.value,
+      flightKnobTransform: document.getElementById('touch-stick-knob')?.style?.transform,
+      aimKnobTransform: document.getElementById('aim-stick-knob')?.style?.transform,
       posZ: window.state?.position?.z
     })`);
     console.log('[Restart Lifecycle - During Countdown]:', duringCountdown);
@@ -244,7 +247,7 @@ server.listen(PORT, '127.0.0.1', async () => {
     await evaluate(`document.getElementById('game-countdown-overlay')?.click()`);
     await new Promise(r => setTimeout(r, 800));
 
-    // Verify Game State post-restart
+    // Verify Game State post-restart and verify player DOES NOT automatically fly forward
     const postRestartState = await evaluate(`({
       hasStarted: window.state?.hasStarted,
       isGameOver: window.state?.isGameOver,
@@ -260,10 +263,23 @@ server.listen(PORT, '127.0.0.1', async () => {
       activeWeapon: window.weaponsSystem ? window.weaponsSystem.getActiveWeapon().id : 'none',
       weaponEnergy: window.weaponsSystem ? window.weaponsSystem.getActiveWeapon().energy : -1,
       weaponOverheated: window.weaponsSystem ? window.weaponsSystem.getActiveWeapon().isOverheated : null,
+      throttleValue: window.state?.throttleValue,
+      customThrottleSliderValue: document.getElementById('custom-throttle-slider')?.value,
+      flightKnobTransform: document.getElementById('touch-stick-knob')?.style?.transform,
+      aimKnobTransform: document.getElementById('aim-stick-knob')?.style?.transform,
+      posZ: window.state?.position?.z,
       gameOverModalDisplay: window.getComputedStyle(document.getElementById('game-over-modal')).display,
       countdownOverlayDisplay: window.getComputedStyle(document.getElementById('game-countdown-overlay')).display
     })`);
     console.log('[Restart Lifecycle - Post-Restart Engagement State]:', postRestartState);
+
+    // Verify that player remains at complete stop when no keys/controls are engaged
+    console.log('[Stationary Verification] Checking whether player remains stationary after engagement...');
+    const zStationary1 = postRestartState.posZ;
+    await new Promise(r => setTimeout(r, 1200));
+    const zStationary2 = await evaluate(`window.state.position.z`);
+    const driftDelta = Math.abs(zStationary2 - zStationary1);
+    console.log(`[Stationary Verification] Position Z stationary check: ${zStationary1.toFixed(3)} -> ${zStationary2.toFixed(3)} (Delta: ${driftDelta.toFixed(3)})`);
 
     // Test player controls responsiveness after restart
     console.log('[Controls] Simulating KeyW forward acceleration...');
@@ -300,6 +316,9 @@ server.listen(PORT, '127.0.0.1', async () => {
       restartMissionVerification: {
         cleanRestartSucceeded: postRestartState.hasStarted === true && postRestartState.isGameOver === false,
         countdownHeldFlight: Math.abs(posZ2 - posZ1) < 0.001,
+        noAutomaticFlightForward: driftDelta < 0.05,
+        throttleResetToZero: postRestartState.throttleValue === 0 && Number(postRestartState.customThrottleSliderValue) === 0,
+        leftAndRightControlsCentered: (postRestartState.flightKnobTransform === 'translate(0px, 0px)' || !postRestartState.flightKnobTransform) && (postRestartState.aimKnobTransform === 'translate(0px, 0px)' || !postRestartState.aimKnobTransform),
         playerHealthAndShieldRestored: postRestartState.health === 100 && postRestartState.shield === 100,
         scoreAndKillsReset: postRestartState.score === 0 && postRestartState.stageKills === 0 && postRestartState.totalKills === 0,
         stageResetToStage1: postRestartState.stage === 1,

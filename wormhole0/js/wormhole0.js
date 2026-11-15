@@ -3440,6 +3440,10 @@ function setGamePaused(paused, skipDrawer = false) {
     state.aimMove.x = 0;
     state.aimMove.y = 0;
     if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
+    state.touchActive = false;
+    state.touchMove.x = 0;
+    state.touchMove.y = 0;
+    if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
 
     document.body.classList.add('game-paused');
 
@@ -5329,14 +5333,14 @@ function centerWormholeOnScreen(immediate = true) {
   }
   const centerCrosshairEl = document.getElementById('center-crosshair');
   if (centerCrosshairEl) {
-    centerCrosshairEl.style.left = '50%';
-    centerCrosshairEl.style.top = '50%';
+    centerCrosshairEl.style.left = typeof state.crosshair.x === 'number' ? `${state.crosshair.x}px` : '50%';
+    centerCrosshairEl.style.top = typeof state.crosshair.y === 'number' ? `${state.crosshair.y}px` : '50%';
     centerCrosshairEl.style.transform = 'translate(-50%, -50%)';
   }
   const vectorRing = document.getElementById('vector-alignment-ring');
   if (vectorRing) {
-    vectorRing.style.left = '50%';
-    vectorRing.style.top = '50%';
+    vectorRing.style.left = typeof state.crosshair.x === 'number' ? `${state.crosshair.x}px` : '50%';
+    vectorRing.style.top = typeof state.crosshair.y === 'number' ? `${state.crosshair.y}px` : '50%';
     vectorRing.style.transform = 'translate(-50%, -50%)';
   }
 }
@@ -9796,6 +9800,20 @@ function triggerGameOver() {
   state.isRightMouseDown = false;
   state.isMouseDown = false;
   state.aimActive = false;
+  state.aimMove.x = 0;
+  state.aimMove.y = 0;
+  state.touchActive = false;
+  state.touchMove.x = 0;
+  state.touchMove.y = 0;
+  flightTouchId = null;
+  aimTouchId = null;
+  isMouseFlight = false;
+  isMouseAim = false;
+  if (aimStickKnob) aimStickKnob.style.transform = 'translate(0px, 0px)';
+  if (touchStickKnob) touchStickKnob.style.transform = 'translate(0px, 0px)';
+  cancelTurn();
+  stopThrottle('GAME OVER');
+  state.velocity.set(0, 0, 0);
 
   const mouseLockBtn = document.getElementById('btn-mouse-lock');
   if (mouseLockBtn) {
@@ -10145,18 +10163,37 @@ function restartGame() {
     mouseLockBtn.textContent = '🎯 Capture Crosshair';
   }
 
-  // Reset mobile touch controls & virtual sticks
+  // Reset mobile touch controls & virtual sticks to exact center
   state.touchActive = false;
   state.touchMove = { x: 0, y: 0 };
   state.aimMove = { x: 0, y: 0 };
   flightTouchId = null;
   aimTouchId = null;
+  isMouseFlight = false;
+  isMouseAim = false;
+  flightTapStartTime = 0;
+  mouseFlightStartTime = 0;
+  sliderInteracting = false;
+  touchTriggeredStop = false;
   touchLookPitch = 0;
   touchLookYaw = 0;
+  lastGyroYaw = 0;
+  lastGyroPitch = 0;
+
+  // Reset left & right virtual joystick controls cleanly to exact center (0px, 0px)
   const flightKnob = document.getElementById('touch-stick-knob') || document.getElementById('flight-stick-knob');
-  if (flightKnob) flightKnob.style.transform = 'translate(-50%, -50%)';
+  if (flightKnob) flightKnob.style.transform = 'translate(0px, 0px)';
   const aimKnob = document.getElementById('aim-stick-knob');
-  if (aimKnob) aimKnob.style.transform = 'translate(-50%, -50%)';
+  if (aimKnob) aimKnob.style.transform = 'translate(0px, 0px)';
+
+  // Cancel any active automated thruster turns (180 / 360)
+  cancelTurn();
+
+  // Reset cruise speed throttle and emergency stop to 0 (neutral center)
+  stopThrottle('MISSION RESTART');
+  state.throttleValue = 0;
+  setThrottleLockout(false);
+  state.throttleLockoutUntil = 0;
 
   // Reset player stats
   state.playerShield = 100;
@@ -10189,7 +10226,8 @@ function restartGame() {
   state.pitch = 0;
   state.yaw = 0;
   state.roll = 0;
-  state.throttleValue = 0.35; // Cruising impulse speed to ensure immediate forward motion
+  state.targetYaw = 0;
+  state.targetPitch = 0;
 
   // Requirement: destroy all remaining enemies and garbage collect before restarting the game
   destroyAllRemainingEnemies(false);
@@ -10217,6 +10255,7 @@ function restartGame() {
   updatePlayerDefenseHUD();
   renderStageObjectivesUI();
   centerWormholeOnScreen(true);
+  snapCrosshairToCurrentGridCenter();
 
   // Reset frame timestamp to prevent delta time explosion
   state.lastFrameTime = performance.now();

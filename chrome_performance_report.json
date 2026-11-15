@@ -1,5 +1,5 @@
 {
-  "testTimestamp": "2026-11-15T06:51:51.130Z",
+  "testTimestamp": "2026-11-15T12:40:17.293Z",
   "gameOverVerification": {
     "allEnemiesDestroyedOnGameOver": true,
     "enemyBoltsCleanedUp": true,
@@ -7,13 +7,16 @@
     "playerHealthZero": true
   },
   "garbageCollectionVerification": {
-    "preGCHeapMB": "7.05",
-    "postGCHeapMB": "5.44",
-    "memoryFreedKB": "1647.68"
+    "preGCHeapMB": "7.56",
+    "postGCHeapMB": "5.74",
+    "memoryFreedKB": "1864.64"
   },
   "restartMissionVerification": {
     "cleanRestartSucceeded": true,
     "countdownHeldFlight": true,
+    "noAutomaticFlightForward": true,
+    "throttleResetToZero": true,
+    "leftAndRightControlsCentered": true,
     "playerHealthAndShieldRestored": true,
     "scoreAndKillsReset": true,
     "stageResetToStage1": true,
@@ -23,20 +26,20 @@
     "overlaysCleanlyDismissed": true
   },
   "chromePerformanceReport": {
-    "timestamp": 509338.405084,
+    "timestamp": 530244.578662,
     "documents": 1,
     "frames": 1,
     "jsEventListeners": 180,
-    "nodes": 3354,
-    "layoutCount": 193,
-    "recalcStyleCount": 287,
-    "layoutDurationSeconds": 0.133341,
-    "recalcStyleDurationSeconds": 0.0872,
-    "scriptDurationSeconds": 3.073549,
-    "taskDurationSeconds": 8.203365,
-    "jsHeapUsedMB": "9.49",
-    "jsHeapTotalMB": "15.95",
-    "cpuProfileSampleCount": 6079,
-    "cpuProfileNodeCount": 274
+    "nodes": 3997,
+    "layoutCount": 252,
+    "recalcStyleCount": 347,
+    "layoutDurationSeconds": 0.151163,
+    "recalcStyleDurationSeconds": 0.100182,
+    "scriptDurationSeconds": 2.879693,
+    "taskDurationSeconds": 9.020387,
+    "jsHeapUsedMB": "6.73",
+    "jsHeapTotalMB": "14.70",
+    "cpuProfileSampleCount": 6500,
+    "cpuProfileNodeCount": 262
   }
 }

@@ -3229,7 +3229,7 @@ Thank you for reaching out to Calm Chess Games. `;
       const t = Date.now();
 
       // Dual-endpoint candidate cascade: checks both admin_api.php and wormhole_device_api.php across relative and base origins
-      const isStageOrAdminAction = action.includes('stage') || action.includes('weapon') || action.includes('enem') || action.includes('powerup');
+      const isStageOrAdminAction = action.includes('stage') || action.includes('weapon') || action.includes('enem') || action.includes('powerup') || action.includes('environ');
       const endpoints = isStageOrAdminAction ? [
           `admin_api.php?action=${action}&_t=${t}`,
           `./admin_api.php?action=${action}&_t=${t}`,
@@ -4268,12 +4268,41 @@ Thank you for reaching out to Calm Chess Games. `;
       return null;
   }
 
-  function setEnemyModelPathExample(path) {
-      const urlInput = document.getElementById('enemy3DModelUrlInput');
+  function setGameAssetQuickPath(targetInputId, path) {
+      if (!path) return;
+      path = path.trim();
+      if (path.startsWith('meshy_test_0/')) {
+          path = '/' + path;
+      }
+      const targetId = targetInputId || 'enemy3DModelUrlInput';
+      const urlInput = document.getElementById(targetId);
       if (urlInput) {
           urlInput.value = path;
-          updateEnemy3DModelFormatStatus();
+          try {
+              urlInput.dispatchEvent(new Event('input', { bubbles: true }));
+              urlInput.dispatchEvent(new Event('change', { bubbles: true }));
+          } catch (e) {}
+
+          // Visual highlight feedback so user immediately sees path change
+          try {
+              const origBorder = urlInput.style.borderColor;
+              const origBoxShadow = urlInput.style.boxShadow;
+              urlInput.style.borderColor = '#00f0ff';
+              urlInput.style.boxShadow = '0 0 10px rgba(0, 240, 255, 0.5)';
+              setTimeout(() => {
+                  urlInput.style.borderColor = origBorder;
+                  urlInput.style.boxShadow = origBoxShadow;
+              }, 600);
+          } catch (e) {}
+
+          if (targetId === 'enemy3DModelUrlInput' && typeof updateEnemy3DModelFormatStatus === 'function') {
+              try { updateEnemy3DModelFormatStatus(); } catch (e) {}
+          }
       }
+  }
+
+  function setEnemyModelPathExample(path) {
+      setGameAssetQuickPath('enemy3DModelUrlInput', path);
   }
 
   function updateEnemy3DModelFormatStatus() {
@@ -4323,6 +4352,7 @@ Thank you for reaching out to Calm Chess Games. `;
   }
 
   if (typeof window !== 'undefined') {
+      window.setGameAssetQuickPath = setGameAssetQuickPath;
       window.setEnemyModelPathExample = setEnemyModelPathExample;
       window.detect3DModelFormat = detect3DModelFormat;
       window.updateEnemy3DModelFormatStatus = updateEnemy3DModelFormatStatus;
@@ -4431,6 +4461,29 @@ Thank you for reaching out to Calm Chess Games. `;
           const weaponDmg = parseInt(e.weapon_damage || 5);
           const weaponSpeed = parseInt(e.weapon_speed || 450);
           const weaponColor = escapeHtml(e.weapon_color || '#ff0055');
+
+          let wList = [];
+          if (e.weapons && Array.isArray(e.weapons) && e.weapons.length > 0) {
+              wList = e.weapons;
+          } else if (e.weapons_json) {
+              try {
+                  const dec = typeof e.weapons_json === 'string' ? JSON.parse(e.weapons_json) : e.weapons_json;
+                  if (Array.isArray(dec) && dec.length > 0) wList = dec;
+              } catch(err) {}
+          }
+          if (wList.length === 0) {
+              wList = [{
+                  name: e.weapon_name || 'Plasma Bolt',
+                  damage: parseInt(e.weapon_damage || 5),
+                  speed: parseInt(e.weapon_speed || 450),
+                  color: e.weapon_color || '#ff0055',
+                  fire_rate_times_per_sec: e.fire_rate_times_per_sec || parseFloat((1000 / Math.max(20, e.fire_rate_ms || 2000)).toFixed(2)),
+                  fire_interval_ms: e.fire_rate_ms || Math.round(parseFloat(e.fire_rate_seconds || 2.0) * 1000),
+                  mount: 'dual_wingtip',
+                  type: 'beam'
+              }];
+          }
+
           const hits = parseInt(e.hits_to_destroy || 1);
           const armor = parseInt(e.armor_strength || 0);
           const hasField = parseInt(e.has_force_field) === 1;
@@ -4571,12 +4624,28 @@ Thank you for reaching out to Calm Chess Games. `;
                   <td style="padding: 10px 12px; text-align: center;">
                       ${devBadge}
                   </td>
-                  <td style="padding: 10px 12px; min-width: 170px;">
-                      <div style="font-weight: bold; font-size: 0.82rem; color: #ff6b8b; display: flex; align-items: center; gap: 5px;">
-                          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${weaponColor};box-shadow:0 0 6px ${weaponColor};"></span>
-                          <span>${weaponName}</span>
-                      </div>
-                      <div style="font-size: 0.72rem; color: #fb7185;">💥 ${weaponDmg} Dmg | ⚡ ${weaponSpeed} spd</div>
+                  <td style="padding: 10px 12px; min-width: 190px;">
+                      ${wList.map((wItem, wIdx) => {
+                          const wCol = escapeHtml(wItem.color || '#ff0055');
+                          const wNm = escapeHtml(wItem.name || 'Weapon');
+                          const wD = parseInt(wItem.damage || 5);
+                          const wSp = parseInt(wItem.speed || 450);
+                          const wRate = wItem.fire_rate_times_per_sec ? `${wItem.fire_rate_times_per_sec}/s` : '';
+                          const wMs = wItem.fire_interval_ms ? `${wItem.fire_interval_ms}ms` : '';
+                          return `
+                              <div style="${wIdx > 0 ? 'margin-top:6px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1);' : ''}">
+                                  <div style="font-weight: bold; font-size: 0.82rem; color: #ff6b8b; display: flex; align-items: center; justify-content: space-between; gap: 5px;">
+                                      <span style="display: flex; align-items: center; gap: 5px;">
+                                          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${wCol};box-shadow:0 0 6px ${wCol};"></span>
+                                          <span>${wNm}</span>
+                                      </span>
+                                      ${wList.length > 1 ? `<span style="font-size:0.68rem; color:#94a3b8; background:rgba(255,255,255,0.06); padding:1px 4px; border-radius:3px;">#${wIdx + 1}</span>` : ''}
+                                  </div>
+                                  <div style="font-size: 0.72rem; color: #fb7185; margin-top: 1px;">💥 ${wD} Dmg | ⚡ ${wSp} spd</div>
+                                  <div style="font-size: 0.70rem; color: #00f0ff; font-family: monospace; margin-top: 1px;">⏱️ ${wRate}${wMs ? ` (${wMs})` : ''}</div>
+                              </div>
+                          `;
+                      }).join('')}
                   </td>
                   <td style="padding: 10px 12px; text-align: center;">
                       <span style="color: #00f0ff; font-weight: bold; font-size: 0.98rem; text-shadow: 0 0 8px rgba(0,240,255,0.35);">💥 ${hits} Hit${hits > 1 ? 's' : ''}</span>
@@ -4696,6 +4765,255 @@ Thank you for reaching out to Calm Chess Games. `;
       }
   }
 
+  // =========================================================================
+  // MULTI-WEAPON ARSENAL & CADENCE (TIMES/SEC & MILLISECONDS) LOGIC
+  // =========================================================================
+  let activeEnemyWeapons = [];
+
+  function createDefaultEnemyWeapon(name = 'Plasma Pulse', type = 'beam', mount = 'dual_wingtip', timesPerSec = 2.0, intervalMs = 500, damage = 5, speed = 450, color = '#ff0055') {
+      const times = parseFloat(timesPerSec) || 2.0;
+      const ms = parseInt(intervalMs) || Math.max(20, Math.round(1000 / times));
+      const sec = (ms / 1000).toFixed(3);
+      return {
+          id: 'ew_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+          name: name,
+          type: type, // 'beam' | 'missile' | 'torpedo' | 'rapid_plasma' | 'heavy_cannon'
+          mount: mount, // 'dual_wingtip' | 'center' | 'turret' | 'left' | 'right'
+          fire_rate_times_per_sec: times,
+          fire_interval_ms: ms,
+          fire_rate_seconds: parseFloat(sec),
+          damage: parseInt(damage) || 5,
+          speed: parseInt(speed) || 450,
+          color: color || '#ff0055',
+          is_enabled: 1
+      };
+  }
+
+  function syncEnemyWeaponsMirrorInputs() {
+      const jsonStr = JSON.stringify(activeEnemyWeapons);
+      const jsonInput = document.getElementById('enemyWeaponsJsonInput');
+      if (jsonInput) jsonInput.value = jsonStr;
+
+      const countBadge = document.getElementById('enemyWeaponsCountBadge');
+      if (countBadge) {
+          countBadge.textContent = `${activeEnemyWeapons.length} Weapon${activeEnemyWeapons.length === 1 ? '' : 's'}`;
+      }
+
+      if (activeEnemyWeapons.length > 0) {
+          const primary = activeEnemyWeapons[0];
+          if (document.getElementById('enemyWeaponNameInput')) document.getElementById('enemyWeaponNameInput').value = primary.name;
+          if (document.getElementById('enemyWeaponDamageInput')) document.getElementById('enemyWeaponDamageInput').value = primary.damage;
+          if (document.getElementById('enemyWeaponSpeedInput')) document.getElementById('enemyWeaponSpeedInput').value = primary.speed;
+          if (document.getElementById('enemyWeaponColorInput')) document.getElementById('enemyWeaponColorInput').value = primary.color;
+          if (document.getElementById('enemyFireRateInput')) document.getElementById('enemyFireRateInput').value = primary.fire_rate_seconds;
+          if (document.getElementById('enemyFireRateMsInput')) document.getElementById('enemyFireRateMsInput').value = primary.fire_interval_ms;
+      }
+  }
+
+  function renderEnemyWeaponsCards() {
+      const container = document.getElementById('enemyWeaponsContainer');
+      if (!container) return;
+
+      if (!activeEnemyWeapons || activeEnemyWeapons.length === 0) {
+          activeEnemyWeapons = [createDefaultEnemyWeapon()];
+      }
+
+      container.innerHTML = activeEnemyWeapons.map((w, idx) => {
+          const isPrimary = idx === 0;
+          const weaponId = w.id || ('ew_' + idx);
+          w.id = weaponId;
+          const timesPerSec = parseFloat(w.fire_rate_times_per_sec) || 2.0;
+          const intervalMs = parseInt(w.fire_interval_ms) || Math.max(20, Math.round(1000 / timesPerSec));
+          const secPerShot = (intervalMs / 1000).toFixed(3);
+
+          return `
+              <div class="enemy-weapon-card" style="background: rgba(15,23,42,0.85); border: 1.5px solid ${isPrimary ? '#ef476f' : 'rgba(239,68,111,0.35)'}; border-radius: 8px; padding: 12px 14px; position: relative; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px;">
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                          <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${escapeHtml(w.color || '#ff0055')}; box-shadow: 0 0 8px ${escapeHtml(w.color || '#ff0055')};"></span>
+                          <strong style="color: #fff; font-size: 0.9rem;">${isPrimary ? '⭐ Primary Weapon (Slot 1)' : `⚔️ Secondary Weapon (Slot ${idx + 1})`}</strong>
+                          <span style="font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; background: rgba(239,68,111,0.2); border: 1px solid #ef476f; color: #ff6b8b; text-transform: uppercase;">${escapeHtml(w.type || 'beam')}</span>
+                      </div>
+                      <div style="display: flex; gap: 6px; align-items: center;">
+                          ${!isPrimary ? `
+                              <button type="button" onclick="removeEnemyWeaponCard('${weaponId}')" style="background: rgba(239,68,111,0.2); border: 1px solid #ef476f; color: #ff4d6d; border-radius: 4px; padding: 3px 8px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s;" title="Remove this weapon slot">🗑️ Remove</button>
+                          ` : '<span style="font-size:0.72rem; color: #94a3b8; font-style: italic;">Default Primary</span>'}
+                      </div>
+                  </div>
+
+                  <!-- Row 1: Name, Type, Mount Point -->
+                  <div style="display: grid; grid-template-columns: 2fr 1.2fr 1.2fr; gap: 10px; margin-bottom: 10px;">
+                      <div>
+                          <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px;">Weapon Name</label>
+                          <input type="text" value="${escapeHtml(w.name || '')}" onchange="updateEnemyWeaponField('${weaponId}', 'name', this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.82rem;" placeholder="e.g. Dual Plasma Cannon">
+                      </div>
+                      <div>
+                          <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px;">Type</label>
+                          <select onchange="updateEnemyWeaponField('${weaponId}', 'type', this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                              <option value="beam" ${w.type === 'beam' ? 'selected' : ''}>⚡ Beam Laser</option>
+                              <option value="missile" ${w.type === 'missile' ? 'selected' : ''}>🚀 Homing Missile</option>
+                              <option value="torpedo" ${w.type === 'torpedo' ? 'selected' : ''}>💣 Heavy Torpedo</option>
+                              <option value="rapid_plasma" ${w.type === 'rapid_plasma' ? 'selected' : ''}>🔥 Rapid Plasma Pulse</option>
+                              <option value="heavy_cannon" ${w.type === 'heavy_cannon' ? 'selected' : ''}>💥 Heavy Particle Cannon</option>
+                          </select>
+                      </div>
+                      <div>
+                          <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px;">Hardpoint Mount</label>
+                          <select onchange="updateEnemyWeaponField('${weaponId}', 'mount', this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem;">
+                              <option value="dual_wingtip" ${w.mount === 'dual_wingtip' ? 'selected' : ''}>Dual Wingtips (Port & Starboard)</option>
+                              <option value="center" ${w.mount === 'center' ? 'selected' : ''}>Center Nose Emitter</option>
+                              <option value="turret" ${w.mount === 'turret' ? 'selected' : ''}>Dorsal Rotating Turret</option>
+                              <option value="left" ${w.mount === 'left' ? 'selected' : ''}>Left Wing Hardpoint</option>
+                              <option value="right" ${w.mount === 'right' ? 'selected' : ''}>Right Wing Hardpoint</option>
+                          </select>
+                      </div>
+                  </div>
+
+                  <!-- Row 2: Fire Cadence: Times per Second, Milliseconds Interval, Seconds per Shot -->
+                  <div style="background: rgba(239,68,111,0.08); border: 1px dashed rgba(239,68,111,0.35); border-radius: 6px; padding: 8px 10px; margin-bottom: 10px;">
+                      <div style="font-size: 0.72rem; font-weight: bold; color: #ff6b8b; margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;">
+                          <span>⏱️ Firing Cadence & Rate (Times/sec & Milliseconds)</span>
+                          <span id="rateSummary_${weaponId}" style="color: #00f0ff; font-family: monospace; font-size: 0.75rem;">${timesPerSec} shots/sec (${intervalMs}ms)</span>
+                      </div>
+                      <div style="display: grid; grid-template-columns: 1.4fr 1.4fr 1.2fr; gap: 8px;">
+                          <div>
+                              <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">Shots Per Second (Rate)</label>
+                              <div style="display: flex; align-items: center; gap: 4px;">
+                                  <input type="number" step="0.01" min="0.05" max="50" value="${timesPerSec}" id="rateTimesSec_${weaponId}" oninput="syncEnemyWeaponTiming('${weaponId}', 'times_sec', this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); border: 1px solid #ef476f; color: #00f0ff; font-weight: bold; padding: 5px 8px; border-radius: 4px; font-size: 0.82rem;">
+                                  <span style="font-size: 0.72rem; color: #ff6b8b; white-space: nowrap;">times/s</span>
+                              </div>
+                          </div>
+                          <div>
+                              <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">Firing Interval (Milliseconds)</label>
+                              <div style="display: flex; align-items: center; gap: 4px;">
+                                  <input type="number" step="10" min="20" max="20000" value="${intervalMs}" id="rateMs_${weaponId}" oninput="syncEnemyWeaponTiming('${weaponId}', 'ms', this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); border: 1px solid #ef476f; color: #00f0ff; font-weight: bold; padding: 5px 8px; border-radius: 4px; font-size: 0.82rem;">
+                                  <span style="font-size: 0.72rem; color: #ff6b8b; white-space: nowrap;">ms</span>
+                              </div>
+                          </div>
+                          <div>
+                              <label style="display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 2px;">Interval (Seconds)</label>
+                              <div style="display: flex; align-items: center; gap: 4px;">
+                                  <input type="number" step="0.01" min="0.02" max="20.0" value="${secPerShot}" id="rateSec_${weaponId}" oninput="syncEnemyWeaponTiming('${weaponId}', 'sec', this.value)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.5); border: 1px solid #475569; color: #fff; padding: 5px 8px; border-radius: 4px; font-size: 0.82rem;">
+                                  <span style="font-size: 0.72rem; color: var(--text-muted); white-space: nowrap;">sec</span>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Row 3: Damage, Projectile Speed, Color -->
+                  <div style="display: grid; grid-template-columns: 1fr 1fr 1.2fr; gap: 10px;">
+                      <div>
+                          <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px;">Damage Per Hit</label>
+                          <input type="number" min="1" max="1000" value="${parseInt(w.damage) || 5}" onchange="updateEnemyWeaponField('${weaponId}', 'damage', parseInt(this.value) || 5)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.82rem;">
+                      </div>
+                      <div>
+                          <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px;">Speed (px/s)</label>
+                          <input type="number" min="50" max="2000" value="${parseInt(w.speed) || 450}" onchange="updateEnemyWeaponField('${weaponId}', 'speed', parseInt(this.value) || 450)" style="width: 100%; box-sizing: border-box; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 0.82rem;">
+                      </div>
+                      <div>
+                          <label style="display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 3px;">Projectile Glow Color</label>
+                          <div style="display: flex; gap: 6px; align-items: center;">
+                              <input type="color" value="${w.color || '#ff0055'}" onchange="updateEnemyWeaponField('${weaponId}', 'color', this.value)" style="width: 38px; height: 32px; border: none; background: transparent; cursor: pointer; padding: 0;">
+                              <input type="text" value="${escapeHtml(w.color || '#ff0055')}" onchange="updateEnemyWeaponField('${weaponId}', 'color', this.value)" style="flex: 1; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: #fff; padding: 6px 8px; border-radius: 6px; font-size: 0.82rem; font-family: monospace;">
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          `;
+      }).join('');
+
+      syncEnemyWeaponsMirrorInputs();
+  }
+
+  function syncEnemyWeaponTiming(weaponId, sourceField, rawVal) {
+      const w = activeEnemyWeapons.find(item => item.id === weaponId);
+      if (!w) return;
+
+      let val = parseFloat(rawVal);
+      if (isNaN(val) || val <= 0) return;
+
+      let timesPerSec, intervalMs, secPerShot;
+
+      if (sourceField === 'times_sec') {
+          timesPerSec = Math.max(0.05, Math.min(50, val));
+          intervalMs = Math.max(20, Math.round(1000 / timesPerSec));
+          secPerShot = (intervalMs / 1000).toFixed(3);
+      } else if (sourceField === 'ms') {
+          intervalMs = Math.max(20, Math.min(20000, Math.round(val)));
+          timesPerSec = parseFloat((1000 / intervalMs).toFixed(2));
+          secPerShot = (intervalMs / 1000).toFixed(3);
+      } else { // 'sec'
+          secPerShot = Math.max(0.02, Math.min(20, val)).toFixed(3);
+          intervalMs = Math.max(20, Math.round(parseFloat(secPerShot) * 1000));
+          timesPerSec = parseFloat((1000 / intervalMs).toFixed(2));
+      }
+
+      w.fire_rate_times_per_sec = timesPerSec;
+      w.fire_interval_ms = intervalMs;
+      w.fire_rate_seconds = parseFloat(secPerShot);
+
+      const tInput = document.getElementById(`rateTimesSec_${weaponId}`);
+      const mInput = document.getElementById(`rateMs_${weaponId}`);
+      const sInput = document.getElementById(`rateSec_${weaponId}`);
+      const summarySpan = document.getElementById(`rateSummary_${weaponId}`);
+
+      if (tInput && sourceField !== 'times_sec') tInput.value = timesPerSec;
+      if (mInput && sourceField !== 'ms') mInput.value = intervalMs;
+      if (sInput && sourceField !== 'sec') sInput.value = secPerShot;
+      if (summarySpan) summarySpan.textContent = `${timesPerSec} shots/sec (${intervalMs}ms)`;
+
+      syncEnemyWeaponsMirrorInputs();
+  }
+
+  function updateEnemyWeaponField(weaponId, field, value) {
+      const w = activeEnemyWeapons.find(item => item.id === weaponId);
+      if (!w) return;
+      w[field] = value;
+      syncEnemyWeaponsMirrorInputs();
+      renderEnemyWeaponsCards();
+  }
+
+  function addCustomEnemyWeaponCard() {
+      const slotNum = activeEnemyWeapons.length + 1;
+      const newW = createDefaultEnemyWeapon(
+          `Secondary Laser Battery #${slotNum}`,
+          'beam',
+          slotNum % 2 === 0 ? 'left' : 'right',
+          2.5,
+          400,
+          8,
+          500,
+          '#00f0ff'
+      );
+      activeEnemyWeapons.push(newW);
+      renderEnemyWeaponsCards();
+  }
+
+  function addTorpedoWeaponPreset() {
+      const slotNum = activeEnemyWeapons.length + 1;
+      const newW = createDefaultEnemyWeapon(
+          `Quantum Plasma Torpedo Launcher`,
+          'torpedo',
+          'center',
+          0.5,
+          2000,
+          25,
+          320,
+          '#ffaa00'
+      );
+      activeEnemyWeapons.push(newW);
+      renderEnemyWeaponsCards();
+  }
+
+  function removeEnemyWeaponCard(weaponId) {
+      if (activeEnemyWeapons.length <= 1) {
+          alert('An enemy must have at least one primary weapon.');
+          return;
+      }
+      activeEnemyWeapons = activeEnemyWeapons.filter(item => item.id !== weaponId);
+      renderEnemyWeaponsCards();
+  }
+
   function openAddGameEnemyModal() {
       const title = document.getElementById('enemyModalTitle');
       if (title) title.innerHTML = '<span>👾 Register New Enemy Threat</span>';
@@ -4748,6 +5066,9 @@ Thank you for reaching out to Calm Chess Games. `;
       document.getElementById('enemyPiercingWeaponInput').value = 'any';
       toggleEnemyShieldCapacityInput();
       updateEnemy3DModelFormatStatus();
+
+      activeEnemyWeapons = [createDefaultEnemyWeapon('Plasma Pulse', 'beam', 'dual_wingtip', 2.0, 500, 5, 450, '#ff0055')];
+      renderEnemyWeaponsCards();
 
       const modal = document.getElementById('editGameEnemyModal');
       if (modal) modal.style.display = 'flex';
@@ -4828,6 +5149,42 @@ Thank you for reaching out to Calm Chess Games. `;
       toggleEnemyShieldCapacityInput();
       updateEnemy3DModelFormatStatus();
 
+      let parsedWeapons = [];
+      if (enemy.weapons && Array.isArray(enemy.weapons) && enemy.weapons.length > 0) {
+          try {
+              parsedWeapons = JSON.parse(JSON.stringify(enemy.weapons));
+          } catch (e) {
+              parsedWeapons = enemy.weapons;
+          }
+      } else if (enemy.weapons_json) {
+          try {
+              const decoded = typeof enemy.weapons_json === 'string' ? JSON.parse(enemy.weapons_json) : enemy.weapons_json;
+              if (Array.isArray(decoded) && decoded.length > 0) parsedWeapons = decoded;
+          } catch (e) {}
+      }
+      if (!parsedWeapons || parsedWeapons.length === 0) {
+          const frSec = parseFloat(enemy.fire_rate_seconds || 2.0);
+          const frMs = parseInt(enemy.fire_rate_ms) || Math.round(frSec * 1000);
+          const frTimes = parseFloat(enemy.fire_rate_times_per_sec) || parseFloat((1000 / Math.max(20, frMs)).toFixed(2));
+          parsedWeapons = [
+              createDefaultEnemyWeapon(
+                  enemy.weapon_name || 'Plasma Pulse',
+                  (enemy.weapon_name && (enemy.weapon_name.toLowerCase().includes('missile') || enemy.weapon_name.toLowerCase().includes('torpedo'))) ? 'missile' : 'beam',
+                  'dual_wingtip',
+                  frTimes,
+                  frMs,
+                  enemy.weapon_damage || 5,
+                  enemy.weapon_speed || 450,
+                  enemy.weapon_color || '#ff0055'
+              )
+          ];
+      }
+      activeEnemyWeapons = parsedWeapons.map((w, idx) => ({
+          ...w,
+          id: w.id || ('ew_' + idx + '_' + Math.random().toString(36).substring(2, 6))
+      }));
+      renderEnemyWeaponsCards();
+
       const modal = document.getElementById('editGameEnemyModal');
       if (modal) modal.style.display = 'flex';
   }
@@ -4896,6 +5253,14 @@ Thank you for reaching out to Calm Chess Games. `;
           return;
       }
 
+      syncEnemyWeaponsMirrorInputs();
+      const primaryWpn = (activeEnemyWeapons && activeEnemyWeapons.length > 0) ? activeEnemyWeapons[0] : null;
+      const primaryTimesSec = primaryWpn ? (parseFloat(primaryWpn.fire_rate_times_per_sec) || 2.0) : parseFloat((1000 / Math.max(20, Math.round(fireRate * 1000))).toFixed(2));
+      const primaryMs = primaryWpn ? (parseInt(primaryWpn.fire_interval_ms) || Math.round(fireRate * 1000)) : Math.round(fireRate * 1000);
+      const weaponsJsonStr = JSON.stringify(activeEnemyWeapons && activeEnemyWeapons.length > 0 ? activeEnemyWeapons : [
+          createDefaultEnemyWeapon(weaponName, 'beam', 'dual_wingtip', primaryTimesSec, primaryMs, weaponDamage, weaponSpeed, weaponColor)
+      ]);
+
       const payload = {
           id: id,
           enemy_id: code,
@@ -4916,6 +5281,8 @@ Thank you for reaching out to Calm Chess Games. `;
           weapon_damage: weaponDamage,
           weapon_speed: weaponSpeed,
           weapon_color: weaponColor,
+          weapons: activeEnemyWeapons,
+          weapons_json: weaponsJsonStr,
           quick_effect_primary: quickEffectPrimary,
           quick_effect_secondary: quickEffectSecondary,
           quick_effect_color: quickEffectColor,
@@ -4934,6 +5301,8 @@ Thank you for reaching out to Calm Chess Games. `;
           movement_speed: speed,
           attack_damage: damage,
           fire_rate_seconds: fireRate,
+          fire_rate_ms: primaryMs,
+          fire_rate_times_per_sec: primaryTimesSec,
           score_value: score,
           threat_level: threat,
           description: desc,
@@ -5888,6 +6257,12 @@ Thank you for reaching out to Calm Chess Games. `;
   global.deleteGameEnemy = deleteGameEnemy;
   global.toggleEnemyForceField = toggleEnemyForceField;
   global.toggleEnemyShieldCapacityInput = toggleEnemyShieldCapacityInput;
+  global.addCustomEnemyWeaponCard = addCustomEnemyWeaponCard;
+  global.addTorpedoWeaponPreset = addTorpedoWeaponPreset;
+  global.removeEnemyWeaponCard = removeEnemyWeaponCard;
+  global.syncEnemyWeaponTiming = syncEnemyWeaponTiming;
+  global.updateEnemyWeaponField = updateEnemyWeaponField;
+  global.renderEnemyWeaponsCards = renderEnemyWeaponsCards;
   global.seedDefaultGameEnemies = seedDefaultGameEnemies;
   global.populateEnemyPiercingWeaponDropdown = populateEnemyPiercingWeaponDropdown;
   global.populateCloneEnemyDropdown = populateCloneEnemyDropdown;
@@ -6513,5 +6888,467 @@ Thank you for reaching out to Calm Chess Games. `;
   global.populateCloneEnvironmentDropdown = populateCloneEnvironmentDropdown;
   global.cloneSelectedGameEnvironment = cloneSelectedGameEnvironment;
   global.cloneGameEnvironment = cloneGameEnvironment;
+
+  // =========================================================================
+  // GAME ASSET BROWSER SYSTEM (3D MODELS & IMAGE ASSETS)
+  // =========================================================================
+  let cachedGameAssets = null;
+  let currentAssetBrowserTargetInput = null;
+  let currentAssetTypeFilter = 'all';
+  let currentLocalPickedFile = null;
+
+  const DEFAULT_FALLBACK_GAME_ASSETS = [
+      { path: 'mobile/event_horizon_images/red_recon_drone.glb', filename: 'red_recon_drone.glb', type: 'model', format: 'glb', device: 'mobile', stage: 'event_horizon', size_formatted: '412 KB' },
+      { path: 'desktop/event_horizon_images/red_recon_drone.glb', filename: 'red_recon_drone.glb', type: 'model', format: 'glb', device: 'desktop', stage: 'event_horizon', size_formatted: '412 KB' },
+      { path: 'vr/event_horizon_images/red_recon_drone.glb', filename: 'red_recon_drone.glb', type: 'model', format: 'glb', device: 'vr', stage: 'event_horizon', size_formatted: '412 KB' },
+      { path: 'arcore/event_horizon_images/red_recon_drone.glb', filename: 'red_recon_drone.glb', type: 'model', format: 'glb', device: 'arcore', stage: 'event_horizon', size_formatted: '412 KB' },
+      { path: 'mobile/event_horizon_images/recon_drone.glb', filename: 'recon_drone.glb', type: 'model', format: 'glb', device: 'mobile', stage: 'event_horizon', size_formatted: '390 KB' },
+      { path: 'desktop/event_horizon_images/recon_drone.glb', filename: 'recon_drone.glb', type: 'model', format: 'glb', device: 'desktop', stage: 'event_horizon', size_formatted: '390 KB' },
+      { path: 'meshy_test_0/models/recon_drone_2.8m.glb', filename: 'recon_drone_2.8m.glb', type: 'model', format: 'glb', device: 'all', stage: 'meshy_models', size_formatted: '420 KB' },
+      { path: 'meshy_test_0/models/recon_drone_raw.glb', filename: 'recon_drone_raw.glb', type: 'model', format: 'glb', device: 'all', stage: 'meshy_models', size_formatted: '410 KB' },
+      { path: 'meshy_test_0/models/red_race_car.glb', filename: 'red_race_car.glb', type: 'model', format: 'glb', device: 'all', stage: 'meshy_models', size_formatted: '1.25 MB' },
+      { path: 'meshy_test_0/models/red_race_car.obj', filename: 'red_race_car.obj', type: 'model', format: 'obj', device: 'all', stage: 'meshy_models', size_formatted: '2.10 MB' },
+      { path: 'desktop/warp_origin_images/singularity_corona.png', filename: 'singularity_corona.png', type: 'image', format: 'png', device: 'desktop', stage: 'warp_origin', size_formatted: '128 KB' },
+      { path: 'desktop/event_horizon_images/singularity_corona.png', filename: 'singularity_corona.png', type: 'image', format: 'png', device: 'desktop', stage: 'event_horizon', size_formatted: '142 KB' },
+      { path: 'desktop/singularity_core_images/singularity_corona.png', filename: 'singularity_corona.png', type: 'image', format: 'png', device: 'desktop', stage: 'singularity_core', size_formatted: '156 KB' },
+      { path: 'desktop/quantum_realm_images/singularity_corona.png', filename: 'singularity_corona.png', type: 'image', format: 'png', device: 'desktop', stage: 'quantum_realm', size_formatted: '135 KB' },
+      { path: 'desktop/event_horizon_images/accretion_disk.png', filename: 'accretion_disk.png', type: 'image', format: 'png', device: 'desktop', stage: 'event_horizon', size_formatted: '96 KB' },
+      { path: 'desktop/event_horizon_images/event_horizon_glow.png', filename: 'event_horizon_glow.png', type: 'image', format: 'png', device: 'desktop', stage: 'event_horizon', size_formatted: '85 KB' },
+      { path: 'desktop/event_horizon_images/photon_ring.png', filename: 'photon_ring.png', type: 'image', format: 'png', device: 'desktop', stage: 'event_horizon', size_formatted: '74 KB' },
+      { path: 'desktop/event_horizon_images/skybox_panorama.jpg', filename: 'skybox_panorama.jpg', type: 'image', format: 'jpg', device: 'desktop', stage: 'event_horizon', size_formatted: '520 KB' },
+      { path: 'mobile/event_horizon_images/recon_drone_thumbnail.png', filename: 'recon_drone_thumbnail.png', type: 'image', format: 'png', device: 'mobile', stage: 'event_horizon', size_formatted: '45 KB' },
+      { path: 'mobile/event_horizon_images/texture_0_base_color.png', filename: 'texture_0_base_color.png', type: 'image', format: 'png', device: 'mobile', stage: 'event_horizon', size_formatted: '310 KB' },
+      { path: 'mobile/event_horizon_images/texture_0_normal.png', filename: 'texture_0_normal.png', type: 'image', format: 'png', device: 'mobile', stage: 'event_horizon', size_formatted: '280 KB' },
+      { path: 'mobile/event_horizon_images/texture_0_metallic.png', filename: 'texture_0_metallic.png', type: 'image', format: 'png', device: 'mobile', stage: 'event_horizon', size_formatted: '190 KB' },
+      { path: 'mobile/event_horizon_images/texture_0_roughness.png', filename: 'texture_0_roughness.png', type: 'image', format: 'png', device: 'mobile', stage: 'event_horizon', size_formatted: '210 KB' }
+  ];
+
+  async function openGameAssetBrowser(targetInputId, assetTypeHint = 'all') {
+      currentAssetBrowserTargetInput = targetInputId || null;
+      currentAssetTypeFilter = assetTypeHint || 'all';
+
+      const modal = document.getElementById('gameAssetBrowserModal');
+      const titleIcon = document.getElementById('gameAssetBrowserTitleIcon');
+      const titleText = document.getElementById('gameAssetBrowserTitleText');
+      const subtitle = document.getElementById('gameAssetBrowserSubtitle');
+      const selectedInput = document.getElementById('gameAssetSelectedPathInput');
+
+      let currentVal = '';
+      if (targetInputId) {
+          const inputEl = document.getElementById(targetInputId);
+          if (inputEl) currentVal = (inputEl.value || '').trim();
+      }
+      if (selectedInput) selectedInput.value = currentVal;
+
+      if (assetTypeHint === 'model') {
+          if (titleIcon) titleIcon.textContent = '🛸';
+          if (titleText) titleText.textContent = 'Browse 3D Model Assets (.glb / .gltf / .obj)';
+          if (subtitle) subtitle.textContent = targetInputId ? `Target Input: ${targetInputId}. Select a 3D mesh asset from the server or choose a local file.` : 'Choose a 3D mesh model asset (.glb, .gltf, .obj)';
+      } else if (assetTypeHint === 'image') {
+          if (titleIcon) titleIcon.textContent = '🖼️';
+          if (titleText) titleText.textContent = 'Browse Custom Image & Texture Assets';
+          if (subtitle) subtitle.textContent = targetInputId ? `Target Input: ${targetInputId}. Select a PNG, JPG, or WebP texture asset.` : 'Choose a custom image asset or texture map';
+      } else {
+          if (titleIcon) titleIcon.textContent = '📂';
+          if (titleText) titleText.textContent = 'Browse Game Asset Library';
+          if (subtitle) subtitle.textContent = 'Browse all 3D model meshes and custom graphic image assets.';
+      }
+
+      setAssetBrowserTypeFilter(currentAssetTypeFilter, false);
+
+      dismissLocalAssetBanner();
+
+      if (modal) modal.style.display = 'flex';
+
+      if (!cachedGameAssets || cachedGameAssets.length === 0) {
+          await fetchGameAssets();
+      } else {
+          filterGameAssets();
+      }
+  }
+
+  function closeGameAssetBrowser() {
+      const modal = document.getElementById('gameAssetBrowserModal');
+      if (modal) modal.style.display = 'none';
+      dismissLocalAssetBanner();
+  }
+
+  function setAssetBrowserTypeFilter(type, runFilter = true) {
+      currentAssetTypeFilter = type || 'all';
+      const btnAll = document.getElementById('btnAssetFilterAll');
+      const btnModel = document.getElementById('btnAssetFilterModel');
+      const btnImage = document.getElementById('btnAssetFilterImage');
+
+      const activeStyle = 'padding: 6px 12px; font-size: 0.8rem; background: rgba(0,240,255,0.22); border-color: #00f0ff; color: #00f0ff; font-weight: bold;';
+      const inactiveStyle = 'padding: 6px 12px; font-size: 0.8rem; background: rgba(255,255,255,0.08); border-color: #475569; color: #cbd5e1;';
+
+      if (btnAll) btnAll.style.cssText = currentAssetTypeFilter === 'all' ? activeStyle : inactiveStyle;
+      if (btnModel) btnModel.style.cssText = currentAssetTypeFilter === 'model' ? activeStyle : inactiveStyle;
+      if (btnImage) btnImage.style.cssText = currentAssetTypeFilter === 'image' ? activeStyle : inactiveStyle;
+
+      if (runFilter) {
+          filterGameAssets();
+      }
+  }
+
+  async function fetchGameAssets(forceRefresh = false) {
+      const grid = document.getElementById('gameAssetBrowserGrid');
+      if (grid && (!cachedGameAssets || forceRefresh)) {
+          grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #00f0ff; padding: 30px 10px;">🛸 Scanning server directories for 3D models and image assets...</div>';
+      }
+
+      try {
+          const res = await callAdminWormholeApi('get_available_game_assets', 'GET');
+          if (res && res.data && Array.isArray(res.data.assets) && res.data.assets.length > 0) {
+              cachedGameAssets = res.data.assets;
+          } else if (res && Array.isArray(res.assets) && res.assets.length > 0) {
+              cachedGameAssets = res.assets;
+          } else {
+              cachedGameAssets = DEFAULT_FALLBACK_GAME_ASSETS;
+          }
+      } catch (err) {
+          console.warn('[Admin] fetchGameAssets API error, using fallback index:', err);
+          if (!cachedGameAssets) cachedGameAssets = DEFAULT_FALLBACK_GAME_ASSETS;
+      }
+
+      filterGameAssets();
+  }
+
+  function refreshGameAssetList() {
+      fetchGameAssets(true);
+  }
+
+  function filterGameAssets() {
+      if (!cachedGameAssets) cachedGameAssets = DEFAULT_FALLBACK_GAME_ASSETS;
+
+      const searchInput = document.getElementById('gameAssetSearchInput');
+      const query = (searchInput?.value || '').trim().toLowerCase();
+
+      const stageSelect = document.getElementById('gameAssetStageFilter');
+      const stageFilter = (stageSelect?.value || 'all').toLowerCase();
+
+      const deviceSelect = document.getElementById('gameAssetDeviceFilter');
+      const deviceFilter = (deviceSelect?.value || 'all').toLowerCase();
+
+      let filtered = cachedGameAssets.filter(item => {
+          if (currentAssetTypeFilter !== 'all' && item.type !== currentAssetTypeFilter) {
+              return false;
+          }
+          if (stageFilter !== 'all' && item.stage !== stageFilter && item.stage !== 'global' && !item.path.includes(stageFilter)) {
+              return false;
+          }
+          if (deviceFilter !== 'all' && item.device !== deviceFilter && item.device !== 'all' && !item.path.includes(deviceFilter + '/')) {
+              return false;
+          }
+          if (query) {
+              const full = (item.path + ' ' + item.filename + ' ' + (item.format || '') + ' ' + (item.stage || '')).toLowerCase();
+              if (!full.includes(query)) return false;
+          }
+          return true;
+      });
+
+      renderGameAssetBrowser(filtered);
+  }
+
+  function renderGameAssetBrowser(assets) {
+      const grid = document.getElementById('gameAssetBrowserGrid');
+      if (!grid) return;
+
+      if (!assets || assets.length === 0) {
+          grid.innerHTML = `
+              <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px 10px;">
+                  <div style="font-size: 2rem; margin-bottom: 8px;">🔍</div>
+                  <div style="color: #fff; font-weight: bold; margin-bottom: 4px;">No matching assets found</div>
+                  <div style="font-size: 0.8rem; color: #94a3b8;">Try clearing the search query or changing the type filter.</div>
+              </div>
+          `;
+          return;
+      }
+
+      const currentSelected = (document.getElementById('gameAssetSelectedPathInput')?.value || '').trim();
+
+      let html = '';
+      assets.forEach(asset => {
+          const isSelected = (currentSelected && currentSelected === asset.path);
+          const ext = (asset.format || '').toUpperCase();
+
+          let badgeColor = '#00f0ff';
+          let badgeBg = 'rgba(0, 240, 255, 0.15)';
+          let badgeBorder = '#00f0ff';
+          let iconChar = '🛸';
+
+          if (asset.format === 'obj') {
+              badgeColor = '#ffd700';
+              badgeBg = 'rgba(255, 215, 0, 0.15)';
+              badgeBorder = '#ffd700';
+              iconChar = '🗿';
+          } else if (asset.format === 'gltf') {
+              badgeColor = '#10b981';
+              badgeBg = 'rgba(16, 185, 129, 0.15)';
+              badgeBorder = '#10b981';
+              iconChar = '📄';
+          } else if (asset.type === 'image') {
+              badgeColor = '#38bdf8';
+              badgeBg = 'rgba(56, 189, 248, 0.15)';
+              badgeBorder = '#38bdf8';
+              iconChar = '🖼️';
+          }
+
+          const borderStyle = isSelected ? '2px solid #00f0ff; background: rgba(0, 240, 255, 0.14); box-shadow: 0 0 15px rgba(0, 240, 255, 0.35);' : '1px solid rgba(255, 255, 255, 0.1); background: rgba(15, 23, 42, 0.6);';
+
+          html += `
+              <div class="game-asset-card" data-path="${escapeHtml(asset.path)}" onclick="selectGameAsset('${escapeHtml(asset.path)}')" ondblclick="applySelectedGameAsset('${escapeHtml(asset.path)}')" style="border-radius: 8px; padding: 10px 12px; cursor: pointer; transition: all 0.18s ease; display: flex; flex-direction: column; justify-content: space-between; border: ${borderStyle}">
+                  <div>
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                          <span style="font-size: 1.15rem;">${iconChar}</span>
+                          <span style="font-size: 0.7rem; font-weight: bold; padding: 2px 6px; border-radius: 4px; background: ${badgeBg}; color: ${badgeColor}; border: 1px solid ${badgeBorder};">${ext ? '.' + ext : asset.type.toUpperCase()}</span>
+                      </div>
+                      <div style="font-size: 0.86rem; font-weight: bold; color: #fff; margin-bottom: 3px; word-break: break-all;" title="${escapeHtml(asset.filename)}">
+                          ${escapeHtml(asset.filename)}
+                      </div>
+                      <div style="font-size: 0.72rem; color: #7dd3fc; font-family: monospace; word-break: break-all; margin-bottom: 6px;" title="${escapeHtml(asset.path)}">
+                          ${escapeHtml(asset.path)}
+                      </div>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 6px; margin-top: 4px;">
+                      <span style="font-size: 0.7rem; color: var(--text-muted);">${escapeHtml(asset.size_formatted || '')}</span>
+                      <button type="button" class="admin-tab-btn" onclick="event.stopPropagation(); applySelectedGameAsset('${escapeHtml(asset.path)}')" style="padding: 2px 8px; font-size: 0.72rem; background: ${isSelected ? '#00f0ff; color: #01050a;' : 'rgba(0,240,255,0.15); color: #00f0ff;'} border: 1px solid #00f0ff; font-weight: bold;">
+                          ${isSelected ? '✔ Selected' : 'Select'}
+                      </button>
+                  </div>
+              </div>
+          `;
+      });
+
+      grid.innerHTML = html;
+  }
+
+  function selectGameAsset(path) {
+      const input = document.getElementById('gameAssetSelectedPathInput');
+      if (input) input.value = path;
+
+      const cards = document.querySelectorAll('.game-asset-card');
+      cards.forEach(card => {
+          if (card.getAttribute('data-path') === path) {
+              card.style.border = '2px solid #00f0ff';
+              card.style.background = 'rgba(0, 240, 255, 0.14)';
+              card.style.boxShadow = '0 0 15px rgba(0, 240, 255, 0.35)';
+          } else {
+              card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+              card.style.background = 'rgba(15, 23, 42, 0.6)';
+              card.style.boxShadow = 'none';
+          }
+      });
+  }
+
+  function applySelectedGameAsset(directPath = null) {
+      let path = (directPath || document.getElementById('gameAssetSelectedPathInput')?.value || '').trim();
+      if (!path) {
+          alert('Please click on an asset card or enter an asset path first.');
+          return;
+      }
+      if (path.startsWith('meshy_test_0/')) {
+          path = '/' + path;
+      }
+
+      if (currentAssetBrowserTargetInput) {
+          const targetEl = document.getElementById(currentAssetBrowserTargetInput);
+          if (targetEl) {
+              targetEl.value = path;
+              targetEl.dispatchEvent(new Event('input', { bubbles: true }));
+              targetEl.dispatchEvent(new Event('change', { bubbles: true }));
+
+              // Visual highlight feedback on target input
+              try {
+                  const origBorder = targetEl.style.borderColor;
+                  const origBoxShadow = targetEl.style.boxShadow;
+                  targetEl.style.borderColor = '#00f0ff';
+                  targetEl.style.boxShadow = '0 0 10px rgba(0, 240, 255, 0.5)';
+                  setTimeout(() => {
+                      targetEl.style.borderColor = origBorder;
+                      targetEl.style.boxShadow = origBoxShadow;
+                  }, 600);
+              } catch (e) {}
+
+              if (currentAssetBrowserTargetInput === 'enemy3DModelUrlInput' && typeof updateEnemy3DModelFormatStatus === 'function') {
+                  updateEnemy3DModelFormatStatus();
+              }
+          }
+      } else {
+          // No specific target element - copy to clipboard and notify
+          try {
+              if (navigator.clipboard && navigator.clipboard.writeText) {
+                  navigator.clipboard.writeText(path);
+                  alert(`✔ Asset Selected & Path Copied to Clipboard:\n${path}`);
+              } else {
+                  alert(`✔ Selected Asset Path:\n${path}`);
+              }
+          } catch (e) {
+              alert(`✔ Selected Asset Path:\n${path}`);
+          }
+      }
+
+      closeGameAssetBrowser();
+  }
+
+  function triggerLocalGameAssetPicker() {
+      const fileInput = document.getElementById('gameAssetLocalFileInput');
+      if (fileInput) {
+          fileInput.value = '';
+          fileInput.click();
+      }
+  }
+
+  function handleLocalGameAssetPicked(inputEl) {
+      if (!inputEl || !inputEl.files || inputEl.files.length === 0) return;
+      const file = inputEl.files[0];
+      currentLocalPickedFile = file;
+
+      const banner = document.getElementById('gameAssetUploadBanner');
+      const nameEl = document.getElementById('localPickedFileName');
+      const sizeEl = document.getElementById('localPickedFileSize');
+
+      if (nameEl) nameEl.textContent = file.name;
+      if (sizeEl) {
+          const sz = file.size >= 1048576 ? (file.size / 1048576).toFixed(2) + ' MB' : (file.size / 1024).toFixed(1) + ' KB';
+          sizeEl.textContent = `(${sz})`;
+      }
+
+      const folderSelect = document.getElementById('localUploadFolderSelect');
+      if (folderSelect) {
+          const ext = (file.name.split('.').pop() || '').toLowerCase();
+          if (['glb', 'obj', 'gltf'].includes(ext)) {
+              folderSelect.value = 'mobile/event_horizon_images';
+          } else {
+              folderSelect.value = 'desktop/event_horizon_images';
+          }
+      }
+
+      if (banner) banner.style.display = 'block';
+
+      const pathInput = document.getElementById('gameAssetSelectedPathInput');
+      if (pathInput && folderSelect) {
+          pathInput.value = folderSelect.value + '/' + file.name;
+      }
+  }
+
+  function dismissLocalAssetBanner() {
+      const banner = document.getElementById('gameAssetUploadBanner');
+      if (banner) banner.style.display = 'none';
+      currentLocalPickedFile = null;
+      const fileInput = document.getElementById('gameAssetLocalFileInput');
+      if (fileInput) fileInput.value = '';
+  }
+
+  function useLocalFilePathDirectly() {
+      if (!currentLocalPickedFile) return;
+      const folder = document.getElementById('localUploadFolderSelect')?.value || 'mobile/event_horizon_images';
+      const path = folder + '/' + currentLocalPickedFile.name;
+      applySelectedGameAsset(path);
+  }
+
+  async function uploadSelectedLocalGameAsset() {
+      if (!currentLocalPickedFile) {
+          alert('No local file selected to upload.');
+          return;
+      }
+
+      const folder = document.getElementById('localUploadFolderSelect')?.value || 'mobile/event_horizon_images';
+      const btn = document.getElementById('btnUploadLocalAsset');
+      const origText = btn ? btn.innerHTML : '';
+      if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '⏳ Uploading...';
+      }
+
+      const pass = getActiveAdminKey();
+      const formData = new FormData();
+      formData.append('asset_file', currentLocalPickedFile);
+      formData.append('destination_folder', folder);
+      formData.append('admin_key', pass);
+      formData.append('admin_password', pass);
+      formData.append('password', pass);
+
+      try {
+          const endpoints = [
+              `admin_api.php?action=upload_game_asset&_t=${Date.now()}`,
+              `wormhole_device_api.php?action=upload_game_asset&_t=${Date.now()}`,
+              `${API_BASE}/admin/admin_api.php?action=upload_game_asset&_t=${Date.now()}`
+          ];
+
+          let successRes = null;
+          let lastErr = null;
+
+          for (const ep of endpoints) {
+              try {
+                  const resp = await fetch(ep, {
+                      method: 'POST',
+                      body: formData,
+                      headers: {
+                          'X-Admin-Key': pass,
+                          'Authorization': 'Bearer ' + pass
+                      }
+                  });
+                  if (resp.ok) {
+                      const data = await resp.json();
+                      if (data && (data.success || data.status === 'success')) {
+                          successRes = data;
+                          break;
+                      }
+                  }
+              } catch (e) {
+                  lastErr = e;
+              }
+          }
+
+          if (successRes && successRes.data && successRes.data.path) {
+              const uploadedPath = successRes.data.path;
+              const newAssetItem = {
+                  path: uploadedPath,
+                  filename: successRes.data.filename || currentLocalPickedFile.name,
+                  type: successRes.data.type || 'model',
+                  format: successRes.data.format || 'glb',
+                  device: folder.split('/')[0] || 'all',
+                  stage: folder.split('/')[1] ? folder.split('/')[1].replace('_images', '') : 'event_horizon',
+                  size_formatted: (currentLocalPickedFile.size / 1024).toFixed(1) + ' KB'
+              };
+
+              if (!cachedGameAssets) cachedGameAssets = DEFAULT_FALLBACK_GAME_ASSETS.slice();
+              cachedGameAssets.unshift(newAssetItem);
+
+              applySelectedGameAsset(uploadedPath);
+              alert(`✔ Asset uploaded successfully!\nPath: ${uploadedPath}`);
+          } else {
+              throw new Error(lastErr ? lastErr.message : 'Server upload failed. Check file size or administrative permissions.');
+          }
+      } catch (err) {
+          console.error('[Admin] uploadSelectedLocalGameAsset error:', err);
+          alert('Upload failed: ' + err.message + '\nYou can still use "Set Path Directly" to save the path reference.');
+      } finally {
+          if (btn) {
+              btn.disabled = false;
+              btn.innerHTML = origText;
+          }
+      }
+  }
+
+  // Export Asset Browser & Quick Path Helpers to global
+  global.setGameAssetQuickPath = setGameAssetQuickPath;
+  global.setEnemyModelPathExample = setEnemyModelPathExample;
+  global.detect3DModelFormat = detect3DModelFormat;
+  global.updateEnemy3DModelFormatStatus = updateEnemy3DModelFormatStatus;
+  global.openGameAssetBrowser = openGameAssetBrowser;
+  global.closeGameAssetBrowser = closeGameAssetBrowser;
+  global.setAssetBrowserTypeFilter = setAssetBrowserTypeFilter;
+  global.fetchGameAssets = fetchGameAssets;
+  global.refreshGameAssetList = refreshGameAssetList;
+  global.filterGameAssets = filterGameAssets;
+  global.selectGameAsset = selectGameAsset;
+  global.applySelectedGameAsset = applySelectedGameAsset;
+  global.triggerLocalGameAssetPicker = triggerLocalGameAssetPicker;
+  global.handleLocalGameAssetPicked = handleLocalGameAssetPicked;
+  global.dismissLocalAssetBanner = dismissLocalAssetBanner;
+  global.useLocalFilePathDirectly = useLocalFilePathDirectly;
+  global.uploadSelectedLocalGameAsset = uploadSelectedLocalGameAsset;
 
 })(window);

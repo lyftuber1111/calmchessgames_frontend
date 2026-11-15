@@ -2643,10 +2643,64 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
     });
 
     const chosenEnemies = stageEnemies.length > 0 ? stageEnemies : dbEnemies.filter(e => parseInt(e.stage_level) === currentStage);
-    window.activeStageEnemies = chosenEnemies.map(e => ({
-      ...e,
-      custom_from_db: true
-    }));
+    window.activeStageEnemies = chosenEnemies.map(e => {
+      let wpns = [];
+      if (e.weapons && Array.isArray(e.weapons) && e.weapons.length > 0) {
+        wpns = e.weapons;
+      } else if (e.weapons_json) {
+        try {
+          const dec = typeof e.weapons_json === 'string' ? JSON.parse(e.weapons_json) : e.weapons_json;
+          if (Array.isArray(dec) && dec.length > 0) wpns = dec;
+        } catch (err) {}
+      }
+      const frSec = parseFloat(e.fire_rate_seconds || 2.0);
+      const frMs = parseInt(e.fire_rate_ms) || (e.fire_interval_ms ? parseInt(e.fire_interval_ms) : Math.round(frSec * 1000));
+      const frTimes = parseFloat(e.fire_rate_times_per_sec) || parseFloat((1000 / Math.max(20, frMs)).toFixed(3));
+
+      if (wpns.length === 0) {
+        wpns = [{
+          name: e.weapon_name || 'Plasma Pulse',
+          type: (e.weapon_name && (e.weapon_name.toLowerCase().includes('missile') || e.weapon_name.toLowerCase().includes('torpedo'))) ? 'missile' : 'beam',
+          mount: 'dual_wingtip',
+          fire_rate_times_per_sec: frTimes,
+          fire_interval_ms: frMs,
+          fire_rate_seconds: frSec,
+          damage: parseInt(e.weapon_damage || 5),
+          speed: parseInt(e.weapon_speed || 450),
+          color: e.weapon_color || '#ff0055',
+          is_enabled: 1
+        }];
+      } else {
+        wpns = wpns.map(w => {
+          const wSec = parseFloat(w.fire_rate_seconds || frSec || 2.0);
+          const wMs = parseInt(w.fire_interval_ms || w.fire_rate_ms) || Math.round(wSec * 1000);
+          const wTimes = parseFloat(w.fire_rate_times_per_sec) || parseFloat((1000 / Math.max(20, wMs)).toFixed(3));
+          return {
+            ...w,
+            name: w.name || e.weapon_name || 'Plasma Pulse',
+            type: w.type || 'beam',
+            mount: w.mount || 'dual_wingtip',
+            fire_rate_times_per_sec: wTimes,
+            fire_interval_ms: wMs,
+            fire_rate_seconds: parseFloat((wMs / 1000).toFixed(3)),
+            damage: parseInt(w.damage || e.weapon_damage || 5),
+            speed: parseInt(w.speed || e.weapon_speed || 450),
+            color: w.color || e.weapon_color || '#ff0055',
+            is_enabled: (w.is_enabled !== undefined) ? parseInt(w.is_enabled) : 1
+          };
+        });
+      }
+
+      return {
+        ...e,
+        weapons: wpns,
+        weapons_json: JSON.stringify(wpns),
+        fire_rate_ms: frMs,
+        fire_rate_times_per_sec: frTimes,
+        fire_rate_seconds: frSec,
+        custom_from_db: true
+      };
+    });
     state.stageEnemies = window.activeStageEnemies;
 
     // Clear 3D model cache so updated model URLs reload fresh assets immediately
@@ -8667,6 +8721,48 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
     const weaponColor = cfg.weapon_color || '#ff0055';
     const fireRate = parseFloat(cfg.fire_rate_seconds || cfg.fire_rate || 2.4);
 
+    // Multi-weapon arsenal initialization
+    let enemyWeaponsList = [];
+    if (cfg.weapons && Array.isArray(cfg.weapons) && cfg.weapons.length > 0) {
+      try {
+        enemyWeaponsList = JSON.parse(JSON.stringify(cfg.weapons));
+      } catch (err) {
+        enemyWeaponsList = cfg.weapons;
+      }
+    } else if (cfg.weapons_json) {
+      try {
+        const decoded = typeof cfg.weapons_json === 'string' ? JSON.parse(cfg.weapons_json) : cfg.weapons_json;
+        if (Array.isArray(decoded) && decoded.length > 0) enemyWeaponsList = decoded;
+      } catch (err) {}
+    }
+    if (enemyWeaponsList.length === 0) {
+      const frSec = parseFloat(cfg.fire_rate_seconds || cfg.fire_rate || 2.4);
+      const frMs = parseInt(cfg.fire_rate_ms) || (cfg.fire_interval_ms ? parseInt(cfg.fire_interval_ms) : Math.round(frSec * 1000));
+      const frTimes = parseFloat(cfg.fire_rate_times_per_sec) || parseFloat((1000 / Math.max(20, frMs)).toFixed(3));
+      enemyWeaponsList = [{
+        name: cfg.weapon_name || 'Plasma Pulse',
+        type: (cfg.weapon_name && (cfg.weapon_name.toLowerCase().includes('missile') || cfg.weapon_name.toLowerCase().includes('torpedo'))) ? 'missile' : 'beam',
+        mount: 'dual_wingtip',
+        fire_rate_times_per_sec: frTimes,
+        fire_interval_ms: frMs,
+        fire_rate_seconds: frSec,
+        damage: weaponDmg,
+        speed: weaponSpeed,
+        color: weaponColor,
+        is_enabled: 1
+      }];
+    }
+
+    // Attach individual nextShotTime per weapon with slight random jitter for realistic stagger
+    const instantiatedWeapons = enemyWeaponsList.map((w, wIdx) => {
+      const wMs = parseInt(w.fire_interval_ms || w.fire_rate_ms) || Math.round(parseFloat(w.fire_rate_seconds || 2.0) * 1000);
+      return {
+        ...w,
+        fire_interval_ms: wMs,
+        nextShotTime: performance.now() + 800 + (wIdx * 350) + Math.random() * Math.min(1500, wMs)
+      };
+    });
+
     const enemyObj = {
       mesh,
       config: cfg,
@@ -8685,6 +8781,7 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
       weaponSpeed,
       weaponColor,
       fireRate,
+      weapons: instantiatedWeapons,
       nextShotTime: performance.now() + 1200 + Math.random() * 2200,
       evaFreqX: 1.6 + Math.random() * 1.8,
       evaFreqY: 1.4 + Math.random() * 1.8,
@@ -9129,33 +9226,57 @@ function updateEnemiesCombat(delta) {
       defaultEnemyMovement(e, delta, enemyCtx);
     }
 
-    // Decoupled Enemy Weapon Firing: when shot timer expires
-    if (now >= e.nextShotTime) {
-      e.nextShotTime = now + (e.fireRate * 1000) * (0.85 + Math.random() * 0.5);
-      let fired = false;
-      if (typeof activeEnemyWeaponHandler === 'function') {
-        try {
-          fired = activeEnemyWeaponHandler(e, enemyCtx);
-        } catch (err) {
-          console.warn('[EnemyWeaponHandler Error]', err);
-        }
-      } else if (activeStageModule) {
-        if (typeof activeStageModule.fireEnemyWeapon === 'function') {
-          try {
-            fired = activeStageModule.fireEnemyWeapon(e, enemyCtx);
-          } catch (err) {
-            console.warn('[StageModule fireEnemyWeapon Error]', err);
+    // Decoupled Enemy Multi-Weapon Firing: each weapon checks its own millisecond cadence timer
+    if (e.weapons && Array.isArray(e.weapons) && e.weapons.length > 0) {
+      for (const w of e.weapons) {
+        if (w.is_enabled === 0) continue;
+        const wInterval = parseInt(w.fire_interval_ms) || Math.max(20, Math.round((parseFloat(w.fire_rate_seconds) || 2.0) * 1000));
+        if (now >= (w.nextShotTime || 0)) {
+          w.nextShotTime = now + wInterval;
+          let fired = false;
+          if (typeof activeEnemyWeaponHandler === 'function') {
+            try { fired = activeEnemyWeaponHandler(e, enemyCtx, w); } catch (err) {}
+          } else if (activeStageModule) {
+            if (typeof activeStageModule.fireEnemyWeapon === 'function') {
+              try { fired = activeStageModule.fireEnemyWeapon(e, enemyCtx, w); } catch (err) {}
+            } else if (activeStageModule.default && typeof activeStageModule.default.fireEnemyWeapon === 'function') {
+              try { fired = activeStageModule.default.fireEnemyWeapon(e, enemyCtx, w); } catch (err) {}
+            }
           }
-        } else if (activeStageModule.default && typeof activeStageModule.default.fireEnemyWeapon === 'function') {
-          try {
-            fired = activeStageModule.default.fireEnemyWeapon(e, enemyCtx);
-          } catch (err) {
-            console.warn('[StageModule.default fireEnemyWeapon Error]', err);
+          if (!fired) {
+            fireEnemyWeaponBolt(e, w);
           }
         }
       }
-      if (!fired) {
-        fireEnemyWeaponBolt(e);
+    } else {
+      // Legacy single weapon fallback
+      if (now >= e.nextShotTime) {
+        e.nextShotTime = now + (e.fireRate * 1000) * (0.85 + Math.random() * 0.5);
+        let fired = false;
+        if (typeof activeEnemyWeaponHandler === 'function') {
+          try {
+            fired = activeEnemyWeaponHandler(e, enemyCtx);
+          } catch (err) {
+            console.warn('[EnemyWeaponHandler Error]', err);
+          }
+        } else if (activeStageModule) {
+          if (typeof activeStageModule.fireEnemyWeapon === 'function') {
+            try {
+              fired = activeStageModule.fireEnemyWeapon(e, enemyCtx);
+            } catch (err) {
+              console.warn('[StageModule fireEnemyWeapon Error]', err);
+            }
+          } else if (activeStageModule.default && typeof activeStageModule.default.fireEnemyWeapon === 'function') {
+            try {
+              fired = activeStageModule.default.fireEnemyWeapon(e, enemyCtx);
+            } catch (err) {
+              console.warn('[StageModule.default fireEnemyWeapon Error]', err);
+            }
+          }
+        }
+        if (!fired) {
+          fireEnemyWeaponBolt(e);
+        }
       }
     }
 
@@ -9244,14 +9365,18 @@ function updateEnemiesCombat(delta) {
   }
 }
 
-function fireEnemyWeaponBolt(enemyObj) {
+function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
   if (!state.hasStarted || state.isPaused || state.isGameOver || !scene) return;
   // Strict requirement: Only fire weapon when level
   if (enemyObj.isLevel === false) return;
   const cfg = enemyObj.config || {};
-  const wpnName = (cfg.weapon_name || enemyObj.weaponName || '').toLowerCase();
+  const wpn = weaponOverride || (enemyObj.weapons && enemyObj.weapons[0]) || {};
+  const wpnName = (wpn.name || cfg.weapon_name || enemyObj.weaponName || '').toLowerCase();
+  const wpnType = (wpn.type || '').toLowerCase();
+  const wpnMount = (wpn.mount || 'dual_wingtip').toLowerCase();
   const modelType = (cfg.model_3d_type || '').toLowerCase();
-  const isMissile = /missile|torpedo|disruptor|annihilator|rocket/i.test(wpnName)
+  const isMissile = wpnType === 'missile' || wpnType === 'torpedo'
+    || /missile|torpedo|disruptor|annihilator|rocket/i.test(wpnName)
     || modelType === 'cruiser'
     || modelType === 'dreadnought'
     || (modelType === 'singularity_probe' && Math.random() > 0.45);
@@ -9262,18 +9387,33 @@ function fireEnemyWeaponBolt(enemyObj) {
 
   // Emanating from front of model / weapon emitters
   enemyObj.lastGunSide = (enemyObj.lastGunSide === 1) ? -1 : 1;
-  const isDualCannon = /dual|twin|interceptor/i.test(wpnName) || /interceptor/i.test(cfg.enemy_id || '');
-  const lateralOffset = isDualCannon ? (enemyObj.lastGunSide * cfgLength * 0.32) : 0;
+  let lateralOffset = 0;
+  let verticalOffset = -0.15 * shipScale;
+
+  if (wpnMount === 'dual_wingtip') {
+    lateralOffset = enemyObj.lastGunSide * cfgLength * 0.32;
+  } else if (wpnMount === 'left') {
+    lateralOffset = -cfgLength * 0.35;
+  } else if (wpnMount === 'right') {
+    lateralOffset = cfgLength * 0.35;
+  } else if (wpnMount === 'turret') {
+    lateralOffset = 0;
+    verticalOffset = 0.25 * shipScale;
+  } else { // 'center'
+    lateralOffset = 0;
+  }
+
   const forwardOffset = cfgDepth * 0.48; // front nose / muzzle
-  const verticalOffset = -0.15 * shipScale; // slightly down along tilted nose
 
   const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffset);
   const spawnOrigin = enemyObj.mesh.position.clone().add(localMuzzle.applyQuaternion(enemyObj.mesh.quaternion));
 
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
   const direction = new THREE.Vector3().subVectors(playerPos, spawnOrigin).normalize();
-  const weaponBoltColor = cfg.weapon_color || enemyObj.weaponColor || '#38bdf8';
+  const weaponBoltColor = wpn.color || cfg.weapon_color || enemyObj.weaponColor || '#38bdf8';
   const boltColorHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0x38bdf8;
+  const weaponDamageVal = parseInt(wpn.damage || cfg.weapon_damage || enemyObj.weaponDmg || 6);
+  const weaponSpeedVal = parseInt(wpn.speed || cfg.weapon_speed || enemyObj.weaponSpeed || 480);
 
   // Weapon fire scaled relative to the size of the model
   const boltScale = THREE.MathUtils.clamp(shipScale * 0.85, 0.6, 2.5);
@@ -9349,7 +9489,7 @@ function fireEnemyWeaponBolt(enemyObj) {
     materialList = [bodyMat, tipMat, finMat, plumeMat];
 
     // Visible flight speed: travels across ~24 units in ~1.0 second
-    boltSpeed = Math.max(22, Math.min(36, (parseInt(cfg.weapon_speed || enemyObj.weaponSpeed || 480)) * 0.065));
+    boltSpeed = Math.max(22, Math.min(36, weaponSpeedVal * 0.065));
 
     if (audioMgr && typeof audioMgr.playEnemyMissile === 'function') {
       audioMgr.playEnemyMissile();
@@ -9399,7 +9539,7 @@ function fireEnemyWeaponBolt(enemyObj) {
     materialList = [sheathMat, coreMat];
 
     // Visible flight speed: travels across ~24 units in ~0.8 second
-    boltSpeed = Math.max(28, Math.min(44, (parseInt(cfg.weapon_speed || enemyObj.weaponSpeed || 480)) * 0.075));
+    boltSpeed = Math.max(28, Math.min(48, weaponSpeedVal * 0.075));
 
     if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
       audioMgr.playEnemyLaser();
@@ -9412,12 +9552,13 @@ function fireEnemyWeaponBolt(enemyObj) {
     materialList,
     direction,
     speed: boltSpeed,
-    damage: enemyObj.weaponDmg || 6,
+    damage: weaponDamageVal,
     type: weaponType,
     spiralTime: Math.random() * Math.PI * 2,
     spawnTime: performance.now(),
     lifetime: 4.8
   });
+}
 }
 
 function applyDamageToPlayer(rawDamage) {

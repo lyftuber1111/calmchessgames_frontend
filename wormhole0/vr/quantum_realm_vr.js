@@ -123,7 +123,24 @@ export const stageConfig = {
         "destruction_particle_url": "",
         "destruction_particle_count": 120,
         "destruction_particle_color": "#ef476f",
-        "destruction_particle_scale": 1
+        "destruction_particle_scale": 1,
+        "fire_rate_seconds": 1.2,
+        "fire_rate_ms": 1200,
+        "fire_rate_times_per_sec": 0.833,
+        "weapons": [
+            {
+                "name": "Quantum Annihilator",
+                "type": "beam",
+                "mount": "dual_wingtip",
+                "fire_rate_times_per_sec": 0.833,
+                "fire_interval_ms": 1200,
+                "fire_rate_seconds": 1.2,
+                "damage": 60,
+                "speed": 650,
+                "color": "#ef476f",
+                "is_enabled": 1
+            }
+        ]
     }
 ],
 
@@ -135,6 +152,135 @@ export const stageConfig = {
     description: 'Dual 6-DOF VR motion controllers, Trigger primary fire, Grip boost thrust'
   }
 };
+
+
+/**
+ * Stage Multi-Weapon Firing Handler:
+ * Supports multiple weapons per enemy, distinct firing cadences (times/sec and ms),
+ * custom projectile colors, velocities, and mount points (dual wingtip, nose, turret).
+ */
+export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
+  if (!enemyObj || !enemyObj.mesh) return false;
+  const THREE = (context && context.THREE) || window.THREE;
+  const scene = (context && context.scene) || window.scene;
+  const state = (context && context.state) || window.state;
+  const cameraRig = (context && context.cameraRig) || window.cameraRig;
+  const enemyBolts = (context && context.enemyBolts) || window.enemyBolts;
+  const audioMgr = (context && context.audioMgr) || window.audioMgr;
+  if (!THREE || !scene || !enemyBolts) return false;
+
+  const playerPos = (state && state.isXR && cameraRig) ? cameraRig.position : ((state && state.position) ? state.position : new THREE.Vector3(0, 0, 220));
+  const cfg = enemyObj.config || {};
+  const activeWpn = weaponOverride || (Array.isArray(enemyObj.weapons) && enemyObj.weapons.length > 0 ? enemyObj.weapons[0] : null);
+
+  const wpnName = (activeWpn && activeWpn.name) ? activeWpn.name : (cfg.weapon_name || enemyObj.weaponName || 'Plasma Pulse');
+  const wpnType = (activeWpn && activeWpn.type) ? activeWpn.type : (/missile|torpedo/i.test(wpnName) ? 'missile' : 'beam');
+  const isMissile = (wpnType === 'missile');
+
+  const shipScale = (enemyObj.mesh.scale && typeof enemyObj.mesh.scale.x === 'number') ? enemyObj.mesh.scale.x : 1.0;
+  const cfgDepth = (parseFloat(cfg.depth) || 3.0) * shipScale;
+  const cfgLength = (parseFloat(cfg.length) || 3.0) * shipScale;
+
+  const mount = (activeWpn && activeWpn.mount) ? activeWpn.mount : 'dual_wingtip';
+  let lateralOffset = 0;
+  let verticalOffset = -0.15 * shipScale;
+  if (mount === 'dual_wingtip') {
+    enemyObj.lastGunSide = (enemyObj.lastGunSide === 1) ? -1 : 1;
+    lateralOffset = enemyObj.lastGunSide * cfgLength * 0.32;
+  } else if (mount === 'left') {
+    lateralOffset = -cfgLength * 0.32;
+  } else if (mount === 'right') {
+    lateralOffset = cfgLength * 0.32;
+  } else if (mount === 'turret') {
+    verticalOffset = 0.45 * shipScale;
+    lateralOffset = 0;
+  }
+  const forwardOffset = cfgDepth * 0.48;
+
+  const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffset);
+  const spawnOrigin = enemyObj.mesh.position.clone().add(localMuzzle.applyQuaternion(enemyObj.mesh.quaternion));
+  const direction = new THREE.Vector3().subVectors(playerPos, spawnOrigin).normalize();
+
+  const weaponBoltColor = (activeWpn && activeWpn.color) ? activeWpn.color : (cfg.weapon_color || enemyObj.weaponColor || '#ff0055');
+  const boltColorHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0xff0055;
+  const boltScale = THREE.MathUtils.clamp(shipScale * 0.85, 0.6, 2.5);
+
+  let mesh;
+  let geometryList = [];
+  let materialList = [];
+  const rawSpd = parseInt((activeWpn && activeWpn.speed) ? activeWpn.speed : (cfg.weapon_speed || enemyObj.weaponSpeed || 450));
+  let boltSpeed = Math.max(24, Math.min(48, rawSpd * 0.075));
+  const boltDamage = parseInt((activeWpn && activeWpn.damage) ? activeWpn.damage : (cfg.weapon_damage || cfg.attack_damage || enemyObj.weaponDmg || 5));
+
+  if (isMissile) {
+    const missileGroup = new THREE.Group();
+    const bodyGeom = new THREE.CylinderGeometry(0.24, 0.4, 2.8, 8);
+    bodyGeom.rotateX(Math.PI / 2);
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2a2d34, metalness: 0.8, roughness: 0.3 });
+    const tipGeom = new THREE.ConeGeometry(0.44, 1.1, 8);
+    tipGeom.rotateX(-Math.PI / 2);
+    tipGeom.translate(0, 0, -1.9);
+    const tipMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.95 });
+    missileGroup.add(new THREE.Mesh(bodyGeom, bodyMat));
+    missileGroup.add(new THREE.Mesh(tipGeom, tipMat));
+
+    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 32 * boltScale);
+    missileGroup.add(light);
+    missileGroup.scale.set(boltScale, boltScale, boltScale);
+    missileGroup.position.copy(spawnOrigin);
+    missileGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+    scene.add(missileGroup);
+    mesh = missileGroup;
+    geometryList = [bodyGeom, tipGeom];
+    materialList = [bodyMat, tipMat];
+    boltSpeed = Math.max(20, Math.min(36, rawSpd * 0.065));
+
+    if (audioMgr && typeof audioMgr.playEnemyMissile === 'function') {
+      audioMgr.playEnemyMissile();
+    } else if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
+      audioMgr.playEnemyLaser();
+    }
+  } else {
+    const beamGroup = new THREE.Group();
+    const sheathGeom = new THREE.CylinderGeometry(0.44, 0.58, 8.2, 8);
+    sheathGeom.rotateX(Math.PI / 2);
+    const sheathMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending });
+    const coreGeom = new THREE.CylinderGeometry(0.18, 0.28, 7.5, 8);
+    coreGeom.rotateX(Math.PI / 2);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.96 });
+    beamGroup.add(new THREE.Mesh(sheathGeom, sheathMat));
+    beamGroup.add(new THREE.Mesh(coreGeom, coreMat));
+
+    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
+    beamGroup.add(light);
+    beamGroup.scale.set(boltScale, boltScale, boltScale);
+    beamGroup.position.copy(spawnOrigin);
+    beamGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+    scene.add(beamGroup);
+    mesh = beamGroup;
+    geometryList = [sheathGeom, coreGeom];
+    materialList = [sheathMat, coreMat];
+
+    if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
+      audioMgr.playEnemyLaser();
+    }
+  }
+
+  enemyBolts.push({
+    mesh,
+    geometryList,
+    materialList,
+    direction,
+    speed: boltSpeed,
+    damage: boltDamage,
+    type: isMissile ? 'missile' : 'beam',
+    spiralTime: Math.random() * Math.PI * 2,
+    spawnTime: performance.now(),
+    lifetime: 4.8
+  });
+
+  return true;
+}
 
 export function applyStage(engineApi) {
   if (!engineApi) return stageConfig;
@@ -155,6 +301,9 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setEnemyWeaponHandler === 'function') {
+    engineApi.setEnemyWeaponHandler(fireEnemyWeapon);
+  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -168,4 +317,4 @@ export function applyStage(engineApi) {
   return stageConfig;
 }
 
-export default { stageConfig, applyStage };
+export default { stageConfig, applyStage, fireEnemyWeapon };;

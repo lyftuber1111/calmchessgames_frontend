@@ -304,7 +304,8 @@ const STAGE_REGISTRY = {
   1: { level: 1, name: 'Warp Origin', slug: 'warp_origin' },
   2: { level: 2, name: 'Event Horizon', slug: 'event_horizon' },
   3: { level: 3, name: 'Singularity Core', slug: 'singularity_core' },
-  4: { level: 4, name: 'Quantum Realm', slug: 'quantum_realm' }
+  4: { level: 4, name: 'Quantum Realm', slug: 'quantum_realm' },
+  5: { level: 5, name: 'Final Boss Stage', slug: 'final_boss_stage' }
 };
 
 let currentActiveStage = 1;
@@ -5096,17 +5097,23 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
         currentStageObjectPool.despawnAll();
       }
-      const poolScriptRelative = `./${stage.slug}_pool.js?t=${timestamp}`;
-      const poolScriptAlt = `../js/${stage.slug}_pool.js?t=${timestamp}`;
+      const candidatePoolPaths = [
+        `./${stage.slug}_pool.js?t=${timestamp}`,
+        `../js/${stage.slug}_pool.js?t=${timestamp}`,
+        `../${deviceType}/${stage.slug}_pool.js?t=${timestamp}`,
+        `./${deviceType}/${stage.slug}_pool.js?t=${timestamp}`,
+        `../${stage.slug}_pool.js?t=${timestamp}`,
+        `./js/${stage.slug}_pool.js?t=${timestamp}`
+      ];
       let poolMod = null;
-      try {
-        poolMod = await import(poolScriptRelative);
-      } catch (pErr1) {
+      for (const pPath of candidatePoolPaths) {
         try {
-          poolMod = await import(poolScriptAlt);
-        } catch (pErr2) {
-          console.warn(`[Wormhole XR Engine] Fallback loading stage pool ${poolScriptRelative}:`, pErr2);
-        }
+          poolMod = await import(pPath);
+          if (poolMod) {
+            console.log(`[Wormhole XR Engine] Successfully loaded stage pool from: ${pPath}`);
+            break;
+          }
+        } catch (ignore) {}
       }
 
       const stagePoolCfg = activeCfg || (STAGE_REGISTRY[stage.level] ? { ...STAGE_REGISTRY[stage.level], enemies: window.activeStageEnemies } : stage);
@@ -8878,11 +8885,11 @@ function create3DEnemyMesh(config) {
         loadedModel.userData.targetRotY = targetRotY;
         group.userData.modelUrl = normUrl;
 
-        // Compute target span and auto-scale
+        // Compute target span and auto-scale (calibrated directly to admin console physical meter dimensions)
         const size = new THREE.Vector3();
         box.getSize(size);
         const maxDim = Math.max(size.x, size.y, size.z, 0.001);
-        const targetSpan = (userLength || (userRadius * 2.4)) * userScale;
+        const targetSpan = (userLength || (userRadius * 2.4));
         const autoScale = targetSpan / maxDim;
 
         const pivot = new THREE.Group();
@@ -9196,8 +9203,8 @@ function spawnEnemyWaveFromPool(forcedCount = null, waveConfig = null, enemyPool
     mesh.scale.set(0.1, 0.1, 0.1);
 
     const userScale = parseFloat(cfg.scale !== undefined && cfg.scale !== null ? cfg.scale : 1.0) || 1.0;
-    const isHeavy = cfg.model_3d_type === 'cruiser' || cfg.model_3d_type === 'dreadnought';
-    const baseScale = (isHeavy ? (1.55 + Math.random() * 0.35) : (1.3 + Math.random() * 0.3)) * userScale;
+    const isHeavy = cfg.model_3d_type === 'cruiser' || cfg.model_3d_type === 'dreadnought' || cfg.model_3d_type === 'boss';
+    const baseScale = userScale * (isHeavy ? 1.25 : 1.0);
     const rawSpeed = parseInt(cfg.movement_speed || cfg.speed || 260);
     const speed = Math.max(34, Math.min(62, rawSpeed * 0.13)); // outward corridor rush speed
 
@@ -12022,9 +12029,19 @@ async function syncStagesDropdownFromDatabase(showNotification = false) {
       const stageList = activeStages.length > 0 ? activeStages : json.stages;
 
       const currentVal = jumpSelect.value;
+      stageList.forEach(s => {
+        const lvl = parseInt(s.stage_level) || 1;
+        if (!STAGE_REGISTRY[lvl]) {
+          STAGE_REGISTRY[lvl] = {
+            level: lvl,
+            name: s.stage_name,
+            slug: s.stage_name.toLowerCase().replace(/[^a-z0-9_]/g, '_')
+          };
+        }
+      });
       jumpSelect.innerHTML = stageList.map(s => {
         const lvl = parseInt(s.stage_level) || 1;
-        const icon = lvl === 1 ? '🚀' : (lvl === 2 ? '🌌' : (lvl === 3 ? '🕳️' : '⚛️'));
+        const icon = lvl === 1 ? '🚀' : (lvl === 2 ? '🌌' : (lvl === 3 ? '🕳️' : (lvl === 4 ? '⚛️' : (lvl === 5 ? '👑' : '🪐'))));
         return `<option value="${lvl}">${icon} Stage ${lvl}: ${s.stage_name}</option>`;
       }).join('');
 
@@ -12507,11 +12524,37 @@ function updateFlight(delta) {
       state.pitch = 0;
       state.isHyperWarping = false;
 
-      // Advance stage level and trigger level change update from Game Manager database
-      const nextStage = (currentActiveStage % 4) + 1;
-      console.log(`[Wormhole XR Engine] Warp traversal complete. Advancing to Stage ${nextStage}...`);
+      // Advance stage level dynamically through all stages in Game Manager database
+      const availableLevels = Object.keys(STAGE_REGISTRY)
+        .map(k => parseInt(k))
+        .filter(n => !isNaN(n) && n > 0)
+        .sort((a, b) => a - b);
+      const currentIdx = availableLevels.indexOf(currentActiveStage);
+      let nextStage = 1;
+      let isVictoryCycle = false;
+
+      if (currentIdx !== -1 && currentIdx < availableLevels.length - 1) {
+        nextStage = availableLevels[currentIdx + 1];
+      } else {
+        // Cleared all campaign sectors (e.g. Stage 5 Final Boss)!
+        isVictoryCycle = true;
+        nextStage = availableLevels[0] || 1;
+      }
+
+      console.log(`[Wormhole XR Engine] Warp traversal complete. Advancing to Stage ${nextStage} (Victory cycle: ${isVictoryCycle})...`);
       triggerAcquireEvent('warp_horizon_jump');
       triggerAcquireEvent('core_collapse_breakthrough');
+
+      if (isVictoryCycle) {
+        state.score += 25000;
+        if (typeof updateScoreHUD === 'function') updateScoreHUD();
+        if (typeof showFloatingCombatText === 'function') {
+          showFloatingCombatText('+25,000 CAMPAIGN VICTORY BONUS', '#ffd166');
+        }
+        if (typeof toastNotification === 'function') {
+          toastNotification('🏆 CAMPAIGN COMPLETE! ALL WORMHOLE SECTORS LIBERATED! ENTERING NEW GAME+ OVERDRIVE!');
+        }
+      }
 
       // Replenish shields & hull for victorious arrival into next stage
       state.playerShield = 100;

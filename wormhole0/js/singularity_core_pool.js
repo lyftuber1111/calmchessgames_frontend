@@ -3,13 +3,11 @@ import { MeshPool, StageObjectPool } from './object_pool.js';
 
 /**
  * Wormhole XR - Stage 3: Singularity Core Object Pool
- * Calm Chess Games / Brian Berry (C) 2026. All Rights Reserved.
+ * Calm Chess Games / Wormhole XR (c) 2026. All Rights Reserved.
  *
- * Pre-allocates enemies (Void Guardians, Singularity Drones)
- * and weapons (Tachyon Lance, Heavy Plasma, Singularity Waves, Heavy Beams).
- * Holds inactive objects in pool at -1000 with visibility false,
- * movement logic, physics, and weapons actions inactive.
- * Controls wave pulls: Wave 1 (5 enemies), Wave 2 (10 enemies).
+ * Pre-allocates enemies and weapons graphic objects.
+ * Sets 3D graphic models, scales, physical dimensions, and weapons attributes
+ * pulled dynamically from the Game Manager admin database.
  */
 
 export class SingularityCoreObjectPool extends StageObjectPool {
@@ -40,13 +38,31 @@ export class SingularityCoreObjectPool extends StageObjectPool {
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
-        initial: { id: 'tachyon_lance',
-          enemy_id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
+        initial: {
+          id: 'plasma_torpedo',
+          name: 'Plasma Torpedo',
+          icon: '💣',
+          color: '#f59e0b',
+          damage: 5,
+          bullet_speed: 450,
+          energy_drain_pct: 40.0,
+          can_overheat: 0,
+          cooldown_seconds: 0.0,
+          pool_size: 300
+        },
         acquirable: [
-          { id: 'heavy_plasma',
-          enemy_id: 'heavy_plasma', name: 'Heavy Plasma', color: '#a855f7', pool_size: 300 },
-          { id: 'blue_laser',
-          enemy_id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 }
+          {
+            id: 'tachyon_lance',
+            name: 'Tachyon Lance',
+            icon: '⚡',
+            color: '#a855f7',
+            damage: 3,
+            bullet_speed: 850,
+            energy_drain_pct: 25.0,
+            can_overheat: 1,
+            cooldown_seconds: 7.0,
+            pool_size: 300
+          }
         ]
       },
       enemies: [
@@ -54,32 +70,118 @@ export class SingularityCoreObjectPool extends StageObjectPool {
           id: 'void_guardian',
           enemy_id: 'void_guardian',
           name: 'Singularity Void Guardian',
-          model_3d_type: 'dreadnought',
+          enemy_class: 'Guardian Frigate',
+          icon: '👾',
+          model_3d_type: 'custom_glb',
+          model_3d_url: 'desktop/warp_origin_images/drone_phase_interceptor_3.glb',
           color: '#a855f7',
-          scale: 1.6,
-          length: 6.2,
-          height: 3.2,
-          depth: 6.0,
+          scale: 1.20,
+          length: 3.80,
+          height: 3.80,
+          depth: 3.80,
+          circumference: 11.94,
+          hits: 15,
+          armor: 70,
+          shield: 6,
+          speed: 150,
+          attack_damage: 35,
+          weapon_name: 'Void Disruptor',
+          weapon_damage: 35,
+          weapon_speed: 400,
+          weapon_color: '#a855f7',
+          fire_rate_seconds: 2.2,
+          fire_rate_ms: 2200,
+          fire_rate_times_per_sec: 0.455,
+          weapons: [
+            {
+              id: 'ew_void_disruptor',
+              name: 'Void Disruptor',
+              type: 'beam',
+              mount: 'dual_wingtip',
+              model_url: '',
+              model_type: '',
+              fire_point_x: 0,
+              fire_point_y: -0.15,
+              fire_point_z: 1.5,
+              scale: 1.0,
+              size_x: 1.0,
+              size_y: 1.0,
+              size_z: 1.0,
+              fire_rate_times_per_sec: 0.455,
+              fire_interval_ms: 2200,
+              fire_rate_seconds: 2.2,
+              damage: 35,
+              speed: 400,
+              color: '#a855f7',
+              is_enabled: 1
+            }
+          ],
+          score: 1000,
+          threat: 'High',
+          piercing: 'plasma_torpedo',
           pool_size: 100
         },
         {
-          id: 'quantum_singularity_drone',
-          enemy_id: 'quantum_singularity_drone',
-          name: 'Quantum Singularity Drone',
-          model_3d_type: 'drone',
+          id: 'core_swarmer',
+          enemy_id: 'core_swarmer',
+          name: 'Core Swarm Drone',
+          enemy_class: 'Scout Drone',
+          icon: '🛸',
+          model_3d_type: 'custom_glb',
+          model_3d_url: 'desktop/warp_origin_images/recon_drone_2.8m.glb',
           color: '#c084fc',
-          scale: 1.2,
-          length: 3.2,
-          height: 2.0,
-          depth: 3.2,
-          pool_size: 100
+          scale: 0.90,
+          length: 2.80,
+          height: 2.80,
+          depth: 2.80,
+          circumference: 8.80,
+          hits: 3,
+          armor: 20,
+          shield: 2,
+          speed: 260,
+          attack_damage: 12,
+          weapon_name: 'Violet Pulse',
+          weapon_damage: 12,
+          weapon_speed: 480,
+          weapon_color: '#c084fc',
+          fire_rate_seconds: 1.8,
+          fire_rate_ms: 1800,
+          fire_rate_times_per_sec: 0.556,
+          weapons: [
+            {
+              id: 'ew_violet_pulse',
+              name: 'Violet Pulse',
+              type: 'beam',
+              mount: 'center',
+              model_url: '',
+              model_type: '',
+              fire_point_x: 0,
+              fire_point_y: -0.15,
+              fire_point_z: 1.5,
+              scale: 1.0,
+              size_x: 0.5,
+              size_y: 0.5,
+              size_z: 1.0,
+              fire_rate_times_per_sec: 0.556,
+              fire_interval_ms: 1800,
+              fire_rate_seconds: 1.8,
+              damage: 12,
+              speed: 480,
+              color: '#c084fc',
+              is_enabled: 1
+            }
+          ],
+          score: 300,
+          threat: 'Medium',
+          piercing: 'any',
+          pool_size: 50
         }
       ],
       ...stageConfig
     };
 
     super(scene, configWithDefaults, options);
-    console.log(`[SingularityCoreObjectPool] Pre-allocated graphics object pool for Stage 3: Singularity Core (100 each enemy, 300 weapons, 2 waves: 5 & 10)`);
+    console.log(`[SingularityCoreObjectPool] Pre-allocated graphics object pool for Stage 3: Singularity Core`);
   }
 }
 

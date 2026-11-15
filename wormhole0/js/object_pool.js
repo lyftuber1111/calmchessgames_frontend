@@ -32,8 +32,18 @@ export class MeshPool {
       mesh = new THREE.Mesh(this.geometry, this.material);
     }
 
+    // Inactive objects in the pool held at -1000 and visibility set to false
+    mesh.position.set(0, -1000, 0);
     mesh.visible = false; // Keep in scene graph, just hidden
     mesh.frustumCulled = true;
+
+    // Movement logic, physics, weapons actions set to be inactive
+    mesh.userData = mesh.userData || {};
+    mesh.userData.inPool = true;
+    mesh.userData.isActive = false;
+    mesh.userData.movementActive = false;
+    mesh.userData.physicsActive = false;
+    mesh.userData.weaponsActive = false;
 
     if (this.scene && mesh.parent !== this.scene) {
       this.scene.add(mesh);
@@ -61,22 +71,47 @@ export class MeshPool {
       mesh.scale.set(1, 1, 1);
     }
     
+    // Only becomes active when pulled from the pool
     mesh.visible = true;
+    mesh.userData = mesh.userData || {};
+    mesh.userData.inPool = false;
+    mesh.userData.isActive = true;
+    mesh.userData.movementActive = true;
+    mesh.userData.physicsActive = true;
+    mesh.userData.weaponsActive = true;
     this.active.add(mesh);
     return mesh;
   }
 
   despawn(mesh) {
-    if (!mesh || !this.active.has(mesh)) return;
+    if (!mesh) return;
 
+    // Return to pool: held at -1000, visibility false, movement/physics/weapons inactive
+    mesh.position.set(0, -1000, 0);
     mesh.visible = false;
+    mesh.userData = mesh.userData || {};
+    mesh.userData.inPool = true;
+    mesh.userData.isActive = false;
+    mesh.userData.movementActive = false;
+    mesh.userData.physicsActive = false;
+    mesh.userData.weaponsActive = false;
+
     this.active.delete(mesh);
-    this.pool.push(mesh);
+    if (!this.pool.includes(mesh)) {
+      this.pool.push(mesh);
+    }
   }
 
   despawnAll() {
     for (const mesh of this.active) {
+      mesh.position.set(0, -1000, 0);
       mesh.visible = false;
+      mesh.userData = mesh.userData || {};
+      mesh.userData.inPool = true;
+      mesh.userData.isActive = false;
+      mesh.userData.movementActive = false;
+      mesh.userData.physicsActive = false;
+      mesh.userData.weaponsActive = false;
       this.pool.push(mesh);
     }
     this.active.clear();
@@ -128,6 +163,39 @@ export class StageObjectPool {
     this.initPlayerWeaponPools();
     this.initEnemyWeaponPools();
     this.initEnemyPools();
+    this.initWaves();
+  }
+
+  initWaves() {
+    this.waves = (this.stageConfig && Array.isArray(this.stageConfig.waves) && this.stageConfig.waves.length > 0)
+      ? this.stageConfig.waves
+      : [
+          {
+            wave_number: 1,
+            enemy_count: 5,
+            interval_seconds: 0,
+            description: 'Wave 1: Recon Vanguard (5 Enemies)'
+          },
+          {
+            wave_number: 2,
+            enemy_count: 10,
+            interval_seconds: 15,
+            description: 'Wave 2: Full Assault Swarm (10 Enemies)'
+          }
+        ];
+    this.totalWaves = (this.stageConfig && this.stageConfig.total_waves) || this.waves.length || 2;
+    this.waveIntervalSeconds = (this.stageConfig && this.stageConfig.wave_interval_seconds) || 15;
+    this.currentWave = 0;
+  }
+
+  getWaveConfig(waveIndex = 1) {
+    if (!this.waves) this.initWaves();
+    return this.waves.find(w => w.wave_number === waveIndex) || this.waves[waveIndex - 1] || null;
+  }
+
+  pullEnemiesForWave(waveNumber = 1) {
+    const waveCfg = this.getWaveConfig(waveNumber);
+    return waveCfg ? waveCfg.enemy_count : (waveNumber === 1 ? 5 : 10);
   }
 
   initPlayerWeaponPools() {
@@ -158,7 +226,7 @@ export class StageObjectPool {
         this.scene,
         null,
         null,
-        wpn.pool_size || 50,
+        wpn.pool_size || 300,
         () => {
           if (typeof this.options.createPlayerLaserMeshFn === 'function') {
             return this.options.createPlayerLaserMeshFn(wpn);
@@ -203,12 +271,12 @@ export class StageObjectPool {
   }
 
   initEnemyWeaponPools() {
-    // 1. Enemy Beam / Plasma Pulse Pool (Size = 50)
+    // 1. Enemy Beam / Plasma Pulse Pool (Size = 300)
     const beamPool = new MeshPool(
       this.scene,
       null,
       null,
-      50,
+      300,
       () => {
         if (typeof this.options.createEnemyWeaponMeshFn === 'function') {
           return this.options.createEnemyWeaponMeshFn({ type: 'beam' }, {});
@@ -234,12 +302,12 @@ export class StageObjectPool {
     );
     this.enemyWeaponPools.set('beam', beamPool);
 
-    // 2. Enemy Missile / Torpedo Pool (Size = 25)
+    // 2. Enemy Missile / Torpedo Pool (Size = 300)
     const missilePool = new MeshPool(
       this.scene,
       null,
       null,
-      25,
+      300,
       () => {
         if (typeof this.options.createEnemyWeaponMeshFn === 'function') {
           return this.options.createEnemyWeaponMeshFn({ type: 'missile' }, {});
@@ -290,7 +358,8 @@ export class StageObjectPool {
             length: 2.8,
             height: 2.8,
             depth: 2.8,
-            color: '#00f0ff'
+            color: '#00f0ff',
+            pool_size: 100
           }
         ];
 
@@ -298,7 +367,7 @@ export class StageObjectPool {
       const enemyKey = enemyCfg.id || enemyCfg.enemy_id || enemyCfg.model_3d_type || 'enemy_default';
       if (this.enemyPools.has(enemyKey)) continue;
 
-      const poolSize = enemyCfg.pool_size || 15;
+      const poolSize = enemyCfg.pool_size || 100;
       const pool = new MeshPool(
         this.scene,
         null,
@@ -379,7 +448,14 @@ export class StageObjectPool {
           return;
         }
       }
+      mesh.position.set(0, -1000, 0);
       mesh.visible = false;
+      mesh.userData = mesh.userData || {};
+      mesh.userData.inPool = true;
+      mesh.userData.isActive = false;
+      mesh.userData.movementActive = false;
+      mesh.userData.physicsActive = false;
+      mesh.userData.weaponsActive = false;
     }
   }
 
@@ -410,7 +486,14 @@ export class StageObjectPool {
           return;
         }
       }
+      mesh.position.set(0, -1000, 0);
       mesh.visible = false;
+      mesh.userData = mesh.userData || {};
+      mesh.userData.inPool = true;
+      mesh.userData.isActive = false;
+      mesh.userData.movementActive = false;
+      mesh.userData.physicsActive = false;
+      mesh.userData.weaponsActive = false;
     }
   }
 
@@ -440,7 +523,14 @@ export class StageObjectPool {
           return;
         }
       }
+      mesh.position.set(0, -1000, 0);
       mesh.visible = false;
+      mesh.userData = mesh.userData || {};
+      mesh.userData.inPool = true;
+      mesh.userData.isActive = false;
+      mesh.userData.movementActive = false;
+      mesh.userData.physicsActive = false;
+      mesh.userData.weaponsActive = false;
     }
   }
 

@@ -382,6 +382,19 @@ const state = {
   isHyperWarping: false,
   warpJumpTimer: 0.0,
 
+  // Stage Wave Progression State
+  currentWave: 0,
+  totalWaves: 2,
+  waveIntervalSeconds: 15,
+  waveStartTime: 0,
+  waveEnemiesSpawned: 0,
+  waveEnemiesRemaining: 0,
+  waveCompleted: false,
+  stageWaves: [
+    { wave_number: 1, enemy_count: 5, interval_seconds: 0, delay_ms: 0, description: 'Wave 1: Recon Vanguard (5 Enemies)' },
+    { wave_number: 2, enemy_count: 10, interval_seconds: 15, delay_ms: 15000, description: 'Wave 2: Full Assault Swarm (10 Enemies)' }
+  ],
+
   // Hardware Diagnostics & Mode Recommendation
   pendingRecommendedMode: 'desktop-xr'
 };
@@ -4805,6 +4818,25 @@ function getEngineApi() {
       }
       window.activeStageEnemies = enemiesConfig;
     },
+    setWaves: (waves, options = {}) => {
+      if (Array.isArray(waves) && waves.length > 0) {
+        state.stageWaves = waves;
+      }
+      if (options.total_waves !== undefined) {
+        state.totalWaves = parseInt(options.total_waves) || 2;
+      }
+      if (options.wave_interval_seconds !== undefined) {
+        state.waveIntervalSeconds = parseFloat(options.wave_interval_seconds) || 15;
+      }
+      state.currentWave = 0;
+      console.log(`[Wormhole XR Engine] Stage waves initialized: ${state.totalWaves} waves (interval: ${state.waveIntervalSeconds}s)`);
+    },
+    spawnWaveEnemies: (count, waveConfig, enemyPool) => {
+      return spawnEnemyWaveFromPool(count, waveConfig, enemyPool);
+    },
+    getWaves: () => state.stageWaves,
+    getCurrentWave: () => state.currentWave,
+    getTotalWaves: () => state.totalWaves,
     setStageObjectives: (objectives) => {
       state.activeStageObjectives = Array.isArray(objectives) ? objectives : [];
       if (typeof renderStageObjectivesUI === 'function') {
@@ -4970,7 +5002,13 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       if (activeCfg.warp_target_distance) state.stageTargetDistance = parseInt(activeCfg.warp_target_distance) || 50000;
       if (activeCfg.mission_objectives) state.stageMissionBriefing = activeCfg.mission_objectives;
       if (activeCfg.objectives) state.activeStageObjectives = activeCfg.objectives;
+      if (activeCfg.waves) state.stageWaves = activeCfg.waves;
+      if (activeCfg.total_waves) state.totalWaves = parseInt(activeCfg.total_waves) || 2;
+      if (activeCfg.wave_interval_seconds) state.waveIntervalSeconds = parseFloat(activeCfg.wave_interval_seconds) || 15;
     }
+    state.currentWave = 0;
+    state.waveStartTime = 0;
+    state.waveCompleted = false;
     if (typeof renderStageObjectivesUI === 'function') {
       renderStageObjectivesUI();
     }
@@ -6560,6 +6598,15 @@ function destroyEnemyInstance(e, enemyIndex = -1) {
   const deathPos = e.mesh.position.clone();
   const deathCfg = e.config || {};
   triggerEnemyExplosion(deathPos, deathCfg);
+
+  e.isActive = false;
+  if (e.mesh) {
+    e.mesh.userData.inPool = true;
+    e.mesh.userData.isActive = false;
+    e.mesh.userData.movementActive = false;
+    e.mesh.userData.physicsActive = false;
+    e.mesh.userData.weaponsActive = false;
+  }
 
   if (e.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemy === 'function') {
     currentStageObjectPool.despawnEnemy(e.mesh, deathCfg);
@@ -8959,37 +9006,44 @@ function create3DEnemyMesh(config) {
   return group;
 }
 
-function spawnEnemySwarmFromWormhole(forcedCount = null) {
-  if (!state.hasStarted || state.isPaused || state.isGameOver || state.isHyperWarping) return;
-  if (!scene || !camera) return;
+function spawnEnemyWaveFromPool(forcedCount = null, waveConfig = null, enemyPoolOverride = null) {
+  if (!state.hasStarted || state.isPaused || state.isGameOver || state.isHyperWarping) return [];
+  if (!scene || !camera) return [];
 
-  const enemyPool = (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.length > 0)
-    ? window.activeStageEnemies
-    : (Array.isArray(state.stageEnemies) && state.stageEnemies.length > 0)
-      ? state.stageEnemies
-      : [
-          {
-            enemy_id: 'scout_drone',
-            enemy_name: 'Void Recon Drone',
-            model_3d_type: 'scout_drone',
-            scale: 1.0,
-            length: 2.8,
-            height: 2.8,
-            depth: 2.8,
-            circumference: 8.8,
-            weapon_name: 'Plasma Pulse',
-            weapon_damage: 6,
-            weapon_speed: 480,
-            weapon_color: '#00f0ff',
-            hits_to_destroy: 2,
-            movement_speed: 260,
-            score_value: 100
-          }
-        ];
+  const waveNum = waveConfig ? (waveConfig.wave_number || state.currentWave || 1) : (state.currentWave || 1);
+  const swarmCount = forcedCount !== null && forcedCount !== undefined
+    ? forcedCount
+    : (waveConfig ? waveConfig.enemy_count : (waveNum === 1 ? 5 : 10));
 
-  // Swarm size: 5 to 10 enemies per swarm
-  const swarmCount = forcedCount || (Math.floor(Math.random() * 6) + 5);
-  const swarmId = 'swarm_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+  const enemyPool = (Array.isArray(enemyPoolOverride) && enemyPoolOverride.length > 0)
+    ? enemyPoolOverride
+    : (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.length > 0)
+      ? window.activeStageEnemies
+      : (Array.isArray(state.stageEnemies) && state.stageEnemies.length > 0)
+        ? state.stageEnemies
+        : [
+            {
+              enemy_id: 'scout_drone',
+              enemy_name: 'Void Recon Drone',
+              model_3d_type: 'scout_drone',
+              scale: 1.0,
+              length: 2.8,
+              height: 2.8,
+              depth: 2.8,
+              circumference: 8.8,
+              weapon_name: 'Plasma Pulse',
+              weapon_damage: 6,
+              weapon_speed: 480,
+              weapon_color: '#00f0ff',
+              hits_to_destroy: 2,
+              movement_speed: 260,
+              score_value: 100,
+              pool_size: 100
+            }
+          ];
+
+  const swarmId = 'wave_' + waveNum + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+  const spawnedList = [];
 
   for (let idx = 0; idx < swarmCount; idx++) {
     const cfg = enemyPool[idx % enemyPool.length];
@@ -9005,7 +9059,7 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
     let mesh = null;
     let fromPool = false;
 
-    // Grab enemy graphic object from stage object pool if available
+    // Grab enemy graphic object from stage object pool (pulled from pool)
     if (currentStageObjectPool && typeof currentStageObjectPool.spawnEnemy === 'function') {
       mesh = currentStageObjectPool.spawnEnemy(cfg, spawnPos);
       if (mesh) {
@@ -9020,6 +9074,16 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
     } else {
       mesh.position.set(spawnX, spawnY, spawnZ);
     }
+
+    // Explicitly activate object when pulled from pool
+    mesh.visible = true;
+    mesh.userData = mesh.userData || {};
+    mesh.userData.inPool = false;
+    mesh.userData.isActive = true;
+    mesh.userData.movementActive = true;
+    mesh.userData.physicsActive = true;
+    mesh.userData.weaponsActive = true;
+    mesh.userData.waveNumber = waveNum;
 
     // Fly out of wormhole starting small and scaling dynamically up as they travel
     mesh.scale.set(0.1, 0.1, 0.1);
@@ -9097,6 +9161,7 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
       swarmId,
       swarmIndex: idx,
       swarmCount,
+      waveNumber: waveNum,
       spawnPos: new THREE.Vector3(spawnX, spawnY, spawnZ),
       baseScale,
       speed,
@@ -9128,14 +9193,24 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
       stoppedTime: 0,
       rotSpeedX: (Math.random() - 0.5) * 1.2,
       rotSpeedY: (Math.random() - 0.5) * 1.5,
-      fromPool
+      fromPool,
+      isActive: true
     };
 
     if (!fromPool && scene && mesh.parent !== scene) {
       scene.add(mesh);
     }
     active3DEnemies.push(enemyObj);
+    spawnedList.push(enemyObj);
   }
+
+  showToast(`⚠️ WAVE ${waveNum}/${state.totalWaves}: ${swarmCount} HOSTILES ENGAGED!`);
+  console.log(`[Wormhole XR Engine] Pulled Wave ${waveNum} (${swarmCount} enemies) from pool. Active enemies: ${active3DEnemies.length}`);
+  return spawnedList;
+}
+
+function spawnEnemySwarmFromWormhole(forcedCount = null) {
+  return spawnEnemyWaveFromPool(forcedCount);
 }
 
 function spawnEnemyFromWormhole() {
@@ -9144,7 +9219,8 @@ function spawnEnemyFromWormhole() {
 }
 
 function defaultEnemyMovement(e, delta, context) {
-  if (!e || !e.mesh) return false;
+  // Movement logic inactive if in pool or flagged inactive
+  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) return false;
   const now = (context && context.now) || performance.now();
   const playerPos = (context && context.playerPos) || { x: 0, y: 0, z: 0 };
   const laserBolts = (context && context.laserBolts) || [];
@@ -9491,22 +9567,40 @@ function updateEnemiesCombat(delta) {
   const now = performance.now();
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
 
-  // 1. Spawning check: maintain active 5-10 enemy swarms until stage required kills fulfilled
-  if (active3DEnemies.length === 0 && state.stageKills < state.stageRequiredKills + 8) {
-    if (now > lastEnemySpawnCheckTime + 600) {
-      lastEnemySpawnCheckTime = now;
-      spawnEnemySwarmFromWormhole();
+  // 1. Stage Wave Progression:
+  // Initially 2 waves with 5 enemies for the first wave and 10 enemies for the second wave.
+  // Wave interval determines how often a wave happens (default 15s or when wave defeated).
+  const waveIntervalMs = (state.waveIntervalSeconds || 15) * 1000;
+  if (state.currentWave === 0 && state.hasStarted && !state.isGameOver && !state.isPaused) {
+    state.currentWave = 1;
+    state.waveStartTime = now;
+    state.waveCompleted = false;
+    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+  } else if (state.currentWave === 1 && state.totalWaves >= 2) {
+    const waveElapsed = now - state.waveStartTime;
+    const wave1EnemiesLeft = active3DEnemies.filter(e => e.isActive && (!e.waveNumber || e.waveNumber === 1)).length;
+    if (wave1EnemiesLeft === 0 || waveElapsed >= waveIntervalMs) {
+      state.currentWave = 2;
+      state.waveStartTime = now;
+      const wave2Cfg = (state.stageWaves && state.stageWaves[1]) || { wave_number: 2, enemy_count: 10 };
+      spawnEnemyWaveFromPool(wave2Cfg.enemy_count || 10, wave2Cfg);
     }
-  } else if (active3DEnemies.length <= 2 && state.stageKills < state.stageRequiredKills + 8) {
-    if (now > lastEnemySpawnCheckTime + 3800) {
+  } else if (state.currentWave >= state.totalWaves && active3DEnemies.length === 0 && state.stageKills < state.stageRequiredKills + 8) {
+    if (now > lastEnemySpawnCheckTime + 4000) {
       lastEnemySpawnCheckTime = now;
-      spawnEnemySwarmFromWormhole();
+      const wave2Cfg = (state.stageWaves && state.stageWaves[1]) || { wave_number: 2, enemy_count: 10 };
+      spawnEnemyWaveFromPool(wave2Cfg.enemy_count || 10, wave2Cfg);
     }
   }
 
   // 2. Update active 3D enemies
   for (let i = active3DEnemies.length - 1; i >= 0; i--) {
     const e = active3DEnemies[i];
+    // Inactive pooled enemies: movement, physics, and weapon actions remain inactive
+    if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false) {
+      continue;
+    }
     const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
     // Context bundle for decoupled stage movement and weapon handlers
@@ -9611,8 +9705,16 @@ function updateEnemiesCombat(delta) {
       }
     }
 
-    // Despawn safeguard if pushed far behind player (and dispose mesh hierarchy to prevent leaks)
+    // Return enemy to pool when lifetime is over or pushed far behind player
     if (e.mesh.position.z > playerPos.z + 30 || distToPlayer > 400) {
+      e.isActive = false;
+      if (e.mesh) {
+        e.mesh.userData.inPool = true;
+        e.mesh.userData.isActive = false;
+        e.mesh.userData.movementActive = false;
+        e.mesh.userData.physicsActive = false;
+        e.mesh.userData.weaponsActive = false;
+      }
       if (e.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemy === 'function') {
         currentStageObjectPool.despawnEnemy(e.mesh, e.config);
       } else {
@@ -10291,9 +10393,13 @@ function executeMissionCountdown(isRestart = false) {
     state.lastFrameTime = performance.now();
     centerWormholeOnScreen(true);
 
-    // Spawn fresh hostile swarm upon mission official engagement
+    // Trigger Stage Wave 1 upon mission official engagement (pulling 5 enemies from pool)
+    state.currentWave = 1;
+    state.waveStartTime = performance.now();
+    state.waveCompleted = false;
     lastEnemySpawnCheckTime = performance.now();
-    spawnEnemySwarmFromWormhole();
+    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
 
     // Ensure keyboard focus is restored and request crosshair capture if on desktop
     try {
@@ -10531,9 +10637,13 @@ function restartGame() {
   // Reset frame timestamp to prevent delta time explosion
   state.lastFrameTime = performance.now();
 
-  // Spawn fresh Stage 1 hostile swarm immediately from the beginning
+  // Trigger Stage Wave 1 immediately upon restart (pulling 5 enemies from pool)
+  state.currentWave = 1;
+  state.waveStartTime = performance.now();
+  state.waveCompleted = false;
   lastEnemySpawnCheckTime = performance.now();
-  spawnEnemySwarmFromWormhole();
+  const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+  spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
 
   // Ensure keyboard focus is restored and request crosshair capture if on desktop
   if (!isMobileInUse() && !state.isPointerLocked) {
@@ -12833,6 +12943,8 @@ if (typeof window !== 'undefined') {
   window.enemyBolts = () => enemyBolts;
   window.spawnEnemyFromWormhole = spawnEnemyFromWormhole;
   window.spawnEnemySwarmFromWormhole = spawnEnemySwarmFromWormhole;
+  window.spawnEnemyWaveFromPool = spawnEnemyWaveFromPool;
+  window.destroyEnemyInstance = destroyEnemyInstance;
   window.despawnAllActiveEnemies = despawnAllActiveEnemies;
   window.applyDamageToPlayer = applyDamageToPlayer;
   window.evaluateWarpReadiness = evaluateWarpReadiness;

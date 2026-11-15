@@ -17,6 +17,26 @@ export const stageConfig = {
   mission_objectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
   required_enemy_kills: 10,
   warp_target_distance: 50000,
+  initial_weapon_pool_size: 300,
+  initial_enemy_pool_size: 100,
+  waves: [
+    {
+      wave_number: 1,
+      enemy_count: 5,
+      interval_seconds: 0,
+      delay_ms: 0,
+      description: 'Wave 1: Recon Vanguard (5 Enemies)'
+    },
+    {
+      wave_number: 2,
+      enemy_count: 10,
+      interval_seconds: 15,
+      delay_ms: 15000,
+      description: 'Wave 2: Full Assault Swarm (10 Enemies)'
+    }
+  ],
+  total_waves: 2,
+  wave_interval_seconds: 15,
   objectives: [
     {
       "id": "kills",
@@ -99,7 +119,8 @@ export const stageConfig = {
       "can_overheat": 1,
       "cooldown_seconds": 5,
       "acquire_event": "default_start",
-      "description": "Standard high-cadence plasma emitter with twin focus beams."
+      "description": "Standard high-cadence plasma emitter with twin focus beams.",
+      "pool_size": 300
     },
     "acquirable": [
       {
@@ -113,7 +134,8 @@ export const stageConfig = {
         "can_overheat": 1,
         "cooldown_seconds": 10,
         "acquire_event": "default_start",
-        "description": "High-impact coherent photon beam with deep penetration."
+        "description": "High-impact coherent photon beam with deep penetration.",
+        "pool_size": 300
       }
     ]
   },
@@ -159,6 +181,7 @@ export const stageConfig = {
         "fire_rate_seconds": 0.85,
         "fire_rate_ms": 850,
         "fire_rate_times_per_sec": 1.176,
+        "pool_size": 100,
         "weapons": [
             {
                 "name": "Dual Ion Cannon",
@@ -209,6 +232,13 @@ export const stageConfig = {
         "destruction_particle_type": "procedural_sparks_explosion",
         "destruction_particle_url": "",
         "destruction_particle_count": 40,
+        "destruction_particle_color": "#ff2255",
+        "destruction_particle_scale": 1,
+        "fire_rate_seconds": 0.85,
+        "fire_rate_ms": 850,
+        "fire_rate_times_per_sec": 1.176,
+        "pool_size": 100,
+        "destruction_particle_count": 40,
         "destruction_particle_color": "#ef476f",
         "destruction_particle_scale": 1,
         "fire_rate_seconds": 0.85,
@@ -251,7 +281,8 @@ export const stageConfig = {
  * - Continuously executes dynamic evasive maneuvers, grid scatter targeting, and proximity repulsion across all phases.
  */
 export function updateEnemyMovement(e, delta, context) {
-  if (!e || !e.mesh) return false;
+  // Movement logic inactive if in pool or flagged inactive
+  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) return false;
   const THREE = (context && context.THREE) || window.THREE;
   if (!THREE) return false;
 
@@ -649,7 +680,8 @@ export function updateEnemyMovement(e, delta, context) {
  * - Fires weapon more often: both when enemies are at 10,000 KM and 5,000 KM from the player.
  */
 export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
-  if (!enemyObj || !enemyObj.mesh) return false;
+  // Weapon actions inactive if in pool or flagged inactive
+  if (!enemyObj || !enemyObj.mesh || enemyObj.mesh.userData.inPool || enemyObj.mesh.userData.isActive === false || enemyObj.isActive === false || enemyObj.mesh.userData.weaponsActive === false) return false;
   const THREE = (context && context.THREE) || window.THREE;
   const scene = (context && context.scene) || window.scene;
   const state = (context && context.state) || window.state;
@@ -838,6 +870,12 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setWaves === 'function') {
+    engineApi.setWaves(stageConfig.waves, {
+      total_waves: stageConfig.total_waves,
+      wave_interval_seconds: stageConfig.wave_interval_seconds
+    });
+  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -893,4 +931,23 @@ export function applyStage(engineApi) {
   return stageConfig;
 }
 
-export default { stageConfig, applyStage, updateEnemyMovement, fireEnemyWeapon };
+/**
+ * Stage Wave Management: Controls pulling specific number of enemies from the pool
+ * for each wave, tracking how many waves and how often a wave happens.
+ */
+export function getStageWaves() {
+  return stageConfig.waves;
+}
+
+export function pullEnemyWave(waveNumber, engineApi, context = {}) {
+  const waves = stageConfig.waves || [];
+  const wave = waves.find(w => w.wave_number === waveNumber) || waves[waveNumber - 1];
+  if (!wave) return [];
+  const count = wave.enemy_count || (waveNumber === 1 ? 5 : 10);
+  if (engineApi && typeof engineApi.spawnWaveEnemies === 'function') {
+    return engineApi.spawnWaveEnemies(count, wave, stageConfig.enemies);
+  }
+  return [];
+}
+
+export default { stageConfig, applyStage, updateEnemyMovement, fireEnemyWeapon, getStageWaves, pullEnemyWave };

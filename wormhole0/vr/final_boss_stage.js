@@ -17,6 +17,26 @@ export const stageConfig = {
   mission_objectives: 'Destroy 10 enemies and pilot vessel to within < 50,000 KM of the singularity core before warp jump gate activates.',
   required_enemy_kills: 10,
   warp_target_distance: 50000,
+  initial_weapon_pool_size: 300,
+  initial_enemy_pool_size: 100,
+  waves: [
+    {
+      wave_number: 1,
+      enemy_count: 5,
+      interval_seconds: 0,
+      delay_ms: 0,
+      description: 'Wave 1: Recon Vanguard (5 Enemies)'
+    },
+    {
+      wave_number: 2,
+      enemy_count: 10,
+      interval_seconds: 15,
+      delay_ms: 15000,
+      description: 'Wave 2: Full Assault Swarm (10 Enemies)'
+    }
+  ],
+  total_waves: 2,
+  wave_interval_seconds: 15,
   objectives: [
     {
         "id": "kills",
@@ -72,6 +92,7 @@ export const stageConfig = {
   weapons: {
     "initial": {
         "id": "red_laser",
+        "pool_size": 300,
         "name": "Neon Red Laser",
         "icon": "🔴",
         "color": "#ff0033",
@@ -88,6 +109,7 @@ export const stageConfig = {
   enemies: [
     {
         "id": "void_recon_drone",
+        "pool_size": 100,
         "name": "Void Recon Drone",
         "enemy_class": "Scout Drone",
         "icon": "🛸",
@@ -143,7 +165,8 @@ export const stageConfig = {
  * custom projectile colors, velocities, and mount points (dual wingtip, nose, turret).
  */
 export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
-  if (!enemyObj || !enemyObj.mesh) return false;
+  // Weapon actions inactive if in pool or flagged inactive
+  if (!enemyObj || !enemyObj.mesh || enemyObj.mesh.userData.inPool || enemyObj.mesh.userData.isActive === false || enemyObj.isActive === false || enemyObj.mesh.userData.weaponsActive === false) return false;
   const THREE = (context && context.THREE) || window.THREE;
   const scene = (context && context.scene) || window.scene;
   const state = (context && context.state) || window.state;
@@ -332,6 +355,12 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setWaves === 'function') {
+    engineApi.setWaves(stageConfig.waves, {
+      total_waves: stageConfig.total_waves,
+      wave_interval_seconds: stageConfig.wave_interval_seconds
+    });
+  }
   if (typeof engineApi.setEnemyWeaponHandler === 'function') {
     engineApi.setEnemyWeaponHandler(fireEnemyWeapon);
   }
@@ -348,4 +377,23 @@ export function applyStage(engineApi) {
   return stageConfig;
 }
 
-export default { stageConfig, applyStage, fireEnemyWeapon };;
+/**
+ * Stage Wave Management: Controls pulling specific number of enemies from the pool
+ * for each wave, tracking how many waves and how often a wave happens.
+ */
+export function getStageWaves() {
+  return stageConfig.waves;
+}
+
+export function pullEnemyWave(waveNumber, engineApi, context = {}) {
+  const waves = stageConfig.waves || [];
+  const wave = waves.find(w => w.wave_number === waveNumber) || waves[waveNumber - 1];
+  if (!wave) return [];
+  const count = wave.enemy_count || (waveNumber === 1 ? 5 : 10);
+  if (engineApi && typeof engineApi.spawnWaveEnemies === 'function') {
+    return engineApi.spawnWaveEnemies(count, wave, stageConfig.enemies);
+  }
+  return [];
+}
+
+export default { stageConfig, applyStage, fireEnemyWeapon, getStageWaves, pullEnemyWave };;

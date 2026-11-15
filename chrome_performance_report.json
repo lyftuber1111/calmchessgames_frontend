@@ -1,0 +1,42 @@
+{
+  "testTimestamp": "2026-11-15T06:51:51.130Z",
+  "gameOverVerification": {
+    "allEnemiesDestroyedOnGameOver": true,
+    "enemyBoltsCleanedUp": true,
+    "gameOverModalVisible": true,
+    "playerHealthZero": true
+  },
+  "garbageCollectionVerification": {
+    "preGCHeapMB": "7.05",
+    "postGCHeapMB": "5.44",
+    "memoryFreedKB": "1647.68"
+  },
+  "restartMissionVerification": {
+    "cleanRestartSucceeded": true,
+    "countdownHeldFlight": true,
+    "playerHealthAndShieldRestored": true,
+    "scoreAndKillsReset": true,
+    "stageResetToStage1": true,
+    "weaponsSystemReset": true,
+    "freshEnemySwarmSpawned": true,
+    "flightControlsResponsive": true,
+    "overlaysCleanlyDismissed": true
+  },
+  "chromePerformanceReport": {
+    "timestamp": 509338.405084,
+    "documents": 1,
+    "frames": 1,
+    "jsEventListeners": 180,
+    "nodes": 3354,
+    "layoutCount": 193,
+    "recalcStyleCount": 287,
+    "layoutDurationSeconds": 0.133341,
+    "recalcStyleDurationSeconds": 0.0872,
+    "scriptDurationSeconds": 3.073549,
+    "taskDurationSeconds": 8.203365,
+    "jsHeapUsedMB": "9.49",
+    "jsHeapTotalMB": "15.95",
+    "cpuProfileSampleCount": 6079,
+    "cpuProfileNodeCount": 274
+  }
+}

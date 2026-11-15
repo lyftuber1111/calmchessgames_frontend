@@ -40,16 +40,21 @@ export class FinalBossStageObjectPool extends StageObjectPool {
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
-        initial: { id: 'quantum_disruptor', name: 'Quantum Disruptor', color: '#ff00aa', pool_size: 300 },
+        initial: { id: 'quantum_disruptor',
+          enemy_id: 'quantum_disruptor', name: 'Quantum Disruptor', color: '#ff00aa', pool_size: 300 },
         acquirable: [
-          { id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
-          { id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 },
-          { id: 'red_laser', name: 'Red Laser', color: '#ff2244', pool_size: 300 }
+          { id: 'tachyon_lance',
+          enemy_id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
+          { id: 'blue_laser',
+          enemy_id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 },
+          { id: 'red_laser',
+          enemy_id: 'red_laser', name: 'Red Laser', color: '#ff2244', pool_size: 300 }
         ]
       },
       enemies: [
         {
           id: 'final_boss',
+          enemy_id: 'final_boss',
           name: 'Singularity Overlord Titan',
           model_3d_type: 'boss',
           color: '#ef4444',
@@ -61,6 +66,7 @@ export class FinalBossStageObjectPool extends StageObjectPool {
         },
         {
           id: 'escort_fighter',
+          enemy_id: 'escort_fighter',
           name: 'Overlord Heavy Escort',
           model_3d_type: 'cruiser',
           color: '#f87171',

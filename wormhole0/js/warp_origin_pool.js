@@ -40,14 +40,17 @@ export class WarpOriginObjectPool extends StageObjectPool {
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
-        initial: { id: 'red_laser', name: 'Red Laser', color: '#ff2244', pool_size: 300 },
+        initial: { id: 'red_laser',
+          enemy_id: 'red_laser', name: 'Red Laser', color: '#ff2244', pool_size: 300 },
         acquirable: [
-          { id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 }
+          { id: 'blue_laser',
+          enemy_id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 }
         ]
       },
       enemies: [
         {
           id: 'phase_interceptor',
+          enemy_id: 'phase_interceptor',
           name: 'Phase Interceptor',
           model_3d_type: 'custom_glb',
           model_3d_url: 'desktop/warp_origin_images/drone_phase_interceptor_3.glb',
@@ -60,6 +63,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         },
         {
           id: 'void_recon_drone',
+          enemy_id: 'void_recon_drone',
           name: 'Void Recon Drone',
           model_3d_type: 'custom_glb',
           model_3d_url: 'desktop/warp_origin_images/recon_drone_2.8m.glb',

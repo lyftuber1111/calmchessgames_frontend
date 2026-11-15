@@ -40,15 +40,19 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
-        initial: { id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 },
+        initial: { id: 'blue_laser',
+          enemy_id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 },
         acquirable: [
-          { id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
-          { id: 'quantum_disruptor', name: 'Quantum Disruptor', color: '#ff00aa', pool_size: 300 }
+          { id: 'tachyon_lance',
+          enemy_id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
+          { id: 'quantum_disruptor',
+          enemy_id: 'quantum_disruptor', name: 'Quantum Disruptor', color: '#ff00aa', pool_size: 300 }
         ]
       },
       enemies: [
         {
           id: 'nebula_raider',
+          enemy_id: 'nebula_raider',
           name: 'Nebula Corsair Raider',
           model_3d_type: 'cruiser',
           color: '#10b981',
@@ -60,6 +64,7 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
         },
         {
           id: 'corsair_frigate',
+          enemy_id: 'corsair_frigate',
           name: 'Nebula Patrol Frigate',
           model_3d_type: 'drone',
           color: '#34d399',

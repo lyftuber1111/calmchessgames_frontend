@@ -40,15 +40,19 @@ export class EventHorizonObjectPool extends StageObjectPool {
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
-        initial: { id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 },
+        initial: { id: 'blue_laser',
+          enemy_id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 },
         acquirable: [
-          { id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
-          { id: 'red_laser', name: 'Red Laser', color: '#ff2244', pool_size: 300 }
+          { id: 'tachyon_lance',
+          enemy_id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
+          { id: 'red_laser',
+          enemy_id: 'red_laser', name: 'Red Laser', color: '#ff2244', pool_size: 300 }
         ]
       },
       enemies: [
         {
           id: 'tachyon_cruiser',
+          enemy_id: 'tachyon_cruiser',
           name: 'Tachyon Heavy Cruiser',
           model_3d_type: 'cruiser',
           color: '#ffd166',
@@ -60,6 +64,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
         },
         {
           id: 'singularity_probe',
+          enemy_id: 'singularity_probe',
           name: 'Singularity Probe',
           model_3d_type: 'singularity_probe',
           color: '#f59e0b',

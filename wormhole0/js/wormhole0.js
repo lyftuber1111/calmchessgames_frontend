@@ -3007,6 +3007,7 @@ let activeEnemyMovementHandler = null;
 let activeEnemyWeaponHandler = null;
 let activeStageEventHandlers = null;
 let activeStageEventHandler = null;
+let activeStageWaveHandler = null;
 
 function triggerAcquireEvent(eventName, eventData = null) {
   if (!eventName) return;
@@ -4837,6 +4838,7 @@ function getEngineApi() {
     getWaves: () => state.stageWaves,
     getCurrentWave: () => state.currentWave,
     getTotalWaves: () => state.totalWaves,
+    getWaveStartTime: () => state.waveStartTime,
     setStageObjectives: (objectives) => {
       state.activeStageObjectives = Array.isArray(objectives) ? objectives : [];
       if (typeof renderStageObjectivesUI === 'function') {
@@ -4912,6 +4914,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     activeEnemyWeaponHandler = null;
     activeStageEventHandlers = null;
     activeStageEventHandler = null;
+    activeStageWaveHandler = null;
 
     const api = getEngineApi();
     if (mod && typeof mod.applyStage === 'function') {
@@ -4928,6 +4931,10 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     if (!activeEnemyWeaponHandler && mod) {
       if (typeof mod.fireEnemyWeapon === 'function') activeEnemyWeaponHandler = mod.fireEnemyWeapon;
       else if (mod.default && typeof mod.default.fireEnemyWeapon === 'function') activeEnemyWeaponHandler = mod.default.fireEnemyWeapon;
+    }
+    if (!activeStageWaveHandler && mod) {
+      if (typeof mod.updateStageWaves === 'function') activeStageWaveHandler = mod.updateStageWaves;
+      else if (mod.default && typeof mod.default.updateStageWaves === 'function') activeStageWaveHandler = mod.default.updateStageWaves;
     }
     if (!activeStageEventHandlers && mod) {
       if (mod.stageEvents) activeStageEventHandlers = mod.stageEvents;
@@ -6671,8 +6678,11 @@ function createPlayerLaserMesh(activeWpn) {
   const geometry = new THREE.CylinderGeometry(boltRadius * 0.35, boltRadius, boltLength, 8);
   geometry.rotateX(Math.PI / 2);
 
+  const rawColor = activeWpn.color || activeWpn.color_hex || '#ff2244';
+  const colorHex = activeWpn.colorHex !== undefined ? activeWpn.colorHex : (parseInt(rawColor.replace('#', '0x'), 16) || 0xff2244);
+
   const material = new THREE.MeshBasicMaterial({
-    color: activeWpn.colorHex,
+    color: colorHex,
     transparent: true,
     opacity: 0.95,
     blending: THREE.AdditiveBlending
@@ -6692,7 +6702,7 @@ function createPlayerLaserMesh(activeWpn) {
   mesh.add(coreMesh);
 
   // Dynamic laser point light glow
-  const light = new THREE.PointLight(activeWpn.colorHex, activeWpn.bulletLightIntensity || 3.5, 35);
+  const light = new THREE.PointLight(colorHex, activeWpn.bulletLightIntensity || 3.5, 35);
   light.position.set(0, 0, 0);
   mesh.add(light);
 
@@ -9009,41 +9019,58 @@ function create3DEnemyMesh(config) {
 function spawnEnemyWaveFromPool(forcedCount = null, waveConfig = null, enemyPoolOverride = null) {
   if (!state.hasStarted || state.isPaused || state.isGameOver || state.isHyperWarping) return [];
   if (!scene || !camera) return [];
+  if (state.waveSpawnInProgress) return [];
+  state.waveSpawnInProgress = true;
 
-  const waveNum = waveConfig ? (waveConfig.wave_number || state.currentWave || 1) : (state.currentWave || 1);
-  const swarmCount = forcedCount !== null && forcedCount !== undefined
-    ? forcedCount
-    : (waveConfig ? waveConfig.enemy_count : (waveNum === 1 ? 5 : 10));
+  try {
+    const waveNum = waveConfig ? (waveConfig.wave_number || (state.currentWave + 1)) : (state.currentWave + 1);
+    state.currentWave = waveNum;
+    state.waveStartTime = performance.now();
+    state.waveCompleted = false;
 
-  const enemyPool = (Array.isArray(enemyPoolOverride) && enemyPoolOverride.length > 0)
-    ? enemyPoolOverride
-    : (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.length > 0)
-      ? window.activeStageEnemies
-      : (Array.isArray(state.stageEnemies) && state.stageEnemies.length > 0)
-        ? state.stageEnemies
-        : [
-            {
-              enemy_id: 'scout_drone',
-              enemy_name: 'Void Recon Drone',
-              model_3d_type: 'scout_drone',
-              scale: 1.0,
-              length: 2.8,
-              height: 2.8,
-              depth: 2.8,
-              circumference: 8.8,
-              weapon_name: 'Plasma Pulse',
-              weapon_damage: 6,
-              weapon_speed: 480,
-              weapon_color: '#00f0ff',
-              hits_to_destroy: 2,
-              movement_speed: 260,
-              score_value: 100,
-              pool_size: 100
-            }
-          ];
+    const swarmCount = forcedCount !== null && forcedCount !== undefined
+      ? forcedCount
+      : (waveConfig ? waveConfig.enemy_count : (waveNum === 1 ? 5 : 10));
 
-  const swarmId = 'wave_' + waveNum + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-  const spawnedList = [];
+    let enemyPool = (Array.isArray(enemyPoolOverride) && enemyPoolOverride.length > 0)
+      ? enemyPoolOverride
+      : (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.length > 0)
+        ? window.activeStageEnemies
+        : (Array.isArray(state.stageEnemies) && state.stageEnemies.length > 0)
+          ? state.stageEnemies
+          : [];
+
+    if (enemyPool.length === 0) {
+      if (activeStageModule && activeStageModule.stageConfig && Array.isArray(activeStageModule.stageConfig.enemies)) {
+        enemyPool = activeStageModule.stageConfig.enemies;
+      } else if (currentStageObjectPool && currentStageObjectPool.stageConfig && Array.isArray(currentStageObjectPool.stageConfig.enemies)) {
+        enemyPool = currentStageObjectPool.stageConfig.enemies;
+      } else {
+        enemyPool = [
+          {
+            id: 'phase_interceptor',
+            enemy_id: 'phase_interceptor',
+            enemy_name: 'Phase Interceptor',
+            model_3d_type: 'custom_glb',
+            model_3d_url: 'desktop/warp_origin_images/drone_phase_interceptor_3.glb',
+            color: '#38bdf8',
+            pool_size: 100
+          },
+          {
+            id: 'void_recon_drone',
+            enemy_id: 'void_recon_drone',
+            enemy_name: 'Void Recon Drone',
+            model_3d_type: 'custom_glb',
+            model_3d_url: 'desktop/warp_origin_images/recon_drone_2.8m.glb',
+            color: '#ef476f',
+            pool_size: 100
+          }
+        ];
+      }
+    }
+
+    const swarmId = 'wave_' + waveNum + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+    const spawnedList = [];
 
   for (let idx = 0; idx < swarmCount; idx++) {
     const cfg = enemyPool[idx % enemyPool.length];
@@ -9204,9 +9231,12 @@ function spawnEnemyWaveFromPool(forcedCount = null, waveConfig = null, enemyPool
     spawnedList.push(enemyObj);
   }
 
-  showToast(`⚠️ WAVE ${waveNum}/${state.totalWaves}: ${swarmCount} HOSTILES ENGAGED!`);
-  console.log(`[Wormhole XR Engine] Pulled Wave ${waveNum} (${swarmCount} enemies) from pool. Active enemies: ${active3DEnemies.length}`);
-  return spawnedList;
+    showToast(`⚠️ WAVE ${waveNum}/${state.totalWaves}: ${swarmCount} HOSTILES ENGAGED!`);
+    console.log(`[Wormhole XR Engine] Pulled Wave ${waveNum} (${swarmCount} enemies) from pool. Active enemies: ${active3DEnemies.length}`);
+    return spawnedList;
+  } finally {
+    state.waveSpawnInProgress = false;
+  }
 }
 
 function spawnEnemySwarmFromWormhole(forcedCount = null) {
@@ -9568,29 +9598,23 @@ function updateEnemiesCombat(delta) {
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : state.position;
 
   // 1. Stage Wave Progression:
-  // Initially 2 waves with 5 enemies for the first wave and 10 enemies for the second wave.
-  // Wave interval determines how often a wave happens (default 15s or when wave defeated).
-  const waveIntervalMs = (state.waveIntervalSeconds || 15) * 1000;
-  if (state.currentWave === 0 && state.hasStarted && !state.isGameOver && !state.isPaused) {
-    state.currentWave = 1;
-    state.waveStartTime = now;
-    state.waveCompleted = false;
-    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
-  } else if (state.currentWave === 1 && state.totalWaves >= 2) {
-    const waveElapsed = now - state.waveStartTime;
-    const wave1EnemiesLeft = active3DEnemies.filter(e => e.isActive && (!e.waveNumber || e.waveNumber === 1)).length;
-    if (wave1EnemiesLeft === 0 || waveElapsed >= waveIntervalMs) {
-      state.currentWave = 2;
-      state.waveStartTime = now;
-      const wave2Cfg = (state.stageWaves && state.stageWaves[1]) || { wave_number: 2, enemy_count: 10 };
-      spawnEnemyWaveFromPool(wave2Cfg.enemy_count || 10, wave2Cfg);
-    }
-  } else if (state.currentWave >= state.totalWaves && active3DEnemies.length === 0 && state.stageKills < state.stageRequiredKills + 8) {
-    if (now > lastEnemySpawnCheckTime + 4000) {
-      lastEnemySpawnCheckTime = now;
-      const wave2Cfg = (state.stageWaves && state.stageWaves[1]) || { wave_number: 2, enemy_count: 10 };
-      spawnEnemyWaveFromPool(wave2Cfg.enemy_count || 10, wave2Cfg);
+  // Controlled by active stage .js file (controls how many waves, enemy count per wave, and how often wave happens)
+  const api = getEngineApi();
+  if (typeof activeStageWaveHandler === 'function') {
+    activeStageWaveHandler(api, { now, delta, activeEnemies: active3DEnemies });
+  } else {
+    // Built-in fallback wave progression
+    const waveIntervalMs = (state.waveIntervalSeconds || 15) * 1000;
+    if (state.currentWave === 0 && state.hasStarted && !state.isGameOver && !state.isPaused) {
+      const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+      spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+    } else if (state.currentWave === 1 && state.totalWaves >= 2) {
+      const waveElapsed = now - state.waveStartTime;
+      const wave1EnemiesLeft = active3DEnemies.filter(e => e.isActive && e.waveNumber === 1).length;
+      if (waveElapsed >= waveIntervalMs || (wave1EnemiesLeft === 0 && waveElapsed >= 5000)) {
+        const wave2Cfg = (state.stageWaves && state.stageWaves[1]) || { wave_number: 2, enemy_count: 10 };
+        spawnEnemyWaveFromPool(wave2Cfg.enemy_count || 10, wave2Cfg);
+      }
     }
   }
 
@@ -10394,12 +10418,17 @@ function executeMissionCountdown(isRestart = false) {
     centerWormholeOnScreen(true);
 
     // Trigger Stage Wave 1 upon mission official engagement (pulling 5 enemies from pool)
-    state.currentWave = 1;
+    state.currentWave = 0;
     state.waveStartTime = performance.now();
     state.waveCompleted = false;
     lastEnemySpawnCheckTime = performance.now();
-    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+    const api = getEngineApi();
+    if (typeof activeStageWaveHandler === 'function') {
+      activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies });
+    } else {
+      const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+      spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+    }
 
     // Ensure keyboard focus is restored and request crosshair capture if on desktop
     try {
@@ -10638,12 +10667,17 @@ function restartGame() {
   state.lastFrameTime = performance.now();
 
   // Trigger Stage Wave 1 immediately upon restart (pulling 5 enemies from pool)
-  state.currentWave = 1;
+  state.currentWave = 0;
   state.waveStartTime = performance.now();
   state.waveCompleted = false;
   lastEnemySpawnCheckTime = performance.now();
-  const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-  spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+  const api = getEngineApi();
+  if (typeof activeStageWaveHandler === 'function') {
+    activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies });
+  } else {
+    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+  }
 
   // Ensure keyboard focus is restored and request crosshair capture if on desktop
   if (!isMobileInUse() && !state.isPointerLocked) {

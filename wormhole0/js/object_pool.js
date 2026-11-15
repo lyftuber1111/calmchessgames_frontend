@@ -364,8 +364,14 @@ export class StageObjectPool {
         ];
 
     for (const enemyCfg of enemies) {
-      const enemyKey = enemyCfg.id || enemyCfg.enemy_id || enemyCfg.model_3d_type || 'enemy_default';
-      if (this.enemyPools.has(enemyKey)) continue;
+      // Prioritize semantic string slug (e.g. 'phase_interceptor', 'void_recon_drone') over numeric DB IDs
+      const primaryKey = (enemyCfg.enemy_id && isNaN(enemyCfg.enemy_id))
+        ? enemyCfg.enemy_id
+        : (enemyCfg.id && isNaN(enemyCfg.id))
+          ? enemyCfg.id
+          : (enemyCfg.enemy_id || enemyCfg.id || enemyCfg.model_3d_type || 'enemy_default');
+
+      if (this.enemyPools.has(primaryKey)) continue;
 
       const poolSize = enemyCfg.pool_size || 100;
       const pool = new MeshPool(
@@ -376,7 +382,7 @@ export class StageObjectPool {
         () => {
           if (typeof this.options.createEnemyMeshFn === 'function') {
             const mesh = this.options.createEnemyMeshFn(enemyCfg);
-            mesh.userData.pooledEnemyKey = enemyKey;
+            mesh.userData.pooledEnemyKey = primaryKey;
             mesh.userData.isEnemyGraphic = true;
             return mesh;
           }
@@ -406,57 +412,128 @@ export class StageObjectPool {
           const core = new THREE.Mesh(coreGeom, coreMat);
           group.add(core);
 
-          group.name = `pooled_enemy_${enemyKey}`;
-          group.userData.pooledEnemyKey = enemyKey;
+          group.name = `pooled_enemy_${primaryKey}`;
+          group.userData.pooledEnemyKey = primaryKey;
           group.userData.isEnemyGraphic = true;
           return group;
         }
       );
 
-      this.enemyPools.set(enemyKey, pool);
+      this.enemyPools.set(primaryKey, pool);
+      if (enemyCfg.id !== undefined && enemyCfg.id !== null) {
+        this.enemyPools.set(String(enemyCfg.id), pool);
+        this.enemyPools.set(enemyCfg.id, pool);
+      }
+      if (enemyCfg.enemy_id !== undefined && enemyCfg.enemy_id !== null) {
+        this.enemyPools.set(String(enemyCfg.enemy_id), pool);
+        this.enemyPools.set(enemyCfg.enemy_id, pool);
+      }
+      if (typeof primaryKey === 'string') {
+        const stripped = primaryKey.replace(/_(mobile|desktop|vr|arcore|all)$/i, '');
+        if (!this.enemyPools.has(stripped)) {
+          this.enemyPools.set(stripped, pool);
+        }
+      }
     }
   }
 
   // --- SPAWN METHODS ---
 
-  spawnEnemy(enemyConfig, position, quaternion = null, scale = null) {
-    const enemyKey = (enemyConfig && (enemyConfig.id || enemyConfig.enemy_id || enemyConfig.model_3d_type)) || 'enemy_default';
-    let pool = this.enemyPools.get(enemyKey);
-    if (!pool && this.enemyPools.size > 0) {
-      // Pick first available enemy pool
-      pool = this.enemyPools.values().next().value;
+  getEnemyPool(enemyConfig) {
+    if (!enemyConfig) return this.enemyPools.values().next().value || null;
+
+    // 1. Direct match by enemy_id (slug like 'phase_interceptor' or 'void_recon_drone')
+    if (enemyConfig.enemy_id) {
+      if (this.enemyPools.has(enemyConfig.enemy_id)) return this.enemyPools.get(enemyConfig.enemy_id);
+      if (this.enemyPools.has(String(enemyConfig.enemy_id))) return this.enemyPools.get(String(enemyConfig.enemy_id));
     }
+
+    // 2. Direct match by id
+    if (enemyConfig.id) {
+      if (this.enemyPools.has(enemyConfig.id)) return this.enemyPools.get(enemyConfig.id);
+      if (this.enemyPools.has(String(enemyConfig.id))) return this.enemyPools.get(String(enemyConfig.id));
+    }
+
+    // 3. Match without device suffix (e.g. 'void_recon_drone_mobile' -> 'void_recon_drone')
+    const candidates = [enemyConfig.enemy_id, enemyConfig.id, enemyConfig.enemy_name, enemyConfig.name]
+      .filter(k => typeof k === 'string' && k.trim());
+    for (const cand of candidates) {
+      const stripped = cand.replace(/_(mobile|desktop|vr|arcore|all)$/i, '');
+      if (this.enemyPools.has(stripped)) return this.enemyPools.get(stripped);
+    }
+
+    // 4. Match by model 3D asset URL keywords
+    if (enemyConfig.model_3d_url) {
+      const urlLower = enemyConfig.model_3d_url.toLowerCase();
+      if (urlLower.includes('interceptor') && (this.enemyPools.has('phase_interceptor') || this.enemyPools.has('phase_interceptor_all'))) {
+        return this.enemyPools.get('phase_interceptor') || this.enemyPools.get('phase_interceptor_all');
+      }
+      if (urlLower.includes('recon') && (this.enemyPools.has('void_recon_drone') || this.enemyPools.has('void_recon_drone_mobile'))) {
+        return this.enemyPools.get('void_recon_drone') || this.enemyPools.get('void_recon_drone_mobile');
+      }
+    }
+
+    // 5. Substring match
+    for (const cand of candidates) {
+      const lower = cand.toLowerCase();
+      for (const [key, pool] of this.enemyPools.entries()) {
+        const keyLower = String(key).toLowerCase();
+        if (lower.includes(keyLower) || keyLower.includes(lower)) {
+          return pool;
+        }
+      }
+    }
+
+    // 6. Match by model_3d_type
+    if (enemyConfig.model_3d_type && this.enemyPools.has(enemyConfig.model_3d_type)) {
+      return this.enemyPools.get(enemyConfig.model_3d_type);
+    }
+
+    // Fallback: pick first available pool
+    return this.enemyPools.values().next().value || null;
+  }
+
+  spawnEnemy(enemyConfig, position, quaternion = null, scale = null) {
+    const pool = this.getEnemyPool(enemyConfig);
     if (!pool) return null;
 
     const mesh = pool.spawn(position, quaternion, scale);
     mesh.userData.fromPool = true;
-    mesh.userData.poolKey = enemyKey;
+    mesh.userData.poolKey = mesh.userData.pooledEnemyKey || (enemyConfig && (enemyConfig.enemy_id || enemyConfig.id)) || 'enemy';
     return mesh;
   }
 
   despawnEnemy(mesh, enemyConfig = null) {
     if (!mesh) return;
-    const enemyKey = (enemyConfig && (enemyConfig.id || enemyConfig.enemy_id || enemyConfig.model_3d_type)) || mesh.userData.poolKey;
-    const pool = this.enemyPools.get(enemyKey);
-    if (pool) {
-      pool.despawn(mesh);
-    } else {
-      // Search all enemy pools
-      for (const p of this.enemyPools.values()) {
-        if (p.active.has(mesh)) {
-          p.despawn(mesh);
-          return;
-        }
-      }
-      mesh.position.set(0, -1000, 0);
-      mesh.visible = false;
-      mesh.userData = mesh.userData || {};
-      mesh.userData.inPool = true;
-      mesh.userData.isActive = false;
-      mesh.userData.movementActive = false;
-      mesh.userData.physicsActive = false;
-      mesh.userData.weaponsActive = false;
+    let pool = null;
+    if (enemyConfig) {
+      pool = this.getEnemyPool(enemyConfig);
     }
+    if (!pool && mesh.userData && mesh.userData.pooledEnemyKey) {
+      pool = this.enemyPools.get(mesh.userData.pooledEnemyKey);
+    }
+    if (!pool && mesh.userData && mesh.userData.poolKey) {
+      pool = this.enemyPools.get(mesh.userData.poolKey);
+    }
+    if (pool && pool.active && pool.active.has(mesh)) {
+      pool.despawn(mesh);
+      return;
+    }
+    // Search all enemy pools
+    for (const p of this.enemyPools.values()) {
+      if (p.active.has(mesh)) {
+        p.despawn(mesh);
+        return;
+      }
+    }
+    mesh.position.set(0, -1000, 0);
+    mesh.visible = false;
+    mesh.userData = mesh.userData || {};
+    mesh.userData.inPool = true;
+    mesh.userData.isActive = false;
+    mesh.userData.movementActive = false;
+    mesh.userData.physicsActive = false;
+    mesh.userData.weaponsActive = false;
   }
 
   spawnPlayerLaser(weaponConfig, position, quaternion = null) {

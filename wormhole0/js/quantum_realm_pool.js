@@ -40,15 +40,19 @@ export class QuantumRealmObjectPool extends StageObjectPool {
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
-        initial: { id: 'quantum_disruptor', name: 'Quantum Disruptor', color: '#ff00aa', pool_size: 300 },
+        initial: { id: 'quantum_disruptor',
+          enemy_id: 'quantum_disruptor', name: 'Quantum Disruptor', color: '#ff00aa', pool_size: 300 },
         acquirable: [
-          { id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
-          { id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 }
+          { id: 'tachyon_lance',
+          enemy_id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
+          { id: 'blue_laser',
+          enemy_id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 }
         ]
       },
       enemies: [
         {
           id: 'quantum_dreadnought',
+          enemy_id: 'quantum_dreadnought',
           name: 'Quantum Omega Dreadnought',
           model_3d_type: 'dreadnought',
           color: '#ec4899',
@@ -60,6 +64,7 @@ export class QuantumRealmObjectPool extends StageObjectPool {
         },
         {
           id: 'quantum_wraith',
+          enemy_id: 'quantum_wraith',
           name: 'Quantum Wraith Interceptor',
           model_3d_type: 'cruiser',
           color: '#f43f5e',

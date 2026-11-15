@@ -40,15 +40,19 @@ export class SingularityCoreObjectPool extends StageObjectPool {
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
-        initial: { id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
+        initial: { id: 'tachyon_lance',
+          enemy_id: 'tachyon_lance', name: 'Tachyon Lance', color: '#ffd166', pool_size: 300 },
         acquirable: [
-          { id: 'heavy_plasma', name: 'Heavy Plasma', color: '#a855f7', pool_size: 300 },
-          { id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 }
+          { id: 'heavy_plasma',
+          enemy_id: 'heavy_plasma', name: 'Heavy Plasma', color: '#a855f7', pool_size: 300 },
+          { id: 'blue_laser',
+          enemy_id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 300 }
         ]
       },
       enemies: [
         {
           id: 'void_guardian',
+          enemy_id: 'void_guardian',
           name: 'Singularity Void Guardian',
           model_3d_type: 'dreadnought',
           color: '#a855f7',
@@ -60,6 +64,7 @@ export class SingularityCoreObjectPool extends StageObjectPool {
         },
         {
           id: 'quantum_singularity_drone',
+          enemy_id: 'quantum_singularity_drone',
           name: 'Quantum Singularity Drone',
           model_3d_type: 'drone',
           color: '#c084fc',

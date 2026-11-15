@@ -143,6 +143,7 @@ export const stageConfig = {
   enemies: [
     {
         "id": "phase_interceptor",
+        "enemy_id": "phase_interceptor",
         "pool_size": 100,
         "device_type": "vr",
         "name": "Phase Interceptor (Universal)",
@@ -199,6 +200,7 @@ export const stageConfig = {
     },
     {
         "id": "void_recon_drone",
+        "enemy_id": "void_recon_drone",
         "pool_size": 100,
         "device_type": "vr",
         "name": "Void Recon Drone (VR)",
@@ -922,6 +924,34 @@ export function getStageWaves() {
   return stageConfig.waves;
 }
 
+export function updateStageWaves(engineApi, context = {}) {
+  if (!engineApi) return null;
+  const currentWave = typeof engineApi.getCurrentWave === 'function' ? engineApi.getCurrentWave() : 0;
+  const totalWaves = stageConfig.total_waves || 2;
+  const now = (context && context.now) || performance.now();
+  const waveStartTime = typeof engineApi.getWaveStartTime === 'function' ? engineApi.getWaveStartTime() : 0;
+  const activeEnemies = (context && context.activeEnemies) || [];
+
+  // Wave 1: Pull 5 enemies from the pool at the start of stage engagement
+  if (currentWave === 0) {
+    return pullEnemyWave(1, engineApi, context);
+  }
+
+  // Wave 2: Pull 10 enemies from the pool when the 15-second wave interval has elapsed
+  if (currentWave === 1 && totalWaves >= 2) {
+    const elapsed = now - waveStartTime;
+    const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
+    const wave1EnemiesRemaining = activeEnemies.filter(e => e.isActive && e.waveNumber === 1).length;
+
+    // Strict timing: Wave 2 occurs after the 15-second interval (or if wave 1 defeated and at least 5s elapsed)
+    if (elapsed >= waveIntervalMs || (wave1EnemiesRemaining === 0 && elapsed >= 5000)) {
+      return pullEnemyWave(2, engineApi, context);
+    }
+  }
+
+  return null;
+}
+
 export function pullEnemyWave(waveNumber, engineApi, context = {}) {
   const waves = stageConfig.waves || [];
   const wave = waves.find(w => w.wave_number === waveNumber) || waves[waveNumber - 1];
@@ -933,4 +963,4 @@ export function pullEnemyWave(waveNumber, engineApi, context = {}) {
   return [];
 }
 
-export default { stageConfig, applyStage, updateEnemyMovement, fireEnemyWeapon, getStageWaves, pullEnemyWave };
+export default { stageConfig, applyStage, updateEnemyMovement, fireEnemyWeapon, getStageWaves, updateStageWaves, pullEnemyWave };

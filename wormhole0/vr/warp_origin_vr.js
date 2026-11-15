@@ -229,17 +229,13 @@ export function updateEnemyMovement(e, delta, context) {
   // Baseline forward posture: nose tilted down (~0.22 rad / 12.6 deg) so top of 3D model is visible
   const basePitchDown = 0.22;
 
-  // Requirement: Ensure custom 3D model asset maintains its front-facing orientation:
-  // recon_drone_2.8m.glb: 0 rad (rotated 90 deg counter-clockwise)
-  // drone_phase_interceptor_3.glb: Math.PI / 2 rad (rotated 180 deg clockwise)
+  // Requirement: Ensure custom 3D model asset maintains its front-facing orientation (+Z is forward, pointing at player):
+  // All custom 3D GLB models natively have +Z forward with 0 rad rotation (un-rotated)
   if (e.mesh.userData && e.mesh.userData.loadedAsset) {
     const asset = e.mesh.userData.loadedAsset;
-    let targetRotY = -Math.PI / 2;
-    const mUrl = String((e.config && e.config.model_3d_url) || e.model_3d_url || (e.mesh.userData && e.mesh.userData.modelUrl) || (e.config && e.config.id) || e.id || e.enemy_id || '').toLowerCase();
-    if (mUrl.includes('recon_drone_2.8m') || mUrl.includes('recon_drone') || mUrl.includes('void_recon_drone')) {
-      targetRotY = 0;
-    } else if (mUrl.includes('drone_phase_interceptor_3') || mUrl.includes('phase_interceptor') || mUrl.includes('interceptor')) {
-      targetRotY = Math.PI / 2;
+    let targetRotY = 0;
+    if (asset.userData && typeof asset.userData.targetRotY === 'number') {
+      targetRotY = asset.userData.targetRotY;
     }
     if (Math.abs(asset.rotation.y - targetRotY) > 0.001) {
       asset.rotation.y = targetRotY;

@@ -99,17 +99,8 @@ function normalizeAssetUrl(url) {
 }
 
 function getCustomModelRotationY(urlOrId) {
-  const s = String(urlOrId || '').toLowerCase();
-  if (s.includes('recon_drone_2.8m') || s.includes('recon_drone') || s.includes('void_recon_drone')) {
-    // recon_drone_2.8m.glb rotated 90 degrees counter-clockwise (-PI/2 + PI/2 = 0)
-    return 0;
-  }
-  if (s.includes('drone_phase_interceptor_3') || s.includes('phase_interceptor') || s.includes('interceptor')) {
-    // drone_phase_interceptor_3.glb rotated 180 degrees clockwise (-PI/2 - PI = -3PI/2 = PI/2)
-    return Math.PI / 2;
-  }
-  // Default fallback for any other models (90 degrees clockwise)
-  return -Math.PI / 2;
+  // All custom 3D GLB models natively have +Z forward with 0 rad rotation (un-rotated) to point directly at player
+  return 0;
 }
 if (typeof window !== 'undefined') {
   window.getCustomModelRotationY = getCustomModelRotationY;
@@ -2691,9 +2682,8 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
               box.getCenter(center);
               newModel.position.sub(center);
 
-              // Requirement: Per-model orientation so front natively faces the player (+Z):
-              // recon_drone_2.8m.glb rotated 90 deg counter-clockwise (0 rad)
-              // drone_phase_interceptor_3.glb rotated 180 deg clockwise (Math.PI / 2 rad)
+              // Requirement: Ensure custom 3D model asset maintains its front-facing orientation (+Z is forward, pointing at player):
+              // All custom 3D GLB models natively have +Z forward with 0 rad rotation (un-rotated)
               const targetRotY = getCustomModelRotationY(matchingCfg.model_3d_url || matchingCfg.id);
               newModel.rotation.y = targetRotY;
               newModel.userData.targetRotY = targetRotY;

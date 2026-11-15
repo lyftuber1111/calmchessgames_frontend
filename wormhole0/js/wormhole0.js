@@ -13,10 +13,13 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { MeshPool, StageObjectPool } from './object_pool.js';
 
-// Expose THREE globally on window for dynamic stage modules and decoupled enemy systems
-if (typeof window !== 'undefined' && !window.THREE) {
-  window.THREE = THREE;
+// Expose THREE and ObjectPool globally on window for dynamic stage modules and decoupled enemy systems
+if (typeof window !== 'undefined') {
+  if (!window.THREE) window.THREE = THREE;
+  window.MeshPool = MeshPool;
+  window.StageObjectPool = StageObjectPool;
 }
 
 const gltfLoader = new GLTFLoader();
@@ -269,6 +272,7 @@ const STAGE_REGISTRY = {
 let currentActiveStage = 1;
 let currentActiveDeviceType = 'desktop';
 let activeStageModule = null;
+let currentStageObjectPool = null;
 
 // Application & Flight state
 const state = {
@@ -4828,6 +4832,10 @@ function getEngineApi() {
       if (audioMgr) audioMgr.setSpinAudioEnabled(enabled);
     },
     THREE,
+    MeshPool,
+    StageObjectPool,
+    getObjectPool: () => currentStageObjectPool,
+    stageObjectPool: () => currentStageObjectPool,
     setEnemyMovementHandler: (fn) => { activeEnemyMovementHandler = fn; },
     setEnemyWeaponHandler: (fn) => { activeEnemyWeaponHandler = fn; },
     setStageEventHandlers: (handlers) => { activeStageEventHandlers = handlers; },
@@ -4965,6 +4973,50 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     }
     if (typeof renderStageObjectivesUI === 'function') {
       renderStageObjectivesUI();
+    }
+
+    // -------------------------------------------------------------------------
+    // DYNAMIC STAGE OBJECT POOL INITIALIZATION
+    // Pre-allocates enemies and weapons graphic objects for this stage
+    // -------------------------------------------------------------------------
+    try {
+      if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
+        currentStageObjectPool.despawnAll();
+      }
+      const poolScriptRelative = `./${stage.slug}_pool.js?t=${timestamp}`;
+      const poolScriptAlt = `../js/${stage.slug}_pool.js?t=${timestamp}`;
+      let poolMod = null;
+      try {
+        poolMod = await import(poolScriptRelative);
+      } catch (pErr1) {
+        try {
+          poolMod = await import(poolScriptAlt);
+        } catch (pErr2) {
+          console.warn(`[Wormhole XR Engine] Fallback loading stage pool ${poolScriptRelative}:`, pErr2);
+        }
+      }
+
+      const stagePoolCfg = activeCfg || (STAGE_REGISTRY[stage.level] ? { ...STAGE_REGISTRY[stage.level], enemies: window.activeStageEnemies } : stage);
+
+      if (poolMod) {
+        const createPoolFn = poolMod.createStagePool || poolMod.default;
+        if (typeof createPoolFn === 'function') {
+          currentStageObjectPool = createPoolFn(scene, stagePoolCfg, {
+            createEnemyMeshFn: (cfg) => create3DEnemyMesh(cfg),
+            createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn)
+          });
+        }
+      } else {
+        currentStageObjectPool = new StageObjectPool(scene, stagePoolCfg, {
+          createEnemyMeshFn: (cfg) => create3DEnemyMesh(cfg),
+          createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn)
+        });
+      }
+
+      window.stageObjectPool = currentStageObjectPool;
+      console.log(`[Wormhole XR Engine] Stage object pool active for Stage ${stage.level}: ${stage.slug}`, currentStageObjectPool);
+    } catch (poolInitErr) {
+      console.warn('[Wormhole XR Engine] Stage object pool initialization warning:', poolInitErr);
     }
 
     window.dispatchEvent(new CustomEvent('wormholeStageChanged', {
@@ -6509,8 +6561,12 @@ function destroyEnemyInstance(e, enemyIndex = -1) {
   const deathCfg = e.config || {};
   triggerEnemyExplosion(deathPos, deathCfg);
 
-  if (scene) scene.remove(e.mesh);
-  disposeMeshHierarchy(e.mesh);
+  if (e.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemy === 'function') {
+    currentStageObjectPool.despawnEnemy(e.mesh, deathCfg);
+  } else {
+    if (scene) scene.remove(e.mesh);
+    disposeMeshHierarchy(e.mesh);
+  }
 
   if (typeof enemyIndex === 'number' && enemyIndex >= 0 && enemyIndex < active3DEnemies.length) {
     active3DEnemies.splice(enemyIndex, 1);
@@ -6556,6 +6612,48 @@ function collectPowerupInstance(p, powerupIndex = -1) {
   if (typeof pruneUncollectedPowerupsByEnergyState === 'function') {
     pruneUncollectedPowerupsByEnergyState();
   }
+}
+
+/**
+ * Creates a standalone player laser bolt mesh.
+ * Used for fallback creation or pre-allocation inside stage object pools.
+ */
+function createPlayerLaserMesh(activeWpn) {
+  const boltLength = activeWpn.boltLength || 7.5;
+  const boltRadius = activeWpn.boltRadius || 0.14;
+  const geometry = new THREE.CylinderGeometry(boltRadius * 0.35, boltRadius, boltLength, 8);
+  geometry.rotateX(Math.PI / 2);
+
+  const material = new THREE.MeshBasicMaterial({
+    color: activeWpn.colorHex,
+    transparent: true,
+    opacity: 0.95,
+    blending: THREE.AdditiveBlending
+  });
+
+  const mesh = new THREE.Mesh(geometry, material);
+
+  // White-hot plasma core
+  const coreGeom = new THREE.CylinderGeometry(boltRadius * 0.15, boltRadius * 0.35, boltLength * 0.92, 6);
+  coreGeom.rotateX(Math.PI / 2);
+  const coreMat = new THREE.MeshBasicMaterial({
+    color: activeWpn.id === 'blue_laser' ? 0xe0ffff : (activeWpn.id === 'tachyon_lance' ? 0xfff4d6 : 0xffffff),
+    transparent: true,
+    opacity: 0.95
+  });
+  const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+  mesh.add(coreMesh);
+
+  // Dynamic laser point light glow
+  const light = new THREE.PointLight(activeWpn.colorHex, activeWpn.bulletLightIntensity || 3.5, 35);
+  light.position.set(0, 0, 0);
+  mesh.add(light);
+
+  mesh.name = 'laser_bolt';
+  mesh.userData.isLaserBolt = true;
+  mesh.userData.isWeapon = true;
+  mesh.userData.isCombatGraphic = true;
+  return mesh;
 }
 
 function fireLaserBeam() {
@@ -6676,54 +6774,30 @@ function fireLaserBeam() {
     .addScaledVector(up, -0.25);
 
   const direction = new THREE.Vector3().subVectors(targetPoint, spawnOrigin).normalize();
+  const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
 
-  // Glowing Laser Beam Geometry based on active weapon configuration
-  const boltLength = activeWpn.boltLength || 7.5;
-  const boltRadius = activeWpn.boltRadius || 0.14;
-  const geometry = new THREE.CylinderGeometry(boltRadius * 0.35, boltRadius, boltLength, 8);
-  geometry.rotateX(Math.PI / 2);
+  let mesh = null;
+  let fromPool = false;
 
-  const material = new THREE.MeshBasicMaterial({
-    color: activeWpn.colorHex,
-    transparent: true,
-    opacity: 0.95,
-    blending: THREE.AdditiveBlending
-  });
+  // Attempt to spawn laser bolt from stage object pool
+  if (currentStageObjectPool && typeof currentStageObjectPool.spawnPlayerLaser === 'function') {
+    mesh = currentStageObjectPool.spawnPlayerLaser(activeWpn, spawnOrigin, boltQuat);
+    if (mesh) {
+      fromPool = true;
+    }
+  }
 
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.position.copy(spawnOrigin);
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
-
-  // White-hot plasma core
-  const coreGeom = new THREE.CylinderGeometry(boltRadius * 0.15, boltRadius * 0.35, boltLength * 0.92, 6);
-  coreGeom.rotateX(Math.PI / 2);
-  const coreMat = new THREE.MeshBasicMaterial({
-    color: activeWpn.id === 'blue_laser' ? 0xe0ffff : (activeWpn.id === 'tachyon_lance' ? 0xfff4d6 : 0xffffff),
-    transparent: true,
-    opacity: 0.95
-  });
-  const coreMesh = new THREE.Mesh(coreGeom, coreMat);
-  mesh.add(coreMesh);
-
-  // Dynamic laser point light glow
-  const light = new THREE.PointLight(activeWpn.colorHex, activeWpn.bulletLightIntensity || 3.5, 35);
-  light.position.set(0, 0, 0);
-  mesh.add(light);
-
-  mesh.name = 'laser_bolt';
-  mesh.userData.isLaserBolt = true;
-  mesh.userData.isWeapon = true;
-  mesh.userData.isCombatGraphic = true;
-
-  scene.add(mesh);
+  // Fallback to fresh creation if no pooled instance available
+  if (!mesh) {
+    mesh = createPlayerLaserMesh(activeWpn);
+    mesh.position.copy(spawnOrigin);
+    mesh.quaternion.copy(boltQuat);
+    scene.add(mesh);
+  }
 
   laserBolts.push({
     mesh,
-    geometry,
-    material,
-    coreGeom,
-    coreMat,
-    light,
+    fromPool,
     direction,
     speed: activeWpn.bulletSpeed || 550, // units per second
     damage: activeWpn.damagePerHit || 1, // Damage hits for weapons from Game Manager
@@ -6761,23 +6835,31 @@ function updateLaserBolts(delta) {
     }
 
     if (boltConsumed) {
-      scene.remove(bolt.mesh);
-      if (bolt.geometry) bolt.geometry.dispose();
-      if (bolt.material) bolt.material.dispose();
-      if (bolt.coreGeom) bolt.coreGeom.dispose();
-      if (bolt.coreMat) bolt.coreMat.dispose();
-      if (bolt.light) bolt.mesh.remove(bolt.light);
+      if (bolt.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnPlayerLaser === 'function') {
+        currentStageObjectPool.despawnPlayerLaser(bolt.mesh, bolt.weaponId);
+      } else {
+        scene.remove(bolt.mesh);
+        if (bolt.geometry) bolt.geometry.dispose();
+        if (bolt.material) bolt.material.dispose();
+        if (bolt.coreGeom) bolt.coreGeom.dispose();
+        if (bolt.coreMat) bolt.coreMat.dispose();
+        if (bolt.light) bolt.mesh.remove(bolt.light);
+      }
       laserBolts.splice(i, 1);
       continue;
     }
 
     if ((now - bolt.spawnTime) * 0.001 > bolt.lifetime) {
-      scene.remove(bolt.mesh);
-      if (bolt.geometry) bolt.geometry.dispose();
-      if (bolt.material) bolt.material.dispose();
-      if (bolt.coreGeom) bolt.coreGeom.dispose();
-      if (bolt.coreMat) bolt.coreMat.dispose();
-      if (bolt.light) bolt.mesh.remove(bolt.light);
+      if (bolt.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnPlayerLaser === 'function') {
+        currentStageObjectPool.despawnPlayerLaser(bolt.mesh, bolt.weaponId);
+      } else {
+        scene.remove(bolt.mesh);
+        if (bolt.geometry) bolt.geometry.dispose();
+        if (bolt.material) bolt.material.dispose();
+        if (bolt.coreGeom) bolt.coreGeom.dispose();
+        if (bolt.coreMat) bolt.coreMat.dispose();
+        if (bolt.light) bolt.mesh.remove(bolt.light);
+      }
       laserBolts.splice(i, 1);
     }
   }
@@ -8421,25 +8503,38 @@ const enemyBolts = [];
 let lastEnemySpawnCheckTime = 0;
 
 function despawnAllActiveEnemies() {
+  if (currentStageObjectPool && typeof currentStageObjectPool.despawnAllEnemies === 'function') {
+    currentStageObjectPool.despawnAllEnemies();
+  }
   destroyAllRemainingEnemies(false);
 }
 
 function clearActiveEnemyBolts() {
+  if (currentStageObjectPool && typeof currentStageObjectPool.despawnAllWeapons === 'function') {
+    currentStageObjectPool.despawnAllWeapons();
+  }
   for (let i = enemyBolts.length - 1; i >= 0; i--) {
     const b = enemyBolts[i];
-    if (b && b.mesh && scene) {
-      scene.remove(b.mesh);
-      if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
-      if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
-      if (b.geometry && b.geometry.dispose) b.geometry.dispose();
-      if (b.material && b.material.dispose) b.material.dispose();
-      disposeMeshHierarchy(b.mesh);
+    if (b && b.mesh) {
+      if (b.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemyWeapon === 'function') {
+        currentStageObjectPool.despawnEnemyWeapon(b.mesh, b.type);
+      } else if (scene) {
+        scene.remove(b.mesh);
+        if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
+        if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
+        if (b.geometry && b.geometry.dispose) b.geometry.dispose();
+        if (b.material && b.material.dispose) b.material.dispose();
+        disposeMeshHierarchy(b.mesh);
+      }
     }
   }
   enemyBolts.length = 0;
 }
 
 function destroyAllRemainingEnemies(triggerExplosionFx = false) {
+  if (currentStageObjectPool && typeof currentStageObjectPool.despawnAllEnemies === 'function') {
+    currentStageObjectPool.despawnAllEnemies();
+  }
   for (let i = active3DEnemies.length - 1; i >= 0; i--) {
     const e = active3DEnemies[i];
     if (e && e.mesh) {
@@ -8448,8 +8543,12 @@ function destroyAllRemainingEnemies(triggerExplosionFx = false) {
           triggerEnemyExplosion(e.mesh.position.clone(), e.config || {});
         } catch (fxErr) {}
       }
-      if (scene) scene.remove(e.mesh);
-      disposeMeshHierarchy(e.mesh);
+      if (e.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemy === 'function') {
+        currentStageObjectPool.despawnEnemy(e.mesh, e.config);
+      } else if (scene) {
+        scene.remove(e.mesh);
+        disposeMeshHierarchy(e.mesh);
+      }
     }
     active3DEnemies.splice(i, 1);
   }
@@ -8457,16 +8556,23 @@ function destroyAllRemainingEnemies(triggerExplosionFx = false) {
 }
 
 function clearActiveLaserBolts() {
+  if (currentStageObjectPool && typeof currentStageObjectPool.despawnAllWeapons === 'function') {
+    currentStageObjectPool.despawnAllWeapons();
+  }
   for (let i = laserBolts.length - 1; i >= 0; i--) {
     const bolt = laserBolts[i];
-    if (bolt && bolt.mesh && scene) {
-      scene.remove(bolt.mesh);
-      if (bolt.geometry && bolt.geometry.dispose) bolt.geometry.dispose();
-      if (bolt.material && bolt.material.dispose) bolt.material.dispose();
-      if (bolt.coreGeom && bolt.coreGeom.dispose) bolt.coreGeom.dispose();
-      if (bolt.coreMat && bolt.coreMat.dispose) bolt.coreMat.dispose();
-      if (bolt.light) bolt.mesh.remove(bolt.light);
-      disposeMeshHierarchy(bolt.mesh);
+    if (bolt && bolt.mesh) {
+      if (bolt.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnPlayerLaser === 'function') {
+        currentStageObjectPool.despawnPlayerLaser(bolt.mesh, bolt.weaponId);
+      } else if (scene) {
+        scene.remove(bolt.mesh);
+        if (bolt.geometry && bolt.geometry.dispose) bolt.geometry.dispose();
+        if (bolt.material && bolt.material.dispose) bolt.material.dispose();
+        if (bolt.coreGeom && bolt.coreGeom.dispose) bolt.coreGeom.dispose();
+        if (bolt.coreMat && bolt.coreMat.dispose) bolt.coreMat.dispose();
+        if (bolt.light) bolt.mesh.remove(bolt.light);
+        disposeMeshHierarchy(bolt.mesh);
+      }
     }
   }
   laserBolts.length = 0;
@@ -8887,7 +8993,6 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
 
   for (let idx = 0; idx < swarmCount; idx++) {
     const cfg = enemyPool[idx % enemyPool.length];
-    const mesh = create3DEnemyMesh(cfg);
 
     // Emerge in formation from the mouth/throat of the wormhole (origin 0,0,0, -Z throat)
     const angle = (idx / swarmCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.45;
@@ -8895,7 +9000,26 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
     const spawnX = Math.cos(angle) * spawnRad;
     const spawnY = Math.sin(angle) * (spawnRad * 0.75);
     const spawnZ = -6.5 - (idx * 1.6) - Math.random() * 2.5;
-    mesh.position.set(spawnX, spawnY, spawnZ);
+    const spawnPos = new THREE.Vector3(spawnX, spawnY, spawnZ);
+
+    let mesh = null;
+    let fromPool = false;
+
+    // Grab enemy graphic object from stage object pool if available
+    if (currentStageObjectPool && typeof currentStageObjectPool.spawnEnemy === 'function') {
+      mesh = currentStageObjectPool.spawnEnemy(cfg, spawnPos);
+      if (mesh) {
+        fromPool = true;
+      }
+    }
+
+    if (!mesh) {
+      mesh = create3DEnemyMesh(cfg);
+      mesh.position.set(spawnX, spawnY, spawnZ);
+      scene.add(mesh);
+    } else {
+      mesh.position.set(spawnX, spawnY, spawnZ);
+    }
 
     // Fly out of wormhole starting small and scaling dynamically up as they travel
     mesh.scale.set(0.1, 0.1, 0.1);
@@ -9003,10 +9127,13 @@ function spawnEnemySwarmFromWormhole(forcedCount = null) {
       phase: 'RUSH_OUT',
       stoppedTime: 0,
       rotSpeedX: (Math.random() - 0.5) * 1.2,
-      rotSpeedY: (Math.random() - 0.5) * 1.5
+      rotSpeedY: (Math.random() - 0.5) * 1.5,
+      fromPool
     };
 
-    scene.add(mesh);
+    if (!fromPool && scene && mesh.parent !== scene) {
+      scene.add(mesh);
+    }
     active3DEnemies.push(enemyObj);
   }
 }
@@ -9486,8 +9613,12 @@ function updateEnemiesCombat(delta) {
 
     // Despawn safeguard if pushed far behind player (and dispose mesh hierarchy to prevent leaks)
     if (e.mesh.position.z > playerPos.z + 30 || distToPlayer > 400) {
-      scene.remove(e.mesh);
-      disposeMeshHierarchy(e.mesh);
+      if (e.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemy === 'function') {
+        currentStageObjectPool.despawnEnemy(e.mesh, e.config);
+      } else {
+        scene.remove(e.mesh);
+        disposeMeshHierarchy(e.mesh);
+      }
       active3DEnemies.splice(i, 1);
     }
   }
@@ -9512,24 +9643,32 @@ function updateEnemiesCombat(delta) {
     if (distToPlayer < 4.8) {
       // Direct enemy weapon impact on player!
       applyDamageToPlayer(b.damage);
-      scene.remove(b.mesh);
-      if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
-      if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
-      if (b.geometry && b.geometry.dispose) b.geometry.dispose();
-      if (b.material && b.material.dispose) b.material.dispose();
-      disposeMeshHierarchy(b.mesh);
+      if (b.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemyWeapon === 'function') {
+        currentStageObjectPool.despawnEnemyWeapon(b.mesh, b.type);
+      } else {
+        scene.remove(b.mesh);
+        if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
+        if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
+        if (b.geometry && b.geometry.dispose) b.geometry.dispose();
+        if (b.material && b.material.dispose) b.material.dispose();
+        disposeMeshHierarchy(b.mesh);
+      }
       enemyBolts.splice(i, 1);
       continue;
     }
 
     // Lifetime expiration or passed far behind player
     if ((now - b.spawnTime) * 0.001 > b.lifetime || b.mesh.position.z > playerPos.z + 30) {
-      scene.remove(b.mesh);
-      if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
-      if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
-      if (b.geometry && b.geometry.dispose) b.geometry.dispose();
-      if (b.material && b.material.dispose) b.material.dispose();
-      disposeMeshHierarchy(b.mesh);
+      if (b.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemyWeapon === 'function') {
+        currentStageObjectPool.despawnEnemyWeapon(b.mesh, b.type);
+      } else {
+        scene.remove(b.mesh);
+        if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
+        if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
+        if (b.geometry && b.geometry.dispose) b.geometry.dispose();
+        if (b.material && b.material.dispose) b.material.dispose();
+        disposeMeshHierarchy(b.mesh);
+      }
       enemyBolts.splice(i, 1);
     }
   }
@@ -9558,12 +9697,16 @@ function updateEnemiesCombat(delta) {
     }
 
     if (boltConsumed) {
-      scene.remove(bolt.mesh);
-      if (bolt.geometry) bolt.geometry.dispose();
-      if (bolt.material) bolt.material.dispose();
-      if (bolt.coreGeom) bolt.coreGeom.dispose();
-      if (bolt.coreMat) bolt.coreMat.dispose();
-      if (bolt.light) bolt.mesh.remove(bolt.light);
+      if (bolt.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnPlayerLaser === 'function') {
+        currentStageObjectPool.despawnPlayerLaser(bolt.mesh, bolt.weaponId);
+      } else {
+        scene.remove(bolt.mesh);
+        if (bolt.geometry) bolt.geometry.dispose();
+        if (bolt.material) bolt.material.dispose();
+        if (bolt.coreGeom) bolt.coreGeom.dispose();
+        if (bolt.coreMat) bolt.coreMat.dispose();
+        if (bolt.light) bolt.mesh.remove(bolt.light);
+      }
       laserBolts.splice(bi, 1);
     }
   }
@@ -9650,6 +9793,25 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
   const wSizeZ = parseFloat(wpn?.size_z !== undefined ? wpn.size_z : (cfg.weapon_size_z !== undefined ? cfg.weapon_size_z : 1.0)) || 1.0;
   const wpnModelUrl = (wpn && (wpn.model_url || wpn.graphic_object || wpn.model_3d_url)) ? (wpn.model_url || wpn.graphic_object || wpn.model_3d_url).trim() : '';
 
+  let fromPool = false;
+
+  // Attempt to spawn enemy projectile from stage object pool
+  if (!wpnModelUrl && currentStageObjectPool && typeof currentStageObjectPool.spawnEnemyWeapon === 'function') {
+    const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+    mesh = currentStageObjectPool.spawnEnemyWeapon(wpn, cfg, spawnOrigin, boltQuat, isMissile ? 'missile' : 'beam');
+    if (mesh) {
+      fromPool = true;
+      weaponType = isMissile ? 'missile' : 'beam';
+      boltSpeed = isMissile ? Math.max(22, Math.min(36, weaponSpeedVal * 0.065)) : Math.max(28, Math.min(48, weaponSpeedVal * 0.075));
+      if (isMissile && audioMgr && typeof audioMgr.playEnemyMissile === 'function') {
+        audioMgr.playEnemyMissile();
+      } else if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
+        audioMgr.playEnemyLaser();
+      }
+    }
+  }
+
+  if (!fromPool) {
   if (wpnModelUrl && typeof load3DAssetModel === 'function') {
     weaponType = 'custom_model';
     const weaponGroup = new THREE.Group();
@@ -9808,9 +9970,11 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
       audioMgr.playEnemyLaser();
     }
   }
+  }
 
   enemyBolts.push({
     mesh,
+    fromPool,
     geometryList,
     materialList,
     direction,
@@ -10243,7 +10407,10 @@ function restartGame() {
   }
   document.body.classList.add('portrait-dismissed');
 
-  // Clean up ALL weapons graphics, enemy bolts, lasers, explosions, and run garbage collection
+  // Clean up ALL weapons graphics, enemy bolts, lasers, explosions, and reset stage object pool
+  if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
+    currentStageObjectPool.despawnAll();
+  }
   cleanupAllWeaponsAndCombatGraphics();
   destroyAllRemainingEnemies(false);
   despawnAllActivePowerups();

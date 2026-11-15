@@ -17,9 +17,9 @@ export class WarpOriginObjectPool extends StageObjectPool {
       stage_slug: 'warp_origin',
       environment_theme: 'Warp Cyan Corridor',
       weapons: {
-        initial: { id: 'red_laser', name: 'Red Laser', color: '#ff2244', pool_size: 50 },
+        initial: { id: 'red_laser', name: 'Red Laser', color: '#ff2244', pool_size: 200 },
         acquirable: [
-          { id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 50 }
+          { id: 'blue_laser', name: 'Blue Laser', color: '#00d4ff', pool_size: 200 }
         ]
       },
       enemies: [
@@ -33,7 +33,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
           length: 4.2,
           height: 1.3,
           depth: 3.4,
-          pool_size: 20
+          pool_size: 100
         },
         {
           id: 'void_recon_drone',

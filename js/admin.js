@@ -6531,6 +6531,11 @@ Thank you for reaching out to Calm Chess Games. `;
   global.autoDetectWeaponModelJson = autoDetectWeaponModelJson;
   global.handleWeaponModelUrlChange = handleWeaponModelUrlChange;
   global.setEnemyWeaponFirePointPreset = setEnemyWeaponFirePointPreset;
+  Object.defineProperty(global, 'activeEnemyWeapons', {
+      get() { return activeEnemyWeapons; },
+      set(val) { activeEnemyWeapons = val; },
+      configurable: true
+  });
   global.seedDefaultGameEnemies = seedDefaultGameEnemies;
   global.populateEnemyPiercingWeaponDropdown = populateEnemyPiercingWeaponDropdown;
   global.populateCloneEnemyDropdown = populateCloneEnemyDropdown;

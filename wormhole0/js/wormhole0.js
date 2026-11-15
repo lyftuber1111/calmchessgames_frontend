@@ -1043,6 +1043,8 @@ const particleMaterial = new THREE.ShaderMaterial({
 });
 
 const particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+particleSystem.name = 'wormhole_particle_system';
+particleSystem.userData.isPermanentEnvironment = true;
 scene.add(particleSystem);
 
 // Full-Screen Starfield & Celestial Singularity Glow
@@ -1117,6 +1119,8 @@ function createStarfield() {
   return new THREE.Points(starGeom, starMat);
 }
 const starfield = createStarfield();
+starfield.name = 'wormhole_starfield';
+starfield.userData.isPermanentEnvironment = true;
 scene.add(starfield);
 
 // Distant Wormhole Singularity Corona & Celestial Beacon
@@ -6706,6 +6710,11 @@ function fireLaserBeam() {
   light.position.set(0, 0, 0);
   mesh.add(light);
 
+  mesh.name = 'laser_bolt';
+  mesh.userData.isLaserBolt = true;
+  mesh.userData.isWeapon = true;
+  mesh.userData.isCombatGraphic = true;
+
   scene.add(mesh);
 
   laserBolts.push({
@@ -8415,7 +8424,22 @@ function despawnAllActiveEnemies() {
   destroyAllRemainingEnemies(false);
 }
 
-function destroyAllRemainingEnemies(triggerExplosionFx = true) {
+function clearActiveEnemyBolts() {
+  for (let i = enemyBolts.length - 1; i >= 0; i--) {
+    const b = enemyBolts[i];
+    if (b && b.mesh && scene) {
+      scene.remove(b.mesh);
+      if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
+      if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
+      if (b.geometry && b.geometry.dispose) b.geometry.dispose();
+      if (b.material && b.material.dispose) b.material.dispose();
+      disposeMeshHierarchy(b.mesh);
+    }
+  }
+  enemyBolts.length = 0;
+}
+
+function destroyAllRemainingEnemies(triggerExplosionFx = false) {
   for (let i = active3DEnemies.length - 1; i >= 0; i--) {
     const e = active3DEnemies[i];
     if (e && e.mesh) {
@@ -8429,18 +8453,7 @@ function destroyAllRemainingEnemies(triggerExplosionFx = true) {
     }
     active3DEnemies.splice(i, 1);
   }
-  for (let i = enemyBolts.length - 1; i >= 0; i--) {
-    const b = enemyBolts[i];
-    if (b && b.mesh && scene) {
-      scene.remove(b.mesh);
-      if (b.geometryList) b.geometryList.forEach(g => { if (g && g.dispose) g.dispose(); });
-      if (b.materialList) b.materialList.forEach(m => { if (m && m.dispose) m.dispose(); });
-      if (b.geometry && b.geometry.dispose) b.geometry.dispose();
-      if (b.material && b.material.dispose) b.material.dispose();
-      disposeMeshHierarchy(b.mesh);
-    }
-    enemyBolts.splice(i, 1);
-  }
+  clearActiveEnemyBolts();
 }
 
 function clearActiveLaserBolts() {
@@ -8453,9 +8466,85 @@ function clearActiveLaserBolts() {
       if (bolt.coreGeom && bolt.coreGeom.dispose) bolt.coreGeom.dispose();
       if (bolt.coreMat && bolt.coreMat.dispose) bolt.coreMat.dispose();
       if (bolt.light) bolt.mesh.remove(bolt.light);
+      disposeMeshHierarchy(bolt.mesh);
     }
-    laserBolts.splice(i, 1);
   }
+  laserBolts.length = 0;
+}
+
+function cleanupAllWeaponsAndCombatGraphics() {
+  // 1. Clear active player laser bolts
+  clearActiveLaserBolts();
+
+  // 2. Clear active enemy weapon bolts (beams, missiles, and custom models)
+  clearActiveEnemyBolts();
+
+  // 3. Clear all explosion intervals and explosion objects (rings, particles, debris)
+  if (typeof clearAllActiveExplosions === 'function') {
+    clearAllActiveExplosions();
+  } else if (typeof clearAllActiveExplosionIntervals === 'function') {
+    clearAllActiveExplosionIntervals();
+  }
+
+  // 4. Sweep scene directly to purge any residual combat graphics, weapon models, shockwave rings or point clouds
+  if (scene && scene.children) {
+    for (let i = scene.children.length - 1; i >= 0; i--) {
+      const child = scene.children[i];
+      if (!child) continue;
+
+      // Keep core engine infrastructure safe
+      if (typeof camera !== 'undefined' && child === camera) continue;
+      if (typeof cameraRig !== 'undefined' && child === cameraRig) continue;
+      if (typeof starfield !== 'undefined' && child === starfield) continue;
+      if (typeof particleSystem !== 'undefined' && child === particleSystem) continue;
+      if (child.userData && (child.userData.isWormholeMesh || child.userData.isWormholeGroup || child.userData.isPermanentEnvironment || child.userData.isWormholeRing)) continue;
+
+      let shouldPurge = false;
+
+      // Purge tagged weapon/explosion objects
+      if (child.userData && (
+        child.userData.isWeapon ||
+        child.userData.isEnemyBolt ||
+        child.userData.isLaserBolt ||
+        child.userData.isExplosion ||
+        child.userData.isCombatGraphic ||
+        child.userData.isDebris
+      )) {
+        shouldPurge = true;
+      }
+
+      // Purge RingGeometry shockwaves (e.g. cyan #38bdf8 explosion rings) that are not wormhole rings
+      if (child.geometry && (child.geometry.type === 'RingGeometry' || child.geometry.type === 'TorusGeometry')) {
+        if (!child.userData || !child.userData.isWormholeRing) {
+          shouldPurge = true;
+        }
+      }
+
+      // Purge transient Points particle clouds
+      if (child.type === 'Points') {
+        const isEnginePoints = (typeof particleSystem !== 'undefined' && child === particleSystem) ||
+                               (typeof starfield !== 'undefined' && child === starfield) ||
+                               (child.userData && child.userData.isPermanentEnvironment);
+        if (!isEnginePoints) {
+          shouldPurge = true;
+        }
+      }
+
+      // Purge by name matching
+      const cName = (child.name || '').toLowerCase();
+      if (cName.includes('bolt') || cName.includes('missile') || cName.includes('beam') || cName.includes('weapon') || cName.includes('debris') || cName.includes('explosion') || cName.includes('shockwave')) {
+        shouldPurge = true;
+      }
+
+      if (shouldPurge) {
+        scene.remove(child);
+        disposeMeshHierarchy(child);
+      }
+    }
+  }
+
+  // 5. Run thorough garbage collection
+  runGarbageCollection();
 }
 
 function clearActiveSpecialEffects() {
@@ -9564,6 +9653,10 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
   if (wpnModelUrl && typeof load3DAssetModel === 'function') {
     weaponType = 'custom_model';
     const weaponGroup = new THREE.Group();
+    weaponGroup.name = 'enemy_weapon_bolt';
+    weaponGroup.userData.isEnemyBolt = true;
+    weaponGroup.userData.isWeapon = true;
+    weaponGroup.userData.isCombatGraphic = true;
 
     const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
     weaponGroup.add(light);
@@ -9572,8 +9665,10 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     weaponGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
 
     load3DAssetModel(wpnModelUrl, (clonedMesh) => {
-      if (clonedMesh) {
+      if (clonedMesh && weaponGroup.parent === scene) {
         weaponGroup.add(clonedMesh);
+      } else if (clonedMesh) {
+        disposeMeshHierarchy(clonedMesh);
       }
     });
 
@@ -9588,6 +9683,10 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     weaponType = 'missile';
     // 3D Guided Missile / Torpedo assembly
     const missileGroup = new THREE.Group();
+    missileGroup.name = 'enemy_weapon_bolt';
+    missileGroup.userData.isEnemyBolt = true;
+    missileGroup.userData.isWeapon = true;
+    missileGroup.userData.isCombatGraphic = true;
 
     // Missile Fuselage
     const bodyGeom = new THREE.CylinderGeometry(0.24, 0.4, 2.8, 8);
@@ -9660,6 +9759,10 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     weaponType = 'beam';
     // High-Intensity Dual-Layer Laser Beam
     const beamGroup = new THREE.Group();
+    beamGroup.name = 'enemy_weapon_bolt';
+    beamGroup.userData.isEnemyBolt = true;
+    beamGroup.userData.isWeapon = true;
+    beamGroup.userData.isCombatGraphic = true;
 
     // Outer Glowing Plasma Sheath
     const sheathGeom = new THREE.CylinderGeometry(0.44, 0.58, 8.2, 8);
@@ -9782,12 +9885,10 @@ function triggerGameOver() {
   updatePlayerDefenseHUD();
 
   // Requirement: when game over appears destroy all remaining enemies and garbage collect before restarting the game
-  destroyAllRemainingEnemies(true);
+  destroyAllRemainingEnemies(false);
   despawnAllActivePowerups();
-  clearActiveLaserBolts();
-  clearAllActiveExplosionIntervals();
+  cleanupAllWeaponsAndCombatGraphics();
   clearActiveSpecialEffects();
-  runGarbageCollection();
 
   // Requirement: when the game over screen appears if the crosshair has captured the mouse pointer automatically un capture it
   if (document.pointerLockElement) {
@@ -10118,7 +10219,12 @@ function restartGame() {
     }
   } catch (e) {}
 
-  // Cancel any lingering countdown intervals or timeouts
+  // Dismiss and hide any countdown overlay to ensure clean, immediate stage restart
+  const countdownOverlay = document.getElementById('game-countdown-overlay');
+  if (countdownOverlay) {
+    countdownOverlay.classList.remove('active');
+    countdownOverlay.style.display = 'none';
+  }
   if (countdownTimerInterval) {
     clearInterval(countdownTimerInterval);
     countdownTimerInterval = null;
@@ -10137,13 +10243,19 @@ function restartGame() {
   }
   document.body.classList.add('portrait-dismissed');
 
-  // Completely reset pause & game over states across entire game
+  // Clean up ALL weapons graphics, enemy bolts, lasers, explosions, and run garbage collection
+  cleanupAllWeaponsAndCombatGraphics();
+  destroyAllRemainingEnemies(false);
+  despawnAllActivePowerups();
+  clearActiveSpecialEffects();
+
+  // Completely reset pause & game over states across entire game - start flight immediately!
   state.isGameOver = false;
   state.isPaused = false;
-  state.hasStarted = false; // Flight holds until mission re-engagement countdown concludes
+  state.hasStarted = true; // Flight & combat engage immediately from stage start
   state.isCountdownActive = false;
   document.body.classList.remove('game-paused');
-  document.body.classList.remove('game-in-flight');
+  document.body.classList.add('game-in-flight');
   const btnQuickPause = document.getElementById('btn-quick-pause');
   if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
 
@@ -10190,12 +10302,12 @@ function restartGame() {
   cancelTurn();
 
   // Reset cruise speed throttle and emergency stop to 0 (neutral center)
-  stopThrottle('MISSION RESTART');
+  stopThrottle('STAGE RESTART');
   state.throttleValue = 0;
   setThrottleLockout(false);
   state.throttleLockoutUntil = 0;
 
-  // Reset player stats
+  // Reset player stats cleanly from the beginning
   state.playerShield = 100;
   state.playerHealth = 100;
   state.score = 0;
@@ -10229,14 +10341,6 @@ function restartGame() {
   state.targetYaw = 0;
   state.targetPitch = 0;
 
-  // Requirement: destroy all remaining enemies and garbage collect before restarting the game
-  destroyAllRemainingEnemies(false);
-  despawnAllActivePowerups();
-  clearAllActiveExplosionIntervals();
-  clearActiveLaserBolts();
-  clearActiveSpecialEffects();
-  runGarbageCollection();
-
   const damageVignette = document.getElementById('damage-vignette');
   if (damageVignette) damageVignette.style.opacity = '0';
   if (typeof triggeredPowerupEventSet !== 'undefined') {
@@ -10248,7 +10352,7 @@ function restartGame() {
     weaponsSystem.resetForMission();
   }
 
-  // Reset to Stage 1 and re-sync
+  // Reset to Stage 1 and re-sync from the beginning
   currentActiveStage = 1;
   loadStageDeviceModule(1, currentActiveDeviceType);
 
@@ -10260,8 +10364,14 @@ function restartGame() {
   // Reset frame timestamp to prevent delta time explosion
   state.lastFrameTime = performance.now();
 
-  // Launch smooth 5-second MISSION RE-ENGAGEMENT countdown
-  executeMissionCountdown(true);
+  // Spawn fresh Stage 1 hostile swarm immediately from the beginning
+  lastEnemySpawnCheckTime = performance.now();
+  spawnEnemySwarmFromWormhole();
+
+  // Ensure keyboard focus is restored and request crosshair capture if on desktop
+  if (!isMobileInUse() && !state.isPointerLocked) {
+    requestCrosshairCapture(true);
+  }
 }
 
 function quitGame() {
@@ -10301,6 +10411,24 @@ function triggerEnemyExplosion(position, config = {}) {
 // -----------------------------------------------------------------------------
 const debrisGLTFCache = new Map();
 const activeExplosionIntervals = [];
+const activeExplosionObjects = [];
+
+function registerExplosionObject(obj) {
+  if (obj) {
+    obj.userData.isExplosion = true;
+    obj.userData.isCombatGraphic = true;
+    if (!activeExplosionObjects.includes(obj)) {
+      activeExplosionObjects.push(obj);
+    }
+  }
+  return obj;
+}
+
+function removeExplosionObject(obj) {
+  if (!obj) return;
+  const idx = activeExplosionObjects.indexOf(obj);
+  if (idx !== -1) activeExplosionObjects.splice(idx, 1);
+}
 
 function registerExplosionInterval(fn, delayMs) {
   let interval = null;
@@ -10326,6 +10454,18 @@ function clearAllActiveExplosionIntervals() {
     } catch (e) {}
   }
   activeExplosionIntervals.length = 0;
+}
+
+function clearAllActiveExplosions() {
+  clearAllActiveExplosionIntervals();
+  for (let i = activeExplosionObjects.length - 1; i >= 0; i--) {
+    const obj = activeExplosionObjects[i];
+    if (obj) {
+      if (scene) scene.remove(obj);
+      disposeMeshHierarchy(obj);
+    }
+  }
+  activeExplosionObjects.length = 0;
 }
 
 function spawnGLTFDebrisExplosion(position, url, count, scale, colorHex, colorStr) {
@@ -10356,6 +10496,8 @@ function spawnGLTFDebrisExplosion(position, url, count, scale, colorHex, colorSt
       shardsGroup.add(shard);
       shards.push({ mesh: shard, vel, angVel });
     }
+    shardsGroup.name = 'gltf_debris_shards';
+    registerExplosionObject(shardsGroup);
     scene.add(shardsGroup);
 
     const startTime = performance.now();
@@ -10374,6 +10516,7 @@ function spawnGLTFDebrisExplosion(position, url, count, scale, colorHex, colorSt
 
       if (elapsed > 1.2) {
         clearExplosionInterval(timerId);
+        removeExplosionObject(shardsGroup);
         scene.remove(shardsGroup);
         disposeMeshHierarchy(shardsGroup);
       }
@@ -10403,8 +10546,10 @@ function spawnPlasmaShatterExplosion(position, count, scale, colorHex) {
     blending: THREE.AdditiveBlending
   });
   const ring = new THREE.Mesh(ringGeom, ringMat);
+  ring.name = 'plasma_shockwave_ring';
   ring.position.copy(position);
   ring.rotation.x = Math.PI / 2;
+  registerExplosionObject(ring);
   scene.add(ring);
 
   // Plasma fireballs point cloud
@@ -10432,6 +10577,8 @@ function spawnPlasmaShatterExplosion(position, count, scale, colorHex) {
     blending: THREE.AdditiveBlending
   });
   const points = new THREE.Points(geom, mat);
+  points.name = 'plasma_points_cloud';
+  registerExplosionObject(points);
   scene.add(points);
 
   const startTime = performance.now();
@@ -10453,6 +10600,8 @@ function spawnPlasmaShatterExplosion(position, count, scale, colorHex) {
 
     if (elapsed > 0.75) {
       clearExplosionInterval(timerId);
+      removeExplosionObject(points);
+      removeExplosionObject(ring);
       scene.remove(points);
       scene.remove(ring);
       geom.dispose();
@@ -10497,6 +10646,8 @@ function spawnQuantumImplosionExplosion(position, count, scale, colorHex) {
     blending: THREE.AdditiveBlending
   });
   const points = new THREE.Points(geom, mat);
+  points.name = 'quantum_points_cloud';
+  registerExplosionObject(points);
   scene.add(points);
 
   const startTime = performance.now();
@@ -10530,6 +10681,7 @@ function spawnQuantumImplosionExplosion(position, count, scale, colorHex) {
 
     if (elapsed > 0.8) {
       clearExplosionInterval(timerId);
+      removeExplosionObject(points);
       scene.remove(points);
       geom.dispose();
       mat.dispose();
@@ -10539,6 +10691,8 @@ function spawnQuantumImplosionExplosion(position, count, scale, colorHex) {
 
 function spawnDebrisCloudExplosion(position, count, scale, colorHex) {
   const debrisGroup = new THREE.Group();
+  debrisGroup.name = 'debris_cloud_group';
+  registerExplosionObject(debrisGroup);
   const shards = [];
   const shardCount = Math.min(count, 22);
 
@@ -10593,6 +10747,7 @@ function spawnDebrisCloudExplosion(position, count, scale, colorHex) {
 
     if (elapsed > 0.85) {
       clearExplosionInterval(timerId);
+      removeExplosionObject(debrisGroup);
       scene.remove(debrisGroup);
       disposeMeshHierarchy(debrisGroup);
       shardMat.dispose();
@@ -10626,6 +10781,8 @@ function spawnSparksBurstExplosion(position, count, scale, colorHex) {
   });
 
   const points = new THREE.Points(geom, mat);
+  points.name = 'sparks_burst_cloud';
+  registerExplosionObject(points);
   scene.add(points);
 
   const startTime = performance.now();
@@ -10642,6 +10799,7 @@ function spawnSparksBurstExplosion(position, count, scale, colorHex) {
 
     if (elapsed > 0.65) {
       clearExplosionInterval(timerId);
+      removeExplosionObject(points);
       scene.remove(points);
       geom.dispose();
       mat.dispose();
@@ -12528,6 +12686,10 @@ if (typeof window !== 'undefined') {
   window.triggerGameOver = triggerGameOver;
   window.restartGame = restartGame;
   window.quitGame = quitGame;
+  window.cleanupAllWeaponsAndCombatGraphics = cleanupAllWeaponsAndCombatGraphics;
+  window.clearActiveEnemyBolts = clearActiveEnemyBolts;
+  window.clearAllActiveExplosions = clearAllActiveExplosions;
+  window.activeExplosionObjects = () => activeExplosionObjects;
   window.applyPowerupEffect = applyPowerupEffect;
   window.isTargetInCrosshairOutsideCircle = isTargetInCrosshairOutsideCircle;
   window.destroyEnemyInstance = destroyEnemyInstance;

@@ -10076,7 +10076,7 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
 
     const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
     weaponGroup.add(light);
-    weaponGroup.scale.set(wScale * wSizeX, wScale * wSizeY, wScale * wSizeZ);
+    weaponGroup.scale.set(wScale * wScaleX * wSizeX, wScale * wScaleY * wSizeY, wScale * wScaleZ * wSizeZ);
     weaponGroup.position.copy(spawnOrigin);
     weaponGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
 
@@ -10154,7 +10154,7 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     light.position.set(0, 0, 0);
     missileGroup.add(light);
 
-    missileGroup.scale.set(wScale * wSizeX, wScale * wSizeY, wScale * wSizeZ);
+    missileGroup.scale.set(wScale * wScaleX * wSizeX, wScale * wScaleY * wSizeY, wScale * wScaleZ * wSizeZ);
     missileGroup.position.copy(spawnOrigin);
     missileGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     scene.add(missileGroup);
@@ -10208,7 +10208,7 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     light.position.set(0, 0, 0);
     beamGroup.add(light);
 
-    beamGroup.scale.set(wScale * wSizeX, wScale * wSizeY, wScale * wSizeZ);
+    beamGroup.scale.set(wScale * wScaleX * wSizeX, wScale * wScaleY * wSizeY, wScale * wScaleZ * wSizeZ);
     beamGroup.position.copy(spawnOrigin);
     beamGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     scene.add(beamGroup);

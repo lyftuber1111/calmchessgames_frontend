@@ -3327,6 +3327,7 @@ try {
                   `environment_theme` VARCHAR(100) DEFAULT 'Warp Cyan Corridor',
                   `events_within_level` TEXT NOT NULL,
                   `end_level_event` VARCHAR(150) NOT NULL,
+                  `cockpit_overlay_asset` VARCHAR(255) NOT NULL DEFAULT 'mobile/warp_origin_images/cockpit_cracks.glb',
                   `mission_objectives` TEXT NULL,
                   `required_enemy_kills` INT NOT NULL DEFAULT 10,
                   `warp_target_distance` INT NOT NULL DEFAULT 50000,
@@ -3342,16 +3343,36 @@ try {
 
             // Auto-migrate wormhole_game_stages columns if missing
             try {
+                $colCockpit = $pdo->query("SHOW COLUMNS FROM `wormhole_game_stages` LIKE 'cockpit_overlay_asset'")->fetch();
+                if (!$colCockpit) {
+                    @$pdo->exec("ALTER TABLE `wormhole_game_stages` ADD COLUMN `cockpit_overlay_asset` VARCHAR(255) NOT NULL DEFAULT 'mobile/warp_origin_images/cockpit_cracks.glb' AFTER `end_level_event`");
+                }
                 $colCheck = $pdo->query("SHOW COLUMNS FROM `wormhole_game_stages` LIKE 'mission_objectives'")->fetch();
                 if (!$colCheck) {
                     @$pdo->exec("ALTER TABLE `wormhole_game_stages` ADD COLUMN `mission_objectives` TEXT NULL AFTER `end_level_event`");
                     @$pdo->exec("ALTER TABLE `wormhole_game_stages` ADD COLUMN `required_enemy_kills` INT NOT NULL DEFAULT 10 AFTER `mission_objectives`");
                     @$pdo->exec("ALTER TABLE `wormhole_game_stages` ADD COLUMN `warp_target_distance` INT NOT NULL DEFAULT 50000 AFTER `required_enemy_kills`");
-                    @$pdo->exec("UPDATE `wormhole_game_stages` SET `mission_objectives` = 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.', `required_enemy_kills` = 10, `warp_target_distance` = 50000 WHERE `stage_level` = 1");
-                    @$pdo->exec("UPDATE `wormhole_game_stages` SET `mission_objectives` = 'Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.', `required_enemy_kills` = 15, `warp_target_distance` = 35000 WHERE `stage_level` = 2");
-                    @$pdo->exec("UPDATE `wormhole_game_stages` SET `mission_objectives` = 'Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.', `required_enemy_kills` = 20, `warp_target_distance` = 20000 WHERE `stage_level` = 3");
-                    @$pdo->exec("UPDATE `wormhole_game_stages` SET `mission_objectives` = 'Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.', `required_enemy_kills` = 25, `warp_target_distance` = 10000 WHERE `stage_level` = 4");
                 }
+                @$pdo->exec("UPDATE `wormhole_game_stages` SET `mission_objectives` = 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.', `required_enemy_kills` = 10, `warp_target_distance` = 50000 WHERE `stage_level` = 1");
+                @$pdo->exec("UPDATE `wormhole_game_stages` SET `mission_objectives` = 'Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.', `required_enemy_kills` = 15, `warp_target_distance` = 35000 WHERE `stage_level` = 2");
+                @$pdo->exec("UPDATE `wormhole_game_stages` SET `mission_objectives` = 'Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.', `required_enemy_kills` = 20, `warp_target_distance` = 20000 WHERE `stage_level` = 3");
+                @$pdo->exec("UPDATE `wormhole_game_stages` SET `mission_objectives` = 'Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.', `required_enemy_kills` = 25, `warp_target_distance` = 10000 WHERE `stage_level` = 4");
+                @$pdo->exec("UPDATE `wormhole_game_stages` SET `mission_objectives` = 'Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.', `required_enemy_kills` = 25, `warp_target_distance` = 5000 WHERE `stage_level` = 5");
+                @$pdo->exec("UPDATE `wormhole_game_stages` SET `mission_objectives` = 'Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.', `required_enemy_kills` = 25, `warp_target_distance` = 5000 WHERE `stage_level` = 6");
+
+                // Ensure Stage 5 & 6 exist
+                @$pdo->exec("
+                    INSERT INTO `wormhole_game_stages`
+                    (`stage_level`, `stage_name`, `environment_theme`, `events_within_level`, `end_level_event`, `mission_objectives`, `required_enemy_kills`, `warp_target_distance`, `description`, `par_score`, `is_enabled`)
+                    VALUES (5, 'Final Boss Stage', 'Singularity Overlord Crimson', 'Singularity Horizon Collapse, Dreadnought Gravitational Wave, Titan Core Overcharge, Final Singularity Breach', 'Wormhole Singularity Overlord Defeated', 'Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.', 25, 5000, 'The epicenter of the cosmic anomaly where the ancient Singularity Overlord Titan commands relativistic swarm dreadnoughts.', 75000, 1)
+                    ON DUPLICATE KEY UPDATE `mission_objectives` = VALUES(`mission_objectives`), `required_enemy_kills` = VALUES(`required_enemy_kills`), `warp_target_distance` = VALUES(`warp_target_distance`)
+                ");
+                @$pdo->exec("
+                    INSERT INTO `wormhole_game_stages`
+                    (`stage_level`, `stage_name`, `environment_theme`, `events_within_level`, `end_level_event`, `mission_objectives`, `required_enemy_kills`, `warp_target_distance`, `description`, `par_score`, `is_enabled`)
+                    VALUES (6, 'Nebula Outpost', 'Ion Nebula Emerald', 'Ion Cloud Density Spike, Nebula Sentry Patrols, Plasma Storm Discharge, Outpost Command Relay Activation', 'Nebula Outpost Relink Established', 'Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.', 25, 5000, 'Dense electromagnetic nebula staging perimeter harboring defensive sentry arrays.', 90000, 1)
+                    ON DUPLICATE KEY UPDATE `mission_objectives` = VALUES(`mission_objectives`), `required_enemy_kills` = VALUES(`required_enemy_kills`), `warp_target_distance` = VALUES(`warp_target_distance`)
+                ");
             } catch (Throwable $eMig) {
                 error_log("Stages migration warning: " . $eMig->getMessage());
             }
@@ -3362,7 +3383,9 @@ try {
                     [1, 'Warp Origin', 'Warp Cyan Corridor', 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert', 'Warp Horizon Jump Gate Initialized', 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.', 10, 50000, 'Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.', 5000, 1],
                     [2, 'Event Horizon', 'Event Horizon Amber', 'Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert', 'Singularity Perimeter Breach', 'Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.', 15, 35000, 'High-velocity relativistic light-horizon boundary with intense magnetic shear.', 12000, 1],
                     [3, 'Singularity Core', 'Singularity Void Violet', 'Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening', 'Core Collapse Breakthrough', 'Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.', 20, 20000, 'Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.', 25000, 1],
-                    [4, 'Quantum Realm', 'Quantum Phasor Magenta', 'Phase-Shift Anomalies, Multi-Dimensional Phasing, Antimatter Vortex, Quantum Dreadnought Confrontation', 'Quantum Conduit Realignment & Safe Extraction', 'Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.', 25, 10000, 'Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.', 50000, 1]
+                    [4, 'Quantum Realm', 'Quantum Phasor Magenta', 'Phase-Shift Anomalies, Multi-Dimensional Phasing, Antimatter Vortex, Quantum Dreadnought Confrontation', 'Quantum Conduit Realignment & Safe Extraction', 'Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.', 25, 10000, 'Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.', 50000, 1],
+                    [5, 'Final Boss Stage', 'Singularity Overlord Crimson', 'Singularity Horizon Collapse, Dreadnought Gravitational Wave, Titan Core Overcharge, Final Singularity Breach', 'Wormhole Singularity Overlord Defeated', 'Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.', 25, 5000, 'The epicenter of the cosmic anomaly where the ancient Singularity Overlord Titan commands relativistic swarm dreadnoughts.', 75000, 1],
+                    [6, 'Nebula Outpost', 'Ion Nebula Emerald', 'Ion Cloud Density Spike, Nebula Sentry Patrols, Plasma Storm Discharge, Outpost Command Relay Activation', 'Nebula Outpost Relink Established', 'Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.', 25, 5000, 'Dense electromagnetic nebula staging perimeter harboring defensive sentry arrays.', 90000, 1]
                 ];
                 $ins = $pdo->prepare("
                     INSERT INTO `wormhole_game_stages`
@@ -3402,6 +3425,10 @@ try {
         $theme = trim($input['environment_theme'] ?? 'Warp Cyan Corridor');
         $eventsWithin = trim($input['events_within_level'] ?? '');
         $endLevelEvent = trim($input['end_level_event'] ?? '');
+        $cockpitOverlayAsset = trim($input['cockpit_overlay_asset'] ?? $input['cockpit_overlay_url'] ?? $input['cockpit_asset'] ?? 'mobile/warp_origin_images/cockpit_cracks.glb');
+        if (empty($cockpitOverlayAsset)) {
+            $cockpitOverlayAsset = 'mobile/warp_origin_images/cockpit_cracks.glb';
+        }
         $description = trim($input['description'] ?? '');
         $missionObjectives = trim($input['mission_objectives'] ?? '');
         $requiredEnemyKills = isset($input['required_enemy_kills']) ? max(0, intval($input['required_enemy_kills'])) : 10;
@@ -3424,7 +3451,7 @@ try {
 
         try {
             $pdo = getDbConnection();
-            $provisionResult = provisionWormholeStageFilesAndAudio($stageLevel, $stageName, $theme, $eventsWithin, $endLevelEvent, $description, $parScore, $missionObjectives, $requiredEnemyKills, $warpTargetDistance);
+            $provisionResult = provisionWormholeStageFilesAndAudio($stageLevel, $stageName, $theme, $eventsWithin, $endLevelEvent, $description, $parScore, $missionObjectives, $requiredEnemyKills, $warpTargetDistance, $cockpitOverlayAsset);
 
             if ($id > 0) {
                 $stmt = $pdo->prepare("
@@ -3434,6 +3461,7 @@ try {
                         `environment_theme` = :theme,
                         `events_within_level` = :events,
                         `end_level_event` = :end_event,
+                        `cockpit_overlay_asset` = :cockpit_asset,
                         `mission_objectives` = :objectives,
                         `required_enemy_kills` = :kills,
                         `warp_target_distance` = :warp_dist,
@@ -3444,22 +3472,24 @@ try {
                     WHERE `id` = :id
                 ");
                 $stmt->execute([
-                    ':stage_level' => $stageLevel,
-                    ':stage_name'  => $stageName,
-                    ':theme'       => $theme,
-                    ':events'      => $eventsWithin,
-                    ':end_event'   => $endLevelEvent,
-                    ':objectives'  => $missionObjectives,
-                    ':kills'       => $requiredEnemyKills,
-                    ':warp_dist'   => $warpTargetDistance,
-                    ':desc'        => $description,
-                    ':par_score'   => $parScore,
-                    ':is_enabled'  => $isEnabled,
-                    ':id'          => $id
+                    ':stage_level'    => $stageLevel,
+                    ':stage_name'     => $stageName,
+                    ':theme'          => $theme,
+                    ':events'         => $eventsWithin,
+                    ':end_event'      => $endLevelEvent,
+                    ':cockpit_asset'  => $cockpitOverlayAsset,
+                    ':objectives'     => $missionObjectives,
+                    ':kills'          => $requiredEnemyKills,
+                    ':warp_dist'      => $warpTargetDistance,
+                    ':desc'           => $description,
+                    ':par_score'      => $parScore,
+                    ':is_enabled'     => $isEnabled,
+                    ':id'             => $id
                 ]);
                 sendJsonResponse(true, "Stage '{$stageName}' updated successfully", [
                     'id' => $id,
                     'stage_slug' => $provisionResult['stage_slug'],
+                    'cockpit_overlay_asset' => $cockpitOverlayAsset,
                     'created_files' => $provisionResult['created_files'],
                     'audio_folders' => $provisionResult['audio_folders'],
                     'image_folders' => $provisionResult['image_folders']
@@ -3467,14 +3497,15 @@ try {
             } else {
                 $stmt = $pdo->prepare("
                     INSERT INTO `wormhole_game_stages`
-                    (`stage_level`, `stage_name`, `environment_theme`, `events_within_level`, `end_level_event`, `mission_objectives`, `required_enemy_kills`, `warp_target_distance`, `description`, `par_score`, `is_enabled`)
+                    (`stage_level`, `stage_name`, `environment_theme`, `events_within_level`, `end_level_event`, `cockpit_overlay_asset`, `mission_objectives`, `required_enemy_kills`, `warp_target_distance`, `description`, `par_score`, `is_enabled`)
                     VALUES
-                    (:stage_level, :stage_name, :theme, :events, :end_event, :objectives, :kills, :warp_dist, :desc, :par_score, :is_enabled)
+                    (:stage_level, :stage_name, :theme, :events, :end_event, :cockpit_asset, :objectives, :kills, :warp_dist, :desc, :par_score, :is_enabled)
                     ON DUPLICATE KEY UPDATE
                         `stage_name` = VALUES(`stage_name`),
                         `environment_theme` = VALUES(`environment_theme`),
                         `events_within_level` = VALUES(`events_within_level`),
                         `end_level_event` = VALUES(`end_level_event`),
+                        `cockpit_overlay_asset` = VALUES(`cockpit_overlay_asset`),
                         `mission_objectives` = VALUES(`mission_objectives`),
                         `required_enemy_kills` = VALUES(`required_enemy_kills`),
                         `warp_target_distance` = VALUES(`warp_target_distance`),
@@ -3484,22 +3515,24 @@ try {
                         `updated_at` = NOW()
                 ");
                 $stmt->execute([
-                    ':stage_level' => $stageLevel,
-                    ':stage_name'  => $stageName,
-                    ':theme'       => $theme,
-                    ':events'      => $eventsWithin,
-                    ':end_event'   => $endLevelEvent,
-                    ':objectives'  => $missionObjectives,
-                    ':kills'       => $requiredEnemyKills,
-                    ':warp_dist'   => $warpTargetDistance,
-                    ':desc'        => $description,
-                    ':par_score'   => $parScore,
-                    ':is_enabled'  => $isEnabled
+                    ':stage_level'    => $stageLevel,
+                    ':stage_name'     => $stageName,
+                    ':theme'          => $theme,
+                    ':events'         => $eventsWithin,
+                    ':end_event'      => $endLevelEvent,
+                    ':cockpit_asset'  => $cockpitOverlayAsset,
+                    ':objectives'     => $missionObjectives,
+                    ':kills'          => $requiredEnemyKills,
+                    ':warp_dist'      => $warpTargetDistance,
+                    ':desc'           => $description,
+                    ':par_score'      => $parScore,
+                    ':is_enabled'     => $isEnabled
                 ]);
                 $newId = (int)$pdo->lastInsertId();
                 sendJsonResponse(true, "Stage '{$stageName}' created successfully", [
                     'id' => $newId,
                     'stage_slug' => $provisionResult['stage_slug'],
+                    'cockpit_overlay_asset' => $cockpitOverlayAsset,
                     'created_files' => $provisionResult['created_files'],
                     'audio_folders' => $provisionResult['audio_folders'],
                     'image_folders' => $provisionResult['image_folders']
@@ -3542,13 +3575,14 @@ try {
             ];
             $ins = $pdo->prepare("
                 INSERT INTO `wormhole_game_stages`
-                (`stage_level`, `stage_name`, `environment_theme`, `events_within_level`, `end_level_event`, `description`, `par_score`, `is_enabled`)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (`stage_level`, `stage_name`, `environment_theme`, `events_within_level`, `end_level_event`, `cockpit_overlay_asset`, `description`, `par_score`, `is_enabled`)
+                VALUES (?, ?, ?, ?, ?, 'mobile/warp_origin_images/cockpit_cracks.glb', ?, ?, ?)
                 ON DUPLICATE KEY UPDATE
                     `stage_name` = VALUES(`stage_name`),
                     `environment_theme` = VALUES(`environment_theme`),
                     `events_within_level` = VALUES(`events_within_level`),
                     `end_level_event` = VALUES(`end_level_event`),
+                    `cockpit_overlay_asset` = VALUES(`cockpit_overlay_asset`),
                     `description` = VALUES(`description`),
                     `par_score` = VALUES(`par_score`),
                     `is_enabled` = VALUES(`is_enabled`),
@@ -3558,7 +3592,7 @@ try {
             $count = 0;
             foreach ($defaultStages as $s) {
                 $ins->execute($s);
-                provisionWormholeStageFilesAndAudio($s[0], $s[1], $s[2], $s[3], $s[4], $s[5], $s[6]);
+                provisionWormholeStageFilesAndAudio($s[0], $s[1], $s[2], $s[3], $s[4], $s[5], $s[6], '', 10, 50000, 'mobile/warp_origin_images/cockpit_cracks.glb');
                 $count++;
             }
 
@@ -3613,7 +3647,8 @@ try {
                     $s['par_score'] ?? 5000,
                     $s['mission_objectives'] ?? '',
                     $s['required_enemy_kills'] ?? 10,
-                    $s['warp_target_distance'] ?? 50000
+                    $s['warp_target_distance'] ?? 50000,
+                    $s['cockpit_overlay_asset'] ?? 'mobile/warp_origin_images/cockpit_cracks.glb'
                 );
                 $allCreatedFiles = array_merge($allCreatedFiles, $res['created_files']);
                 $allAudioFolders = array_merge($allAudioFolders, $res['audio_folders']);

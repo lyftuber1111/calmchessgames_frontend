@@ -1897,6 +1897,7 @@
                                     <th style="padding: 10px 14px; text-align: center; width: 115px; min-width: 110px;">Stage #</th>
                                     <th style="padding: 10px 12px; text-align: left; min-width: 200px;">Editable Stage / Level Name</th>
                                     <th style="padding: 10px 14px; text-align: left; min-width: 185px;">Environment Theme</th>
+                                    <th style="padding: 10px 12px; text-align: left; min-width: 200px;">🪟 Cockpit Overlay Asset (.glb/.gltf)</th>
                                     <th style="padding: 10px 12px; text-align: left; min-width: 280px;">🎯 Mission Objectives (Required Before Warp)</th>
                                     <th style="padding: 10px 12px; text-align: left; min-width: 300px;">Events Within the Level</th>
                                     <th style="padding: 10px 12px; text-align: left; min-width: 230px;">Event That Ends Level</th>
@@ -2650,6 +2651,30 @@
                         <div>
                             <label style="display:block; color:var(--text-muted); margin-bottom:4px;">Par Score (Pts)</label>
                             <input type="number" id="stageParScoreInput" min="500" step="500" value="5000" style="width: 100%; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #10b981;">
+                        </div>
+                    </div>
+
+                    <!-- Row 2.5: Cockpit Impact Overlay Graphics Asset (.glb, .gltf, transparent overlay) -->
+                    <div style="background: rgba(0,240,255,0.05); padding: 10px 12px; border-radius: 6px; border: 1px solid rgba(0,240,255,0.28);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <label style="color:#00f0ff; font-weight: bold; font-size: 0.84rem; display: flex; align-items: center; gap: 6px;">
+                                <span>🪟 Cockpit Cracks &amp; Impact Overlay Graphics Asset (<span style="color:#00f0ff;">.glb</span>, <span style="color:#10b981;">.gltf</span>, <span style="color:#ffd700;">.obj</span>, <span style="color:#ff6b8b;">.png</span>)</span>
+                            </label>
+                            <span id="stageCockpitAssetFormatBadge" style="font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; background: rgba(0,240,255,0.18); border: 1px solid #00f0ff; color: #00f0ff; font-weight: bold;">📦 .GLB</span>
+                        </div>
+                        <div style="font-size: 0.73rem; color: var(--text-muted); margin-bottom: 6px;">
+                            Sets the 3D cockpit impact &amp; game over overlay graphics model/image across the cockpit window (rendered across cockpit for 1 second before game over screen appears). Settable per stage and deployed to all device stage files.
+                        </div>
+                        <div style="display: flex; gap: 6px; align-items: center;">
+                            <input type="text" id="stageCockpitAssetInput" placeholder="e.g. mobile/warp_origin_images/cockpit_cracks.glb or .gltf / .png" style="flex: 1; padding: 8px 10px; background: #0b0f19; border: 1px solid #334155; border-radius: 6px; color: #fff; font-family: monospace; font-size: 0.82rem;" oninput="updateStageCockpitAssetBadge()">
+                            <button type="button" class="admin-tab-btn" onclick="openGameAssetBrowser('stageCockpitAssetInput', 'model')" style="padding: 7px 12px; background: rgba(0,240,255,0.18); border: 1px solid #00f0ff; color: #00f0ff; font-weight: bold; font-size: 0.8rem; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;" title="Browse server or local 3D models (.glb, .gltf, .obj)">📂 Browse...</button>
+                        </div>
+                        <div style="margin-top: 6px; font-size: 0.73rem; color: var(--text-muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: center;">
+                            <span style="color: #00f0ff; font-weight: 600;">⚡ Quick Presets:</span>
+                            <button type="button" class="admin-tab-btn" style="padding: 2px 8px; font-size: 0.72rem; background: rgba(0, 240, 255, 0.14); border: 1px solid rgba(0, 240, 255, 0.4); color: #00f0ff; border-radius: 4px; cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); setGameAssetQuickPath('stageCockpitAssetInput', 'mobile/warp_origin_images/cockpit_cracks.glb'); updateStageCockpitAssetBadge();">mobile/.../cockpit_cracks.glb</button>
+                            <button type="button" class="admin-tab-btn" style="padding: 2px 8px; font-size: 0.72rem; background: rgba(16, 185, 129, 0.14); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; border-radius: 4px; cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); setGameAssetQuickPath('stageCockpitAssetInput', '/meshy_test_0/models/cockpit_cracks/cockpit_cracks.glb'); updateStageCockpitAssetBadge();">meshy/.../cockpit_cracks.glb</button>
+                            <button type="button" class="admin-tab-btn" style="padding: 2px 8px; font-size: 0.72rem; background: rgba(56, 189, 248, 0.14); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; border-radius: 4px; cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); setGameAssetQuickPath('stageCockpitAssetInput', 'mobile/warp_origin_images/cockpit_cracks.gltf'); updateStageCockpitAssetBadge();">cockpit_cracks.gltf</button>
+                            <button type="button" class="admin-tab-btn" style="padding: 2px 8px; font-size: 0.72rem; background: rgba(239, 68, 111, 0.14); border: 1px solid rgba(239, 68, 111, 0.4); color: #ff6b8b; border-radius: 4px; cursor: pointer;" onclick="event.preventDefault(); event.stopPropagation(); setGameAssetQuickPath('stageCockpitAssetInput', 'desktop/warp_origin_images/cockpit_cracks_overlay.png'); updateStageCockpitAssetBadge();">cockpit_cracks_overlay.png</button>
                         </div>
                     </div>
 

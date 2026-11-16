@@ -4009,6 +4009,11 @@ Thank you for reaching out to Calm Chess Games. `;
           const requiredKills = parseInt(s.required_enemy_kills || 10);
           const warpDist = parseInt(s.warp_target_distance || 50000).toLocaleString();
           const objectivesDesc = escapeHtml(s.mission_objectives || `Destroy ${requiredKills} enemies & approach within < ${warpDist} KM of wormhole`);
+          const cockpitAsset = escapeHtml(s.cockpit_overlay_asset || 'mobile/warp_origin_images/cockpit_cracks.glb');
+          const is3D = /\.(glb|gltf|obj)($|\?)/i.test(cockpitAsset);
+          const assetBadge = is3D
+              ? `<span style="font-size:0.75rem; font-weight:bold; background:rgba(0,240,255,0.18); border:1px solid #00f0ff; color:#00f0ff; padding:2px 7px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">📦 <span>${cockpitAsset.split('/').pop()}</span></span>`
+              : `<span style="font-size:0.75rem; font-weight:bold; background:rgba(239,68,111,0.18); border:1px solid #ef476f; color:#ff6b8b; padding:2px 7px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;">🖼️ <span>${cockpitAsset.split('/').pop()}</span></span>`;
 
           // Split events into stylish pills
           const eventsList = (s.events_within_level || '')
@@ -4044,6 +4049,12 @@ Thank you for reaching out to Calm Chess Games. `;
                           <span style="font-size:0.95rem;">🎨</span>
                           <span>${theme}</span>
                       </span>
+                  </td>
+                  <td style="padding: 10px 12px; min-width: 200px;">
+                      <div style="display: flex; flex-direction: column; gap: 4px;">
+                          ${assetBadge}
+                          <div style="font-size: 0.70rem; color: var(--text-muted); font-family: monospace; word-break: break-all;" title="${cockpitAsset}">${cockpitAsset}</div>
+                      </div>
                   </td>
                   <td style="padding: 10px 12px; min-width: 280px;">
                       <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px; flex-wrap: wrap;">
@@ -4085,6 +4096,7 @@ Thank you for reaching out to Calm Chess Games. `;
       const filtered = cachedGameStages.filter(s => {
           if (!q) return true;
           return (s.stage_name && s.stage_name.toLowerCase().includes(q)) ||
+                 (s.cockpit_overlay_asset && s.cockpit_overlay_asset.toLowerCase().includes(q)) ||
                  (s.events_within_level && s.events_within_level.toLowerCase().includes(q)) ||
                  (s.end_level_event && s.end_level_event.toLowerCase().includes(q)) ||
                  (s.environment_theme && s.environment_theme.toLowerCase().includes(q)) ||
@@ -4103,6 +4115,10 @@ Thank you for reaching out to Calm Chess Games. `;
       document.getElementById('stageLevelNumber').value = nextLevel;
       document.getElementById('stageNameInput').value = '';
       document.getElementById('stageThemeInput').value = 'Warp Cyan Corridor';
+      if (document.getElementById('stageCockpitAssetInput')) {
+          document.getElementById('stageCockpitAssetInput').value = 'mobile/warp_origin_images/cockpit_cracks.glb';
+          updateStageCockpitAssetBadge();
+      }
       if (document.getElementById('stageEnemyKillsInput')) document.getElementById('stageEnemyKillsInput').value = '10';
       if (document.getElementById('stageWarpDistanceInput')) document.getElementById('stageWarpDistanceInput').value = '50000';
       if (document.getElementById('stageObjectivesInput')) document.getElementById('stageObjectivesInput').value = 'Destroy 10 hostiles and close within 50,000 KM of wormhole singularity to authorize warp jump.';
@@ -4130,6 +4146,10 @@ Thank you for reaching out to Calm Chess Games. `;
       document.getElementById('stageLevelNumber').value = stage.stage_level || 1;
       document.getElementById('stageNameInput').value = stage.stage_name || '';
       document.getElementById('stageThemeInput').value = stage.environment_theme || 'Warp Cyan Corridor';
+      if (document.getElementById('stageCockpitAssetInput')) {
+          document.getElementById('stageCockpitAssetInput').value = stage.cockpit_overlay_asset || (stage.cockpit_overlay && (stage.cockpit_overlay.model_3d_url || stage.cockpit_overlay.model_url)) || 'mobile/warp_origin_images/cockpit_cracks.glb';
+          updateStageCockpitAssetBadge();
+      }
       if (document.getElementById('stageEnemyKillsInput')) document.getElementById('stageEnemyKillsInput').value = stage.required_enemy_kills || 10;
       if (document.getElementById('stageWarpDistanceInput')) document.getElementById('stageWarpDistanceInput').value = stage.warp_target_distance || 50000;
       if (document.getElementById('stageObjectivesInput')) document.getElementById('stageObjectivesInput').value = stage.mission_objectives || '';
@@ -4153,6 +4173,7 @@ Thank you for reaching out to Calm Chess Games. `;
       const stageLevel = parseInt(document.getElementById('stageLevelNumber').value || 1);
       const stageName = (document.getElementById('stageNameInput').value || '').trim();
       const theme = (document.getElementById('stageThemeInput').value || '').trim();
+      const cockpitAsset = (document.getElementById('stageCockpitAssetInput')?.value || '').trim() || 'mobile/warp_origin_images/cockpit_cracks.glb';
       const kills = parseInt(document.getElementById('stageEnemyKillsInput')?.value || 10);
       const warpDistance = parseInt(document.getElementById('stageWarpDistanceInput')?.value || 50000);
       const objectives = (document.getElementById('stageObjectivesInput')?.value || '').trim();
@@ -4180,6 +4201,7 @@ Thank you for reaching out to Calm Chess Games. `;
           stage_level: stageLevel,
           stage_name: stageName,
           environment_theme: theme,
+          cockpit_overlay_asset: cockpitAsset,
           required_enemy_kills: kills,
           warp_target_distance: warpDistance,
           mission_objectives: objectives,
@@ -4247,6 +4269,30 @@ Thank you for reaching out to Calm Chess Games. `;
       } catch (err) {
           console.error('[Admin] Sync stage files error:', err);
           alert('Failed to sync stage files: ' + err.message);
+      }
+  }
+
+  function updateStageCockpitAssetBadge() {
+      const input = document.getElementById('stageCockpitAssetInput');
+      const badge = document.getElementById('stageCockpitAssetFormatBadge');
+      if (!input || !badge) return;
+      const val = (input.value || '').trim();
+      const fmt = detect3DModelFormat(val);
+      if (fmt) {
+          badge.textContent = fmt.badge;
+          badge.style.color = fmt.color;
+          badge.style.borderColor = fmt.color;
+          badge.style.background = `rgba(${fmt.color === '#00f0ff' ? '0,240,255' : (fmt.color === '#10b981' ? '16,185,129' : '255,215,0')}, 0.2)`;
+      } else if (/\.(png|jpg|jpeg|webp|svg)($|\?)/i.test(val)) {
+          badge.textContent = '🖼️ 2D OVERLAY';
+          badge.style.color = '#ff6b8b';
+          badge.style.borderColor = '#ff6b8b';
+          badge.style.background = 'rgba(239, 68, 111, 0.2)';
+      } else {
+          badge.textContent = '📦 .GLB / ASSET';
+          badge.style.color = '#00f0ff';
+          badge.style.borderColor = '#00f0ff';
+          badge.style.background = 'rgba(0, 240, 255, 0.18)';
       }
   }
 
@@ -8060,7 +8106,16 @@ Thank you for reaching out to Calm Chess Games. `;
       }
   }
 
-  // Export Asset Browser & Quick Path Helpers to global
+  // Export Stage & Asset Browser Helpers to global
+  global.updateStageCockpitAssetBadge = updateStageCockpitAssetBadge;
+  global.openAddGameStageModal = openAddGameStageModal;
+  global.openEditGameStageModal = openEditGameStageModal;
+  global.closeEditGameStageModal = closeEditGameStageModal;
+  global.saveGameStage = saveGameStage;
+  global.deleteGameStage = deleteGameStage;
+  global.seedDefaultGameStages = seedDefaultGameStages;
+  global.syncAllStageFiles = syncAllStageFiles;
+  global.filterGameStages = filterGameStages;
   global.setGameAssetQuickPath = setGameAssetQuickPath;
   global.setEnemyModelPathExample = setEnemyModelPathExample;
   global.detect3DModelFormat = detect3DModelFormat;

@@ -24,6 +24,12 @@ export const stageConfig = {
   environment_theme: 'Event Horizon Amber',
   device: 'vr',
   xr_mode: 'desktop-vr',
+  cockpit_overlay: {
+    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    asset_type: '3d_model'
+  },
+  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
   events_within_level: 'Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert',
   end_level_event: 'Singularity Perimeter Breach',
   mission_objectives: "Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.",
@@ -349,8 +355,7 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   }
 
   try {
-    const glbUrl = (stageConfig.cockpit_overlay && stageConfig.cockpit_overlay.model_3d_url)
-      || COCKPIT_CRACKS_GLB_URL
+    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url)) || stageConfig.cockpit_overlay_asset || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
     const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);

@@ -26,6 +26,12 @@ export class FinalBossStageObjectPool extends StageObjectPool {
       stage_name: 'Final Boss Stage',
       stage_slug: 'final_boss_stage',
       environment_theme: 'Singularity Overlord Crimson',
+  cockpit_overlay: {
+    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    asset_type: '3d_model'
+  },
+  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [

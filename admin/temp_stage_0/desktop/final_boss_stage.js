@@ -18,6 +18,12 @@ import {
  */
 
 export const stageConfig = {
+  cockpit_overlay: {
+    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    asset_type: '3d_model'
+  },
+  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
   warp_target_distance: 5000,
   required_enemy_kills: 25,
   mission_objectives: "Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.",
@@ -356,8 +362,7 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   }
 
   try {
-    const glbUrl = (stageConfig.cockpit_overlay && stageConfig.cockpit_overlay.model_3d_url)
-      || COCKPIT_CRACKS_GLB_URL
+    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url)) || stageConfig.cockpit_overlay_asset || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
     const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);

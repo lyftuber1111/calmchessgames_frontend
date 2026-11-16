@@ -26,6 +26,12 @@ export class EventHorizonObjectPool extends StageObjectPool {
       stage_name: 'Event Horizon',
       stage_slug: 'event_horizon',
       environment_theme: 'Event Horizon Amber',
+  cockpit_overlay: {
+    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    asset_type: '3d_model'
+  },
+  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [

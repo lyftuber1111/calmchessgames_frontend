@@ -24,6 +24,12 @@ export const stageConfig = {
   environment_theme: 'Singularity Void Violet',
   device: 'vr',
   xr_mode: 'desktop-vr',
+  cockpit_overlay: {
+    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    asset_type: '3d_model'
+  },
+  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
   events_within_level: 'Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening',
   end_level_event: 'Core Collapse Breakthrough',
   mission_objectives: "Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.",
@@ -325,8 +331,7 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   }
 
   try {
-    const glbUrl = (stageConfig.cockpit_overlay && stageConfig.cockpit_overlay.model_3d_url)
-      || COCKPIT_CRACKS_GLB_URL
+    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url)) || stageConfig.cockpit_overlay_asset || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
     const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);

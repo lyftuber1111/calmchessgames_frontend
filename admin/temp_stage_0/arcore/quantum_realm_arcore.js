@@ -24,6 +24,12 @@ export const stageConfig = {
   environment_theme: 'Quantum Phasor Magenta',
   device: 'arcore',
   xr_mode: 'mobile-ar',
+  cockpit_overlay: {
+    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    asset_type: '3d_model'
+  },
+  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
   events_within_level: 'Phase-Shift Anomalies, Multi-Dimensional Phasing, Antimatter Vortex, Quantum Dreadnought Confrontation',
   end_level_event: 'Quantum Conduit Realignment & Safe Extraction',
   mission_objectives: "Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.",
@@ -325,8 +331,7 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   }
 
   try {
-    const glbUrl = (stageConfig.cockpit_overlay && stageConfig.cockpit_overlay.model_3d_url)
-      || COCKPIT_CRACKS_GLB_URL
+    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url)) || stageConfig.cockpit_overlay_asset || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
     const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);

@@ -993,8 +993,9 @@ export class StageObjectPool {
 
   async initCockpitCracksPool() {
     try {
-      const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && this.stageConfig.cockpit_overlay.model_3d_url)
-        || (this.stageConfig && this.stageConfig.cockpit_overlay && this.stageConfig.cockpit_overlay.model_url)
+      const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
+        || (this.stageConfig && this.stageConfig.cockpit_overlay_asset)
+        || (this.stageConfig && this.stageConfig.cockpit_cracks_asset)
         || COCKPIT_CRACKS_GLB_URL;
 
       const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);

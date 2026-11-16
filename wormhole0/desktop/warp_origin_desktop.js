@@ -24,6 +24,12 @@ export const stageConfig = {
   environment_theme: 'Warp Cyan Corridor',
   device: 'desktop',
   xr_mode: 'desktop-xr',
+  cockpit_overlay: {
+    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    asset_type: '3d_model'
+  },
+  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
   events_within_level: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
   end_level_event: 'Warp Horizon Jump Gate Initialized',
   mission_objectives: "Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.",
@@ -865,8 +871,7 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   }
 
   try {
-    const glbUrl = (stageConfig.cockpit_overlay && stageConfig.cockpit_overlay.model_3d_url)
-      || COCKPIT_CRACKS_GLB_URL
+    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url)) || stageConfig.cockpit_overlay_asset || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
     const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);

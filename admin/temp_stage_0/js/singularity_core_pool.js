@@ -26,6 +26,12 @@ export class SingularityCoreObjectPool extends StageObjectPool {
       stage_name: 'Singularity Core',
       stage_slug: 'singularity_core',
       environment_theme: 'Singularity Void Violet',
+  cockpit_overlay: {
+    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    asset_type: '3d_model'
+  },
+  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [

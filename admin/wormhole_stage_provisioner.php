@@ -105,7 +105,8 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
         $parScore,
         $missionObjectives = '',
         $requiredEnemyKills = 10,
-        $warpTargetDistance = 50000
+        $warpTargetDistance = 50000,
+        $cockpitOverlayAsset = 'mobile/warp_origin_images/cockpit_cracks.glb'
     ) {
         $stageSlug = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace(' ', '_', trim($stageName))));
         if (empty($stageSlug)) {
@@ -118,6 +119,27 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
         if (empty($missionObjectives)) {
             $missionObjectives = "Destroy {$requiredEnemyKills} enemies and pilot vessel to within < " . number_format($warpTargetDistance) . " KM of the singularity core before warp jump gate activates.";
         }
+
+        $cockpitOverlayAsset = trim($cockpitOverlayAsset ?? '');
+        if (empty($cockpitOverlayAsset) || $cockpitOverlayAsset === 'mobile/warp_origin_images/cockpit_cracks.glb') {
+            try {
+                $pdoCheck = getDbConnection();
+                if ($pdoCheck) {
+                    $cStmt = $pdoCheck->prepare("SELECT `cockpit_overlay_asset` FROM `wormhole_game_stages` WHERE `stage_level` = :lvl");
+                    $cStmt->execute(['lvl' => $stageLevel]);
+                    $dbOverlay = $cStmt->fetchColumn();
+                    if (!empty($dbOverlay)) {
+                        $cockpitOverlayAsset = trim($dbOverlay);
+                    }
+                }
+            } catch (Throwable $eDbCheck) {}
+        }
+        $cleanCockpitAsset = sanitizeWormholeAssetUrl($cockpitOverlayAsset);
+        if (empty($cleanCockpitAsset)) {
+            $cleanCockpitAsset = 'mobile/warp_origin_images/cockpit_cracks.glb';
+        }
+        $cockpitExt = strtolower(pathinfo(parse_url($cleanCockpitAsset, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
+        $cockpitAssetType = ($cockpitExt === 'gltf' || $cockpitExt === 'glb') ? '3d_model' : ($cockpitExt === 'obj' ? 'obj_model' : 'image_overlay');
 
         $candidateBases = [
             'C:/Users/lyftu/gemini_3/updated_html_js_0/calmchessgames_frontend/wormhole0',
@@ -726,16 +748,6 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
             $poolJsCode = <<<JS
 import * as THREE from 'three';
 import {
-  createStagePool,
-  MeshPool,
-  loadCockpitCracksGlbAsset,
-  setupCockpitCracksHierarchy,
-  flashCockpitCracksOverlay,
-  showGameOverCockpitCracksOverlay,
-  fitCockpitCracksToCamera,
-  COCKPIT_CRACKS_GLB_URL
-} from './{$stageSlug}_pool.js';
-import {
   MeshPool,
   StageObjectPool,
   COCKPIT_CRACKS_GLB_URL,
@@ -745,6 +757,8 @@ import {
   flashCockpitCracksOverlay,
   showGameOverCockpitCracksOverlay
 } from './object_pool.js';
+
+export const STAGE_COCKPIT_CRACKS_GLB_URL = '{$cleanCockpitAsset}';
 
 export {
   COCKPIT_CRACKS_GLB_URL,
@@ -771,6 +785,12 @@ export class {$pascalSlug}ObjectPool extends StageObjectPool {
       stage_name: '{$cleanStageName}',
       stage_slug: '{$stageSlug}',
       environment_theme: '{$cleanTheme}',
+      cockpit_overlay: {
+        model_3d_url: '{$cleanCockpitAsset}',
+        model_url: '{$cleanCockpitAsset}',
+        asset_type: '{$cockpitAssetType}'
+      },
+      cockpit_overlay_asset: '{$cleanCockpitAsset}',
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
@@ -798,6 +818,30 @@ export class {$pascalSlug}ObjectPool extends StageObjectPool {
 
     super(scene, configWithDefaults, options);
     console.log(`[{$pascalSlug}ObjectPool] Pre-allocated graphics object pool for Stage {$stageLevel}: {$cleanStageName}`);
+  }
+
+  async initCockpitCracksPool() {
+    try {
+      const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
+        || (this.stageConfig && this.stageConfig.cockpit_overlay_asset)
+        || '{$cleanCockpitAsset}'
+        || COCKPIT_CRACKS_GLB_URL;
+
+      const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+      if (loadedMesh) {
+        this.cockpitCracksMesh = loadedMesh;
+        this.cockpitCracksOverlayPool = new MeshPool(
+          this.scene,
+          null,
+          null,
+          1,
+          () => loadedMesh.clone(true)
+        );
+        console.log(`[{$pascalSlug}ObjectPool] Pre-allocated Cockpit Cracks 3D GLB/GLTF overlay pool from: \${glbUrl}`);
+      }
+    } catch (err) {
+      console.warn('[{$pascalSlug}ObjectPool] Cockpit cracks pooling warning:', err);
+    }
   }
 }
 
@@ -882,7 +926,8 @@ export const stageConfig = {
     warpTargetDistance: {$warpTargetDistance},
     missionObjectives: '{$cleanMissionObjectives}',
     eventsWithin: '{$cleanEventsWithin}',
-    endLevelEvent: '{$cleanEndLevelEvent}'
+    endLevelEvent: '{$cleanEndLevelEvent}',
+    cockpitOverlayAsset: '{$cleanCockpitAsset}'
   },
   stage_level: {$stageLevel},
   stage_name: '{$cleanStageName}',
@@ -890,6 +935,12 @@ export const stageConfig = {
   environment_theme: '{$cleanTheme}',
   device: '{$prof['device']}',
   xr_mode: '{$prof['xr_mode']}',
+  cockpit_overlay: {
+    model_3d_url: '{$cleanCockpitAsset}',
+    model_url: '{$cleanCockpitAsset}',
+    asset_type: '{$cockpitAssetType}'
+  },
+  cockpit_overlay_asset: '{$cleanCockpitAsset}',
   events_within_level: '{$cleanEventsWithin}',
   end_level_event: '{$cleanEndLevelEvent}',
   mission_objectives: '{$cleanMissionObjectives}',
@@ -1072,7 +1123,9 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   }
 
   try {
-    const glbUrl = (stageConfig.cockpit_overlay && stageConfig.cockpit_overlay.model_3d_url)
+    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url))
+      || stageConfig.cockpit_overlay_asset
+      || '{$cleanCockpitAsset}'
       || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
@@ -1328,7 +1381,8 @@ if (!function_exists('provisionAllWormholeStageFilesAndAudio')) {
                     intval($s['par_score'] ?? 5000),
                     $s['mission_objectives'] ?? '',
                     intval($s['required_enemy_kills'] ?? 10),
-                    intval($s['warp_target_distance'] ?? 50000)
+                    intval($s['warp_target_distance'] ?? 50000),
+                    $s['cockpit_overlay_asset'] ?? 'mobile/warp_origin_images/cockpit_cracks.glb'
                 );
             }
         } catch (Throwable $e) {

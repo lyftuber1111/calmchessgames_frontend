@@ -10838,6 +10838,14 @@ function triggerGameOver() {
   }
 
   // Set worm_hole0/mobile/warp_origin_images/cockpit_cracks.glb across the cockpit as an overlay for 1 second before the game over screen appears load it with the pool
+  const stageCockpitAsset = (currentStageObjectPool && currentStageObjectPool.stageConfig && (currentStageObjectPool.stageConfig.cockpit_overlay_asset || (currentStageObjectPool.stageConfig.cockpit_overlay && (currentStageObjectPool.stageConfig.cockpit_overlay.model_3d_url || currentStageObjectPool.stageConfig.cockpit_overlay.model_url))))
+    || (typeof currentStageConfig !== 'undefined' && currentStageConfig && (currentStageConfig.cockpit_overlay_asset || (currentStageConfig.cockpit_overlay && (currentStageConfig.cockpit_overlay.model_3d_url || currentStageConfig.cockpit_overlay.model_url))))
+    || (typeof window !== 'undefined' && window.activeStageConfig && (window.activeStageConfig.cockpit_overlay_asset || (window.activeStageConfig.cockpit_overlay && (window.activeStageConfig.cockpit_overlay.model_3d_url || window.activeStageConfig.cockpit_overlay.model_url))))
+    || (typeof STAGE_REGISTRY !== 'undefined' && STAGE_REGISTRY[currentActiveStage] && STAGE_REGISTRY[currentActiveStage].cockpit_overlay_asset)
+    || 'mobile/warp_origin_images/cockpit_cracks.glb';
+
+  const is3DModelAsset = /\.(glb|gltf|obj)($|\?)/i.test(stageCockpitAsset);
+
   let cracksOverlay = null;
   if (currentStageObjectPool && typeof currentStageObjectPool.getCockpitCracksOverlay === 'function') {
     cracksOverlay = currentStageObjectPool.getCockpitCracksOverlay(camera);
@@ -10845,6 +10853,39 @@ function triggerGameOver() {
     cracksOverlay = window.getActiveCockpitCracksOverlay();
   } else if (camera) {
     cracksOverlay = camera.getObjectByName('cockpit_cracks_overlay');
+  }
+
+  // If 3D model asset (.glb/.gltf/.obj) and not yet instantiated, load and mount to camera
+  if (!cracksOverlay && is3DModelAsset && camera && typeof load3DAssetModel === 'function') {
+    load3DAssetModel(stageCockpitAsset, (loadedModel) => {
+      if (loadedModel) {
+        loadedModel.name = 'cockpit_cracks_overlay';
+        loadedModel.visible = true;
+        loadedModel.traverse((child) => {
+          if (child.isMesh && child.material) {
+            child.material.transparent = true;
+            child.material.opacity = 1.0;
+            child.material.depthTest = false;
+            child.material.depthWrite = false;
+            child.material.needsUpdate = true;
+          }
+        });
+        camera.add(loadedModel);
+        if (typeof fitCockpitCracksToCamera === 'function') {
+          fitCockpitCracksToCamera(loadedModel, camera);
+        } else {
+          const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
+          const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
+          const dist = 1.0;
+          const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
+          const visibleW = visibleH * aspect;
+          const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
+          loadedModel.position.set(0, 0, -1.0);
+          loadedModel.rotation.set(0, 0, 0);
+          loadedModel.scale.set(scale, scale, 1.0);
+        }
+      }
+    });
   }
 
   if (cracksOverlay) {
@@ -10869,6 +10910,15 @@ function triggerGameOver() {
       cracksOverlay.rotation.set(0, 0, 0);
       cracksOverlay.scale.set(scale, scale, 1.0);
     }
+  }
+
+  // Transparent overlay fallback across DOM cockpit window if 2D image asset configured
+  const htmlOverlay = document.getElementById('cockpit-cracks-overlay');
+  if (htmlOverlay) {
+    if (!is3DModelAsset && stageCockpitAsset) {
+      htmlOverlay.style.backgroundImage = `url("${stageCockpitAsset}")`;
+    }
+    htmlOverlay.style.opacity = '0.96';
   }
 
   if (typeof window !== 'undefined') {

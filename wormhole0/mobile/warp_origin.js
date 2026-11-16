@@ -1,4 +1,13 @@
 import * as THREE from 'three';
+import {
+  createStagePool,
+  WarpOriginObjectPool,
+  MeshPool,
+  loadCockpitCracksGlbAsset,
+  setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  COCKPIT_CRACKS_GLB_URL
+} from './warp_origin_pool.js';
 
 /**
  * Wormhole XR - Stage 1: Warp Origin [Mobile Profile]
@@ -63,6 +72,17 @@ export const stageConfig = {
 ],
   description: 'Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.',
   par_score: 5000,
+
+  cockpit_overlay: {
+    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    alt_url: 'wormhole0/mobile/warp_origin_images/cockpit_cracks.glb',
+    type: 'transparent_overlay',
+    initial_opacity: 0.0,
+    hit_opacity: 0.95,
+    flash_duration_ms: 280,
+    fade_duration_ms: 100,
+    pool_size: 1
+  },
 
   visual: {
     themeName: 'Warp Cyan Corridor',
@@ -184,6 +204,9 @@ export const stageConfig = {
       "y": 1.0,
       "z": 1.0
     },
+    "weapon_special_fx": "cockpit_cracks_red_edges",
+    "weapon_special_fx_file": "mobile/warp_origin_images/cockpit_cracks.glb",
+    "weapon_special_fx_type": "overlay",
     "fire_rate": 3.0,
     "fire_rate_seconds": 3.0,
     "fire_rate_ms": 3000,
@@ -211,6 +234,9 @@ export const stageConfig = {
           "y": 1.0,
           "z": 1.0
         },
+        "special_fx": "cockpit_cracks_red_edges",
+        "special_fx_file": "mobile/warp_origin_images/cockpit_cracks.glb",
+        "special_fx_type": "overlay",
         "fire_rate_times_per_sec": 0.333,
         "fire_interval_ms": 3000,
         "fire_rate_seconds": 3.0,
@@ -260,6 +286,9 @@ export const stageConfig = {
       "y": 0.5,
       "z": 1.0
     },
+    "weapon_special_fx": "cockpit_cracks_red_edges",
+    "weapon_special_fx_file": "mobile/warp_origin_images/cockpit_cracks.glb",
+    "weapon_special_fx_type": "overlay",
     "fire_rate": 2.5,
     "fire_rate_seconds": 2.5,
     "fire_rate_ms": 2500,
@@ -287,6 +316,9 @@ export const stageConfig = {
           "y": 0.5,
           "z": 1.0
         },
+        "special_fx": "cockpit_cracks_red_edges",
+        "special_fx_file": "mobile/warp_origin_images/cockpit_cracks.glb",
+        "special_fx_type": "overlay",
         "fire_rate_times_per_sec": 0.4,
         "fire_interval_ms": 2500,
         "fire_rate_seconds": 2.5,
@@ -756,6 +788,12 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
     direction,
     speed: boltSpeed,
     damage: boltDamage,
+    weaponId: primaryW.id || '',
+    weaponName: primaryW.name || enemy.weapon_name || 'Dual Ion Cannon',
+    weaponColor: enemy.weaponColor || enemy.weapon_color || '#38bdf8',
+    specialFx: primaryW.special_fx || enemy.weapon_special_fx || 'cockpit_cracks_red_edges',
+    specialFxFile: primaryW.special_fx_file || enemy.weapon_special_fx_file || 'mobile/warp_origin_images/cockpit_cracks.glb',
+    specialFxType: primaryW.special_fx_type || enemy.weapon_special_fx_type || 'overlay',
     scale: wScale,
     scale_x: wScaleX,
     scale_y: wScaleY,
@@ -773,21 +811,125 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   return true;
 }
 
-export function updateEnemyMovement(enemy, delta, playerPos, scene) {
-  if (!enemy || !enemy.mesh) return;
-  // Default forward intercept trajectory
-  if (typeof enemy.speed === 'number' && enemy.speed > 0) {
-    const dir = new THREE.Vector3().subVectors(playerPos, enemy.mesh.position).normalize();
-    enemy.mesh.position.addScaledVector(dir, enemy.speed * delta * 0.1);
+// =========================================================================
+// COCKPIT CRACKS TRANSPARENT OVERLAY POOL & HIT MANAGEMENT
+// Model: mobile/warp_origin_images/cockpit_cracks.glb
+// Transparent overlay positioned across the cockpit window;
+// flashes visible for an instant on enemy hit then returns to invisible.
+// =========================================================================
+
+let activeCockpitCracksMesh = null;
+let activeCockpitCracksPool = null;
+
+/**
+ * Initializes and mounts the cockpit cracks GLB transparent overlay across the cockpit view using the pool.
+ */
+export async function setupCockpitCracksOverlay(camera, pool = null, scene = null) {
+  if (!camera) {
+    camera = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+  }
+  if (!scene) {
+    scene = (typeof window !== 'undefined' && window.scene) ? window.scene : null;
+  }
+
+  // If an existing cracks overlay is already mounted to this camera, clean it up first
+  if (camera) {
+    const existing = camera.getObjectByName('cockpit_cracks_overlay');
+    if (existing) {
+      camera.remove(existing);
+    }
+  }
+
+  // 1. Try loading with provided object pool
+  if (pool && typeof pool.getCockpitCracksOverlay === 'function') {
+    activeCockpitCracksPool = pool;
+    activeCockpitCracksMesh = pool.getCockpitCracksOverlay(camera);
+    if (activeCockpitCracksMesh) {
+      fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
+      return activeCockpitCracksMesh;
+    }
+  }
+
+  // 2. Pre-allocate and load using MeshPool
+  try {
+    const glbUrl = (stageConfig.cockpit_overlay && stageConfig.cockpit_overlay.model_3d_url)
+      || COCKPIT_CRACKS_GLB_URL
+      || 'mobile/warp_origin_images/cockpit_cracks.glb';
+
+    const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+    if (loadedMesh) {
+      setupCockpitCracksHierarchy(loadedMesh);
+
+      // Pre-allocate in a dedicated MeshPool
+      activeCockpitCracksPool = new MeshPool(
+        scene,
+        null,
+        null,
+        1,
+        () => loadedMesh.clone(true)
+      );
+
+      activeCockpitCracksMesh = activeCockpitCracksPool.spawn();
+      setupCockpitCracksHierarchy(activeCockpitCracksMesh);
+
+      if (camera) {
+        camera.add(activeCockpitCracksMesh);
+        fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
+      }
+
+      console.log('[Stage 1: Warp Origin Mobile] Cockpit cracks GLB loaded with pool and mounted across cockpit view');
+    }
+  } catch (err) {
+    console.warn('[Stage 1: Warp Origin Mobile] Error setting up cockpit cracks overlay:', err);
+  }
+
+  return activeCockpitCracksMesh;
+}
+
+/**
+ * Fits the Cockpit Cracks 3D mesh across the camera frustum so it covers the entire cockpit window.
+ */
+export function fitCockpitCracksToCamera(mesh, camera) {
+  if (!mesh || !camera) return;
+  mesh.position.set(0, 0, -1.0);
+  mesh.rotation.set(0, 0, 0);
+
+  const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
+  const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
+  const dist = 1.0;
+  const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
+  const visibleW = visibleH * aspect;
+
+  // Base model bounds: width ~1.90, height ~1.41
+  const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
+  mesh.scale.set(scale, scale, 1.0);
+}
+
+/**
+ * Triggers the Cockpit Cracks overlay to become visible for an instant on enemy hit,
+ * then smoothly fades back to invisible.
+ */
+export function triggerCockpitCracksHit(durationMs = 280) {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.flashCockpitCracks === 'function') {
+    activeCockpitCracksPool.flashCockpitCracks(durationMs);
+  } else if (activeCockpitCracksMesh) {
+    flashCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
+  }
+
+  // Also trigger 2D edge flash if DOM elements exist
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+      setTimeout(() => {
+        redEdges.style.opacity = '0';
+      }, durationMs);
+    }
   }
 }
 
-export function updateStageWaves(pool, activeEnemies, stageKills, scene) {
-  if (!pool) return;
-  // Waves boilerplate handler
-  if (typeof pool.getPoolStats === 'function') {
-    return pool.getPoolStats();
-  }
+export function getActiveCockpitCracksOverlay() {
+  return activeCockpitCracksMesh;
 }
 
 export function handleStageEvent(eventName, payload, engineApi) {
@@ -836,6 +978,74 @@ export function applyStage(engineApi) {
   if (typeof engineApi.showToast === 'function') {
     engineApi.showToast('🚀 STAGE 1: WARP ORIGIN [MOBILE] LOADED');
   }
+
+  // --- Mount Cockpit Cracks Overlay Across Cockpit Window via Pool ---
+  const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
+  const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
+  const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || (typeof window !== 'undefined' && window.stageObjectPool)
+    || null;
+
+  setupCockpitCracksOverlay(camera, pool, scene);
+
+  // Resize handler to maintain perfect cockpit fit
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', () => {
+      const cam = (engineApi && engineApi.camera) || window.camera;
+      if (activeCockpitCracksMesh && cam) {
+        fitCockpitCracksToCamera(activeCockpitCracksMesh, cam);
+      }
+    });
+
+    // Hook enemy hit detection:
+    // 1. Intercept window.applyDamageToPlayer
+    if (typeof window.applyDamageToPlayer === 'function' && !window.applyDamageToPlayer._cockpitCracksHooked) {
+      const prevDamage = window.applyDamageToPlayer;
+      window.applyDamageToPlayer = function(dmg, ...args) {
+        const ret = prevDamage.apply(this, [dmg, ...args]);
+        triggerCockpitCracksHit();
+        return ret;
+      };
+      window.applyDamageToPlayer._cockpitCracksHooked = true;
+    }
+
+    // 2. Window event listeners for hits
+    window.addEventListener('cockpitHit', () => triggerCockpitCracksHit());
+    window.addEventListener('playerDamage', () => triggerCockpitCracksHit());
+    window.addEventListener('cockpitImpact', () => triggerCockpitCracksHit());
+
+    // 3. Custom weapon impact handler
+    const prevCustomFx = window.executeCustomWeaponImpactFx;
+    window.executeCustomWeaponImpactFx = function(bolt, normX, normY, canvas) {
+      if (typeof prevCustomFx === 'function') {
+        try { prevCustomFx(bolt, normX, normY, canvas); } catch (e) {}
+      }
+      triggerCockpitCracksHit();
+    };
+
+    // 4. Expose helpers on window
+    window.triggerCockpitCracksHit = triggerCockpitCracksHit;
+    window.flashCockpitCracks = triggerCockpitCracksHit;
+    window.setupCockpitCracksOverlay = setupCockpitCracksOverlay;
+  }
+
+  // 5. Register frame hook to monitor defense drops in case damage bypasses wrappers
+  let lastShield = (engineApi && engineApi.state) ? engineApi.state.playerShield : 100;
+  let lastHealth = (engineApi && engineApi.state) ? engineApi.state.playerHealth : 100;
+  if (engineApi && typeof engineApi.registerVrFrameHook === 'function') {
+    engineApi.registerVrFrameHook(() => {
+      if (engineApi.state) {
+        const curShield = engineApi.state.playerShield;
+        const curHealth = engineApi.state.playerHealth;
+        if (curShield < lastShield || curHealth < lastHealth) {
+          triggerCockpitCracksHit();
+        }
+        lastShield = curShield;
+        lastHealth = curHealth;
+      }
+    });
+  }
+
 
   return stageConfig;
 }
@@ -887,4 +1097,4 @@ export function pullEnemyWave(waveNumber, engineApi, context = {}) {
   return [];
 }
 
-export default { stageConfig, applyStage, updateEnemyMovement, fireEnemyWeapon, getStageWaves, updateStageWaves, pullEnemyWave };
+export default { stageConfig, applyStage, updateEnemyMovement, fireEnemyWeapon, getStageWaves, updateStageWaves, pullEnemyWave , setupCockpitCracksOverlay, triggerCockpitCracksHit, fitCockpitCracksToCamera, getActiveCockpitCracksOverlay };

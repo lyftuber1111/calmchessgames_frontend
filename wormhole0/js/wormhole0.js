@@ -10898,7 +10898,7 @@ function triggerGameOver() {
     if (audioMgr && typeof audioMgr.playOverheatAlert === 'function') {
       audioMgr.playOverheatAlert();
     }
-  }, 1000);
+  }, 3000);
 }
 
 let countdownTimerInterval = null;

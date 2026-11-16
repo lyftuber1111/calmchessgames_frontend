@@ -126,6 +126,9 @@ export class WarpOriginObjectPool extends StageObjectPool {
                         "y": 1.0,
                         "z": 1.0
                 },
+                "weapon_special_fx": "cockpit_cracks_red_edges",
+                "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                "weapon_special_fx_type": "overlay",
                 "fire_rate": 3.0,
                 "fire_rate_seconds": 3.0,
                 "fire_rate_ms": 3000,
@@ -153,6 +156,9 @@ export class WarpOriginObjectPool extends StageObjectPool {
                                         "y": 1.0,
                                         "z": 1.0
                                 },
+                                "special_fx": "cockpit_cracks_red_edges",
+                                "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                                "special_fx_type": "overlay",
                                 "fire_rate_times_per_sec": 0.333,
                                 "fire_interval_ms": 3000,
                                 "fire_rate_seconds": 3.0,
@@ -202,6 +208,9 @@ export class WarpOriginObjectPool extends StageObjectPool {
                         "y": 0.5,
                         "z": 1.0
                 },
+                "weapon_special_fx": "cockpit_cracks_red_edges",
+                "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                "weapon_special_fx_type": "overlay",
                 "fire_rate": 2.5,
                 "fire_rate_seconds": 2.5,
                 "fire_rate_ms": 2500,
@@ -229,6 +238,9 @@ export class WarpOriginObjectPool extends StageObjectPool {
                                         "y": 0.5,
                                         "z": 1.0
                                 },
+                                "special_fx": "cockpit_cracks_red_edges",
+                                "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                                "special_fx_type": "overlay",
                                 "fire_rate_times_per_sec": 0.4,
                                 "fire_interval_ms": 2500,
                                 "fire_rate_seconds": 2.5,

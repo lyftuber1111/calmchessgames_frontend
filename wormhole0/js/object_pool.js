@@ -277,6 +277,7 @@ export class StageObjectPool {
   }
 
   initEnemyWeaponPools() {
+  initEnemyWeaponPools() {
     // 1. Enemy Beam / Plasma Pulse Pool (Size = 300)
     const beamPool = new MeshPool(
       this.scene,
@@ -303,6 +304,7 @@ export class StageObjectPool {
         mesh.userData.isWeapon = true;
         mesh.userData.isCombatGraphic = true;
         mesh.userData.weaponType = 'beam';
+        mesh.userData.poolKey = 'beam';
         return mesh;
       }
     );
@@ -345,10 +347,78 @@ export class StageObjectPool {
         group.userData.isWeapon = true;
         group.userData.isCombatGraphic = true;
         group.userData.weaponType = 'missile';
+        group.userData.poolKey = 'missile';
         return group;
       }
     );
     this.enemyWeaponPools.set('missile', missilePool);
+
+    // 3. Pre-allocate dedicated weapon pools for all enemy weapon graphics objects in this stage
+    const enemies = Array.isArray(this.stageConfig.enemies) ? this.stageConfig.enemies : [];
+    for (const enemyCfg of enemies) {
+      const weaponList = Array.isArray(enemyCfg.weapons) && enemyCfg.weapons.length > 0
+        ? enemyCfg.weapons
+        : [{
+            id: enemyCfg.weapon_name ? 'ew_' + enemyCfg.weapon_name.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'ew_primary',
+            name: enemyCfg.weapon_name || 'Plasma Pulse',
+            type: enemyCfg.weaponType || 'beam',
+            color: enemyCfg.weapon_color || enemyCfg.weaponColor || '#ff0055',
+            model_url: enemyCfg.weapon_model_url || enemyCfg.weaponModelUrl || '',
+            scale: enemyCfg.weapon_scale || 1.0,
+            scale_x: enemyCfg.weapon_scale_x || 1.0,
+            scale_y: enemyCfg.weapon_scale_y || 1.0,
+            scale_z: enemyCfg.weapon_scale_z || 1.0,
+            size_x: enemyCfg.weapon_size_x || 1.0,
+            size_y: enemyCfg.weapon_size_y || 1.0,
+            size_z: enemyCfg.weapon_size_z || 1.0,
+            special_fx: enemyCfg.weapon_special_fx || 'cockpit_cracks_red_edges',
+            special_fx_file: enemyCfg.weapon_special_fx_file || 'desktop/warp_origin_images/cockpit_cracks_overlay.png',
+            special_fx_type: enemyCfg.weapon_special_fx_type || 'overlay'
+          }];
+
+      for (const wpn of weaponList) {
+        const wpnKey = wpn.id || wpn.name || 'ew_primary';
+        if (this.enemyWeaponPools.has(wpnKey)) continue;
+
+        const wpnPool = new MeshPool(
+          this.scene,
+          null,
+          null,
+          wpn.pool_size || 60,
+          () => {
+            if (typeof this.options.createEnemyWeaponMeshFn === 'function') {
+              const customMesh = this.options.createEnemyWeaponMeshFn(wpn, enemyCfg);
+              if (customMesh) {
+                customMesh.userData.poolKey = wpnKey;
+                customMesh.userData.weaponId = wpnKey;
+                return customMesh;
+              }
+            }
+            const isMiss = (wpn.type === 'missile' || /missile|torpedo/i.test(wpn.name || ''));
+            const rawCol = wpn.color || enemyCfg.weapon_color || '#ff0055';
+            const colHex = parseInt(rawCol.replace('#', '0x'), 16) || 0xff0055;
+            const geom = new THREE.CylinderGeometry(0.1 * (wpn.size_x || 1.0), 0.1 * (wpn.size_y || 1.0), 2.2 * (wpn.size_z || 1.0), 6);
+            geom.rotateX(Math.PI / 2);
+            const mat = new THREE.MeshBasicMaterial({ color: colHex, transparent: true, opacity: 0.95 });
+            const m = new THREE.Mesh(geom, mat);
+            const pLight = new THREE.PointLight(colHex, 3.0, 25);
+            m.add(pLight);
+            m.name = `pooled_enemy_wpn_${wpnKey}`;
+            m.userData.isEnemyBolt = true;
+            m.userData.isWeapon = true;
+            m.userData.isCombatGraphic = true;
+            m.userData.weaponType = isMiss ? 'missile' : 'beam';
+            m.userData.poolKey = wpnKey;
+            m.userData.weaponId = wpnKey;
+            return m;
+          }
+        );
+        this.enemyWeaponPools.set(wpnKey, wpnPool);
+        if (wpn.model_url) {
+          this.enemyWeaponPools.set(wpn.model_url, wpnPool);
+        }
+      }
+    }
   }
 
   initEnemyPools() {
@@ -606,7 +676,12 @@ export class StageObjectPool {
     const wpn = weaponConfig || {};
     const wpnType = (typeOverride || wpn.type || (/missile|torpedo/i.test(wpn.name || '') ? 'missile' : 'beam')).toLowerCase();
     const poolKey = wpnType === 'missile' ? 'missile' : 'beam';
-    const pool = this.enemyWeaponPools.get(poolKey) || this.enemyWeaponPools.get('beam');
+    const wpnId = wpn.id || wpn.name || '';
+    const pool = (wpn.model_url && this.enemyWeaponPools.get(wpn.model_url))
+      || (wpnId && this.enemyWeaponPools.get(wpnId))
+      || this.enemyWeaponPools.get(poolKey)
+      || this.enemyWeaponPools.get('beam')
+      || (this.enemyWeaponPools.size > 0 ? this.enemyWeaponPools.values().next().value : null);
     if (!pool) return null;
 
     const baseScale = Number(wpn.scale ?? (enemyConfig && enemyConfig.weapon_scale) ?? 1.0);
@@ -625,6 +700,8 @@ export class StageObjectPool {
     mesh.scale.set(finalScaleX, finalScaleY, finalScaleZ);
     mesh.userData.fromPool = true;
     mesh.userData.weaponType = poolKey;
+    mesh.userData.weaponId = wpnId || poolKey;
+    mesh.userData.poolKey = (wpn.model_url && this.enemyWeaponPools.has(wpn.model_url)) ? wpn.model_url : (wpnId && this.enemyWeaponPools.has(wpnId)) ? wpnId : poolKey;
     mesh.userData.scale = baseScale;
     mesh.userData.scale_x = scaleX;
     mesh.userData.scale_y = scaleY;
@@ -633,16 +710,36 @@ export class StageObjectPool {
     mesh.userData.size_y = sizeY;
     mesh.userData.size_z = sizeZ;
     mesh.userData.dimensions = { x: sizeX, y: sizeY, z: sizeZ };
+    mesh.userData.special_fx = wpn.special_fx || (enemyConfig && enemyConfig.weapon_special_fx) || 'cockpit_cracks_red_edges';
+    mesh.userData.special_fx_file = wpn.special_fx_file || (enemyConfig && enemyConfig.weapon_special_fx_file) || 'desktop/warp_origin_images/cockpit_cracks_overlay.png';
+    mesh.userData.special_fx_type = wpn.special_fx_type || (enemyConfig && enemyConfig.weapon_special_fx_type) || 'overlay';
     return mesh;
   }
 
   despawnEnemyWeapon(mesh, weaponType = null) {
     if (!mesh) return;
-    const poolKey = (weaponType === 'missile' || mesh.userData.weaponType === 'missile') ? 'missile' : 'beam';
+    const poolKey = mesh.userData.poolKey || mesh.userData.weaponId || ((weaponType === 'missile' || mesh.userData.weaponType === 'missile') ? 'missile' : 'beam');
     const pool = this.enemyWeaponPools.get(poolKey);
-    if (pool) {
+    if (pool && pool.active && pool.active.has(mesh)) {
       pool.despawn(mesh);
-    } else {
+      return;
+    }
+    // Search across all pools
+    for (const p of this.enemyWeaponPools.values()) {
+      if (p.active.has(mesh)) {
+        p.despawn(mesh);
+        return;
+      }
+    }
+    mesh.position.set(0, -1000, 0);
+    mesh.visible = false;
+    mesh.userData = mesh.userData || {};
+    mesh.userData.inPool = true;
+    mesh.userData.isActive = false;
+    mesh.userData.movementActive = false;
+    mesh.userData.physicsActive = false;
+    mesh.userData.weaponsActive = false;
+  }
       for (const p of this.enemyWeaponPools.values()) {
         if (p.active.has(mesh)) {
           p.despawn(mesh);

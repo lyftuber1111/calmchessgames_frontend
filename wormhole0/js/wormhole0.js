@@ -5123,13 +5123,15 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
         if (typeof createPoolFn === 'function') {
           currentStageObjectPool = createPoolFn(scene, stagePoolCfg, {
             createEnemyMeshFn: (cfg) => create3DEnemyMesh(cfg),
-            createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn)
+            createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn),
+            createEnemyWeaponMeshFn: (wpn, cfg) => createEnemyWeaponMesh(wpn, cfg)
           });
         }
       } else {
         currentStageObjectPool = new StageObjectPool(scene, stagePoolCfg, {
           createEnemyMeshFn: (cfg) => create3DEnemyMesh(cfg),
-          createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn)
+          createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn),
+          createEnemyWeaponMeshFn: (wpn, cfg) => createEnemyWeaponMesh(wpn, cfg)
         });
       }
 
@@ -9869,8 +9871,13 @@ function updateEnemiesCombat(delta) {
   for (let i = enemyBolts.length - 1; i >= 0; i--) {
     const b = enemyBolts[i];
 
+    // Record previous position for swept ray / segment testing against tunneling
+    const prevPos = (b.prevPosition || b.mesh.position).clone();
+    b.prevPosition = b.mesh.position.clone();
+
     // Trajectory movement
     b.mesh.position.addScaledVector(b.direction, b.speed * delta);
+    const currPos = b.mesh.position;
 
     // Dynamic missile weaving / spiral homing
     if (b.type === 'missile') {
@@ -9880,17 +9887,53 @@ function updateEnemiesCombat(delta) {
     }
     b.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), b.direction);
 
-    // Test collision against player cockpit using weapon dimensions & scale
-    const distToPlayer = b.mesh.position.distanceTo(playerPos);
-    const boltMaxDim = Math.max(
-      (b.size_x || (b.dimensions && b.dimensions.x) || 1.0) * (b.scale_x || 1.0),
-      (b.size_y || (b.dimensions && b.dimensions.y) || 1.0) * (b.scale_y || 1.0),
-      (b.size_z || (b.dimensions && b.dimensions.z) || 1.0) * (b.scale_z || 1.0)
-    ) * (b.scale || 1.0);
-    const hitRadius = Math.max(3.8, 2.8 + boltMaxDim * 0.65);
-    if (distToPlayer < hitRadius) {
+    // Physical tip calculation:
+    // Leading edge (tip) of the weapon along its travel direction:
+    const halfZ = Math.max(0.1, (b.size_z || (b.dimensions && b.dimensions.z) || 1.0) * (b.scale_z || 1.0) * (b.scale || 1.0) * 0.5);
+    const prevTip = prevPos.clone().addScaledVector(b.direction, halfZ);
+    const currTip = currPos.clone().addScaledVector(b.direction, halfZ);
+
+    // Cockpit screen is centered at playerPos with effective screen radius ~4.2 units
+    const cockpitRadius = 4.2;
+    let hitCockpit = false;
+    let hitContactPoint = currTip.clone();
+
+    // 1. Direct tip distance check: when the leading tip reaches the cockpit screen plane
+    if (currTip.distanceTo(playerPos) <= cockpitRadius) {
+      hitCockpit = true;
+      hitContactPoint = currTip.clone();
+    }
+    // 2. Direct center distance check (for tiny, scaled-down, or point-like projectiles)
+    else if (currPos.distanceTo(playerPos) <= cockpitRadius) {
+      hitCockpit = true;
+      hitContactPoint = currPos.clone();
+    }
+    // 3. Swept segment check between prevTip and currTip against playerPos (prevents tunneling at high velocities)
+    else {
+      const segVec = new THREE.Vector3().subVectors(currTip, prevTip);
+      const segLenSq = segVec.lengthSq();
+      if (segLenSq > 0.0001) {
+        const toPlayer = new THREE.Vector3().subVectors(playerPos, prevTip);
+        const t = Math.max(0, Math.min(1, toPlayer.dot(segVec) / segLenSq));
+        const closestPoint = prevTip.clone().addScaledVector(segVec, t);
+        if (closestPoint.distanceTo(playerPos) <= cockpitRadius) {
+          hitCockpit = true;
+          hitContactPoint = closestPoint;
+        }
+      }
+    }
+
+    if (hitCockpit) {
+      // Calculate normalized screen coordinates (-1 to 1) for localized impact FX
+      const offset = new THREE.Vector3().subVectors(hitContactPoint, playerPos);
+      const normX = Math.max(-0.9, Math.min(0.9, offset.x / cockpitRadius));
+      const normY = Math.max(-0.9, Math.min(0.9, offset.y / cockpitRadius));
+
+      // Trigger weapon-specific special FX on the cockpit screen
+      triggerCockpitWeaponImpactFx(b, normX, normY);
+
       // Direct enemy weapon impact on player!
-      applyDamageToPlayer(b.damage);
+      applyDamageToPlayer(b.damage, b);
       if (b.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemyWeapon === 'function') {
         currentStageObjectPool.despawnEnemyWeapon(b.mesh, b.type);
       } else {
@@ -9959,6 +10002,364 @@ function updateEnemiesCombat(delta) {
       laserBolts.splice(bi, 1);
     }
   }
+}
+
+// Pre-load default Cockpit Cracks transparent overlay into memory for zero impact latency
+let preloadedCockpitOverlayImg = null;
+function preloadCockpitImpactOverlay() {
+  if (typeof Image !== 'undefined') {
+    preloadedCockpitOverlayImg = new Image();
+    preloadedCockpitOverlayImg.src = 'desktop/warp_origin_images/cockpit_cracks_overlay.png';
+  }
+}
+preloadCockpitImpactOverlay();
+
+/**
+ * Creates enemy weapon 3D mesh instances for pre-allocation in Stage Object Pools
+ */
+function createEnemyWeaponMesh(wpn, cfg) {
+  const isMissile = (wpn && (wpn.type === 'missile' || /missile|torpedo/i.test(wpn.name || '')));
+  const rawColor = (wpn && wpn.color) || (cfg && cfg.weapon_color) || '#ff0055';
+  const boltColorHex = parseInt(rawColor.replace('#', '0x'), 16) || 0xff0055;
+  const wpnModelUrl = (wpn && (wpn.model_url || wpn.graphic_object || wpn.model_3d_url)) ? (wpn.model_url || wpn.graphic_object || wpn.model_3d_url).trim() : '';
+
+  if (wpnModelUrl && typeof load3DAssetModel === 'function') {
+    const weaponGroup = new THREE.Group();
+    weaponGroup.name = 'pooled_enemy_custom_wpn';
+    weaponGroup.userData.isEnemyBolt = true;
+    weaponGroup.userData.isWeapon = true;
+    weaponGroup.userData.isCombatGraphic = true;
+    weaponGroup.userData.weaponType = 'custom_model';
+
+    const light = new THREE.PointLight(boltColorHex, 3.5, 30);
+    weaponGroup.add(light);
+
+    load3DAssetModel(wpnModelUrl, (clonedMesh) => {
+      if (clonedMesh) {
+        weaponGroup.add(clonedMesh);
+      }
+    });
+    return weaponGroup;
+  }
+
+  if (isMissile) {
+    const missileGroup = new THREE.Group();
+    missileGroup.name = 'pooled_enemy_missile';
+    missileGroup.userData.isEnemyBolt = true;
+    missileGroup.userData.isWeapon = true;
+    missileGroup.userData.isCombatGraphic = true;
+    missileGroup.userData.weaponType = 'missile';
+
+    const bodyGeom = new THREE.CylinderGeometry(0.24, 0.4, 2.8, 8);
+    bodyGeom.rotateX(Math.PI / 2);
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2a2d34, metalness: 0.8, roughness: 0.3 });
+    const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
+    missileGroup.add(bodyMesh);
+
+    const tipGeom = new THREE.ConeGeometry(0.44, 1.1, 8);
+    tipGeom.rotateX(-Math.PI / 2);
+    tipGeom.translate(0, 0, -1.9);
+    const tipMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.95 });
+    const tipMesh = new THREE.Mesh(tipGeom, tipMat);
+    missileGroup.add(tipMesh);
+
+    const light = new THREE.PointLight(boltColorHex, 3.5, 28);
+    missileGroup.add(light);
+    return missileGroup;
+  }
+
+  // Laser beam
+  const beamGroup = new THREE.Group();
+  beamGroup.name = 'pooled_enemy_beam';
+  beamGroup.userData.isEnemyBolt = true;
+  beamGroup.userData.isWeapon = true;
+  beamGroup.userData.isCombatGraphic = true;
+  beamGroup.userData.weaponType = 'beam';
+
+  const sheathGeom = new THREE.CylinderGeometry(0.44, 0.58, 8.2, 8);
+  sheathGeom.rotateX(Math.PI / 2);
+  const sheathMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending });
+  const sheathMesh = new THREE.Mesh(sheathGeom, sheathMat);
+  beamGroup.add(sheathMesh);
+
+  const coreGeom = new THREE.CylinderGeometry(0.18, 0.28, 7.5, 8);
+  coreGeom.rotateX(Math.PI / 2);
+  const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.96 });
+  const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+  beamGroup.add(coreMesh);
+
+  const light = new THREE.PointLight(boltColorHex, 3.5, 32);
+  beamGroup.add(light);
+  return beamGroup;
+}
+
+/**
+ * Triggers weapon-specific Special FX upon cockpit screen strike
+ */
+function triggerCockpitWeaponImpactFx(bolt, normX = 0, normY = 0) {
+  const specialFx = (bolt && bolt.specialFx) || 'cockpit_cracks_red_edges';
+  const specialFxFile = (bolt && bolt.specialFxFile) || 'desktop/warp_origin_images/cockpit_cracks_overlay.png';
+  const specialFxType = (bolt && bolt.specialFxType) || 'overlay';
+  const weaponColor = (bolt && bolt.weaponColor) || '#ff0055';
+
+  const cracksOverlay = document.getElementById('cockpit-cracks-overlay');
+  const redEdges = document.getElementById('cockpit-edges-red');
+  const fxCanvas = document.getElementById('cockpit-fx-canvas');
+
+  // Custom Procedural Script handling
+  if (specialFx === 'custom_procedural_file' || specialFxType === 'procedural') {
+    if (typeof window.executeCustomWeaponImpactFx === 'function') {
+      try {
+        window.executeCustomWeaponImpactFx(bolt, normX, normY, fxCanvas);
+        return;
+      } catch (err) {
+        console.warn('[Cockpit FX] Custom procedural FX execution error:', err);
+      }
+    }
+  }
+
+  // 1. Primary & First Special Effect: Transparent Cockpit Screen Cracks Overlay with glowing Red Edges for split second
+  if (specialFx === 'cockpit_cracks_red_edges' || specialFx === 'custom_graphics_file' || (!specialFx && specialFxFile)) {
+    const overlayPath = (specialFx === 'custom_graphics_file' && specialFxFile)
+      ? specialFxFile
+      : (specialFxFile || 'desktop/warp_origin_images/cockpit_cracks_overlay.png');
+
+    if (cracksOverlay) {
+      cracksOverlay.style.backgroundImage = `url("${overlayPath}")`;
+      cracksOverlay.style.opacity = '0.96';
+    }
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+    }
+
+    // Split second flash duration: hold visibility for 260ms, smooth fade out by 380ms
+    setTimeout(() => {
+      if (cracksOverlay) cracksOverlay.style.opacity = '0';
+      if (redEdges) redEdges.style.opacity = '0';
+    }, 280);
+    return;
+  }
+
+  // 2. Procedural Vector Glass Cracks (far apart so view is not obscured)
+  if (specialFx === 'procedural_cracks') {
+    renderProceduralVectorCracks(normX, normY, weaponColor, redEdges, fxCanvas);
+    return;
+  }
+
+  // 3. Plasma Burn & Screen Distortion
+  if (specialFx === 'plasma_burn_distortion') {
+    if (redEdges) {
+      redEdges.style.boxShadow = `inset 0 0 110px 40px rgba(255, 95, 0, 0.95)`;
+      redEdges.style.opacity = '1.0';
+    }
+    if (fxCanvas) {
+      drawPlasmaBurnFlash(fxCanvas, normX, normY);
+    }
+    setTimeout(() => {
+      if (redEdges) {
+        redEdges.style.opacity = '0';
+        redEdges.style.boxShadow = 'inset 0 0 95px 32px rgba(239, 35, 60, 0.95)';
+      }
+      if (fxCanvas) fxCanvas.style.opacity = '0';
+    }, 320);
+    return;
+  }
+
+  // 4. EMP Glitch / Static Interference
+  if (specialFx === 'emp_glitch_interference') {
+    if (fxCanvas) {
+      drawEmpGlitchBars(fxCanvas);
+    }
+    setTimeout(() => {
+      if (fxCanvas) fxCanvas.style.opacity = '0';
+    }, 260);
+    return;
+  }
+
+  // 5. Antimatter Inversion / Dark Flash
+  if (specialFx === 'antimatter_dark_flash') {
+    if (redEdges) {
+      redEdges.style.boxShadow = `inset 0 0 120px 50px rgba(147, 51, 234, 0.95)`;
+      redEdges.style.opacity = '1.0';
+    }
+    if (fxCanvas) {
+      drawDarkAntimatterShockwave(fxCanvas, normX, normY);
+    }
+    setTimeout(() => {
+      if (redEdges) {
+        redEdges.style.opacity = '0';
+        redEdges.style.boxShadow = 'inset 0 0 95px 32px rgba(239, 35, 60, 0.95)';
+      }
+      if (fxCanvas) fxCanvas.style.opacity = '0';
+    }, 350);
+    return;
+  }
+
+  // 6. Shield Shockwave Ripple
+  if (specialFx === 'shield_shockwave_ripple') {
+    if (fxCanvas) {
+      drawShieldRipple(fxCanvas, normX, normY, weaponColor);
+    }
+    setTimeout(() => {
+      if (fxCanvas) fxCanvas.style.opacity = '0';
+    }, 320);
+    return;
+  }
+
+  // Standard fallback
+  const vignette = document.getElementById('damage-vignette');
+  if (vignette) {
+    vignette.style.opacity = '0.88';
+    setTimeout(() => { vignette.style.opacity = '0'; }, 180);
+  }
+}
+
+function renderProceduralVectorCracks(normX, normY, color, redEdges, canvas) {
+  if (!canvas) return;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, w, h);
+  canvas.style.opacity = '1.0';
+  if (redEdges) redEdges.style.opacity = '1.0';
+
+  const originX = (normX * 0.5 + 0.5) * w;
+  const originY = (-normY * 0.5 + 0.5) * h;
+
+  ctx.save();
+  ctx.strokeStyle = '#ffffff';
+  ctx.shadowColor = 'rgba(239, 68, 111, 0.9)';
+  ctx.shadowBlur = 10;
+  ctx.lineWidth = 1.8;
+
+  // Far apart cracks: 7 primary rays spread across full 360 degrees
+  const rayCount = 7;
+  for (let r = 0; r < rayCount; r++) {
+    const baseAngle = (r / rayCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
+    ctx.beginPath();
+    ctx.moveTo(originX, originY);
+    let curX = originX;
+    let curY = originY;
+    const segments = 4 + Math.floor(Math.random() * 3);
+    for (let s = 0; s < segments; s++) {
+      const segLen = 70 + Math.random() * 90;
+      const angle = baseAngle + (Math.random() - 0.5) * 0.5;
+      curX += Math.cos(angle) * segLen;
+      curY += Math.sin(angle) * segLen;
+      ctx.lineTo(curX, curY);
+
+      // Far-apart branch
+      if (s === 2 && Math.random() > 0.4) {
+        ctx.moveTo(curX, curY);
+        const bAngle = angle + (Math.random() > 0.5 ? 0.7 : -0.7);
+        ctx.lineTo(curX + Math.cos(bAngle) * 60, curY + Math.sin(bAngle) * 60);
+        ctx.moveTo(curX, curY);
+      }
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  setTimeout(() => {
+    canvas.style.opacity = '0';
+    if (redEdges) redEdges.style.opacity = '0';
+  }, 320);
+}
+
+function drawPlasmaBurnFlash(canvas, normX, normY) {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  canvas.style.opacity = '1.0';
+
+  const cx = (normX * 0.5 + 0.5) * w;
+  const cy = (-normY * 0.5 + 0.5) * h;
+  const rad = Math.max(w, h) * 0.6;
+  const grad = ctx.createRadialGradient(cx, cy, 10, cx, cy, rad);
+  grad.addColorStop(0, 'rgba(255, 240, 180, 0.95)');
+  grad.addColorStop(0.35, 'rgba(255, 110, 0, 0.75)');
+  grad.addColorStop(0.7, 'rgba(239, 35, 60, 0.4)');
+  grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+}
+
+function drawEmpGlitchBars(canvas) {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  canvas.style.opacity = '1.0';
+
+  ctx.fillStyle = 'rgba(0, 240, 255, 0.25)';
+  for (let y = 0; y < h; y += 8 + Math.random() * 16) {
+    const barHeight = 2 + Math.random() * 6;
+    ctx.fillRect(0, y, w, barHeight);
+  }
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  for (let k = 0; k < 6; k++) {
+    const gy = Math.random() * h;
+    ctx.fillRect(Math.random() * w * 0.2, gy, Math.random() * w * 0.8, 3);
+  }
+}
+
+function drawDarkAntimatterShockwave(canvas, normX, normY) {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  canvas.style.opacity = '1.0';
+
+  const cx = (normX * 0.5 + 0.5) * w;
+  const cy = (-normY * 0.5 + 0.5) * h;
+  ctx.fillStyle = 'rgba(10, 0, 24, 0.65)';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.save();
+  ctx.strokeStyle = '#c084fc';
+  ctx.shadowColor = '#9333ea';
+  ctx.shadowBlur = 18;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 140, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawShieldRipple(canvas, normX, normY, color) {
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+  canvas.style.opacity = '1.0';
+
+  const cx = (normX * 0.5 + 0.5) * w;
+  const cy = (-normY * 0.5 + 0.5) * h;
+  ctx.save();
+  ctx.strokeStyle = color || '#00f0ff';
+  ctx.shadowColor = color || '#00f0ff';
+  ctx.shadowBlur = 15;
+  ctx.lineWidth = 3;
+
+  for (let r = 40; r <= 160; r += 40) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
@@ -10049,13 +10450,13 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
   let fromPool = false;
 
   // Attempt to spawn enemy projectile from stage object pool
-  if (!wpnModelUrl && currentStageObjectPool && typeof currentStageObjectPool.spawnEnemyWeapon === 'function') {
+  if (currentStageObjectPool && typeof currentStageObjectPool.spawnEnemyWeapon === 'function') {
     const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
     mesh = currentStageObjectPool.spawnEnemyWeapon(wpn, cfg, spawnOrigin, boltQuat, isMissile ? 'missile' : 'beam');
     if (mesh) {
       fromPool = true;
       mesh.scale.set(wScale * wScaleX * wSizeX, wScale * wScaleY * wSizeY, wScale * wScaleZ * wSizeZ);
-      weaponType = isMissile ? 'missile' : 'beam';
+      weaponType = isMissile ? 'missile' : (wpnModelUrl ? 'custom_model' : 'beam');
       boltSpeed = isMissile ? Math.max(22, Math.min(36, weaponSpeedVal * 0.065)) : Math.max(28, Math.min(48, weaponSpeedVal * 0.075));
       if (isMissile && audioMgr && typeof audioMgr.playEnemyMissile === 'function') {
         audioMgr.playEnemyMissile();
@@ -10234,6 +10635,12 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     direction,
     speed: boltSpeed,
     damage: weaponDamageVal,
+    weaponId: (wpn && wpn.id) || '',
+    weaponName: (wpn && wpn.name) || cfg.weapon_name || 'Plasma Pulse',
+    weaponColor: weaponBoltColor,
+    specialFx: (wpn && wpn.special_fx) || cfg.weapon_special_fx || 'cockpit_cracks_red_edges',
+    specialFxFile: (wpn && wpn.special_fx_file) || cfg.weapon_special_fx_file || 'desktop/warp_origin_images/cockpit_cracks_overlay.png',
+    specialFxType: (wpn && wpn.special_fx_type) || cfg.weapon_special_fx_type || 'overlay',
     scale: wScale,
     scale_x: wScaleX,
     scale_y: wScaleY,

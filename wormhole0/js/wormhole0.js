@@ -6748,8 +6748,16 @@ function collectPowerupInstance(p, powerupIndex = -1) {
  * Used for fallback creation or pre-allocation inside stage object pools.
  */
 function createPlayerLaserMesh(activeWpn) {
-  const boltLength = activeWpn.boltLength || 7.5;
-  const boltRadius = activeWpn.boltRadius || 0.14;
+  const baseScale = Number(activeWpn.scale ?? 1.0);
+  const scaleX = Number(activeWpn.scale_x ?? 1.0);
+  const scaleY = Number(activeWpn.scale_y ?? 1.0);
+  const scaleZ = Number(activeWpn.scale_z ?? 1.0);
+  const sizeX = Number(activeWpn.size_x ?? (activeWpn.dimensions && activeWpn.dimensions.x) ?? 1.0);
+  const sizeY = Number(activeWpn.size_y ?? (activeWpn.dimensions && activeWpn.dimensions.y) ?? 1.0);
+  const sizeZ = Number(activeWpn.size_z ?? (activeWpn.dimensions && activeWpn.dimensions.z) ?? 1.0);
+
+  const boltLength = (activeWpn.boltLength || 7.5) * sizeZ;
+  const boltRadius = (activeWpn.boltRadius || 0.14) * Math.max(sizeX, sizeY);
   const geometry = new THREE.CylinderGeometry(boltRadius * 0.35, boltRadius, boltLength, 8);
   geometry.rotateX(Math.PI / 2);
 
@@ -6782,9 +6790,18 @@ function createPlayerLaserMesh(activeWpn) {
   mesh.add(light);
 
   mesh.name = 'laser_bolt';
+  mesh.scale.set(baseScale * scaleX, baseScale * scaleY, baseScale * scaleZ);
   mesh.userData.isLaserBolt = true;
   mesh.userData.isWeapon = true;
   mesh.userData.isCombatGraphic = true;
+  mesh.userData.scale = baseScale;
+  mesh.userData.scale_x = scaleX;
+  mesh.userData.scale_y = scaleY;
+  mesh.userData.scale_z = scaleZ;
+  mesh.userData.size_x = sizeX;
+  mesh.userData.size_y = sizeY;
+  mesh.userData.size_z = sizeZ;
+  mesh.userData.dimensions = { x: sizeX, y: sizeY, z: sizeZ };
   return mesh;
 }
 
@@ -6933,6 +6950,18 @@ function fireLaserBeam() {
     direction,
     speed: activeWpn.bulletSpeed || 550, // units per second
     damage: activeWpn.damagePerHit || 1, // Damage hits for weapons from Game Manager
+    scale: activeWpn.scale || 1.0,
+    scale_x: activeWpn.scale_x || 1.0,
+    scale_y: activeWpn.scale_y || 1.0,
+    scale_z: activeWpn.scale_z || 1.0,
+    size_x: activeWpn.size_x || (activeWpn.dimensions && activeWpn.dimensions.x) || 1.0,
+    size_y: activeWpn.size_y || (activeWpn.dimensions && activeWpn.dimensions.y) || 1.0,
+    size_z: activeWpn.size_z || (activeWpn.dimensions && activeWpn.dimensions.z) || 1.0,
+    dimensions: activeWpn.dimensions || {
+      x: activeWpn.size_x || 1.0,
+      y: activeWpn.size_y || 1.0,
+      z: activeWpn.size_z || 1.0
+    },
     weaponId: activeWpn.id,
     canOverheat: activeWpn.canOverheat,
     drainPct: activeWpn.energyCost,
@@ -9851,9 +9880,15 @@ function updateEnemiesCombat(delta) {
     }
     b.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), b.direction);
 
-    // Test collision against player cockpit
+    // Test collision against player cockpit using weapon dimensions & scale
     const distToPlayer = b.mesh.position.distanceTo(playerPos);
-    if (distToPlayer < 4.8) {
+    const boltMaxDim = Math.max(
+      (b.size_x || (b.dimensions && b.dimensions.x) || 1.0) * (b.scale_x || 1.0),
+      (b.size_y || (b.dimensions && b.dimensions.y) || 1.0) * (b.scale_y || 1.0),
+      (b.size_z || (b.dimensions && b.dimensions.z) || 1.0) * (b.scale_z || 1.0)
+    ) * (b.scale || 1.0);
+    const hitRadius = Math.max(3.8, 2.8 + boltMaxDim * 0.65);
+    if (distToPlayer < hitRadius) {
       // Direct enemy weapon impact on player!
       applyDamageToPlayer(b.damage);
       if (b.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemyWeapon === 'function') {
@@ -9899,8 +9934,9 @@ function updateEnemiesCombat(delta) {
       const collisionRadius = Math.max(2.8, (e.mesh.scale.x / (dims ? dims.scale : 1.0)) * maxDim * 0.65);
       const dist = bolt.mesh.position.distanceTo(e.mesh.position);
       const insideCrosshair = isTargetInCrosshairOutsideCircle(e.mesh, collisionRadius);
+      const laserRadius = Math.max(0.4, (bolt.size_x || (bolt.dimensions && bolt.dimensions.x) || 1.0) * (bolt.scale || 1.0) * 0.4);
 
-      if (dist < collisionRadius || insideCrosshair) {
+      if (dist < (collisionRadius + laserRadius) || insideCrosshair) {
         // Laser impact! Enemy destroyed on laser bolt hit!
         boltConsumed = true;
         e.currentHits = 0;
@@ -10001,9 +10037,13 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
 
   // 2. Weapon Dimensions & Graphic Object (.glb / .obj / .gltf) handling with scale and size
   const wScale = (parseFloat(wpn?.scale !== undefined ? wpn.scale : (cfg.weapon_scale !== undefined ? cfg.weapon_scale : 1.0)) || 1.0) * boltScale;
-  const wSizeX = parseFloat(wpn?.size_x !== undefined ? wpn.size_x : (cfg.weapon_size_x !== undefined ? cfg.weapon_size_x : 1.0)) || 1.0;
-  const wSizeY = parseFloat(wpn?.size_y !== undefined ? wpn.size_y : (cfg.weapon_size_y !== undefined ? cfg.weapon_size_y : 1.0)) || 1.0;
-  const wSizeZ = parseFloat(wpn?.size_z !== undefined ? wpn.size_z : (cfg.weapon_size_z !== undefined ? cfg.weapon_size_z : 1.0)) || 1.0;
+  const wScaleX = parseFloat(wpn?.scale_x !== undefined ? wpn.scale_x : (cfg.weapon_scale_x !== undefined ? cfg.weapon_scale_x : 1.0)) || 1.0;
+  const wScaleY = parseFloat(wpn?.scale_y !== undefined ? wpn.scale_y : (cfg.weapon_scale_y !== undefined ? cfg.weapon_scale_y : 1.0)) || 1.0;
+  const wScaleZ = parseFloat(wpn?.scale_z !== undefined ? wpn.scale_z : (cfg.weapon_scale_z !== undefined ? cfg.weapon_scale_z : 1.0)) || 1.0;
+  const wSizeX = parseFloat(wpn?.size_x !== undefined ? wpn.size_x : ((wpn?.dimensions && wpn.dimensions.x) !== undefined ? wpn.dimensions.x : (cfg.weapon_size_x !== undefined ? cfg.weapon_size_x : 1.0))) || 1.0;
+  const wSizeY = parseFloat(wpn?.size_y !== undefined ? wpn.size_y : ((wpn?.dimensions && wpn.dimensions.y) !== undefined ? wpn.dimensions.y : (cfg.weapon_size_y !== undefined ? cfg.weapon_size_y : 1.0))) || 1.0;
+  const wSizeZ = parseFloat(wpn?.size_z !== undefined ? wpn.size_z : ((wpn?.dimensions && wpn.dimensions.z) !== undefined ? wpn.dimensions.z : (cfg.weapon_size_z !== undefined ? cfg.weapon_size_z : 1.0))) || 1.0;
+  const wDimensions = { x: wSizeX, y: wSizeY, z: wSizeZ };
   const wpnModelUrl = (wpn && (wpn.model_url || wpn.graphic_object || wpn.model_3d_url)) ? (wpn.model_url || wpn.graphic_object || wpn.model_3d_url).trim() : '';
 
   let fromPool = false;
@@ -10014,6 +10054,7 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     mesh = currentStageObjectPool.spawnEnemyWeapon(wpn, cfg, spawnOrigin, boltQuat, isMissile ? 'missile' : 'beam');
     if (mesh) {
       fromPool = true;
+      mesh.scale.set(wScale * wScaleX * wSizeX, wScale * wScaleY * wSizeY, wScale * wScaleZ * wSizeZ);
       weaponType = isMissile ? 'missile' : 'beam';
       boltSpeed = isMissile ? Math.max(22, Math.min(36, weaponSpeedVal * 0.065)) : Math.max(28, Math.min(48, weaponSpeedVal * 0.075));
       if (isMissile && audioMgr && typeof audioMgr.playEnemyMissile === 'function') {
@@ -10193,6 +10234,14 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     direction,
     speed: boltSpeed,
     damage: weaponDamageVal,
+    scale: wScale,
+    scale_x: wScaleX,
+    scale_y: wScaleY,
+    scale_z: wScaleZ,
+    size_x: wSizeX,
+    size_y: wSizeY,
+    size_z: wSizeZ,
+    dimensions: wDimensions,
     type: weaponType,
     spiralTime: Math.random() * Math.PI * 2,
     spawnTime: performance.now(),

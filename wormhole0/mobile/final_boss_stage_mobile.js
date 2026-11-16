@@ -56,45 +56,44 @@ export const stageConfig = {
   "initial": {
     "id": "quantum_disruptor",
     "name": "Quantum Disruptor",
-    "icon": "⚡",
+    "icon": "\u26a1",
     "color": "#ff00aa",
     "damage": 5,
     "bullet_speed": 1050,
-    "energy_drain_pct": 18,
+    "energy_drain_pct": 18.0,
     "can_overheat": 1,
     "cooldown_seconds": 5.5,
-    "description": "Heavy antimatter pulse array piercing dark matter shields and dreadnought armor matrices."
+    "scale": 1.6,
+    "scale_x": 1.4,
+    "scale_y": 1.4,
+    "scale_z": 2.0,
+    "size_x": 1.5,
+    "size_y": 1.5,
+    "size_z": 2.5,
+    "dimensions": {
+      "x": 1.5,
+      "y": 1.5,
+      "z": 2.5
+    },
+    "description": "Heavy antimatter pulse array piercing dark matter shields."
   },
-  "acquirable": [
-    {
-      "id": "tachyon_lance",
-      "name": "Tachyon Lance",
-      "icon": "⚡",
-      "color": "#ffd166",
-      "damage": 3,
-      "bullet_speed": 850,
-      "energy_drain_pct": 25,
-      "can_overheat": 1,
-      "cooldown_seconds": 7,
-      "description": "Superluminal phase particle array."
-    }
-  ]
+  "acquirable": []
 },
   enemies: [
   {
     "id": "final_boss_titan",
     "enemy_id": "final_boss_titan",
-    "name": "Singularity Overlord Titan",
+    "name": "Singularity Overlord Titan (Stage 5 Boss)",
     "enemy_class": "Boss Dreadnought",
-    "icon": "💀",
+    "icon": "\ud83d\udc80",
     "model_3d_type": "custom_glb",
     "model_3d_url": "desktop/warp_origin_images/drone_phase_interceptor_3.glb",
+    "color": "#ef4444",
     "scale": 2.2,
     "length": 9.0,
     "height": 4.8,
     "depth": 9.0,
     "circumference": 25.0,
-    "color": "#ef4444",
     "hits": 45,
     "armor": 100,
     "shield": 20,
@@ -104,6 +103,18 @@ export const stageConfig = {
     "weapon_damage": 75,
     "weapon_speed": 650,
     "weapon_color": "#ef4444",
+    "weapon_scale": 1.8,
+    "weapon_scale_x": 1.6,
+    "weapon_scale_y": 1.6,
+    "weapon_scale_z": 2.2,
+    "weapon_size_x": 1.8,
+    "weapon_size_y": 1.8,
+    "weapon_size_z": 3.2,
+    "weapon_dimensions": {
+      "x": 1.8,
+      "y": 1.8,
+      "z": 3.2
+    },
     "fire_rate": 1.2,
     "fire_rate_seconds": 1.2,
     "fire_rate_ms": 1200,
@@ -116,13 +127,21 @@ export const stageConfig = {
         "mount": "center",
         "model_url": "",
         "model_type": "",
-        "fire_point_x": 0,
+        "fire_point_x": 0.0,
         "fire_point_y": -0.2,
         "fire_point_z": 2.0,
-        "scale": 1.5,
-        "size_x": 1.5,
-        "size_y": 1.5,
-        "size_z": 2.0,
+        "scale": 1.8,
+        "scale_x": 1.6,
+        "scale_y": 1.6,
+        "scale_z": 2.2,
+        "size_x": 1.8,
+        "size_y": 1.8,
+        "size_z": 3.2,
+        "dimensions": {
+          "x": 1.8,
+          "y": 1.8,
+          "z": 3.2
+        },
         "fire_rate_times_per_sec": 0.833,
         "fire_interval_ms": 1200,
         "fire_rate_seconds": 1.2,
@@ -139,12 +158,20 @@ export const stageConfig = {
         "model_url": "",
         "model_type": "",
         "fire_point_x": 2.5,
-        "fire_point_y": 0,
+        "fire_point_y": 0.0,
         "fire_point_z": 1.0,
-        "scale": 1.2,
-        "size_x": 1.0,
-        "size_y": 1.0,
-        "size_z": 1.8,
+        "scale": 1.5,
+        "scale_x": 1.3,
+        "scale_y": 1.3,
+        "scale_z": 1.8,
+        "size_x": 1.4,
+        "size_y": 1.4,
+        "size_z": 2.6,
+        "dimensions": {
+          "x": 1.4,
+          "y": 1.4,
+          "z": 2.6
+        },
         "fire_rate_times_per_sec": 0.4,
         "fire_interval_ms": 2500,
         "fire_rate_seconds": 2.5,
@@ -157,84 +184,10 @@ export const stageConfig = {
     "score": 10000,
     "threat": "Extreme",
     "piercing": "quantum_disruptor",
-    "pool_size": 100,
-    "quick_effect_primary": "gravitational_vortex",
-    "quick_effect_secondary": "quantum_phase_glow",
-    "quick_effect_color": "#ef4444",
-    "quick_effect_intensity": 1.5,
-    "quick_effect_speed": 1.2,
-    "destruction_particle_type": "procedural_quantum_implosion",
-    "destruction_particle_count": 150,
-    "destruction_particle_color": "#ef4444",
-    "destruction_particle_scale": 2.0
-  },
-  {
-    "id": "boss_escort_fighter",
-    "enemy_id": "boss_escort_fighter",
-    "name": "Overlord Heavy Escort Fighter",
-    "enemy_class": "Fast Interceptor",
-    "icon": "🚀",
-    "model_3d_type": "custom_glb",
-    "model_3d_url": "desktop/warp_origin_images/recon_drone_2.8m.glb",
-    "scale": 1.25,
-    "length": 4.2,
-    "height": 1.5,
-    "depth": 3.5,
-    "circumference": 9.0,
-    "color": "#f87171",
-    "hits": 5,
-    "armor": 25,
-    "shield": 5,
-    "speed": 220,
-    "attack_damage": 15,
-    "weapon_name": "Heavy Plasma Pulse",
-    "weapon_damage": 15,
-    "weapon_speed": 550,
-    "weapon_color": "#f87171",
-    "fire_rate": 2.0,
-    "fire_rate_seconds": 2.0,
-    "fire_rate_ms": 2000,
-    "fire_rate_times_per_sec": 0.5,
-    "weapons": [
-      {
-        "id": "ew_escort_pulse",
-        "name": "Heavy Plasma Pulse",
-        "type": "beam",
-        "mount": "center",
-        "model_url": "",
-        "model_type": "",
-        "fire_point_x": 0,
-        "fire_point_y": -0.15,
-        "fire_point_z": 1.5,
-        "scale": 1.0,
-        "size_x": 1.0,
-        "size_y": 1.0,
-        "size_z": 1.0,
-        "fire_rate_times_per_sec": 0.5,
-        "fire_interval_ms": 2000,
-        "fire_rate_seconds": 2.0,
-        "damage": 15,
-        "speed": 550,
-        "color": "#f87171",
-        "is_enabled": 1
-      }
-    ],
-    "score": 500,
-    "threat": "High",
-    "piercing": "any",
-    "pool_size": 50,
-    "quick_effect_primary": "engine_ion_thrust",
-    "quick_effect_secondary": "energy_shield_pulse",
-    "quick_effect_color": "#f87171",
-    "quick_effect_intensity": 1.0,
-    "quick_effect_speed": 1.0,
-    "destruction_particle_type": "procedural_plasma_shatter",
-    "destruction_particle_count": 50,
-    "destruction_particle_color": "#f87171",
-    "destruction_particle_scale": 1.2
+    "pool_size": 100
   }
 ],
-  objectives: [
+  objectivesobjectives: [
   {
     "id": "kills",
     "type": "kills",
@@ -272,28 +225,39 @@ export const stageEvents = [
 export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   if (!enemy || !enemy.mesh || !activeEnemyBolts || !scene) return false;
 
-  const enemyBolts = activeEnemyBolts();
-  if (enemyBolts.length > 80) return false;
+  const enemyBolts = typeof activeEnemyBolts === 'function' ? activeEnemyBolts() : activeEnemyBolts;
+  if (!enemyBolts || enemyBolts.length > 80) return false;
 
-  const boltGeom = new THREE.CylinderGeometry(0.12, 0.12, 2.2, 6);
+  const primaryW = (enemy.weapons && enemy.weapons[0]) || {};
+  const wScale = Number(enemy.weapon_scale ?? primaryW.scale ?? 1.0);
+  const wScaleX = Number(enemy.weapon_scale_x ?? primaryW.scale_x ?? 1.0);
+  const wScaleY = Number(enemy.weapon_scale_y ?? primaryW.scale_y ?? 1.0);
+  const wScaleZ = Number(enemy.weapon_scale_z ?? primaryW.scale_z ?? 1.0);
+  const wSizeX = Number(enemy.weapon_size_x ?? primaryW.size_x ?? (primaryW.dimensions && primaryW.dimensions.x) ?? 1.0);
+  const wSizeY = Number(enemy.weapon_size_y ?? primaryW.size_y ?? (primaryW.dimensions && primaryW.dimensions.y) ?? 1.0);
+  const wSizeZ = Number(enemy.weapon_size_z ?? primaryW.size_z ?? (primaryW.dimensions && primaryW.dimensions.z) ?? 1.0);
+
+  const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
   boltGeom.rotateX(Math.PI / 2);
   const boltMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(enemy.weaponColor || '#ef4444'),
+    color: new THREE.Color(enemy.weaponColor || enemy.weapon_color || '#ef4444'),
     wireframe: false
   });
 
   const mesh = new THREE.Mesh(boltGeom, boltMat);
+  mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
   mesh.position.copy(enemy.mesh.position);
 
-  const direction = new THREE.Vector3().subVectors(playerPos, enemy.mesh.position).normalize();
+  const target = (playerPos && playerPos.isVector3) ? playerPos : new THREE.Vector3(0, 0, 220);
+  const direction = new THREE.Vector3().subVectors(target, enemy.mesh.position).normalize();
   mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
 
   const geometryList = [boltGeom];
   const materialList = [boltMat];
 
-  const isMissile = (enemy.weaponType === 'missile' || (enemy.weaponName && enemy.weaponName.toLowerCase().includes('torpedo')));
-  const boltSpeed = enemy.weaponSpeed || 550;
-  const boltDamage = enemy.weaponDamage || 25;
+  const isMissile = (enemy.weaponType === 'missile' || (enemy.weaponName && enemy.weaponName.toLowerCase().includes('missile')));
+  const boltSpeed = enemy.weaponSpeed || enemy.weapon_speed || 420;
+  const boltDamage = enemy.weaponDamage || enemy.weapon_damage || 5;
 
   scene.add(mesh);
 
@@ -304,6 +268,14 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
     direction,
     speed: boltSpeed,
     damage: boltDamage,
+    scale: wScale,
+    scale_x: wScaleX,
+    scale_y: wScaleY,
+    scale_z: wScaleZ,
+    size_x: wSizeX,
+    size_y: wSizeY,
+    size_z: wSizeZ,
+    dimensions: { x: wSizeX, y: wSizeY, z: wSizeZ },
     type: isMissile ? 'missile' : 'beam',
     spiralTime: Math.random() * Math.PI * 2,
     spawnTime: performance.now(),

@@ -66,6 +66,12 @@ export class MeshPool {
         mesh.scale.set(scale, scale, scale);
       } else if (scale.isVector3) {
         mesh.scale.copy(scale);
+      } else if (typeof scale === 'object') {
+        mesh.scale.set(
+          scale.x !== undefined ? scale.x : 1,
+          scale.y !== undefined ? scale.y : 1,
+          scale.z !== undefined ? scale.z : 1
+        );
       }
     } else {
       mesh.scale.set(1, 1, 1);
@@ -537,16 +543,38 @@ export class StageObjectPool {
   }
 
   spawnPlayerLaser(weaponConfig, position, quaternion = null) {
-    const wpnId = (weaponConfig && weaponConfig.id) || 'red_laser';
+    const wpn = weaponConfig || {};
+    const wpnId = wpn.id || 'red_laser';
     let pool = this.playerWeaponPools.get(wpnId);
     if (!pool && this.playerWeaponPools.size > 0) {
       pool = this.playerWeaponPools.values().next().value;
     }
     if (!pool) return null;
 
-    const mesh = pool.spawn(position, quaternion);
+    const baseScale = Number(wpn.scale ?? 1.0);
+    const scaleX = Number(wpn.scale_x ?? 1.0);
+    const scaleY = Number(wpn.scale_y ?? 1.0);
+    const scaleZ = Number(wpn.scale_z ?? 1.0);
+    const sizeX = Number(wpn.size_x ?? (wpn.dimensions && wpn.dimensions.x) ?? 1.0);
+    const sizeY = Number(wpn.size_y ?? (wpn.dimensions && wpn.dimensions.y) ?? 1.0);
+    const sizeZ = Number(wpn.size_z ?? (wpn.dimensions && wpn.dimensions.z) ?? 1.0);
+
+    const finalScaleX = baseScale * scaleX * sizeX;
+    const finalScaleY = baseScale * scaleY * sizeY;
+    const finalScaleZ = baseScale * scaleZ * sizeZ;
+
+    const mesh = pool.spawn(position, quaternion, { x: finalScaleX, y: finalScaleY, z: finalScaleZ });
+    mesh.scale.set(finalScaleX, finalScaleY, finalScaleZ);
     mesh.userData.fromPool = true;
     mesh.userData.weaponId = wpnId;
+    mesh.userData.scale = baseScale;
+    mesh.userData.scale_x = scaleX;
+    mesh.userData.scale_y = scaleY;
+    mesh.userData.scale_z = scaleZ;
+    mesh.userData.size_x = sizeX;
+    mesh.userData.size_y = sizeY;
+    mesh.userData.size_z = sizeZ;
+    mesh.userData.dimensions = { x: sizeX, y: sizeY, z: sizeZ };
     return mesh;
   }
 
@@ -581,9 +609,30 @@ export class StageObjectPool {
     const pool = this.enemyWeaponPools.get(poolKey) || this.enemyWeaponPools.get('beam');
     if (!pool) return null;
 
-    const mesh = pool.spawn(position, quaternion);
+    const baseScale = Number(wpn.scale ?? (enemyConfig && enemyConfig.weapon_scale) ?? 1.0);
+    const scaleX = Number(wpn.scale_x ?? (enemyConfig && enemyConfig.weapon_scale_x) ?? 1.0);
+    const scaleY = Number(wpn.scale_y ?? (enemyConfig && enemyConfig.weapon_scale_y) ?? 1.0);
+    const scaleZ = Number(wpn.scale_z ?? (enemyConfig && enemyConfig.weapon_scale_z) ?? 1.0);
+    const sizeX = Number(wpn.size_x ?? (wpn.dimensions && wpn.dimensions.x) ?? (enemyConfig && (enemyConfig.weapon_size_x ?? (enemyConfig.weapon_dimensions && enemyConfig.weapon_dimensions.x))) ?? 1.0);
+    const sizeY = Number(wpn.size_y ?? (wpn.dimensions && wpn.dimensions.y) ?? (enemyConfig && (enemyConfig.weapon_size_y ?? (enemyConfig.weapon_dimensions && enemyConfig.weapon_dimensions.y))) ?? 1.0);
+    const sizeZ = Number(wpn.size_z ?? (wpn.dimensions && wpn.dimensions.z) ?? (enemyConfig && (enemyConfig.weapon_size_z ?? (enemyConfig.weapon_dimensions && enemyConfig.weapon_dimensions.z))) ?? 1.0);
+
+    const finalScaleX = baseScale * scaleX * sizeX;
+    const finalScaleY = baseScale * scaleY * sizeY;
+    const finalScaleZ = baseScale * scaleZ * sizeZ;
+
+    const mesh = pool.spawn(position, quaternion, { x: finalScaleX, y: finalScaleY, z: finalScaleZ });
+    mesh.scale.set(finalScaleX, finalScaleY, finalScaleZ);
     mesh.userData.fromPool = true;
     mesh.userData.weaponType = poolKey;
+    mesh.userData.scale = baseScale;
+    mesh.userData.scale_x = scaleX;
+    mesh.userData.scale_y = scaleY;
+    mesh.userData.scale_z = scaleZ;
+    mesh.userData.size_x = sizeX;
+    mesh.userData.size_y = sizeY;
+    mesh.userData.size_z = sizeZ;
+    mesh.userData.dimensions = { x: sizeX, y: sizeY, z: sizeZ };
     return mesh;
   }
 

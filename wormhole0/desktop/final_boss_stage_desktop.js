@@ -1,4 +1,15 @@
 ﻿import * as THREE from 'three';
+import {
+  createStagePool,
+  MeshPool,
+  loadCockpitCracksGlbAsset,
+  setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
+  fitCockpitCracksToCamera,
+  COCKPIT_CRACKS_GLB_URL
+} from './final_boss_stage_pool.js';
+
 
 /**
  * Wormhole XR - Stage 5: Final Boss Stage [desktop Profile]
@@ -308,6 +319,146 @@ export function updateStageWaves(pool, activeEnemies, stageKills, scene) {
   }
 }
 
+
+// =========================================================================
+// COCKPIT CRACKS TRANSPARENT OVERLAY POOL & GAME OVER MANAGEMENT
+// Model: mobile/warp_origin_images/cockpit_cracks.glb
+// Transparent overlay positioned across the cockpit window;
+// flashes visible for an instant on enemy hit and stays visible for 1 second
+// before game over screen appears. Loaded with the stage object pool.
+// =========================================================================
+
+let activeCockpitCracksMesh = null;
+let activeCockpitCracksPool = null;
+
+export async function setupCockpitCracksOverlay(camera, pool = null, scene = null) {
+  if (!camera) {
+    camera = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+  }
+  if (!scene) {
+    scene = (typeof window !== 'undefined' && window.scene) ? window.scene : null;
+  }
+
+  if (camera) {
+    const existing = camera.getObjectByName('cockpit_cracks_overlay');
+    if (existing) {
+      camera.remove(existing);
+    }
+  }
+
+  if (pool && typeof pool.getCockpitCracksOverlay === 'function') {
+    activeCockpitCracksPool = pool;
+    activeCockpitCracksMesh = pool.getCockpitCracksOverlay(camera);
+    if (activeCockpitCracksMesh) {
+      fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
+      return activeCockpitCracksMesh;
+    }
+  }
+
+  try {
+    const glbUrl = (stageConfig.cockpit_overlay && stageConfig.cockpit_overlay.model_3d_url)
+      || COCKPIT_CRACKS_GLB_URL
+      || 'mobile/warp_origin_images/cockpit_cracks.glb';
+
+    const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+    if (loadedMesh) {
+      setupCockpitCracksHierarchy(loadedMesh);
+
+      activeCockpitCracksPool = new MeshPool(
+        scene,
+        null,
+        null,
+        1,
+        () => loadedMesh.clone(true)
+      );
+
+      activeCockpitCracksMesh = activeCockpitCracksPool.spawn();
+      setupCockpitCracksHierarchy(activeCockpitCracksMesh);
+
+      if (camera) {
+        camera.add(activeCockpitCracksMesh);
+        fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
+      }
+      console.log(`[Stage 5: Final Boss Stage] Cockpit cracks GLB loaded with pool and mounted across cockpit view`);
+    }
+  } catch (err) {
+    console.warn(`[Stage 5: Final Boss Stage] Error setting up cockpit cracks overlay:`, err);
+  }
+
+  return activeCockpitCracksMesh;
+}
+
+export function fitCockpitCracksToCamera(mesh, camera) {
+  if (!mesh || !camera) return;
+  mesh.position.set(0, 0, -1.0);
+  mesh.rotation.set(0, 0, 0);
+
+  const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
+  const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
+  const dist = 1.0;
+  const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
+  const visibleW = visibleH * aspect;
+
+  const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
+  mesh.scale.set(scale, scale, 1.0);
+}
+
+export function triggerCockpitCracksHit(durationMs = 280) {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.flashCockpitCracks === 'function') {
+    activeCockpitCracksPool.flashCockpitCracks(durationMs);
+  } else if (activeCockpitCracksMesh) {
+    flashCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
+  }
+
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+      setTimeout(() => {
+        redEdges.style.opacity = '0';
+      }, durationMs);
+    }
+  }
+}
+
+export function triggerGameOverCockpitCracks(durationMs = 1000) {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.showGameOverCockpitCracks === 'function') {
+    activeCockpitCracksPool.showGameOverCockpitCracks(durationMs);
+  } else if (activeCockpitCracksMesh) {
+    showGameOverCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+    }
+  }
+}
+
+export function hideCockpitCracks() {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.hideCockpitCracks === 'function') {
+    activeCockpitCracksPool.hideCockpitCracks();
+  } else if (activeCockpitCracksMesh) {
+    activeCockpitCracksMesh.visible = false;
+    activeCockpitCracksMesh.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material.opacity = 0.0;
+        child.material.needsUpdate = true;
+      }
+    });
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '0';
+    }
+  }
+}
+
+export function getActiveCockpitCracksOverlay() {
+  return activeCockpitCracksMesh;
+}
+
 export function handleStageEvent(eventName, payload, engineApi) {
   console.log('[Stage 5: Final Boss Stage] Event received: ' + eventName, payload);
   if (eventName === 'Wormhole Singularity Overlord Defeated') {
@@ -348,6 +499,57 @@ export function applyStage(engineApi) {
   if (typeof engineApi.showToast === 'function') {
     engineApi.showToast('🚀 STAGE 5: FINAL BOSS STAGE [DESKTOP] LOADED');
   }
+  // --- Mount Cockpit Cracks Overlay Across Cockpit Window via Pool ---
+  const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
+  const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
+  const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || (typeof window !== 'undefined' && window.stageObjectPool)
+    || null;
+
+  setupCockpitCracksOverlay(camera, pool, scene);
+
+  // Resize handler to maintain perfect cockpit fit
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', () => {
+      const cam = (engineApi && engineApi.camera) || window.camera;
+      if (activeCockpitCracksMesh && cam) {
+        fitCockpitCracksToCamera(activeCockpitCracksMesh, cam);
+      }
+    });
+
+    // Hook enemy hit detection:
+    if (typeof window.applyDamageToPlayer === 'function' && !window.applyDamageToPlayer._cockpitCracksHooked) {
+      const prevDamage = window.applyDamageToPlayer;
+      window.applyDamageToPlayer = function(dmg, ...args) {
+        const ret = prevDamage.apply(this, [dmg, ...args]);
+        triggerCockpitCracksHit();
+        return ret;
+      };
+      window.applyDamageToPlayer._cockpitCracksHooked = true;
+    }
+
+    window.addEventListener('cockpitHit', () => triggerCockpitCracksHit());
+    window.addEventListener('playerDamage', () => triggerCockpitCracksHit());
+    window.addEventListener('cockpitImpact', () => triggerCockpitCracksHit());
+    window.addEventListener('gameOverCracks', () => triggerGameOverCockpitCracks(1000));
+
+    const prevCustomFx = window.executeCustomWeaponImpactFx;
+    window.executeCustomWeaponImpactFx = function(bolt, normX, normY, canvas) {
+      if (typeof prevCustomFx === 'function') {
+        try { prevCustomFx(bolt, normX, normY, canvas); } catch (e) {}
+      }
+      triggerCockpitCracksHit();
+    };
+
+    window.triggerCockpitCracksHit = triggerCockpitCracksHit;
+    window.flashCockpitCracks = triggerCockpitCracksHit;
+    window.triggerGameOverCockpitCracks = triggerGameOverCockpitCracks;
+    window.hideCockpitCracks = hideCockpitCracks;
+    window.setupCockpitCracksOverlay = setupCockpitCracksOverlay;
+    window.getActiveCockpitCracksOverlay = getActiveCockpitCracksOverlay;
+  }
+
+
 
   return stageConfig;
 }

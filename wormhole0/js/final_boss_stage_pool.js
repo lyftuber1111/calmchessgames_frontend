@@ -1,3 +1,12 @@
+export {
+  COCKPIT_CRACKS_GLB_URL,
+  setupCockpitCracksHierarchy,
+  fitCockpitCracksToCamera,
+  loadCockpitCracksGlbAsset,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay
+} from './object_pool.js';
+
 import * as THREE from 'three';
 import { MeshPool, StageObjectPool } from './object_pool.js';
 
@@ -179,6 +188,24 @@ export class FinalBossStageObjectPool extends StageObjectPool {
     console.log(`[FinalBossStageObjectPool] Pre-allocated graphics object pool for Stage 5: Final Boss Stage`);
   }
 }
+
+  showGameOverCockpitCracks(durationMs = 1000) {
+    if (this.cockpitCracksMesh) {
+      showGameOverCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
+    }
+  }
+
+  hideCockpitCracks() {
+    if (this.cockpitCracksMesh) {
+      this.cockpitCracksMesh.visible = false;
+      this.cockpitCracksMesh.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.opacity = 0.0;
+          child.material.needsUpdate = true;
+        }
+      });
+    }
+  }
 
 export function createStagePool(scene, stageConfig = {}, options = {}) {
   return new FinalBossStageObjectPool(scene, stageConfig, options);

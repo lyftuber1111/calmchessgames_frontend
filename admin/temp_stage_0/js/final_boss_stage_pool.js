@@ -1,3 +1,12 @@
+export {
+  COCKPIT_CRACKS_GLB_URL,
+  setupCockpitCracksHierarchy,
+  fitCockpitCracksToCamera,
+  loadCockpitCracksGlbAsset,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay
+} from './object_pool.js';
+
 import * as THREE from 'three';
 import { MeshPool, StageObjectPool } from './object_pool.js';
 
@@ -16,7 +25,7 @@ export class FinalBossStageObjectPool extends StageObjectPool {
       stage_level: 5,
       stage_name: 'Final Boss Stage',
       stage_slug: 'final_boss_stage',
-      environment_theme: 'Warp Cyan Corridor',
+      environment_theme: 'Singularity Overlord Crimson',
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
@@ -38,176 +47,139 @@ export class FinalBossStageObjectPool extends StageObjectPool {
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
-    "initial": {
-        "id": "quantum_disruptor",
-        "name": "Quantum Disruptor",
-        "icon": "⚡",
-        "color": "#ff00aa",
-        "damage": 5,
-        "bullet_speed": 1050,
-        "energy_drain_pct": 18,
-        "can_overheat": 1,
-        "cooldown_seconds": 5.5,
-        "acquire_event": "default_start",
-        "description": "Heavy antimatter pulse array piercing dark matter shields."
-    },
-    "acquirable": []
-},
-      enemies: [
-    {
-        "id": "boss_escort_fighter",
-        "enemy_id": "boss_escort_fighter",
-        "name": "Overlord Heavy Escort Fighter (Universal)",
-        "enemy_class": "Fast Interceptor",
-        "icon": "🚀",
-        "model_3d_type": "custom_glb",
-        "model_3d_url": "desktop/warp_origin_images/recon_drone_2.8m.glb",
-        "scale": 1.25,
-        "length": 4.2,
-        "height": 1.5,
-        "depth": 3.5,
-        "circumference": 9,
-        "color": "#f87171",
-        "hits": 5,
-        "armor": 25,
-        "shield": 5,
-        "speed": 220,
-        "attack_damage": 15,
-        "weapon_name": "Heavy Plasma Pulse",
-        "weapon_damage": 15,
-        "weapon_speed": 550,
-        "weapon_color": "#f87171",
-        "fire_rate": 2,
-        "fire_rate_seconds": 2,
-        "fire_rate_ms": 2000,
-        "fire_rate_times_per_sec": 0.5,
-        "weapons": [
-            {
-                "id": "ew_escort_pulse",
-                "name": "Heavy Plasma Pulse",
-                "type": "beam",
-                "mount": "center",
-                "model_url": "",
-                "model_type": "",
-                "fire_point_x": 0,
-                "fire_point_y": -0.15,
-                "fire_point_z": 1.5,
-                "scale": 1,
-                "size_x": 1,
-                "size_y": 1,
-                "size_z": 1,
-                "fire_rate_times_per_sec": 0.5,
-                "fire_interval_ms": 2000,
-                "fire_rate_seconds": 2,
-                "damage": 15,
-                "speed": 550,
-                "color": "#f87171",
-                "is_enabled": 1
-            }
-        ],
-        "score": 500,
-        "threat": "High",
-        "piercing": "any",
-        "pool_size": 30,
-        "quick_effect_primary": "engine_ion_thrust",
-        "quick_effect_secondary": "energy_shield_pulse",
-        "quick_effect_color": "#f87171",
-        "quick_effect_intensity": 1,
-        "quick_effect_speed": 1,
-        "destruction_particle_type": "procedural_plasma_shatter",
-        "destruction_particle_url": "",
-        "destruction_particle_count": 50,
-        "destruction_particle_color": "#f87171",
-        "destruction_particle_scale": 1.2
-    },
-    {
-        "id": "final_boss_titan",
-        "enemy_id": "final_boss_titan",
-        "name": "Singularity Overlord Titan (Stage 5 Boss) (Universal)",
-        "enemy_class": "Boss Dreadnought",
-        "icon": "💀",
-        "model_3d_type": "custom_glb",
-        "model_3d_url": "desktop/warp_origin_images/drone_phase_interceptor_3.glb",
-        "scale": 2.2,
-        "length": 9,
-        "height": 4.8,
-        "depth": 9,
-        "circumference": 25,
-        "color": "#ef4444",
-        "hits": 45,
-        "armor": 100,
-        "shield": 20,
-        "speed": 85,
-        "attack_damage": 75,
-        "weapon_name": "Overlord Annihilator",
-        "weapon_damage": 75,
-        "weapon_speed": 650,
-        "weapon_color": "#ef4444",
-        "fire_rate": 1.2,
-        "fire_rate_seconds": 1.2,
-        "fire_rate_ms": 1200,
-        "fire_rate_times_per_sec": 0.833,
-        "weapons": [
-            {
-                "id": "ew_boss_beam",
-                "name": "Overlord Annihilator",
-                "type": "beam",
-                "mount": "center",
-                "model_url": "",
-                "model_type": "",
-                "fire_point_x": 0,
-                "fire_point_y": -0.2,
-                "fire_point_z": 2,
-                "scale": 1.5,
+        "initial": {
+                "id": "quantum_disruptor",
+                "name": "Quantum Disruptor",
+                "icon": "\u26a1",
+                "color": "#ff00aa",
+                "damage": 5,
+                "bullet_speed": 1050,
+                "energy_drain_pct": 18.0,
+                "can_overheat": 1,
+                "cooldown_seconds": 5.5,
+                "scale": 1.6,
+                "scale_x": 1.4,
+                "scale_y": 1.4,
+                "scale_z": 2.0,
                 "size_x": 1.5,
                 "size_y": 1.5,
-                "size_z": 2,
-                "fire_rate_times_per_sec": 0.833,
-                "fire_interval_ms": 1200,
-                "fire_rate_seconds": 1.2,
-                "damage": 75,
-                "speed": 650,
+                "size_z": 2.5,
+                "dimensions": {
+                        "x": 1.5,
+                        "y": 1.5,
+                        "z": 2.5
+                },
+                "description": "Heavy antimatter pulse array piercing dark matter shields."
+        },
+        "acquirable": []
+},
+      enemies: [
+        {
+                "id": "final_boss_titan",
+                "enemy_id": "final_boss_titan",
+                "name": "Singularity Overlord Titan (Stage 5 Boss)",
+                "enemy_class": "Boss Dreadnought",
+                "icon": "\ud83d\udc80",
+                "model_3d_type": "custom_glb",
+                "model_3d_url": "desktop/warp_origin_images/drone_phase_interceptor_3.glb",
                 "color": "#ef4444",
-                "is_enabled": 1
-            },
-            {
-                "id": "ew_boss_torpedo",
-                "name": "Gravitational Torpedo",
-                "type": "missile",
-                "mount": "dual_wingtip",
-                "model_url": "",
-                "model_type": "",
-                "fire_point_x": 2.5,
-                "fire_point_y": 0,
-                "fire_point_z": 1,
-                "scale": 1.2,
-                "size_x": 1,
-                "size_y": 1,
-                "size_z": 1.8,
-                "fire_rate_times_per_sec": 0.4,
-                "fire_interval_ms": 2500,
-                "fire_rate_seconds": 2.5,
-                "damage": 50,
-                "speed": 450,
-                "color": "#ff0055",
-                "is_enabled": 1
-            }
-        ],
-        "score": 10000,
-        "threat": "Extreme",
-        "piercing": "quantum_disruptor",
-        "pool_size": 100,
-        "quick_effect_primary": "gravitational_vortex",
-        "quick_effect_secondary": "quantum_phase_glow",
-        "quick_effect_color": "#ef4444",
-        "quick_effect_intensity": 1.5,
-        "quick_effect_speed": 1.2,
-        "destruction_particle_type": "procedural_quantum_implosion",
-        "destruction_particle_url": "",
-        "destruction_particle_count": 150,
-        "destruction_particle_color": "#ef4444",
-        "destruction_particle_scale": 2
-    }
+                "scale": 2.2,
+                "length": 9.0,
+                "height": 4.8,
+                "depth": 9.0,
+                "circumference": 25.0,
+                "hits": 45,
+                "armor": 100,
+                "shield": 20,
+                "speed": 85,
+                "attack_damage": 75,
+                "weapon_name": "Overlord Annihilator",
+                "weapon_damage": 75,
+                "weapon_speed": 650,
+                "weapon_color": "#ef4444",
+                "weapon_scale": 1.8,
+                "weapon_scale_x": 1.6,
+                "weapon_scale_y": 1.6,
+                "weapon_scale_z": 2.2,
+                "weapon_size_x": 1.8,
+                "weapon_size_y": 1.8,
+                "weapon_size_z": 3.2,
+                "weapon_dimensions": {
+                        "x": 1.8,
+                        "y": 1.8,
+                        "z": 3.2
+                },
+                "fire_rate": 1.2,
+                "fire_rate_seconds": 1.2,
+                "fire_rate_ms": 1200,
+                "fire_rate_times_per_sec": 0.833,
+                "weapons": [
+                        {
+                                "id": "ew_boss_beam",
+                                "name": "Overlord Annihilator",
+                                "type": "beam",
+                                "mount": "center",
+                                "model_url": "",
+                                "model_type": "",
+                                "fire_point_x": 0.0,
+                                "fire_point_y": -0.2,
+                                "fire_point_z": 2.0,
+                                "scale": 1.8,
+                                "scale_x": 1.6,
+                                "scale_y": 1.6,
+                                "scale_z": 2.2,
+                                "size_x": 1.8,
+                                "size_y": 1.8,
+                                "size_z": 3.2,
+                                "dimensions": {
+                                        "x": 1.8,
+                                        "y": 1.8,
+                                        "z": 3.2
+                                },
+                                "fire_rate_times_per_sec": 0.833,
+                                "fire_interval_ms": 1200,
+                                "fire_rate_seconds": 1.2,
+                                "damage": 75,
+                                "speed": 650,
+                                "color": "#ef4444",
+                                "is_enabled": 1
+                        },
+                        {
+                                "id": "ew_boss_torpedo",
+                                "name": "Gravitational Torpedo",
+                                "type": "missile",
+                                "mount": "dual_wingtip",
+                                "model_url": "",
+                                "model_type": "",
+                                "fire_point_x": 2.5,
+                                "fire_point_y": 0.0,
+                                "fire_point_z": 1.0,
+                                "scale": 1.5,
+                                "scale_x": 1.3,
+                                "scale_y": 1.3,
+                                "scale_z": 1.8,
+                                "size_x": 1.4,
+                                "size_y": 1.4,
+                                "size_z": 2.6,
+                                "dimensions": {
+                                        "x": 1.4,
+                                        "y": 1.4,
+                                        "z": 2.6
+                                },
+                                "fire_rate_times_per_sec": 0.4,
+                                "fire_interval_ms": 2500,
+                                "fire_rate_seconds": 2.5,
+                                "damage": 50,
+                                "speed": 450,
+                                "color": "#ff0055",
+                                "is_enabled": 1
+                        }
+                ],
+                "score": 10000,
+                "threat": "Extreme",
+                "piercing": "quantum_disruptor",
+                "pool_size": 100
+        }
 ],
       ...stageConfig
     };
@@ -216,6 +188,24 @@ export class FinalBossStageObjectPool extends StageObjectPool {
     console.log(`[FinalBossStageObjectPool] Pre-allocated graphics object pool for Stage 5: Final Boss Stage`);
   }
 }
+
+  showGameOverCockpitCracks(durationMs = 1000) {
+    if (this.cockpitCracksMesh) {
+      showGameOverCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
+    }
+  }
+
+  hideCockpitCracks() {
+    if (this.cockpitCracksMesh) {
+      this.cockpitCracksMesh.visible = false;
+      this.cockpitCracksMesh.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.opacity = 0.0;
+          child.material.needsUpdate = true;
+        }
+      });
+    }
+  }
 
 export function createStagePool(scene, stageConfig = {}, options = {}) {
   return new FinalBossStageObjectPool(scene, stageConfig, options);

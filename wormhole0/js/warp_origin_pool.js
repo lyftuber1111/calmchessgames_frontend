@@ -475,6 +475,24 @@ export class WarpOriginObjectPool extends StageObjectPool {
   }
 }
 
+  showGameOverCockpitCracks(durationMs = 1000) {
+    if (this.cockpitCracksMesh) {
+      showGameOverCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
+    }
+  }
+
+  hideCockpitCracks() {
+    if (this.cockpitCracksMesh) {
+      this.cockpitCracksMesh.visible = false;
+      this.cockpitCracksMesh.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.opacity = 0.0;
+          child.material.needsUpdate = true;
+        }
+      });
+    }
+  }
+
 export function createStagePool(scene, stageConfig = {}, options = {}) {
   return new WarpOriginObjectPool(scene, stageConfig, options);
 }

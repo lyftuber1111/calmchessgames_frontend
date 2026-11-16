@@ -6,6 +6,7 @@ import {
   loadCockpitCracksGlbAsset,
   setupCockpitCracksHierarchy,
   flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
   COCKPIT_CRACKS_GLB_URL
 } from './warp_origin_pool.js';
 
@@ -928,6 +929,41 @@ export function triggerCockpitCracksHit(durationMs = 280) {
   }
 }
 
+
+export function triggerGameOverCockpitCracks(durationMs = 1000) {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.showGameOverCockpitCracks === 'function') {
+    activeCockpitCracksPool.showGameOverCockpitCracks(durationMs);
+  } else if (activeCockpitCracksMesh) {
+    showGameOverCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+    }
+  }
+}
+
+export function hideCockpitCracks() {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.hideCockpitCracks === 'function') {
+    activeCockpitCracksPool.hideCockpitCracks();
+  } else if (activeCockpitCracksMesh) {
+    activeCockpitCracksMesh.visible = false;
+    activeCockpitCracksMesh.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material.opacity = 0.0;
+        child.material.needsUpdate = true;
+      }
+    });
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '0';
+    }
+  }
+}
+
 export function getActiveCockpitCracksOverlay() {
   return activeCockpitCracksMesh;
 }
@@ -1025,6 +1061,8 @@ export function applyStage(engineApi) {
 
     // 4. Expose helpers on window
     window.triggerCockpitCracksHit = triggerCockpitCracksHit;
+    window.triggerGameOverCockpitCracks = triggerGameOverCockpitCracks;
+    window.hideCockpitCracks = hideCockpitCracks;
     window.flashCockpitCracks = triggerCockpitCracksHit;
     window.setupCockpitCracksOverlay = setupCockpitCracksOverlay;
   }

@@ -10837,21 +10837,68 @@ function triggerGameOver() {
     mouseLockBtn.textContent = '🎯 Capture Crosshair';
   }
 
-  // Show Game Over modal overlay
-  const modal = document.getElementById('game-over-modal');
-  if (modal) {
-    const scoreEl = document.getElementById('game-over-score');
-    const stageEl = document.getElementById('game-over-stage');
-    const killsEl = document.getElementById('game-over-kills');
-    if (scoreEl) scoreEl.textContent = state.score.toLocaleString();
-    if (stageEl) stageEl.textContent = `Stage ${currentActiveStage}`;
-    if (killsEl) killsEl.textContent = String(state.totalKills ? state.totalKills + state.stageKills : state.stageKills);
-    modal.style.display = 'flex';
+  // Set worm_hole0/mobile/warp_origin_images/cockpit_cracks.glb across the cockpit as an overlay for 1 second before the game over screen appears load it with the pool
+  let cracksOverlay = null;
+  if (currentStageObjectPool && typeof currentStageObjectPool.getCockpitCracksOverlay === 'function') {
+    cracksOverlay = currentStageObjectPool.getCockpitCracksOverlay(camera);
+  } else if (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
+    cracksOverlay = window.getActiveCockpitCracksOverlay();
+  } else if (camera) {
+    cracksOverlay = camera.getObjectByName('cockpit_cracks_overlay');
   }
 
-  if (audioMgr && typeof audioMgr.playOverheatAlert === 'function') {
-    audioMgr.playOverheatAlert();
+  if (cracksOverlay) {
+    cracksOverlay.visible = true;
+    cracksOverlay.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material.transparent = true;
+        child.material.opacity = 1.0;
+        child.material.depthTest = false;
+        child.material.depthWrite = false;
+        child.material.needsUpdate = true;
+      }
+    });
+    if (camera) {
+      const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
+      const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
+      const dist = 1.0;
+      const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
+      const visibleW = visibleH * aspect;
+      const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
+      cracksOverlay.position.set(0, 0, -1.0);
+      cracksOverlay.rotation.set(0, 0, 0);
+      cracksOverlay.scale.set(scale, scale, 1.0);
+    }
   }
+
+  if (typeof window !== 'undefined') {
+    if (typeof window.triggerGameOverCockpitCracks === 'function') {
+      try { window.triggerGameOverCockpitCracks(1000); } catch (e) {}
+    }
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+    }
+  }
+
+  // Delay the game over modal display for 1 second (1000 ms) so cockpit cracks overlay is seen across cockpit
+  setTimeout(() => {
+    // Show Game Over modal overlay
+    const modal = document.getElementById('game-over-modal');
+    if (modal) {
+      const scoreEl = document.getElementById('game-over-score');
+      const stageEl = document.getElementById('game-over-stage');
+      const killsEl = document.getElementById('game-over-kills');
+      if (scoreEl) scoreEl.textContent = state.score.toLocaleString();
+      if (stageEl) stageEl.textContent = `Stage ${currentActiveStage}`;
+      if (killsEl) killsEl.textContent = String(state.totalKills ? state.totalKills + state.stageKills : state.stageKills);
+      modal.style.display = 'flex';
+    }
+
+    if (audioMgr && typeof audioMgr.playOverheatAlert === 'function') {
+      audioMgr.playOverheatAlert();
+    }
+  }, 1000);
 }
 
 let countdownTimerInterval = null;
@@ -11175,6 +11222,28 @@ function restartGame() {
   destroyAllRemainingEnemies(false);
   despawnAllActivePowerups();
   clearActiveSpecialEffects();
+
+  // Reset and hide cockpit cracks overlay
+  if (currentStageObjectPool && typeof currentStageObjectPool.hideCockpitCracks === 'function') {
+    currentStageObjectPool.hideCockpitCracks();
+  } else if (typeof window !== 'undefined' && typeof window.hideCockpitCracks === 'function') {
+    try { window.hideCockpitCracks(); } catch (e) {}
+  } else if (camera) {
+    const cracks = camera.getObjectByName('cockpit_cracks_overlay');
+    if (cracks) {
+      cracks.visible = false;
+      cracks.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.opacity = 0.0;
+          child.material.needsUpdate = true;
+        }
+      });
+    }
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) redEdges.style.opacity = '0';
+  }
 
   // Completely reset pause & game over states across entire game - start flight immediately!
   state.isGameOver = false;

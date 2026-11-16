@@ -1,3 +1,12 @@
+export {
+  COCKPIT_CRACKS_GLB_URL,
+  setupCockpitCracksHierarchy,
+  fitCockpitCracksToCamera,
+  loadCockpitCracksGlbAsset,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay
+} from './object_pool.js';
+
 import * as THREE from 'three';
 import { MeshPool, StageObjectPool } from './object_pool.js';
 
@@ -38,88 +47,109 @@ export class QuantumRealmObjectPool extends StageObjectPool {
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
-    "initial": {
-        "id": "quantum_phaser",
-        "name": "Quantum Phaser",
-        "icon": "✨",
-        "color": "#10b981",
-        "damage": 4,
-        "bullet_speed": 950,
-        "energy_drain_pct": 15,
-        "can_overheat": 1,
-        "cooldown_seconds": 6,
-        "acquire_event": "deep_core_breakthrough",
-        "description": "Sub-atomic pulse rifle optimized for deep singularity warfare."
-    },
-    "acquirable": []
+        "initial": {
+                "id": "quantum_phaser",
+                "name": "Quantum Phaser",
+                "icon": "\u2728",
+                "color": "#10b981",
+                "damage": 4,
+                "bullet_speed": 950,
+                "energy_drain_pct": 15.0,
+                "can_overheat": 1,
+                "cooldown_seconds": 6.0,
+                "scale": 1.4,
+                "scale_x": 1.2,
+                "scale_y": 1.2,
+                "scale_z": 1.5,
+                "size_x": 1.1,
+                "size_y": 1.1,
+                "size_z": 1.8,
+                "dimensions": {
+                        "x": 1.1,
+                        "y": 1.1,
+                        "z": 1.8
+                },
+                "description": "Sub-atomic pulse rifle optimized for deep singularity warfare."
+        },
+        "acquirable": []
 },
       enemies: [
-    {
-        "id": "quantum_dreadnought",
-        "enemy_id": "quantum_dreadnought",
-        "name": "Quantum Omega Dreadnought (Universal)",
-        "enemy_class": "Boss Dreadnought",
-        "icon": "💀",
-        "model_3d_type": "dreadnought",
-        "model_3d_url": "",
-        "scale": 1.6,
-        "length": 7,
-        "height": 3.2,
-        "depth": 6,
-        "circumference": 15,
-        "color": "#ef476f",
-        "hits": 35,
-        "armor": 90,
-        "shield": 15,
-        "speed": 90,
-        "attack_damage": 60,
-        "weapon_name": "Quantum Annihilator",
-        "weapon_damage": 60,
-        "weapon_speed": 650,
-        "weapon_color": "#ef476f",
-        "fire_rate": 1.2,
-        "fire_rate_seconds": 1.2,
-        "fire_rate_ms": 1200,
-        "fire_rate_times_per_sec": 0.833,
-        "weapons": [
-            {
-                "id": "ew_quantum_dreadnought",
-                "name": "Quantum Annihilator",
-                "type": "beam",
-                "mount": "dual_wingtip",
-                "model_url": "",
-                "model_type": "",
-                "fire_point_x": 0,
-                "fire_point_y": -0.15,
-                "fire_point_z": 1.5,
-                "scale": 1,
-                "size_x": 1,
-                "size_y": 1,
-                "size_z": 1,
-                "fire_rate_times_per_sec": 0.833,
-                "fire_interval_ms": 1200,
-                "fire_rate_seconds": 1.2,
-                "damage": 60,
-                "speed": 650,
-                "color": "#ef476f",
-                "is_enabled": 1
-            }
-        ],
-        "score": 5000,
-        "threat": "Extreme",
-        "piercing": "quantum_phaser",
-        "pool_size": 100,
-        "quick_effect_primary": "quantum_phase_glow",
-        "quick_effect_secondary": "energy_shield_pulse",
-        "quick_effect_color": "#ef476f",
-        "quick_effect_intensity": 1,
-        "quick_effect_speed": 1,
-        "destruction_particle_type": "procedural_plasma_shatter",
-        "destruction_particle_url": "",
-        "destruction_particle_count": 120,
-        "destruction_particle_color": "#ef476f",
-        "destruction_particle_scale": 1
-    }
+        {
+                "id": "quantum_dreadnought",
+                "enemy_id": "quantum_dreadnought",
+                "name": "Quantum Realm Dreadnought",
+                "enemy_class": "Dreadnought",
+                "icon": "\ud83d\udc80",
+                "model_3d_type": "custom_glb",
+                "model_3d_url": "desktop/warp_origin_images/drone_phase_interceptor_3.glb",
+                "color": "#f43f5e",
+                "scale": 1.8,
+                "length": 8.0,
+                "height": 3.5,
+                "depth": 7.5,
+                "circumference": 20.0,
+                "hits": 18,
+                "armor": 80,
+                "shield": 3,
+                "speed": 140,
+                "attack_damage": 40,
+                "weapon_name": "Quantum Annihilator Cannon",
+                "weapon_damage": 40,
+                "weapon_speed": 600,
+                "weapon_color": "#f43f5e",
+                "weapon_scale": 1.6,
+                "weapon_scale_x": 1.5,
+                "weapon_scale_y": 1.5,
+                "weapon_scale_z": 2.0,
+                "weapon_size_x": 1.4,
+                "weapon_size_y": 1.4,
+                "weapon_size_z": 2.8,
+                "weapon_dimensions": {
+                        "x": 1.4,
+                        "y": 1.4,
+                        "z": 2.8
+                },
+                "fire_rate": 1.8,
+                "fire_rate_seconds": 1.8,
+                "fire_rate_ms": 1800,
+                "fire_rate_times_per_sec": 0.556,
+                "weapons": [
+                        {
+                                "id": "ew_quantum_annihilator",
+                                "name": "Quantum Annihilator Cannon",
+                                "type": "beam",
+                                "mount": "center",
+                                "model_url": "",
+                                "model_type": "",
+                                "fire_point_x": 0.0,
+                                "fire_point_y": -0.2,
+                                "fire_point_z": 2.0,
+                                "scale": 1.6,
+                                "scale_x": 1.5,
+                                "scale_y": 1.5,
+                                "scale_z": 2.0,
+                                "size_x": 1.4,
+                                "size_y": 1.4,
+                                "size_z": 2.8,
+                                "dimensions": {
+                                        "x": 1.4,
+                                        "y": 1.4,
+                                        "z": 2.8
+                                },
+                                "fire_rate_times_per_sec": 0.556,
+                                "fire_interval_ms": 1800,
+                                "fire_rate_seconds": 1.8,
+                                "damage": 40,
+                                "speed": 600,
+                                "color": "#f43f5e",
+                                "is_enabled": 1
+                        }
+                ],
+                "score": 1500,
+                "threat": "Extreme",
+                "piercing": "any",
+                "pool_size": 40
+        }
 ],
       ...stageConfig
     };
@@ -128,6 +158,24 @@ export class QuantumRealmObjectPool extends StageObjectPool {
     console.log(`[QuantumRealmObjectPool] Pre-allocated graphics object pool for Stage 4: Quantum Realm`);
   }
 }
+
+  showGameOverCockpitCracks(durationMs = 1000) {
+    if (this.cockpitCracksMesh) {
+      showGameOverCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
+    }
+  }
+
+  hideCockpitCracks() {
+    if (this.cockpitCracksMesh) {
+      this.cockpitCracksMesh.visible = false;
+      this.cockpitCracksMesh.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.opacity = 0.0;
+          child.material.needsUpdate = true;
+        }
+      });
+    }
+  }
 
 export function createStagePool(scene, stageConfig = {}, options = {}) {
   return new QuantumRealmObjectPool(scene, stageConfig, options);

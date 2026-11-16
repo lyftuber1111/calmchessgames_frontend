@@ -1,4 +1,15 @@
 import * as THREE from 'three';
+import {
+  createStagePool,
+  MeshPool,
+  loadCockpitCracksGlbAsset,
+  setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
+  fitCockpitCracksToCamera,
+  COCKPIT_CRACKS_GLB_URL
+} from './warp_origin_pool.js';
+
 
 /**
  * Wormhole XR - Stage 1: Warp Origin [VR Headset Profile]
@@ -7,20 +18,63 @@ import * as THREE from 'three';
  */
 
 export const stageConfig = {
-  meta: {
-    level: 1,
-    name: 'Warp Origin',
-    slug: 'warp_origin',
-    theme: 'Warp Cyan Corridor',
-    device: 'vr',
-    xrMode: 'desktop-vr',
-    description: 'Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.',
-    parScore: 5000,
-    requiredKills: 10,
-    warpTargetDistance: 50000,
-    eventsWithin: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
-    endLevelEvent: 'Warp Horizon Jump Gate Initialized'
+  stage_level: 1,
+  stage_name: 'Warp Origin',
+  stage_slug: 'warp_origin',
+  environment_theme: 'Warp Cyan Corridor',
+  device: 'vr',
+  xr_mode: 'immersive-vr',
+  events_within_level: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
+  end_level_event: 'Warp Horizon Jump Gate Initialized',
+  mission_objectives: "Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.",
+  required_enemy_kills: 10,
+  warp_target_distance: 50000,
+  initial_weapon_pool_size: 300,
+  initial_enemy_pool_size: 100,
+  waves: [
+    {
+      wave_number: 1,
+      enemy_count: 5,
+      interval_seconds: 0,
+      delay_ms: 0,
+      description: 'Wave 1: Recon Vanguard (5 Enemies)'
+    },
+    {
+      wave_number: 2,
+      enemy_count: 10,
+      interval_seconds: 15,
+      delay_ms: 15000,
+      description: 'Wave 2: Full Assault Swarm (10 Enemies)'
+    }
+  ],
+  total_waves: 2,
+  wave_interval_seconds: 15,
+  objectives: [
+  {
+    "id": "kills",
+    "type": "kills",
+    "target": 10,
+    "current": 0,
+    "title": "Destroy 10 Void Recon Drones",
+    "description": "Shoot down 10 hostile scout probes emerging from cyan entry vector",
+    "requiredForWarp": true,
+    "actionText": "🎯 Target Threat",
+    "actionId": "target_enemy"
   },
+  {
+    "id": "distance",
+    "type": "distance",
+    "target": 50000,
+    "title": "Singularity Proximity < 50,000 KM",
+    "description": "Pilot vessel to within < 50,000 KM of cyan singularity core",
+    "requiredForWarp": true,
+    "actionText": "🛰️ Lock Vector",
+    "actionId": "lock_vector"
+  }
+],
+  description: 'Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.',
+  par_score: 5000,
+
   visual: {
     themeName: 'Warp Cyan Corridor',
     colors: {
@@ -53,158 +107,223 @@ export const stageConfig = {
 }
   },
   weapons: {
-    "initial": {
-        "id": "red_laser",
-        "name": "Red Laser",
-        "icon": "🔴",
-        "color": "#ff2244",
-        "damage": 2,
-        "bullet_speed": 550,
-        "energy_drain_pct": 1,
-        "can_overheat": 1,
-        "cooldown_seconds": 5,
-        "acquire_event": "default_start",
-        "description": "Standard high-cadence plasma emitter with twin focus beams."
+  "initial": {
+    "id": "red_laser",
+    "name": "Red Laser",
+    "icon": "\ud83d\udd34",
+    "color": "#ff2244",
+    "damage": 2,
+    "bullet_speed": 550,
+    "energy_drain_pct": 10.0,
+    "can_overheat": 1,
+    "cooldown_seconds": 5.0,
+    "scale": 1.0,
+    "scale_x": 1.0,
+    "scale_y": 1.0,
+    "scale_z": 1.0,
+    "size_x": 1.0,
+    "size_y": 1.0,
+    "size_z": 1.0,
+    "dimensions": {
+      "x": 1.0,
+      "y": 1.0,
+      "z": 1.0
     },
-    "acquirable": [
-        {
-            "id": "blue_laser",
-            "name": "Blue Laser",
-            "icon": "🔵",
-            "color": "#00d4ff",
-            "damage": 3,
-            "bullet_speed": 700,
-            "energy_drain_pct": 5,
-            "can_overheat": 1,
-            "cooldown_seconds": 10,
-            "acquire_event": "default_start",
-            "description": "High-impact coherent photon beam with deep penetration."
-        }
-    ]
+    "description": "Standard high-cadence plasma emitter with twin focus beams."
+  },
+  "acquirable": [
+    {
+      "id": "blue_laser",
+      "name": "Blue Laser",
+      "icon": "\ud83d\udd35",
+      "color": "#00d4ff",
+      "damage": 3,
+      "bullet_speed": 700,
+      "energy_drain_pct": 25.0,
+      "can_overheat": 1,
+      "cooldown_seconds": 7.0,
+      "acquire_event": "default_start",
+      "scale": 1.2,
+      "scale_x": 1.0,
+      "scale_y": 1.0,
+      "scale_z": 1.2,
+      "size_x": 1.2,
+      "size_y": 1.2,
+      "size_z": 1.5,
+      "dimensions": {
+        "x": 1.2,
+        "y": 1.2,
+        "z": 1.5
+      },
+      "description": "High-impact coherent photon beam with deep penetration."
+    }
+  ]
 },
   enemies: [
-    {
-        "id": "phase_interceptor",
-        "device_type": "vr",
-        "name": "Phase Interceptor (Universal)",
-        "enemy_class": "Fast Interceptor",
-        "icon": "🚀",
-        "model_3d_type": "custom_glb",
-        "model_3d_url": "vr/warp_origin_images/drone_phase_interceptor_3.glb",
-        "scale": 1.3,
-        "length": 4.2,
-        "height": 1.3,
-        "depth": 3.4,
-        "circumference": 5,
-        "color": "#38bdf8",
-        "hits": 1,
-        "armor": 1,
-        "shield": 0,
-        "speed": 220,
-        "attack_damage": 1,
-        "weapon_name": "Dual Ion Cannon",
-        "weapon_damage": 1,
-        "weapon_speed": 550,
-        "weapon_color": "#38bdf8",
-        "fire_rate": 0.85,
-        "score": 250,
-        "threat": "Medium",
-        "piercing": "red_laser",
-        "quick_effect_primary": "engine_ion_thrust",
-        "quick_effect_secondary": "plasma_aura",
-        "quick_effect_color": "#38bdf8",
-        "quick_effect_intensity": 1,
-        "quick_effect_speed": 1,
-        "destruction_particle_type": "procedural_plasma_shatter",
-        "destruction_particle_url": "",
-        "destruction_particle_count": 45,
-        "destruction_particle_color": "#38bdf8",
-        "destruction_particle_scale": 1,
-        "fire_rate_seconds": 0.85,
-        "fire_rate_ms": 850,
-        "fire_rate_times_per_sec": 1.176,
-        "weapons": [
-            {
-                "name": "Dual Ion Cannon",
-                "type": "beam",
-                "mount": "dual_wingtip",
-                "fire_rate_times_per_sec": 1.176,
-                "fire_interval_ms": 850,
-                "fire_rate_seconds": 0.85,
-                "damage": 1,
-                "speed": 550,
-                "color": "#38bdf8",
-                "is_enabled": 1
-            }
-        ]
+  {
+    "id": "phase_interceptor",
+    "enemy_id": "phase_interceptor",
+    "name": "Phase Interceptor",
+    "enemy_class": "Fast Interceptor",
+    "icon": "\ud83d\ude80",
+    "model_3d_type": "custom_glb",
+    "model_3d_url": "desktop/warp_origin_images/drone_phase_interceptor_3.glb",
+    "color": "#38bdf8",
+    "scale": 0.5,
+    "length": 4.2,
+    "height": 1.3,
+    "depth": 3.4,
+    "circumference": 5.0,
+    "hits": 1,
+    "armor": 1,
+    "shield": 0,
+    "speed": 220,
+    "attack_damage": 1,
+    "weapon_name": "Dual Ion Cannon",
+    "weapon_damage": 1,
+    "weapon_speed": 550,
+    "weapon_color": "#38bdf8",
+    "weapon_scale": 1.0,
+    "weapon_scale_x": 1.0,
+    "weapon_scale_y": 1.0,
+    "weapon_scale_z": 1.0,
+    "weapon_size_x": 1.0,
+    "weapon_size_y": 1.0,
+    "weapon_size_z": 1.0,
+    "weapon_dimensions": {
+      "x": 1.0,
+      "y": 1.0,
+      "z": 1.0
     },
-    {
-        "id": "void_recon_drone",
-        "device_type": "vr",
-        "name": "Void Recon Drone (VR)",
-        "enemy_class": "Scout Drone",
-        "icon": "🛸",
-        "model_3d_type": "custom_glb",
-        "model_3d_url": "vr/warp_origin_images/recon_drone_2.8m.glb",
-        "scale": 1.35,
-        "length": 3,
-        "height": 1.5,
-        "depth": 3,
-        "circumference": 6,
-        "color": "#ef476f",
-        "hits": 2,
-        "armor": 10,
-        "shield": 0,
-        "speed": 250,
-        "attack_damage": 5,
-        "weapon_name": "Plasma Pulse",
-        "weapon_damage": 5,
-        "weapon_speed": 450,
-        "weapon_color": "#ff2255",
-        "fire_rate": 0.85,
-        "score": 100,
-        "threat": "Low",
-        "piercing": "any",
-        "quick_effect_primary": "none",
-        "quick_effect_secondary": "none",
-        "quick_effect_color": "#00f0ff",
-        "quick_effect_intensity": 1,
-        "quick_effect_speed": 1,
-        "destruction_particle_type": "procedural_sparks_explosion",
-        "destruction_particle_url": "",
-        "destruction_particle_count": 40,
-        "destruction_particle_color": "#ef476f",
-        "destruction_particle_scale": 1,
-        "fire_rate_seconds": 0.85,
-        "fire_rate_ms": 850,
-        "fire_rate_times_per_sec": 1.176,
-        "weapons": [
-            {
-                "name": "Plasma Pulse",
-                "type": "beam",
-                "mount": "dual_wingtip",
-                "fire_rate_times_per_sec": 1.176,
-                "fire_interval_ms": 850,
-                "fire_rate_seconds": 0.85,
-                "damage": 5,
-                "speed": 450,
-                "color": "#ff2255",
-                "is_enabled": 1
-            }
-        ]
-    }
+    "fire_rate": 3.0,
+    "fire_rate_seconds": 3.0,
+    "fire_rate_ms": 3000,
+    "fire_rate_times_per_sec": 0.333,
+    "weapons": [
+      {
+        "id": "ew_phase_ion",
+        "name": "Dual Ion Cannon",
+        "type": "beam",
+        "mount": "dual_wingtip",
+        "model_url": "",
+        "model_type": "",
+        "fire_point_x": 0.0,
+        "fire_point_y": -0.15,
+        "fire_point_z": 1.5,
+        "scale": 1.0,
+        "scale_x": 1.0,
+        "scale_y": 1.0,
+        "scale_z": 1.0,
+        "size_x": 1.0,
+        "size_y": 1.0,
+        "size_z": 1.0,
+        "dimensions": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "fire_rate_times_per_sec": 0.333,
+        "fire_interval_ms": 3000,
+        "fire_rate_seconds": 3.0,
+        "damage": 1,
+        "speed": 550,
+        "color": "#38bdf8",
+        "is_enabled": 1
+      }
+    ],
+    "score": 150,
+    "threat": "Medium",
+    "piercing": "any",
+    "pool_size": 40
+  },
+  {
+    "id": "recon_drone",
+    "enemy_id": "recon_drone",
+    "name": "Recon Drone",
+    "enemy_class": "Scout Drone",
+    "icon": "\ud83d\udef8",
+    "model_3d_type": "custom_glb",
+    "model_3d_url": "desktop/warp_origin_images/recon_drone_2.8m.glb",
+    "color": "#00f0ff",
+    "scale": 0.4,
+    "length": 2.8,
+    "height": 2.8,
+    "depth": 2.8,
+    "circumference": 8.8,
+    "hits": 1,
+    "armor": 0,
+    "shield": 0,
+    "speed": 180,
+    "attack_damage": 1,
+    "weapon_name": "Plasma Pulse",
+    "weapon_damage": 1,
+    "weapon_speed": 450,
+    "weapon_color": "#00f0ff",
+    "weapon_scale": 0.8,
+    "weapon_scale_x": 0.8,
+    "weapon_scale_y": 0.8,
+    "weapon_scale_z": 1.0,
+    "weapon_size_x": 0.5,
+    "weapon_size_y": 0.5,
+    "weapon_size_z": 1.0,
+    "weapon_dimensions": {
+      "x": 0.5,
+      "y": 0.5,
+      "z": 1.0
+    },
+    "fire_rate": 2.5,
+    "fire_rate_seconds": 2.5,
+    "fire_rate_ms": 2500,
+    "fire_rate_times_per_sec": 0.4,
+    "weapons": [
+      {
+        "id": "ew_recon_pulse",
+        "name": "Plasma Pulse",
+        "type": "beam",
+        "mount": "center",
+        "model_url": "",
+        "model_type": "",
+        "fire_point_x": 0.0,
+        "fire_point_y": -0.15,
+        "fire_point_z": 1.5,
+        "scale": 0.8,
+        "scale_x": 0.8,
+        "scale_y": 0.8,
+        "scale_z": 1.0,
+        "size_x": 0.5,
+        "size_y": 0.5,
+        "size_z": 1.0,
+        "dimensions": {
+          "x": 0.5,
+          "y": 0.5,
+          "z": 1.0
+        },
+        "fire_rate_times_per_sec": 0.4,
+        "fire_interval_ms": 2500,
+        "fire_rate_seconds": 2.5,
+        "damage": 1,
+        "speed": 450,
+        "color": "#00f0ff",
+        "is_enabled": 1
+      }
+    ],
+    "score": 100,
+    "threat": "Low",
+    "piercing": "any",
+    "pool_size": 40
+  }
 ],
-
-  controls: {
+  controlscontrols: {
     "inputMode": "6dof_controllers",
-    "showVirtualJoysticks": "false",
-    "enablePointerLock": "false",
-    "description": "Dual 6-DOF VR motion controllers, Trigger primary fire, Grip boost thrust"
+    "showVirtualJoysticks": false,
+    "enablePointerLock": false,
+    "description": "Dual 6-DOF VR motion controllers, Trigger primary fire, Grip boost thrust, Controller warp engage"
 }
 };
 
 export function updateEnemyMovement(e, delta, context) {
-  if (!e || !e.mesh) return false;
+  // Movement logic inactive if in pool or flagged inactive
+  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) return false;
   const THREE = (context && context.THREE) || window.THREE;
   if (!THREE) return false;
 
@@ -602,136 +721,44 @@ export function updateEnemyMovement(e, delta, context) {
  * - Fires weapon more often: both when enemies are at 10,000 KM and 5,000 KM from the player.
  */
 
-export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
-  if (!enemyObj || !enemyObj.mesh) return false;
-  const THREE = (context && context.THREE) || window.THREE;
-  const scene = (context && context.scene) || window.scene;
-  const state = (context && context.state) || window.state;
-  const cameraRig = (context && context.cameraRig) || window.cameraRig;
-  const enemyBolts = (context && context.enemyBolts) || window.enemyBolts;
-  const audioMgr = (context && context.audioMgr) || window.audioMgr;
-  if (!THREE || !scene || !enemyBolts) return false;
+export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
+  if (!enemy || !enemy.mesh || !activeEnemyBolts || !scene) return false;
 
-  // Requirement: Enemy fires weapon more often, both at 10,000 KM and 5,000 KM from player
-  const playerPos = (state && state.isXR && cameraRig) ? cameraRig.position : ((state && state.position) ? state.position : new THREE.Vector3(0, 0, 220));
-  const distZ = Math.abs(playerPos.z - enemyObj.mesh.position.z);
-  const isNear10k = Math.abs(distZ - (10000 / 420)) < 5.0; // ~23.8 units
-  const isNear5k = Math.abs(distZ - (5000 / 420)) < 4.5;   // ~11.9 units
-  const isFiringState = (enemyObj.maneuverState === 'LEVEL_FIRING' || enemyObj.maneuverState === 'LEVEL_FIRING_5K');
+  const enemyBolts = typeof activeEnemyBolts === 'function' ? activeEnemyBolts() : activeEnemyBolts;
+  if (!enemyBolts || enemyBolts.length > 80) return false;
 
-  if (!enemyObj.isLevel && !isFiringState && !isNear10k && !isNear5k) {
-    return true; // Mark as handled so engine does not fire fallback weapon bolt
-  }
+  const primaryW = (enemy.weapons && enemy.weapons[0]) || {};
+  const wScale = Number(enemy.weapon_scale ?? primaryW.scale ?? 1.0);
+  const wScaleX = Number(enemy.weapon_scale_x ?? primaryW.scale_x ?? 1.0);
+  const wScaleY = Number(enemy.weapon_scale_y ?? primaryW.scale_y ?? 1.0);
+  const wScaleZ = Number(enemy.weapon_scale_z ?? primaryW.scale_z ?? 1.0);
+  const wSizeX = Number(enemy.weapon_size_x ?? primaryW.size_x ?? (primaryW.dimensions && primaryW.dimensions.x) ?? 1.0);
+  const wSizeY = Number(enemy.weapon_size_y ?? primaryW.size_y ?? (primaryW.dimensions && primaryW.dimensions.y) ?? 1.0);
+  const wSizeZ = Number(enemy.weapon_size_z ?? primaryW.size_z ?? (primaryW.dimensions && primaryW.dimensions.z) ?? 1.0);
 
-  const cfg = enemyObj.config || {};
-  const wpnName = (cfg.weapon_name || enemyObj.weaponName || 'Dual Ion Cannon').toLowerCase();
-  const isMissile = /missile|torpedo|disruptor|annihilator|rocket/i.test(wpnName);
+  const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
+  boltGeom.rotateX(Math.PI / 2);
+  const boltMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(enemy.weaponColor || enemy.weapon_color || '#00f0ff'),
+    wireframe: false
+  });
 
-  const shipScale = (enemyObj.mesh.scale && typeof enemyObj.mesh.scale.x === 'number') ? enemyObj.mesh.scale.x : 1.0;
-  const cfgDepth = (parseFloat(cfg.depth) || 3.0) * shipScale;
-  const cfgLength = (parseFloat(cfg.length) || 3.0) * shipScale;
+  const mesh = new THREE.Mesh(boltGeom, boltMat);
+  mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
+  mesh.position.copy(enemy.mesh.position);
 
-  enemyObj.lastGunSide = (enemyObj.lastGunSide === 1) ? -1 : 1;
-  const isDualCannon = /dual|twin|interceptor/i.test(wpnName) || /interceptor/i.test(cfg.enemy_id || '');
-  const lateralOffset = isDualCannon ? (enemyObj.lastGunSide * cfgLength * 0.32) : 0;
-  const forwardOffset = cfgDepth * 0.48;
-  const verticalOffset = -0.15 * shipScale;
+  const target = (playerPos && playerPos.isVector3) ? playerPos : new THREE.Vector3(0, 0, 220);
+  const direction = new THREE.Vector3().subVectors(target, enemy.mesh.position).normalize();
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
 
-  const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffset);
-  const spawnOrigin = enemyObj.mesh.position.clone().add(localMuzzle.applyQuaternion(enemyObj.mesh.quaternion));
+  const geometryList = [boltGeom];
+  const materialList = [boltMat];
 
-  const direction = new THREE.Vector3().subVectors(playerPos, spawnOrigin).normalize();
-  const weaponBoltColor = cfg.weapon_color || enemyObj.weaponColor || '#38bdf8';
-  const boltColorHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0x38bdf8;
+  const isMissile = (enemy.weaponType === 'missile' || (enemy.weaponName && enemy.weaponName.toLowerCase().includes('missile')));
+  const boltSpeed = enemy.weaponSpeed || enemy.weapon_speed || 420;
+  const boltDamage = enemy.weaponDamage || enemy.weapon_damage || 5;
 
-  const boltScale = THREE.MathUtils.clamp(shipScale * 0.85, 0.6, 2.5);
-
-  let mesh;
-  let geometryList = [];
-  let materialList = [];
-  let boltSpeed;
-  let weaponType;
-
-  if (isMissile) {
-    weaponType = 'missile';
-    const missileGroup = new THREE.Group();
-
-    const bodyGeom = new THREE.CylinderGeometry(0.24, 0.4, 2.8, 8);
-    bodyGeom.rotateX(Math.PI / 2);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2a2d34, metalness: 0.8, roughness: 0.3 });
-    const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
-    missileGroup.add(bodyMesh);
-
-    const tipGeom = new THREE.ConeGeometry(0.44, 1.1, 8);
-    tipGeom.rotateX(-Math.PI / 2);
-    tipGeom.translate(0, 0, -1.9);
-    const tipMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.95 });
-    const tipMesh = new THREE.Mesh(tipGeom, tipMat);
-    missileGroup.add(tipMesh);
-
-    const plumeGeom = new THREE.ConeGeometry(0.34, 1.3, 8);
-    plumeGeom.rotateX(Math.PI / 2);
-    plumeGeom.translate(0, 0, 2.0);
-    const plumeMat = new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending });
-    const plumeMesh = new THREE.Mesh(plumeGeom, plumeMat);
-    missileGroup.add(plumeMesh);
-
-    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 32 * boltScale);
-    missileGroup.add(light);
-
-    missileGroup.scale.set(boltScale, boltScale, boltScale);
-    missileGroup.position.copy(spawnOrigin);
-    missileGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
-    scene.add(missileGroup);
-    mesh = missileGroup;
-
-    geometryList = [bodyGeom, tipGeom, plumeGeom];
-    materialList = [bodyMat, tipMat, plumeMat];
-    boltSpeed = Math.max(22, Math.min(36, (parseInt(cfg.weapon_speed || enemyObj.weaponSpeed || 480)) * 0.065));
-
-    if (audioMgr && typeof audioMgr.playEnemyMissile === 'function') {
-      audioMgr.playEnemyMissile();
-    } else if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
-      audioMgr.playEnemyLaser();
-    }
-  } else {
-    weaponType = 'beam';
-    const beamGroup = new THREE.Group();
-
-    const sheathGeom = new THREE.CylinderGeometry(0.44, 0.58, 8.2, 8);
-    sheathGeom.rotateX(Math.PI / 2);
-    const sheathMat = new THREE.MeshBasicMaterial({
-      color: boltColorHex,
-      transparent: true,
-      opacity: 0.92,
-      blending: THREE.AdditiveBlending
-    });
-    const sheathMesh = new THREE.Mesh(sheathGeom, sheathMat);
-    beamGroup.add(sheathMesh);
-
-    const coreGeom = new THREE.CylinderGeometry(0.18, 0.28, 7.5, 8);
-    coreGeom.rotateX(Math.PI / 2);
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.96 });
-    const coreMesh = new THREE.Mesh(coreGeom, coreMat);
-    beamGroup.add(coreMesh);
-
-    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
-    beamGroup.add(light);
-
-    beamGroup.scale.set(boltScale, boltScale, boltScale);
-    beamGroup.position.copy(spawnOrigin);
-    beamGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
-    scene.add(beamGroup);
-    mesh = beamGroup;
-
-    geometryList = [sheathGeom, coreGeom];
-    materialList = [sheathMat, coreMat];
-    boltSpeed = Math.max(28, Math.min(44, (parseInt(cfg.weapon_speed || enemyObj.weaponSpeed || 480)) * 0.075));
-
-    if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
-      audioMgr.playEnemyLaser();
-    }
-  }
+  scene.add(mesh);
 
   enemyBolts.push({
     mesh,
@@ -740,6 +767,14 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     direction,
     speed: boltSpeed,
     damage: boltDamage,
+    scale: wScale,
+    scale_x: wScaleX,
+    scale_y: wScaleY,
+    scale_z: wScaleZ,
+    size_x: wSizeX,
+    size_y: wSizeY,
+    size_z: wSizeZ,
+    dimensions: { x: wSizeX, y: wSizeY, z: wSizeZ },
     type: isMissile ? 'missile' : 'beam',
     spiralTime: Math.random() * Math.PI * 2,
     spawnTime: performance.now(),
@@ -764,6 +799,146 @@ export function updateStageWaves(pool, activeEnemies, stageKills, scene) {
   if (typeof pool.getPoolStats === 'function') {
     return pool.getPoolStats();
   }
+}
+
+
+// =========================================================================
+// COCKPIT CRACKS TRANSPARENT OVERLAY POOL & GAME OVER MANAGEMENT
+// Model: mobile/warp_origin_images/cockpit_cracks.glb
+// Transparent overlay positioned across the cockpit window;
+// flashes visible for an instant on enemy hit and stays visible for 1 second
+// before game over screen appears. Loaded with the stage object pool.
+// =========================================================================
+
+let activeCockpitCracksMesh = null;
+let activeCockpitCracksPool = null;
+
+export async function setupCockpitCracksOverlay(camera, pool = null, scene = null) {
+  if (!camera) {
+    camera = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+  }
+  if (!scene) {
+    scene = (typeof window !== 'undefined' && window.scene) ? window.scene : null;
+  }
+
+  if (camera) {
+    const existing = camera.getObjectByName('cockpit_cracks_overlay');
+    if (existing) {
+      camera.remove(existing);
+    }
+  }
+
+  if (pool && typeof pool.getCockpitCracksOverlay === 'function') {
+    activeCockpitCracksPool = pool;
+    activeCockpitCracksMesh = pool.getCockpitCracksOverlay(camera);
+    if (activeCockpitCracksMesh) {
+      fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
+      return activeCockpitCracksMesh;
+    }
+  }
+
+  try {
+    const glbUrl = (stageConfig.cockpit_overlay && stageConfig.cockpit_overlay.model_3d_url)
+      || COCKPIT_CRACKS_GLB_URL
+      || 'mobile/warp_origin_images/cockpit_cracks.glb';
+
+    const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+    if (loadedMesh) {
+      setupCockpitCracksHierarchy(loadedMesh);
+
+      activeCockpitCracksPool = new MeshPool(
+        scene,
+        null,
+        null,
+        1,
+        () => loadedMesh.clone(true)
+      );
+
+      activeCockpitCracksMesh = activeCockpitCracksPool.spawn();
+      setupCockpitCracksHierarchy(activeCockpitCracksMesh);
+
+      if (camera) {
+        camera.add(activeCockpitCracksMesh);
+        fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
+      }
+      console.log(`[Stage 1: Warp Origin] Cockpit cracks GLB loaded with pool and mounted across cockpit view`);
+    }
+  } catch (err) {
+    console.warn(`[Stage 1: Warp Origin] Error setting up cockpit cracks overlay:`, err);
+  }
+
+  return activeCockpitCracksMesh;
+}
+
+export function fitCockpitCracksToCamera(mesh, camera) {
+  if (!mesh || !camera) return;
+  mesh.position.set(0, 0, -1.0);
+  mesh.rotation.set(0, 0, 0);
+
+  const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
+  const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
+  const dist = 1.0;
+  const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
+  const visibleW = visibleH * aspect;
+
+  const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
+  mesh.scale.set(scale, scale, 1.0);
+}
+
+export function triggerCockpitCracksHit(durationMs = 280) {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.flashCockpitCracks === 'function') {
+    activeCockpitCracksPool.flashCockpitCracks(durationMs);
+  } else if (activeCockpitCracksMesh) {
+    flashCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
+  }
+
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+      setTimeout(() => {
+        redEdges.style.opacity = '0';
+      }, durationMs);
+    }
+  }
+}
+
+export function triggerGameOverCockpitCracks(durationMs = 1000) {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.showGameOverCockpitCracks === 'function') {
+    activeCockpitCracksPool.showGameOverCockpitCracks(durationMs);
+  } else if (activeCockpitCracksMesh) {
+    showGameOverCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+    }
+  }
+}
+
+export function hideCockpitCracks() {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.hideCockpitCracks === 'function') {
+    activeCockpitCracksPool.hideCockpitCracks();
+  } else if (activeCockpitCracksMesh) {
+    activeCockpitCracksMesh.visible = false;
+    activeCockpitCracksMesh.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material.opacity = 0.0;
+        child.material.needsUpdate = true;
+      }
+    });
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '0';
+    }
+  }
+}
+
+export function getActiveCockpitCracksOverlay() {
+  return activeCockpitCracksMesh;
 }
 
 export function handleStageEvent(eventName, payload, engineApi) {
@@ -794,6 +969,12 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setWaves === 'function') {
+    engineApi.setWaves(stageConfig.waves, {
+      total_waves: stageConfig.total_waves,
+      wave_interval_seconds: stageConfig.wave_interval_seconds
+    });
+  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -806,8 +987,106 @@ export function applyStage(engineApi) {
   if (typeof engineApi.showToast === 'function') {
     engineApi.showToast('🚀 STAGE 1: WARP ORIGIN [VR] LOADED');
   }
+  // --- Mount Cockpit Cracks Overlay Across Cockpit Window via Pool ---
+  const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
+  const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
+  const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || (typeof window !== 'undefined' && window.stageObjectPool)
+    || null;
+
+  setupCockpitCracksOverlay(camera, pool, scene);
+
+  // Resize handler to maintain perfect cockpit fit
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', () => {
+      const cam = (engineApi && engineApi.camera) || window.camera;
+      if (activeCockpitCracksMesh && cam) {
+        fitCockpitCracksToCamera(activeCockpitCracksMesh, cam);
+      }
+    });
+
+    // Hook enemy hit detection:
+    if (typeof window.applyDamageToPlayer === 'function' && !window.applyDamageToPlayer._cockpitCracksHooked) {
+      const prevDamage = window.applyDamageToPlayer;
+      window.applyDamageToPlayer = function(dmg, ...args) {
+        const ret = prevDamage.apply(this, [dmg, ...args]);
+        triggerCockpitCracksHit();
+        return ret;
+      };
+      window.applyDamageToPlayer._cockpitCracksHooked = true;
+    }
+
+    window.addEventListener('cockpitHit', () => triggerCockpitCracksHit());
+    window.addEventListener('playerDamage', () => triggerCockpitCracksHit());
+    window.addEventListener('cockpitImpact', () => triggerCockpitCracksHit());
+    window.addEventListener('gameOverCracks', () => triggerGameOverCockpitCracks(1000));
+
+    const prevCustomFx = window.executeCustomWeaponImpactFx;
+    window.executeCustomWeaponImpactFx = function(bolt, normX, normY, canvas) {
+      if (typeof prevCustomFx === 'function') {
+        try { prevCustomFx(bolt, normX, normY, canvas); } catch (e) {}
+      }
+      triggerCockpitCracksHit();
+    };
+
+    window.triggerCockpitCracksHit = triggerCockpitCracksHit;
+    window.flashCockpitCracks = triggerCockpitCracksHit;
+    window.triggerGameOverCockpitCracks = triggerGameOverCockpitCracks;
+    window.hideCockpitCracks = hideCockpitCracks;
+    window.setupCockpitCracksOverlay = setupCockpitCracksOverlay;
+    window.getActiveCockpitCracksOverlay = getActiveCockpitCracksOverlay;
+  }
+
+
 
   return stageConfig;
 }
 
-export default { stageConfig, applyStage, fireEnemyWeapon, updateEnemyMovement, updateStageWaves, handleStageEvent, stageEvents };
+/**
+ * Stage Wave Management: Controls pulling specific number of enemies from the pool
+ * for each wave, tracking how many waves and how often a wave happens.
+ */
+export function getStageWaves() {
+  return stageConfig.waves;
+}
+
+export function updateStageWaves(engineApi, context = {}) {
+  if (!engineApi) return null;
+  const currentWave = typeof engineApi.getCurrentWave === 'function' ? engineApi.getCurrentWave() : 0;
+  const totalWaves = stageConfig.total_waves || 2;
+  const now = (context && context.now) || performance.now();
+  const waveStartTime = typeof engineApi.getWaveStartTime === 'function' ? engineApi.getWaveStartTime() : 0;
+  const activeEnemies = (context && context.activeEnemies) || [];
+
+  // Wave 1: Pull 5 enemies from the pool at the start of stage engagement
+  if (currentWave === 0) {
+    return pullEnemyWave(1, engineApi, context);
+  }
+
+  // Wave 2: Pull 10 enemies from the pool when the 15-second wave interval has elapsed
+  if (currentWave === 1 && totalWaves >= 2) {
+    const elapsed = now - waveStartTime;
+    const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
+    const wave1EnemiesRemaining = activeEnemies.filter(e => e.isActive && e.waveNumber === 1).length;
+
+    // Strict timing: Wave 2 occurs after the 15-second interval (or if wave 1 defeated and at least 5s elapsed)
+    if (elapsed >= waveIntervalMs || (wave1EnemiesRemaining === 0 && elapsed >= 5000)) {
+      return pullEnemyWave(2, engineApi, context);
+    }
+  }
+
+  return null;
+}
+
+export function pullEnemyWave(waveNumber, engineApi, context = {}) {
+  const waves = stageConfig.waves || [];
+  const wave = waves.find(w => w.wave_number === waveNumber) || waves[waveNumber - 1];
+  if (!wave) return [];
+  const count = wave.enemy_count || (waveNumber === 1 ? 5 : 10);
+  if (engineApi && typeof engineApi.spawnWaveEnemies === 'function') {
+    return engineApi.spawnWaveEnemies(count, wave, stageConfig.enemies);
+  }
+  return [];
+}
+
+export default { stageConfig, applyStage, updateEnemyMovement, fireEnemyWeapon, getStageWaves, updateStageWaves, pullEnemyWave };

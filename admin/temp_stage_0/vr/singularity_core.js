@@ -1,4 +1,15 @@
 import * as THREE from 'three';
+import {
+  createStagePool,
+  MeshPool,
+  loadCockpitCracksGlbAsset,
+  setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
+  fitCockpitCracksToCamera,
+  COCKPIT_CRACKS_GLB_URL
+} from './singularity_core_pool.js';
+
 
 /**
  * Wormhole XR - Stage 3: Singularity Core [VR Headset Profile]
@@ -7,20 +18,63 @@ import * as THREE from 'three';
  */
 
 export const stageConfig = {
-  meta: {
-    level: 3,
-    name: 'Singularity Core',
-    slug: 'singularity_core',
-    theme: 'Singularity Void Violet',
-    device: 'vr',
-    xrMode: 'desktop-vr',
-    description: 'Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.',
-    parScore: 25000,
-    requiredKills: 20,
-    warpTargetDistance: 20000,
-    eventsWithin: 'Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening',
-    endLevelEvent: 'Core Collapse Breakthrough'
+  stage_level: 3,
+  stage_name: 'Singularity Core',
+  stage_slug: 'singularity_core',
+  environment_theme: 'Singularity Void Violet',
+  device: 'vr',
+  xr_mode: 'desktop-vr',
+  events_within_level: 'Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening',
+  end_level_event: 'Core Collapse Breakthrough',
+  mission_objectives: "Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.",
+  required_enemy_kills: 20,
+  warp_target_distance: 20000,
+  initial_weapon_pool_size: 300,
+  initial_enemy_pool_size: 100,
+  waves: [
+    {
+      wave_number: 1,
+      enemy_count: 5,
+      interval_seconds: 0,
+      delay_ms: 0,
+      description: 'Wave 1: Recon Vanguard (5 Enemies)'
+    },
+    {
+      wave_number: 2,
+      enemy_count: 10,
+      interval_seconds: 15,
+      delay_ms: 15000,
+      description: 'Wave 2: Full Assault Swarm (10 Enemies)'
+    }
+  ],
+  total_waves: 2,
+  wave_interval_seconds: 15,
+  objectives: [
+  {
+    "id": "kills",
+    "type": "kills",
+    "target": 20,
+    "current": 0,
+    "title": "Destroy 20 Gravitational Void Probes",
+    "description": "Destroy 20 automated kinetic probes guarding singularity perimeter",
+    "requiredForWarp": true,
+    "actionText": "🎯 Target Threat",
+    "actionId": "target_enemy"
   },
+  {
+    "id": "distance",
+    "type": "distance",
+    "target": 20000,
+    "title": "Collapse Perimeter Proximity < 20,000 KM",
+    "description": "Penetrate gravitational collapse boundary to within < 20,000 KM",
+    "requiredForWarp": true,
+    "actionText": "🛰️ Lock Vector",
+    "actionId": "lock_vector"
+  }
+],
+  description: 'Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.',
+  par_score: 25000,
+
   visual: {
     themeName: 'Singularity Void Violet',
     colors: {
@@ -53,130 +107,115 @@ export const stageConfig = {
 }
   },
   weapons: {
-    "initial": {
-        "id": "plasma_torpedo",
-        "name": "Plasma Torpedo",
-        "icon": "💣",
-        "color": "#f59e0b",
-        "damage": 5,
-        "bullet_speed": 450,
-        "energy_drain_pct": 40,
-        "can_overheat": 0,
-        "cooldown_seconds": 0,
-        "acquire_event": "singularity_core_probe",
-        "description": "Heavy magnetic payload causing massive kinetic shockwave without overheating."
+  "initial": {
+    "id": "plasma_torpedo",
+    "name": "Plasma Torpedo",
+    "icon": "\ud83d\udca3",
+    "color": "#f59e0b",
+    "damage": 5,
+    "bullet_speed": 450,
+    "energy_drain_pct": 30.0,
+    "can_overheat": 0,
+    "cooldown_seconds": 0.0,
+    "scale": 1.5,
+    "scale_x": 1.3,
+    "scale_y": 1.3,
+    "scale_z": 1.8,
+    "size_x": 1.2,
+    "size_y": 1.2,
+    "size_z": 2.2,
+    "dimensions": {
+      "x": 1.2,
+      "y": 1.2,
+      "z": 2.2
     },
-    "acquirable": []
+    "description": "Heavy magnetic payload causing massive kinetic shockwave without overheating."
+  },
+  "acquirable": []
 },
   enemies: [
-    {
-        "id": "void_guardian",
-        "enemy_id": "void_guardian",
-        "name": "Singularity Void Guardian (Universal)",
-        "enemy_class": "Guardian Frigate",
-        "icon": "👾",
-        "model_3d_type": "singularity_probe",
-        "model_3d_url": "",
-        "scale": 1.2,
-        "length": 3.8,
-        "height": 3.8,
-        "depth": 3.8,
-        "circumference": 11.94,
-        "color": "#a855f7",
-        "hits": 15,
-        "armor": 70,
-        "shield": 6,
-        "speed": 150,
-        "attack_damage": 35,
-        "weapon_name": "Void Disruptor",
-        "weapon_damage": 35,
-        "weapon_speed": 400,
-        "weapon_color": "#a855f7",
-        "fire_rate": 2.2,
-        "fire_rate_seconds": 2.2,
-        "fire_rate_ms": 2200,
-        "fire_rate_times_per_sec": 0.455,
-        "weapons": [
-            {
-                "id": "ew_void_guardian",
-                "name": "Void Disruptor",
-                "type": "beam",
-                "mount": "dual_wingtip",
-                "model_url": "",
-                "model_type": "",
-                "fire_point_x": 0,
-                "fire_point_y": -0.15,
-                "fire_point_z": 1.5,
-                "scale": 1,
-                "size_x": 1,
-                "size_y": 1,
-                "size_z": 1,
-                "fire_rate_times_per_sec": 0.455,
-                "fire_interval_ms": 2200,
-                "fire_rate_seconds": 2.2,
-                "damage": 35,
-                "speed": 400,
-                "color": "#a855f7",
-                "is_enabled": 1
-            }
-        ],
-        "score": 1000,
-        "threat": "High",
-        "piercing": "plasma_torpedo",
-        "pool_size": 30,
-        "quick_effect_primary": "gravitational_vortex",
-        "quick_effect_secondary": "arc_lightning",
-        "quick_effect_color": "#a855f7",
-        "quick_effect_intensity": 1,
-        "quick_effect_speed": 1,
-        "destruction_particle_type": "procedural_quantum_implosion",
-        "destruction_particle_url": "",
-        "destruction_particle_count": 80,
-        "destruction_particle_color": "#a855f7",
-        "destruction_particle_scale": 1,
-        "fire_rate_seconds": 2.2,
-        "fire_rate_ms": 2200,
-        "fire_rate_times_per_sec": 0.455,
-        "weapons": [
-            {
-                "name": "Void Disruptor",
-                "type": "beam",
-                "mount": "dual_wingtip",
-                "fire_rate_times_per_sec": 0.455,
-                "fire_interval_ms": 2200,
-                "fire_rate_seconds": 2.2,
-                "damage": 35,
-                "speed": 400,
-                "color": "#a855f7",
-                "is_enabled": 1
-            }
-        ]
-    }
-],
-  objectives: [
-    {
-        "id": "kills",
-        "type": "kills",
-        "target": 20,
-        "current": 0,
-        "title": "Destroy 20 Threats",
-        "description": "Destroy 20 hostile 3D units emerging from the wormhole",
-        "requiredForWarp": true
+  {
+    "id": "void_singularity_probe",
+    "enemy_id": "void_singularity_probe",
+    "name": "Singularity Void Probe",
+    "enemy_class": "Gravitational Probe",
+    "icon": "\ud83d\udef8",
+    "model_3d_type": "custom_glb",
+    "model_3d_url": "desktop/warp_origin_images/recon_drone_2.8m.glb",
+    "color": "#c084fc",
+    "scale": 0.95,
+    "length": 3.2,
+    "height": 3.2,
+    "depth": 3.2,
+    "circumference": 9.8,
+    "hits": 8,
+    "armor": 40,
+    "shield": 2,
+    "speed": 230,
+    "attack_damage": 20,
+    "weapon_name": "Graviton Beam",
+    "weapon_damage": 20,
+    "weapon_speed": 520,
+    "weapon_color": "#c084fc",
+    "weapon_scale": 1.3,
+    "weapon_scale_x": 1.2,
+    "weapon_scale_y": 1.2,
+    "weapon_scale_z": 1.6,
+    "weapon_size_x": 1.1,
+    "weapon_size_y": 1.1,
+    "weapon_size_z": 2.4,
+    "weapon_dimensions": {
+      "x": 1.1,
+      "y": 1.1,
+      "z": 2.4
     },
-    {
-        "id": "distance",
-        "type": "distance",
-        "target": 20000,
-        "title": "Wormhole Proximity < 20,000 KM",
-        "description": "Navigate vessel to within < 20,000 KM of singularity core",
-        "requiredForWarp": true
-    }
+    "fire_rate": 2.0,
+    "fire_rate_seconds": 2.0,
+    "fire_rate_ms": 2000,
+    "fire_rate_times_per_sec": 0.5,
+    "weapons": [
+      {
+        "id": "ew_graviton_beam",
+        "name": "Graviton Beam",
+        "type": "beam",
+        "mount": "center",
+        "model_url": "",
+        "model_type": "",
+        "fire_point_x": 0.0,
+        "fire_point_y": -0.15,
+        "fire_point_z": 1.6,
+        "scale": 1.3,
+        "scale_x": 1.2,
+        "scale_y": 1.2,
+        "scale_z": 1.6,
+        "size_x": 1.1,
+        "size_y": 1.1,
+        "size_z": 2.4,
+        "dimensions": {
+          "x": 1.1,
+          "y": 1.1,
+          "z": 2.4
+        },
+        "fire_rate_times_per_sec": 0.5,
+        "fire_interval_ms": 2000,
+        "fire_rate_seconds": 2.0,
+        "damage": 20,
+        "speed": 520,
+        "color": "#c084fc",
+        "is_enabled": 1
+      }
+    ],
+    "score": 500,
+    "threat": "High",
+    "piercing": "any",
+    "pool_size": 40
+  }
 ],
-  controls: {
+  controlscontrols: {
     "inputMode": "6dof_controllers",
-    "showVirtualJoysticks": "false",
-    "enablePointerLock": "false",
-    "description": "Dual 6-DOF VR motion controllers, Trigger primary fire, Grip boost thrust"
+    "showVirtualJoysticks": false,
+    "enablePointerLock": false,
+    "description": "Dual 6-DOF VR motion controllers, Trigger primary fire, Grip boost thrust, Controller warp engage"
 }
 };
 
@@ -186,112 +225,44 @@ export const stageConfig = {
  * Supports multiple weapons per enemy, distinct firing cadences (times/sec and ms),
  * custom projectile colors, velocities, and mount points (dual wingtip, nose, turret).
  */
-export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
-  if (!enemyObj || !enemyObj.mesh) return false;
-  const THREE = (context && context.THREE) || window.THREE;
-  const scene = (context && context.scene) || window.scene;
-  const state = (context && context.state) || window.state;
-  const cameraRig = (context && context.cameraRig) || window.cameraRig;
-  const enemyBolts = (context && context.enemyBolts) || window.enemyBolts;
-  const audioMgr = (context && context.audioMgr) || window.audioMgr;
-  if (!THREE || !scene || !enemyBolts) return false;
+export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
+  if (!enemy || !enemy.mesh || !activeEnemyBolts || !scene) return false;
 
-  const playerPos = (state && state.isXR && cameraRig) ? cameraRig.position : ((state && state.position) ? state.position : new THREE.Vector3(0, 0, 220));
-  const cfg = enemyObj.config || {};
-  const activeWpn = weaponOverride || (Array.isArray(enemyObj.weapons) && enemyObj.weapons.length > 0 ? enemyObj.weapons[0] : null);
+  const enemyBolts = typeof activeEnemyBolts === 'function' ? activeEnemyBolts() : activeEnemyBolts;
+  if (!enemyBolts || enemyBolts.length > 80) return false;
 
-  const wpnName = (activeWpn && activeWpn.name) ? activeWpn.name : (cfg.weapon_name || enemyObj.weaponName || 'Plasma Pulse');
-  const wpnType = (activeWpn && activeWpn.type) ? activeWpn.type : (/missile|torpedo/i.test(wpnName) ? 'missile' : 'beam');
-  const isMissile = (wpnType === 'missile');
+  const primaryW = (enemy.weapons && enemy.weapons[0]) || {};
+  const wScale = Number(enemy.weapon_scale ?? primaryW.scale ?? 1.0);
+  const wScaleX = Number(enemy.weapon_scale_x ?? primaryW.scale_x ?? 1.0);
+  const wScaleY = Number(enemy.weapon_scale_y ?? primaryW.scale_y ?? 1.0);
+  const wScaleZ = Number(enemy.weapon_scale_z ?? primaryW.scale_z ?? 1.0);
+  const wSizeX = Number(enemy.weapon_size_x ?? primaryW.size_x ?? (primaryW.dimensions && primaryW.dimensions.x) ?? 1.0);
+  const wSizeY = Number(enemy.weapon_size_y ?? primaryW.size_y ?? (primaryW.dimensions && primaryW.dimensions.y) ?? 1.0);
+  const wSizeZ = Number(enemy.weapon_size_z ?? primaryW.size_z ?? (primaryW.dimensions && primaryW.dimensions.z) ?? 1.0);
 
-  const shipScale = (enemyObj.mesh.scale && typeof enemyObj.mesh.scale.x === 'number') ? enemyObj.mesh.scale.x : 1.0;
-  const cfgDepth = (parseFloat(cfg.depth) || 3.0) * shipScale;
-  const cfgLength = (parseFloat(cfg.length) || 3.0) * shipScale;
+  const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
+  boltGeom.rotateX(Math.PI / 2);
+  const boltMat = new THREE.MeshBasicMaterial({
+    color: new THREE.Color(enemy.weaponColor || enemy.weapon_color || '#c084fc'),
+    wireframe: false
+  });
 
-  const mount = (activeWpn && activeWpn.mount) ? activeWpn.mount : 'dual_wingtip';
-  let lateralOffset = 0;
-  let verticalOffset = -0.15 * shipScale;
-  if (mount === 'dual_wingtip') {
-    enemyObj.lastGunSide = (enemyObj.lastGunSide === 1) ? -1 : 1;
-    lateralOffset = enemyObj.lastGunSide * cfgLength * 0.32;
-  } else if (mount === 'left') {
-    lateralOffset = -cfgLength * 0.32;
-  } else if (mount === 'right') {
-    lateralOffset = cfgLength * 0.32;
-  } else if (mount === 'turret') {
-    verticalOffset = 0.45 * shipScale;
-    lateralOffset = 0;
-  }
-  const forwardOffset = cfgDepth * 0.48;
+  const mesh = new THREE.Mesh(boltGeom, boltMat);
+  mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
+  mesh.position.copy(enemy.mesh.position);
 
-  const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffset);
-  const spawnOrigin = enemyObj.mesh.position.clone().add(localMuzzle.applyQuaternion(enemyObj.mesh.quaternion));
-  const direction = new THREE.Vector3().subVectors(playerPos, spawnOrigin).normalize();
+  const target = (playerPos && playerPos.isVector3) ? playerPos : new THREE.Vector3(0, 0, 220);
+  const direction = new THREE.Vector3().subVectors(target, enemy.mesh.position).normalize();
+  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
 
-  const weaponBoltColor = (activeWpn && activeWpn.color) ? activeWpn.color : (cfg.weapon_color || enemyObj.weaponColor || '#ff0055');
-  const boltColorHex = parseInt(weaponBoltColor.replace('#', '0x'), 16) || 0xff0055;
-  const boltScale = THREE.MathUtils.clamp(shipScale * 0.85, 0.6, 2.5);
+  const geometryList = [boltGeom];
+  const materialList = [boltMat];
 
-  let mesh;
-  let geometryList = [];
-  let materialList = [];
-  const rawSpd = parseInt((activeWpn && activeWpn.speed) ? activeWpn.speed : (cfg.weapon_speed || enemyObj.weaponSpeed || 450));
-  let boltSpeed = Math.max(24, Math.min(48, rawSpd * 0.075));
-  const boltDamage = parseInt((activeWpn && activeWpn.damage) ? activeWpn.damage : (cfg.weapon_damage || cfg.attack_damage || enemyObj.weaponDmg || 5));
+  const isMissile = (enemy.weaponType === 'missile' || (enemy.weaponName && enemy.weaponName.toLowerCase().includes('missile')));
+  const boltSpeed = enemy.weaponSpeed || enemy.weapon_speed || 420;
+  const boltDamage = enemy.weaponDamage || enemy.weapon_damage || 5;
 
-  if (isMissile) {
-    const missileGroup = new THREE.Group();
-    const bodyGeom = new THREE.CylinderGeometry(0.24, 0.4, 2.8, 8);
-    bodyGeom.rotateX(Math.PI / 2);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2a2d34, metalness: 0.8, roughness: 0.3 });
-    const tipGeom = new THREE.ConeGeometry(0.44, 1.1, 8);
-    tipGeom.rotateX(-Math.PI / 2);
-    tipGeom.translate(0, 0, -1.9);
-    const tipMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.95 });
-    missileGroup.add(new THREE.Mesh(bodyGeom, bodyMat));
-    missileGroup.add(new THREE.Mesh(tipGeom, tipMat));
-
-    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 32 * boltScale);
-    missileGroup.add(light);
-    missileGroup.scale.set(boltScale, boltScale, boltScale);
-    missileGroup.position.copy(spawnOrigin);
-    missileGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
-    scene.add(missileGroup);
-    mesh = missileGroup;
-    geometryList = [bodyGeom, tipGeom];
-    materialList = [bodyMat, tipMat];
-    boltSpeed = Math.max(20, Math.min(36, rawSpd * 0.065));
-
-    if (audioMgr && typeof audioMgr.playEnemyMissile === 'function') {
-      audioMgr.playEnemyMissile();
-    } else if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
-      audioMgr.playEnemyLaser();
-    }
-  } else {
-    const beamGroup = new THREE.Group();
-    const sheathGeom = new THREE.CylinderGeometry(0.44, 0.58, 8.2, 8);
-    sheathGeom.rotateX(Math.PI / 2);
-    const sheathMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending });
-    const coreGeom = new THREE.CylinderGeometry(0.18, 0.28, 7.5, 8);
-    coreGeom.rotateX(Math.PI / 2);
-    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.96 });
-    beamGroup.add(new THREE.Mesh(sheathGeom, sheathMat));
-    beamGroup.add(new THREE.Mesh(coreGeom, coreMat));
-
-    const light = new THREE.PointLight(boltColorHex, 4.0 * boltScale, 36 * boltScale);
-    beamGroup.add(light);
-    beamGroup.scale.set(boltScale, boltScale, boltScale);
-    beamGroup.position.copy(spawnOrigin);
-    beamGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
-    scene.add(beamGroup);
-    mesh = beamGroup;
-    geometryList = [sheathGeom, coreGeom];
-    materialList = [sheathMat, coreMat];
-
-    if (audioMgr && typeof audioMgr.playEnemyLaser === 'function') {
-      audioMgr.playEnemyLaser();
-    }
-  }
+  scene.add(mesh);
 
   enemyBolts.push({
     mesh,
@@ -300,6 +271,14 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     direction,
     speed: boltSpeed,
     damage: boltDamage,
+    scale: wScale,
+    scale_x: wScaleX,
+    scale_y: wScaleY,
+    scale_z: wScaleZ,
+    size_x: wSizeX,
+    size_y: wSizeY,
+    size_z: wSizeZ,
+    dimensions: { x: wSizeX, y: wSizeY, z: wSizeZ },
     type: isMissile ? 'missile' : 'beam',
     spiralTime: Math.random() * Math.PI * 2,
     spawnTime: performance.now(),
@@ -307,6 +286,146 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   });
 
   return true;
+}
+
+
+// =========================================================================
+// COCKPIT CRACKS TRANSPARENT OVERLAY POOL & GAME OVER MANAGEMENT
+// Model: mobile/warp_origin_images/cockpit_cracks.glb
+// Transparent overlay positioned across the cockpit window;
+// flashes visible for an instant on enemy hit and stays visible for 1 second
+// before game over screen appears. Loaded with the stage object pool.
+// =========================================================================
+
+let activeCockpitCracksMesh = null;
+let activeCockpitCracksPool = null;
+
+export async function setupCockpitCracksOverlay(camera, pool = null, scene = null) {
+  if (!camera) {
+    camera = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+  }
+  if (!scene) {
+    scene = (typeof window !== 'undefined' && window.scene) ? window.scene : null;
+  }
+
+  if (camera) {
+    const existing = camera.getObjectByName('cockpit_cracks_overlay');
+    if (existing) {
+      camera.remove(existing);
+    }
+  }
+
+  if (pool && typeof pool.getCockpitCracksOverlay === 'function') {
+    activeCockpitCracksPool = pool;
+    activeCockpitCracksMesh = pool.getCockpitCracksOverlay(camera);
+    if (activeCockpitCracksMesh) {
+      fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
+      return activeCockpitCracksMesh;
+    }
+  }
+
+  try {
+    const glbUrl = (stageConfig.cockpit_overlay && stageConfig.cockpit_overlay.model_3d_url)
+      || COCKPIT_CRACKS_GLB_URL
+      || 'mobile/warp_origin_images/cockpit_cracks.glb';
+
+    const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+    if (loadedMesh) {
+      setupCockpitCracksHierarchy(loadedMesh);
+
+      activeCockpitCracksPool = new MeshPool(
+        scene,
+        null,
+        null,
+        1,
+        () => loadedMesh.clone(true)
+      );
+
+      activeCockpitCracksMesh = activeCockpitCracksPool.spawn();
+      setupCockpitCracksHierarchy(activeCockpitCracksMesh);
+
+      if (camera) {
+        camera.add(activeCockpitCracksMesh);
+        fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
+      }
+      console.log(`[Stage 3: Singularity Core] Cockpit cracks GLB loaded with pool and mounted across cockpit view`);
+    }
+  } catch (err) {
+    console.warn(`[Stage 3: Singularity Core] Error setting up cockpit cracks overlay:`, err);
+  }
+
+  return activeCockpitCracksMesh;
+}
+
+export function fitCockpitCracksToCamera(mesh, camera) {
+  if (!mesh || !camera) return;
+  mesh.position.set(0, 0, -1.0);
+  mesh.rotation.set(0, 0, 0);
+
+  const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
+  const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
+  const dist = 1.0;
+  const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
+  const visibleW = visibleH * aspect;
+
+  const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
+  mesh.scale.set(scale, scale, 1.0);
+}
+
+export function triggerCockpitCracksHit(durationMs = 280) {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.flashCockpitCracks === 'function') {
+    activeCockpitCracksPool.flashCockpitCracks(durationMs);
+  } else if (activeCockpitCracksMesh) {
+    flashCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
+  }
+
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+      setTimeout(() => {
+        redEdges.style.opacity = '0';
+      }, durationMs);
+    }
+  }
+}
+
+export function triggerGameOverCockpitCracks(durationMs = 1000) {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.showGameOverCockpitCracks === 'function') {
+    activeCockpitCracksPool.showGameOverCockpitCracks(durationMs);
+  } else if (activeCockpitCracksMesh) {
+    showGameOverCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+    }
+  }
+}
+
+export function hideCockpitCracks() {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.hideCockpitCracks === 'function') {
+    activeCockpitCracksPool.hideCockpitCracks();
+  } else if (activeCockpitCracksMesh) {
+    activeCockpitCracksMesh.visible = false;
+    activeCockpitCracksMesh.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material.opacity = 0.0;
+        child.material.needsUpdate = true;
+      }
+    });
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '0';
+    }
+  }
+}
+
+export function getActiveCockpitCracksOverlay() {
+  return activeCockpitCracksMesh;
 }
 
 export function applyStage(engineApi) {
@@ -328,6 +447,12 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setWaves === 'function') {
+    engineApi.setWaves(stageConfig.waves, {
+      total_waves: stageConfig.total_waves,
+      wave_interval_seconds: stageConfig.wave_interval_seconds
+    });
+  }
   if (typeof engineApi.setEnemyWeaponHandler === 'function') {
     engineApi.setEnemyWeaponHandler(fireEnemyWeapon);
   }
@@ -343,8 +468,107 @@ export function applyStage(engineApi) {
   if (typeof engineApi.showToast === 'function') {
     engineApi.showToast('🚀 STAGE 3: SINGULARITY CORE [VR] LOADED');
   }
+  // --- Mount Cockpit Cracks Overlay Across Cockpit Window via Pool ---
+  const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
+  const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
+  const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || (typeof window !== 'undefined' && window.stageObjectPool)
+    || null;
+
+  setupCockpitCracksOverlay(camera, pool, scene);
+
+  // Resize handler to maintain perfect cockpit fit
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', () => {
+      const cam = (engineApi && engineApi.camera) || window.camera;
+      if (activeCockpitCracksMesh && cam) {
+        fitCockpitCracksToCamera(activeCockpitCracksMesh, cam);
+      }
+    });
+
+    // Hook enemy hit detection:
+    if (typeof window.applyDamageToPlayer === 'function' && !window.applyDamageToPlayer._cockpitCracksHooked) {
+      const prevDamage = window.applyDamageToPlayer;
+      window.applyDamageToPlayer = function(dmg, ...args) {
+        const ret = prevDamage.apply(this, [dmg, ...args]);
+        triggerCockpitCracksHit();
+        return ret;
+      };
+      window.applyDamageToPlayer._cockpitCracksHooked = true;
+    }
+
+    window.addEventListener('cockpitHit', () => triggerCockpitCracksHit());
+    window.addEventListener('playerDamage', () => triggerCockpitCracksHit());
+    window.addEventListener('cockpitImpact', () => triggerCockpitCracksHit());
+    window.addEventListener('gameOverCracks', () => triggerGameOverCockpitCracks(1000));
+
+    const prevCustomFx = window.executeCustomWeaponImpactFx;
+    window.executeCustomWeaponImpactFx = function(bolt, normX, normY, canvas) {
+      if (typeof prevCustomFx === 'function') {
+        try { prevCustomFx(bolt, normX, normY, canvas); } catch (e) {}
+      }
+      triggerCockpitCracksHit();
+    };
+
+    window.triggerCockpitCracksHit = triggerCockpitCracksHit;
+    window.flashCockpitCracks = triggerCockpitCracksHit;
+    window.triggerGameOverCockpitCracks = triggerGameOverCockpitCracks;
+    window.hideCockpitCracks = hideCockpitCracks;
+    window.setupCockpitCracksOverlay = setupCockpitCracksOverlay;
+    window.getActiveCockpitCracksOverlay = getActiveCockpitCracksOverlay;
+  }
+
+
 
   return stageConfig;
 }
 
-export default { stageConfig, applyStage, fireEnemyWeapon };;
+/**
+ * Stage Wave Management: Controls pulling specific number of enemies from the pool
+ * for each wave, tracking how many waves and how often a wave happens.
+ */
+export function getStageWaves() {
+  return stageConfig.waves;
+}
+
+
+export function updateStageWaves(engineApi, context = {}) {
+  if (!engineApi) return null;
+  const currentWave = typeof engineApi.getCurrentWave === 'function' ? engineApi.getCurrentWave() : 0;
+  const totalWaves = stageConfig.total_waves || 2;
+  const now = (context && context.now) || performance.now();
+  const waveStartTime = typeof engineApi.getWaveStartTime === 'function' ? engineApi.getWaveStartTime() : 0;
+  const activeEnemies = (context && context.activeEnemies) || [];
+
+  // Wave 1: Pull 5 enemies from the pool at the start of stage engagement
+  if (currentWave === 0) {
+    return pullEnemyWave(1, engineApi, context);
+  }
+
+  // Wave 2: Pull 10 enemies from the pool when the 15-second wave interval has elapsed
+  if (currentWave === 1 && totalWaves >= 2) {
+    const elapsed = now - waveStartTime;
+    const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
+    const wave1EnemiesRemaining = activeEnemies.filter(e => e.isActive && e.waveNumber === 1).length;
+
+    // Strict timing: Wave 2 occurs after the 15-second interval (or if wave 1 defeated and at least 5s elapsed)
+    if (elapsed >= waveIntervalMs || (wave1EnemiesRemaining === 0 && elapsed >= 5000)) {
+      return pullEnemyWave(2, engineApi, context);
+    }
+  }
+
+  return null;
+}
+
+export function pullEnemyWave(waveNumber, engineApi, context = {}) {
+  const waves = stageConfig.waves || [];
+  const wave = waves.find(w => w.wave_number === waveNumber) || waves[waveNumber - 1];
+  if (!wave) return [];
+  const count = wave.enemy_count || (waveNumber === 1 ? 5 : 10);
+  if (engineApi && typeof engineApi.spawnWaveEnemies === 'function') {
+    return engineApi.spawnWaveEnemies(count, wave, stageConfig.enemies);
+  }
+  return [];
+}
+
+export default { stageConfig, applyStage, fireEnemyWeapon, getStageWaves, updateStageWaves, pullEnemyWave };;

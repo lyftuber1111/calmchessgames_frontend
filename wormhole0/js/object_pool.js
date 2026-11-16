@@ -8,6 +8,211 @@ import * as THREE from 'three';
  * to prevent frame drops, Garbage Collection pauses, and scene graph thrashing.
  */
 
+export const COCKPIT_CRACKS_GLB_URL = 'mobile/warp_origin_images/cockpit_cracks.glb';
+
+let activeFlashTimer = null;
+let activeFadeRaf = null;
+
+/**
+ * Traverses and configures the Cockpit Cracks 3D mesh hierarchy as a transparent overlay.
+ */
+export function setupCockpitCracksHierarchy(root) {
+  if (!root) return;
+  root.name = 'cockpit_cracks_overlay';
+  root.visible = false;
+  root.userData = root.userData || {};
+  root.userData.isCockpitCracks = true;
+  root.userData.isOverlay = true;
+
+  root.traverse((child) => {
+    if (child.isMesh) {
+      child.castShadow = false;
+      child.receiveShadow = false;
+      child.frustumCulled = false;
+      child.renderOrder = 9999;
+      if (child.material) {
+        child.material = child.material.clone();
+        child.material.transparent = true;
+        child.material.opacity = 0.0;
+        child.material.depthTest = false;
+        child.material.depthWrite = false;
+        child.material.side = THREE.DoubleSide;
+        child.material.blending = THREE.NormalBlending;
+        child.material.needsUpdate = true;
+      }
+    }
+  });
+}
+
+/**
+ * Fits the Cockpit Cracks 3D mesh across the camera frustum so it covers the entire cockpit window.
+ */
+export function fitCockpitCracksToCamera(mesh, camera) {
+  if (!mesh || !camera) return;
+  mesh.position.set(0, 0, -1.0);
+  mesh.rotation.set(0, 0, 0);
+
+  const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
+  const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
+  const dist = 1.0;
+  const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
+  const visibleW = visibleH * aspect;
+
+  // Base model bounds: width ~1.90, height ~1.41
+  const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
+  mesh.scale.set(scale, scale, 1.0);
+}
+
+/**
+ * Loads the Cockpit Cracks 3D GLB model asset with multi-path fallbacks.
+ */
+export async function loadCockpitCracksGlbAsset(glbUrl = COCKPIT_CRACKS_GLB_URL) {
+  return new Promise((resolve) => {
+    const candidateUrls = [
+      glbUrl,
+      'mobile/warp_origin_images/cockpit_cracks.glb',
+      'wormhole0/mobile/warp_origin_images/cockpit_cracks.glb',
+      'worm_hole0/mobile/warp_origin_images/cockpit_cracks.glb',
+      '/wormhole0/mobile/warp_origin_images/cockpit_cracks.glb',
+      'warp_origin_images/cockpit_cracks.glb',
+      'wormhole0/warp_origin_images/cockpit_cracks.glb'
+    ];
+
+    if (typeof window !== 'undefined' && typeof window.load3DAssetModel === 'function') {
+      window.load3DAssetModel(
+        glbUrl,
+        (cloned) => {
+          if (cloned) {
+            setupCockpitCracksHierarchy(cloned);
+            resolve(cloned);
+            return;
+          }
+          fallbackLoader(0);
+        },
+        () => fallbackLoader(0)
+      );
+      return;
+    }
+
+    fallbackLoader(0);
+
+    function fallbackLoader(index = 0) {
+      if (index >= candidateUrls.length) {
+        console.warn('[CockpitCracks] Failed to load GLB from all candidate paths');
+        resolve(null);
+        return;
+      }
+      const curUrl = candidateUrls[index];
+
+      import('three/addons/loaders/GLTFLoader.js')
+        .then(({ GLTFLoader }) => {
+          const loader = new GLTFLoader();
+          loader.load(
+            curUrl,
+            (gltf) => {
+              const scene = gltf.scene || gltf.scenes[0] || gltf;
+              setupCockpitCracksHierarchy(scene);
+              resolve(scene);
+            },
+            undefined,
+            () => {
+              fallbackLoader(index + 1);
+            }
+          );
+        })
+        .catch((e) => {
+          console.warn('[CockpitCracks] Failed to import GLTFLoader:', e);
+          resolve(null);
+        });
+    }
+  });
+}
+
+/**
+ * Triggers an instant flash of the Cockpit Cracks transparent overlay, then smoothly returns to invisible.
+ */
+export function flashCockpitCracksOverlay(mesh, durationMs = 280) {
+  if (!mesh) return;
+
+  if (activeFlashTimer) {
+    clearTimeout(activeFlashTimer);
+    activeFlashTimer = null;
+  }
+  if (activeFadeRaf) {
+    cancelAnimationFrame(activeFadeRaf);
+    activeFadeRaf = null;
+  }
+
+  mesh.visible = true;
+  mesh.traverse((child) => {
+    if (child.isMesh && child.material) {
+      child.material.transparent = true;
+      child.material.opacity = 0.95;
+      child.material.depthTest = false;
+      child.material.depthWrite = false;
+      child.material.needsUpdate = true;
+    }
+  });
+
+  activeFlashTimer = setTimeout(() => {
+    const startTime = performance.now();
+    const fadeDuration = 100;
+
+    function fade(now) {
+      const elapsed = now - startTime;
+      const progress = Math.min(1.0, elapsed / fadeDuration);
+      const curOpacity = 0.95 * (1.0 - progress);
+
+      mesh.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.opacity = curOpacity;
+          child.material.needsUpdate = true;
+        }
+      });
+
+      if (progress < 1.0) {
+        activeFadeRaf = requestAnimationFrame(fade);
+      } else {
+        mesh.visible = false;
+        mesh.traverse((child) => {
+          if (child.isMesh && child.material) {
+            child.material.opacity = 0.0;
+            child.material.needsUpdate = true;
+          }
+        });
+      }
+    }
+    activeFadeRaf = requestAnimationFrame(fade);
+  }, durationMs);
+}
+
+/**
+ * Sets the Cockpit Cracks overlay across the cockpit view for 1 second before game over screen.
+ */
+export function showGameOverCockpitCracksOverlay(mesh, durationMs = 1000) {
+  if (!mesh) return;
+
+  if (activeFlashTimer) {
+    clearTimeout(activeFlashTimer);
+    activeFlashTimer = null;
+  }
+  if (activeFadeRaf) {
+    cancelAnimationFrame(activeFadeRaf);
+    activeFadeRaf = null;
+  }
+
+  mesh.visible = true;
+  mesh.traverse((child) => {
+    if (child.isMesh && child.material) {
+      child.material.transparent = true;
+      child.material.opacity = 1.0;
+      child.material.depthTest = false;
+      child.material.depthWrite = false;
+      child.material.needsUpdate = true;
+    }
+  });
+}
+
 export class MeshPool {
   constructor(scene, geometry, material, initialSize = 50, createFn = null) {
     this.scene = scene;
@@ -163,6 +368,11 @@ export class StageObjectPool {
 
     // Pre-allocate when stage loads
     this.initPools();
+
+    // Pre-allocate Cockpit Cracks 3D GLB Overlay Pool
+    this.cockpitCracksOverlayPool = null;
+    this.cockpitCracksMesh = null;
+    this.initCockpitCracksPool();
   }
 
   initPools() {
@@ -777,5 +987,69 @@ export class StageObjectPool {
       pool.dispose();
     }
     this.enemyWeaponPools.clear();
+  }
+
+  // --- COCKPIT CRACKS OVERLAY POOL METHODS ---
+
+  async initCockpitCracksPool() {
+    try {
+      const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && this.stageConfig.cockpit_overlay.model_3d_url)
+        || (this.stageConfig && this.stageConfig.cockpit_overlay && this.stageConfig.cockpit_overlay.model_url)
+        || COCKPIT_CRACKS_GLB_URL;
+
+      const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+      if (loadedMesh) {
+        this.cockpitCracksMesh = loadedMesh;
+        this.cockpitCracksOverlayPool = new MeshPool(
+          this.scene,
+          null,
+          null,
+          1,
+          () => loadedMesh.clone(true)
+        );
+        console.log(`[StageObjectPool] Pre-allocated Cockpit Cracks 3D GLB overlay pool from: ${glbUrl}`);
+      }
+    } catch (err) {
+      console.warn('[StageObjectPool] Cockpit cracks pooling warning:', err);
+    }
+  }
+
+  getCockpitCracksOverlay(camera = null) {
+    if (!this.cockpitCracksMesh && this.cockpitCracksOverlayPool) {
+      this.cockpitCracksMesh = this.cockpitCracksOverlayPool.spawn();
+    }
+    if (this.cockpitCracksMesh && camera && this.cockpitCracksMesh.parent !== camera) {
+      const existing = camera.getObjectByName('cockpit_cracks_overlay');
+      if (existing && existing !== this.cockpitCracksMesh) {
+        camera.remove(existing);
+      }
+      camera.add(this.cockpitCracksMesh);
+      fitCockpitCracksToCamera(this.cockpitCracksMesh, camera);
+    }
+    return this.cockpitCracksMesh;
+  }
+
+  flashCockpitCracks(durationMs = 280) {
+    if (this.cockpitCracksMesh) {
+      flashCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
+    }
+  }
+
+  showGameOverCockpitCracks(durationMs = 1000) {
+    if (this.cockpitCracksMesh) {
+      showGameOverCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
+    }
+  }
+
+  hideCockpitCracks() {
+    if (this.cockpitCracksMesh) {
+      this.cockpitCracksMesh.visible = false;
+      this.cockpitCracksMesh.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.opacity = 0.0;
+          child.material.needsUpdate = true;
+        }
+      });
+    }
   }
 }

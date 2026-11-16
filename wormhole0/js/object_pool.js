@@ -277,7 +277,6 @@ export class StageObjectPool {
   }
 
   initEnemyWeaponPools() {
-  initEnemyWeaponPools() {
     // 1. Enemy Beam / Plasma Pulse Pool (Size = 300)
     const beamPool = new MeshPool(
       this.scene,
@@ -739,22 +738,6 @@ export class StageObjectPool {
     mesh.userData.movementActive = false;
     mesh.userData.physicsActive = false;
     mesh.userData.weaponsActive = false;
-  }
-      for (const p of this.enemyWeaponPools.values()) {
-        if (p.active.has(mesh)) {
-          p.despawn(mesh);
-          return;
-        }
-      }
-      mesh.position.set(0, -1000, 0);
-      mesh.visible = false;
-      mesh.userData = mesh.userData || {};
-      mesh.userData.inPool = true;
-      mesh.userData.isActive = false;
-      mesh.userData.movementActive = false;
-      mesh.userData.physicsActive = false;
-      mesh.userData.weaponsActive = false;
-    }
   }
 
   // --- CLEANUP METHODS ---

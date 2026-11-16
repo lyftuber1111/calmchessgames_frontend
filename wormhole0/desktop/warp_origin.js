@@ -15,7 +15,7 @@ export const stageConfig = {
   xr_mode: 'desktop-xr',
   events_within_level: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
   end_level_event: 'Warp Horizon Jump Gate Initialized',
-  mission_objectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
+  mission_objectives: "Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.",
   required_enemy_kills: 10,
   warp_target_distance: 50000,
   initial_weapon_pool_size: 300,
@@ -40,39 +40,47 @@ export const stageConfig = {
   wave_interval_seconds: 15,
   objectives: [
     {
-      "id": "kills",
-      "type": "kills",
-      "target": 10,
-      "current": 0,
-      "title": "Destroy 10 Threats",
-      "description": "Destroy 10 hostile 3D units emerging from the wormhole",
-      "requiredForWarp": true
+        "id": "kills",
+        "type": "kills",
+        "target": 10,
+        "current": 0,
+        "title": "Destroy 10 Void Recon Drones",
+        "description": "Shoot down 10 hostile scout probes emerging from cyan entry vector",
+        "requiredForWarp": true,
+        "actionText": "🎯 Target Threat",
+        "actionId": "target_enemy"
     },
     {
-      "id": "distance",
-      "type": "distance",
-      "target": 50000,
-      "title": "Wormhole Proximity < 50,000 KM",
-      "description": "Navigate vessel to within < 50,000 KM of singularity core",
-      "requiredForWarp": true
+        "id": "distance",
+        "type": "distance",
+        "target": 50000,
+        "title": "Singularity Proximity < 50,000 KM",
+        "description": "Pilot vessel to within < 50,000 KM of cyan singularity core",
+        "requiredForWarp": true,
+        "actionText": "🛰️ Lock Vector",
+        "actionId": "lock_vector"
     },
     {
-      "id": "scan",
-      "type": "scan",
-      "target": 1,
-      "title": "Resonance Anomaly Scan",
-      "description": "Scan singularity anomaly to map gravitational shear",
-      "requiredForWarp": false
+        "id": "scan",
+        "type": "scan",
+        "target": 1.0,
+        "title": "Resonance Anomaly Scan",
+        "description": "Scan singularity anomaly to map gravitational shear harmonics",
+        "requiredForWarp": false,
+        "actionText": "📡 Scan Singularity",
+        "actionId": "scan"
     },
     {
-      "id": "coils",
-      "type": "coils",
-      "target": 3,
-      "title": "Tachyon Warp Coils",
-      "description": "Calibrate all 3 coils for hyperspace stability",
-      "requiredForWarp": false
+        "id": "coils",
+        "type": "coils",
+        "target": 3,
+        "title": "Tachyon Warp Coils Calibration",
+        "description": "Calibrate and synchronize all 3 warp coils for hyperspace stability",
+        "requiredForWarp": false,
+        "actionText": "Coil α / β / γ",
+        "actionId": "coils"
     }
-  ],
+],
   description: 'Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.',
   par_score: 5000,
 
@@ -315,12 +323,11 @@ export const stageConfig = {
   }
 ],
   controlscontrols: {
-    inputMode: 'keyboard_mouse',
-    showVirtualJoysticks: false,
-    enablePointerLock: true,
-    requireLandscape: false,
-    description: 'WASD flight thrust, Mouse aim, Space boost, Tab HUD toggle, Left-Click fire laser'
-  }
+    "inputMode": "keyboard_mouse",
+    "showVirtualJoysticks": false,
+    "enablePointerLock": true,
+    "description": "WASD flight thrust, Mouse aim, Space boost, Tab HUD toggle, Left-Click fire laser, F engage warp"
+}
 };
 
 /**

@@ -15,7 +15,7 @@ export const stageConfig = {
   xr_mode: 'mobile-ar',
   events_within_level: 'Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert',
   end_level_event: 'Singularity Perimeter Breach',
-  mission_objectives: 'Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.',
+  mission_objectives: "Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.",
   required_enemy_kills: 15,
   warp_target_distance: 35000,
   initial_weapon_pool_size: 300,
@@ -44,17 +44,31 @@ export const stageConfig = {
         "type": "kills",
         "target": 15,
         "current": 0,
-        "title": "Destroy 15 Threats",
-        "description": "Destroy 15 hostile 3D units emerging from the wormhole",
-        "requiredForWarp": true
+        "title": "Destroy 15 Tachyon Interceptors",
+        "description": "Neutralize 15 high-speed relativistic combat interceptors",
+        "requiredForWarp": true,
+        "actionText": "🎯 Target Threat",
+        "actionId": "target_enemy"
     },
     {
         "id": "distance",
         "type": "distance",
         "target": 35000,
-        "title": "Wormhole Proximity < 35,000 KM",
-        "description": "Navigate vessel to within < 35,000 KM of singularity core",
-        "requiredForWarp": true
+        "title": "Light Horizon Proximity < 35,000 KM",
+        "description": "Approach within < 35,000 KM of the amber event horizon boundary",
+        "requiredForWarp": true,
+        "actionText": "🛰️ Lock Vector",
+        "actionId": "lock_vector"
+    },
+    {
+        "id": "shield_stabilize",
+        "type": "action",
+        "target": 1.0,
+        "title": "Relativistic Flux Shield Stabilization",
+        "description": "Stabilize vessel deflector harmonics against tachyon shear radiation",
+        "requiredForWarp": false,
+        "actionText": "🛡️ Stabilize Deflectors",
+        "actionId": "shield_stabilize"
     }
 ],
   description: 'High-velocity relativistic light-horizon boundary with intense magnetic shear.',
@@ -221,12 +235,11 @@ export const stageConfig = {
   }
 ],
   controlscontrols: {
-    inputMode: 'ar_touch_flight',
-    showVirtualJoysticks: true,
-    enablePointerLock: false,
-    requireLandscape: false,
-    description: '6-DOF AR device pose tracking, Screen tap targeting, Virtual touch thrust'
-  }
+    "inputMode": "ar_touch_flight",
+    "showVirtualJoysticks": true,
+    "enablePointerLock": false,
+    "description": "6-DOF AR device pose tracking, Screen tap targeting, Virtual touch thrust, On-screen warp button"
+}
 };
 
 

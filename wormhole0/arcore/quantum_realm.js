@@ -15,7 +15,7 @@ export const stageConfig = {
   xr_mode: 'mobile-ar',
   events_within_level: 'Phase-Shift Anomalies, Multi-Dimensional Phasing, Antimatter Vortex, Quantum Dreadnought Confrontation',
   end_level_event: 'Quantum Conduit Realignment & Safe Extraction',
-  mission_objectives: 'Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.',
+  mission_objectives: "Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.",
   required_enemy_kills: 25,
   warp_target_distance: 10000,
   initial_weapon_pool_size: 300,
@@ -44,17 +44,31 @@ export const stageConfig = {
         "type": "kills",
         "target": 25,
         "current": 0,
-        "title": "Destroy 25 Threats",
-        "description": "Destroy 25 hostile 3D units emerging from the wormhole",
-        "requiredForWarp": true
+        "title": "Annihilate 25 Quantum Dreadnoughts",
+        "description": "Destroy 25 phase-shifting capital dreadnoughts and combat escort wings",
+        "requiredForWarp": true,
+        "actionText": "🎯 Target Threat",
+        "actionId": "target_enemy"
     },
     {
         "id": "distance",
         "type": "distance",
         "target": 10000,
-        "title": "Wormhole Proximity < 10,000 KM",
-        "description": "Navigate vessel to within < 10,000 KM of singularity core",
-        "requiredForWarp": true
+        "title": "Extraction Conduit Proximity < 10,000 KM",
+        "description": "Navigate vessel into quantum extraction conduit coordinates < 10,000 KM",
+        "requiredForWarp": true,
+        "actionText": "🛰️ Lock Vector",
+        "actionId": "lock_vector"
+    },
+    {
+        "id": "quantum_phase",
+        "type": "action",
+        "target": 1.0,
+        "title": "Multi-Dimensional Phase Alignment",
+        "description": "Harmonize sub-atomic dimensional phasors to unlock extraction hyper-jump gate",
+        "requiredForWarp": false,
+        "actionText": "✨ Align Phasing",
+        "actionId": "quantum_phase"
     }
 ],
   description: 'Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.',
@@ -197,12 +211,11 @@ export const stageConfig = {
   }
 ],
   controlscontrols: {
-    inputMode: 'ar_touch_flight',
-    showVirtualJoysticks: true,
-    enablePointerLock: false,
-    requireLandscape: false,
-    description: '6-DOF AR device pose tracking, Screen tap targeting, Virtual touch thrust'
-  }
+    "inputMode": "ar_touch_flight",
+    "showVirtualJoysticks": true,
+    "enablePointerLock": false,
+    "description": "6-DOF AR device pose tracking, Screen tap targeting, Virtual touch thrust, On-screen warp button"
+}
 };
 
 

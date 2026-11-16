@@ -1489,11 +1489,19 @@
       border-left: 3px solid var(--cyan-dark);
       border-radius: 4px;
       transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .objective-item:hover {
+      background: rgba(0, 48, 75, 0.7);
+      border-left-color: var(--cyan-neon);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
     }
 
     .objective-item.active {
       border-left-color: var(--cyan-neon);
-      background: rgba(0, 48, 75, 0.75);
+      background: rgba(0, 48, 75, 0.85);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.35);
     }
 
     .objective-item.completed {
@@ -4505,6 +4513,7 @@
             <option value="3">🕳️ Stage 3: Singularity Core</option>
             <option value="4">⚛️ Stage 4: Quantum Realm</option>
             <option value="5">👑 Stage 5: Final Boss Stage</option>
+            <option value="6">🪐 Stage 6: Nebula Outpost</option>
           </select>
           <button type="button" id="btn-refresh-stages" class="hud-btn" style="padding:5px 8px; font-size:0.75rem; border-color:#00f0ff; color:#00f0ff; background:rgba(0,240,255,0.18);" title="Check database for newly created stages & refresh dropdown">🔄 Sync</button>
         </div>

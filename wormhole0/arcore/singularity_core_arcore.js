@@ -15,7 +15,7 @@ export const stageConfig = {
   xr_mode: 'mobile-ar',
   events_within_level: 'Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening',
   end_level_event: 'Core Collapse Breakthrough',
-  mission_objectives: 'Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.',
+  mission_objectives: "Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.",
   required_enemy_kills: 20,
   warp_target_distance: 20000,
   initial_weapon_pool_size: 300,
@@ -44,17 +44,31 @@ export const stageConfig = {
         "type": "kills",
         "target": 20,
         "current": 0,
-        "title": "Destroy 20 Threats",
-        "description": "Destroy 20 hostile 3D units emerging from the wormhole",
-        "requiredForWarp": true
+        "title": "Destroy 20 Gravitational Void Probes",
+        "description": "Destroy 20 automated kinetic probes guarding singularity perimeter",
+        "requiredForWarp": true,
+        "actionText": "🎯 Target Threat",
+        "actionId": "target_enemy"
     },
     {
         "id": "distance",
         "type": "distance",
         "target": 20000,
-        "title": "Wormhole Proximity < 20,000 KM",
-        "description": "Navigate vessel to within < 20,000 KM of singularity core",
-        "requiredForWarp": true
+        "title": "Collapse Perimeter Proximity < 20,000 KM",
+        "description": "Penetrate gravitational collapse boundary to within < 20,000 KM",
+        "requiredForWarp": true,
+        "actionText": "🛰️ Lock Vector",
+        "actionId": "lock_vector"
+    },
+    {
+        "id": "grav_dampener",
+        "type": "action",
+        "target": 1.0,
+        "title": "Gravitational Wave Dampener Calibration",
+        "description": "Calibrate phase dampeners to neutralize extreme black hole tidal forces",
+        "requiredForWarp": false,
+        "actionText": "🌀 Calibrate Dampener",
+        "actionId": "grav_dampener"
     }
 ],
   description: 'Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.',
@@ -197,12 +211,11 @@ export const stageConfig = {
   }
 ],
   controlscontrols: {
-    inputMode: 'ar_touch_flight',
-    showVirtualJoysticks: true,
-    enablePointerLock: false,
-    requireLandscape: false,
-    description: '6-DOF AR device pose tracking, Screen tap targeting, Virtual touch thrust'
-  }
+    "inputMode": "ar_touch_flight",
+    "showVirtualJoysticks": true,
+    "enablePointerLock": false,
+    "description": "6-DOF AR device pose tracking, Screen tap targeting, Virtual touch thrust, On-screen warp button"
+}
 };
 
 

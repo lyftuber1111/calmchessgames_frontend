@@ -522,20 +522,89 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
             ]
         ];
         if ($stageLevel === 1) {
+            $stageObjectivesArray[0]['title'] = "Destroy {$requiredEnemyKills} Void Recon Drones";
+            $stageObjectivesArray[0]['description'] = "Shoot down {$requiredEnemyKills} hostile scout probes emerging from cyan entry vector";
+            $stageObjectivesArray[1]['title'] = "Singularity Proximity < " . number_format($warpTargetDistance) . " KM";
+            $stageObjectivesArray[1]['description'] = "Pilot vessel to within < " . number_format($warpTargetDistance) . " KM of cyan singularity core";
             $stageObjectivesArray[] = [
                 'id' => 'scan',
                 'type' => 'scan',
                 'target' => 1.0,
                 'title' => 'Resonance Anomaly Scan',
-                'description' => 'Scan singularity anomaly to map gravitational shear',
+                'description' => 'Scan singularity anomaly to map gravitational shear harmonics',
                 'requiredForWarp' => false
             ];
             $stageObjectivesArray[] = [
                 'id' => 'coils',
                 'type' => 'coils',
                 'target' => 3,
-                'title' => 'Tachyon Warp Coils',
-                'description' => 'Calibrate all 3 coils for hyperspace stability',
+                'title' => 'Tachyon Warp Coils Calibration',
+                'description' => 'Calibrate and synchronize all 3 warp coils for hyperspace stability',
+                'requiredForWarp' => false
+            ];
+        } elseif ($stageLevel === 2) {
+            $stageObjectivesArray[0]['title'] = "Destroy {$requiredEnemyKills} Tachyon Cruisers & Interceptors";
+            $stageObjectivesArray[0]['description'] = "Neutralize {$requiredEnemyKills} high-speed relativistic combat interceptors";
+            $stageObjectivesArray[1]['title'] = "Light Horizon Proximity < " . number_format($warpTargetDistance) . " KM";
+            $stageObjectivesArray[1]['description'] = "Approach within < " . number_format($warpTargetDistance) . " KM of the amber event horizon boundary";
+            $stageObjectivesArray[] = [
+                'id' => 'shield_stabilize',
+                'type' => 'action',
+                'target' => 1.0,
+                'title' => 'Relativistic Flux Shield Stabilization',
+                'description' => 'Stabilize vessel deflector harmonics against tachyon shear radiation',
+                'requiredForWarp' => false
+            ];
+        } elseif ($stageLevel === 3) {
+            $stageObjectivesArray[0]['title'] = "Destroy {$requiredEnemyKills} Gravitational Void Probes";
+            $stageObjectivesArray[0]['description'] = "Destroy {$requiredEnemyKills} automated kinetic probes guarding singularity perimeter";
+            $stageObjectivesArray[1]['title'] = "Collapse Perimeter Proximity < " . number_format($warpTargetDistance) . " KM";
+            $stageObjectivesArray[1]['description'] = "Penetrate gravitational collapse boundary to within < " . number_format($warpTargetDistance) . " KM";
+            $stageObjectivesArray[] = [
+                'id' => 'grav_dampener',
+                'type' => 'action',
+                'target' => 1.0,
+                'title' => 'Gravitational Wave Dampener Calibration',
+                'description' => 'Calibrate phase dampeners to neutralize extreme black hole tidal forces',
+                'requiredForWarp' => false
+            ];
+        } elseif ($stageLevel === 4) {
+            $stageObjectivesArray[0]['title'] = "Annihilate {$requiredEnemyKills} Quantum Dreadnoughts";
+            $stageObjectivesArray[0]['description'] = "Destroy {$requiredEnemyKills} phase-shifting capital dreadnoughts and combat escort wings";
+            $stageObjectivesArray[1]['title'] = "Extraction Conduit Proximity < " . number_format($warpTargetDistance) . " KM";
+            $stageObjectivesArray[1]['description'] = "Navigate vessel into quantum extraction conduit coordinates < " . number_format($warpTargetDistance) . " KM";
+            $stageObjectivesArray[] = [
+                'id' => 'quantum_phase',
+                'type' => 'action',
+                'target' => 1.0,
+                'title' => 'Multi-Dimensional Phase Alignment',
+                'description' => 'Harmonize sub-atomic dimensional phasors to unlock extraction hyper-jump gate',
+                'requiredForWarp' => false
+            ];
+        } elseif ($stageLevel === 5) {
+            $stageObjectivesArray[0]['title'] = "Destroy {$requiredEnemyKills} Overlord Hostiles";
+            $stageObjectivesArray[0]['description'] = "Destroy {$requiredEnemyKills} hostiles including heavy escort fighters and dreadnoughts";
+            $stageObjectivesArray[1]['title'] = "Singularity Epicenter Proximity < " . number_format($warpTargetDistance) . " KM";
+            $stageObjectivesArray[1]['description'] = "Breach core epicenter perimeter threshold < " . number_format($warpTargetDistance) . " KM";
+            $stageObjectivesArray[] = [
+                'id' => 'titan_boss',
+                'type' => 'boss',
+                'target' => 1.0,
+                'title' => 'Defeat Singularity Overlord Titan',
+                'description' => 'Target and destroy the ancient 9-meter Singularity Overlord Titan flagship',
+                'requiredForWarp' => true
+            ];
+        } elseif ($stageLevel === 6) {
+            $stageObjectivesArray[0]['title'] = "Neutralize {$requiredEnemyKills} Nebula Defense Sentries";
+            $stageObjectivesArray[0]['description'] = "Clear {$requiredEnemyKills} defensive sentries patrolling emerald nebula corridor";
+            $stageObjectivesArray[1]['title'] = "Command Relay Proximity < " . number_format($warpTargetDistance) . " KM";
+            $stageObjectivesArray[1]['description'] = "Navigate dense asteroid corridor to within < " . number_format($warpTargetDistance) . " KM of outpost command relay";
+            $stageObjectivesArray[] = [
+                'id' => 'outpost_relink',
+                'type' => 'action',
+                'target' => 1.0,
+                'title' => 'Outpost Command Relink Activation',
+                'description' => 'Establish secure quantum telemetry link with orbital outpost command relay',
                 'requiredForWarp' => false
             ];
         }
@@ -665,6 +734,7 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
         $cleanTheme = addslashes($theme);
         $cleanEventsWithin = addslashes($eventsWithin);
         $cleanEndLevelEvent = addslashes($endLevelEvent);
+        $cleanMissionObjectives = addslashes($missionObjectives);
 
         // Split eventsWithin by commas into JSON array
         $eventsList = array_values(array_filter(array_map('trim', explode(',', $eventsWithin))));
@@ -824,9 +894,23 @@ export const stageConfig = {
     parScore: {$parScore},
     requiredKills: {$requiredEnemyKills},
     warpTargetDistance: {$warpTargetDistance},
+    missionObjectives: '{$cleanMissionObjectives}',
     eventsWithin: '{$cleanEventsWithin}',
     endLevelEvent: '{$cleanEndLevelEvent}'
   },
+  stage_level: {$stageLevel},
+  stage_name: '{$cleanStageName}',
+  stage_slug: '{$stageSlug}',
+  environment_theme: '{$cleanTheme}',
+  device: '{$prof['device']}',
+  xr_mode: '{$prof['xr_mode']}',
+  events_within_level: '{$cleanEventsWithin}',
+  end_level_event: '{$cleanEndLevelEvent}',
+  mission_objectives: '{$cleanMissionObjectives}',
+  required_enemy_kills: {$requiredEnemyKills},
+  warp_target_distance: {$warpTargetDistance},
+  description: '{$cleanDesc}',
+  par_score: {$parScore},
   visual: {
     themeName: '{$cleanTheme}',
     colors: {

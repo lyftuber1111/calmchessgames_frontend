@@ -6,6 +6,9 @@
  */
 
 export const stageConfig = {
+  warp_target_distance: 5000,
+  required_enemy_kills: 25,
+  mission_objectives: "Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.",
   stage_level: 6,
   stage_name: 'Nebula Outpost',
   stage_slug: 'nebula_outpost',
@@ -17,6 +20,39 @@ export const stageConfig = {
   description: 'Dense emerald asteroid field guarding the outer sector perimeter.',
   par_score: 7500,
 
+  objectives: [
+    {
+        "id": "kills",
+        "type": "kills",
+        "target": 25,
+        "current": 0,
+        "title": "Neutralize 25 Nebula Defense Sentries",
+        "description": "Clear 25 defensive sentries patrolling emerald nebula corridor",
+        "requiredForWarp": true,
+        "actionText": "🎯 Target Threat",
+        "actionId": "target_enemy"
+    },
+    {
+        "id": "distance",
+        "type": "distance",
+        "target": 5000,
+        "title": "Command Relay Proximity < 5,000 KM",
+        "description": "Navigate dense asteroid corridor to within < 5,000 KM of outpost command relay",
+        "requiredForWarp": true,
+        "actionText": "🛰️ Lock Vector",
+        "actionId": "lock_vector"
+    },
+    {
+        "id": "outpost_relink",
+        "type": "action",
+        "target": 1.0,
+        "title": "Outpost Command Relink Activation",
+        "description": "Establish secure quantum telemetry link with orbital outpost command relay",
+        "requiredForWarp": false,
+        "actionText": "📡 Activate Relink",
+        "actionId": "outpost_relink"
+    }
+],
   visual: {
     themeName: 'Emerald Nebula Corridor',
     primaryColor: '#10b981',
@@ -153,12 +189,11 @@ export const stageConfig = {
   }
 ],
   controlscontrols: {
-    inputMode: 'keyboard_mouse',
-    showVirtualJoysticks: false,
-    enablePointerLock: true,
-    requireLandscape: false,
-    description: 'WASD flight thrust, Mouse aim, Space boost, Tab HUD toggle, Left-Click fire laser'
-  }
+    "inputMode": "keyboard_mouse",
+    "showVirtualJoysticks": false,
+    "enablePointerLock": true,
+    "description": "WASD flight thrust, Mouse aim, Space boost, Tab HUD toggle, Left-Click fire laser, F engage warp"
+}
 };
 
 
@@ -230,7 +265,10 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   return true;
 }
 
-export function applyStage(engineApi) {
+export function   if (typeof engineApi.setStageObjectives === 'function') {
+    engineApi.setStageObjectives(stageConfig.objectives || []);
+  }
+applyStage(engineApi) {
   if (!engineApi) return stageConfig;
   console.log(`[Stage 6: Nebula Outpost] Applying Desktop Profile configuration...`);
 

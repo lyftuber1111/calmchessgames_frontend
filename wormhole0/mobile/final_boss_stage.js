@@ -7,6 +7,9 @@
  */
 
 export const stageConfig = {
+  warp_target_distance: 5000,
+  required_enemy_kills: 25,
+  mission_objectives: "Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.",
   meta: {
     level: 5,
     name: 'Final Boss Stage',
@@ -18,6 +21,7 @@ export const stageConfig = {
     parScore: 75000,
     requiredKills: 25,
     warpTargetDistance: 5000,
+    missionObjectives: "Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.",
     eventsWithin: 'Singularity Horizon Collapse, Dreadnought Gravitational Wave, Titan Core Overcharge, Final Singularity Breach',
     endLevelEvent: 'Wormhole Singularity Overlord Defeated'
   },
@@ -187,31 +191,45 @@ export const stageConfig = {
     "pool_size": 100
   }
 ],
-  objectivesobjectives: [
-  {
-    "id": "kills",
-    "type": "kills",
-    "target": 25,
-    "current": 0,
-    "title": "Destroy 25 Overlord Hostiles",
-    "description": "Destroy 25 hostile 3D units emerging from the singularity core including the Singularity Overlord Titan",
-    "requiredForWarp": true
-  },
-  {
-    "id": "distance",
-    "type": "distance",
-    "target": 5000,
-    "title": "Singularity Core Proximity < 5,000 KM",
-    "description": "Navigate vessel to within < 5,000 KM of singularity core",
-    "requiredForWarp": true
-  }
+  objectives: [
+    {
+        "id": "kills",
+        "type": "kills",
+        "target": 25,
+        "current": 0,
+        "title": "Destroy 25 Overlord Hostiles",
+        "description": "Destroy 25 hostiles including heavy escort fighters and dreadnoughts",
+        "requiredForWarp": true,
+        "actionText": "🎯 Target Threat",
+        "actionId": "target_enemy"
+    },
+    {
+        "id": "distance",
+        "type": "distance",
+        "target": 5000,
+        "title": "Singularity Epicenter Proximity < 5,000 KM",
+        "description": "Breach core epicenter perimeter threshold < 5,000 KM",
+        "requiredForWarp": true,
+        "actionText": "🛰️ Lock Vector",
+        "actionId": "lock_vector"
+    },
+    {
+        "id": "titan_boss",
+        "type": "boss",
+        "target": 1.0,
+        "title": "Defeat Singularity Overlord Titan",
+        "description": "Target and destroy the ancient 9-meter Singularity Overlord Titan flagship",
+        "requiredForWarp": true,
+        "actionText": "💀 Lock Titan Boss",
+        "actionId": "titan_boss"
+    }
 ],
   controls: {
-    inputMode: 'keyboard_mouse',
-    showVirtualJoysticks: false,
-    enablePointerLock: true,
-    description: 'WASD flight thrust, Mouse aim, Space boost, Tab HUD toggle, Left-Click fire laser'
-  }
+    "inputMode": "touch_virtual_joysticks",
+    "showVirtualJoysticks": true,
+    "enablePointerLock": false,
+    "description": "Left virtual joystick for pitch/yaw, Right slider for thrust/throttle, On-screen fire button, Tap to warp"
+}
 };
 
 export const stageEvents = [

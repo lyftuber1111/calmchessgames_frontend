@@ -39,37 +39,27 @@ export const stageConfig = {
   total_waves: 2,
   wave_interval_seconds: 15,
   objectives: [
-    {
-        "id": "kills",
-        "type": "kills",
-        "target": 15,
-        "current": 0,
-        "title": "Destroy 15 Tachyon Interceptors",
-        "description": "Neutralize 15 high-speed relativistic combat interceptors",
-        "requiredForWarp": true,
-        "actionText": "🎯 Target Threat",
-        "actionId": "target_enemy"
-    },
-    {
-        "id": "distance",
-        "type": "distance",
-        "target": 35000,
-        "title": "Light Horizon Proximity < 35,000 KM",
-        "description": "Approach within < 35,000 KM of the amber event horizon boundary",
-        "requiredForWarp": true,
-        "actionText": "🛰️ Lock Vector",
-        "actionId": "lock_vector"
-    },
-    {
-        "id": "shield_stabilize",
-        "type": "action",
-        "target": 1.0,
-        "title": "Relativistic Flux Shield Stabilization",
-        "description": "Stabilize vessel deflector harmonics against tachyon shear radiation",
-        "requiredForWarp": false,
-        "actionText": "🛡️ Stabilize Deflectors",
-        "actionId": "shield_stabilize"
-    }
+  {
+    "id": "kills",
+    "type": "kills",
+    "target": 15,
+    "current": 0,
+    "title": "Destroy 15 Tachyon Cruisers & Interceptors",
+    "description": "Neutralize 15 high-speed relativistic combat interceptors",
+    "requiredForWarp": true,
+    "actionText": "🎯 Target Threat",
+    "actionId": "target_enemy"
+  },
+  {
+    "id": "distance",
+    "type": "distance",
+    "target": 35000,
+    "title": "Light Horizon Proximity < 35,000 KM",
+    "description": "Approach within < 35,000 KM of the amber event horizon boundary",
+    "requiredForWarp": true,
+    "actionText": "🛰️ Lock Vector",
+    "actionId": "lock_vector"
+  }
 ],
   description: 'High-velocity relativistic light-horizon boundary with intense magnetic shear.',
   par_score: 12000,

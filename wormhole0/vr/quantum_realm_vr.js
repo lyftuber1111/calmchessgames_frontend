@@ -39,37 +39,27 @@ export const stageConfig = {
   total_waves: 2,
   wave_interval_seconds: 15,
   objectives: [
-    {
-        "id": "kills",
-        "type": "kills",
-        "target": 25,
-        "current": 0,
-        "title": "Annihilate 25 Quantum Dreadnoughts",
-        "description": "Destroy 25 phase-shifting capital dreadnoughts and combat escort wings",
-        "requiredForWarp": true,
-        "actionText": "🎯 Target Threat",
-        "actionId": "target_enemy"
-    },
-    {
-        "id": "distance",
-        "type": "distance",
-        "target": 10000,
-        "title": "Extraction Conduit Proximity < 10,000 KM",
-        "description": "Navigate vessel into quantum extraction conduit coordinates < 10,000 KM",
-        "requiredForWarp": true,
-        "actionText": "🛰️ Lock Vector",
-        "actionId": "lock_vector"
-    },
-    {
-        "id": "quantum_phase",
-        "type": "action",
-        "target": 1.0,
-        "title": "Multi-Dimensional Phase Alignment",
-        "description": "Harmonize sub-atomic dimensional phasors to unlock extraction hyper-jump gate",
-        "requiredForWarp": false,
-        "actionText": "✨ Align Phasing",
-        "actionId": "quantum_phase"
-    }
+  {
+    "id": "kills",
+    "type": "kills",
+    "target": 25,
+    "current": 0,
+    "title": "Annihilate 25 Quantum Dreadnoughts",
+    "description": "Destroy 25 phase-shifting capital dreadnoughts and combat escort wings",
+    "requiredForWarp": true,
+    "actionText": "🎯 Target Threat",
+    "actionId": "target_enemy"
+  },
+  {
+    "id": "distance",
+    "type": "distance",
+    "target": 10000,
+    "title": "Extraction Conduit Proximity < 10,000 KM",
+    "description": "Navigate vessel into quantum extraction conduit coordinates < 10,000 KM",
+    "requiredForWarp": true,
+    "actionText": "🛰️ Lock Vector",
+    "actionId": "lock_vector"
+  }
 ],
   description: 'Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.',
   par_score: 50000,

@@ -39,37 +39,27 @@ export const stageConfig = {
   total_waves: 2,
   wave_interval_seconds: 15,
   objectives: [
-    {
-        "id": "kills",
-        "type": "kills",
-        "target": 20,
-        "current": 0,
-        "title": "Destroy 20 Gravitational Void Probes",
-        "description": "Destroy 20 automated kinetic probes guarding singularity perimeter",
-        "requiredForWarp": true,
-        "actionText": "🎯 Target Threat",
-        "actionId": "target_enemy"
-    },
-    {
-        "id": "distance",
-        "type": "distance",
-        "target": 20000,
-        "title": "Collapse Perimeter Proximity < 20,000 KM",
-        "description": "Penetrate gravitational collapse boundary to within < 20,000 KM",
-        "requiredForWarp": true,
-        "actionText": "🛰️ Lock Vector",
-        "actionId": "lock_vector"
-    },
-    {
-        "id": "grav_dampener",
-        "type": "action",
-        "target": 1.0,
-        "title": "Gravitational Wave Dampener Calibration",
-        "description": "Calibrate phase dampeners to neutralize extreme black hole tidal forces",
-        "requiredForWarp": false,
-        "actionText": "🌀 Calibrate Dampener",
-        "actionId": "grav_dampener"
-    }
+  {
+    "id": "kills",
+    "type": "kills",
+    "target": 20,
+    "current": 0,
+    "title": "Destroy 20 Gravitational Void Probes",
+    "description": "Destroy 20 automated kinetic probes guarding singularity perimeter",
+    "requiredForWarp": true,
+    "actionText": "🎯 Target Threat",
+    "actionId": "target_enemy"
+  },
+  {
+    "id": "distance",
+    "type": "distance",
+    "target": 20000,
+    "title": "Collapse Perimeter Proximity < 20,000 KM",
+    "description": "Penetrate gravitational collapse boundary to within < 20,000 KM",
+    "requiredForWarp": true,
+    "actionText": "🛰️ Lock Vector",
+    "actionId": "lock_vector"
+  }
 ],
   description: 'Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.',
   par_score: 25000,

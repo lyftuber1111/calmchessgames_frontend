@@ -39,47 +39,27 @@ export const stageConfig = {
   total_waves: 2,
   wave_interval_seconds: 15,
   objectives: [
-    {
-        "id": "kills",
-        "type": "kills",
-        "target": 10,
-        "current": 0,
-        "title": "Destroy 10 Void Recon Drones",
-        "description": "Shoot down 10 hostile scout probes emerging from cyan entry vector",
-        "requiredForWarp": true,
-        "actionText": "🎯 Target Threat",
-        "actionId": "target_enemy"
-    },
-    {
-        "id": "distance",
-        "type": "distance",
-        "target": 50000,
-        "title": "Singularity Proximity < 50,000 KM",
-        "description": "Pilot vessel to within < 50,000 KM of cyan singularity core",
-        "requiredForWarp": true,
-        "actionText": "🛰️ Lock Vector",
-        "actionId": "lock_vector"
-    },
-    {
-        "id": "scan",
-        "type": "scan",
-        "target": 1.0,
-        "title": "Resonance Anomaly Scan",
-        "description": "Scan singularity anomaly to map gravitational shear harmonics",
-        "requiredForWarp": false,
-        "actionText": "📡 Scan Singularity",
-        "actionId": "scan"
-    },
-    {
-        "id": "coils",
-        "type": "coils",
-        "target": 3,
-        "title": "Tachyon Warp Coils Calibration",
-        "description": "Calibrate and synchronize all 3 warp coils for hyperspace stability",
-        "requiredForWarp": false,
-        "actionText": "Coil α / β / γ",
-        "actionId": "coils"
-    }
+  {
+    "id": "kills",
+    "type": "kills",
+    "target": 10,
+    "current": 0,
+    "title": "Destroy 10 Void Recon Drones",
+    "description": "Shoot down 10 hostile scout probes emerging from cyan entry vector",
+    "requiredForWarp": true,
+    "actionText": "🎯 Target Threat",
+    "actionId": "target_enemy"
+  },
+  {
+    "id": "distance",
+    "type": "distance",
+    "target": 50000,
+    "title": "Singularity Proximity < 50,000 KM",
+    "description": "Pilot vessel to within < 50,000 KM of cyan singularity core",
+    "requiredForWarp": true,
+    "actionText": "🛰️ Lock Vector",
+    "actionId": "lock_vector"
+  }
 ],
   description: 'Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.',
   par_score: 5000,

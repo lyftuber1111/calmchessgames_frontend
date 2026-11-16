@@ -12241,16 +12241,17 @@ function updatePlayerDefenseHUD() {
 // =============================================================================
 
 function getDeviceControlsHint() {
-  if (state.isXR && renderer && renderer.xr && renderer.xr.isPresenting) {
-    return '🥽 VR: Left Stick: Flight | Right Stick: Pitch/Yaw | Index Trigger: Fire Lasers | Grip: Engage Warp';
+  const dev = (currentActiveDeviceType || (state.isXR ? 'vr' : (state.isMobile ? 'mobile' : 'desktop'))).toLowerCase();
+  if (dev === 'vr' || (state.isXR && renderer && renderer.xr && renderer.xr.isPresenting)) {
+    return '🥽 VR Headset: Left Stick: Flight 6-DOF | Right Stick: Pitch/Yaw | Index Trigger: Fire | Grip: Boost / Warp Jump (Y)';
   }
-  if (window.isArModeActive || (state.isXR && window.isArSessionActive)) {
-    return '📱 ARCore: Device Motion to Aim | Center Reticle to Target | Screen Tap: Fire Lasers';
+  if (dev === 'arcore' || window.isArModeActive || (state.isXR && window.isArSessionActive)) {
+    return '📱 ARCore Mobile: Device Motion Aim | Reticle Target | Screen Tap: Fire Lasers | Vector Lock to Warp';
   }
-  if (state.isMobile || ('ontouchstart' in window && window.innerWidth <= 1024)) {
-    return '📱 Mobile: Left Stick: Steer | Right Fire Button: Lasers | Throttle Slider: Boost';
+  if (dev === 'mobile' || state.isMobile || ('ontouchstart' in window && window.innerWidth <= 1024)) {
+    return '📱 Mobile Touch: Left Virtual Stick: Steer | Right Aim | Throttle Slider: Boost | Tap: Fire | F/Badge: Warp';
   }
-  return '🖥️ Desktop: WASD / Mouse: Steer | Space / Left Click: Fire | Shift: Boost | F: Warp';
+  return '🖥️ Desktop: WASD / Mouse: Steer | Space / Left-Click: Fire | Shift: Boost | F: Warp Jump | Tab/M: Controls Panel';
 }
 
 function getFallbackObjectivesForStage(stageLevel) {
@@ -12260,45 +12261,38 @@ function getFallbackObjectivesForStage(stageLevel) {
   switch (stageLevel) {
     case 1:
       return [
-        { id: 'obj-kills', key: 'kills', title: `Destroy ${reqKills} Hostile Drones`, desc: 'Shoot down hostile reconnaissance drones emerging from entry corridor.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
-        { id: 'obj-distance', key: 'distance', title: `Wormhole Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Fly toward cyan singularity core with ship thrusters.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' },
-        { id: 'obj-scan', key: 'scan', title: 'Singularity Harmonic Scan', desc: 'Calibrate quantum sensor array to 432.8 THz resonance frequency.', action: 'scan_singularity', actionLabel: '📡 Scan Singularity' },
-        { id: 'obj-coils', key: 'coils', title: 'Tachyon Warp Coils (3/3)', desc: 'Synchronize Alpha, Beta, and Gamma field coils.', action: 'calibrate_coils', actionLabel: 'Coil α / β / γ' }
+        { id: 'obj-kills', key: 'kills', type: 'kills', target: reqKills, requiredForWarp: true, title: `Destroy ${reqKills} Void Recon Drones`, desc: 'Shoot down hostile scout probes emerging from cyan entry vector.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
+        { id: 'obj-distance', key: 'distance', type: 'distance', target: targetDist, requiredForWarp: true, title: `Singularity Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Pilot vessel to within < 50,000 KM of cyan singularity core.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' }
       ];
     case 2:
       return [
-        { id: 'obj-kills', key: 'kills', title: `Neutralize ${reqKills} Tachyon Cruisers`, desc: 'Eliminate high-speed interceptors in tachyon flux stream.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
-        { id: 'obj-distance', key: 'distance', title: `Event Horizon Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Navigate safely through relativistic accretion envelope.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' },
-        { id: 'obj-deflector', key: 'deflector', title: 'Deflector Shield Stabilization', desc: 'Harmonize forward deflectors to withstand tachyon distortion.', action: 'stabilize_deflectors', actionLabel: '🛡️ Stabilize Deflectors' }
+        { id: 'obj-kills', key: 'kills', type: 'kills', target: reqKills, requiredForWarp: true, title: `Destroy ${reqKills} Tachyon Cruisers & Interceptors`, desc: 'Neutralize high-speed relativistic combat interceptors in amber flux stream.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
+        { id: 'obj-distance', key: 'distance', type: 'distance', target: targetDist, requiredForWarp: true, title: `Light Horizon Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Approach within < 35,000 KM of the amber event horizon boundary.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' }
       ];
     case 3:
       return [
-        { id: 'obj-kills', key: 'kills', title: `Eliminate ${reqKills} Void Probes`, desc: 'Destroy gravitational probes distorting sensor arrays.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
-        { id: 'obj-distance', key: 'distance', title: `Core Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Approach dense gravitational core along safe gradient lines.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' },
-        { id: 'obj-dampener', key: 'dampener', title: 'Gravitational Wave Dampening', desc: 'Calibrate tidal stress dampener to prevent hull breach.', action: 'calibrate_dampener', actionLabel: '🌀 Calibrate Dampener' }
+        { id: 'obj-kills', key: 'kills', type: 'kills', target: reqKills, requiredForWarp: true, title: `Destroy ${reqKills} Gravitational Void Probes`, desc: 'Destroy automated kinetic probes guarding singularity perimeter.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
+        { id: 'obj-distance', key: 'distance', type: 'distance', target: targetDist, requiredForWarp: true, title: `Collapse Perimeter Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Penetrate gravitational collapse boundary to within < 20,000 KM.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' }
       ];
     case 4:
       return [
-        { id: 'obj-kills', key: 'kills', title: `Defeat ${reqKills} Quantum Dreadnoughts`, desc: 'Disrupt phase-shifting quantum fleet vessels before nexus jump.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
-        { id: 'obj-distance', key: 'distance', title: `Quantum Gate Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Transit through multi-dimensional nexus corridor.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' },
-        { id: 'obj-phase', key: 'phase', title: 'Quantum Phase Synchronization', desc: 'Align multi-dimensional phasing for sub-space transit.', action: 'align_phase', actionLabel: '✨ Align Phasing' }
+        { id: 'obj-kills', key: 'kills', type: 'kills', target: reqKills, requiredForWarp: true, title: `Annihilate ${reqKills} Quantum Dreadnoughts`, desc: 'Destroy phase-shifting capital dreadnoughts and combat escort wings.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
+        { id: 'obj-distance', key: 'distance', type: 'distance', target: targetDist, requiredForWarp: true, title: `Extraction Conduit Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Navigate vessel into quantum extraction conduit coordinates < 10,000 KM.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' }
       ];
     case 5:
       return [
-        { id: 'obj-kills', key: 'kills', title: `Destroy ${reqKills} Hostiles & Singularity Titan Boss`, desc: 'Take down the Singularity Overlord Titan and escort drones.', action: 'target_boss', actionLabel: '💀 Lock Titan Boss' },
-        { id: 'obj-distance', key: 'distance', title: `Singularity Epicenter < ${targetDist.toLocaleString()} KM`, desc: 'Navigate into singularity heart to disrupt overload collapse.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' },
-        { id: 'obj-overload', key: 'overload', title: 'Disrupt Epicenter Collapse', desc: 'Invert resonance polarity to prevent spacetime collapse.', action: 'disrupt_epicenter', actionLabel: '💥 Invert Polarity' }
+        { id: 'obj-kills', key: 'kills', type: 'kills', target: reqKills, requiredForWarp: true, title: `Destroy ${reqKills} Overlord Hostiles`, desc: 'Destroy 25 hostiles including heavy escort fighters and dreadnoughts.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
+        { id: 'obj-distance', key: 'distance', type: 'distance', target: targetDist, requiredForWarp: true, title: `Singularity Epicenter Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Breach core epicenter perimeter threshold < 5,000 KM.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' }
       ];
     case 6:
       return [
-        { id: 'obj-kills', key: 'kills', title: `Clear ${reqKills} Nebula Defense Sentries`, desc: 'Neutralize automated sentry grid guarding deep space outpost.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
-        { id: 'obj-distance', key: 'distance', title: `Nebula Outpost Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Reach docking range of deep space nebula relay station.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' },
-        { id: 'obj-relink', key: 'relink', title: 'Subspace Relink Transmission', desc: 'Establish high-bandwidth encrypted data link with command outpost.', action: 'relink_outpost', actionLabel: '📡 Activate Relink' }
+        { id: 'obj-kills', key: 'kills', type: 'kills', target: reqKills, requiredForWarp: true, title: `Neutralize ${reqKills} Nebula Defense Sentries`, desc: 'Clear defensive sentries patrolling emerald nebula corridor.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
+        { id: 'obj-distance', key: 'distance', type: 'distance', target: targetDist, requiredForWarp: true, title: `Command Relay Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Navigate dense asteroid corridor to within < 5,000 KM of outpost relay.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' }
       ];
     default:
       return [
-        { id: 'obj-kills', key: 'kills', title: `Destroy ${reqKills} Hostile Units`, desc: 'Neutralize all active sector hostile units.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
-        { id: 'obj-distance', key: 'distance', title: `Wormhole Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Fly toward target singularity coordinates.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' }
+        { id: 'obj-kills', key: 'kills', type: 'kills', target: reqKills, requiredForWarp: true, title: `Destroy ${reqKills} Hostile Units`, desc: 'Neutralize all active sector hostile units.', action: 'target_hostile', actionLabel: '🎯 Target Threat' },
+        { id: 'obj-distance', key: 'distance', type: 'distance', target: targetDist, requiredForWarp: true, title: `Wormhole Proximity < ${targetDist.toLocaleString()} KM`, desc: 'Fly toward target singularity coordinates.', action: 'vector_lock', actionLabel: '🛰️ Lock Vector' }
       ];
   }
 }
@@ -12344,117 +12338,23 @@ function toggleWormholeVectorLock() {
   showToast('🛰️ VECTOR LOCK ENGAGED: Heading Aligned to Singularity Core');
 }
 
-function triggerObjectiveAction(actionId, durationMs = 1500, onDoneCallback = null) {
-  if (!state.objectiveActionStates) state.objectiveActionStates = {};
-  if (state.objectiveActionStates[actionId] && state.objectiveActionStates[actionId].inProgress) return;
-  if (state.objectiveActionStates[actionId] && state.objectiveActionStates[actionId].completed) return;
-
-  if (audioMgr && audioMgr.playObjectiveTone) audioMgr.playObjectiveTone('action_start');
-  state.objectiveActionStates[actionId] = { inProgress: true, progress: 0.0, completed: false };
-
-  const startTime = Date.now();
-  const timer = setInterval(() => {
-    const elapsed = Date.now() - startTime;
-    const pct = Math.min(1.0, elapsed / durationMs);
-    state.objectiveActionStates[actionId].progress = pct;
-
-    const barEl = document.getElementById(`bar-${actionId}`);
-    if (barEl) barEl.style.width = `${Math.round(pct * 100)}%`;
-
-    if (pct >= 1.0) {
-      clearInterval(timer);
-      state.objectiveActionStates[actionId].inProgress = false;
-      state.objectiveActionStates[actionId].completed = true;
-      if (audioMgr && audioMgr.playObjectiveTone) audioMgr.playObjectiveTone('action_complete');
-      if (typeof onDoneCallback === 'function') onDoneCallback();
-      evaluateWarpReadiness();
-      renderStageObjectivesUI();
-    }
-  }, 60);
-}
-
 function handleObjectiveActionClick(action, btn, objId) {
   if (audioMgr && audioMgr.init) audioMgr.init();
 
   switch (action) {
     case 'target_hostile':
-    case 'target_boss':
+    case 'target_enemy':
+    case 'target_threat':
       targetNearestEnemy();
       break;
 
     case 'vector_lock':
+    case 'lock_vector':
       toggleWormholeVectorLock();
       break;
 
-    case 'scan_singularity':
-      if (state.isScanning || state.scanProgress >= 1.0) return;
-      if (audioMgr && audioMgr.playScan) audioMgr.playScan();
-      state.isScanning = true;
-      if (btn) { btn.disabled = true; btn.textContent = 'Scanning...'; }
-      let p = 0;
-      const scanInt = setInterval(() => {
-        p += 0.08;
-        state.scanProgress = Math.min(1.0, p);
-        const bar = document.getElementById('bar-scan');
-        if (bar) bar.style.width = `${Math.round(state.scanProgress * 100)}%`;
-        if (state.scanProgress >= 1.0) {
-          clearInterval(scanInt);
-          state.isScanning = false;
-          if (audioMgr && audioMgr.playObjectiveTone) audioMgr.playObjectiveTone('action_complete');
-          showToast('📡 Singularity Harmonic Scan Locked at 432.8 THz');
-          evaluateWarpReadiness();
-          renderStageObjectivesUI();
-        }
-      }, 100);
-      break;
-
-    case 'calibrate_coils':
-      if (!state.coils) state.coils = [false, false, false];
-      const nextIdx = state.coils.findIndex(c => !c);
-      if (nextIdx !== -1) {
-        if (audioMgr && audioMgr.playCoil) audioMgr.playCoil();
-        state.coils[nextIdx] = true;
-        const coilNames = ['Alpha', 'Beta', 'Gamma'];
-        showToast(`⚡ Coil ${coilNames[nextIdx]} Synchronized`);
-        evaluateWarpReadiness();
-        renderStageObjectivesUI();
-      }
-      break;
-
-    case 'stabilize_deflectors':
-      triggerObjectiveAction('deflector', 1600, () => {
-        state.shield = Math.min(100, (state.shield || 70) + 30);
-        showToast('🛡️ Deflectors Stabilized: Shields Restored +30%');
-      });
-      break;
-
-    case 'calibrate_dampener':
-      triggerObjectiveAction('dampener', 1800, () => {
-        state.velocity.multiplyScalar(0.1);
-        showToast('🌀 Gravitational Wave Dampeners Calibrated: Turbulence Nullified');
-      });
-      break;
-
-    case 'align_phase':
-      triggerObjectiveAction('phase', 1600, () => {
-        showToast('✨ Quantum Phase Synchronized: Multi-Dimensional Transit Ready');
-      });
-      break;
-
-    case 'disrupt_epicenter':
-      triggerObjectiveAction('overload', 2000, () => {
-        showToast('💥 Epicenter Collapse Inverted: Spacetime Horizon Stabilized');
-      });
-      break;
-
-    case 'relink_outpost':
-      triggerObjectiveAction('relink', 1700, () => {
-        showToast('📡 Subspace Relink Established: Deep Space Outpost Online');
-      });
-      break;
-
     default:
-      showToast(`⚡ Objective action [${action}] initialized`);
+      showToast(`⚡ Action [${action}] initialized`);
       break;
   }
 }
@@ -12464,9 +12364,10 @@ function handleObjectiveCardClick(objId, cardEl) {
   document.querySelectorAll('.objective-item').forEach(el => el.classList.remove('active'));
   if (cardEl) cardEl.classList.add('active');
 
-  if (objId === 'obj-kills') {
+  const strId = String(objId || '').toLowerCase();
+  if (strId.includes('kill') || strId.includes('threat') || strId.includes('hostile') || strId.includes('enemy')) {
     targetNearestEnemy();
-  } else if (objId === 'obj-distance') {
+  } else if (strId.includes('dist') || strId.includes('wormhole') || strId.includes('vector') || strId.includes('proximity')) {
     toggleWormholeVectorLock();
   }
 }
@@ -12490,8 +12391,17 @@ function renderStageObjectivesUI() {
   const killsCompleted = state.stageKills >= state.stageRequiredKills;
   const distCompleted = distKm <= state.stageTargetDistance;
 
-  // Retrieve configured or fallback objectives
-  const objectives = getFallbackObjectivesForStage(currentActiveStage);
+  // Retrieve configured or fallback objectives (strictly the 2 Mission Objectives)
+  const rawObjectives = (state.activeStageObjectives && state.activeStageObjectives.length > 0)
+    ? state.activeStageObjectives
+    : getFallbackObjectivesForStage(currentActiveStage);
+
+  // Strictly filter to the 2 Admin Console Mission Objectives: Kills and Distance
+  const objectives = rawObjectives.filter(o => o.key === 'kills' || o.key === 'distance' || o.id === 'kills' || o.id === 'distance').slice(0, 2);
+  if (objectives.length === 0) {
+    objectives.push(...getFallbackObjectivesForStage(currentActiveStage));
+  }
+
   let completedCount = 0;
   const totalCount = objectives.length;
 
@@ -12511,60 +12421,44 @@ function renderStageObjectivesUI() {
     let statusColor = '#f59e0b';
     let actionHtml = '';
 
-    if (obj.key === 'kills') {
+    const isKills = obj.key === 'kills' || obj.id === 'kills';
+    if (isKills) {
       isCompleted = killsCompleted;
       progressPct = Math.round(killsProgress * 100);
       statusText = isCompleted ? '✓ COMPLETED' : `${state.stageKills} / ${state.stageRequiredKills} KILLS`;
       statusColor = isCompleted ? '#10b981' : '#f59e0b';
-      actionHtml = `<button class="btn-action" data-action="${obj.action}" data-target="${obj.id}">${obj.actionLabel}</button>`;
-    } else if (obj.key === 'distance') {
+      actionHtml = `<button class="btn-action" data-action="${obj.action || 'target_enemy'}" data-target="${obj.id || 'obj-kills'}">${obj.actionLabel || obj.actionText || '🎯 Target Threat'}</button>`;
+    } else {
       isCompleted = distCompleted;
       progressPct = Math.round(distProgress * 100);
       statusText = isCompleted ? '✓ IN RANGE' : `${distKm.toLocaleString()} KM`;
       statusColor = isCompleted ? '#10b981' : '#00f0ff';
-      actionHtml = `<button class="btn-action" data-action="${obj.action}" data-target="${obj.id}">${obj.actionLabel}</button>`;
-    } else if (obj.key === 'scan') {
-      isCompleted = state.scanProgress >= 1.0;
-      progressPct = Math.round(state.scanProgress * 100);
-      statusText = isCompleted ? '✓ LOCKED (432.8 THz)' : (state.isScanning ? 'SCANNING...' : 'PENDING');
-      statusColor = isCompleted ? '#10b981' : 'var(--cyan-neon)';
-      actionHtml = `<button class="btn-action" data-action="scan_singularity" data-target="${obj.id}" ${isCompleted ? 'disabled style="background:#10b981; color:#000;"' : ''}>${isCompleted ? '✓ Scanned' : '📡 Scan Singularity'}</button>`;
-    } else if (obj.key === 'coils') {
-      const coilsCalibrated = (state.coils || []).filter(c => c).length;
-      isCompleted = coilsCalibrated === 3;
-      progressPct = Math.round((coilsCalibrated / 3) * 100);
-      statusText = isCompleted ? '✓ 3/3 SYNCHRONIZED' : `${coilsCalibrated}/3 CALIBRATED`;
-      statusColor = isCompleted ? '#10b981' : 'var(--cyan-neon)';
-      actionHtml = `
-        <div style="display:flex; gap:4px;">
-          <button class="btn-action btn-coil" data-action="calibrate_coils" data-coil="0" ${state.coils && state.coils[0] ? 'disabled style="background:#10b981; color:#000;"' : ''}>Coil α</button>
-          <button class="btn-action btn-coil" data-action="calibrate_coils" data-coil="1" ${state.coils && state.coils[1] ? 'disabled style="background:#10b981; color:#000;"' : ''}>Coil β</button>
-          <button class="btn-action btn-coil" data-action="calibrate_coils" data-coil="2" ${state.coils && state.coils[2] ? 'disabled style="background:#10b981; color:#000;"' : ''}>Coil γ</button>
-        </div>
-      `;
-    } else {
-      // Dynamic objective actions
-      const actState = (state.objectiveActionStates && state.objectiveActionStates[obj.key]) || { completed: false, progress: 0 };
-      isCompleted = Boolean(actState.completed);
-      progressPct = Math.round((actState.progress || 0) * 100);
-      statusText = isCompleted ? '✓ COMPLETED' : (actState.inProgress ? 'CALIBRATING...' : 'PENDING');
-      statusColor = isCompleted ? '#10b981' : 'var(--cyan-neon)';
-      actionHtml = `<button class="btn-action" data-action="${obj.action}" data-target="${obj.id}" ${isCompleted ? 'disabled style="background:#10b981; color:#000;"' : ''}>${isCompleted ? '✓ Completed' : obj.actionLabel}</button>`;
+      actionHtml = `<button class="btn-action" data-action="${obj.action || 'lock_vector'}" data-target="${obj.id || 'obj-distance'}">${obj.actionLabel || obj.actionText || '🛰️ Lock Vector'}</button>`;
     }
 
     if (isCompleted) completedCount++;
 
+    const badgeHtml = isCompleted
+      ? '<span class="obj-req-badge met">✓ WARP REQUIREMENT MET</span>'
+      : '<span class="obj-req-badge req">⚡ REQUIRED BEFORE WARP</span>';
+
+    const cardId = obj.id || (isKills ? 'obj-kills' : 'obj-distance');
+    const barKey = isKills ? 'kills' : 'distance';
+
     html += `
-      <div class="objective-item ${isCompleted ? 'completed' : ''}" id="${obj.id}" data-objid="${obj.id}">
+      <div class="objective-item ${isCompleted ? 'completed' : ''}" id="${cardId}" data-objid="${cardId}">
         <div class="obj-header">
           <span>${idx + 1}. ${obj.title}</span>
-          <span class="obj-status" id="status-${obj.id}" style="color:${statusColor}; font-weight:bold;">${statusText}</span>
+          <span class="obj-status" id="status-${cardId}" style="color:${statusColor}; font-weight:bold;">${statusText}</span>
+        </div>
+        <div style="margin:2px 0 4px 0;">
+          ${badgeHtml}
         </div>
         <div class="obj-bar-wrap">
-          <div class="obj-bar" id="bar-${obj.key}" style="width:${progressPct}%; background:${isCompleted ? '#10b981' : (obj.key === 'kills' ? '#f59e0b' : '#00f0ff')};"></div>
+          <div class="obj-bar" id="bar-${barKey}" style="width:${progressPct}%; background:${isCompleted ? '#10b981' : (isKills ? '#f59e0b' : '#00f0ff')};"></div>
         </div>
         <div style="font-size:0.64rem; color:var(--text-dim); margin-top:2px;">
-          ${obj.desc}
+          ${obj.desc || obj.description || ''}
         </div>
         <div class="obj-actions" style="margin-top:6px;">
           ${actionHtml}
@@ -12579,7 +12473,7 @@ function renderStageObjectivesUI() {
   // Attach interactive click handlers for cards and action buttons
   listContainer.querySelectorAll('.objective-item').forEach(card => {
     card.addEventListener('click', (ev) => {
-      if (ev.target.tagName.toLowerCase() === 'button') return; // Handled by button listener
+      if (ev.target.tagName.toLowerCase() === 'button') return;
       handleObjectiveCardClick(card.dataset.objid, card);
     });
   });
@@ -12590,20 +12484,6 @@ function renderStageObjectivesUI() {
       const action = btn.dataset.action;
       const target = btn.dataset.target;
       handleObjectiveActionClick(action, btn, target);
-    });
-  });
-
-  listContainer.querySelectorAll('.btn-coil').forEach(coilBtn => {
-    coilBtn.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      const coilIdx = parseInt(coilBtn.dataset.coil || 0);
-      if (!state.coils) state.coils = [false, false, false];
-      if (audioMgr && audioMgr.playCoil) audioMgr.playCoil();
-      state.coils[coilIdx] = true;
-      const coilNames = ['Alpha', 'Beta', 'Gamma'];
-      showToast(`⚡ Coil ${coilNames[coilIdx]} Synchronized`);
-      evaluateWarpReadiness();
-      renderStageObjectivesUI();
     });
   });
 
@@ -12647,7 +12527,15 @@ function evaluateWarpReadiness(distKm) {
   const killsMet = state.stageKills >= state.stageRequiredKills;
   const distMet = distKm <= state.stageTargetDistance;
 
-  // Warp authorization requires completing the required mission objectives (kills & distance threshold)
+  const missingRequirements = [];
+  if (!killsMet) {
+    missingRequirements.push(`${state.stageRequiredKills - state.stageKills} Hostile Kills Remaining`);
+  }
+  if (!distMet) {
+    missingRequirements.push(`Approach Singularity < ${state.stageTargetDistance.toLocaleString()} KM (Current: ${distKm.toLocaleString()} KM)`);
+  }
+
+  // Warp authorization strictly requires completing the 2 admin console mission objectives
   const isReady = killsMet && distMet;
   state.isWarpReady = isReady;
 
@@ -12667,19 +12555,6 @@ function evaluateWarpReadiness(distKm) {
     triggerAcquireEvent('distance', { stageLevel: currentActiveStage });
   }
 
-  if (currentActiveStage === 1) {
-    if (state.scanProgress >= 1.0 && !state.completedObjectiveEvents[stagePrefix + 'scan']) {
-      state.completedObjectiveEvents[stagePrefix + 'scan'] = true;
-      triggerAcquireEvent('objective_scan_complete', { stageLevel: currentActiveStage });
-      triggerAcquireEvent('scan', { stageLevel: currentActiveStage });
-    }
-    if (state.coils && state.coils.filter(c => c).length === 3 && !state.completedObjectiveEvents[stagePrefix + 'coils']) {
-      state.completedObjectiveEvents[stagePrefix + 'coils'] = true;
-      triggerAcquireEvent('objective_coils_complete', { stageLevel: currentActiveStage });
-      triggerAcquireEvent('coils', { stageLevel: currentActiveStage });
-    }
-  }
-
   if (isReady && !state.completedObjectiveEvents[stagePrefix + 'all_ready']) {
     state.completedObjectiveEvents[stagePrefix + 'all_ready'] = true;
     triggerAcquireEvent('all_required_objectives_complete', { stageLevel: currentActiveStage });
@@ -12687,6 +12562,9 @@ function evaluateWarpReadiness(distKm) {
     const endEv = (stageRec && stageRec.endLevelEvent) || (activeStageModule && activeStageModule.stageConfig && activeStageModule.stageConfig.end_level_event);
     if (endEv) {
       triggerAcquireEvent(endEv, { stageLevel: currentActiveStage });
+    }
+    if (audioMgr && audioMgr.playObjectiveTone) {
+      audioMgr.playObjectiveTone('action_complete');
     }
   }
 
@@ -12725,6 +12603,7 @@ function evaluateWarpReadiness(distKm) {
   });
 
   const authStatusText = document.getElementById('warp-auth-status-text');
+  const authSubtext = document.getElementById('warp-auth-subtext');
   const authBox = document.getElementById('warp-gate-authorization-box');
   if (authStatusText && authBox) {
     if (isReady) {
@@ -12733,12 +12612,20 @@ function evaluateWarpReadiness(distKm) {
       authStatusText.style.color = '#ffd700';
       authStatusText.style.fontWeight = 'bold';
       authStatusText.textContent = '⚡ WARP AVAILABLE: HYPER-WARP GATE AUTHORIZED!';
+      if (authSubtext) {
+        authSubtext.style.color = '#ffd700';
+        authSubtext.textContent = 'ALL REQUIRED OBJECTIVES SATISFIED — PRESS [F] OR TAP ENGAGE WARP TO INITIATE TRANSIT';
+      }
     } else {
       authBox.style.background = 'rgba(239,68,111,0.12)';
       authBox.style.borderColor = 'rgba(239,68,111,0.4)';
       authStatusText.style.color = '#ff6b8b';
       authStatusText.style.fontWeight = 'bold';
       authStatusText.textContent = '⛔ HYPER-WARP LOCKED: OBJECTIVES INCOMPLETE';
+      if (authSubtext) {
+        authSubtext.style.color = '#f87171';
+        authSubtext.textContent = 'RESTRICTED: ' + (missingRequirements.join(' | ') || 'Requirements incomplete');
+      }
     }
   }
 }
@@ -12758,7 +12645,18 @@ function triggerWarpJump() {
     if (distKm > state.stageTargetDistance) {
       missing.push(`APPROACH < ${state.stageTargetDistance.toLocaleString()} KM (CURRENT: ${distKm.toLocaleString()} KM)`);
     }
-    showToast('WARP UNAVAILABLE', 2500);
+    const missingNotice = missing.length > 0 ? missing.join(' | ') : 'OBJECTIVES INCOMPLETE';
+    showToast(`⛔ HYPER-WARP LOCKED: ${missingNotice}`, 3500);
+
+    if (audioMgr && audioMgr.playObjectiveTone) {
+      audioMgr.playObjectiveTone('action_start');
+    }
+
+    // Auto-open Controls drawer to Missions tab so user sees pending objectives
+    const drawer = document.getElementById('left-drawer-container');
+    if (drawer && !drawer.classList.contains('open') && typeof toggleDrawer === 'function') {
+      toggleDrawer(true);
+    }
     return;
   }
 

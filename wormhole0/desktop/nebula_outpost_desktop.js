@@ -21,37 +21,27 @@ export const stageConfig = {
   par_score: 7500,
 
   objectives: [
-    {
-        "id": "kills",
-        "type": "kills",
-        "target": 25,
-        "current": 0,
-        "title": "Neutralize 25 Nebula Defense Sentries",
-        "description": "Clear 25 defensive sentries patrolling emerald nebula corridor",
-        "requiredForWarp": true,
-        "actionText": "🎯 Target Threat",
-        "actionId": "target_enemy"
-    },
-    {
-        "id": "distance",
-        "type": "distance",
-        "target": 5000,
-        "title": "Command Relay Proximity < 5,000 KM",
-        "description": "Navigate dense asteroid corridor to within < 5,000 KM of outpost command relay",
-        "requiredForWarp": true,
-        "actionText": "🛰️ Lock Vector",
-        "actionId": "lock_vector"
-    },
-    {
-        "id": "outpost_relink",
-        "type": "action",
-        "target": 1.0,
-        "title": "Outpost Command Relink Activation",
-        "description": "Establish secure quantum telemetry link with orbital outpost command relay",
-        "requiredForWarp": false,
-        "actionText": "📡 Activate Relink",
-        "actionId": "outpost_relink"
-    }
+  {
+    "id": "kills",
+    "type": "kills",
+    "target": 25,
+    "current": 0,
+    "title": "Neutralize 25 Nebula Defense Sentries",
+    "description": "Clear 25 defensive sentries patrolling emerald nebula corridor",
+    "requiredForWarp": true,
+    "actionText": "🎯 Target Threat",
+    "actionId": "target_enemy"
+  },
+  {
+    "id": "distance",
+    "type": "distance",
+    "target": 5000,
+    "title": "Command Relay Proximity < 5,000 KM",
+    "description": "Navigate dense asteroid corridor to within < 5,000 KM of outpost command relay",
+    "requiredForWarp": true,
+    "actionText": "🛰️ Lock Vector",
+    "actionId": "lock_vector"
+  }
 ],
   visual: {
     themeName: 'Emerald Nebula Corridor',
@@ -265,10 +255,10 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   return true;
 }
 
-export function   if (typeof engineApi.setStageObjectives === 'function') {
+export function applyStage(engineApi) {
+  if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
-applyStage(engineApi) {
   if (!engineApi) return stageConfig;
   console.log(`[Stage 6: Nebula Outpost] Applying Desktop Profile configuration...`);
 

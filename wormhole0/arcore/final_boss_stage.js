@@ -192,37 +192,27 @@ export const stageConfig = {
   }
 ],
   objectives: [
-    {
-        "id": "kills",
-        "type": "kills",
-        "target": 25,
-        "current": 0,
-        "title": "Destroy 25 Overlord Hostiles",
-        "description": "Destroy 25 hostiles including heavy escort fighters and dreadnoughts",
-        "requiredForWarp": true,
-        "actionText": "🎯 Target Threat",
-        "actionId": "target_enemy"
-    },
-    {
-        "id": "distance",
-        "type": "distance",
-        "target": 5000,
-        "title": "Singularity Epicenter Proximity < 5,000 KM",
-        "description": "Breach core epicenter perimeter threshold < 5,000 KM",
-        "requiredForWarp": true,
-        "actionText": "🛰️ Lock Vector",
-        "actionId": "lock_vector"
-    },
-    {
-        "id": "titan_boss",
-        "type": "boss",
-        "target": 1.0,
-        "title": "Defeat Singularity Overlord Titan",
-        "description": "Target and destroy the ancient 9-meter Singularity Overlord Titan flagship",
-        "requiredForWarp": true,
-        "actionText": "💀 Lock Titan Boss",
-        "actionId": "titan_boss"
-    }
+  {
+    "id": "kills",
+    "type": "kills",
+    "target": 25,
+    "current": 0,
+    "title": "Destroy 25 Overlord Hostiles",
+    "description": "Destroy 25 hostiles including heavy escort fighters and dreadnoughts",
+    "requiredForWarp": true,
+    "actionText": "🎯 Target Threat",
+    "actionId": "target_enemy"
+  },
+  {
+    "id": "distance",
+    "type": "distance",
+    "target": 5000,
+    "title": "Singularity Epicenter Proximity < 5,000 KM",
+    "description": "Breach core epicenter perimeter threshold < 5,000 KM",
+    "requiredForWarp": true,
+    "actionText": "🛰️ Lock Vector",
+    "actionId": "lock_vector"
+  }
 ],
   controls: {
     "inputMode": "ar_touch_flight",

@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import {
   createStagePool,
-  WarpOriginObjectPool,
   MeshPool,
   loadCockpitCracksGlbAsset,
   setupCockpitCracksHierarchy,
   flashCockpitCracksOverlay,
   showGameOverCockpitCracksOverlay,
+  fitCockpitCracksToCamera,
   COCKPIT_CRACKS_GLB_URL
 } from './warp_origin_pool.js';
 
@@ -30,7 +30,8 @@ export const stageConfig = {
     warpTargetDistance: 50000,
     missionObjectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
     eventsWithin: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
-    endLevelEvent: 'Warp Horizon Jump Gate Initialized'
+    endLevelEvent: 'Warp Horizon Jump Gate Initialized',
+    cockpitOverlayAsset: 'scene_images/cockpit_cracks.glb'
   },
   stage_level: 1,
   stage_name: 'Warp Origin',
@@ -39,73 +40,18 @@ export const stageConfig = {
   device: 'mobile',
   xr_mode: 'mobile-xr',
   cockpit_overlay: {
-    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
-    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+    model_3d_url: 'scene_images/cockpit_cracks.glb',
+    model_url: 'scene_images/cockpit_cracks.glb',
     asset_type: '3d_model'
   },
-  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
+  cockpit_overlay_asset: 'scene_images/cockpit_cracks.glb',
   events_within_level: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
   end_level_event: 'Warp Horizon Jump Gate Initialized',
-  mission_objectives: "Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.",
+  mission_objectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
   required_enemy_kills: 10,
   warp_target_distance: 50000,
-  initial_weapon_pool_size: 300,
-  initial_enemy_pool_size: 100,
-  waves: [
-    {
-      wave_number: 1,
-      enemy_count: 5,
-      interval_seconds: 0,
-      delay_ms: 0,
-      description: 'Wave 1: Recon Vanguard (5 Enemies)'
-    },
-    {
-      wave_number: 2,
-      enemy_count: 10,
-      interval_seconds: 15,
-      delay_ms: 15000,
-      description: 'Wave 2: Full Assault Swarm (10 Enemies)'
-    }
-  ],
-  total_waves: 2,
-  wave_interval_seconds: 15,
-  objectives: [
-  {
-    "id": "kills",
-    "type": "kills",
-    "target": 10,
-    "current": 0,
-    "title": "Destroy 10 Void Recon Drones",
-    "description": "Shoot down 10 hostile scout probes emerging from cyan entry vector",
-    "requiredForWarp": true,
-    "actionText": "🎯 Target Threat",
-    "actionId": "target_enemy"
-  },
-  {
-    "id": "distance",
-    "type": "distance",
-    "target": 50000,
-    "title": "Singularity Proximity < 50,000 KM",
-    "description": "Pilot vessel to within < 50,000 KM of cyan singularity core",
-    "requiredForWarp": true,
-    "actionText": "🛰️ Lock Vector",
-    "actionId": "lock_vector"
-  }
-],
   description: 'Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.',
   par_score: 5000,
-
-  cockpit_overlay: {
-    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
-    alt_url: 'wormhole0/mobile/warp_origin_images/cockpit_cracks.glb',
-    type: 'transparent_overlay',
-    initial_opacity: 0.0,
-    hit_opacity: 0.95,
-    flash_duration_ms: 280,
-    fade_duration_ms: 100,
-    pool_size: 1
-  },
-
   visual: {
     themeName: 'Warp Cyan Corridor',
     colors: {
@@ -198,161 +144,111 @@ export const stageConfig = {
     ]
 },
   enemies: [
-  {
-    "id": "phase_interceptor",
-    "enemy_id": "phase_interceptor",
-    "name": "Phase Interceptor",
-    "enemy_class": "Fast Interceptor",
-    "icon": "\ud83d\ude80",
-    "model_3d_type": "custom_glb",
-    "model_3d_url": "desktop/warp_origin_images/drone_phase_interceptor_3.glb",
-    "color": "#38bdf8",
-    "scale": 0.5,
-    "length": 4.2,
-    "height": 1.3,
-    "depth": 3.4,
-    "circumference": 5.0,
-    "hits": 1,
-    "armor": 1,
-    "shield": 0,
-    "speed": 220,
-    "attack_damage": 1,
-    "weapon_name": "Dual Ion Cannon",
-    "weapon_damage": 1,
-    "weapon_speed": 550,
-    "weapon_color": "#38bdf8",
-    "weapon_scale": 1.0,
-    "weapon_scale_x": 1.0,
-    "weapon_scale_y": 1.0,
-    "weapon_scale_z": 1.0,
-    "weapon_size_x": 1.0,
-    "weapon_size_y": 1.0,
-    "weapon_size_z": 1.0,
-    "weapon_dimensions": {
-      "x": 1.0,
-      "y": 1.0,
-      "z": 1.0
-    },
-    "weapon_special_fx": "cockpit_cracks_red_edges",
-    "weapon_special_fx_file": "mobile/warp_origin_images/cockpit_cracks.glb",
-    "weapon_special_fx_type": "overlay",
-    "fire_rate": 3.0,
-    "fire_rate_seconds": 3.0,
-    "fire_rate_ms": 3000,
-    "fire_rate_times_per_sec": 0.333,
-    "weapons": [
-      {
-        "id": "ew_phase_ion",
-        "name": "Dual Ion Cannon",
-        "type": "beam",
-        "mount": "dual_wingtip",
-        "model_url": "",
-        "model_type": "",
-        "fire_point_x": 0.0,
-        "fire_point_y": -0.15,
-        "fire_point_z": 1.5,
-        "scale": 1.0,
-        "scale_x": 1.0,
-        "scale_y": 1.0,
-        "scale_z": 1.0,
-        "size_x": 1.0,
-        "size_y": 1.0,
-        "size_z": 1.0,
-        "dimensions": {
-          "x": 1.0,
-          "y": 1.0,
-          "z": 1.0
-        },
-        "special_fx": "cockpit_cracks_red_edges",
-        "special_fx_file": "mobile/warp_origin_images/cockpit_cracks.glb",
-        "special_fx_type": "overlay",
-        "fire_rate_times_per_sec": 0.333,
-        "fire_interval_ms": 3000,
-        "fire_rate_seconds": 3.0,
-        "damage": 1,
-        "speed": 550,
+    {
+        "id": "phase_interceptor",
+        "enemy_id": "phase_interceptor",
+        "name": "Phase Interceptor (Universal)",
+        "enemy_class": "Fast Interceptor",
+        "icon": "🚀",
+        "model_3d_type": "custom_glb",
+        "model_3d_url": "desktop/warp_origin_images/drone_phase_interceptor_3.glb",
+        "scale": 0.5,
+        "length": 4.2,
+        "height": 1.3,
+        "depth": 3.4,
+        "circumference": 5,
         "color": "#38bdf8",
-        "is_enabled": 1
-      }
-    ],
-    "score": 150,
-    "threat": "Medium",
-    "piercing": "any",
-    "pool_size": 40
-  },
-  {
-    "id": "recon_drone",
-    "enemy_id": "recon_drone",
-    "name": "Recon Drone",
-    "enemy_class": "Scout Drone",
-    "icon": "\ud83d\udef8",
-    "model_3d_type": "custom_glb",
-    "model_3d_url": "desktop/warp_origin_images/recon_drone_2.8m.glb",
-    "color": "#00f0ff",
-    "scale": 0.4,
-    "length": 2.8,
-    "height": 2.8,
-    "depth": 2.8,
-    "circumference": 8.8,
-    "hits": 1,
-    "armor": 0,
-    "shield": 0,
-    "speed": 180,
-    "attack_damage": 1,
-    "weapon_name": "Plasma Pulse",
-    "weapon_damage": 1,
-    "weapon_speed": 450,
-    "weapon_color": "#00f0ff",
-    "weapon_scale": 0.8,
-    "weapon_scale_x": 0.8,
-    "weapon_scale_y": 0.8,
-    "weapon_scale_z": 1.0,
-    "weapon_size_x": 0.5,
-    "weapon_size_y": 0.5,
-    "weapon_size_z": 1.0,
-    "weapon_dimensions": {
-      "x": 0.5,
-      "y": 0.5,
-      "z": 1.0
-    },
-    "weapon_special_fx": "cockpit_cracks_red_edges",
-    "weapon_special_fx_file": "mobile/warp_origin_images/cockpit_cracks.glb",
-    "weapon_special_fx_type": "overlay",
-    "fire_rate": 2.5,
-    "fire_rate_seconds": 2.5,
-    "fire_rate_ms": 2500,
-    "fire_rate_times_per_sec": 0.4,
-    "weapons": [
-      {
-        "id": "ew_recon_pulse",
-        "name": "Plasma Pulse",
-        "type": "beam",
-        "mount": "center",
-        "model_url": "",
-        "model_type": "",
-        "fire_point_x": 0.0,
-        "fire_point_y": -0.15,
-        "fire_point_z": 1.5,
-        "scale": 0.8,
-        "scale_x": 0.8,
-        "scale_y": 0.8,
-        "scale_z": 1.0,
-        "size_x": 0.5,
-        "size_y": 0.5,
-        "size_z": 1.0,
-        "dimensions": {
-          "x": 0.5,
-          "y": 0.5,
-          "z": 1.0
+        "hits": 1,
+        "armor": 1,
+        "shield": 0,
+        "speed": 220,
+        "attack_damage": 1,
+        "weapon_name": "Dual Ion Cannon",
+        "weapon_damage": 1,
+        "weapon_speed": 550,
+        "weapon_color": "#38bdf8",
+        "weapon_scale": 0.5,
+        "weapon_scale_x": 1,
+        "weapon_scale_y": 1,
+        "weapon_scale_z": 1,
+        "weapon_size_x": 1,
+        "weapon_size_y": 1,
+        "weapon_size_z": 1,
+        "weapon_dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
         },
-        "special_fx": "cockpit_cracks_red_edges",
-        "special_fx_file": "mobile/warp_origin_images/cockpit_cracks.glb",
-        "special_fx_type": "overlay",
-        "fire_rate_times_per_sec": 0.4,
-        "fire_interval_ms": 2500,
-        "fire_rate_seconds": 2.5,
-        "damage": 1,
-        "speed": 450,
+        "weapon_special_fx": "cockpit_cracks_red_edges",
+        "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "weapon_special_fx_type": "overlay",
+        "fire_rate": 3,
+        "fire_rate_seconds": 3,
+        "fire_rate_ms": 3000,
+        "fire_rate_times_per_sec": 0.333,
+        "weapons": [
+            {
+                "id": "ew_phase_interceptor_0",
+                "name": "Dual Ion Cannon",
+                "type": "beam",
+                "mount": "center",
+                "model_url": "",
+                "model_type": "",
+                "fire_point_x": 0,
+                "fire_point_y": -0.15,
+                "fire_point_z": 1.5,
+                "scale": 0.5,
+                "scale_x": 1,
+                "scale_y": 1,
+                "scale_z": 1,
+                "size_x": 1,
+                "size_y": 1,
+                "size_z": 1,
+                "dimensions": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "fire_rate_times_per_sec": 0.333,
+                "fire_interval_ms": 3000,
+                "fire_rate_seconds": 3,
+                "damage": 1,
+                "speed": 550,
+                "color": "#38bdf8",
+                "special_fx": "cockpit_cracks_red_edges",
+                "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                "special_fx_type": "overlay",
+                "is_enabled": 1
+            }
+        ],
+        "score": 250,
+        "threat": "Medium",
+        "piercing": "red_laser",
+        "pool_size": 30,
+        "quick_effect_primary": "engine_ion_thrust",
+        "quick_effect_secondary": "plasma_aura",
+        "quick_effect_color": "#38bdf8",
+        "quick_effect_intensity": 1,
+        "quick_effect_speed": 1,
+        "destruction_particle_type": "procedural_plasma_shatter",
+        "destruction_particle_url": "",
+        "destruction_particle_count": 45,
+        "destruction_particle_color": "#38bdf8",
+        "destruction_particle_scale": 1
+    },
+    {
+        "id": "void_recon_drone_mobile",
+        "enemy_id": "void_recon_drone_mobile",
+        "name": "Void Recon Drone (Mobile)",
+        "enemy_class": "Scout Drone",
+        "icon": "🛸",
+        "model_3d_type": "custom_glb",
+        "model_3d_url": "mobile/warp_origin_images/recon_drone_2.8m.glb",
+        "scale": 0.75,
+        "length": 2.8,
+        "height": 2.8,
+        "depth": 2.8,
+        "circumference": 8.8,
         "color": "#00f0ff",
         "hits": 1,
         "armor": 1,
@@ -617,11 +513,34 @@ export const stageConfig = {
         "destruction_particle_scale": 1
     }
 ],
-  controlscontrols: {
+  objectives: [
+    {
+        "id": "kills",
+        "type": "kills",
+        "target": 10,
+        "current": 0,
+        "title": "Destroy 10 Void Recon Drones",
+        "description": "Shoot down 10 hostile scout probes emerging from cyan entry vector",
+        "requiredForWarp": true,
+        "actionText": "🎯 Target Threat",
+        "actionId": "target_enemy"
+    },
+    {
+        "id": "distance",
+        "type": "distance",
+        "target": 50000,
+        "title": "Singularity Proximity < 50,000 KM",
+        "description": "Pilot vessel to within < 50,000 KM of cyan singularity core",
+        "requiredForWarp": true,
+        "actionText": "🛰️ Lock Vector",
+        "actionId": "lock_vector"
+    }
+],
+  controls: {
     "inputMode": "touch_virtual_joysticks",
-    "showVirtualJoysticks": true,
-    "enablePointerLock": false,
-    "description": "Left virtual joystick for pitch/yaw, Right slider for thrust/throttle, On-screen fire button, Tap to warp"
+    "showVirtualJoysticks": "true",
+    "enablePointerLock": "false",
+    "description": "Left virtual joystick for pitch/yaw, Right slider for thrust/throttle, On-screen fire button"
 }
 };
 
@@ -703,12 +622,12 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
     direction,
     speed: boltSpeed,
     damage: boltDamage,
-    weaponId: primaryW.id || '',
-    weaponName: primaryW.name || enemy.weapon_name || 'Dual Ion Cannon',
-    weaponColor: enemy.weaponColor || enemy.weapon_color || '#38bdf8',
-    specialFx: primaryW.special_fx || enemy.weapon_special_fx || 'cockpit_cracks_red_edges',
-    specialFxFile: primaryW.special_fx_file || enemy.weapon_special_fx_file || 'mobile/warp_origin_images/cockpit_cracks.glb',
-    specialFxType: primaryW.special_fx_type || enemy.weapon_special_fx_type || 'overlay',
+    weaponId: wId,
+    weaponName: wName,
+    weaponColor: wColor,
+    specialFx: wSpecialFx,
+    specialFxFile: wSpecialFxFile,
+    specialFxType: wSpecialFxType,
     scale: wScale,
     scale_x: wScaleX,
     scale_y: wScaleY,
@@ -726,19 +645,35 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   return true;
 }
 
+export function updateEnemyMovement(enemy, delta, playerPos, scene) {
+  if (!enemy || !enemy.mesh) return;
+  // Default forward intercept trajectory
+  if (typeof enemy.speed === 'number' && enemy.speed > 0) {
+    const dir = new THREE.Vector3().subVectors(playerPos, enemy.mesh.position).normalize();
+    enemy.mesh.position.addScaledVector(dir, enemy.speed * delta * 0.1);
+  }
+}
+
+export function updateStageWaves(pool, activeEnemies, stageKills, scene) {
+  if (!pool) return;
+  // Waves boilerplate handler
+  if (typeof pool.getPoolStats === 'function') {
+    return pool.getPoolStats();
+  }
+}
+
+
 // =========================================================================
-// COCKPIT CRACKS TRANSPARENT OVERLAY POOL & HIT MANAGEMENT
+// COCKPIT CRACKS TRANSPARENT OVERLAY POOL & GAME OVER MANAGEMENT
 // Model: mobile/warp_origin_images/cockpit_cracks.glb
 // Transparent overlay positioned across the cockpit window;
-// flashes visible for an instant on enemy hit then returns to invisible.
+// flashes visible for an instant on enemy hit and stays visible for 1 second
+// before game over screen appears. Loaded with the stage object pool.
 // =========================================================================
 
 let activeCockpitCracksMesh = null;
 let activeCockpitCracksPool = null;
 
-/**
- * Initializes and mounts the cockpit cracks GLB transparent overlay across the cockpit view using the pool.
- */
 export async function setupCockpitCracksOverlay(camera, pool = null, scene = null) {
   if (!camera) {
     camera = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
@@ -747,7 +682,6 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
     scene = (typeof window !== 'undefined' && window.scene) ? window.scene : null;
   }
 
-  // If an existing cracks overlay is already mounted to this camera, clean it up first
   if (camera) {
     const existing = camera.getObjectByName('cockpit_cracks_overlay');
     if (existing) {
@@ -755,7 +689,6 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
     }
   }
 
-  // 1. Try loading with provided object pool
   if (pool && typeof pool.getCockpitCracksOverlay === 'function') {
     activeCockpitCracksPool = pool;
     activeCockpitCracksMesh = pool.getCockpitCracksOverlay(camera);
@@ -765,16 +698,17 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
     }
   }
 
-  // 2. Pre-allocate and load using MeshPool
   try {
-    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url)) || stageConfig.cockpit_overlay_asset || COCKPIT_CRACKS_GLB_URL
+    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url))
+      || stageConfig.cockpit_overlay_asset
+      || 'scene_images/cockpit_cracks.glb'
+      || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
     const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
     if (loadedMesh) {
       setupCockpitCracksHierarchy(loadedMesh);
 
-      // Pre-allocate in a dedicated MeshPool
       activeCockpitCracksPool = new MeshPool(
         scene,
         null,
@@ -790,19 +724,15 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
         camera.add(activeCockpitCracksMesh);
         fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
       }
-
-      console.log('[Stage 1: Warp Origin Mobile] Cockpit cracks GLB loaded with pool and mounted across cockpit view');
+      console.log(`[Stage 1: Warp Origin] Cockpit cracks GLB loaded with pool and mounted across cockpit view`);
     }
   } catch (err) {
-    console.warn('[Stage 1: Warp Origin Mobile] Error setting up cockpit cracks overlay:', err);
+    console.warn(`[Stage 1: Warp Origin] Error setting up cockpit cracks overlay:`, err);
   }
 
   return activeCockpitCracksMesh;
 }
 
-/**
- * Fits the Cockpit Cracks 3D mesh across the camera frustum so it covers the entire cockpit window.
- */
 export function fitCockpitCracksToCamera(mesh, camera) {
   if (!mesh || !camera) return;
   mesh.position.set(0, 0, -1.0);
@@ -814,15 +744,10 @@ export function fitCockpitCracksToCamera(mesh, camera) {
   const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
   const visibleW = visibleH * aspect;
 
-  // Base model bounds: width ~1.90, height ~1.41
   const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
   mesh.scale.set(scale, scale, 1.0);
 }
 
-/**
- * Triggers the Cockpit Cracks overlay to become visible for an instant on enemy hit,
- * then smoothly fades back to invisible.
- */
 export function triggerCockpitCracksHit(durationMs = 280) {
   if (activeCockpitCracksPool && typeof activeCockpitCracksPool.flashCockpitCracks === 'function') {
     activeCockpitCracksPool.flashCockpitCracks(durationMs);
@@ -830,7 +755,6 @@ export function triggerCockpitCracksHit(durationMs = 280) {
     flashCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
   }
 
-  // Also trigger 2D edge flash if DOM elements exist
   if (typeof document !== 'undefined') {
     const redEdges = document.getElementById('cockpit-edges-red');
     if (redEdges) {
@@ -841,7 +765,6 @@ export function triggerCockpitCracksHit(durationMs = 280) {
     }
   }
 }
-
 
 export function triggerGameOverCockpitCracks(durationMs = 1000) {
   if (activeCockpitCracksPool && typeof activeCockpitCracksPool.showGameOverCockpitCracks === 'function') {
@@ -922,6 +845,7 @@ export function applyStage(engineApi) {
     engineApi.showToast('🚀 STAGE 1: WARP ORIGIN [MOBILE] LOADED');
   }
 
+
   // --- Mount Cockpit Cracks Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
@@ -941,7 +865,6 @@ export function applyStage(engineApi) {
     });
 
     // Hook enemy hit detection:
-    // 1. Intercept window.applyDamageToPlayer
     if (typeof window.applyDamageToPlayer === 'function' && !window.applyDamageToPlayer._cockpitCracksHooked) {
       const prevDamage = window.applyDamageToPlayer;
       window.applyDamageToPlayer = function(dmg, ...args) {
@@ -952,12 +875,11 @@ export function applyStage(engineApi) {
       window.applyDamageToPlayer._cockpitCracksHooked = true;
     }
 
-    // 2. Window event listeners for hits
     window.addEventListener('cockpitHit', () => triggerCockpitCracksHit());
     window.addEventListener('playerDamage', () => triggerCockpitCracksHit());
     window.addEventListener('cockpitImpact', () => triggerCockpitCracksHit());
+    window.addEventListener('gameOverCracks', () => triggerGameOverCockpitCracks(1000));
 
-    // 3. Custom weapon impact handler
     const prevCustomFx = window.executeCustomWeaponImpactFx;
     window.executeCustomWeaponImpactFx = function(bolt, normX, normY, canvas) {
       if (typeof prevCustomFx === 'function') {
@@ -966,80 +888,15 @@ export function applyStage(engineApi) {
       triggerCockpitCracksHit();
     };
 
-    // 4. Expose helpers on window
     window.triggerCockpitCracksHit = triggerCockpitCracksHit;
+    window.flashCockpitCracks = triggerCockpitCracksHit;
     window.triggerGameOverCockpitCracks = triggerGameOverCockpitCracks;
     window.hideCockpitCracks = hideCockpitCracks;
-    window.flashCockpitCracks = triggerCockpitCracksHit;
     window.setupCockpitCracksOverlay = setupCockpitCracksOverlay;
+    window.getActiveCockpitCracksOverlay = getActiveCockpitCracksOverlay;
   }
-
-  // 5. Register frame hook to monitor defense drops in case damage bypasses wrappers
-  let lastShield = (engineApi && engineApi.state) ? engineApi.state.playerShield : 100;
-  let lastHealth = (engineApi && engineApi.state) ? engineApi.state.playerHealth : 100;
-  if (engineApi && typeof engineApi.registerVrFrameHook === 'function') {
-    engineApi.registerVrFrameHook(() => {
-      if (engineApi.state) {
-        const curShield = engineApi.state.playerShield;
-        const curHealth = engineApi.state.playerHealth;
-        if (curShield < lastShield || curHealth < lastHealth) {
-          triggerCockpitCracksHit();
-        }
-        lastShield = curShield;
-        lastHealth = curHealth;
-      }
-    });
-  }
-
 
   return stageConfig;
 }
 
-/**
- * Stage Wave Management: Controls pulling specific number of enemies from the pool
- * for each wave, tracking how many waves and how often a wave happens.
- */
-export function getStageWaves() {
-  return stageConfig.waves;
-}
-
-export function updateStageWaves(engineApi, context = {}) {
-  if (!engineApi) return null;
-  const currentWave = typeof engineApi.getCurrentWave === 'function' ? engineApi.getCurrentWave() : 0;
-  const totalWaves = stageConfig.total_waves || 2;
-  const now = (context && context.now) || performance.now();
-  const waveStartTime = typeof engineApi.getWaveStartTime === 'function' ? engineApi.getWaveStartTime() : 0;
-  const activeEnemies = (context && context.activeEnemies) || [];
-
-  // Wave 1: Pull 5 enemies from the pool at the start of stage engagement
-  if (currentWave === 0) {
-    return pullEnemyWave(1, engineApi, context);
-  }
-
-  // Wave 2: Pull 10 enemies from the pool when the 15-second wave interval has elapsed
-  if (currentWave === 1 && totalWaves >= 2) {
-    const elapsed = now - waveStartTime;
-    const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
-    const wave1EnemiesRemaining = activeEnemies.filter(e => e.isActive && e.waveNumber === 1).length;
-
-    // Strict timing: Wave 2 occurs after the 15-second interval (or if wave 1 defeated and at least 5s elapsed)
-    if (elapsed >= waveIntervalMs || (wave1EnemiesRemaining === 0 && elapsed >= 5000)) {
-      return pullEnemyWave(2, engineApi, context);
-    }
-  }
-
-  return null;
-}
-
-export function pullEnemyWave(waveNumber, engineApi, context = {}) {
-  const waves = stageConfig.waves || [];
-  const wave = waves.find(w => w.wave_number === waveNumber) || waves[waveNumber - 1];
-  if (!wave) return [];
-  const count = wave.enemy_count || (waveNumber === 1 ? 5 : 10);
-  if (engineApi && typeof engineApi.spawnWaveEnemies === 'function') {
-    return engineApi.spawnWaveEnemies(count, wave, stageConfig.enemies);
-  }
-  return [];
-}
-
-export default { stageConfig, applyStage, updateEnemyMovement, fireEnemyWeapon, getStageWaves, updateStageWaves, pullEnemyWave , setupCockpitCracksOverlay, triggerCockpitCracksHit, fitCockpitCracksToCamera, getActiveCockpitCracksOverlay };
+export default { stageConfig, applyStage, fireEnemyWeapon, updateEnemyMovement, updateStageWaves, handleStageEvent, stageEvents, setupCockpitCracksOverlay, triggerCockpitCracksHit, triggerGameOverCockpitCracks, hideCockpitCracks, fitCockpitCracksToCamera, getActiveCockpitCracksOverlay };

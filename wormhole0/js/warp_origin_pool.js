@@ -1,5 +1,25 @@
 import * as THREE from 'three';
-import { MeshPool, StageObjectPool } from './object_pool.js';
+import {
+  MeshPool,
+  StageObjectPool,
+  COCKPIT_CRACKS_GLB_URL,
+  setupCockpitCracksHierarchy,
+  fitCockpitCracksToCamera,
+  loadCockpitCracksGlbAsset,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay
+} from './object_pool.js';
+
+export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/cockpit_cracks.glb';
+
+export {
+  COCKPIT_CRACKS_GLB_URL,
+  setupCockpitCracksHierarchy,
+  fitCockpitCracksToCamera,
+  loadCockpitCracksGlbAsset,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay
+};
 
 /**
  * Wormhole XR - Stage 1: Warp Origin Object Pool
@@ -10,159 +30,6 @@ import { MeshPool, StageObjectPool } from './object_pool.js';
  * pulled dynamically from the Game Manager admin database.
  */
 
-export const COCKPIT_CRACKS_GLB_URL = 'mobile/warp_origin_images/cockpit_cracks.glb';
-
-let activeFlashTimer = null;
-let activeFadeRaf = null;
-
-/**
- * Traverses and configures the Cockpit Cracks 3D mesh hierarchy as a transparent overlay.
- */
-export function setupCockpitCracksHierarchy(root) {
-  if (!root) return;
-  root.name = 'cockpit_cracks_overlay';
-  root.visible = false;
-  root.userData = root.userData || {};
-  root.userData.isCockpitCracks = true;
-  root.userData.isOverlay = true;
-
-  root.traverse((child) => {
-    if (child.isMesh) {
-      child.castShadow = false;
-      child.receiveShadow = false;
-      child.frustumCulled = false;
-      child.renderOrder = 9999;
-      if (child.material) {
-        child.material = child.material.clone();
-        child.material.transparent = true;
-        child.material.opacity = 0.0;
-        child.material.depthTest = false;
-        child.material.depthWrite = false;
-        child.material.side = THREE.DoubleSide;
-        child.material.blending = THREE.NormalBlending;
-        child.material.needsUpdate = true;
-      }
-    }
-  });
-}
-
-/**
- * Loads the Cockpit Cracks 3D GLB model asset with multi-path fallbacks.
- */
-export async function loadCockpitCracksGlbAsset(glbUrl = COCKPIT_CRACKS_GLB_URL) {
-  return new Promise((resolve) => {
-    if (typeof window !== 'undefined' && typeof window.load3DAssetModel === 'function') {
-      window.load3DAssetModel(
-        glbUrl,
-        (cloned) => {
-          if (cloned) {
-            setupCockpitCracksHierarchy(cloned);
-            resolve(cloned);
-            return;
-          }
-          fallbackLoader();
-        },
-        () => fallbackLoader()
-      );
-      return;
-    }
-
-    fallbackLoader();
-
-    function fallbackLoader() {
-      import('three/addons/loaders/GLTFLoader.js')
-        .then(({ GLTFLoader }) => {
-          const loader = new GLTFLoader();
-          loader.load(
-            glbUrl,
-            (gltf) => {
-              const scene = gltf.scene || gltf.scenes[0] || gltf;
-              setupCockpitCracksHierarchy(scene);
-              resolve(scene);
-            },
-            undefined,
-            (err) => {
-              const altUrl = 'wormhole0/' + glbUrl;
-              loader.load(
-                altUrl,
-                (gltf2) => {
-                  const scene2 = gltf2.scene || gltf2.scenes[0] || gltf2;
-                  setupCockpitCracksHierarchy(scene2);
-                  resolve(scene2);
-                },
-                undefined,
-                (err2) => {
-                  console.warn('[CockpitCracks] Failed to load GLB from both paths:', err, err2);
-                  resolve(null);
-                }
-              );
-            }
-          );
-        })
-        .catch((e) => {
-          console.warn('[CockpitCracks] Failed to import GLTFLoader:', e);
-          resolve(null);
-        });
-    }
-  });
-}
-
-/**
- * Triggers an instant flash of the Cockpit Cracks transparent overlay, then smoothly returns to invisible.
- */
-export function flashCockpitCracksOverlay(mesh, durationMs = 280) {
-  if (!mesh) return;
-
-  if (activeFlashTimer) {
-    clearTimeout(activeFlashTimer);
-    activeFlashTimer = null;
-  }
-  if (activeFadeRaf) {
-    cancelAnimationFrame(activeFadeRaf);
-    activeFadeRaf = null;
-  }
-
-  mesh.visible = true;
-  mesh.traverse((child) => {
-    if (child.isMesh && child.material) {
-      child.material.transparent = true;
-      child.material.opacity = 0.95;
-      child.material.needsUpdate = true;
-    }
-  });
-
-  activeFlashTimer = setTimeout(() => {
-    const startTime = performance.now();
-    const fadeDuration = 100;
-
-    function fade(now) {
-      const elapsed = now - startTime;
-      const progress = Math.min(1.0, elapsed / fadeDuration);
-      const curOpacity = 0.95 * (1.0 - progress);
-
-      mesh.traverse((child) => {
-        if (child.isMesh && child.material) {
-          child.material.opacity = curOpacity;
-          child.material.needsUpdate = true;
-        }
-      });
-
-      if (progress < 1.0) {
-        activeFadeRaf = requestAnimationFrame(fade);
-      } else {
-        mesh.visible = false;
-        mesh.traverse((child) => {
-          if (child.isMesh && child.material) {
-            child.material.opacity = 0.0;
-            child.material.needsUpdate = true;
-          }
-        });
-      }
-    }
-    activeFadeRaf = requestAnimationFrame(fade);
-  }, durationMs);
-}
-
 export class WarpOriginObjectPool extends StageObjectPool {
   constructor(scene, stageConfig = {}, options = {}) {
     const configWithDefaults = {
@@ -170,12 +37,12 @@ export class WarpOriginObjectPool extends StageObjectPool {
       stage_name: 'Warp Origin',
       stage_slug: 'warp_origin',
       environment_theme: 'Warp Cyan Corridor',
-  cockpit_overlay: {
-    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
-    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
-    asset_type: '3d_model'
-  },
-  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
+      cockpit_overlay: {
+        model_3d_url: 'scene_images/cockpit_cracks.glb',
+        model_url: 'scene_images/cockpit_cracks.glb',
+        asset_type: '3d_model'
+      },
+      cockpit_overlay_asset: 'scene_images/cockpit_cracks.glb',
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
@@ -630,19 +497,14 @@ export class WarpOriginObjectPool extends StageObjectPool {
     };
 
     super(scene, configWithDefaults, options);
-
-    // Pre-allocate Cockpit Cracks 3D GLB Overlay Pool
-    this.cockpitCracksOverlayPool = null;
-    this.cockpitCracksMesh = null;
-    this.initCockpitCracksPool();
-
     console.log(`[WarpOriginObjectPool] Pre-allocated graphics object pool for Stage 1: Warp Origin`);
   }
 
   async initCockpitCracksPool() {
     try {
-      const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && this.stageConfig.cockpit_overlay.model_3d_url)
-        || (this.stageConfig && this.stageConfig.cockpit_overlay && this.stageConfig.cockpit_overlay.model_url)
+      const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
+        || (this.stageConfig && this.stageConfig.cockpit_overlay_asset)
+        || 'scene_images/cockpit_cracks.glb'
         || COCKPIT_CRACKS_GLB_URL;
 
       const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
@@ -655,60 +517,13 @@ export class WarpOriginObjectPool extends StageObjectPool {
           1,
           () => loadedMesh.clone(true)
         );
-        console.log(`[WarpOriginObjectPool] Pre-allocated Cockpit Cracks 3D GLB overlay pool from: ${glbUrl}`);
+        console.log(`[WarpOriginObjectPool] Pre-allocated Cockpit Cracks 3D GLB/GLTF overlay pool from: ${glbUrl}`);
       }
     } catch (err) {
       console.warn('[WarpOriginObjectPool] Cockpit cracks pooling warning:', err);
     }
   }
-
-  getCockpitCracksOverlay(camera = null) {
-    if (!this.cockpitCracksMesh && this.cockpitCracksOverlayPool) {
-      this.cockpitCracksMesh = this.cockpitCracksOverlayPool.spawn();
-    }
-    if (this.cockpitCracksMesh && camera && this.cockpitCracksMesh.parent !== camera) {
-      const existing = camera.getObjectByName('cockpit_cracks_overlay');
-      if (existing && existing !== this.cockpitCracksMesh) {
-        camera.remove(existing);
-      }
-      camera.add(this.cockpitCracksMesh);
-      this.cockpitCracksMesh.position.set(0, 0, -1.0);
-      this.cockpitCracksMesh.rotation.set(0, 0, 0);
-
-      const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
-      const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
-      const visibleH = 2 * Math.tan(vFovRad / 2) * 1.0;
-      const visibleW = visibleH * aspect;
-      const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
-      this.cockpitCracksMesh.scale.set(scale, scale, 1.0);
-    }
-    return this.cockpitCracksMesh;
-  }
-
-  flashCockpitCracks(durationMs = 280) {
-    if (this.cockpitCracksMesh) {
-      flashCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
-    }
-  }
 }
-
-  showGameOverCockpitCracks(durationMs = 1000) {
-    if (this.cockpitCracksMesh) {
-      showGameOverCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
-    }
-  }
-
-  hideCockpitCracks() {
-    if (this.cockpitCracksMesh) {
-      this.cockpitCracksMesh.visible = false;
-      this.cockpitCracksMesh.traverse((child) => {
-        if (child.isMesh && child.material) {
-          child.material.opacity = 0.0;
-          child.material.needsUpdate = true;
-        }
-      });
-    }
-  }
 
 export function createStagePool(scene, stageConfig = {}, options = {}) {
   return new WarpOriginObjectPool(scene, stageConfig, options);

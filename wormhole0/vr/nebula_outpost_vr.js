@@ -1,4 +1,14 @@
 import * as THREE from 'three';
+import {
+  createStagePool,
+  MeshPool,
+  loadCockpitCracksGlbAsset,
+  setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
+  fitCockpitCracksToCamera,
+  COCKPIT_CRACKS_GLB_URL
+} from './nebula_outpost_pool.js';
 
 /**
  * Wormhole XR - Stage 6: Nebula Outpost [VR Headset Profile]
@@ -7,9 +17,22 @@ import * as THREE from 'three';
  */
 
 export const stageConfig = {
-  warp_target_distance: 5000,
-  required_enemy_kills: 25,
-  mission_objectives: "Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.",
+  meta: {
+    level: 6,
+    name: 'Nebula Outpost',
+    slug: 'nebula_outpost',
+    theme: 'Ion Nebula Emerald',
+    device: 'vr',
+    xrMode: 'desktop-vr',
+    description: 'Dense electromagnetic nebula staging perimeter harboring defensive sentry arrays.',
+    parScore: 90000,
+    requiredKills: 25,
+    warpTargetDistance: 5000,
+    missionObjectives: 'Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.',
+    eventsWithin: 'Ion Cloud Density Spike, Nebula Sentry Patrols, Plasma Storm Discharge, Outpost Command Relay Activation',
+    endLevelEvent: 'Nebula Outpost Relink Established',
+    cockpitOverlayAsset: 'mobile/warp_origin_images/cockpit_cracks.glb'
+  },
   stage_level: 6,
   stage_name: 'Nebula Outpost',
   stage_slug: 'nebula_outpost',
@@ -22,34 +45,13 @@ export const stageConfig = {
     asset_type: '3d_model'
   },
   cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
-  events_within_level: 'Asteroid Storm, EMP Pulse Drones, Shield Recharge Waves',
-  end_level_event: 'Ancient Cyber Dreadnought Gate Collapse',
-  description: 'Dense emerald asteroid field guarding the outer sector perimeter.',
-  par_score: 7500,
-
-  objectives: [
-  {
-    "id": "kills",
-    "type": "kills",
-    "target": 25,
-    "current": 0,
-    "title": "Neutralize 25 Nebula Defense Sentries",
-    "description": "Clear 25 defensive sentries patrolling emerald nebula corridor",
-    "requiredForWarp": true,
-    "actionText": "🎯 Target Threat",
-    "actionId": "target_enemy"
-  },
-  {
-    "id": "distance",
-    "type": "distance",
-    "target": 5000,
-    "title": "Command Relay Proximity < 5,000 KM",
-    "description": "Navigate dense asteroid corridor to within < 5,000 KM of outpost command relay",
-    "requiredForWarp": true,
-    "actionText": "🛰️ Lock Vector",
-    "actionId": "lock_vector"
-  }
-],
+  events_within_level: 'Ion Cloud Density Spike, Nebula Sentry Patrols, Plasma Storm Discharge, Outpost Command Relay Activation',
+  end_level_event: 'Nebula Outpost Relink Established',
+  mission_objectives: 'Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.',
+  required_enemy_kills: 25,
+  warp_target_distance: 5000,
+  description: 'Dense electromagnetic nebula staging perimeter harboring defensive sentry arrays.',
+  par_score: 90000,
   visual: {
     themeName: 'Ion Nebula Emerald',
     colors: {
@@ -298,11 +300,34 @@ export const stageConfig = {
         "destruction_particle_scale": 1
     }
 ],
-  controlscontrols: {
+  objectives: [
+    {
+        "id": "kills",
+        "type": "kills",
+        "target": 25,
+        "current": 0,
+        "title": "Neutralize 25 Nebula Defense Sentries",
+        "description": "Clear 25 defensive sentries patrolling emerald nebula corridor",
+        "requiredForWarp": true,
+        "actionText": "🎯 Target Threat",
+        "actionId": "target_enemy"
+    },
+    {
+        "id": "distance",
+        "type": "distance",
+        "target": 5000,
+        "title": "Command Relay Proximity < 5,000 KM",
+        "description": "Navigate dense asteroid corridor to within < 5,000 KM of outpost command relay",
+        "requiredForWarp": true,
+        "actionText": "🛰️ Lock Vector",
+        "actionId": "lock_vector"
+    }
+],
+  controls: {
     "inputMode": "6dof_controllers",
-    "showVirtualJoysticks": false,
-    "enablePointerLock": false,
-    "description": "Dual 6-DOF VR motion controllers, Trigger primary fire, Grip boost thrust, Controller warp engage"
+    "showVirtualJoysticks": "false",
+    "enablePointerLock": "false",
+    "description": "Dual 6-DOF VR motion controllers, Trigger primary fire, Grip boost thrust"
 }
 };
 
@@ -406,6 +431,23 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   return true;
 }
 
+export function updateEnemyMovement(enemy, delta, playerPos, scene) {
+  if (!enemy || !enemy.mesh) return;
+  // Default forward intercept trajectory
+  if (typeof enemy.speed === 'number' && enemy.speed > 0) {
+    const dir = new THREE.Vector3().subVectors(playerPos, enemy.mesh.position).normalize();
+    enemy.mesh.position.addScaledVector(dir, enemy.speed * delta * 0.1);
+  }
+}
+
+export function updateStageWaves(pool, activeEnemies, stageKills, scene) {
+  if (!pool) return;
+  // Waves boilerplate handler
+  if (typeof pool.getPoolStats === 'function') {
+    return pool.getPoolStats();
+  }
+}
+
 
 // =========================================================================
 // COCKPIT CRACKS TRANSPARENT OVERLAY POOL & GAME OVER MANAGEMENT
@@ -443,7 +485,10 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   }
 
   try {
-    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url)) || stageConfig.cockpit_overlay_asset || COCKPIT_CRACKS_GLB_URL
+    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url))
+      || stageConfig.cockpit_overlay_asset
+      || 'mobile/warp_origin_images/cockpit_cracks.glb'
+      || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
     const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
@@ -545,10 +590,16 @@ export function getActiveCockpitCracksOverlay() {
   return activeCockpitCracksMesh;
 }
 
-export function applyStage(engineApi) {
-  if (typeof engineApi.setStageObjectives === 'function') {
-    engineApi.setStageObjectives(stageConfig.objectives || []);
+export function handleStageEvent(eventName, payload, engineApi) {
+  console.log(`[Stage 6: Nebula Outpost] Event received: ${eventName}`, payload);
+  if (eventName === 'Nebula Outpost Relink Established') {
+    if (engineApi && typeof engineApi.showToast === 'function') {
+      engineApi.showToast('🏆 STAGE 6 OBJECTIVE COMPLETE: Nebula Outpost Relink Established');
+    }
   }
+}
+
+export function applyStage(engineApi) {
   if (!engineApi) return stageConfig;
   console.log(`[Stage 6: Nebula Outpost] Applying VR Headset Profile configuration...`);
 
@@ -579,6 +630,8 @@ export function applyStage(engineApi) {
   if (typeof engineApi.showToast === 'function') {
     engineApi.showToast('🚀 STAGE 6: NEBULA OUTPOST [VR] LOADED');
   }
+
+
   // --- Mount Cockpit Cracks Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
@@ -629,9 +682,7 @@ export function applyStage(engineApi) {
     window.getActiveCockpitCracksOverlay = getActiveCockpitCracksOverlay;
   }
 
-
-
   return stageConfig;
 }
 
-export default { stageConfig, applyStage, fireEnemyWeapon, updateEnemyMovement, updateStageWaves, handleStageEvent, stageEvents };
+export default { stageConfig, applyStage, fireEnemyWeapon, updateEnemyMovement, updateStageWaves, handleStageEvent, stageEvents, setupCockpitCracksOverlay, triggerCockpitCracksHit, triggerGameOverCockpitCracks, hideCockpitCracks, fitCockpitCracksToCamera, getActiveCockpitCracksOverlay };

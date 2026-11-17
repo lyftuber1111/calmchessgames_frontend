@@ -1,4 +1,7 @@
-export {
+import * as THREE from 'three';
+import {
+  MeshPool,
+  StageObjectPool,
   COCKPIT_CRACKS_GLB_URL,
   setupCockpitCracksHierarchy,
   fitCockpitCracksToCamera,
@@ -7,8 +10,16 @@ export {
   showGameOverCockpitCracksOverlay
 } from './object_pool.js';
 
-import * as THREE from 'three';
-import { MeshPool, StageObjectPool } from './object_pool.js';
+export const STAGE_COCKPIT_CRACKS_GLB_URL = 'mobile/warp_origin_images/cockpit_cracks.glb';
+
+export {
+  COCKPIT_CRACKS_GLB_URL,
+  setupCockpitCracksHierarchy,
+  fitCockpitCracksToCamera,
+  loadCockpitCracksGlbAsset,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay
+};
 
 /**
  * Wormhole XR - Stage 5: Final Boss Stage Object Pool
@@ -25,13 +36,13 @@ export class FinalBossStageObjectPool extends StageObjectPool {
       stage_level: 5,
       stage_name: 'Final Boss Stage',
       stage_slug: 'final_boss_stage',
-      environment_theme: 'Singularity Overlord Crimson',
-  cockpit_overlay: {
-    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
-    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
-    asset_type: '3d_model'
-  },
-  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
+      environment_theme: 'Warp Cyan Corridor',
+      cockpit_overlay: {
+        model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+        model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+        asset_type: '3d_model'
+      },
+      cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
@@ -308,25 +319,31 @@ export class FinalBossStageObjectPool extends StageObjectPool {
     super(scene, configWithDefaults, options);
     console.log(`[FinalBossStageObjectPool] Pre-allocated graphics object pool for Stage 5: Final Boss Stage`);
   }
+
+  async initCockpitCracksPool() {
+    try {
+      const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
+        || (this.stageConfig && this.stageConfig.cockpit_overlay_asset)
+        || 'mobile/warp_origin_images/cockpit_cracks.glb'
+        || COCKPIT_CRACKS_GLB_URL;
+
+      const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+      if (loadedMesh) {
+        this.cockpitCracksMesh = loadedMesh;
+        this.cockpitCracksOverlayPool = new MeshPool(
+          this.scene,
+          null,
+          null,
+          1,
+          () => loadedMesh.clone(true)
+        );
+        console.log(`[FinalBossStageObjectPool] Pre-allocated Cockpit Cracks 3D GLB/GLTF overlay pool from: ${glbUrl}`);
+      }
+    } catch (err) {
+      console.warn('[FinalBossStageObjectPool] Cockpit cracks pooling warning:', err);
+    }
+  }
 }
-
-  showGameOverCockpitCracks(durationMs = 1000) {
-    if (this.cockpitCracksMesh) {
-      showGameOverCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
-    }
-  }
-
-  hideCockpitCracks() {
-    if (this.cockpitCracksMesh) {
-      this.cockpitCracksMesh.visible = false;
-      this.cockpitCracksMesh.traverse((child) => {
-        if (child.isMesh && child.material) {
-          child.material.opacity = 0.0;
-          child.material.needsUpdate = true;
-        }
-      });
-    }
-  }
 
 export function createStagePool(scene, stageConfig = {}, options = {}) {
   return new FinalBossStageObjectPool(scene, stageConfig, options);

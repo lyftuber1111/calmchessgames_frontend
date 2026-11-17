@@ -1,21 +1,27 @@
 {
     "model": "cyan_laser_rod.glb",
     "base_name": "cyan_laser_rod",
-    "exported_at": "2026-11-17T14:29:09.145Z",
+    "exported_at": "2026-11-17T17:11:18.132Z",
     "color_palette": [
-        "#00FFFF"
+        "#FFFFFF",
+        "#00F8FF"
     ],
     "materials": [
         {
-            "name": "CyanLaserBeamMaterial",
+            "name": "Material_Cyan_Laser",
             "type": "MeshStandardMaterial",
-            "color": "#00FFFF",
-            "emissive": "#00FFFF",
-            "roughness": 0.2,
-            "metalness": 0.1,
+            "color": "#FFFFFF",
+            "emissive": "#00F8FF",
+            "roughness": 0.15,
+            "metalness": 0.85,
             "opacity": 1,
             "wireframe": false,
-            "textures": []
+            "textures": {
+                "base_color": "texture_0_base_color",
+                "normal": "texture_0_normal",
+                "roughness": "texture_0_metallicRoughness",
+                "metallic": "texture_0_metallicRoughness"
+            }
         }
     ],
     "companion_files": []

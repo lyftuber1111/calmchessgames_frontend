@@ -1,0 +1,39 @@
+{
+  "model_name": "cyan_laser_rod",
+  "type": "animated_cyan_rod_laser_beam",
+  "circumference_meters": 0.25,
+  "radius_meters": 0.039788735772973836,
+  "diameter_meters": 0.07957747154594767,
+  "start_coordinate": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "end_coordinate": [
+    0.0,
+    0.0,
+    23.80952380952381
+  ],
+  "length_meters": 23.80952380952381,
+  "length_derivation": "10000 KM warp origin enemy firing distance / 420 Three.js unit scaling = 23.809524 m to cockpit screen",
+  "forward_axis": "+Z",
+  "animation": {
+    "clip_name": "Laser_Flight_Extension",
+    "duration_seconds": 0.8,
+    "flight_duration_derivation": "wormhole0.js weapon speed travels ~24 units in ~0.8s to reach enemy"
+  },
+  "textures_path": "./meshy_test_0/models/cyan_laser_rod/cyan_laser_rod_textures",
+  "textures_mirror_path": "./meshy_yest_0/models/cyan_laser_rod/cyan_laser_rod_textures",
+  "generated_files": [
+    "cyan_laser_rod.glb",
+    "cyan_laser_rod.obj",
+    "cyan_laser_rod.mtl",
+    "cyan_laser_rod_materials.json",
+    "cyan_laser_rod_textures/texture_0_base_color.png",
+    "cyan_laser_rod_textures/texture_0_emissive.png",
+    "cyan_laser_rod_textures/texture_0_metallic.png",
+    "cyan_laser_rod_textures/texture_0_roughness.png",
+    "cyan_laser_rod_textures/texture_0_normal.png",
+    "cyan_laser_rod_textures/thumbnail.png"
+  ]
+}

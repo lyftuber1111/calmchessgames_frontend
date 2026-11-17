@@ -1,0 +1,12 @@
+# Wavefront MTL for cyan_laser_rod
+newmtl Material_Cyan_Laser
+Ka 0.0 0.94 1.0
+Kd 0.0 0.94 1.0
+Ks 1.0 1.0 1.0
+Ke 0.0 0.94 1.0
+Ns 500
+d 1.0
+illum 2
+map_Kd cyan_laser_rod_textures/texture_0_base_color.png
+map_Ke cyan_laser_rod_textures/texture_0_emissive.png
+map_Bump cyan_laser_rod_textures/texture_0_normal.png

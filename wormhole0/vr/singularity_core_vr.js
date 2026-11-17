@@ -18,6 +18,21 @@ import {
  */
 
 export const stageConfig = {
+  meta: {
+    level: 3,
+    name: 'Singularity Core',
+    slug: 'singularity_core',
+    theme: 'Singularity Void Violet',
+    device: 'vr',
+    xrMode: 'desktop-vr',
+    description: 'Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.',
+    parScore: 25000,
+    requiredKills: 20,
+    warpTargetDistance: 20000,
+    missionObjectives: 'Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.',
+    eventsWithin: 'Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening',
+    endLevelEvent: 'Core Collapse Breakthrough'
+  },
   stage_level: 3,
   stage_name: 'Singularity Core',
   stage_slug: 'singularity_core',
@@ -80,7 +95,6 @@ export const stageConfig = {
 ],
   description: 'Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.',
   par_score: 25000,
-
   visual: {
     themeName: 'Singularity Void Violet',
     colors: {
@@ -113,109 +127,118 @@ export const stageConfig = {
 }
   },
   weapons: {
-  "initial": {
-    "id": "plasma_torpedo",
-    "name": "Plasma Torpedo",
-    "icon": "\ud83d\udca3",
-    "color": "#f59e0b",
-    "damage": 5,
-    "bullet_speed": 450,
-    "energy_drain_pct": 30.0,
-    "can_overheat": 0,
-    "cooldown_seconds": 0.0,
-    "scale": 1.5,
-    "scale_x": 1.3,
-    "scale_y": 1.3,
-    "scale_z": 1.8,
-    "size_x": 1.2,
-    "size_y": 1.2,
-    "size_z": 2.2,
-    "dimensions": {
-      "x": 1.2,
-      "y": 1.2,
-      "z": 2.2
+    "initial": {
+        "id": "plasma_torpedo",
+        "name": "Plasma Torpedo",
+        "icon": "💣",
+        "color": "#f59e0b",
+        "damage": 5,
+        "bullet_speed": 450,
+        "energy_drain_pct": 40,
+        "can_overheat": 0,
+        "cooldown_seconds": 0,
+        "acquire_event": "singularity_core_probe",
+        "description": "Heavy magnetic payload causing massive kinetic shockwave without overheating.",
+        "scale": 1,
+        "scale_x": 1,
+        "scale_y": 1,
+        "scale_z": 1,
+        "size_x": 1,
+        "size_y": 1,
+        "size_z": 1,
+        "dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+        },
+        "special_fx": "cockpit_cracks_red_edges",
+        "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "special_fx_type": "overlay"
     },
-    "description": "Heavy magnetic payload causing massive kinetic shockwave without overheating."
-  },
-  "acquirable": []
+    "acquirable": []
 },
   enemies: [
-  {
-    "id": "void_singularity_probe",
-    "enemy_id": "void_singularity_probe",
-    "name": "Singularity Void Probe",
-    "enemy_class": "Gravitational Probe",
-    "icon": "\ud83d\udef8",
-    "model_3d_type": "custom_glb",
-    "model_3d_url": "desktop/warp_origin_images/recon_drone_2.8m.glb",
-    "color": "#c084fc",
-    "scale": 0.95,
-    "length": 3.2,
-    "height": 3.2,
-    "depth": 3.2,
-    "circumference": 9.8,
-    "hits": 8,
-    "armor": 40,
-    "shield": 2,
-    "speed": 230,
-    "attack_damage": 20,
-    "weapon_name": "Graviton Beam",
-    "weapon_damage": 20,
-    "weapon_speed": 520,
-    "weapon_color": "#c084fc",
-    "weapon_scale": 1.3,
-    "weapon_scale_x": 1.2,
-    "weapon_scale_y": 1.2,
-    "weapon_scale_z": 1.6,
-    "weapon_size_x": 1.1,
-    "weapon_size_y": 1.1,
-    "weapon_size_z": 2.4,
-    "weapon_dimensions": {
-      "x": 1.1,
-      "y": 1.1,
-      "z": 2.4
-    },
-    "fire_rate": 2.0,
-    "fire_rate_seconds": 2.0,
-    "fire_rate_ms": 2000,
-    "fire_rate_times_per_sec": 0.5,
-    "weapons": [
-      {
-        "id": "ew_graviton_beam",
-        "name": "Graviton Beam",
-        "type": "beam",
-        "mount": "center",
-        "model_url": "",
-        "model_type": "",
-        "fire_point_x": 0.0,
-        "fire_point_y": -0.15,
-        "fire_point_z": 1.6,
-        "scale": 1.3,
-        "scale_x": 1.2,
-        "scale_y": 1.2,
-        "scale_z": 1.6,
-        "size_x": 1.1,
-        "size_y": 1.1,
-        "size_z": 2.4,
-        "dimensions": {
-          "x": 1.1,
-          "y": 1.1,
-          "z": 2.4
+    {
+        "id": "void_guardian",
+        "enemy_id": "void_guardian",
+        "name": "Singularity Void Guardian (Universal)",
+        "enemy_class": "Guardian Frigate",
+        "icon": "👾",
+        "model_3d_type": "singularity_probe",
+        "model_3d_url": "",
+        "scale": 1.2,
+        "length": 3.8,
+        "height": 3.8,
+        "depth": 3.8,
+        "circumference": 11.94,
+        "color": "#a855f7",
+        "hits": 15,
+        "armor": 70,
+        "shield": 6,
+        "speed": 150,
+        "attack_damage": 35,
+        "weapon_name": "Void Disruptor",
+        "weapon_damage": 35,
+        "weapon_speed": 400,
+        "weapon_color": "#a855f7",
+        "weapon_scale": 1,
+        "weapon_scale_x": 1,
+        "weapon_scale_y": 1,
+        "weapon_scale_z": 1,
+        "weapon_size_x": 1,
+        "weapon_size_y": 1,
+        "weapon_size_z": 1,
+        "weapon_dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
         },
-        "fire_rate_times_per_sec": 0.5,
-        "fire_interval_ms": 2000,
-        "fire_rate_seconds": 2.0,
-        "damage": 20,
-        "speed": 520,
-        "color": "#c084fc",
-        "is_enabled": 1
-      }
-    ],
-    "score": 500,
-    "threat": "High",
-    "piercing": "any",
-    "pool_size": 40
-  }
+        "weapon_special_fx": "cockpit_cracks_red_edges",
+        "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "weapon_special_fx_type": "overlay",
+        "fire_rate": 2.2,
+        "fire_rate_seconds": 2.2,
+        "fire_rate_ms": 2200,
+        "fire_rate_times_per_sec": 0.455,
+        "weapons": [
+            {
+                "id": "ew_void_guardian",
+                "name": "Void Disruptor",
+                "type": "beam",
+                "mount": "dual_wingtip",
+                "model_url": "",
+                "model_type": "",
+                "fire_point_x": 0,
+                "fire_point_y": -0.15,
+                "fire_point_z": 1.5,
+                "scale": 1,
+                "size_x": 1,
+                "size_y": 1,
+                "size_z": 1,
+                "fire_rate_times_per_sec": 0.455,
+                "fire_interval_ms": 2200,
+                "fire_rate_seconds": 2.2,
+                "damage": 35,
+                "speed": 400,
+                "color": "#a855f7",
+                "is_enabled": 1
+            }
+        ],
+        "score": 1000,
+        "threat": "High",
+        "piercing": "plasma_torpedo",
+        "pool_size": 30,
+        "quick_effect_primary": "gravitational_vortex",
+        "quick_effect_secondary": "arc_lightning",
+        "quick_effect_color": "#a855f7",
+        "quick_effect_intensity": 1,
+        "quick_effect_speed": 1,
+        "destruction_particle_type": "procedural_quantum_implosion",
+        "destruction_particle_url": "",
+        "destruction_particle_count": 80,
+        "destruction_particle_color": "#a855f7",
+        "destruction_particle_scale": 1
+    }
 ],
   controlscontrols: {
     "inputMode": "6dof_controllers",
@@ -225,17 +248,19 @@ export const stageConfig = {
 }
 };
 
+export const stageEvents = [
+    "Gravitational Tidal Waves",
+    "Singularity Probe Deployment",
+    "Heavy Antimatter Eruptions",
+    "Core Guardian Awakening",
+    "Core Collapse Breakthrough"
+];
 
-/**
- * Stage Multi-Weapon Firing Handler:
- * Supports multiple weapons per enemy, distinct firing cadences (times/sec and ms),
- * custom projectile colors, velocities, and mount points (dual wingtip, nose, turret).
- */
 export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   if (!enemy || !enemy.mesh || !activeEnemyBolts || !scene) return false;
 
-  const enemyBolts = typeof activeEnemyBolts === 'function' ? activeEnemyBolts() : activeEnemyBolts;
-  if (!enemyBolts || enemyBolts.length > 80) return false;
+  const enemyBolts = activeEnemyBolts();
+  if (enemyBolts.length > 80) return false;
 
   const primaryW = (enemy.weapons && enemy.weapons[0]) || {};
   const wScale = Number(enemy.weapon_scale ?? primaryW.scale ?? 1.0);
@@ -246,37 +271,66 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   const wSizeY = Number(enemy.weapon_size_y ?? primaryW.size_y ?? (primaryW.dimensions && primaryW.dimensions.y) ?? 1.0);
   const wSizeZ = Number(enemy.weapon_size_z ?? primaryW.size_z ?? (primaryW.dimensions && primaryW.dimensions.z) ?? 1.0);
 
-  const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
-  boltGeom.rotateX(Math.PI / 2);
-  const boltMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(enemy.weaponColor || enemy.weapon_color || '#c084fc'),
-    wireframe: false
-  });
+  const wSpecialFx = primaryW.special_fx || enemy.weapon_special_fx || 'cockpit_cracks_red_edges';
+  const wSpecialFxFile = primaryW.special_fx_file || enemy.weapon_special_fx_file || 'desktop/warp_origin_images/cockpit_cracks_overlay.png';
+  const wSpecialFxType = primaryW.special_fx_type || enemy.weapon_special_fx_type || 'overlay';
+  const wColor = enemy.weaponColor || enemy.weapon_color || primaryW.color || '#c084fc';
+  const wName = primaryW.name || enemy.weapon_name || 'Enemy Laser';
+  const wId = primaryW.id || enemy.weapon_id || 'enemy_laser';
 
-  const mesh = new THREE.Mesh(boltGeom, boltMat);
-  mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
-  mesh.position.copy(enemy.mesh.position);
+  let mesh = null;
+  let fromPool = false;
+  let geometryList = [];
+  let materialList = [];
 
   const target = (playerPos && playerPos.isVector3) ? playerPos : new THREE.Vector3(0, 0, 220);
   const direction = new THREE.Vector3().subVectors(target, enemy.mesh.position).normalize();
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+  const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
 
-  const geometryList = [boltGeom];
-  const materialList = [boltMat];
+  if (window.stageObjectPool && typeof window.stageObjectPool.spawnEnemyWeapon === 'function') {
+    mesh = window.stageObjectPool.spawnEnemyWeapon(primaryW, enemy, enemy.mesh.position, boltQuat, isMissile ? 'missile' : 'beam');
+    if (mesh) fromPool = true;
+  }
+
+  if (!mesh) {
+    const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
+    boltGeom.rotateX(Math.PI / 2);
+    const boltMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(wColor),
+      wireframe: false
+    });
+
+    mesh = new THREE.Mesh(boltGeom, boltMat);
+    mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
+    mesh.position.copy(enemy.mesh.position);
+    mesh.quaternion.copy(boltQuat);
+
+    geometryList = [boltGeom];
+    materialList = [boltMat];
+    scene.add(mesh);
+  } else {
+    mesh.position.copy(enemy.mesh.position);
+    mesh.quaternion.copy(boltQuat);
+  }
 
   const isMissile = (enemy.weaponType === 'missile' || (enemy.weaponName && enemy.weaponName.toLowerCase().includes('missile')));
   const boltSpeed = enemy.weaponSpeed || enemy.weapon_speed || 420;
   const boltDamage = enemy.weaponDamage || enemy.weapon_damage || 5;
 
-  scene.add(mesh);
-
   enemyBolts.push({
     mesh,
+    fromPool,
     geometryList,
     materialList,
     direction,
     speed: boltSpeed,
     damage: boltDamage,
+    weaponId: wId,
+    weaponName: wName,
+    weaponColor: wColor,
+    specialFx: wSpecialFx,
+    specialFxFile: wSpecialFxFile,
+    specialFxType: wSpecialFxType,
     scale: wScale,
     scale_x: wScaleX,
     scale_y: wScaleY,
@@ -452,15 +506,6 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
-  if (typeof engineApi.setWaves === 'function') {
-    engineApi.setWaves(stageConfig.waves, {
-      total_waves: stageConfig.total_waves,
-      wave_interval_seconds: stageConfig.wave_interval_seconds
-    });
-  }
-  if (typeof engineApi.setEnemyWeaponHandler === 'function') {
-    engineApi.setEnemyWeaponHandler(fireEnemyWeapon);
-  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -528,52 +573,4 @@ export function applyStage(engineApi) {
   return stageConfig;
 }
 
-/**
- * Stage Wave Management: Controls pulling specific number of enemies from the pool
- * for each wave, tracking how many waves and how often a wave happens.
- */
-export function getStageWaves() {
-  return stageConfig.waves;
-}
-
-
-export function updateStageWaves(engineApi, context = {}) {
-  if (!engineApi) return null;
-  const currentWave = typeof engineApi.getCurrentWave === 'function' ? engineApi.getCurrentWave() : 0;
-  const totalWaves = stageConfig.total_waves || 2;
-  const now = (context && context.now) || performance.now();
-  const waveStartTime = typeof engineApi.getWaveStartTime === 'function' ? engineApi.getWaveStartTime() : 0;
-  const activeEnemies = (context && context.activeEnemies) || [];
-
-  // Wave 1: Pull 5 enemies from the pool at the start of stage engagement
-  if (currentWave === 0) {
-    return pullEnemyWave(1, engineApi, context);
-  }
-
-  // Wave 2: Pull 10 enemies from the pool when the 15-second wave interval has elapsed
-  if (currentWave === 1 && totalWaves >= 2) {
-    const elapsed = now - waveStartTime;
-    const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
-    const wave1EnemiesRemaining = activeEnemies.filter(e => e.isActive && e.waveNumber === 1).length;
-
-    // Strict timing: Wave 2 occurs after the 15-second interval (or if wave 1 defeated and at least 5s elapsed)
-    if (elapsed >= waveIntervalMs || (wave1EnemiesRemaining === 0 && elapsed >= 5000)) {
-      return pullEnemyWave(2, engineApi, context);
-    }
-  }
-
-  return null;
-}
-
-export function pullEnemyWave(waveNumber, engineApi, context = {}) {
-  const waves = stageConfig.waves || [];
-  const wave = waves.find(w => w.wave_number === waveNumber) || waves[waveNumber - 1];
-  if (!wave) return [];
-  const count = wave.enemy_count || (waveNumber === 1 ? 5 : 10);
-  if (engineApi && typeof engineApi.spawnWaveEnemies === 'function') {
-    return engineApi.spawnWaveEnemies(count, wave, stageConfig.enemies);
-  }
-  return [];
-}
-
-export default { stageConfig, applyStage, fireEnemyWeapon, getStageWaves, updateStageWaves, pullEnemyWave };;
+export default { stageConfig, applyStage, fireEnemyWeapon, updateEnemyMovement, updateStageWaves, handleStageEvent, stageEvents };

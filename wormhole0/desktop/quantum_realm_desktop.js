@@ -18,6 +18,21 @@ import {
  */
 
 export const stageConfig = {
+  meta: {
+    level: 4,
+    name: 'Quantum Realm',
+    slug: 'quantum_realm',
+    theme: 'Quantum Phasor Magenta',
+    device: 'desktop',
+    xrMode: 'desktop-xr',
+    description: 'Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.',
+    parScore: 50000,
+    requiredKills: 25,
+    warpTargetDistance: 10000,
+    missionObjectives: 'Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.',
+    eventsWithin: 'Phase-Shift Anomalies, Multi-Dimensional Phasing, Antimatter Vortex, Quantum Dreadnought Confrontation',
+    endLevelEvent: 'Quantum Conduit Realignment & Safe Extraction'
+  },
   stage_level: 4,
   stage_name: 'Quantum Realm',
   stage_slug: 'quantum_realm',
@@ -80,7 +95,6 @@ export const stageConfig = {
 ],
   description: 'Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.',
   par_score: 50000,
-
   visual: {
     themeName: 'Quantum Phasor Magenta',
     colors: {
@@ -113,109 +127,118 @@ export const stageConfig = {
 }
   },
   weapons: {
-  "initial": {
-    "id": "quantum_phaser",
-    "name": "Quantum Phaser",
-    "icon": "\u2728",
-    "color": "#10b981",
-    "damage": 4,
-    "bullet_speed": 950,
-    "energy_drain_pct": 15.0,
-    "can_overheat": 1,
-    "cooldown_seconds": 6.0,
-    "scale": 1.4,
-    "scale_x": 1.2,
-    "scale_y": 1.2,
-    "scale_z": 1.5,
-    "size_x": 1.1,
-    "size_y": 1.1,
-    "size_z": 1.8,
-    "dimensions": {
-      "x": 1.1,
-      "y": 1.1,
-      "z": 1.8
+    "initial": {
+        "id": "quantum_phaser",
+        "name": "Quantum Phaser",
+        "icon": "✨",
+        "color": "#10b981",
+        "damage": 4,
+        "bullet_speed": 950,
+        "energy_drain_pct": 15,
+        "can_overheat": 1,
+        "cooldown_seconds": 6,
+        "acquire_event": "deep_core_breakthrough",
+        "description": "Sub-atomic pulse rifle optimized for deep singularity warfare.",
+        "scale": 1,
+        "scale_x": 1,
+        "scale_y": 1,
+        "scale_z": 1,
+        "size_x": 1,
+        "size_y": 1,
+        "size_z": 1,
+        "dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+        },
+        "special_fx": "cockpit_cracks_red_edges",
+        "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "special_fx_type": "overlay"
     },
-    "description": "Sub-atomic pulse rifle optimized for deep singularity warfare."
-  },
-  "acquirable": []
+    "acquirable": []
 },
   enemies: [
-  {
-    "id": "quantum_dreadnought",
-    "enemy_id": "quantum_dreadnought",
-    "name": "Quantum Realm Dreadnought",
-    "enemy_class": "Dreadnought",
-    "icon": "\ud83d\udc80",
-    "model_3d_type": "custom_glb",
-    "model_3d_url": "desktop/warp_origin_images/drone_phase_interceptor_3.glb",
-    "color": "#f43f5e",
-    "scale": 1.8,
-    "length": 8.0,
-    "height": 3.5,
-    "depth": 7.5,
-    "circumference": 20.0,
-    "hits": 18,
-    "armor": 80,
-    "shield": 3,
-    "speed": 140,
-    "attack_damage": 40,
-    "weapon_name": "Quantum Annihilator Cannon",
-    "weapon_damage": 40,
-    "weapon_speed": 600,
-    "weapon_color": "#f43f5e",
-    "weapon_scale": 1.6,
-    "weapon_scale_x": 1.5,
-    "weapon_scale_y": 1.5,
-    "weapon_scale_z": 2.0,
-    "weapon_size_x": 1.4,
-    "weapon_size_y": 1.4,
-    "weapon_size_z": 2.8,
-    "weapon_dimensions": {
-      "x": 1.4,
-      "y": 1.4,
-      "z": 2.8
-    },
-    "fire_rate": 1.8,
-    "fire_rate_seconds": 1.8,
-    "fire_rate_ms": 1800,
-    "fire_rate_times_per_sec": 0.556,
-    "weapons": [
-      {
-        "id": "ew_quantum_annihilator",
-        "name": "Quantum Annihilator Cannon",
-        "type": "beam",
-        "mount": "center",
-        "model_url": "",
-        "model_type": "",
-        "fire_point_x": 0.0,
-        "fire_point_y": -0.2,
-        "fire_point_z": 2.0,
+    {
+        "id": "quantum_dreadnought",
+        "enemy_id": "quantum_dreadnought",
+        "name": "Quantum Omega Dreadnought (Universal)",
+        "enemy_class": "Boss Dreadnought",
+        "icon": "💀",
+        "model_3d_type": "dreadnought",
+        "model_3d_url": "",
         "scale": 1.6,
-        "scale_x": 1.5,
-        "scale_y": 1.5,
-        "scale_z": 2.0,
-        "size_x": 1.4,
-        "size_y": 1.4,
-        "size_z": 2.8,
-        "dimensions": {
-          "x": 1.4,
-          "y": 1.4,
-          "z": 2.8
+        "length": 7,
+        "height": 3.2,
+        "depth": 6,
+        "circumference": 15,
+        "color": "#ef476f",
+        "hits": 35,
+        "armor": 90,
+        "shield": 15,
+        "speed": 90,
+        "attack_damage": 60,
+        "weapon_name": "Quantum Annihilator",
+        "weapon_damage": 60,
+        "weapon_speed": 650,
+        "weapon_color": "#ef476f",
+        "weapon_scale": 1,
+        "weapon_scale_x": 1,
+        "weapon_scale_y": 1,
+        "weapon_scale_z": 1,
+        "weapon_size_x": 1,
+        "weapon_size_y": 1,
+        "weapon_size_z": 1,
+        "weapon_dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
         },
-        "fire_rate_times_per_sec": 0.556,
-        "fire_interval_ms": 1800,
-        "fire_rate_seconds": 1.8,
-        "damage": 40,
-        "speed": 600,
-        "color": "#f43f5e",
-        "is_enabled": 1
-      }
-    ],
-    "score": 1500,
-    "threat": "Extreme",
-    "piercing": "any",
-    "pool_size": 40
-  }
+        "weapon_special_fx": "cockpit_cracks_red_edges",
+        "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "weapon_special_fx_type": "overlay",
+        "fire_rate": 1.2,
+        "fire_rate_seconds": 1.2,
+        "fire_rate_ms": 1200,
+        "fire_rate_times_per_sec": 0.833,
+        "weapons": [
+            {
+                "id": "ew_quantum_dreadnought",
+                "name": "Quantum Annihilator",
+                "type": "beam",
+                "mount": "dual_wingtip",
+                "model_url": "",
+                "model_type": "",
+                "fire_point_x": 0,
+                "fire_point_y": -0.15,
+                "fire_point_z": 1.5,
+                "scale": 1,
+                "size_x": 1,
+                "size_y": 1,
+                "size_z": 1,
+                "fire_rate_times_per_sec": 0.833,
+                "fire_interval_ms": 1200,
+                "fire_rate_seconds": 1.2,
+                "damage": 60,
+                "speed": 650,
+                "color": "#ef476f",
+                "is_enabled": 1
+            }
+        ],
+        "score": 5000,
+        "threat": "Extreme",
+        "piercing": "quantum_phaser",
+        "pool_size": 100,
+        "quick_effect_primary": "quantum_phase_glow",
+        "quick_effect_secondary": "energy_shield_pulse",
+        "quick_effect_color": "#ef476f",
+        "quick_effect_intensity": 1,
+        "quick_effect_speed": 1,
+        "destruction_particle_type": "procedural_plasma_shatter",
+        "destruction_particle_url": "",
+        "destruction_particle_count": 120,
+        "destruction_particle_color": "#ef476f",
+        "destruction_particle_scale": 1
+    }
 ],
   controlscontrols: {
     "inputMode": "keyboard_mouse",
@@ -225,17 +248,19 @@ export const stageConfig = {
 }
 };
 
+export const stageEvents = [
+    "Phase-Shift Anomalies",
+    "Multi-Dimensional Phasing",
+    "Antimatter Vortex",
+    "Quantum Dreadnought Confrontation",
+    "Quantum Conduit Realignment & Safe Extraction"
+];
 
-/**
- * Stage Multi-Weapon Firing Handler:
- * Supports multiple weapons per enemy, distinct firing cadences (times/sec and ms),
- * custom projectile colors, velocities, and mount points (dual wingtip, nose, turret).
- */
 export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   if (!enemy || !enemy.mesh || !activeEnemyBolts || !scene) return false;
 
-  const enemyBolts = typeof activeEnemyBolts === 'function' ? activeEnemyBolts() : activeEnemyBolts;
-  if (!enemyBolts || enemyBolts.length > 80) return false;
+  const enemyBolts = activeEnemyBolts();
+  if (enemyBolts.length > 80) return false;
 
   const primaryW = (enemy.weapons && enemy.weapons[0]) || {};
   const wScale = Number(enemy.weapon_scale ?? primaryW.scale ?? 1.0);
@@ -246,37 +271,66 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   const wSizeY = Number(enemy.weapon_size_y ?? primaryW.size_y ?? (primaryW.dimensions && primaryW.dimensions.y) ?? 1.0);
   const wSizeZ = Number(enemy.weapon_size_z ?? primaryW.size_z ?? (primaryW.dimensions && primaryW.dimensions.z) ?? 1.0);
 
-  const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
-  boltGeom.rotateX(Math.PI / 2);
-  const boltMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(enemy.weaponColor || enemy.weapon_color || '#f43f5e'),
-    wireframe: false
-  });
+  const wSpecialFx = primaryW.special_fx || enemy.weapon_special_fx || 'cockpit_cracks_red_edges';
+  const wSpecialFxFile = primaryW.special_fx_file || enemy.weapon_special_fx_file || 'desktop/warp_origin_images/cockpit_cracks_overlay.png';
+  const wSpecialFxType = primaryW.special_fx_type || enemy.weapon_special_fx_type || 'overlay';
+  const wColor = enemy.weaponColor || enemy.weapon_color || primaryW.color || '#f43f5e';
+  const wName = primaryW.name || enemy.weapon_name || 'Enemy Laser';
+  const wId = primaryW.id || enemy.weapon_id || 'enemy_laser';
 
-  const mesh = new THREE.Mesh(boltGeom, boltMat);
-  mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
-  mesh.position.copy(enemy.mesh.position);
+  let mesh = null;
+  let fromPool = false;
+  let geometryList = [];
+  let materialList = [];
 
   const target = (playerPos && playerPos.isVector3) ? playerPos : new THREE.Vector3(0, 0, 220);
   const direction = new THREE.Vector3().subVectors(target, enemy.mesh.position).normalize();
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+  const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
 
-  const geometryList = [boltGeom];
-  const materialList = [boltMat];
+  if (window.stageObjectPool && typeof window.stageObjectPool.spawnEnemyWeapon === 'function') {
+    mesh = window.stageObjectPool.spawnEnemyWeapon(primaryW, enemy, enemy.mesh.position, boltQuat, isMissile ? 'missile' : 'beam');
+    if (mesh) fromPool = true;
+  }
+
+  if (!mesh) {
+    const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
+    boltGeom.rotateX(Math.PI / 2);
+    const boltMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(wColor),
+      wireframe: false
+    });
+
+    mesh = new THREE.Mesh(boltGeom, boltMat);
+    mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
+    mesh.position.copy(enemy.mesh.position);
+    mesh.quaternion.copy(boltQuat);
+
+    geometryList = [boltGeom];
+    materialList = [boltMat];
+    scene.add(mesh);
+  } else {
+    mesh.position.copy(enemy.mesh.position);
+    mesh.quaternion.copy(boltQuat);
+  }
 
   const isMissile = (enemy.weaponType === 'missile' || (enemy.weaponName && enemy.weaponName.toLowerCase().includes('missile')));
   const boltSpeed = enemy.weaponSpeed || enemy.weapon_speed || 420;
   const boltDamage = enemy.weaponDamage || enemy.weapon_damage || 5;
 
-  scene.add(mesh);
-
   enemyBolts.push({
     mesh,
+    fromPool,
     geometryList,
     materialList,
     direction,
     speed: boltSpeed,
     damage: boltDamage,
+    weaponId: wId,
+    weaponName: wName,
+    weaponColor: wColor,
+    specialFx: wSpecialFx,
+    specialFxFile: wSpecialFxFile,
+    specialFxType: wSpecialFxType,
     scale: wScale,
     scale_x: wScaleX,
     scale_y: wScaleY,
@@ -452,15 +506,6 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
-  if (typeof engineApi.setWaves === 'function') {
-    engineApi.setWaves(stageConfig.waves, {
-      total_waves: stageConfig.total_waves,
-      wave_interval_seconds: stageConfig.wave_interval_seconds
-    });
-  }
-  if (typeof engineApi.setEnemyWeaponHandler === 'function') {
-    engineApi.setEnemyWeaponHandler(fireEnemyWeapon);
-  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -528,52 +573,4 @@ export function applyStage(engineApi) {
   return stageConfig;
 }
 
-/**
- * Stage Wave Management: Controls pulling specific number of enemies from the pool
- * for each wave, tracking how many waves and how often a wave happens.
- */
-export function getStageWaves() {
-  return stageConfig.waves;
-}
-
-
-export function updateStageWaves(engineApi, context = {}) {
-  if (!engineApi) return null;
-  const currentWave = typeof engineApi.getCurrentWave === 'function' ? engineApi.getCurrentWave() : 0;
-  const totalWaves = stageConfig.total_waves || 2;
-  const now = (context && context.now) || performance.now();
-  const waveStartTime = typeof engineApi.getWaveStartTime === 'function' ? engineApi.getWaveStartTime() : 0;
-  const activeEnemies = (context && context.activeEnemies) || [];
-
-  // Wave 1: Pull 5 enemies from the pool at the start of stage engagement
-  if (currentWave === 0) {
-    return pullEnemyWave(1, engineApi, context);
-  }
-
-  // Wave 2: Pull 10 enemies from the pool when the 15-second wave interval has elapsed
-  if (currentWave === 1 && totalWaves >= 2) {
-    const elapsed = now - waveStartTime;
-    const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
-    const wave1EnemiesRemaining = activeEnemies.filter(e => e.isActive && e.waveNumber === 1).length;
-
-    // Strict timing: Wave 2 occurs after the 15-second interval (or if wave 1 defeated and at least 5s elapsed)
-    if (elapsed >= waveIntervalMs || (wave1EnemiesRemaining === 0 && elapsed >= 5000)) {
-      return pullEnemyWave(2, engineApi, context);
-    }
-  }
-
-  return null;
-}
-
-export function pullEnemyWave(waveNumber, engineApi, context = {}) {
-  const waves = stageConfig.waves || [];
-  const wave = waves.find(w => w.wave_number === waveNumber) || waves[waveNumber - 1];
-  if (!wave) return [];
-  const count = wave.enemy_count || (waveNumber === 1 ? 5 : 10);
-  if (engineApi && typeof engineApi.spawnWaveEnemies === 'function') {
-    return engineApi.spawnWaveEnemies(count, wave, stageConfig.enemies);
-  }
-  return [];
-}
-
-export default { stageConfig, applyStage, fireEnemyWeapon, getStageWaves, updateStageWaves, pullEnemyWave };;
+export default { stageConfig, applyStage, fireEnemyWeapon, updateEnemyMovement, updateStageWaves, handleStageEvent, stageEvents };

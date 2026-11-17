@@ -17,6 +17,21 @@ import {
  */
 
 export const stageConfig = {
+  meta: {
+    level: 1,
+    name: 'Warp Origin',
+    slug: 'warp_origin',
+    theme: 'Warp Cyan Corridor',
+    device: 'mobile',
+    xrMode: 'mobile-xr',
+    description: 'Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.',
+    parScore: 5000,
+    requiredKills: 10,
+    warpTargetDistance: 50000,
+    missionObjectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
+    eventsWithin: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
+    endLevelEvent: 'Warp Horizon Jump Gate Initialized'
+  },
   stage_level: 1,
   stage_name: 'Warp Origin',
   stage_slug: 'warp_origin',
@@ -123,57 +138,64 @@ export const stageConfig = {
 }
   },
   weapons: {
-  "initial": {
-    "id": "red_laser",
-    "name": "Red Laser",
-    "icon": "\ud83d\udd34",
-    "color": "#ff2244",
-    "damage": 2,
-    "bullet_speed": 550,
-    "energy_drain_pct": 10.0,
-    "can_overheat": 1,
-    "cooldown_seconds": 5.0,
-    "scale": 1.0,
-    "scale_x": 1.0,
-    "scale_y": 1.0,
-    "scale_z": 1.0,
-    "size_x": 1.0,
-    "size_y": 1.0,
-    "size_z": 1.0,
-    "dimensions": {
-      "x": 1.0,
-      "y": 1.0,
-      "z": 1.0
+    "initial": {
+        "id": "red_laser",
+        "name": "Red Laser",
+        "icon": "🔴",
+        "color": "#ff2244",
+        "damage": 2,
+        "bullet_speed": 550,
+        "energy_drain_pct": 1,
+        "can_overheat": 1,
+        "cooldown_seconds": 5,
+        "acquire_event": "default_start",
+        "description": "Standard high-cadence plasma emitter with twin focus beams.",
+        "scale": 1,
+        "scale_x": 1,
+        "scale_y": 1,
+        "scale_z": 1,
+        "size_x": 1,
+        "size_y": 1,
+        "size_z": 1,
+        "dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+        },
+        "special_fx": "cockpit_cracks_red_edges",
+        "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "special_fx_type": "overlay"
     },
-    "description": "Standard high-cadence plasma emitter with twin focus beams."
-  },
-  "acquirable": [
-    {
-      "id": "blue_laser",
-      "name": "Blue Laser",
-      "icon": "\ud83d\udd35",
-      "color": "#00d4ff",
-      "damage": 3,
-      "bullet_speed": 700,
-      "energy_drain_pct": 25.0,
-      "can_overheat": 1,
-      "cooldown_seconds": 7.0,
-      "acquire_event": "default_start",
-      "scale": 1.2,
-      "scale_x": 1.0,
-      "scale_y": 1.0,
-      "scale_z": 1.2,
-      "size_x": 1.2,
-      "size_y": 1.2,
-      "size_z": 1.5,
-      "dimensions": {
-        "x": 1.2,
-        "y": 1.2,
-        "z": 1.5
-      },
-      "description": "High-impact coherent photon beam with deep penetration."
-    }
-  ]
+    "acquirable": [
+        {
+            "id": "blue_laser",
+            "name": "Blue Laser",
+            "icon": "🔵",
+            "color": "#00d4ff",
+            "damage": 3,
+            "bullet_speed": 700,
+            "energy_drain_pct": 5,
+            "can_overheat": 1,
+            "cooldown_seconds": 10,
+            "acquire_event": "default_start",
+            "description": "High-impact coherent photon beam with deep penetration.",
+            "scale": 1,
+            "scale_x": 1,
+            "scale_y": 1,
+            "scale_z": 1,
+            "size_x": 1,
+            "size_y": 1,
+            "size_z": 1,
+            "dimensions": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "special_fx": "cockpit_cracks_red_edges",
+            "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+            "special_fx_type": "overlay"
+        }
+    ]
 },
   enemies: [
   {
@@ -332,14 +354,268 @@ export const stageConfig = {
         "damage": 1,
         "speed": 450,
         "color": "#00f0ff",
-        "is_enabled": 1
-      }
-    ],
-    "score": 100,
-    "threat": "Low",
-    "piercing": "any",
-    "pool_size": 40
-  }
+        "hits": 1,
+        "armor": 1,
+        "shield": 0,
+        "speed": 220,
+        "attack_damage": 1,
+        "weapon_name": "Plasma Pulse",
+        "weapon_damage": 1,
+        "weapon_speed": 450,
+        "weapon_color": "#00f0ff",
+        "weapon_scale": 1,
+        "weapon_scale_x": 0.5,
+        "weapon_scale_y": 0.5,
+        "weapon_scale_z": 1,
+        "weapon_size_x": 1,
+        "weapon_size_y": 1,
+        "weapon_size_z": 1,
+        "weapon_dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+        },
+        "weapon_special_fx": "none",
+        "weapon_special_fx_file": "mobile/warp_origin_images/cockpit_cracks_overlay.png",
+        "weapon_special_fx_type": "overlay",
+        "fire_rate": 2,
+        "fire_rate_seconds": 2,
+        "fire_rate_ms": 2000,
+        "fire_rate_times_per_sec": 0.5,
+        "weapons": [
+            {
+                "id": "ew_0_fzo0",
+                "name": "Plasma Pulse",
+                "type": "missile",
+                "mount": "center",
+                "model_url": "",
+                "model_type": "",
+                "fire_point_x": 0,
+                "fire_point_y": -0.15,
+                "fire_point_z": 1.5,
+                "scale": 1,
+                "scale_x": 0.5,
+                "scale_y": 0.5,
+                "scale_z": 1,
+                "size_x": 1,
+                "size_y": 1,
+                "size_z": 1,
+                "dimensions": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "fire_rate_times_per_sec": 0.5,
+                "fire_interval_ms": 2000,
+                "fire_rate_seconds": 2,
+                "damage": 1,
+                "speed": 450,
+                "color": "#00f0ff",
+                "special_fx": "none",
+                "special_fx_file": "mobile/warp_origin_images/cockpit_cracks_overlay.png",
+                "special_fx_type": "overlay",
+                "is_enabled": 1
+            }
+        ],
+        "score": 100,
+        "threat": "Low",
+        "piercing": "any",
+        "pool_size": 30,
+        "quick_effect_primary": "plasma_aura",
+        "quick_effect_secondary": "sparks_burst",
+        "quick_effect_color": "#00f0ff",
+        "quick_effect_intensity": 1,
+        "quick_effect_speed": 1,
+        "destruction_particle_type": "procedural_sparks_explosion",
+        "destruction_particle_url": "",
+        "destruction_particle_count": 30,
+        "destruction_particle_color": "#00f0ff",
+        "destruction_particle_scale": 1
+    },
+    {
+        "id": "phase_interceptor_all",
+        "enemy_id": "phase_interceptor_all",
+        "name": "Phase Interceptor (Universal)",
+        "enemy_class": "Fast Interceptor",
+        "icon": "🚀",
+        "model_3d_type": "custom_glb",
+        "model_3d_url": "mobile/warp_origin_images/drone_phase_interceptor_3.glb",
+        "scale": 0.75,
+        "length": 4.2,
+        "height": 1.3,
+        "depth": 3.4,
+        "circumference": 5,
+        "color": "#38bdf8",
+        "hits": 1,
+        "armor": 1,
+        "shield": 0,
+        "speed": 220,
+        "attack_damage": 1,
+        "weapon_name": "Dual Ion Cannon",
+        "weapon_damage": 1,
+        "weapon_speed": 550,
+        "weapon_color": "#38bdf8",
+        "weapon_scale": 1,
+        "weapon_scale_x": 0.5,
+        "weapon_scale_y": 0.5,
+        "weapon_scale_z": 1,
+        "weapon_size_x": 1,
+        "weapon_size_y": 1,
+        "weapon_size_z": 1,
+        "weapon_dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+        },
+        "weapon_special_fx": "none",
+        "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "weapon_special_fx_type": "overlay",
+        "fire_rate": 3,
+        "fire_rate_seconds": 3,
+        "fire_rate_ms": 3003,
+        "fire_rate_times_per_sec": 0.333,
+        "weapons": [
+            {
+                "id": "ew_0_jerr",
+                "name": "Dual Ion Cannon",
+                "type": "missile",
+                "mount": "center",
+                "model_url": "",
+                "model_type": "",
+                "fire_point_x": 0,
+                "fire_point_y": -0.15,
+                "fire_point_z": 1.5,
+                "scale": 1,
+                "scale_x": 0.5,
+                "scale_y": 0.5,
+                "scale_z": 1,
+                "size_x": 1,
+                "size_y": 1,
+                "size_z": 1,
+                "dimensions": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "fire_rate_times_per_sec": 0.333,
+                "fire_interval_ms": 3003,
+                "fire_rate_seconds": 3.003,
+                "damage": 1,
+                "speed": 550,
+                "color": "#38bdf8",
+                "special_fx": "none",
+                "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                "special_fx_type": "overlay",
+                "is_enabled": 1
+            }
+        ],
+        "score": 250,
+        "threat": "Medium",
+        "piercing": "red_laser",
+        "pool_size": 30,
+        "quick_effect_primary": "engine_ion_thrust",
+        "quick_effect_secondary": "plasma_aura",
+        "quick_effect_color": "#38bdf8",
+        "quick_effect_intensity": 1,
+        "quick_effect_speed": 1,
+        "destruction_particle_type": "procedural_plasma_shatter",
+        "destruction_particle_url": "",
+        "destruction_particle_count": 45,
+        "destruction_particle_color": "#38bdf8",
+        "destruction_particle_scale": 1
+    },
+    {
+        "id": "void_recon_drone",
+        "enemy_id": "void_recon_drone",
+        "name": "Void Recon Drone (Desktop)",
+        "enemy_class": "Scout Drone",
+        "icon": "🛸",
+        "model_3d_type": "custom_glb",
+        "model_3d_url": "desktop/warp_origin_images/recon_drone_2.8m.glb",
+        "scale": 1,
+        "length": 3,
+        "height": 1.5,
+        "depth": 3,
+        "circumference": 6,
+        "color": "#ef476f",
+        "hits": 2,
+        "armor": 10,
+        "shield": 0,
+        "speed": 250,
+        "attack_damage": 5,
+        "weapon_name": "Plasma Pulse",
+        "weapon_damage": 5,
+        "weapon_speed": 450,
+        "weapon_color": "#ff2255",
+        "weapon_scale": 1,
+        "weapon_scale_x": 1,
+        "weapon_scale_y": 1,
+        "weapon_scale_z": 1,
+        "weapon_size_x": 1,
+        "weapon_size_y": 1,
+        "weapon_size_z": 1,
+        "weapon_dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+        },
+        "weapon_special_fx": "cockpit_cracks_red_edges",
+        "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "weapon_special_fx_type": "overlay",
+        "fire_rate": 3,
+        "fire_rate_seconds": 3,
+        "fire_rate_ms": 3000,
+        "fire_rate_times_per_sec": 0.333,
+        "weapons": [
+            {
+                "id": "ew_void_recon_drone_0",
+                "name": "Plasma Pulse",
+                "type": "beam",
+                "mount": "center",
+                "model_url": "",
+                "model_type": "",
+                "fire_point_x": 0,
+                "fire_point_y": -0.15,
+                "fire_point_z": 1.5,
+                "scale": 1,
+                "scale_x": 1,
+                "scale_y": 1,
+                "scale_z": 1,
+                "size_x": 1,
+                "size_y": 1,
+                "size_z": 1,
+                "dimensions": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "fire_rate_times_per_sec": 0.333,
+                "fire_interval_ms": 3000,
+                "fire_rate_seconds": 3,
+                "damage": 5,
+                "speed": 450,
+                "color": "#ff2255",
+                "special_fx": "cockpit_cracks_red_edges",
+                "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                "special_fx_type": "overlay",
+                "is_enabled": 1
+            }
+        ],
+        "score": 100,
+        "threat": "Low",
+        "piercing": "any",
+        "pool_size": 30,
+        "quick_effect_primary": "none",
+        "quick_effect_secondary": "none",
+        "quick_effect_color": "#00f0ff",
+        "quick_effect_intensity": 1,
+        "quick_effect_speed": 1,
+        "destruction_particle_type": "procedural_sparks_explosion",
+        "destruction_particle_url": "",
+        "destruction_particle_count": 40,
+        "destruction_particle_color": "#ef476f",
+        "destruction_particle_scale": 1
+    }
 ],
   controlscontrols: {
     "inputMode": "touch_virtual_joysticks",
@@ -349,411 +625,20 @@ export const stageConfig = {
 }
 };
 
-export function updateEnemyMovement(e, delta, context) {
-  // Movement logic inactive if in pool or flagged inactive
-  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) return false;
-  const THREE = (context && context.THREE) || window.THREE;
-  if (!THREE) return false;
-
-  const now = (context && context.now) || performance.now();
-  const playerPos = (context && context.playerPos) || { x: 0, y: 0, z: 0 };
-  const laserBolts = (context && context.laserBolts) || [];
-  const activeEnemies = (context && context.activeEnemies) || [];
-  const enemyIndex = (context && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
-  const distToPlayer = e.mesh.position.distanceTo(playerPos);
-
-  // Exact distance definitions: at 420 KM per Three.js unit
-  const dist10k = 10000 / 420; // ~23.8095 units
-  const dist5k = 5000 / 420;   // ~11.9048 units
-  const targetZ10k = playerPos.z - dist10k;
-  const targetZ5k = playerPos.z - dist5k;
-  const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
-  const baseScale = e.baseScale || 1.3;
-
-  // Baseline forward posture: nose tilted down (~0.22 rad / 12.6 deg) so top of 3D model is visible
-  const basePitchDown = 0.22;
-
-  // Requirement: Ensure custom 3D model asset maintains its front-facing orientation (+Z is forward, pointing at player):
-  // All custom 3D GLB models natively have +Z forward with 0 rad rotation (un-rotated)
-  if (e.mesh.userData && e.mesh.userData.loadedAsset) {
-    const asset = e.mesh.userData.loadedAsset;
-    let targetRotY = 0;
-    if (asset.userData && typeof asset.userData.targetRotY === 'number') {
-      targetRotY = asset.userData.targetRotY;
-    }
-    if (Math.abs(asset.rotation.y - targetRotY) > 0.001) {
-      asset.rotation.y = targetRotY;
-    }
-  }
-
-  // Initialize tactical maneuver state machine
-  if (!e.maneuverState) {
-    e.maneuverState = (e.phase === 'RUSH_OUT') ? 'RUSH_OUT' : 'CRUISE_10K';
-    e.levelPitchProgress = 0.0; // 0.0 = full forward tilt (0.22 rad), 1.0 = level (0.0 rad)
-    e.isLevel = false;
-    e.hasFiredThisLevel = false;
-    e.shotsFiredInLevel = 0;
-    e.nextBurstShotTime = 0;
-    e.shotsFiredAt5k = 0;
-    e.nextBurstShotTime5k = 0;
-    e.nextLevelTime = now + 800 + Math.random() * 1200;
-  }
-
-  if (e.phase === 'RUSH_OUT' || e.maneuverState === 'RUSH_OUT') {
-    // Fly out of the black hole mouth towards player stopping at 10,000 KM
-    e.mesh.position.z += (e.speed || 45) * delta;
-    e.mesh.position.x += (playerPos.x + (e.targetScatterX || 0) * 0.25 - e.mesh.position.x) * delta * 0.55;
-    e.mesh.position.y += (playerPos.y + (e.targetScatterY || 0) * 0.25 - e.mesh.position.y) * delta * 0.55;
-
-    // Scale up as approaching 10,000 KM
-    const totalDist = Math.max(10, targetZ10k - spawnZ);
-    const distTraveled = e.mesh.position.z - spawnZ;
-    const rushProgress = THREE.MathUtils.clamp(distTraveled / totalDist, 0.0, 1.0);
-    const curScale = THREE.MathUtils.lerp(0.12, baseScale, rushProgress);
-    e.mesh.scale.set(curScale, curScale, curScale);
-
-    // Tilted forward posture oriented towards player
-    const rushDx = playerPos.x - e.mesh.position.x;
-    const rushDy = playerPos.y - e.mesh.position.y;
-    const rushDz = Math.max(5.0, playerPos.z - e.mesh.position.z);
-    const rushLookYaw = THREE.MathUtils.clamp(Math.atan2(rushDx, rushDz), -0.35, 0.35);
-    const rushLookPitch = THREE.MathUtils.clamp(-Math.atan2(rushDy, rushDz), -0.20, 0.20);
-    e.levelPitchProgress = 0.0;
-    e.isLevel = false;
-    e.mesh.rotation.set(basePitchDown + rushLookPitch, rushLookYaw, 0, 'YXZ');
-
-    if (e.mesh.position.z >= targetZ10k || distToPlayer <= dist10k) {
-      e.mesh.position.z = targetZ10k;
-      e.phase = 'SCATTER_AND_EVADE';
-      e.maneuverState = 'CRUISE_10K';
-      e.stoppedTime = now;
-      e.nextLevelTime = now + 800 + Math.random() * 1200;
-    }
-    return true;
-  }
-
-  // --- Dynamic Evasive Maneuvers & Snap Grid Screen Scatter Targeting ---
-  const grid = (context && context.snapGrid) || (typeof window !== 'undefined' && window.snapGrid);
-  const cols = (grid && grid.cols) ? grid.cols : 15;
-  const rows = (grid && grid.rows) ? grid.rows : 7;
-  const cellW = 48.8 / cols;
-  const cellH = 27.5 / rows;
-
-  if (now > (e.scatterRetargetTime || 0)) {
-    e.scatterRetargetTime = now + 4000 + Math.random() * 4000;
-    const maxCol = Math.max(2, Math.floor(cols / 2) - 1);
-    const maxRow = Math.max(1, Math.floor(rows / 2) - 1);
-    const signX = Math.random() > 0.5 ? 1 : -1;
-    // Align scatter targets to snap grid columns and rows across viewport
-    const colSlot = signX * (1 + Math.floor(Math.random() * maxCol));
-    const rowSlot = Math.floor((Math.random() * 2 - 1) * maxRow);
-    e.targetScatterX = colSlot * cellW;
-    e.targetScatterY = rowSlot * cellH;
-  }
-
-  const screenTargetX = playerPos.x + (e.targetScatterX || 0);
-  const screenTargetY = playerPos.y + (e.targetScatterY || 0);
-  e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
-  e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
-
-  // Multi-frequency sinusoidal evasive weaves
-  const t = (now - (e.stoppedTime || now)) * 0.001;
-  const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0);
-  const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.4);
-  const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.6);
-  e.mesh.position.x += evaVx * delta;
-  e.mesh.position.y += evaVy * delta;
-  e.mesh.position.z += evaVz * delta;
-
-  // Tactical thruster bursts / jukes
-  if (now >= (e.nextJukeTime || 0)) {
-    e.nextJukeTime = now + 1400 + Math.random() * 2000;
-    e.jukeEndTime = now + 350 + Math.random() * 350;
-    if (e.jukeVelocity && typeof e.jukeVelocity.set === 'function') {
-      e.jukeVelocity.set(
-        (Math.random() - 0.5) * 30,
-        (Math.random() - 0.5) * 22,
-        (Math.random() - 0.5) * 6
-      );
-    }
-  }
-  if (e.jukeVelocity) {
-    if (now < e.jukeEndTime) {
-      e.mesh.position.addScaledVector(e.jukeVelocity, delta);
-    } else {
-      e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
-    }
-  }
-
-  // Reactive dodging of incoming player laser fire
-  for (let li = 0; li < laserBolts.length; li++) {
-    const lbolt = laserBolts[li];
-    if (!lbolt || !lbolt.mesh) continue;
-    const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
-    if (ldist < 7.2) {
-      const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
-      dodgeDir.z = 0;
-      if (dodgeDir.lengthSq() > 0.001) {
-        dodgeDir.normalize();
-        e.mesh.position.addScaledVector(dodgeDir, 20.0 * delta);
-      }
-      break;
-    }
-  }
-
-  // --- Tactical State Machine: Frequent Firing at 10,000 KM & 5,000 KM ---
-  switch (e.maneuverState) {
-    case 'CRUISE_10K': {
-      // Locking Z proximity around 10,000 KM
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
-      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 0) - delta * 3.0);
-      e.isLevel = false;
-
-      // Base scale at 10,000 KM
-      e.mesh.scale.set(baseScale, baseScale, baseScale);
-
-      // Trigger to level off and fire frequently at 10,000 KM
-      if (now >= (e.nextLevelTime || 0)) {
-        e.maneuverState = 'LEVELING_OFF';
-        e.hasFiredThisLevel = false;
-        e.shotsFiredInLevel = 0;
-        e.nextBurstShotTime = now + 80;
-      }
-      break;
-    }
-
-    case 'LEVELING_OFF': {
-      // Smoothly transition pitch to level (levelPitchProgress -> 1.0)
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
-      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 3.5);
-      e.mesh.scale.set(baseScale, baseScale, baseScale);
-
-      if (e.levelPitchProgress >= 0.94) {
-        e.levelPitchProgress = 1.0;
-        e.isLevel = true;
-        e.maneuverState = 'LEVEL_FIRING';
-        e.levelFireEndTime = now + 1300; // Firing window while level at 10,000 KM
-        e.shotsFiredInLevel = 0;
-        e.nextBurstShotTime = now;
-      }
-      break;
-    }
-
-    case 'LEVEL_FIRING': {
-      // Maintain level orientation and fire weapons more often at 10,000 KM
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
-      e.levelPitchProgress = 1.0;
-      e.isLevel = true;
-      e.mesh.scale.set(baseScale, baseScale, baseScale);
-
-      // Fire weapon more often: alternating dual cannon bursts every 280ms
-      if (now >= (e.nextBurstShotTime || 0)) {
-        e.nextBurstShotTime = now + 280;
-        e.shotsFiredInLevel = (e.shotsFiredInLevel || 0) + 1;
-        e.hasFiredThisLevel = true;
-        fireEnemyWeapon(e, context);
-      }
-
-      if (now >= (e.levelFireEndTime || 0) && (e.shotsFiredInLevel || 0) >= 3) {
-        e.isLevel = false;
-        e.maneuverState = 'TILTING_FORWARD';
-      }
-      break;
-    }
-
-    case 'TILTING_FORWARD': {
-      // Smoothly tilt back forward (levelPitchProgress -> 0.0)
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
-      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 3.2);
-      e.isLevel = false;
-      e.mesh.scale.set(baseScale, baseScale, baseScale);
-
-      if (e.levelPitchProgress <= 0.04) {
-        e.levelPitchProgress = 0.0;
-        e.maneuverState = 'ADVANCE_5K';
-      }
-      break;
-    }
-
-    case 'ADVANCE_5K': {
-      // Fly forward to 5,000 KM from player, scaling 2% bigger as it gets closer
-      e.levelPitchProgress = 0.0;
-      e.isLevel = false;
-
-      // Smooth flight forward towards targetZ5k
-      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
-
-      const advanceProgress = THREE.MathUtils.clamp((e.mesh.position.z - targetZ10k) / (targetZ5k - targetZ10k), 0.0, 1.0);
-      const scaleFactor = 1.0 + 0.02 * advanceProgress; // 2% bigger as it gets closer
-      const curScale = baseScale * scaleFactor;
-      e.mesh.scale.set(curScale, curScale, curScale);
-
-      if (advanceProgress >= 0.98 || Math.abs(targetZ5k - e.mesh.position.z) < 0.25) {
-        e.mesh.position.z = targetZ5k;
-        e.maneuverState = 'LEVELING_OFF_5K';
-      }
-      break;
-    }
-
-    case 'LEVELING_OFF_5K': {
-      // Smoothly transition pitch to level at 5,000 KM
-      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
-      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 3.5);
-      const curScale = baseScale * 1.02; // Stays 2% bigger
-      e.mesh.scale.set(curScale, curScale, curScale);
-
-      if (e.levelPitchProgress >= 0.94) {
-        e.levelPitchProgress = 1.0;
-        e.isLevel = true;
-        e.maneuverState = 'LEVEL_FIRING_5K';
-        e.levelFireEndTime5k = now + 3000; // 3 seconds engagement window at 5,000 KM
-        e.shotsFiredAt5k = 0;
-        e.nextBurstShotTime5k = now;
-      }
-      break;
-    }
-
-    case 'LEVEL_FIRING_5K': {
-      // Hold position at 5,000 KM and actively fire weapons repeatedly at close range!
-      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
-      e.levelPitchProgress = 1.0;
-      e.isLevel = true;
-      const curScale = baseScale * 1.02; // Stays 2% bigger
-      e.mesh.scale.set(curScale, curScale, curScale);
-
-      // Fire weapon more often at 5,000 KM: bursts every 300ms from both wingtips
-      if (now >= (e.nextBurstShotTime5k || 0)) {
-        e.nextBurstShotTime5k = now + 300;
-        e.shotsFiredAt5k = (e.shotsFiredAt5k || 0) + 1;
-        fireEnemyWeapon(e, context);
-      }
-
-      if (now >= (e.levelFireEndTime5k || 0) && (e.shotsFiredAt5k || 0) >= 4) {
-        e.isLevel = false;
-        e.maneuverState = 'TILTING_FORWARD_5K';
-      }
-      break;
-    }
-
-    case 'TILTING_FORWARD_5K': {
-      // Smoothly tilt forward before retreating back to 10,000 KM
-      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
-      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 3.2);
-      e.isLevel = false;
-      const curScale = baseScale * 1.02;
-      e.mesh.scale.set(curScale, curScale, curScale);
-
-      if (e.levelPitchProgress <= 0.04) {
-        e.levelPitchProgress = 0.0;
-        e.maneuverState = 'RETREAT_10K';
-      }
-      break;
-    }
-
-    case 'RETREAT_10K': {
-      // Fly back to 10,000 KM from player, scaling back down by 2% as it gets farther away
-      e.levelPitchProgress = 0.0;
-      e.isLevel = false;
-
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 2.8;
-
-      const retreatProgress = THREE.MathUtils.clamp((targetZ5k - e.mesh.position.z) / (targetZ5k - targetZ10k), 0.0, 1.0);
-      const scaleFactor = 1.02 - 0.02 * retreatProgress; // Scales back down by 2%
-      const curScale = baseScale * scaleFactor;
-      e.mesh.scale.set(curScale, curScale, curScale);
-
-      if (retreatProgress >= 0.98 || Math.abs(targetZ10k - e.mesh.position.z) < 0.25) {
-        e.mesh.position.z = targetZ10k;
-        e.mesh.scale.set(baseScale, baseScale, baseScale);
-        e.maneuverState = 'CRUISE_10K';
-        e.nextLevelTime = now + 1000 + Math.random() * 1500; // Quick cadence to fire again!
-      }
-      break;
-    }
-
-    default: {
-      e.maneuverState = 'CRUISE_10K';
-      break;
-    }
-  }
-
-  // --- Look-At Player Orientation & Snap Grid Alignment ---
-  // Vector from enemy to player position
-  const dx = playerPos.x - e.mesh.position.x;
-  const dy = playerPos.y - e.mesh.position.y;
-  const dz = Math.max(5.0, playerPos.z - e.mesh.position.z);
-
-  // Exact bearing angles towards player
-  const rawLookYaw = Math.atan2(dx, dz);
-  const rawLookPitch = -Math.atan2(dy, dz);
-
-  // Angular resolution of each snap grid cell at stop distance
-  const gridYawStep = cellW / dist10k;   // ~0.136 rad (~7.8 deg)
-  const gridPitchStep = cellH / dist10k; // ~0.165 rad (~9.4 deg)
-  const snappedYaw = Math.round(rawLookYaw / gridYawStep) * gridYawStep;
-  const snappedPitch = Math.round(rawLookPitch / gridPitchStep) * gridPitchStep;
-
-  // Rotate smoothly so models always look at player, softly aligned to snap grid cells
-  const lookYaw = THREE.MathUtils.clamp(
-    THREE.MathUtils.lerp(rawLookYaw, snappedYaw, 0.45),
-    -0.45, 0.45
-  );
-  const lookPitch = THREE.MathUtils.clamp(
-    THREE.MathUtils.lerp(rawLookPitch, snappedPitch, 0.45),
-    -0.28, 0.28
-  );
-
-  // --- Banking, Pitch, and Orientation ---
-  const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
-  const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
-  const netVx = (screenTargetX - e.mesh.position.x) * 1.1 + jukeVx + evaVx;
-  const netVy = (screenTargetY - e.mesh.position.y) * 1.1 + jukeVy + evaVy;
-
-  const roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65);
-  const yaw = lookYaw + THREE.MathUtils.clamp(-netVx * 0.02, -0.22, 0.22);
-
-  // Transition between forward tilt (~0.22 rad) and level (0.0 rad), plus look-at pitch to player
-  const effectiveBasePitch = basePitchDown * (1.0 - (e.levelPitchProgress || 0));
-  const pitch = effectiveBasePitch + lookPitch + THREE.MathUtils.clamp(netVy * 0.035, -0.18, 0.18);
-  e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
-
-  if (e.mesh.userData && e.mesh.userData.spinRing) {
-    e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
-  }
-
-  // --- Proximity Detection & Repulsion: Smoothly prevent collisions between enemies ---
-  for (let j = 0; j < activeEnemies.length; j++) {
-    if (j === enemyIndex) continue;
-    const other = activeEnemies[j];
-    if (!other || !other.mesh) continue;
-    const sepVec = new THREE.Vector3().subVectors(e.mesh.position, other.mesh.position);
-    const sepDist = sepVec.length();
-    const otherScale = (other.mesh.scale && typeof other.mesh.scale.x === 'number') ? other.mesh.scale.x : 1.0;
-    const curScaleX = (e.mesh.scale && typeof e.mesh.scale.x === 'number') ? e.mesh.scale.x : 1.0;
-    const minSafeSep = Math.max(5.5, (curScaleX + otherScale) * 2.8);
-    if (sepDist < minSafeSep && sepDist > 0.001) {
-      const overlapFactor = (minSafeSep - sepDist) / minSafeSep;
-      const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 20.0 * delta);
-      e.mesh.position.add(repulse);
-    }
-  }
-
-  return true;
-}
-
-/**
- * Stage 1 Enemy Weapon Firing Handler:
- * - Emanates directly from the 3D model's front muzzles/cannons rather than the object center.
- * - Scaled proportionally relative to the size/scale of the firing ship model.
- * - Utilizes weapon damage, speed, color, and name configured from database/.js files.
- * - Fires weapon more often: both when enemies are at 10,000 KM and 5,000 KM from the player.
- */
+export const stageEvents = [
+    "Sub-space Entry",
+    "Nav-Beacon Calibration",
+    "Asteroid Debris Belt",
+    "Anomaly Alpha Spike",
+    "Plasma Surge Alert",
+    "Warp Horizon Jump Gate Initialized"
+];
 
 export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   if (!enemy || !enemy.mesh || !activeEnemyBolts || !scene) return false;
 
-  const enemyBolts = typeof activeEnemyBolts === 'function' ? activeEnemyBolts() : activeEnemyBolts;
-  if (!enemyBolts || enemyBolts.length > 80) return false;
+  const enemyBolts = activeEnemyBolts();
+  if (enemyBolts.length > 80) return false;
 
   const primaryW = (enemy.weapons && enemy.weapons[0]) || {};
   const wScale = Number(enemy.weapon_scale ?? primaryW.scale ?? 1.0);
@@ -764,32 +649,55 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   const wSizeY = Number(enemy.weapon_size_y ?? primaryW.size_y ?? (primaryW.dimensions && primaryW.dimensions.y) ?? 1.0);
   const wSizeZ = Number(enemy.weapon_size_z ?? primaryW.size_z ?? (primaryW.dimensions && primaryW.dimensions.z) ?? 1.0);
 
-  const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
-  boltGeom.rotateX(Math.PI / 2);
-  const boltMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(enemy.weaponColor || enemy.weapon_color || '#00f0ff'),
-    wireframe: false
-  });
+  const wSpecialFx = primaryW.special_fx || enemy.weapon_special_fx || 'cockpit_cracks_red_edges';
+  const wSpecialFxFile = primaryW.special_fx_file || enemy.weapon_special_fx_file || 'desktop/warp_origin_images/cockpit_cracks_overlay.png';
+  const wSpecialFxType = primaryW.special_fx_type || enemy.weapon_special_fx_type || 'overlay';
+  const wColor = enemy.weaponColor || enemy.weapon_color || primaryW.color || '#00f0ff';
+  const wName = primaryW.name || enemy.weapon_name || 'Enemy Laser';
+  const wId = primaryW.id || enemy.weapon_id || 'enemy_laser';
 
-  const mesh = new THREE.Mesh(boltGeom, boltMat);
-  mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
-  mesh.position.copy(enemy.mesh.position);
+  let mesh = null;
+  let fromPool = false;
+  let geometryList = [];
+  let materialList = [];
 
   const target = (playerPos && playerPos.isVector3) ? playerPos : new THREE.Vector3(0, 0, 220);
   const direction = new THREE.Vector3().subVectors(target, enemy.mesh.position).normalize();
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+  const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
 
-  const geometryList = [boltGeom];
-  const materialList = [boltMat];
+  if (window.stageObjectPool && typeof window.stageObjectPool.spawnEnemyWeapon === 'function') {
+    mesh = window.stageObjectPool.spawnEnemyWeapon(primaryW, enemy, enemy.mesh.position, boltQuat, isMissile ? 'missile' : 'beam');
+    if (mesh) fromPool = true;
+  }
+
+  if (!mesh) {
+    const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
+    boltGeom.rotateX(Math.PI / 2);
+    const boltMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(wColor),
+      wireframe: false
+    });
+
+    mesh = new THREE.Mesh(boltGeom, boltMat);
+    mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
+    mesh.position.copy(enemy.mesh.position);
+    mesh.quaternion.copy(boltQuat);
+
+    geometryList = [boltGeom];
+    materialList = [boltMat];
+    scene.add(mesh);
+  } else {
+    mesh.position.copy(enemy.mesh.position);
+    mesh.quaternion.copy(boltQuat);
+  }
 
   const isMissile = (enemy.weaponType === 'missile' || (enemy.weaponName && enemy.weaponName.toLowerCase().includes('missile')));
   const boltSpeed = enemy.weaponSpeed || enemy.weapon_speed || 420;
   const boltDamage = enemy.weaponDamage || enemy.weapon_damage || 5;
 
-  scene.add(mesh);
-
   enemyBolts.push({
     mesh,
+    fromPool,
     geometryList,
     materialList,
     direction,
@@ -1000,12 +908,6 @@ export function applyStage(engineApi) {
   }
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
-  }
-  if (typeof engineApi.setWaves === 'function') {
-    engineApi.setWaves(stageConfig.waves, {
-      total_waves: stageConfig.total_waves,
-      wave_interval_seconds: stageConfig.wave_interval_seconds
-    });
   }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);

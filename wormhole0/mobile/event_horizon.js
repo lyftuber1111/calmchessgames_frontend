@@ -18,6 +18,21 @@ import {
  */
 
 export const stageConfig = {
+  meta: {
+    level: 2,
+    name: 'Event Horizon',
+    slug: 'event_horizon',
+    theme: 'Event Horizon Amber',
+    device: 'mobile',
+    xrMode: 'mobile-xr',
+    description: 'High-velocity relativistic light-horizon boundary with intense magnetic shear.',
+    parScore: 12000,
+    requiredKills: 15,
+    warpTargetDistance: 35000,
+    missionObjectives: 'Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.',
+    eventsWithin: 'Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert',
+    endLevelEvent: 'Singularity Perimeter Breach'
+  },
   stage_level: 2,
   stage_name: 'Event Horizon',
   stage_slug: 'event_horizon',
@@ -80,7 +95,6 @@ export const stageConfig = {
 ],
   description: 'High-velocity relativistic light-horizon boundary with intense magnetic shear.',
   par_score: 12000,
-
   visual: {
     themeName: 'Event Horizon Amber',
     colors: {
@@ -113,133 +127,129 @@ export const stageConfig = {
 }
   },
   weapons: {
-  "initial": {
-    "id": "tachyon_lance",
-    "name": "Tachyon Lance",
-    "icon": "\u26a1",
-    "color": "#a855f7",
-    "damage": 3,
-    "bullet_speed": 850,
-    "energy_drain_pct": 20.0,
-    "can_overheat": 1,
-    "cooldown_seconds": 7.0,
-    "scale": 1.2,
-    "scale_x": 1.0,
-    "scale_y": 1.0,
-    "scale_z": 1.4,
-    "size_x": 1.2,
-    "size_y": 1.2,
-    "size_z": 1.6,
-    "dimensions": {
-      "x": 1.2,
-      "y": 1.2,
-      "z": 1.6
+    "initial": {
+        "id": "tachyon_lance",
+        "name": "Tachyon Lance",
+        "icon": "⚡",
+        "color": "#a855f7",
+        "damage": 3,
+        "bullet_speed": 850,
+        "energy_drain_pct": 25,
+        "can_overheat": 1,
+        "cooldown_seconds": 7,
+        "acquire_event": "warp_horizon_jump",
+        "description": "Superluminal phase particle array unlocked after horizon traversal.",
+        "scale": 1,
+        "scale_x": 1,
+        "scale_y": 1,
+        "scale_z": 1,
+        "size_x": 1,
+        "size_y": 1,
+        "size_z": 1,
+        "dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+        },
+        "special_fx": "cockpit_cracks_red_edges",
+        "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "special_fx_type": "overlay"
     },
-    "description": "Superluminal phase particle array unlocked after horizon traversal."
-  },
-  "acquirable": [
-    {
-      "id": "blue_laser",
-      "name": "Blue Laser",
-      "icon": "\ud83d\udd35",
-      "color": "#00d4ff",
-      "damage": 3,
-      "bullet_speed": 700,
-      "energy_drain_pct": 25.0,
-      "can_overheat": 1,
-      "cooldown_seconds": 7.0,
-      "scale": 1.0,
-      "scale_x": 1.0,
-      "scale_y": 1.0,
-      "scale_z": 1.0,
-      "size_x": 1.0,
-      "size_y": 1.0,
-      "size_z": 1.0,
-      "dimensions": {
-        "x": 1.0,
-        "y": 1.0,
-        "z": 1.0
-      }
-    }
-  ]
+    "acquirable": []
 },
   enemies: [
-  {
-    "id": "tachyon_cruiser",
-    "enemy_id": "tachyon_cruiser",
-    "name": "Tachyon Heavy Cruiser",
-    "enemy_class": "Heavy Cruiser",
-    "icon": "\ud83d\udef8",
-    "model_3d_type": "custom_glb",
-    "model_3d_url": "desktop/warp_origin_images/drone_phase_interceptor_3.glb",
-    "color": "#f59e0b",
-    "scale": 1.1,
-    "length": 5.2,
-    "height": 2.1,
-    "depth": 4.6,
-    "circumference": 9.5,
-    "hits": 6,
-    "armor": 30,
-    "shield": 1,
-    "speed": 210,
-    "attack_damage": 15,
-    "weapon_name": "Tachyon Torpedo",
-    "weapon_damage": 15,
-    "weapon_speed": 480,
-    "weapon_color": "#f59e0b",
-    "weapon_scale": 1.2,
-    "weapon_scale_x": 1.2,
-    "weapon_scale_y": 1.2,
-    "weapon_scale_z": 1.5,
-    "weapon_size_x": 1.0,
-    "weapon_size_y": 1.0,
-    "weapon_size_z": 2.0,
-    "weapon_dimensions": {
-      "x": 1.0,
-      "y": 1.0,
-      "z": 2.0
-    },
-    "fire_rate": 2.5,
-    "fire_rate_seconds": 2.5,
-    "fire_rate_ms": 2500,
-    "fire_rate_times_per_sec": 0.4,
-    "weapons": [
-      {
-        "id": "ew_tachyon_torp",
-        "name": "Tachyon Torpedo",
-        "type": "missile",
-        "mount": "dual_wingtip",
-        "model_url": "",
-        "model_type": "",
-        "fire_point_x": 1.8,
-        "fire_point_y": -0.1,
-        "fire_point_z": 1.2,
-        "scale": 1.2,
-        "scale_x": 1.2,
-        "scale_y": 1.2,
-        "scale_z": 1.5,
-        "size_x": 1.0,
-        "size_y": 1.0,
-        "size_z": 2.0,
-        "dimensions": {
-          "x": 1.0,
-          "y": 1.0,
-          "z": 2.0
+    {
+        "id": "tachyon_cruiser",
+        "enemy_id": "tachyon_cruiser",
+        "name": "Horizon Tachyon Cruiser (Universal)",
+        "enemy_class": "Heavy Cruiser",
+        "icon": "🛰️",
+        "model_3d_type": "cruiser",
+        "model_3d_url": "",
+        "scale": 1.25,
+        "length": 3.5,
+        "height": 2.5,
+        "depth": 5.5,
+        "circumference": 10.5,
+        "color": "#ffd166",
+        "hits": 8,
+        "armor": 50,
+        "shield": 4,
+        "speed": 200,
+        "attack_damage": 20,
+        "weapon_name": "Tachyon Beam",
+        "weapon_damage": 20,
+        "weapon_speed": 600,
+        "weapon_color": "#ffd166",
+        "weapon_scale": 1,
+        "weapon_scale_x": 1,
+        "weapon_scale_y": 1,
+        "weapon_scale_z": 1,
+        "weapon_size_x": 1,
+        "weapon_size_y": 1,
+        "weapon_size_z": 1,
+        "weapon_dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
         },
-        "fire_rate_times_per_sec": 0.4,
-        "fire_interval_ms": 2500,
-        "fire_rate_seconds": 2.5,
-        "damage": 15,
-        "speed": 480,
-        "color": "#f59e0b",
-        "is_enabled": 1
-      }
-    ],
-    "score": 350,
-    "threat": "High",
-    "piercing": "any",
-    "pool_size": 40
-  }
+        "weapon_special_fx": "cockpit_cracks_red_edges",
+        "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "weapon_special_fx_type": "overlay",
+        "fire_rate": 3,
+        "fire_rate_seconds": 3,
+        "fire_rate_ms": 3000,
+        "fire_rate_times_per_sec": 0.333,
+        "weapons": [
+            {
+                "id": "ew_tachyon_cruiser_0",
+                "name": "Tachyon Beam",
+                "type": "beam",
+                "mount": "center",
+                "model_url": "",
+                "model_type": "",
+                "fire_point_x": 0,
+                "fire_point_y": -0.15,
+                "fire_point_z": 1.5,
+                "scale": 1,
+                "scale_x": 1,
+                "scale_y": 1,
+                "scale_z": 1,
+                "size_x": 1,
+                "size_y": 1,
+                "size_z": 1,
+                "dimensions": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "fire_rate_times_per_sec": 0.333,
+                "fire_interval_ms": 3000,
+                "fire_rate_seconds": 3,
+                "damage": 20,
+                "speed": 600,
+                "color": "#ffd166",
+                "special_fx": "cockpit_cracks_red_edges",
+                "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                "special_fx_type": "overlay",
+                "is_enabled": 1
+            }
+        ],
+        "score": 500,
+        "threat": "High",
+        "piercing": "tachyon_lance",
+        "pool_size": 30,
+        "quick_effect_primary": "tachyon_trail",
+        "quick_effect_secondary": "sparks_burst",
+        "quick_effect_color": "#ffd166",
+        "quick_effect_intensity": 1,
+        "quick_effect_speed": 1,
+        "destruction_particle_type": "procedural_debris_cloud",
+        "destruction_particle_url": "",
+        "destruction_particle_count": 60,
+        "destruction_particle_color": "#ffd166",
+        "destruction_particle_scale": 1
+    }
 ],
   controlscontrols: {
     "inputMode": "touch_virtual_joysticks",
@@ -249,17 +259,19 @@ export const stageConfig = {
 }
 };
 
+export const stageEvents = [
+    "Tachyon Flux Distortions",
+    "Ion Cloud Interference",
+    "Interceptor Ambush Wave",
+    "Wormhole Coil Resonance Alert",
+    "Singularity Perimeter Breach"
+];
 
-/**
- * Stage Multi-Weapon Firing Handler:
- * Supports multiple weapons per enemy, distinct firing cadences (times/sec and ms),
- * custom projectile colors, velocities, and mount points (dual wingtip, nose, turret).
- */
 export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   if (!enemy || !enemy.mesh || !activeEnemyBolts || !scene) return false;
 
-  const enemyBolts = typeof activeEnemyBolts === 'function' ? activeEnemyBolts() : activeEnemyBolts;
-  if (!enemyBolts || enemyBolts.length > 80) return false;
+  const enemyBolts = activeEnemyBolts();
+  if (enemyBolts.length > 80) return false;
 
   const primaryW = (enemy.weapons && enemy.weapons[0]) || {};
   const wScale = Number(enemy.weapon_scale ?? primaryW.scale ?? 1.0);
@@ -270,37 +282,66 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   const wSizeY = Number(enemy.weapon_size_y ?? primaryW.size_y ?? (primaryW.dimensions && primaryW.dimensions.y) ?? 1.0);
   const wSizeZ = Number(enemy.weapon_size_z ?? primaryW.size_z ?? (primaryW.dimensions && primaryW.dimensions.z) ?? 1.0);
 
-  const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
-  boltGeom.rotateX(Math.PI / 2);
-  const boltMat = new THREE.MeshBasicMaterial({
-    color: new THREE.Color(enemy.weaponColor || enemy.weapon_color || '#ffaa00'),
-    wireframe: false
-  });
+  const wSpecialFx = primaryW.special_fx || enemy.weapon_special_fx || 'cockpit_cracks_red_edges';
+  const wSpecialFxFile = primaryW.special_fx_file || enemy.weapon_special_fx_file || 'desktop/warp_origin_images/cockpit_cracks_overlay.png';
+  const wSpecialFxType = primaryW.special_fx_type || enemy.weapon_special_fx_type || 'overlay';
+  const wColor = enemy.weaponColor || enemy.weapon_color || primaryW.color || '#ffd166';
+  const wName = primaryW.name || enemy.weapon_name || 'Enemy Laser';
+  const wId = primaryW.id || enemy.weapon_id || 'enemy_laser';
 
-  const mesh = new THREE.Mesh(boltGeom, boltMat);
-  mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
-  mesh.position.copy(enemy.mesh.position);
+  let mesh = null;
+  let fromPool = false;
+  let geometryList = [];
+  let materialList = [];
 
   const target = (playerPos && playerPos.isVector3) ? playerPos : new THREE.Vector3(0, 0, 220);
   const direction = new THREE.Vector3().subVectors(target, enemy.mesh.position).normalize();
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
+  const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
 
-  const geometryList = [boltGeom];
-  const materialList = [boltMat];
+  if (window.stageObjectPool && typeof window.stageObjectPool.spawnEnemyWeapon === 'function') {
+    mesh = window.stageObjectPool.spawnEnemyWeapon(primaryW, enemy, enemy.mesh.position, boltQuat, isMissile ? 'missile' : 'beam');
+    if (mesh) fromPool = true;
+  }
+
+  if (!mesh) {
+    const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
+    boltGeom.rotateX(Math.PI / 2);
+    const boltMat = new THREE.MeshBasicMaterial({
+      color: new THREE.Color(wColor),
+      wireframe: false
+    });
+
+    mesh = new THREE.Mesh(boltGeom, boltMat);
+    mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
+    mesh.position.copy(enemy.mesh.position);
+    mesh.quaternion.copy(boltQuat);
+
+    geometryList = [boltGeom];
+    materialList = [boltMat];
+    scene.add(mesh);
+  } else {
+    mesh.position.copy(enemy.mesh.position);
+    mesh.quaternion.copy(boltQuat);
+  }
 
   const isMissile = (enemy.weaponType === 'missile' || (enemy.weaponName && enemy.weaponName.toLowerCase().includes('missile')));
   const boltSpeed = enemy.weaponSpeed || enemy.weapon_speed || 420;
   const boltDamage = enemy.weaponDamage || enemy.weapon_damage || 5;
 
-  scene.add(mesh);
-
   enemyBolts.push({
     mesh,
+    fromPool,
     geometryList,
     materialList,
     direction,
     speed: boltSpeed,
     damage: boltDamage,
+    weaponId: wId,
+    weaponName: wName,
+    weaponColor: wColor,
+    specialFx: wSpecialFx,
+    specialFxFile: wSpecialFxFile,
+    specialFxType: wSpecialFxType,
     scale: wScale,
     scale_x: wScaleX,
     scale_y: wScaleY,
@@ -476,15 +517,6 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
-  if (typeof engineApi.setWaves === 'function') {
-    engineApi.setWaves(stageConfig.waves, {
-      total_waves: stageConfig.total_waves,
-      wave_interval_seconds: stageConfig.wave_interval_seconds
-    });
-  }
-  if (typeof engineApi.setEnemyWeaponHandler === 'function') {
-    engineApi.setEnemyWeaponHandler(fireEnemyWeapon);
-  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -552,52 +584,4 @@ export function applyStage(engineApi) {
   return stageConfig;
 }
 
-/**
- * Stage Wave Management: Controls pulling specific number of enemies from the pool
- * for each wave, tracking how many waves and how often a wave happens.
- */
-export function getStageWaves() {
-  return stageConfig.waves;
-}
-
-
-export function updateStageWaves(engineApi, context = {}) {
-  if (!engineApi) return null;
-  const currentWave = typeof engineApi.getCurrentWave === 'function' ? engineApi.getCurrentWave() : 0;
-  const totalWaves = stageConfig.total_waves || 2;
-  const now = (context && context.now) || performance.now();
-  const waveStartTime = typeof engineApi.getWaveStartTime === 'function' ? engineApi.getWaveStartTime() : 0;
-  const activeEnemies = (context && context.activeEnemies) || [];
-
-  // Wave 1: Pull 5 enemies from the pool at the start of stage engagement
-  if (currentWave === 0) {
-    return pullEnemyWave(1, engineApi, context);
-  }
-
-  // Wave 2: Pull 10 enemies from the pool when the 15-second wave interval has elapsed
-  if (currentWave === 1 && totalWaves >= 2) {
-    const elapsed = now - waveStartTime;
-    const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
-    const wave1EnemiesRemaining = activeEnemies.filter(e => e.isActive && e.waveNumber === 1).length;
-
-    // Strict timing: Wave 2 occurs after the 15-second interval (or if wave 1 defeated and at least 5s elapsed)
-    if (elapsed >= waveIntervalMs || (wave1EnemiesRemaining === 0 && elapsed >= 5000)) {
-      return pullEnemyWave(2, engineApi, context);
-    }
-  }
-
-  return null;
-}
-
-export function pullEnemyWave(waveNumber, engineApi, context = {}) {
-  const waves = stageConfig.waves || [];
-  const wave = waves.find(w => w.wave_number === waveNumber) || waves[waveNumber - 1];
-  if (!wave) return [];
-  const count = wave.enemy_count || (waveNumber === 1 ? 5 : 10);
-  if (engineApi && typeof engineApi.spawnWaveEnemies === 'function') {
-    return engineApi.spawnWaveEnemies(count, wave, stageConfig.enemies);
-  }
-  return [];
-}
-
-export default { stageConfig, applyStage, fireEnemyWeapon, getStageWaves, updateStageWaves, pullEnemyWave };;
+export default { stageConfig, applyStage, fireEnemyWeapon, updateEnemyMovement, updateStageWaves, handleStageEvent, stageEvents };

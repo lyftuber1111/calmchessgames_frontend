@@ -1,7 +1,24 @@
 {
     "model": "cyan_laser_rod.glb",
     "base_name": "cyan_laser_rod",
-    "exported_at": "2026-11-18T00:33:57.265Z",
+    "exported_at": "2026-11-18T00:52:41.000Z",
+    "specifications": {
+        "circumference_meters": 0.25,
+        "radius_meters": 0.039789,
+        "diameter_meters": 0.079577,
+        "length_meters": 23.809525,
+        "start_coordinate": [0.0, 0.0, 0.0],
+        "end_coordinate": [0.0, 0.0, 23.809525],
+        "pivot_point": [0.0, 0.0, 0.0],
+        "forward_axis": "+Z",
+        "both_ends_capped": true,
+        "animation": {
+            "name": "Laser_Flight_Extension",
+            "extension_axis": "+Z",
+            "duration_seconds": 0.8,
+            "keyframes": "Scale along +Z extends from 0.001 to 1.000 starting at +Z 0"
+        }
+    },
     "color_palette": [
         "#FFFFFF",
         "#00F8FF"

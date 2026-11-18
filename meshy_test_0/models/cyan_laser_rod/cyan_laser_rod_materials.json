@@ -3,9 +3,9 @@
   "baseName": "cyan_laser_rod",
   "description": "A glowing animated cyan rod that looks like a laser beam, glowing neon cyan energy cylinder beam, sci-fi futuristic plasma laser rod, vibrant cyan emissive core",
   "specifications": {
-    "circumference": "0.5m",
-    "radius": "0.079577m",
-    "diameter": "0.159155m",
+    "circumference": "0.25m",
+    "radius": "0.039789m",
+    "diameter": "0.079577m",
     "start_coordinate": [
       0.0,
       0.0,
@@ -14,14 +14,21 @@
     "end_coordinate": [
       0.0,
       0.0,
-      5.0
+      23.809525
+    ],
+    "pivot_point": [
+      0.0,
+      0.0,
+      0.0
     ],
     "axis": "+Z (forward)",
-    "length": "5.0m",
-    "animation_duration": "1.0s",
-    "animation_type": "LaserExtendAlongZ (0s to 1s linear scale along +Z)"
+    "length": "23.809525m",
+    "both_ends_capped": true,
+    "animation_duration": "0.8s",
+    "animation_name": "Laser_Flight_Extension",
+    "animation_type": "Scale along +Z extends from 0.001 to 1.000 starting at +Z 0"
   },
-  "exported_at": "2026-11-17T14:21:38+00:00",
+  "exported_at": "2026-11-18T00:52:41+00:00",
   "destination": "./meshy_test_0/models/cyan_laser_rod",
   "textures_directory": "./meshy_test_0/models/cyan_laser_rod/cyan_laser_rod_textures",
   "fallback_textures_directory": "./meshy_yest_0/models/cyan_laser_rod/cyan_laser_rod_textures",
@@ -36,10 +43,12 @@
     "cyan_laser_rod.glb",
     "cyan_laser_rod.mtl",
     "cyan_laser_rod.obj",
-    "cyan_laser_rod_meshy_raw.glb",
-    "cyan_laser_rod_meshy_raw.mtl",
-    "cyan_laser_rod_meshy_raw.obj",
-    "final_result.json",
-    "preview_result.json"
+    "cyan_laser_rod_materials.json",
+    "cyan_laser_rod_textures/texture_0_base_color.png",
+    "cyan_laser_rod_textures/texture_0_emissive.png",
+    "cyan_laser_rod_textures/texture_0_metallic.png",
+    "cyan_laser_rod_textures/texture_0_normal.png",
+    "cyan_laser_rod_textures/texture_0_roughness.png",
+    "cyan_laser_rod_textures/thumbnail.png"
   ]
 }

@@ -1,9 +1,12 @@
-# Material for Cyan Laser Rod
-newmtl CyanLaserMaterial
-Ka 0.0 0.8 0.8
-Kd 0.0 1.0 1.0
-Ks 0.2 0.9 0.9
-Ke 0.0 1.0 1.0
-Ns 100.0
-d 1.0
+# Blender 5.2.0 LTS MTL File: 'None'
+# www.blender.org
+
+newmtl Material_Cyan_Laser
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 1.000000 1.000000 1.000000
+Ni 1.500000
+d 1.000000
 illum 2

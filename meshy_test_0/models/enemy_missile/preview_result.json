@@ -1,0 +1,46 @@
+{
+  "id": "01a1f006-5f33-73fe-b1f9-f4ccd3c67781",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 3663333950,
+  "prompt": "A menacing hostile heavy enemy missile weapon for an XR sci-fi game, glowing crimson red and fiery orange thermal warhead with hazard warning stripes, dark heavy titanium armor plating, dual forward guidance probes, aggressive swept-back fins, industrial rocket booster exhaust nozzle, hard surface sci-fi 3D game asset, glb",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795028314381,
+  "progress": 100,
+  "started_at": 1795028314391,
+  "finished_at": 1795028354545,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/model.glb?Expires=4948560000&Signature=FR3HaJ8KbEvFYb0E~VqJViigtJ12ZfZyNLee8GYqu19SalPNQ5wTSOxYHzbjk8ij6qv1H2Zo9cNjSWQKGghFI6uxUrkApPrLTh96i9iu9zxzguJXYD4je1-MEeHslbAYSTETdfEeUDdeljd8HzabtY60pjYIGWWjS2mepIRo1UGbiPLt8MDPCUDjHX1hwVzQand1qQOlKzGRh3Go07i1hVJCmLc5faoTerMUC5b70Iq4BzyS16-Zh5nQp464DaJq2OWG8G~Km1laGKDosBPB-zHTbULkjUkvKS2O1a8BZ5lf4hpJ1G8yafMG20R-PdEnrkQakhUCCxM49gdPbd9WPA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/model.fbx?Expires=4948560000&Signature=YCYM8JRDbBNNfLH2-kW1jKyC4zDKETaiI-HoZP38YwHw1ZHUtkA9CSslbCe-gjWqtiC~3oMHCdfz34LKcFmMqAYuVq2qjTb6JHod8LEShqbU5wSWMoAFs5ET~ItE2HudnwdrHzKWl~-lCt0obZRfTXGa-QnfBnZym0vHBdWqZZwYCwXxRh2hQPH2EebStJn2Qw-C1dHNDljNQ1vXsyMCqXtmTTLqSTVGpeVj5UgWJzasVaZAfBGDiaXppIduhehSiAghuGEi13O-8F2SWvpk1ky9ktuyEpyZ6u7P8f5r8YEbVHhd9D04VYOY7G77VqpLuxqaboZmR9UDk1X-LFycnA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/model.usdz?Expires=4948560000&Signature=Y-z4fyBK058nj~Hd1QUXykiWh8JU5Jyp9FQgZKX06bsBzUo67-LFHnmNzOSoPXaegpawT5H~ThI9ohakz0H6VKsNopnJ7tDciHAzzx2n5697ug9-m~f~chh7Nv0irJJU4juJkbq13R~TlLFbqRJ6Dh~xRofrSbA5crqaetxhqOwT2scBLg3bhumSUFIEynSSh~zSzuNpETBIDG6wY8N0YrbQ59Z6CEinFC-neSesY3d3FwL3WDWDCXlWcWdHukC~QdxinsNCoY-jDRP59S8q6D5NK30bi~a55LvRA3bxBXKX6fgYQ8PDVvuhET2nRkSm9Xi2holXCqPVTZ0PYQjSsA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/model.obj?Expires=4948560000&Signature=hz2mEku7LFa5XOiKPZO345h6Xhek2af0EN3cZP7LONr3DUIU4laxYumXQFAs1Vnb1pwTLbT-DgUNHMMhwXb8My59m7fIPqxO386iHRCglPl~ce0Auq22mM61-pJ2w~~6gAhTTzYJB776TbNQegnyiNtsz46dLMM55KW1RgKt0zWXdBLw3Y9zg9bkSNOP7kLBDetKAv4u26Z2ddQVOYE~gpnT3dEt0RdFaipWfDU~1RbOAZ~qIqrNoLHuHVoujwylHQcd~4yHg-EblVKjcTCPF6uISdWggvFUfqSADx2DAYbJv-I7egujUXlbhFSU0hp4TIbXcWsoYDagsZ8Esj3xgQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/model.stl?Expires=4948560000&Signature=pHVUZ170D7Tv03bCFVg8zFrcy-RVthm6GHiAlugJUG1ssE3wdweVOnwhK2KqB6jm5eCxbIO4hpfxzBlcEIcO96tQmkNwFO~hG18DvBLLy3A6zta7RDxK8VRx4WP69LDwEpallzdwj4d1XMkU-wQhPIqEgCRsuv1hd0dg5ZD8H7fWkI6DyRXXmcJGB7EPVv8BBFfRTFxeqcAFMH7KU2GfU2ZUUYUdXdbki9H80~Ia2x~B4NHnwU5Yp2EvVFJigmeQ4o4T-L0gQx8SFZfpBifZzYYh4hpk9EYOwSPLSdyZOiD3IytgJbAkRvCkMospHi-NsdOfQUgw4CAGT4pnCcj~cw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/preview.png?Expires=4948560000&Signature=VdQ4C8JF0jtm6R9PZxL37YDkYBzFH6oQxfpfbgya0HXzuvPNONx4md-HSvBNJYY7x5nt5xE30CgacTWyaGhIctQ56t69uOd~7jP1tK2qIhs4madZ8esGoZPMoqvYYhBH~UAxbCfb3-js545Fg1CfFBRQrU9Z3Fh65yKpXvfaC3yg2Ecyk033a9knMxSmMHcWsBiZMzVFa6EThCDguvC8LYt0gsmu7qnaQ81lXtdR7Yq608C5818Plz1CX9gxL4RVnvXZnl3ymxTSFWg7c92BVPYCievEvQqxvfybRkmhJ2g7JRKcGsoNK-w3T6lqx35Hi45FoE0qFHkIPOCx94gLbQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "mode": "preview",
+    "prompt": "A menacing hostile heavy enemy missile weapon for an XR sci-fi game, glowing crimson red and fiery orange thermal warhead with hazard warning stripes, dark heavy titanium armor plating, dual forward guidance probes, aggressive swept-back fins, industrial rocket booster exhaust nozzle, hard surface sci-fi 3D game asset, glb",
+    "should_remesh": true
+  },
+  "output": {
+    "seed": 3663333950,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/model.fbx?Expires=4948560000&Signature=YCYM8JRDbBNNfLH2-kW1jKyC4zDKETaiI-HoZP38YwHw1ZHUtkA9CSslbCe-gjWqtiC~3oMHCdfz34LKcFmMqAYuVq2qjTb6JHod8LEShqbU5wSWMoAFs5ET~ItE2HudnwdrHzKWl~-lCt0obZRfTXGa-QnfBnZym0vHBdWqZZwYCwXxRh2hQPH2EebStJn2Qw-C1dHNDljNQ1vXsyMCqXtmTTLqSTVGpeVj5UgWJzasVaZAfBGDiaXppIduhehSiAghuGEi13O-8F2SWvpk1ky9ktuyEpyZ6u7P8f5r8YEbVHhd9D04VYOY7G77VqpLuxqaboZmR9UDk1X-LFycnA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/model.glb?Expires=4948560000&Signature=FR3HaJ8KbEvFYb0E~VqJViigtJ12ZfZyNLee8GYqu19SalPNQ5wTSOxYHzbjk8ij6qv1H2Zo9cNjSWQKGghFI6uxUrkApPrLTh96i9iu9zxzguJXYD4je1-MEeHslbAYSTETdfEeUDdeljd8HzabtY60pjYIGWWjS2mepIRo1UGbiPLt8MDPCUDjHX1hwVzQand1qQOlKzGRh3Go07i1hVJCmLc5faoTerMUC5b70Iq4BzyS16-Zh5nQp464DaJq2OWG8G~Km1laGKDosBPB-zHTbULkjUkvKS2O1a8BZ5lf4hpJ1G8yafMG20R-PdEnrkQakhUCCxM49gdPbd9WPA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/model.obj?Expires=4948560000&Signature=hz2mEku7LFa5XOiKPZO345h6Xhek2af0EN3cZP7LONr3DUIU4laxYumXQFAs1Vnb1pwTLbT-DgUNHMMhwXb8My59m7fIPqxO386iHRCglPl~ce0Auq22mM61-pJ2w~~6gAhTTzYJB776TbNQegnyiNtsz46dLMM55KW1RgKt0zWXdBLw3Y9zg9bkSNOP7kLBDetKAv4u26Z2ddQVOYE~gpnT3dEt0RdFaipWfDU~1RbOAZ~qIqrNoLHuHVoujwylHQcd~4yHg-EblVKjcTCPF6uISdWggvFUfqSADx2DAYbJv-I7egujUXlbhFSU0hp4TIbXcWsoYDagsZ8Esj3xgQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/model.stl?Expires=4948560000&Signature=pHVUZ170D7Tv03bCFVg8zFrcy-RVthm6GHiAlugJUG1ssE3wdweVOnwhK2KqB6jm5eCxbIO4hpfxzBlcEIcO96tQmkNwFO~hG18DvBLLy3A6zta7RDxK8VRx4WP69LDwEpallzdwj4d1XMkU-wQhPIqEgCRsuv1hd0dg5ZD8H7fWkI6DyRXXmcJGB7EPVv8BBFfRTFxeqcAFMH7KU2GfU2ZUUYUdXdbki9H80~Ia2x~B4NHnwU5Yp2EvVFJigmeQ4o4T-L0gQx8SFZfpBifZzYYh4hpk9EYOwSPLSdyZOiD3IytgJbAkRvCkMospHi-NsdOfQUgw4CAGT4pnCcj~cw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/model.usdz?Expires=4948560000&Signature=Y-z4fyBK058nj~Hd1QUXykiWh8JU5Jyp9FQgZKX06bsBzUo67-LFHnmNzOSoPXaegpawT5H~ThI9ohakz0H6VKsNopnJ7tDciHAzzx2n5697ug9-m~f~chh7Nv0irJJU4juJkbq13R~TlLFbqRJ6Dh~xRofrSbA5crqaetxhqOwT2scBLg3bhumSUFIEynSSh~zSzuNpETBIDG6wY8N0YrbQ59Z6CEinFC-neSesY3d3FwL3WDWDCXlWcWdHukC~QdxinsNCoY-jDRP59S8q6D5NK30bi~a55LvRA3bxBXKX6fgYQ8PDVvuhET2nRkSm9Xi2holXCqPVTZ0PYQjSsA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f006-5f33-73fe-b1f9-f4ccd3c67781/output/preview.png?Expires=4948560000&Signature=VdQ4C8JF0jtm6R9PZxL37YDkYBzFH6oQxfpfbgya0HXzuvPNONx4md-HSvBNJYY7x5nt5xE30CgacTWyaGhIctQ56t69uOd~7jP1tK2qIhs4madZ8esGoZPMoqvYYhBH~UAxbCfb3-js545Fg1CfFBRQrU9Z3Fh65yKpXvfaC3yg2Ecyk033a9knMxSmMHcWsBiZMzVFa6EThCDguvC8LYt0gsmu7qnaQ81lXtdR7Yq608C5818Plz1CX9gxL4RVnvXZnl3ymxTSFWg7c92BVPYCievEvQqxvfybRkmhJ2g7JRKcGsoNK-w3T6lqx35Hi45FoE0qFHkIPOCx94gLbQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

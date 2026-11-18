@@ -1,0 +1,46 @@
+{
+  "id": "01a1f005-103d-764d-9661-3f14c636e0af",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 1870374971,
+  "prompt": "A compact high-tech small cyan missile weapon for an XR sci-fi game, glowing neon cyan energy conduits, aerodynamic sleek metallic fuselage, forward sensor tracking dome, micro stabilizer guidance fins, rear ion thruster exhaust nozzle, intricate sci-fi paneling, hard surface 3D game asset, glb",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795028228822,
+  "progress": 100,
+  "started_at": 1795028228836,
+  "finished_at": 1795028272524,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/model.glb?Expires=4948560000&Signature=jIEBSrAnnwvkkFzUT5d-JR~NgN3cfHre0DuAkXc4iiQT5azvr3V7dRE3CYM3GhwbOOfoVdK7-ViRVs1hQEm2wKejnq7JszPV7MHLwPNqJZB8LZxfdp9SQIbJr5E575yqv-EtcsAi7jDCcRsVs~sZU6YzuZV1zrGtVlXJ4Kmy7dRfLjcjIfDIi0AEK-LyzsMZGb4UhhLp~Nh7W~btRrR2pg1WEyqjxWID1FeYGdaoYRVAsRNemDnkIvnGaF2NXmCK35D3jjRfWr7Fbg0wCMM~5oWPiKYmv9ZM2DNgj3GKlEof6HuWy-qy9-9o7g1fpMibgS0fNYDKvcw46VOPSXG3hA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/model.fbx?Expires=4948560000&Signature=h7UyERpauXWoPeG9gMe~REcZCvgVVLs8etJ0frxNw13VDwnLXOlY6hUFjK-9Op36nGrdOJDyWKZj5xlNEG~r6qWT~J2ddGYnSD~n5PpCuHDkvcs2TSeo8c0O4RURyEKG~zOY9Bsc7uVy8nrXBnFuJR4n4DjRUNbAL90MxJk0TOSB3SSUeg68WNu9LYN9HuOalf3-VT5PG8xvP0dY4yis2-XKpB0afTNE66XPr7q7LZwa3Zfu1vCp91QDW6c~UEOh-ssYC8MHHHK19s3mCpX775LaFrblTUrkEWkzfqsOsnBfJNHFObOUtS88QAIs82Sau1jfLG535cz6ILOICjwDsg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/model.usdz?Expires=4948560000&Signature=Y8FLVstQg7WZQoWr7xVTY1w6OizwkHbxZkJmlmO6CnF3g2ApTDLggZ2SVwInXwa8kufs9fcx~wieYuIBd-lo5XcwoaUG10fFfhVtU6-DeRK~30nVRs~KANw6ZkXYWvkD6r53liPdo5ybkk6SHRlUqsiIleJEdBqnnG6CP2Lo44UjZVESldXXTZxZj1qMhNbrXxoGnxTTFwaldAMY9qljIg7E7WYBBnmBcIrobM3GZxBDaVeOlRKWs4ii4hIKi8hy7zst-JSslM9SPL0610iu5EPYJAijkNfj57lVR~MAD5p37DVcLpbiAR0NRQhAs~EvOhhKEOmc6rMQY9ylkb7WCQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/model.obj?Expires=4948560000&Signature=YY02S01hZrvUbYKL-ujE-0PyL098wjWF0rcuX5sLTCH2erJmo1lh6mumKBFV5lRmrvz0WiZpPQzz91lFTxp3tL3UIOc4y5LlyQ~bgL~CnkPB2Wb26GQHYeiRYqHWkGFed202Ey2I77-SauKwrEbiERjzx-8AkIgoof7hhsYlQphVvMe3vPiQMVRxTSY6WG00ji-1ePMvkm8ftDuEWrBHmqGETMlWjzQi8iatYt8dda1kgTlkUIYroh4iprddTMPpWtf0fWLmZjWDt16ic4owXT8r44HL5yeivsojtNw32TXXNHmUoWymHFVLnTqZl1-~DBd0zGNkLUb9wfkYKD6N9Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/model.stl?Expires=4948560000&Signature=Cup6ayDFcjrNNvhdJ-Io5fQDwVrH3YLggUfF2RRWKxxtBafYspbpsGGVjLYBlGzvcZhstduKPsbS~qoWo1kycWwGenKuJDWRiiGAFdF3mVRtkbH-kpygBQ7EyNGAkyfW6jpw2XbfIrPTDiNpzxFjhwuQWPANG1MYq4MW6NbMxSsmv-8CacqRvOhBdb2tkXcG018iKxC6Mk8k39ensnwyAXRC~geKx99hb6pniPGx7Mi-GU-Ot62VjsV1cMO~lxCS1yBIOaStxZ-m3mKfMdCsGwN2vej5MWsAtD-FhSTMOl1KaNPXx0bZ1R04r1s49VwQcTAhJaquc~Qp0C6TBoJXHg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/preview.png?Expires=4948560000&Signature=kiCtBtCilNYqc-AACuxpOfh3xEiP2RVOKwl2MJ0Jq8RBFyqhAym~ECHYNiPN6gbJAHWPO~2ckYas6v8hkDKdMD3wErYy7GJx6m60NSFRhSFxlpaVMiZL8vHaByh~GBe97basNJFw7HFXJIyrm1DbyKvDZaOtpc9Vld23dQftNJbKSoS-mIa~b9I8Fv6Kg3qB76wVYSKVP5V5JlZk0N9~mSlph074VGzq7bDX8uz3wfZbLCuCNFayoKgC7xpScwK4srIwjajbFIeDmb~G5ZuOYvaEm98~jub6K-xX4x1RlQbAHUIrSTy5tM64HknwjM7w0RDDm81TyxWUW-5SyevBqw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "mode": "preview",
+    "prompt": "A compact high-tech small cyan missile weapon for an XR sci-fi game, glowing neon cyan energy conduits, aerodynamic sleek metallic fuselage, forward sensor tracking dome, micro stabilizer guidance fins, rear ion thruster exhaust nozzle, intricate sci-fi paneling, hard surface 3D game asset, glb",
+    "should_remesh": true
+  },
+  "output": {
+    "seed": 1870374971,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/model.fbx?Expires=4948560000&Signature=h7UyERpauXWoPeG9gMe~REcZCvgVVLs8etJ0frxNw13VDwnLXOlY6hUFjK-9Op36nGrdOJDyWKZj5xlNEG~r6qWT~J2ddGYnSD~n5PpCuHDkvcs2TSeo8c0O4RURyEKG~zOY9Bsc7uVy8nrXBnFuJR4n4DjRUNbAL90MxJk0TOSB3SSUeg68WNu9LYN9HuOalf3-VT5PG8xvP0dY4yis2-XKpB0afTNE66XPr7q7LZwa3Zfu1vCp91QDW6c~UEOh-ssYC8MHHHK19s3mCpX775LaFrblTUrkEWkzfqsOsnBfJNHFObOUtS88QAIs82Sau1jfLG535cz6ILOICjwDsg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/model.glb?Expires=4948560000&Signature=jIEBSrAnnwvkkFzUT5d-JR~NgN3cfHre0DuAkXc4iiQT5azvr3V7dRE3CYM3GhwbOOfoVdK7-ViRVs1hQEm2wKejnq7JszPV7MHLwPNqJZB8LZxfdp9SQIbJr5E575yqv-EtcsAi7jDCcRsVs~sZU6YzuZV1zrGtVlXJ4Kmy7dRfLjcjIfDIi0AEK-LyzsMZGb4UhhLp~Nh7W~btRrR2pg1WEyqjxWID1FeYGdaoYRVAsRNemDnkIvnGaF2NXmCK35D3jjRfWr7Fbg0wCMM~5oWPiKYmv9ZM2DNgj3GKlEof6HuWy-qy9-9o7g1fpMibgS0fNYDKvcw46VOPSXG3hA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/model.obj?Expires=4948560000&Signature=YY02S01hZrvUbYKL-ujE-0PyL098wjWF0rcuX5sLTCH2erJmo1lh6mumKBFV5lRmrvz0WiZpPQzz91lFTxp3tL3UIOc4y5LlyQ~bgL~CnkPB2Wb26GQHYeiRYqHWkGFed202Ey2I77-SauKwrEbiERjzx-8AkIgoof7hhsYlQphVvMe3vPiQMVRxTSY6WG00ji-1ePMvkm8ftDuEWrBHmqGETMlWjzQi8iatYt8dda1kgTlkUIYroh4iprddTMPpWtf0fWLmZjWDt16ic4owXT8r44HL5yeivsojtNw32TXXNHmUoWymHFVLnTqZl1-~DBd0zGNkLUb9wfkYKD6N9Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/model.stl?Expires=4948560000&Signature=Cup6ayDFcjrNNvhdJ-Io5fQDwVrH3YLggUfF2RRWKxxtBafYspbpsGGVjLYBlGzvcZhstduKPsbS~qoWo1kycWwGenKuJDWRiiGAFdF3mVRtkbH-kpygBQ7EyNGAkyfW6jpw2XbfIrPTDiNpzxFjhwuQWPANG1MYq4MW6NbMxSsmv-8CacqRvOhBdb2tkXcG018iKxC6Mk8k39ensnwyAXRC~geKx99hb6pniPGx7Mi-GU-Ot62VjsV1cMO~lxCS1yBIOaStxZ-m3mKfMdCsGwN2vej5MWsAtD-FhSTMOl1KaNPXx0bZ1R04r1s49VwQcTAhJaquc~Qp0C6TBoJXHg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/model.usdz?Expires=4948560000&Signature=Y8FLVstQg7WZQoWr7xVTY1w6OizwkHbxZkJmlmO6CnF3g2ApTDLggZ2SVwInXwa8kufs9fcx~wieYuIBd-lo5XcwoaUG10fFfhVtU6-DeRK~30nVRs~KANw6ZkXYWvkD6r53liPdo5ybkk6SHRlUqsiIleJEdBqnnG6CP2Lo44UjZVESldXXTZxZj1qMhNbrXxoGnxTTFwaldAMY9qljIg7E7WYBBnmBcIrobM3GZxBDaVeOlRKWs4ii4hIKi8hy7zst-JSslM9SPL0610iu5EPYJAijkNfj57lVR~MAD5p37DVcLpbiAR0NRQhAs~EvOhhKEOmc6rMQY9ylkb7WCQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f005-103d-764d-9661-3f14c636e0af/output/preview.png?Expires=4948560000&Signature=kiCtBtCilNYqc-AACuxpOfh3xEiP2RVOKwl2MJ0Jq8RBFyqhAym~ECHYNiPN6gbJAHWPO~2ckYas6v8hkDKdMD3wErYy7GJx6m60NSFRhSFxlpaVMiZL8vHaByh~GBe97basNJFw7HFXJIyrm1DbyKvDZaOtpc9Vld23dQftNJbKSoS-mIa~b9I8Fv6Kg3qB76wVYSKVP5V5JlZk0N9~mSlph074VGzq7bDX8uz3wfZbLCuCNFayoKgC7xpScwK4srIwjajbFIeDmb~G5ZuOYvaEm98~jub6K-xX4x1RlQbAHUIrSTy5tM64HknwjM7w0RDDm81TyxWUW-5SyevBqw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

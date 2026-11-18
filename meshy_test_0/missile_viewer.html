@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XR Sci-Fi Missiles 3D Viewer - Meshy API</title>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(13, 17, 26, 0.88);
+      --accent-cyan: #00f0ff;
+      --accent-red: #ff3344;
+      --text: #f0f6fc;
+      --text-muted: #8b949e;
+      --border: rgba(255, 255, 255, 0.12);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 50% 25%, #101726 0%, #05070a 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+    header {
+      padding: 1rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      background: rgba(7, 9, 14, 0.85);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .title-group h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.5rem 1.1rem;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .tab-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .tab-btn.active.cyan {
+      background: rgba(0, 240, 255, 0.18);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 14px rgba(0, 240, 255, 0.3);
+    }
+    .tab-btn.active.red {
+      background: rgba(255, 51, 68, 0.18);
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+      box-shadow: 0 0 14px rgba(255, 51, 68, 0.3);
+    }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.5rem;
+      gap: 1.5rem;
+    }
+    .viewport-panel {
+      position: relative;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    model-viewer {
+      width: 100%;
+      height: 620px;
+      background: radial-gradient(circle at 50% 50%, #151e2e 0%, #080c14 100%);
+    }
+    .details-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .spec-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 0.85rem;
+    }
+    .spec-label { color: var(--text-muted); }
+    .spec-val { font-family: monospace; font-weight: 600; }
+    .color-cyan { color: var(--accent-cyan); }
+    .color-red { color: var(--accent-red); }
+    .desc-text {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+    .links-group a {
+      display: block;
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-size: 0.85rem;
+      margin-top: 0.4rem;
+      word-break: break-all;
+    }
+    .links-group a:hover {
+      text-decoration: underline;
+    }
+    @media (max-width: 960px) {
+      main { grid-template-columns: 1fr; }
+      model-viewer { height: 420px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title-group">
+      <h1>XR Sci-Fi Missiles 3D Arsenal</h1>
+    </div>
+    <div class="tabs">
+      <button id="btnCyan" class="tab-btn active cyan" onclick="selectModel('cyan')">Cyan Missile (Player)</button>
+      <button id="btnEnemy" class="tab-btn red" onclick="selectModel('enemy')">Enemy Missile (Hostile)</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="viewport-panel">
+      <model-viewer id="missileViewer"
+        src="./models/small_cyan_missile/small_cyan_missile.glb"
+        poster="./models/small_cyan_missile/small_cyan_missile_textures/thumbnail.png"
+        alt="XR Sci-Fi Missile Weapon"
+        auto-rotate
+        camera-controls
+        ar
+        ar-modes="webxr scene-viewer quick-look"
+        shadow-intensity="1.5"
+        exposure="1.0"
+        interaction-prompt="auto">
+      </model-viewer>
+    </div>
+
+    <div class="details-panel">
+      <div class="card">
+        <h3 id="panelTitle" class="color-cyan">Small Cyan Missile</h3>
+        <p id="panelDesc" class="desc-text">
+          Compact high-tech cyan missile weapon with glowing neon plasma conduits, aerodynamic metallic fuselage, micro guidance fins, and rear ion thruster exhaust nozzle.
+        </p>
+      </div>
+
+      <div class="card">
+        <h3>Specifications</h3>
+        <div class="spec-item"><span class="spec-label">Format:</span><span class="spec-val">GLB (glTF 2.0 Binary)</span></div>
+        <div class="spec-item"><span class="spec-label">Target System:</span><span class="spec-val">WebXR / Horizon OS</span></div>
+        <div class="spec-item"><span class="spec-label">Faction / Alignment:</span><span id="specFaction" class="spec-val color-cyan">Player / Vanguard</span></div>
+        <div class="spec-item"><span class="spec-label">Shading:</span><span class="spec-val">PBR Metallic-Roughness</span></div>
+        <div class="spec-item"><span class="spec-label">Texture Set:</span><span class="spec-val">Base, Normal, Metal, Rough</span></div>
+      </div>
+
+      <div class="card links-group">
+        <h3>Asset Directories</h3>
+        <div class="spec-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span class="spec-label">GLB Path:</span>
+          <a id="linkGlb" href="./models/small_cyan_missile/small_cyan_missile.glb" target="_blank">./models/small_cyan_missile/small_cyan_missile.glb</a>
+        </div>
+        <div class="spec-item" style="flex-direction: column; align-items: flex-start; gap: 4px;">
+          <span class="spec-label">Textures:</span>
+          <a id="linkTextures" href="./models/small_cyan_missile/small_cyan_missile_textures/" target="_blank">./models/small_cyan_missile/small_cyan_missile_textures/</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const models = {
+      cyan: {
+        src: "./models/small_cyan_missile/small_cyan_missile.glb",
+        poster: "./models/small_cyan_missile/small_cyan_missile_textures/thumbnail.png",
+        title: "Small Cyan Missile",
+        titleClass: "color-cyan",
+        faction: "Player / Vanguard",
+        desc: "Compact high-tech small cyan missile weapon for an XR sci-fi game, glowing neon cyan energy conduits, aerodynamic sleek metallic fuselage, forward sensor tracking dome, micro stabilizer guidance fins, and rear ion thruster exhaust nozzle.",
+        glbLink: "./models/small_cyan_missile/small_cyan_missile.glb",
+        texLink: "./models/small_cyan_missile/small_cyan_missile_textures/"
+      },
+      enemy: {
+        src: "./models/enemy_missile/enemy_missile.glb",
+        poster: "./models/enemy_missile/enemy_missile_textures/thumbnail.png",
+        title: "Enemy Heavy Missile",
+        titleClass: "color-red",
+        faction: "Hostile / Drone Fleet",
+        desc: "Menacing hostile heavy enemy missile weapon for an XR sci-fi game, glowing crimson red and fiery orange thermal warhead with hazard warning stripes, dark heavy titanium armor plating, dual forward guidance probes, aggressive swept-back fins, and industrial rocket booster exhaust nozzle.",
+        glbLink: "./models/enemy_missile/enemy_missile.glb",
+        texLink: "./models/enemy_missile/enemy_missile_textures/"
+      }
+    };
+
+    function selectModel(key) {
+      const info = models[key];
+      const viewer = document.getElementById("missileViewer");
+      viewer.src = info.src;
+      viewer.poster = info.poster;
+
+      const title = document.getElementById("panelTitle");
+      title.textContent = info.title;
+      title.className = info.titleClass;
+
+      const faction = document.getElementById("specFaction");
+      faction.textContent = info.faction;
+      faction.className = `spec-val ${info.titleClass}`;
+
+      document.getElementById("panelDesc").textContent = info.desc;
+      document.getElementById("linkGlb").textContent = info.glbLink;
+      document.getElementById("linkGlb").href = info.glbLink;
+      document.getElementById("linkTextures").textContent = info.texLink;
+      document.getElementById("linkTextures").href = info.texLink;
+
+      document.getElementById("btnCyan").className = "tab-btn " + (key === 'cyan' ? 'active cyan' : '');
+      document.getElementById("btnEnemy").className = "tab-btn " + (key === 'enemy' ? 'active red' : '');
+    }
+  </script>
+</body>
+</html>

@@ -179,8 +179,9 @@ elif hasattr(action, 'layers'):
                     for kp in fc.keyframe_points:
                         kp.interpolation = 'LINEAR'
 
-# Set base/rest scale to frame 0 (length = 0.0 meters) for GLB export
-obj.scale = (1.000, 0.000, 1.000)
+# Set base/rest scale to frame 90 (full scale 1.0, 1.0, 1.0) so default node dimensions match OBJ (0.25m x 0.25m x 28m)
+bpy.context.scene.frame_set(TOTAL_FRAMES)
+obj.scale = (1.000, 1.000, 1.000)
 
 # Export GLB with +Y up (maps Blender -Y forward to XR +Z forward)
 bpy.ops.export_scene.gltf(
@@ -189,6 +190,33 @@ bpy.ops.export_scene.gltf(
     export_yup=True,
     export_animations=True
 )
+
+# Post-process GLB to explicitly ensure base node 0 rest scale is [1.0, 1.0, 1.0] (matching OBJ dimensions)
+with open(str(TEMP_EXPORT_GLB), 'rb') as f:
+    glb_data = f.read()
+
+magic, version, total_len = struct.unpack('<4sII', glb_data[:12])
+chunk0_len, chunk0_type = struct.unpack('<II', glb_data[12:20])
+json_bytes = glb_data[20:20+chunk0_len]
+gltf_json = json.loads(json_bytes.decode('utf-8'))
+
+# Set root node rest scale to [1.0, 1.0, 1.0]
+gltf_json['nodes'][0]['scale'] = [1.0, 1.0, 1.0]
+
+new_json_bytes = json.dumps(gltf_json, separators=(',', ':')).encode('utf-8')
+pad = (4 - (len(new_json_bytes) % 4)) % 4
+new_json_bytes += b' ' * pad
+
+new_chunk0_len = len(new_json_bytes)
+bin_chunk = glb_data[20+chunk0_len:]
+new_total_len = 12 + 8 + new_chunk0_len + len(bin_chunk)
+
+new_header = struct.pack('<4sII', magic, version, new_total_len)
+new_chunk0_header = struct.pack('<II', new_chunk0_len, chunk0_type)
+final_glb_data = new_header + new_chunk0_header + new_json_bytes + bin_chunk
+
+with open(str(TEMP_EXPORT_GLB), 'wb') as f:
+    f.write(final_glb_data)
 
 shutil.copy2(TEMP_EXPORT_GLB, DEST_MOBILE_GLB)
 shutil.copy2(TEMP_EXPORT_GLB, DEST_MIRROR_GLB)
@@ -206,8 +234,7 @@ bpy.ops.wm.obj_export(
     export_normals=True,
     export_materials=True
 )
-# Reset back to frame 0 scale
-obj.scale = (1.000, 0.000, 1.000)
+obj.scale = (1.000, 1.000, 1.000)
 
 # Copy texture assets into cyan_laser_rod_4_textures directories
 src_tex_dir = FRONTEND_DIR / "meshy_test_0" / "models" / "cyan_laser_rod_2" / "cyan_laser_rod_2_textures"
@@ -219,7 +246,7 @@ for f in src_tex_dir.glob("*.png"):
 materials_data = {
     "model": f"{MODEL_NAME}.glb",
     "base_name": MODEL_NAME,
-    "exported_at": "2026-11-18T03:05:00.000Z",
+    "exported_at": "2026-11-18T04:20:00.000Z",
     "specifications": {
         "width_meters": 0.25,
         "height_meters": 0.25,

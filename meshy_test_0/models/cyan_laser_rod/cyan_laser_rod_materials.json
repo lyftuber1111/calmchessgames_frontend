@@ -4,31 +4,29 @@
   "description": "A glowing animated cyan rod that looks like a laser beam, glowing neon cyan energy cylinder beam, sci-fi futuristic plasma laser rod, vibrant cyan emissive core",
   "specifications": {
     "circumference": "0.25m",
-    "radius": "0.039789m",
-    "diameter": "0.079577m",
-    "start_coordinate": [
-      0.0,
-      0.0,
-      0.0
-    ],
-    "end_coordinate": [
-      0.0,
-      0.0,
-      23.809525
-    ],
-    "pivot_point": [
-      0.0,
-      0.0,
-      0.0
-    ],
-    "axis": "+Z (forward)",
+    "radius": "0.03979m",
+    "diameter": "0.07958m",
     "length": "23.809525m",
     "both_ends_capped": true,
+    "blender_coordinates": {
+      "pivot_point": [0.0, 0.0, 0.0],
+      "start_coordinate": [0.0, 0.0, 0.0],
+      "end_coordinate": [0.0, -23.809525, 0.0],
+      "forward_axis": "-Y (Blender Front / Forward)",
+      "both_ends_capped": true
+    },
+    "xr_gltf_coordinates": {
+      "pivot_point": [0.0, 0.0, 0.0],
+      "start_coordinate": [0.0, 0.0, 0.0],
+      "end_coordinate": [0.0, 0.0, 23.809525],
+      "forward_axis": "+Z (XR / glTF Forward)",
+      "both_ends_capped": true
+    },
     "animation_duration": "0.8s",
     "animation_name": "Laser_Flight_Extension",
-    "animation_type": "Scale along +Z extends from 0.001 to 1.000 starting at +Z 0"
+    "animation_type": "Scale extends from 0.001 to 1.000 starting at origin (0, 0, 0)"
   },
-  "exported_at": "2026-11-18T00:52:41+00:00",
+  "exported_at": "2026-11-18T01:09:09+00:00",
   "destination": "./meshy_test_0/models/cyan_laser_rod",
   "textures_directory": "./meshy_test_0/models/cyan_laser_rod/cyan_laser_rod_textures",
   "fallback_textures_directory": "./meshy_yest_0/models/cyan_laser_rod/cyan_laser_rod_textures",

@@ -4,6 +4,7 @@ import math
 import shutil
 import json
 import os
+import struct
 from pathlib import Path
 
 # Paths
@@ -12,63 +13,32 @@ SRC_GLB = FRONTEND_DIR / "wormhole0" / "mobile" / "warp_origin_images" / "cyan_l
 DEST_MOBILE_GLB = FRONTEND_DIR / "wormhole0" / "mobile" / "warp_origin_images" / "cyan_laser_rod.glb"
 DEST_MIRROR_GLB = FRONTEND_DIR / "wormhole0" / "warp_origin_images" / "cyan_laser_rod.glb"
 DEST_MESHY_GLB  = FRONTEND_DIR / "meshy_test_0" / "models" / "cyan_laser_rod" / "cyan_laser_rod.glb"
-
+DEST_OBJ        = FRONTEND_DIR / "meshy_test_0" / "models" / "cyan_laser_rod" / "cyan_laser_rod.obj"
 TEMP_EXPORT_GLB = FRONTEND_DIR / "wormhole0" / "mobile" / "warp_origin_images" / "cyan_laser_rod_blender_out.glb"
 
 print("==================================================")
-print("UPDATING CYAN LASER ROD GLB USING BLENDER")
+print("BUILDING CYAN LASER ROD (BLENDER -Y / XR +Z FORWARD)")
 print("==================================================")
 
-# 1. Reset Blender to factory settings
 bpy.ops.wm.read_factory_settings(use_empty=True)
-
-# 2. Import existing GLB
 bpy.ops.import_scene.gltf(filepath=str(SRC_GLB))
 
 obj = bpy.data.objects.get("CyanLaserRod_Root")
 if not obj:
-    raise RuntimeError("CyanLaserRod_Root object not found in imported GLB")
+    raise RuntimeError("CyanLaserRod_Root not found")
 
 mesh = obj.data
 
-print("Original mesh vertex count:", len(mesh.vertices))
-orig_ys = [v.co.y for v in mesh.vertices]
-min_y = min(orig_ys)
-max_y = max(orig_ys)
-print(f"Original Y range in Blender: [{min_y:.6f}, {max_y:.6f}]")
-
-# Step 1: Move pivot point to farthest end on Y axis
-# Farthest end is at min_y = -23.809525.
-# Moving the pivot point to that end means translating mesh vertices by -min_y along Y:
-offset_y = -min_y # +23.809525
-
-# Step 2: Move that end so it starts at +Z 0 so the animation only extends down +Z axis
-# Rotation 90 degrees around X axis:
-# x' = x, y' = -z, z' = y
-rot_x_90 = mathutils.Matrix.Rotation(math.radians(90.0), 4, 'X')
-trans_y = mathutils.Matrix.Translation((0.0, offset_y, 0.0))
-combined_transform = rot_x_90 @ trans_y
-
-mesh.transform(combined_transform)
-mesh.update()
-
-# Verify geometry
+# Ensure clean bounds in Blender:
+# Pivot at Y=0, extending along -Y to -23.809525 (Blender forward, corresponding to +Z forward in XR)
+# Cross-section in X and Z with radius ~0.039789 m (circumference = 0.25 m)
 xs = [v.co.x for v in mesh.vertices]
 ys = [v.co.y for v in mesh.vertices]
 zs = [v.co.z for v in mesh.vertices]
-radius_x = (max(xs) - min(xs)) / 2.0
-radius_y = (max(ys) - min(ys)) / 2.0
-circumference = 2.0 * math.pi * radius_x
-length_z = max(zs) - min(zs)
 
-print(f"Transformed Mesh Bounds:")
-print(f"  X: [{min(xs):.6f}, {max(xs):.6f}] (Radius: {radius_x:.6f} m)")
-print(f"  Y: [{min(ys):.6f}, {max(ys):.6f}] (Radius: {radius_y:.6f} m)")
-print(f"  Z: [{min(zs):.6f}, {max(zs):.6f}] (Length: {length_z:.6f} m)")
-print(f"Circumference: {circumference:.6f} m (Target: 0.25 m)")
-print(f"Start at +Z: {min(zs):.6f} m, End at +Z: {max(zs):.6f} m")
+print(f"Blender bounds: X=[{min(xs):.4f}, {max(xs):.4f}], Y=[{min(ys):.4f}, {max(ys):.4f}], Z=[{min(zs):.4f}, {max(zs):.4f}]")
 
-# Step 3: Remove old actions to ensure exact clean action naming
+# Ensure clean animation
 for act in list(bpy.data.actions):
     bpy.data.actions.remove(act)
 
@@ -79,23 +49,19 @@ obj.animation_data_create()
 action = bpy.data.actions.new(name="Laser_Flight_Extension")
 obj.animation_data.action = action
 
-# Keyframes:
-# Linear extension along Z from 0.001 to 1.000
-# Mild radial energy pulse on X and Y (1.0 -> 1.04 -> 1.0 -> 1.04 -> 1.0)
 keyframes = [
-    (0.0,  (1.0,  1.0,  0.001)),
-    (4.8,  (1.04, 1.04, 0.250)),
-    (9.6,  (1.00, 1.00, 0.500)),
-    (14.4, (1.04, 1.04, 0.750)),
-    (19.2, (1.00, 1.00, 1.000)),
-    (24.0, (1.00, 1.00, 1.000)),
+    (0.0,  (1.00, 0.001, 1.00)),
+    (4.8,  (1.04, 0.250, 1.04)),
+    (9.6,  (1.00, 0.500, 1.00)),
+    (14.4, (1.04, 0.750, 1.04)),
+    (19.2, (1.00, 1.000, 1.00)),
+    (24.0, (1.00, 1.000, 1.00)),
 ]
 
 for frame, scale in keyframes:
     obj.scale = scale
     obj.keyframe_insert(data_path="scale", frame=frame)
 
-# Set interpolation to linear
 if hasattr(action, 'fcurves'):
     for fc in action.fcurves:
         for kp in fc.keyframe_points:
@@ -111,7 +77,7 @@ elif hasattr(action, 'layers'):
 bpy.context.scene.frame_start = 0
 bpy.context.scene.frame_end = 24
 
-# Step 4: Export to temporary GLB
+# Export GLB with +Y up (which maps Blender -Y forward to XR +Z forward)
 bpy.ops.export_scene.gltf(
     filepath=str(TEMP_EXPORT_GLB),
     export_format='GLB',
@@ -119,9 +85,6 @@ bpy.ops.export_scene.gltf(
     export_animations=True
 )
 
-print(f"Exported to temp GLB: {TEMP_EXPORT_GLB} (Size: {os.path.getsize(TEMP_EXPORT_GLB)} bytes)")
-
-# Replace targets with new GLB
 shutil.copy2(TEMP_EXPORT_GLB, DEST_MOBILE_GLB)
 shutil.copy2(TEMP_EXPORT_GLB, DEST_MIRROR_GLB)
 shutil.copy2(TEMP_EXPORT_GLB, DEST_MESHY_GLB)
@@ -129,8 +92,12 @@ shutil.copy2(TEMP_EXPORT_GLB, DEST_MESHY_GLB)
 if os.path.exists(TEMP_EXPORT_GLB):
     os.remove(TEMP_EXPORT_GLB)
 
-print("Updated destination files:")
-print(f"  -> {DEST_MOBILE_GLB}")
-print(f"  -> {DEST_MIRROR_GLB}")
-print(f"  -> {DEST_MESHY_GLB}")
-print("Blender update completed successfully!")
+bpy.ops.wm.obj_export(
+    filepath=str(DEST_OBJ),
+    export_selected_objects=False,
+    export_uv=True,
+    export_normals=True,
+    export_materials=True
+)
+
+print("Export completed successfully!")

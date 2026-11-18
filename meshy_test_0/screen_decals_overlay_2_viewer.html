@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XR Mobile Game - Screen Decals Overlay 2 (.005m Frame + Solid Panels + Targetable Decals)</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(13, 17, 26, 0.90);
+      --accent-cyan: #00f0ff;
+      --accent-orange: #ff5500;
+      --accent-red: #ff2244;
+      --accent-glow: rgba(0, 240, 255, 0.45);
+      --text: #f0f6fc;
+      --text-muted: #8b949e;
+      --border: rgba(0, 240, 255, 0.22);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 50% 25%, #0f1c2e 0%, #05070a 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+    header {
+      padding: 1rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      background: rgba(7, 9, 14, 0.88);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .title-group h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .badge {
+      font-size: 0.72rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-cyan {
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid var(--accent-cyan);
+    }
+    .badge-orange {
+      background: rgba(255, 85, 0, 0.18);
+      color: var(--accent-orange);
+      border: 1px solid var(--accent-orange);
+    }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      max-width: 1680px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    @media (max-width: 1100px) {
+      main { grid-template-columns: 1fr; }
+    }
+    .viewport-panel {
+      position: relative;
+      background: #000;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      min-height: 620px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.65);
+    }
+    #three-canvas-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    #three-canvas-container canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    .viewport-overlay {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+    .hud-tag {
+      font-family: monospace;
+      font-size: 0.8rem;
+      background: rgba(7, 9, 14, 0.75);
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      border-left: 3px solid var(--accent-cyan);
+      color: #b0c4de;
+    }
+    .viewport-controls {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      right: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      pointer-events: auto;
+      background: rgba(7, 9, 14, 0.82);
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.1);
+      backdrop-filter: blur(8px);
+    }
+    .btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--text);
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn:hover {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--accent-cyan);
+      color: #fff;
+    }
+    .btn-primary {
+      background: rgba(0, 240, 255, 0.22);
+      border-color: var(--accent-cyan);
+      color: #fff;
+    }
+    .btn-danger {
+      background: rgba(255, 34, 68, 0.22);
+      border-color: var(--accent-red);
+      color: #fff;
+    }
+    .btn-warning {
+      background: rgba(255, 85, 0, 0.22);
+      border-color: var(--accent-orange);
+      color: #fff;
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      padding-right: 0.35rem;
+    }
+    .sidebar::-webkit-scrollbar { width: 6px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(0,240,255,0.25); border-radius: 3px; }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem;
+      backdrop-filter: blur(10px);
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+      padding-bottom: 0.45rem;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .decal-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem;
+      max-height: 230px;
+      overflow-y: auto;
+      padding: 0.25rem 0.1rem;
+    }
+    .decal-toggle-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.04);
+      padding: 0.35rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.76rem;
+      font-family: monospace;
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .decal-toggle-item:hover {
+      background: rgba(0, 240, 255, 0.10);
+      border-color: rgba(0, 240, 255, 0.35);
+    }
+    .decal-toggle-item.active {
+      background: rgba(255, 85, 0, 0.15);
+      border-color: var(--accent-orange);
+      color: #fff;
+    }
+    .decal-toggle-item.burn.active {
+      background: rgba(255, 120, 0, 0.20);
+      border-color: #ff8800;
+    }
+    .decal-toggle-item.strike.active {
+      background: rgba(255, 34, 68, 0.20);
+      border-color: var(--accent-red);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #555;
+      display: inline-block;
+    }
+    .decal-toggle-item.active .status-dot {
+      background: #00ff88;
+      box-shadow: 0 0 6px #00ff88;
+    }
+    .code-box {
+      background: #05070a;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 6px;
+      padding: 0.75rem;
+      font-family: Consolas, Monaco, monospace;
+      font-size: 0.75rem;
+      color: #98c379;
+      line-height: 1.45;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    .code-keyword { color: #c678dd; }
+    .code-func { color: #61afef; }
+    .code-str { color: #e5c07b; }
+    .code-comment { color: #5c6370; font-style: italic; }
+    .spec-table {
+      width: 100%;
+      font-size: 0.8rem;
+      border-collapse: collapse;
+    }
+    .spec-table td {
+      padding: 0.35rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .spec-table td:first-child { color: var(--text-muted); width: 45%; }
+    .spec-table td:last-child { color: var(--text); font-weight: 500; text-align: right; }
+    .links-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .link-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      padding: 0.5rem 0.75rem;
+      border-radius: 6px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 0.82rem;
+      transition: all 0.2s ease;
+    }
+    .link-item:hover {
+      background: rgba(0,240,255,0.12);
+      border-color: var(--accent-cyan);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title-group">
+      <h1>XR Mobile Screen Decals Overlay 2</h1>
+      <span class="badge badge-cyan">0.005m Thick Frame</span>
+      <span class="badge badge-orange">16 Targetable Decals</span>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+      <a class="btn" href="./screen_overlay_1_viewer.html">🪟 Overlay 1</a>
+      <a class="btn" href="./cockpit_burn_decal_viewer.html">🔥 Cockpit Decal</a>
+      <a class="btn" href="./models/screen_decals__overlay_2/screen_decals_overlay_2.glb" download>📥 Download GLB</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="viewport-panel">
+      <div id="three-canvas-container"></div>
+      
+      <div class="viewport-overlay">
+        <div class="hud-tag">XR DISPLAY: 1.60m x 0.90m (16:9)</div>
+        <div class="hud-tag">FRAME THICKNESS: 0.005m (5mm) Solid Alloy</div>
+        <div class="hud-tag">PANELS: Solid Front &amp; Back Structural Casings</div>
+        <div class="hud-tag" id="hud-active-count">ACTIVE DECALS: 16 / 16</div>
+      </div>
+
+      <div class="viewport-controls">
+        <div style="display: flex; gap: 0.4rem; align-items: center;">
+          <button class="btn btn-primary" id="btn-combat-sim">⚡ Simulate Combat Hits</button>
+          <button class="btn" id="btn-toggle-burns">🔥 Laser Burns (8)</button>
+          <button class="btn" id="btn-toggle-strikes">💥 Missile Strikes (8)</button>
+          <button class="btn" id="btn-clear-all">🛡️ Clear All Decals</button>
+          <button class="btn" id="btn-enable-all">🎯 Show All Decals</button>
+        </div>
+        <div style="display: flex; gap: 0.4rem;">
+          <button class="btn" id="btn-bg-toggle">🌌 Space / Dark</button>
+          <button class="btn" id="btn-reset-cam">🔄 Reset View</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <!-- Decal Target List Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Targetable Decal Meshes</span>
+          <span style="font-size: 0.72rem; color: var(--accent-orange);" id="decal-summary">16 Targetable Nodes</span>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.6rem;">
+          Click any decal mesh below to toggle its visibility via code in real-time:
+        </p>
+        
+        <div style="font-size: 0.74rem; font-weight: 600; color: #ff9933; margin-bottom: 0.3rem;">LASER BURNS (SCORCH CRATERS)</div>
+        <div class="decal-grid" id="laser-burn-list"></div>
+
+        <div style="font-size: 0.74rem; font-weight: 600; color: #ff4466; margin-top: 0.75rem; margin-bottom: 0.3rem;">MISSILE STRIKES (EXPLOSIVE SPALL)</div>
+        <div class="decal-grid" id="missile-strike-list"></div>
+      </div>
+
+      <!-- Code Targeting Integration Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Targeting With Code</span>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.5rem;">
+          Use these standard snippet APIs in your XR mobile game engine:
+        </p>
+        <div class="code-box">
+<span class="code-comment">// 1. Three.js / WebXR Target by Name:</span>
+<span class="code-keyword">const</span> decal = scene.<span class="code-func">getObjectByName</span>(<span class="code-str">'Decal_LaserBurn_01'</span>);
+decal.visible = <span class="code-keyword">false</span>; <span class="code-comment">// Turn off</span>
+decal.visible = <span class="code-keyword">true</span>;  <span class="code-comment">// Turn on</span>
+
+<span class="code-comment">// 2. Toggle all Burns or Strikes:</span>
+scene.<span class="code-func">traverse</span>(node => {
+  <span class="code-keyword">if</span> (node.name.<span class="code-func">startsWith</span>(<span class="code-str">'Decal_LaserBurn_'</span>)) {
+    node.visible = showBurns;
+  }
+});
+
+<span class="code-comment">// 3. Unity C#:</span>
+<span class="code-keyword">var</span> burnObj = transform.<span class="code-func">Find</span>(<span class="code-str">"Decal_LaserBurn_01"</span>).gameObject;
+burnObj.<span class="code-func">SetActive</span>(<span class="code-keyword">false</span>);</div>
+      </div>
+
+      <!-- Specifications Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>Specifications</span>
+        </div>
+        <table class="spec-table">
+          <tr><td>GLB Model Path</td><td>./meshy_test_0/models/screen_decals__overlay_2/</td></tr>
+          <tr><td>Screen Width</td><td>1.60 m (1600 mm)</td></tr>
+          <tr><td>Screen Height</td><td>0.90 m (900 mm, 16:9)</td></tr>
+          <tr><td>Frame Thickness</td><td>0.005 m (5 mm) Solid Alloy</td></tr>
+          <tr><td>Front &amp; Back Panels</td><td>Solid Obsidian Armor Enclosures</td></tr>
+          <tr><td>Screen Glass</td><td>Translucent Clear Optical Slab (0.22 Alpha)</td></tr>
+          <tr><td>Cyber Accents</td><td>Emissive Cyan Chevrons &amp; Guidelines</td></tr>
+          <tr><td>Laser Burn Decals</td><td>8 Dispersed Scorched Carbon Meshes</td></tr>
+          <tr><td>Missile Strike Decals</td><td>8 Dispersed Blast Fracture Meshes</td></tr>
+          <tr><td>glTF Alpha Mode</td><td>BLEND (Double Sided)</td></tr>
+        </table>
+      </div>
+
+      <!-- Downloads & Links -->
+      <div class="card">
+        <div class="card-title">
+          <span>Asset Downloads &amp; Links</span>
+        </div>
+        <div class="links-list">
+          <a class="link-item" href="./models/screen_decals__overlay_2/screen_decals_overlay_2.glb" download>📥 Download GLB (729 KB)</a>
+          <a class="link-item" href="./models/screen_decals__overlay_2/screen_decals_overlay_2.blend" download>🎨 Download Blender .blend Source</a>
+          <a class="link-item" href="./models/screen_decals__overlay_2/screen_decals_overlay_2.obj" download>📦 Download Wavefront OBJ + MTL</a>
+          <a class="link-item" href="./models/screen_decals__overlay_2/screen_decals_overlay_2_materials.json" target="_blank">📄 View Materials &amp; Decal Registry JSON</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // -------------------------------------------------------------------------
+    // Three.js Interactive 3D Setup
+    // -------------------------------------------------------------------------
+    const container = document.getElementById('three-canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x06080d);
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.01, 100);
+    camera.position.set(0, 0, 2.2);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.25;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxDistance = 5.0;
+    controls.minDistance = 0.5;
+
+    // Lighting
+    const ambientLight = new THREE.AmbientLight(0xddeeff, 1.2);
+    scene.add(ambientLight);
+
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    keyLight.position.set(2, 3, 3);
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0x00f0ff, 1.4);
+    fillLight.position.set(-2, -1, 2);
+    scene.add(fillLight);
+
+    const rimLight = new THREE.DirectionalLight(0xff5500, 1.2);
+    rimLight.position.set(0, -3, -2);
+    scene.add(rimLight);
+
+    // Decal tracking map
+    const decalMap = new Map(); // name -> { obj, elem, type }
+    let rootModel = null;
+
+    const laserBurnNames = [
+      "Decal_LaserBurn_01", "Decal_LaserBurn_02", "Decal_LaserBurn_03", "Decal_LaserBurn_04",
+      "Decal_LaserBurn_05", "Decal_LaserBurn_06", "Decal_LaserBurn_07", "Decal_LaserBurn_08"
+    ];
+
+    const missileStrikeNames = [
+      "Decal_MissileStrike_01", "Decal_MissileStrike_02", "Decal_MissileStrike_03", "Decal_MissileStrike_04",
+      "Decal_MissileStrike_05", "Decal_MissileStrike_06", "Decal_MissileStrike_07", "Decal_MissileStrike_08"
+    ];
+
+    // Load GLB
+    const loader = new THREE.GLTFLoader();
+    const modelUrl = './models/screen_decals__overlay_2/screen_decals_overlay_2.glb';
+
+    loader.load(modelUrl, (gltf) => {
+      rootModel = gltf.scene;
+      scene.add(rootModel);
+
+      // Inspect & register decal meshes
+      rootModel.traverse((child) => {
+        if (child.isMesh) {
+          if (child.name.startsWith('Decal_LaserBurn_')) {
+            decalMap.set(child.name, { obj: child, type: 'burn' });
+          } else if (child.name.startsWith('Decal_MissileStrike_')) {
+            decalMap.set(child.name, { obj: child, type: 'strike' });
+          }
+        }
+      });
+
+      console.log(`Loaded overlay GLB with ${decalMap.size} targetable decals.`);
+      buildDecalUI();
+      updateHUD();
+    }, undefined, (err) => {
+      console.error('Error loading GLB:', err);
+    });
+
+    // -------------------------------------------------------------------------
+    // UI Builder for Decal List
+    // -------------------------------------------------------------------------
+    function buildDecalUI() {
+      const burnList = document.getElementById('laser-burn-list');
+      const strikeList = document.getElementById('missile-strike-list');
+      burnList.innerHTML = '';
+      strikeList.innerHTML = '';
+
+      laserBurnNames.forEach((name, idx) => {
+        const item = document.createElement('div');
+        item.className = 'decal-toggle-item burn active';
+        item.innerHTML = `<span>Burn ${idx + 1}</span><span class="status-dot"></span>`;
+        item.onclick = () => toggleDecal(name, item);
+        burnList.appendChild(item);
+        if (decalMap.has(name)) {
+          decalMap.get(name).elem = item;
+        }
+      });
+
+      missileStrikeNames.forEach((name, idx) => {
+        const item = document.createElement('div');
+        item.className = 'decal-toggle-item strike active';
+        item.innerHTML = `<span>Strike ${idx + 1}</span><span class="status-dot"></span>`;
+        item.onclick = () => toggleDecal(name, item);
+        strikeList.appendChild(item);
+        if (decalMap.has(name)) {
+          decalMap.get(name).elem = item;
+        }
+      });
+    }
+
+    function toggleDecal(name, item) {
+      if (decalMap.has(name)) {
+        const entry = decalMap.get(name);
+        entry.obj.visible = !entry.obj.visible;
+        item.classList.toggle('active', entry.obj.visible);
+        updateHUD();
+      }
+    }
+
+    function updateHUD() {
+      let activeCount = 0;
+      decalMap.forEach(entry => {
+        if (entry.obj.visible) activeCount++;
+      });
+      document.getElementById('hud-active-count').textContent = `ACTIVE DECALS: ${activeCount} / ${decalMap.size}`;
+    }
+
+    // -------------------------------------------------------------------------
+    // Button Action Handlers
+    // -------------------------------------------------------------------------
+    let burnsVisible = true;
+    document.getElementById('btn-toggle-burns').addEventListener('click', () => {
+      burnsVisible = !burnsVisible;
+      laserBurnNames.forEach(name => {
+        if (decalMap.has(name)) {
+          const entry = decalMap.get(name);
+          entry.obj.visible = burnsVisible;
+          if (entry.elem) entry.elem.classList.toggle('active', burnsVisible);
+        }
+      });
+      updateHUD();
+    });
+
+    let strikesVisible = true;
+    document.getElementById('btn-toggle-strikes').addEventListener('click', () => {
+      strikesVisible = !strikesVisible;
+      missileStrikeNames.forEach(name => {
+        if (decalMap.has(name)) {
+          const entry = decalMap.get(name);
+          entry.obj.visible = strikesVisible;
+          if (entry.elem) entry.elem.classList.toggle('active', strikesVisible);
+        }
+      });
+      updateHUD();
+    });
+
+    document.getElementById('btn-clear-all').addEventListener('click', () => {
+      decalMap.forEach(entry => {
+        entry.obj.visible = false;
+        if (entry.elem) entry.elem.classList.remove('active');
+      });
+      burnsVisible = false;
+      strikesVisible = false;
+      updateHUD();
+    });
+
+    document.getElementById('btn-enable-all').addEventListener('click', () => {
+      decalMap.forEach(entry => {
+        entry.obj.visible = true;
+        if (entry.elem) entry.elem.classList.add('active');
+      });
+      burnsVisible = true;
+      strikesVisible = true;
+      updateHUD();
+    });
+
+    // Simulate Combat Hits Sequence
+    document.getElementById('btn-combat-sim').addEventListener('click', () => {
+      // Clear all first
+      decalMap.forEach(entry => {
+        entry.obj.visible = false;
+        if (entry.elem) entry.elem.classList.remove('active');
+      });
+      updateHUD();
+
+      // Sequentially trigger hits with interval
+      const allNames = [...missileStrikeNames, ...laserBurnNames];
+      // Shuffle
+      const shuffled = allNames.sort(() => 0.5 - Math.random());
+      
+      let step = 0;
+      const interval = setInterval(() => {
+        if (step >= shuffled.length) {
+          clearInterval(interval);
+          return;
+        }
+        const name = shuffled[step];
+        if (decalMap.has(name)) {
+          const entry = decalMap.get(name);
+          entry.obj.visible = true;
+          if (entry.elem) entry.elem.classList.add('active');
+          
+          // Subtle camera shake effect
+          camera.position.x += (Math.random() - 0.5) * 0.04;
+          camera.position.y += (Math.random() - 0.5) * 0.04;
+          setTimeout(() => {
+            camera.position.x = 0;
+            camera.position.y = 0;
+          }, 60);
+          updateHUD();
+        }
+        step++;
+      }, 180);
+    });
+
+    // Background toggle
+    let spaceBg = true;
+    document.getElementById('btn-bg-toggle').addEventListener('click', () => {
+      spaceBg = !spaceBg;
+      scene.background = new THREE.Color(spaceBg ? 0x06080d : 0x141a24);
+    });
+
+    document.getElementById('btn-reset-cam').addEventListener('click', () => {
+      camera.position.set(0, 0, 2.2);
+      controls.target.set(0, 0, 0);
+      controls.update();
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+      camera.aspect = container.clientWidth / container.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    // Render Loop
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>

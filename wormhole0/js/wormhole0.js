@@ -5227,6 +5227,243 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
   }
 }
 
+/**
+ * Aborts the current stage cleanly and starts the newly chosen stage completely fresh.
+ * Cleans up all active enemies, combat graphics, weapon bolts, explosions, overlays,
+ * resets vessel position/health/shield/stats, loads the new stage pool/assets,
+ * and launches Wave 1 immediately.
+ */
+async function abortCurrentStageAndStartFresh(targetStage = 1) {
+  const stageNum = parseInt(targetStage) || 1;
+  console.log(`[Wormhole XR Engine] Aborting current stage (${currentActiveStage}) and starting Stage ${stageNum} fresh...`);
+
+  // 1. Hide Game Over modal if showing
+  const modal = document.getElementById('game-over-modal');
+  if (modal) modal.style.display = 'none';
+
+  // 2. Dismiss and fade out splash screen if showing
+  const splashEl = document.getElementById('wormhole-splash-screen');
+  if (splashEl && splashEl.parentNode) {
+    splashEl.classList.add('splash-fade-out');
+    setTimeout(() => {
+      try { if (splashEl.parentNode) splashEl.remove(); } catch (e) {}
+    }, 400);
+  }
+
+  // 3. Restore window/container focus so keyboard/touch input is received immediately
+  try {
+    if (document.activeElement && document.activeElement.blur) {
+      document.activeElement.blur();
+    }
+    window.focus();
+    if (container) {
+      container.tabIndex = 0;
+      if (container.focus) container.focus();
+    }
+  } catch (e) {}
+
+  // 4. Dismiss and hide any countdown overlay & clear active timers
+  const countdownOverlay = document.getElementById('game-countdown-overlay');
+  if (countdownOverlay) {
+    countdownOverlay.classList.remove('active');
+    countdownOverlay.style.display = 'none';
+  }
+  if (countdownTimerInterval) {
+    clearInterval(countdownTimerInterval);
+    countdownTimerInterval = null;
+  }
+  if (countdownCompletionTimeout) {
+    clearTimeout(countdownCompletionTimeout);
+    countdownCompletionTimeout = null;
+  }
+
+  // 5. Dismiss and hide any rotate orientation prompt to prevent freeze/lockout
+  const rotatePrompt = document.getElementById('landscape-rotate-prompt');
+  if (rotatePrompt) {
+    rotatePrompt.classList.remove('active');
+    rotatePrompt.classList.add('dismissed');
+    rotatePrompt.style.display = 'none';
+  }
+  document.body.classList.add('portrait-dismissed');
+
+  // 6. Clean up ALL active enemies, weapon meshes, lasers, projectiles, explosions, powerups, special effects
+  if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
+    currentStageObjectPool.despawnAll();
+  }
+  cleanupAllWeaponsAndCombatGraphics();
+  destroyAllRemainingEnemies(false);
+  despawnAllActivePowerups();
+  clearActiveSpecialEffects();
+
+  // 7. Reset and hide cockpit cracks overlay, damage vignette, and red hit edges
+  if (currentStageObjectPool && typeof currentStageObjectPool.hideCockpitCracks === 'function') {
+    currentStageObjectPool.hideCockpitCracks();
+  } else if (typeof window !== 'undefined' && typeof window.hideCockpitCracks === 'function') {
+    try { window.hideCockpitCracks(); } catch (e) {}
+  } else if (camera) {
+    const cracks = camera.getObjectByName('cockpit_cracks_overlay');
+    if (cracks) {
+      cracks.visible = false;
+      cracks.traverse((child) => {
+        if (child.isMesh && child.material) {
+          child.material.opacity = 0.0;
+          child.material.needsUpdate = true;
+        }
+      });
+    }
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) redEdges.style.opacity = '0';
+  }
+  const damageVignette = document.getElementById('damage-vignette');
+  if (damageVignette) damageVignette.style.opacity = '0';
+
+  // 8. Completely reset pause & game over states across entire game - start flight immediately!
+  state.isGameOver = false;
+  state.isPaused = false;
+  state.hasStarted = true;
+  state.isCountdownActive = false;
+  document.body.classList.remove('game-paused');
+  document.body.classList.add('game-in-flight');
+  const btnQuickPause = document.getElementById('btn-quick-pause');
+  if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
+
+  // 9. Reset keyboard and mouse capture states
+  for (const k in keys) {
+    delete keys[k];
+  }
+  state.keys = {};
+  state.isPointerLocked = false;
+  state.isLeftMouseDown = false;
+  state.isRightMouseDown = false;
+  state.isMouseDown = false;
+  state.aimActive = false;
+  const mouseLockBtn = document.getElementById('btn-mouse-lock');
+  if (mouseLockBtn) {
+    mouseLockBtn.classList.remove('active');
+    mouseLockBtn.textContent = '🎯 Capture Crosshair';
+  }
+
+  // 10. Reset mobile touch controls & virtual sticks to exact center (0px, 0px)
+  state.touchActive = false;
+  state.touchMove = { x: 0, y: 0 };
+  state.aimMove = { x: 0, y: 0 };
+  flightTouchId = null;
+  aimTouchId = null;
+  isMouseFlight = false;
+  isMouseAim = false;
+  flightTapStartTime = 0;
+  mouseFlightStartTime = 0;
+  sliderInteracting = false;
+  touchTriggeredStop = false;
+  touchLookPitch = 0;
+  touchLookYaw = 0;
+  lastGyroYaw = 0;
+  lastGyroPitch = 0;
+  const flightKnob = document.getElementById('touch-stick-knob') || document.getElementById('flight-stick-knob');
+  if (flightKnob) flightKnob.style.transform = 'translate(0px, 0px)';
+  const aimKnob = document.getElementById('aim-stick-knob');
+  if (aimKnob) aimKnob.style.transform = 'translate(0px, 0px)';
+
+  // 11. Cancel any active automated thruster turns (180 / 360) & reset throttle
+  cancelTurn();
+  stopThrottle('STAGE ABORT');
+  state.throttleValue = 0;
+  setThrottleLockout(false);
+  state.throttleLockoutUntil = 0;
+
+  // 12. Reset player stats cleanly from the beginning
+  state.playerShield = 100;
+  state.playerHealth = 100;
+  state.score = 0;
+  state.stageKills = 0;
+  state.totalKills = 0;
+  state.isWarpReady = false;
+  state.isHyperWarping = false;
+  state.warpJumpTimer = 0;
+  state.distance = 0;
+  state.flightLockoutUntil = 0;
+  state.isAligningToWormhole = false;
+  state.frameCount = 0;
+  state.lastFpsUpdate = performance.now();
+
+  // 13. Reset vessel position to safe distance away from wormhole singularity
+  const respawnDistance = CONFIG.wormholeDistance || 220;
+  state.position.set(0, 0, respawnDistance);
+  if (!state.isXR && camera) {
+    camera.position.set(0, 0, respawnDistance);
+    camera.rotation.set(0, 0, 0);
+    camera.fov = 75;
+    camera.updateProjectionMatrix();
+  } else if (cameraRig) {
+    cameraRig.position.set(0, 0, respawnDistance);
+    cameraRig.rotation.set(0, 0, 0);
+  }
+  state.velocity.set(0, 0, 0);
+  state.pitch = 0;
+  state.yaw = 0;
+  state.roll = 0;
+  state.targetYaw = 0;
+  state.targetPitch = 0;
+
+  if (typeof triggeredPowerupEventSet !== 'undefined') {
+    triggeredPowerupEventSet.clear();
+  }
+  state.completedObjectiveEvents = {};
+
+  // 14. Reset weapons system to initial state (energy restored, overheat cleared, red laser selected)
+  if (weaponsSystem && typeof weaponsSystem.resetForMission === 'function') {
+    weaponsSystem.resetForMission();
+  }
+
+  // 15. Load the target stage module & configure stage pool and assets
+  currentActiveStage = stageNum;
+  await loadStageDeviceModule(stageNum, currentActiveDeviceType);
+
+  // Synchronize jump dropdown value in Telemetry & Modes panel
+  const jumpSelect = document.getElementById('select-stage-jump');
+  if (jumpSelect && parseInt(jumpSelect.value) !== stageNum) {
+    jumpSelect.value = stageNum.toString();
+  }
+
+  // 16. Update player defense HUD, stage objectives, wormhole center, and crosshair reticle
+  updatePlayerDefenseHUD();
+  renderStageObjectivesUI();
+  centerWormholeOnScreen(true);
+  snapCrosshairToCurrentGridCenter();
+
+  // Reset frame timestamp to prevent delta time explosion
+  state.lastFrameTime = performance.now();
+
+  // 17. Trigger Stage Wave 1 immediately fresh (pulling enemies from pool)
+  state.currentWave = 0;
+  state.waveStartTime = performance.now();
+  state.waveCompleted = false;
+  lastEnemySpawnCheckTime = performance.now();
+  const api = getEngineApi();
+  if (typeof activeStageWaveHandler === 'function') {
+    activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies });
+  } else {
+    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+  }
+
+  // 18. Auto-close the top Telemetry & Modes panel if auto-close is enabled
+  const chkAutoClose = document.getElementById('chk-auto-close-top');
+  const topDrawer = document.getElementById('top-drawer-container');
+  if (topDrawer && (!chkAutoClose || chkAutoClose.checked)) {
+    topDrawer.classList.remove('open');
+  }
+
+  // 19. Ensure keyboard focus and request crosshair capture if on desktop
+  if (!isMobileInUse() && !state.isPointerLocked) {
+    requestCrosshairCapture(true);
+  }
+
+  console.log(`[Wormhole XR Engine] Stage ${stageNum} aborted previous state and started fresh.`);
+}
+
 // MULTI-PLATFORM & XR MODE SWITCHER
 // =============================================================================
 const selectModeEl = document.getElementById('select-mode');
@@ -5242,10 +5479,10 @@ if (selectModeEl) {
 // Stage Jump Debug Selector & Live Sync Button
 const selectStageJumpEl = document.getElementById('select-stage-jump');
 if (selectStageJumpEl) {
-  selectStageJumpEl.addEventListener('change', (e) => {
+  selectStageJumpEl.addEventListener('change', async (e) => {
     const targetStage = parseInt(e.target.value) || 1;
-    console.log(`[Wormhole XR Debug] Stage jump selected: Stage ${targetStage}`);
-    loadStageDeviceModule(targetStage, currentActiveDeviceType);
+    console.log(`[Wormhole XR Debug] Stage jump selected in Telemetry & Modes: Stage ${targetStage}`);
+    await abortCurrentStageAndStartFresh(targetStage);
   });
   // Check for any newly created stages when dropdown is opened/focused
   selectStageJumpEl.addEventListener('focus', () => {
@@ -11225,208 +11462,7 @@ function executeMissionCountdown(isRestart = false) {
 }
 
 function restartGame() {
-  const modal = document.getElementById('game-over-modal');
-  if (modal) modal.style.display = 'none';
-
-  // Restore focus to window/container so keyboard input is immediately received
-  try {
-    if (document.activeElement && document.activeElement.blur) {
-      document.activeElement.blur();
-    }
-    window.focus();
-    if (container) {
-      container.tabIndex = 0;
-      if (container.focus) container.focus();
-    }
-  } catch (e) {}
-
-  // Dismiss and hide any countdown overlay to ensure clean, immediate stage restart
-  const countdownOverlay = document.getElementById('game-countdown-overlay');
-  if (countdownOverlay) {
-    countdownOverlay.classList.remove('active');
-    countdownOverlay.style.display = 'none';
-  }
-  if (countdownTimerInterval) {
-    clearInterval(countdownTimerInterval);
-    countdownTimerInterval = null;
-  }
-  if (countdownCompletionTimeout) {
-    clearTimeout(countdownCompletionTimeout);
-    countdownCompletionTimeout = null;
-  }
-
-  // Dismiss and hide any rotate orientation prompt to prevent freeze/lockout
-  const rotatePrompt = document.getElementById('landscape-rotate-prompt');
-  if (rotatePrompt) {
-    rotatePrompt.classList.remove('active');
-    rotatePrompt.classList.add('dismissed');
-    rotatePrompt.style.display = 'none';
-  }
-  document.body.classList.add('portrait-dismissed');
-
-  // Clean up ALL weapons graphics, enemy bolts, lasers, explosions, and reset stage object pool
-  if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
-    currentStageObjectPool.despawnAll();
-  }
-  cleanupAllWeaponsAndCombatGraphics();
-  destroyAllRemainingEnemies(false);
-  despawnAllActivePowerups();
-  clearActiveSpecialEffects();
-
-  // Reset and hide cockpit cracks overlay
-  if (currentStageObjectPool && typeof currentStageObjectPool.hideCockpitCracks === 'function') {
-    currentStageObjectPool.hideCockpitCracks();
-  } else if (typeof window !== 'undefined' && typeof window.hideCockpitCracks === 'function') {
-    try { window.hideCockpitCracks(); } catch (e) {}
-  } else if (camera) {
-    const cracks = camera.getObjectByName('cockpit_cracks_overlay');
-    if (cracks) {
-      cracks.visible = false;
-      cracks.traverse((child) => {
-        if (child.isMesh && child.material) {
-          child.material.opacity = 0.0;
-          child.material.needsUpdate = true;
-        }
-      });
-    }
-  }
-  if (typeof document !== 'undefined') {
-    const redEdges = document.getElementById('cockpit-edges-red');
-    if (redEdges) redEdges.style.opacity = '0';
-  }
-
-  // Completely reset pause & game over states across entire game - start flight immediately!
-  state.isGameOver = false;
-  state.isPaused = false;
-  state.hasStarted = true; // Flight & combat engage immediately from stage start
-  state.isCountdownActive = false;
-  document.body.classList.remove('game-paused');
-  document.body.classList.add('game-in-flight');
-  const btnQuickPause = document.getElementById('btn-quick-pause');
-  if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
-
-  // Reset desktop keyboard and mouse capture states
-  for (const k in keys) {
-    delete keys[k];
-  }
-  state.keys = {};
-  state.isPointerLocked = false;
-  state.isLeftMouseDown = false;
-  state.isRightMouseDown = false;
-  state.isMouseDown = false;
-  state.aimActive = false;
-  const mouseLockBtn = document.getElementById('btn-mouse-lock');
-  if (mouseLockBtn) {
-    mouseLockBtn.classList.remove('active');
-    mouseLockBtn.textContent = '🎯 Capture Crosshair';
-  }
-
-  // Reset mobile touch controls & virtual sticks to exact center
-  state.touchActive = false;
-  state.touchMove = { x: 0, y: 0 };
-  state.aimMove = { x: 0, y: 0 };
-  flightTouchId = null;
-  aimTouchId = null;
-  isMouseFlight = false;
-  isMouseAim = false;
-  flightTapStartTime = 0;
-  mouseFlightStartTime = 0;
-  sliderInteracting = false;
-  touchTriggeredStop = false;
-  touchLookPitch = 0;
-  touchLookYaw = 0;
-  lastGyroYaw = 0;
-  lastGyroPitch = 0;
-
-  // Reset left & right virtual joystick controls cleanly to exact center (0px, 0px)
-  const flightKnob = document.getElementById('touch-stick-knob') || document.getElementById('flight-stick-knob');
-  if (flightKnob) flightKnob.style.transform = 'translate(0px, 0px)';
-  const aimKnob = document.getElementById('aim-stick-knob');
-  if (aimKnob) aimKnob.style.transform = 'translate(0px, 0px)';
-
-  // Cancel any active automated thruster turns (180 / 360)
-  cancelTurn();
-
-  // Reset cruise speed throttle and emergency stop to 0 (neutral center)
-  stopThrottle('STAGE RESTART');
-  state.throttleValue = 0;
-  setThrottleLockout(false);
-  state.throttleLockoutUntil = 0;
-
-  // Reset player stats cleanly from the beginning
-  state.playerShield = 100;
-  state.playerHealth = 100;
-  state.score = 0;
-  state.stageKills = 0;
-  state.totalKills = 0;
-  state.isWarpReady = false;
-  state.isHyperWarping = false;
-  state.warpJumpTimer = 0;
-  state.distance = 0;
-  state.flightLockoutUntil = 0;
-  state.isAligningToWormhole = false;
-  state.frameCount = 0;
-  state.lastFpsUpdate = performance.now();
-
-  // Reset vessel position to safe distance away from wormhole singularity
-  const respawnDistance = CONFIG.wormholeDistance || 220;
-  state.position.set(0, 0, respawnDistance);
-  if (!state.isXR && camera) {
-    camera.position.set(0, 0, respawnDistance);
-    camera.rotation.set(0, 0, 0);
-    camera.fov = 75;
-    camera.updateProjectionMatrix();
-  } else if (cameraRig) {
-    cameraRig.position.set(0, 0, respawnDistance);
-    cameraRig.rotation.set(0, 0, 0);
-  }
-  state.velocity.set(0, 0, 0);
-  state.pitch = 0;
-  state.yaw = 0;
-  state.roll = 0;
-  state.targetYaw = 0;
-  state.targetPitch = 0;
-
-  const damageVignette = document.getElementById('damage-vignette');
-  if (damageVignette) damageVignette.style.opacity = '0';
-  if (typeof triggeredPowerupEventSet !== 'undefined') {
-    triggeredPowerupEventSet.clear();
-  }
-
-  // Reset weapons system to initial state (energy restored, overheat cleared, red laser selected)
-  if (weaponsSystem && typeof weaponsSystem.resetForMission === 'function') {
-    weaponsSystem.resetForMission();
-  }
-
-  // Reset to Stage 1 and re-sync from the beginning
-  currentActiveStage = 1;
-  loadStageDeviceModule(1, currentActiveDeviceType);
-
-  updatePlayerDefenseHUD();
-  renderStageObjectivesUI();
-  centerWormholeOnScreen(true);
-  snapCrosshairToCurrentGridCenter();
-
-  // Reset frame timestamp to prevent delta time explosion
-  state.lastFrameTime = performance.now();
-
-  // Trigger Stage Wave 1 immediately upon restart (pulling 5 enemies from pool)
-  state.currentWave = 0;
-  state.waveStartTime = performance.now();
-  state.waveCompleted = false;
-  lastEnemySpawnCheckTime = performance.now();
-  const api = getEngineApi();
-  if (typeof activeStageWaveHandler === 'function') {
-    activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies });
-  } else {
-    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
-  }
-
-  // Ensure keyboard focus is restored and request crosshair capture if on desktop
-  if (!isMobileInUse() && !state.isPointerLocked) {
-    requestCrosshairCapture(true);
-  }
+  return abortCurrentStageAndStartFresh(currentActiveStage || 1);
 }
 
 function quitGame() {
@@ -13857,9 +13893,12 @@ if (typeof window !== 'undefined') {
   window.cancel360Turn = cancel360Turn;
   window.cancelTurn = cancelTurn;
   window.audioMgr = audioMgr;
-  window.jumpToStage = (level) => loadStageDeviceModule(level, currentActiveDeviceType);
+  window.abortCurrentStageAndStartFresh = abortCurrentStageAndStartFresh;
+  window.jumpToStage = (level) => abortCurrentStageAndStartFresh(level);
   window.loadStageDeviceModule = loadStageDeviceModule;
-  window.reloadActiveStage = () => loadStageDeviceModule(currentActiveStage, currentActiveDeviceType);
+  window.reloadActiveStage = () => abortCurrentStageAndStartFresh(currentActiveStage);
+  window.restartStage = () => abortCurrentStageAndStartFresh(currentActiveStage || 1);
+  window.restartMission = () => abortCurrentStageAndStartFresh(currentActiveStage || 1);
   window.currentActiveStage = () => currentActiveStage;
   window.currentActiveDeviceType = () => currentActiveDeviceType;
   window.syncGameManagerFromDatabase = syncGameManagerFromDatabase;

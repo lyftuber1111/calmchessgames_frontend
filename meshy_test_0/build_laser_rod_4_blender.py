@@ -113,21 +113,31 @@ y_min = min(ys)
 y_max = max(ys)
 
 for v in mesh.vertices:
-    # Center perfectly around (0,0) and scale cross section to exact 0.25m circumference (radius = 0.039789m, diameter = 0.079577m)
-    v.co.x = (v.co.x - center_x) * scale_factor_x
-    v.co.z = (v.co.z - center_z) * scale_factor_z
+    old_x = v.co.x
+    old_y = v.co.y
+    old_z = v.co.z
+    # Cross section in X and Y centered around (0,0) with exact 0.25m circumference (radius = 0.039789m)
+    v.co.x = (old_x - center_x) * scale_factor_x
+    v.co.y = (old_z - center_z) * scale_factor_z
     
-    # Ensure start is strictly at Y=0 and end extends to -LENGTH (-28.0m in Blender)
-    # (In glTF export with export_yup=True, Blender -Y corresponds to XR +Z forward)
-    t = (v.co.y - y_max) / (y_min - y_max) if abs(y_min - y_max) > 1e-4 else 0.0
+    # Length extending strictly along +Z axis from Z=0.0 to Z=LENGTH (28.0m)
+    # The pivot point is on the end at (0,0,0) and the rod expands down +Z
+    t = (old_y - y_max) / (y_min - y_max) if abs(y_min - y_max) > 1e-4 else 0.0
     if t < 1e-5:
-        v.co.y = 0.0
+        v.co.z = 0.0
     elif t > 1.0 - 1e-5:
-        v.co.y = -LENGTH
+        v.co.z = LENGTH
     else:
-        v.co.y = - t * LENGTH
+        v.co.z = t * LENGTH
 
 mesh.update()
+
+# Recalculate mesh normals to ensure clean outward-pointing faces
+bpy.context.view_layer.objects.active = obj
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.mesh.normals_make_consistent(inside=False)
+bpy.ops.object.mode_set(mode='OBJECT')
 
 # Explicitly set 3D cursor and Object Origin (Pivot Point) to exact start end (0, 0, 0)
 bpy.context.scene.cursor.location = (0.0, 0.0, 0.0)
@@ -141,18 +151,18 @@ ys_new = [v.co.y for v in mesh.vertices]
 zs_new = [v.co.z for v in mesh.vertices]
 
 width_x = max(xs_new) - min(xs_new)
-height_z = max(zs_new) - min(zs_new)
-length_y = max(ys_new) - min(ys_new)
+height_y = max(ys_new) - min(ys_new)
+length_z = max(zs_new) - min(zs_new)
 
 print(f"New Blender bounds: X=[{min(xs_new):.6f}, {max(xs_new):.6f}] (Width: {width_x:.4f}m)")
-print(f"                    Z=[{min(zs_new):.6f}, {max(zs_new):.6f}] (Height: {height_z:.4f}m)")
-print(f"                    Y=[{min(ys_new):.6f}, {max(ys_new):.6f}] (Length: {length_y:.4f}m)")
+print(f"                    Y=[{min(ys_new):.6f}, {max(ys_new):.6f}] (Height: {height_y:.4f}m)")
+print(f"                    Z=[{min(zs_new):.6f}, {max(zs_new):.6f}] (Length: {length_z:.4f}m)")
 
 # Verify caps
-cap_start = [v for v in mesh.vertices if abs(v.co.y - 0.0) < 1e-4]
-cap_end   = [v for v in mesh.vertices if abs(v.co.y - (-LENGTH)) < 1e-4]
-print(f"Start cap vertices (at Y=0.0): {len(cap_start)}")
-print(f"End cap vertices (at Y=-{LENGTH:.1f}m): {len(cap_end)}")
+cap_start = [v for v in mesh.vertices if abs(v.co.z - 0.0) < 1e-4]
+cap_end   = [v for v in mesh.vertices if abs(v.co.z - LENGTH) < 1e-4]
+print(f"Start cap vertices (at Z=0.0): {len(cap_start)}")
+print(f"End cap vertices (at Z={LENGTH:.1f}m): {len(cap_end)}")
 
 # Animation setup:
 # Strictly linear extension from 0.0 meters to 28.0 meters across exactly 0.8 seconds (24 frames @ 30 FPS)
@@ -172,10 +182,10 @@ action = bpy.data.actions.new(name="Laser_Flight_Extension")
 obj.animation_data.action = action
 
 # Keyframes across 0.8 seconds (0 to 24 frames @ 30 FPS):
-# Starts at length 0.0m (t=0.0s, scale Y=0.000) and extends linearly to 28.0m (t=0.8s, scale Y=1.000)
-# Circumference remains strictly 0.25m throughout (scale X=1.000, scale Z=1.000)
+# Starts at length 0.0m (t=0.0s, scale Z=0.000) and extends linearly to 28.0m (t=0.8s, scale Z=1.000)
+# Circumference remains strictly 0.25m throughout (scale X=1.000, scale Y=1.000)
 keyframes = [
-    (0.0,                (1.000, 0.000, 1.000)), # Frame 0  (t = 0.00s): starts at length 0.000m (pivot at +Z 0)
+    (0.0,                 (1.000, 1.000, 0.000)), # Frame 0  (t = 0.00s): starts at length 0.000m (pivot at +Z 0)
     (float(TOTAL_FRAMES), (1.000, 1.000, 1.000)), # Frame 24 (t = 0.80s): extends to full 28.000m down +Z
 ]
 
@@ -200,11 +210,11 @@ elif hasattr(action, 'layers'):
 bpy.context.scene.frame_set(TOTAL_FRAMES)
 obj.scale = (1.000, 1.000, 1.000)
 
-# Export GLB with +Y up (maps Blender -Y forward to XR +Z forward)
+# Export GLB with export_yup=False so Blender +Z directly maps to glTF/XR +Z forward
 bpy.ops.export_scene.gltf(
     filepath=str(TEMP_EXPORT_GLB),
     export_format='GLB',
-    export_yup=True,
+    export_yup=False,
     export_animations=True
 )
 
@@ -248,6 +258,8 @@ if os.path.exists(TEMP_EXPORT_GLB):
 obj.scale = (1.000, 1.000, 1.000)
 bpy.ops.wm.obj_export(
     filepath=str(DEST_OBJ),
+    up_axis='Z',
+    forward_axis='Y',
     export_selected_objects=True,
     export_uv=True,
     export_normals=True,
@@ -281,10 +293,10 @@ materials_data = {
         "blender_coordinates": {
             "pivot_point": [0.0, 0.0, 0.0],
             "start_coordinate": [0.0, 0.0, 0.0],
-            "end_coordinate": [0.0, -round(LENGTH, 6), 0.0],
-            "forward_axis": "-Y (Blender Front / Forward)",
+            "end_coordinate": [0.0, 0.0, round(LENGTH, 6)],
+            "forward_axis": "+Z (Blender +Z forward/length axis)",
             "cross_section_width_x": round(TARGET_WIDTH, 6),
-            "cross_section_height_z": round(TARGET_HEIGHT, 6),
+            "cross_section_height_y": round(TARGET_HEIGHT, 6),
             "both_ends_capped": True
         },
         "xr_gltf_coordinates": {
@@ -298,7 +310,7 @@ materials_data = {
         },
         "animation": {
             "name": "Laser_Flight_Extension",
-            "blender_extension_axis": "-Y",
+            "blender_extension_axis": "+Z",
             "xr_extension_axis": "+Z",
             "duration_seconds": 0.8,
             "fps": 30,

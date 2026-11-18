@@ -22,12 +22,12 @@
             ],
             "end_coordinate": [
                 0.0,
-                -28.0,
-                0.0
+                0.0,
+                28.0
             ],
-            "forward_axis": "-Y (Blender Front / Forward)",
+            "forward_axis": "+Z (Blender +Z forward/length axis)",
             "cross_section_width_x": 0.079577,
-            "cross_section_height_z": 0.079577,
+            "cross_section_height_y": 0.079577,
             "both_ends_capped": true
         },
         "xr_gltf_coordinates": {
@@ -53,7 +53,7 @@
         },
         "animation": {
             "name": "Laser_Flight_Extension",
-            "blender_extension_axis": "-Y",
+            "blender_extension_axis": "+Z",
             "xr_extension_axis": "+Z",
             "duration_seconds": 0.8,
             "fps": 30,

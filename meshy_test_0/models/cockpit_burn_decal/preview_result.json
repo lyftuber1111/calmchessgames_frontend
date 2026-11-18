@@ -1,0 +1,46 @@
+{
+  "id": "01a1f03d-746c-73fd-9914-75354496218a",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 1128797575,
+  "prompt": "A translucent blackened burn decal and laser strike impact scorch mark on a sci-fi spaceship cockpit windshield canopy screen. Radial blast burn marks, charred black carbonized soot, melted tempered blast glass, scorched dark edges fading into transparent cracked glass, micro-fractures, intense heat blast epicenter from a high-energy military plasma laser or missile blast impact, translucent glass decal, hard surface sci-fi game asset, PBR realistic, high detail",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795031924630,
+  "progress": 100,
+  "started_at": 1795031924646,
+  "finished_at": 1795031973243,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/model.glb?Expires=4948560000&Signature=PGOtc8FJIbzoke9TwUOweYLLSAZKVfmMtKcnBiehLns2LT--CtZcp-sv6rsVRNtoeH2ysNPYNGxum5InJ7odL-lbUfTdMtI3K1cbnwTxBVUTT5sLgsC6iDgVaiI~6xM7Z9fR0PJvwwvK1X0LoV3QOeO4MmkJAOZHjqQarFmMr-28rmgtxLdy~2sdbvJBmb6MY3b9DCC2XsQmIH94ot2SPXjXODEeP8jrrQGRTgC22aiPgsMqwauiA3o5p1Vedd0p5JcMUHpwv1-FgTYsWLEBBe6WiQ3E4wFdTFPoyWTLac4CJ1KUPLvC-a5SmU5PaS7amRItPOvO2UJ~0VWxa-dJSw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/model.fbx?Expires=4948560000&Signature=OnGDG2sy9LBhi~GWJcnWDp6mdkjKF4I~eH0iVT-PL7epbyPjY3meDmo9DZWHwv~VwHfJG6RNOBol5pd5FOLUOnqtX3G3wjpy20UFUXQ0o~7WGTljUdWkqbJhBnXzFN5vMWtWP-BX3jTBU5LngU-KrOQNPDW3S8zF88yIan2H~G7YLE~EtUSG6YJRF0ngyMPc87VEF4zdshcEWavf4WMlfWTzDI8PX5XxZVgH0dXD5-L8AkvDiNjRUVwMyoyWgSa3~RiwTXDvwOWV~ZidbbCE9Ju6Gqh49QvnGn-QgjVsMTc9FFpdzzC9JadF2ppNp52GmSx94qVlaJHBtpukqBdF~A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/model.usdz?Expires=4948560000&Signature=p~EvHegWLG4xkg44ocbbbEK7AAsRpvVvbtPwcV4rtLabtSM3JC0FpLfmVp6B4xSDjX3leMliTNItFXzV6NsQ9XT0IUJdpKEaom-yO6N8H7cxaloWhiYbLXi4oXqVhGpy-OMVsWiRyC7KyamU3uosclbMbjCmIX7mS56KJMDGyFMvxZLgq1IJ7X17mUCyPDEWC00dz8X5t6F7tioM8qhh4RvMVPjYcLoQzyUXN7-fw7tN4MjVmxVIKeGGNAf1tWAw5UCVZuDTPcGKwAa0NMkmOZwweNvNlsynHglucXUgwEVP3HiXylMEdR7oo90KhllUCFz7iF9d196Ve3KP9A2hHA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/model.obj?Expires=4948560000&Signature=HxRioTeFSlZ5YKbaJ44oskzqIED4LrYFOtB6fYi6YkLwxhIyKkQsBAGzdffJ5fWg2SvSa6-sM50saBAGg9GCb9DTUTmWqMJ6GeRh03jZIXOZqHwZjd2w3CBvy5kWRRTDMTW2E5W6r89hYP7PkKmhmN4LEuJYYKUHx2Sjgfi6uGMKw38avFQECqpWm8IGXj~A6hyLKwsajo12CUByxJKfetLKJJDGRF9SrCnbmpdXKDUbJiYBB5IjqvfUmbjDeVFdF94y2qgsx6wsLL2PeykqUuxwPgPxDpu3iVuTYLppiALxsIw~l7ikkyB9HimJIebYGCiRKq2BinV-zq3i6j4ImQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/model.stl?Expires=4948560000&Signature=AF~gc9wHRlPGit6vppUVeKvWnc0CaCi5bSyoNFVSlmFexKr15RWO8aS5HkLn7GR1hPtVTapBCopbTJO7v9yXm-3XNdX0FZc9lPQKM5PY~GWO-XUPHmVawC2Gla394BUzjPENblHZw85s5p2drTfedBY91h4pnhRG3gjTTWjs12TfOUS-pnVuD7ylK-3vvtupST5sC4rHV8EMMV5PnCVdHwOJSpL3cCyA0l49Ay76zQdRpxTHMv6B01Ww5vXEEl6S48PNfNQfQ~Bx~JktjnPcv7xDfD35hbebhmlf-7upmzZCJ9kMGMweutI9pp9N~EwTF5w~W1hBKVLghz2RCFz~Lg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/preview.png?Expires=4948560000&Signature=FIcBvvIDToXBDbTebzRAZL~pGp7TKE7Eum~QwMSaQlch22Xbl4ZqLBRKroZCYXGkXtz6MrOIlSizh5uq1Sl8TAY7ZRdCniqyUNVTuMVAo0lYf~s5~vwYVgH0KyJvzOlKSYCPT-XAT2gg4yO3~Lt3i1IhNiwAhnikdvau66D3Cg90ogENc3F9LtX7EDxt08VkgqcbueGN2-vMTgM5~aA9Y3ETvttrVjCFvtaiAIr34bsrWMW9pue4c-d-OCdHxYuRiXdqcfjt0uNfrfTEEzEB4HQ3XTqSaOFjFrYq4PJ-MVLzM5sxtQwwUNsNT~dJ-6SmYnL62LnO2-slKCqQj5JAJA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "mode": "preview",
+    "prompt": "A translucent blackened burn decal and laser strike impact scorch mark on a sci-fi spaceship cockpit windshield canopy screen. Radial blast burn marks, charred black carbonized soot, melted tempered blast glass, scorched dark edges fading into transparent cracked glass, micro-fractures, intense heat blast epicenter from a high-energy military plasma laser or missile blast impact, translucent glass decal, hard surface sci-fi game asset, PBR realistic, high detail",
+    "should_remesh": true
+  },
+  "output": {
+    "seed": 1128797575,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/model.fbx?Expires=4948560000&Signature=OnGDG2sy9LBhi~GWJcnWDp6mdkjKF4I~eH0iVT-PL7epbyPjY3meDmo9DZWHwv~VwHfJG6RNOBol5pd5FOLUOnqtX3G3wjpy20UFUXQ0o~7WGTljUdWkqbJhBnXzFN5vMWtWP-BX3jTBU5LngU-KrOQNPDW3S8zF88yIan2H~G7YLE~EtUSG6YJRF0ngyMPc87VEF4zdshcEWavf4WMlfWTzDI8PX5XxZVgH0dXD5-L8AkvDiNjRUVwMyoyWgSa3~RiwTXDvwOWV~ZidbbCE9Ju6Gqh49QvnGn-QgjVsMTc9FFpdzzC9JadF2ppNp52GmSx94qVlaJHBtpukqBdF~A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/model.glb?Expires=4948560000&Signature=PGOtc8FJIbzoke9TwUOweYLLSAZKVfmMtKcnBiehLns2LT--CtZcp-sv6rsVRNtoeH2ysNPYNGxum5InJ7odL-lbUfTdMtI3K1cbnwTxBVUTT5sLgsC6iDgVaiI~6xM7Z9fR0PJvwwvK1X0LoV3QOeO4MmkJAOZHjqQarFmMr-28rmgtxLdy~2sdbvJBmb6MY3b9DCC2XsQmIH94ot2SPXjXODEeP8jrrQGRTgC22aiPgsMqwauiA3o5p1Vedd0p5JcMUHpwv1-FgTYsWLEBBe6WiQ3E4wFdTFPoyWTLac4CJ1KUPLvC-a5SmU5PaS7amRItPOvO2UJ~0VWxa-dJSw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/model.obj?Expires=4948560000&Signature=HxRioTeFSlZ5YKbaJ44oskzqIED4LrYFOtB6fYi6YkLwxhIyKkQsBAGzdffJ5fWg2SvSa6-sM50saBAGg9GCb9DTUTmWqMJ6GeRh03jZIXOZqHwZjd2w3CBvy5kWRRTDMTW2E5W6r89hYP7PkKmhmN4LEuJYYKUHx2Sjgfi6uGMKw38avFQECqpWm8IGXj~A6hyLKwsajo12CUByxJKfetLKJJDGRF9SrCnbmpdXKDUbJiYBB5IjqvfUmbjDeVFdF94y2qgsx6wsLL2PeykqUuxwPgPxDpu3iVuTYLppiALxsIw~l7ikkyB9HimJIebYGCiRKq2BinV-zq3i6j4ImQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/model.stl?Expires=4948560000&Signature=AF~gc9wHRlPGit6vppUVeKvWnc0CaCi5bSyoNFVSlmFexKr15RWO8aS5HkLn7GR1hPtVTapBCopbTJO7v9yXm-3XNdX0FZc9lPQKM5PY~GWO-XUPHmVawC2Gla394BUzjPENblHZw85s5p2drTfedBY91h4pnhRG3gjTTWjs12TfOUS-pnVuD7ylK-3vvtupST5sC4rHV8EMMV5PnCVdHwOJSpL3cCyA0l49Ay76zQdRpxTHMv6B01Ww5vXEEl6S48PNfNQfQ~Bx~JktjnPcv7xDfD35hbebhmlf-7upmzZCJ9kMGMweutI9pp9N~EwTF5w~W1hBKVLghz2RCFz~Lg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/model.usdz?Expires=4948560000&Signature=p~EvHegWLG4xkg44ocbbbEK7AAsRpvVvbtPwcV4rtLabtSM3JC0FpLfmVp6B4xSDjX3leMliTNItFXzV6NsQ9XT0IUJdpKEaom-yO6N8H7cxaloWhiYbLXi4oXqVhGpy-OMVsWiRyC7KyamU3uosclbMbjCmIX7mS56KJMDGyFMvxZLgq1IJ7X17mUCyPDEWC00dz8X5t6F7tioM8qhh4RvMVPjYcLoQzyUXN7-fw7tN4MjVmxVIKeGGNAf1tWAw5UCVZuDTPcGKwAa0NMkmOZwweNvNlsynHglucXUgwEVP3HiXylMEdR7oo90KhllUCFz7iF9d196Ve3KP9A2hHA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f03d-746c-73fd-9914-75354496218a/output/preview.png?Expires=4948560000&Signature=FIcBvvIDToXBDbTebzRAZL~pGp7TKE7Eum~QwMSaQlch22Xbl4ZqLBRKroZCYXGkXtz6MrOIlSizh5uq1Sl8TAY7ZRdCniqyUNVTuMVAo0lYf~s5~vwYVgH0KyJvzOlKSYCPT-XAT2gg4yO3~Lt3i1IhNiwAhnikdvau66D3Cg90ogENc3F9LtX7EDxt08VkgqcbueGN2-vMTgM5~aA9Y3ETvttrVjCFvtaiAIr34bsrWMW9pue4c-d-OCdHxYuRiXdqcfjt0uNfrfTEEzEB4HQ3XTqSaOFjFrYq4PJ-MVLzM5sxtQwwUNsNT~dJ-6SmYnL62LnO2-slKCqQj5JAJA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

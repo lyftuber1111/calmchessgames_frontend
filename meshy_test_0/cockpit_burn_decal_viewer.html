@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sci-Fi Spaceship Cockpit Decal - Translucent Blackened Burn Mark</title>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(13, 17, 26, 0.88);
+      --accent-cyan: #00f0ff;
+      --accent-glow: rgba(0, 240, 255, 0.45);
+      --accent-orange: #ff5500;
+      --text: #f0f6fc;
+      --text-muted: #8b949e;
+      --border: rgba(0, 240, 255, 0.22);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 50% 25%, #18111e 0%, #06070a 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+    header {
+      padding: 1rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      background: rgba(7, 9, 14, 0.85);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .title-group h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .badge {
+      font-size: 0.72rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      background: rgba(255, 85, 0, 0.18);
+      color: var(--accent-orange);
+      border: 1px solid var(--accent-orange);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 1.5rem;
+      padding: 1.5rem;
+      max-width: 1600px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    @media (max-width: 1024px) {
+      main { grid-template-columns: 1fr; }
+    }
+    .viewport-container {
+      background: rgba(10, 13, 20, 0.6);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+      min-height: 600px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+    }
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      min-height: 600px;
+      --poster-color: transparent;
+      background: radial-gradient(circle at center, #1b1724 0%, #090a10 70%);
+    }
+    .viewer-overlay {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .status-tag {
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 85, 0, 0.4);
+      padding: 0.35rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: #ff9966;
+      font-family: monospace;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: #ff5500;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #ff5500;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+    .controls-overlay {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      right: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+      pointer-events: none;
+    }
+    .btn-group {
+      display: flex;
+      gap: 0.5rem;
+      pointer-events: auto;
+    }
+    .btn {
+      background: rgba(13, 17, 26, 0.85);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.45rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .btn:hover {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .btn.active {
+      background: var(--accent-cyan);
+      color: #07090e;
+      border-color: var(--accent-cyan);
+      font-weight: 600;
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      backdrop-filter: blur(12px);
+    }
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .meta-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      font-size: 0.85rem;
+    }
+    .meta-item {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.4rem;
+    }
+    .meta-label { color: var(--text-muted); }
+    .meta-val {
+      font-family: monospace;
+      color: #e6edf3;
+      font-weight: 500;
+    }
+    .texture-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .texture-thumb {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+      text-align: center;
+      padding: 0.35rem;
+    }
+    .texture-thumb img {
+      width: 100%;
+      height: 85px;
+      object-fit: cover;
+      border-radius: 4px;
+    }
+    .texture-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+      font-family: monospace;
+    }
+    .links-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .link-item {
+      color: var(--accent-cyan);
+      text-decoration: none;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.3rem 0;
+      border-bottom: 1px dashed rgba(0, 240, 255, 0.2);
+    }
+    .link-item:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title-group">
+      <h1>Spaceship Cockpit Burn Decal</h1>
+      <span class="badge">Laser / Missile Strike Scorch</span>
+    </div>
+    <div class="header-links">
+      <span style="font-size: 0.8rem; color: var(--text-muted); font-family: monospace;">Meshy 3D PBR Decal Asset</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="viewport-container">
+      <model-viewer id="viewer"
+                    src="./models/cockpit_burn_decal/cockpit_burn_decal.glb"
+                    alt="Translucent Blackened Burn Decal on Sci-Fi Spaceship Cockpit Screen"
+                    camera-controls
+                    auto-rotate
+                    auto-rotate-delay="1500"
+                    rotation-per-second="25deg"
+                    shadow-intensity="1.5"
+                    shadow-softness="0.8"
+                    exposure="1.15"
+                    environment-image="neutral"
+                    ar>
+      </model-viewer>
+
+      <div class="viewer-overlay">
+        <div class="status-tag">
+          <span class="status-dot"></span>
+          <span>IMPACT DECAL: ACTIVE</span>
+        </div>
+        <div class="status-tag" style="border-color: rgba(0, 240, 255, 0.3); color: var(--accent-cyan);">
+          <span>CANOPY GLASS FRACTURE & CHARRED SOOT</span>
+        </div>
+      </div>
+
+      <div class="controls-overlay">
+        <div class="btn-group">
+          <button class="btn" id="btn-rotate">Auto-Rotate</button>
+          <button class="btn" id="btn-reset">Reset Camera</button>
+          <button class="btn" id="btn-backdrop">Toggle Background</button>
+        </div>
+        <div class="btn-group">
+          <button class="btn" id="btn-dim">Light Mode</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="card">
+        <div class="card-title">
+          <span>Decal Specifications</span>
+          <span style="font-size: 0.7rem; color: var(--accent-orange);">SECTOR: COCKPIT HUD</span>
+        </div>
+        <div class="meta-list">
+          <div class="meta-item">
+            <span class="meta-label">Asset Name</span>
+            <span class="meta-val">cockpit_burn_decal</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Target Surface</span>
+            <span class="meta-val">Tempered Canopy Glass</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Visual Effect</span>
+            <span class="meta-val">Translucent Blackened Scorch</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Damage Source</span>
+            <span class="meta-val">Military Laser / Missile Strike</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Alpha Mode</span>
+            <span class="meta-val">BLEND (Translucent Glass)</span>
+          </div>
+          <div class="meta-item">
+            <span class="meta-label">Format</span>
+            <span class="meta-val">GLB, OBJ, MTL, PBR Textures</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>PBR Textures & Materials</span>
+          <span style="font-size: 0.7rem; color: var(--accent-cyan);">4K PBR</span>
+        </div>
+        <div class="texture-grid">
+          <div class="texture-thumb">
+            <img src="./models/cockpit_burn_decal/cockpit_burn_decal_textures/thumbnail.png" alt="Thumbnail" onerror="this.src='./models/cockpit_burn_decal/thumbnail.png'">
+            <div class="texture-label">Thumbnail</div>
+          </div>
+          <div class="texture-thumb">
+            <img src="./models/cockpit_burn_decal/cockpit_burn_decal_textures/texture_0_base_color.png" alt="Base Color" onerror="this.src='./models/cockpit_burn_decal/texture_0_base_color.png'">
+            <div class="texture-label">Base Color</div>
+          </div>
+          <div class="texture-thumb">
+            <img src="./models/cockpit_burn_decal/cockpit_burn_decal_textures/texture_0_normal.png" alt="Normal Map" onerror="this.src='./models/cockpit_burn_decal/texture_0_normal.png'">
+            <div class="texture-label">Normal</div>
+          </div>
+          <div class="texture-thumb">
+            <img src="./models/cockpit_burn_decal/cockpit_burn_decal_textures/texture_0_roughness.png" alt="Roughness" onerror="this.src='./models/cockpit_burn_decal/texture_0_roughness.png'">
+            <div class="texture-label">Roughness</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Asset Navigation</span>
+        </div>
+        <div class="links-list">
+          <a class="link-item" href="./models/cockpit_burn_decal/cockpit_burn_decal.glb" download>📥 Download GLB Model</a>
+          <a class="link-item" href="./models/cockpit_burn_decal/cockpit_burn_decal_materials.json" target="_blank">📄 View Materials JSON</a>
+          <a class="link-item" href="./screen_overlay_1_viewer.html">🪟 View Screen Overlay 1</a>
+          <a class="link-item" href="./overlay_viewer.html">🔍 View Translucent Screen Overlay</a>
+          <a class="link-item" href="./missile_viewer.html">🚀 View Missiles</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const viewer = document.getElementById('viewer');
+    const btnRotate = document.getElementById('btn-rotate');
+    const btnReset = document.getElementById('btn-reset');
+    const btnBackdrop = document.getElementById('btn-backdrop');
+    const btnDim = document.getElementById('btn-dim');
+
+    let rotating = true;
+    btnRotate.classList.add('active');
+    btnRotate.addEventListener('click', () => {
+      rotating = !rotating;
+      viewer.autoRotate = rotating;
+      btnRotate.classList.toggle('active', rotating);
+    });
+
+    btnReset.addEventListener('click', () => {
+      viewer.cameraOrbit = '0deg 75deg 105%';
+      viewer.fieldOfView = 'auto';
+    });
+
+    let darkBackdrop = true;
+    btnBackdrop.addEventListener('click', () => {
+      darkBackdrop = !darkBackdrop;
+      viewer.style.background = darkBackdrop
+        ? 'radial-gradient(circle at center, #1b1724 0%, #090a10 70%)'
+        : 'radial-gradient(circle at center, #1e314b 0%, #08101a 70%)';
+    });
+
+    let bright = false;
+    btnDim.addEventListener('click', () => {
+      bright = !bright;
+      viewer.exposure = bright ? 1.7 : 1.15;
+      btnDim.textContent = bright ? 'Cockpit Light (Bright)' : 'Space Light (Normal)';
+    });
+  </script>
+</body>
+</html>

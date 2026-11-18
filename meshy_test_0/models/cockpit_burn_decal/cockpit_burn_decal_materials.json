@@ -1,0 +1,30 @@
+{
+  "model": "cockpit_burn_decal.glb",
+  "baseName": "cockpit_burn_decal",
+  "description": "A translucent blackened burn decal and laser strike impact scorch mark on a sci-fi spaceship cockpit windshield canopy screen. Radial blast burn marks, charred black carbonized soot, melted tempered blast glass, scorched dark edges fading into transparent cracked glass, micro-fractures, intense heat blast epicenter from a high-energy military plasma laser or missile blast impact, translucent glass decal, hard surface sci-fi game asset, PBR realistic, high detail",
+  "exported_at": "2026-11-18T20:00:27+00:00",
+  "destination": "./meshy_test_0/models/cockpit_burn_decal",
+  "textures_directory": "./meshy_test_0/models/cockpit_burn_decal/cockpit_burn_decal_textures",
+  "fallback_textures_directory": "./meshy_yest_0/models/cockpit_burn_decal/cockpit_burn_decal_textures",
+  "materials": {
+    "thumbnail": "./meshy_test_0/models/cockpit_burn_decal/cockpit_burn_decal_textures/thumbnail.png",
+    "texture_0_base_color": "./meshy_test_0/models/cockpit_burn_decal/cockpit_burn_decal_textures/texture_0_base_color.png",
+    "texture_0_metallic": "./meshy_test_0/models/cockpit_burn_decal/cockpit_burn_decal_textures/texture_0_metallic.png",
+    "texture_0_roughness": "./meshy_test_0/models/cockpit_burn_decal/cockpit_burn_decal_textures/texture_0_roughness.png",
+    "texture_0_normal": "./meshy_test_0/models/cockpit_burn_decal/cockpit_burn_decal_textures/texture_0_normal.png"
+  },
+  "companion_files": [
+    "cockpit_burn_decal.fbx",
+    "cockpit_burn_decal.glb",
+    "cockpit_burn_decal.mtl",
+    "cockpit_burn_decal.obj",
+    "cockpit_burn_decal_raw.glb",
+    "final_result.json",
+    "preview_result.json",
+    "texture_0_base_color.png",
+    "texture_0_metallic.png",
+    "texture_0_normal.png",
+    "texture_0_roughness.png",
+    "thumbnail.png"
+  ]
+}

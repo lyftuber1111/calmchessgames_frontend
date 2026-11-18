@@ -16,6 +16,7 @@ DEST_MESHY_TEX_DIR = DEST_MESHY_DIR / f"{MODEL_NAME}_textures"
 DEST_YEST_TEX_DIR = FRONTEND_DIR / "meshy_yest_0" / "models" / MODEL_NAME / f"{MODEL_NAME}_textures"
 
 DEST_MESHY_GLB  = DEST_MESHY_DIR / f"{MODEL_NAME}.glb"
+DEST_BLEND      = DEST_MESHY_DIR / f"{MODEL_NAME}.blend"
 DEST_OBJ        = DEST_MESHY_DIR / f"{MODEL_NAME}.obj"
 DEST_MTL        = DEST_MESHY_DIR / f"{MODEL_NAME}.mtl"
 DEST_JSON       = DEST_MESHY_DIR / f"{MODEL_NAME}_materials.json"
@@ -82,6 +83,14 @@ obj.name = "CyanLaserRod_Root"
 mesh = obj.data
 mesh.name = "CyanLaserRod_Mesh"
 
+# Clear any previous animation and reset object transform to origin
+if obj.animation_data:
+    obj.animation_data_clear()
+
+obj.location = (0.0, 0.0, 0.0)
+obj.rotation_euler = (0.0, 0.0, 0.0)
+obj.scale = (1.0, 1.0, 1.0)
+
 # Select only obj
 bpy.context.view_layer.objects.active = obj
 obj.select_set(True)
@@ -93,8 +102,10 @@ zs = [v.co.z for v in mesh.vertices]
 
 print(f"Imported bounds: X=[{min(xs):.6f}, {max(xs):.6f}], Y=[{min(ys):.6f}, {max(ys):.6f}], Z=[{min(zs):.6f}, {max(zs):.6f}]")
 
-curr_radius_x = max(abs(min(xs)), abs(max(xs)))
-curr_radius_z = max(abs(min(zs)), abs(max(zs)))
+center_x = (min(xs) + max(xs)) / 2.0
+center_z = (min(zs) + max(zs)) / 2.0
+curr_radius_x = (max(xs) - min(xs)) / 2.0
+curr_radius_z = (max(zs) - min(zs)) / 2.0
 scale_factor_x = TARGET_RADIUS / curr_radius_x if curr_radius_x > 0 else 1.0
 scale_factor_z = TARGET_RADIUS / curr_radius_z if curr_radius_z > 0 else 1.0
 
@@ -102,9 +113,9 @@ y_min = min(ys)
 y_max = max(ys)
 
 for v in mesh.vertices:
-    # Scale cross section to exact 0.25m circumference (radius = 0.039789m, width/height = 0.079577m)
-    v.co.x = v.co.x * scale_factor_x
-    v.co.z = v.co.z * scale_factor_z
+    # Center perfectly around (0,0) and scale cross section to exact 0.25m circumference (radius = 0.039789m, diameter = 0.079577m)
+    v.co.x = (v.co.x - center_x) * scale_factor_x
+    v.co.z = (v.co.z - center_z) * scale_factor_z
     
     # Ensure start is strictly at Y=0 and end extends to -LENGTH (-28.0m in Blender)
     # (In glTF export with export_yup=True, Blender -Y corresponds to XR +Z forward)
@@ -117,6 +128,12 @@ for v in mesh.vertices:
         v.co.y = - t * LENGTH
 
 mesh.update()
+
+# Explicitly set 3D cursor and Object Origin (Pivot Point) to exact start end (0, 0, 0)
+bpy.context.scene.cursor.location = (0.0, 0.0, 0.0)
+bpy.context.scene.cursor.rotation_euler = (0.0, 0.0, 0.0)
+bpy.ops.object.origin_set(type='ORIGIN_CURSOR')
+bpy.context.scene.tool_settings.transform_pivot_point = 'CURSOR'
 
 # Recalculate and verify bounds
 xs_new = [v.co.x for v in mesh.vertices]
@@ -200,7 +217,9 @@ chunk0_len, chunk0_type = struct.unpack('<II', glb_data[12:20])
 json_bytes = glb_data[20:20+chunk0_len]
 gltf_json = json.loads(json_bytes.decode('utf-8'))
 
-# Set root node rest scale to [1.0, 1.0, 1.0]
+# Set root node rest transform: translation [0, 0, 0], rotation [0, 0, 0, 1], scale [1, 1, 1]
+gltf_json['nodes'][0]['translation'] = [0.0, 0.0, 0.0]
+gltf_json['nodes'][0]['rotation'] = [0.0, 0.0, 0.0, 1.0]
 gltf_json['nodes'][0]['scale'] = [1.0, 1.0, 1.0]
 
 new_json_bytes = json.dumps(gltf_json, separators=(',', ':')).encode('utf-8')
@@ -235,6 +254,11 @@ bpy.ops.wm.obj_export(
     export_materials=True
 )
 obj.scale = (1.000, 1.000, 1.000)
+
+# Set Blender scene frame to 0 (when rod length is 0.0 and pivot is at 0,0,0) and save .blend file
+bpy.context.scene.frame_set(0)
+bpy.context.scene.frame_current = 0
+bpy.ops.wm.save_as_mainfile(filepath=str(DEST_BLEND))
 
 # Copy texture assets into cyan_laser_rod_4_textures directories
 src_tex_dir = FRONTEND_DIR / "meshy_test_0" / "models" / "cyan_laser_rod_2" / "cyan_laser_rod_2_textures"
@@ -307,6 +331,7 @@ materials_data = {
     ],
     "companion_files": [
         f"{MODEL_NAME}.glb",
+        f"{MODEL_NAME}.blend",
         f"{MODEL_NAME}.obj",
         f"{MODEL_NAME}.mtl",
         f"{MODEL_NAME}_materials.json",

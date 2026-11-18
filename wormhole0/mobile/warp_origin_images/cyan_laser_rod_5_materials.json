@@ -1,0 +1,141 @@
+{
+    "model": "cyan_laser_rod_5.glb",
+    "base_name": "cyan_laser_rod_5",
+    "exported_at": "2026-11-18T09:25:00.000Z",
+    "specifications": {
+        "diameter_meters": 0.125,
+        "radius_meters": 0.0625,
+        "circumference_meters": 0.392699,
+        "width_meters": 0.125,
+        "height_meters": 0.125,
+        "start_length_meters": 0.1,
+        "expansion_length_meters": 28.9,
+        "total_length_meters": 29.0,
+        "base_dimensions": {
+            "diameter": 0.125,
+            "circumference": 0.392699,
+            "width": 0.125,
+            "height": 0.125,
+            "length": 29.0
+        },
+        "user_camera": {
+            "name": "User_Camera",
+            "position": [
+                0.0,
+                0.0,
+                29.25
+            ],
+            "target": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "forward_vector": [
+                0.0,
+                0.0,
+                -1.0
+            ],
+            "distance_meters": 29.25,
+            "strike_point_distance_to_camera_meters": 0.25,
+            "fov_lens_mm": 35,
+            "description": "User player camera positioned at +Z 29.25m looking directly down -Z at the origin (0, 0, 0). The laser rod expands 28.9m from start length 0.1m to 29.0m down +Z over 0.8s, arriving at exactly 0.25m in front of the player camera lens."
+        },
+        "blender_coordinates": {
+            "pivot_point": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "start_coordinate": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "end_coordinate": [
+                0.0,
+                0.0,
+                29.0
+            ],
+            "forward_axis": "+Z (Blender +Z forward/length axis)",
+            "diameter_meters": 0.125,
+            "cross_section_width_x": 0.125,
+            "cross_section_height_y": 0.125,
+            "both_ends_capped": true
+        },
+        "xr_gltf_coordinates": {
+            "pivot_point": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "start_coordinate": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "end_coordinate": [
+                0.0,
+                0.0,
+                29.0
+            ],
+            "forward_axis": "+Z (XR / glTF Forward)",
+            "diameter_meters": 0.125,
+            "cross_section_width_x": 0.125,
+            "cross_section_height_y": 0.125,
+            "both_ends_capped": true
+        },
+        "animation": {
+            "name": "Laser_Flight_Extension",
+            "blender_extension_axis": "+Z",
+            "xr_extension_axis": "+Z",
+            "duration_seconds": 0.8,
+            "fps": 30,
+            "total_frames": 24,
+            "base_scale": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.1m (t=0.00s, scale=[1,1,0.00344828]) at origin (0, 0, 0) and extends continuously by 28.9m to 29.0m (t=0.80s, scale=[1,1,1]) down +Z axis, with its front point reaching 0.25m in front of the player camera at (0, 0, 29.25)"
+        },
+        "normals_and_uvs": {
+            "normals": "Recalculated outward with consistent face orientations, shaded smooth by angle (60 deg) for seamless cylinder body and crisp planar caps, exported with vertex split normals and MikkTSpace tangents",
+            "uvs": "Verified cylindrical UV unwrap with seamless U mapping [0, 1] across circumference and V [0, 1] along 29m length, with radial cap unwrapping centered at (0.5, 0.5)"
+        }
+    },
+    "color_palette": [
+        "#FFFFFF",
+        "#00F8FF"
+    ],
+    "materials": [
+        {
+            "name": "Material_Cyan_Laser",
+            "type": "MeshStandardMaterial",
+            "color": "#FFFFFF",
+            "emissive": "#00F8FF",
+            "roughness": 0.15,
+            "metalness": 0.85,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": {
+                "base_color": "texture_0_base_color",
+                "normal": "texture_0_normal",
+                "roughness": "texture_0_metallicRoughness",
+                "metallic": "texture_0_metallicRoughness"
+            }
+        }
+    ],
+    "companion_files": [
+        "cyan_laser_rod_5.glb",
+        "cyan_laser_rod_5.blend",
+        "cyan_laser_rod_5.obj",
+        "cyan_laser_rod_5.mtl",
+        "cyan_laser_rod_5_materials.json",
+        "cyan_laser_rod_5_textures/texture_0_base_color.png",
+        "cyan_laser_rod_5_textures/texture_0_emissive.png",
+        "cyan_laser_rod_5_textures/texture_0_metallic.png",
+        "cyan_laser_rod_5_textures/texture_0_normal.png",
+        "cyan_laser_rod_5_textures/texture_0_roughness.png",
+        "cyan_laser_rod_5_textures/thumbnail.png"
+    ]
+}

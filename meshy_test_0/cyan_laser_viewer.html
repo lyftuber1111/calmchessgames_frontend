@@ -153,9 +153,9 @@
     <div class="viewer-card">
       <model-viewer
         id="laser-viewer"
-        src="models/cyan_laser_rod_4/cyan_laser_rod_4.glb"
-        alt="Animated Cyan Laser Rod 4"
-        poster="models/cyan_laser_rod_4/cyan_laser_rod_4_textures/thumbnail.png"
+        src="models/cyan_laser_rod_5/cyan_laser_rod_5.glb"
+        alt="Animated Cyan Laser Rod 5"
+        poster="models/cyan_laser_rod_5/cyan_laser_rod_5_textures/thumbnail.png"
         auto-rotate
         camera-controls
         autoplay
@@ -163,45 +163,46 @@
         shadow-intensity="1"
         exposure="1.2"
         tone-mapping="neutral"
-        camera-orbit="45deg 75deg 32m"
+        camera-orbit="45deg 75deg 35m"
         field-of-view="35deg">
       </model-viewer>
     </div>
 
     <div class="stats-grid">
       <div class="stat-box">
-        <span class="stat-label">Circumference &amp; Diameter</span>
-        <span class="stat-val">C = 0.25 m (d &asymp; 0.0796 m)</span>
-        <span class="stat-sub">Radius = 0.03979 m across X &amp; Y axes</span>
+        <span class="stat-label">Diameter &amp; Radius</span>
+        <span class="stat-val">d = 0.125 m (r = 0.0625 m)</span>
+        <span class="stat-sub">Circumference &asymp; 0.3927 m across X &amp; Y axes</span>
       </div>
 
       <div class="stat-box">
         <span class="stat-label">Origin &amp; Base Scale</span>
         <span class="stat-val">Starts +Z 0 &bull; Scale [1, 1, 1]</span>
-        <span class="stat-sub">+Z forward along length axis</span>
+        <span class="stat-sub">+Z forward &bull; +Y up &bull; +X right</span>
       </div>
 
       <div class="stat-box">
-        <span class="stat-label">Length &amp; Camera Strike Point</span>
-        <span class="stat-val">28.0 m &bull; Point 0.25 m from Camera</span>
-        <span class="stat-sub">Camera at +Z 28.25m, tip arrives at +Z 28.0m</span>
+        <span class="stat-label">Length &amp; Expansion</span>
+        <span class="stat-val">0.1 m &rarr; 29.0 m (+28.9 m)</span>
+        <span class="stat-sub">Pivot at (0,0,0), camera at +Z 29.25m (strike 0.25m)</span>
       </div>
 
       <div class="stat-box">
         <span class="stat-label">Animation Duration</span>
         <span class="stat-val">0.80 Seconds (24 frames @ 30 FPS)</span>
-        <span class="stat-sub">Linear expansion from 0m to 28m</span>
+        <span class="stat-sub">Linear expansion along +Z axis</span>
       </div>
     </div>
 
     <div style="width:100%; display:flex; justify-content:center; flex-wrap:wrap; gap:0.75rem; margin-top:1rem;">
-      <button class="btn" onclick="loadModel('models/cyan_laser_rod_4/cyan_laser_rod_4.glb', 'models/cyan_laser_rod_4/cyan_laser_rod_4_textures/thumbnail.png', 'Cyan Laser Rod 4 (28m, C: 0.25m, Strike: 0.25m)')">⚡ Load Rod 4 (28m Strike Point)</button>
+      <button class="btn" onclick="loadModel('models/cyan_laser_rod_5/cyan_laser_rod_5.glb', 'models/cyan_laser_rod_5/cyan_laser_rod_5_textures/thumbnail.png', 'Cyan Laser Rod 5 (0.1m to 29m, d: 0.125m, Strike: 0.25m)')">⚡ Load Rod 5 (29m / d: 0.125m)</button>
+      <button class="btn" onclick="loadModel('models/cyan_laser_rod_4/cyan_laser_rod_4.glb', 'models/cyan_laser_rod_4/cyan_laser_rod_4_textures/thumbnail.png', 'Cyan Laser Rod 4 (28m, C: 0.25m, Strike: 0.25m)')">Load Rod 4 (28m)</button>
       <button class="btn" onclick="loadModel('models/cyan_laser_rod/cyan_laser_rod.glb', 'models/cyan_laser_rod/cyan_laser_rod_textures/thumbnail.png', 'Cyan Laser Rod (23.8m)')">Load Rod 1 (23.8m)</button>
       <button class="btn" onclick="document.getElementById('laser-viewer').play()">▶ Play</button>
       <button class="btn" onclick="document.getElementById('laser-viewer').pause()">⏸ Pause</button>
-      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '90deg 90deg 35m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 14m'">Side View (Full 28m)</button>
-      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '0deg 0deg 32m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 14m'">Front View (+Z)</button>
-      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '180deg 90deg 0.25m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 28m'">🎯 Player Camera Strike POV (0.25m)</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '90deg 90deg 35m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 14.5m'">Side View (Full 29m)</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '0deg 0deg 35m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 14.5m'">Front View (+Z)</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '180deg 90deg 0.25m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 29m'">🎯 Player Camera Strike POV (0.25m)</button>
     </div>
   </main>
 

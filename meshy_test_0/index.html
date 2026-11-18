@@ -1790,6 +1790,12 @@
       border-color: #ff4466;
       color: #fff;
     }
+    .decal-mesh-btn.spiderweb.active {
+      background: rgba(123, 197, 254, 0.22);
+      border-color: #7bc5fe;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(123, 197, 254, 0.35);
+    }
     .decal-indicator-dot {
       width: 7px;
       height: 7px;
@@ -1809,6 +1815,10 @@
     .decal-mesh-btn.strike.active .decal-indicator-dot {
       background: #ff3344;
       box-shadow: 0 0 6px #ff3344;
+    }
+    .decal-mesh-btn.spiderweb.active .decal-indicator-dot {
+      background: #7bc5fe;
+      box-shadow: 0 0 6px #7bc5fe;
     }
   </style>
 
@@ -1996,6 +2006,7 @@
             <option value="models/phase_interceptor_2/phase_interceptor_2.obj">models/phase_interceptor_2/phase_interceptor_2.obj (OBJ)</option>
             <option value="models/red_race_car.fbx">models/red_race_car.fbx (FBX)</option>
             <option value="models/red_race_car.stl">models/red_race_car.stl (STL)</option>
+            <option value="models/screen_decals_spider_web_overlay_4/screen_decals_spider_web_overlay_4.glb">models/screen_decals_spider_web_overlay_4/screen_decals_spider_web_overlay_4.glb (Broken Spider Web GLB)</option>
             <option value="models/screen_decals_overlay_3/screen_decals_overlay_3.glb">models/screen_decals_overlay_3/screen_decals_overlay_3.glb (No Radiating Lines GLB)</option>
             <option value="models/screen_decals__overlay_2/screen_decals_overlay_2.glb">models/screen_decals__overlay_2/screen_decals_overlay_2.glb (Starburst Decals GLB)</option>
             <option value="models/screen_overlay_1/screen_overlay_1.glb">models/screen_overlay_1/screen_overlay_1.glb (.005m Frame Overlay GLB)</option>
@@ -2607,6 +2618,9 @@
               No 3D model containing decals is currently loaded. Select or load a 3D model containing decals to control its decals:
             </div>
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="decal-quick-load-row">
+              <button type="button" class="btn btn-sm" id="btn-decal-load-overlay4" style="border-color: #00f0ff; color: #00f0ff;" title="Load screen_decals_spider_web_overlay_4.glb into viewer">
+                <span>🕸️</span> <span>Load Overlay 4 (Spider Web)</span>
+              </button>
               <button type="button" class="btn btn-sm" id="btn-decal-load-overlay3" style="border-color: #00ffaa; color: #00ffaa;" title="Load screen_decals_overlay_3.glb into viewer">
                 <span>✨</span> <span>Load Overlay 3 (No Lines)</span>
               </button>
@@ -2625,6 +2639,9 @@
             <div class="btn-row" style="flex-wrap: wrap;">
               <button id="btn-decal-toggle-all" class="btn active" type="button">
                 <span>🛡️</span> <span id="label-decal-all">All Decals: ON</span>
+              </button>
+              <button id="btn-decal-toggle-spiderweb" class="btn active" type="button" style="border-color: #7bc5fe;">
+                <span>🕸️</span> <span id="label-decal-spiderweb">Spider Web: ON</span>
               </button>
               <button id="btn-decal-toggle-burns" class="btn active" type="button" style="border-color: #ff9933;">
                 <span>🔥</span> <span id="label-decal-burns">Laser Burns (8): ON</span>
@@ -2666,7 +2683,12 @@
               <span id="decal-individual-count" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">0 / 0 Decals</span>
             </div>
             
-            <div style="font-size: 0.74rem; font-weight: 600; color: #ff9933; margin-bottom: 0.25rem;">LASER BURNS (SCORCH CRATERS)</div>
+            <div style="font-size: 0.74rem; font-weight: 600; color: #7bc5fe; margin-bottom: 0.25rem;">🕸️ BROKEN SPIDER WEB (FULL-SCREEN HUD OVERLAY)</div>
+            <div class="decal-toggle-grid" id="decal-spiderweb-grid">
+              <!-- Dynamically populated -->
+            </div>
+
+            <div style="font-size: 0.74rem; font-weight: 600; color: #ff9933; margin-top: 0.6rem; margin-bottom: 0.25rem;">LASER BURNS (SCORCH CRATERS)</div>
             <div class="decal-toggle-grid" id="decal-burns-grid">
               <!-- Dynamically populated -->
             </div>
@@ -6456,13 +6478,14 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
     // =========================================================================
     const DECAL_CONFIG = {
       allEnabled: true,
+      spiderWebEnabled: true,
       burnsEnabled: true,
       strikesEnabled: true,
       opacity: 1.0
     };
 
     // Store detected decal meshes from the currently loaded model (carModel)
-    let loadedDecalMeshes = []; // Array of { mesh, name, type: 'burn'|'strike'|'other', initialOpacity }
+    let loadedDecalMeshes = []; // Array of { mesh, name, type: 'spiderweb'|'burn'|'strike'|'other', initialOpacity }
     const individualDecalMap = new Map(); // meshName/uuid -> boolean (visible)
 
     // Scan the loaded carModel to discover all decal meshes
@@ -6475,12 +6498,13 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
           if (child.isMesh) {
             const name = child.name || '';
             const lower = name.toLowerCase();
+            const isSpiderWeb = name.includes('SpiderWeb') || lower.includes('spider') || lower.includes('web');
             const isBurn = name.startsWith('Decal_LaserBurn_') || lower.includes('laserburn') || lower.includes('burn');
             const isStrike = name.startsWith('Decal_MissileStrike_') || lower.includes('missilestrike') || lower.includes('strike') || lower.includes('blast');
-            const isOtherDecal = !isBurn && !isStrike && (lower.includes('decal') || lower.includes('scorch') || lower.includes('soot') || lower.includes('impact'));
+            const isOtherDecal = !isSpiderWeb && !isBurn && !isStrike && (lower.includes('decal') || lower.includes('scorch') || lower.includes('soot') || lower.includes('impact'));
 
-            if (isBurn || isStrike || isOtherDecal) {
-              const type = isBurn ? 'burn' : (isStrike ? 'strike' : 'other');
+            if (isSpiderWeb || isBurn || isStrike || isOtherDecal) {
+              const type = isSpiderWeb ? 'spiderweb' : (isBurn ? 'burn' : (isStrike ? 'strike' : 'other'));
               const key = name || `Decal_Mesh_${child.id}`;
               individualDecalMap.set(key, child.visible !== false);
 
@@ -6521,6 +6545,7 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
         const { mesh, name, type } = item;
         let visible = DECAL_CONFIG.allEnabled;
         if (visible) {
+          if (type === 'spiderweb' && !DECAL_CONFIG.spiderWebEnabled) visible = false;
           if (type === 'burn' && !DECAL_CONFIG.burnsEnabled) visible = false;
           if (type === 'strike' && !DECAL_CONFIG.strikesEnabled) visible = false;
           if (individualDecalMap.has(name) && !individualDecalMap.get(name)) visible = false;
@@ -6618,6 +6643,13 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
       if (btnQuickAll) btnQuickAll.classList.toggle('active', DECAL_CONFIG.allEnabled && totalFound > 0);
       if (labelQuickAll) labelQuickAll.textContent = DECAL_CONFIG.allEnabled ? 'All: ON' : 'All: OFF';
 
+      // Spider Web button
+      const webCount = loadedDecalMeshes.filter(m => m.type === 'spiderweb').length;
+      const btnWeb = document.getElementById('btn-decal-toggle-spiderweb');
+      const labelWeb = document.getElementById('label-decal-spiderweb');
+      if (btnWeb) btnWeb.classList.toggle('active', DECAL_CONFIG.spiderWebEnabled && webCount > 0);
+      if (labelWeb) labelWeb.textContent = `Spider Web (${webCount}): ${DECAL_CONFIG.spiderWebEnabled ? 'ON' : 'OFF'}`;
+
       // Burns button
       const burnCount = loadedDecalMeshes.filter(m => m.type === 'burn').length;
       const btnBurns = document.getElementById('btn-decal-toggle-burns');
@@ -6649,7 +6681,8 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
           const item = loadedDecalMeshes.find(m => m.name === name);
           const type = item ? item.type : 'other';
           const effectiveVisible = DECAL_CONFIG.allEnabled && isVisible &&
-            ((type === 'burn' ? DECAL_CONFIG.burnsEnabled : true) &&
+            ((type === 'spiderweb' ? DECAL_CONFIG.spiderWebEnabled : true) &&
+             (type === 'burn' ? DECAL_CONFIG.burnsEnabled : true) &&
              (type === 'strike' ? DECAL_CONFIG.strikesEnabled : true));
           btn.classList.toggle('active', effectiveVisible);
         }
@@ -6658,22 +6691,45 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
 
     // Build Individual Decals Buttons in Grid dynamically for the loaded model
     function populateDecalsGrid(displayName = '') {
+      const spiderwebGrid = document.getElementById('decal-spiderweb-grid');
       const burnsGrid = document.getElementById('decal-burns-grid');
       const strikesGrid = document.getElementById('decal-strikes-grid');
-      if (!burnsGrid || !strikesGrid) return;
-
-      burnsGrid.innerHTML = '';
-      strikesGrid.innerHTML = '';
+      if (spiderwebGrid) spiderwebGrid.innerHTML = '';
+      if (burnsGrid) burnsGrid.innerHTML = '';
+      if (strikesGrid) strikesGrid.innerHTML = '';
 
       if (loadedDecalMeshes.length === 0) {
         const emptyMsg = `<div style="grid-column: 1/-1; padding: 12px; text-align: center; color: var(--text-muted); font-size: 0.74rem;">${displayName ? 'No decal meshes found in ' + displayName : 'No 3D model loaded.'}</div>`;
-        burnsGrid.innerHTML = emptyMsg;
-        strikesGrid.innerHTML = emptyMsg;
+        if (spiderwebGrid) spiderwebGrid.innerHTML = emptyMsg;
+        if (burnsGrid) burnsGrid.innerHTML = emptyMsg;
+        if (strikesGrid) strikesGrid.innerHTML = emptyMsg;
         return;
       }
 
-      const burns = loadedDecalMeshes.filter(m => m.type === 'burn' || m.type === 'other');
+      const spiderwebs = loadedDecalMeshes.filter(m => m.type === 'spiderweb');
+      const burns = loadedDecalMeshes.filter(m => m.type === 'burn' || (m.type === 'other' && !m.name.includes('SpiderWeb')));
       const strikes = loadedDecalMeshes.filter(m => m.type === 'strike');
+
+      if (spiderwebGrid) {
+        if (spiderwebs.length === 0) {
+          spiderwebGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 8px; text-align: center; color: var(--text-muted); font-size: 0.74rem;">No spider web decals in loaded model</div>`;
+        } else {
+          spiderwebs.forEach((item, idx) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.id = `btn-mesh-${item.name}`;
+            btn.className = 'decal-mesh-btn spiderweb active';
+            const shortName = item.name.replace(/^Decal_BrokenSpiderWeb_/, 'Web ').replace(/^Decal_/, '').replace(/_/g, ' ');
+            btn.innerHTML = `<span title="${item.name}">🕸️ ${shortName || ('Web ' + (idx + 1))}</span><span class="decal-indicator-dot"></span>`;
+            btn.onclick = () => {
+              const current = individualDecalMap.get(item.name) !== false;
+              individualDecalMap.set(item.name, !current);
+              applyDecalsVisibility();
+            };
+            spiderwebGrid.appendChild(btn);
+          });
+        }
+      }
 
       if (burns.length === 0) {
         burnsGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 8px; text-align: center; color: var(--text-muted); font-size: 0.74rem;">No laser burn decals in loaded model</div>`;
@@ -6717,6 +6773,15 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
     // Wire Event Listeners
     function setupDecalsListeners() {
       // Quick Load Buttons inside Decals Tab
+      document.getElementById('btn-decal-load-overlay4')?.addEventListener('click', () => {
+        loadModel(
+          'models/screen_decals_spider_web_overlay_4/screen_decals_spider_web_overlay_4.glb',
+          '',
+          'screen_decals_spider_web_overlay_4.glb',
+          'meshy_test_0/models/screen_decals_spider_web_overlay_4/screen_decals_spider_web_overlay_4.glb'
+        );
+      });
+
       document.getElementById('btn-decal-load-overlay3')?.addEventListener('click', () => {
         loadModel(
           'models/screen_decals_overlay_3/screen_decals_overlay_3.glb',
@@ -6753,6 +6818,19 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
         DECAL_CONFIG.allEnabled = !DECAL_CONFIG.allEnabled;
         applyDecalsVisibility();
       };
+      document.getElementById('btn-decal-toggle-all')?.addEventListener('click', toggleAll);
+      document.getElementById('btn-quick-decal-toggle-all')?.addEventListener('click', toggleAll);
+
+      // Spider Web toggle
+      const toggleSpiderWeb = () => {
+        if (loadedDecalMeshes.length === 0) {
+          showToast('No decal model loaded.');
+          return;
+        }
+        DECAL_CONFIG.spiderWebEnabled = !DECAL_CONFIG.spiderWebEnabled;
+        applyDecalsVisibility();
+      };
+      document.getElementById('btn-decal-toggle-spiderweb')?.addEventListener('click', toggleSpiderWeb);
       document.getElementById('btn-decal-toggle-all')?.addEventListener('click', toggleAll);
       document.getElementById('btn-quick-decal-toggle-all')?.addEventListener('click', toggleAll);
 

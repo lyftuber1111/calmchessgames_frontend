@@ -1,0 +1,76 @@
+{
+  "model": "screen_overlay_1.glb",
+  "baseName": "screen_overlay_1",
+  "description": "Blender-modeled translucent clear full screen overlay with 0.005m thick frame and solid front and back panels for XR mobile games, 16:9 widescreen aspect ratio (1.60m x 0.90m x 0.005m depth), optical clarity glass viewport with alphaMode BLEND, solid titanium frame and obsidian front/back panels, cyan holographic chevrons and telemetry guides.",
+  "engine": "Blender 5.2.0 LTS",
+  "exported_at": "2026-11-18T19:30:00+00:00",
+  "dimensions": {
+    "width_meters": 1.60,
+    "height_meters": 0.90,
+    "thickness_meters": 0.005,
+    "aspect_ratio": "16:9",
+    "frame_thickness": 0.005
+  },
+  "destination": "./meshy_test_0/models/screen_overlay_1",
+  "textures_directory": "./meshy_test_0/models/screen_overlay_1/screen_overlay_1_textures",
+  "fallback_textures_directory": "./meshy_yest_0/models/screen_overlay_1/screen_overlay_1_textures",
+  "materials": {
+    "thumbnail": "./meshy_test_0/models/screen_overlay_1/screen_overlay_1_textures/thumbnail.png",
+    "texture_0_base_color": "./meshy_test_0/models/screen_overlay_1/screen_overlay_1_textures/texture_0_base_color.png",
+    "texture_0_metallic": "./meshy_test_0/models/screen_overlay_1/screen_overlay_1_textures/texture_0_metallic.png",
+    "texture_0_roughness": "./meshy_test_0/models/screen_overlay_1/screen_overlay_1_textures/texture_0_roughness.png",
+    "texture_0_normal": "./meshy_test_0/models/screen_overlay_1/screen_overlay_1_textures/texture_0_normal.png"
+  },
+  "components": [
+    {
+      "name": "Translucent_Clear_Screen",
+      "material": "M_Translucent_Clear_Glass",
+      "type": "Optical Glass / Polycarbonate Visor",
+      "alpha_mode": "BLEND",
+      "opacity": 0.22,
+      "transmission": 0.95,
+      "roughness": 0.03
+    },
+    {
+      "name": "Frame_005m_Thick",
+      "material": "M_Solid_Frame",
+      "type": "Aerospace Titanium / Composite Frame",
+      "thickness_meters": 0.005,
+      "metallic": 0.85,
+      "roughness": 0.28
+    },
+    {
+      "name": "Solid_Front_Panel",
+      "material": "M_Solid_Front_Panel",
+      "type": "Obsidian Cyber Bezel & Top/Bottom Bars",
+      "metallic": 0.75,
+      "roughness": 0.22
+    },
+    {
+      "name": "Solid_Back_Panel",
+      "material": "M_Solid_Back_Panel",
+      "type": "Structural Rear Casing & Lugs",
+      "metallic": 0.65,
+      "roughness": 0.35
+    },
+    {
+      "name": "Cyan_Accents",
+      "material": "M_Cyan_Accent",
+      "type": "Emissive Holographic Targeting Chevrons & HUD Lines",
+      "emission_color": [0.0, 0.94, 1.0],
+      "emission_strength": 3.0
+    }
+  ],
+  "companion_files": [
+    "screen_overlay_1.blend",
+    "screen_overlay_1.glb",
+    "screen_overlay_1.obj",
+    "screen_overlay_1.mtl",
+    "screen_overlay_1_materials.json",
+    "texture_0_base_color.png",
+    "texture_0_metallic.png",
+    "texture_0_normal.png",
+    "texture_0_roughness.png",
+    "thumbnail.png"
+  ]
+}

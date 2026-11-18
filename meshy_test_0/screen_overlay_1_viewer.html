@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XR Mobile Game - Screen Overlay 1 (.005m Frame + Solid Panels)</title>
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+  <style>
+    :root {
+      --bg: #07090e;
+      --card-bg: rgba(13, 17, 26, 0.88);
+      --accent-cyan: #00f0ff;
+      --accent-glow: rgba(0, 240, 255, 0.45);
+      --text: #f0f6fc;
+      --text-muted: #8b949e;
+      --border: rgba(0, 240, 255, 0.22);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: radial-gradient(circle at 50% 25%, #0f1c2e 0%, #05070a 100%);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+    header {
+      padding: 1rem 1.75rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      background: rgba(7, 9, 14, 0.85);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .title-group h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .badge {
+      font-size: 0.72rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      background: rgba(0, 240, 255, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid var(--accent-cyan);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.5rem;
+      gap: 1.5rem;
+    }
+    @media (max-width: 900px) {
+      main { grid-template-columns: 1fr; }
+    }
+    .viewport-panel {
+      position: relative;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 560px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      min-height: 540px;
+      background-color: transparent;
+      --poster-color: transparent;
+    }
+    .hud-overlay {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      z-index: 5;
+    }
+    .hud-tag {
+      background: rgba(0, 240, 255, 0.15);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      padding: 0.3rem 0.7rem;
+      font-size: 0.75rem;
+      border-radius: 6px;
+      font-family: monospace;
+      letter-spacing: 0.5px;
+    }
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .card h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.84rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .info-row span:first-child { color: var(--text-muted); }
+    .info-row span:last-child { color: var(--text); font-weight: 500; font-family: monospace; }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .btn {
+      padding: 0.65rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(0, 240, 255, 0.08);
+      color: var(--accent-cyan);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      transition: all 0.2s ease;
+      display: inline-block;
+    }
+    .btn:hover {
+      background: rgba(0, 240, 255, 0.2);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+    .component-pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 0.2rem 0.5rem;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 4px;
+      margin: 0.15rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="title-group">
+      <h1>XR Mobile Screen Overlay 1</h1>
+      <span class="badge">Blender 5.2.0 PBR Asset</span>
+    </div>
+    <div style="font-size: 0.85rem; color: var(--accent-cyan); font-family: monospace;">
+      0.005m Frame | Solid Front/Back Panels | Translucent Screen
+    </div>
+  </header>
+
+  <main>
+    <section class="viewport-panel">
+      <div class="hud-overlay">
+        <span class="hud-tag">STATUS: 0.005m FRAME ACTIVE</span>
+        <span class="hud-tag">SOLID PANELS: FRONT + BACK ENGAGED</span>
+        <span class="hud-tag">VIEWPORT: OPTICAL CLEAR TRANSLUCENT (BLEND)</span>
+      </div>
+
+      <model-viewer
+        id="viewer"
+        src="./models/screen_overlay_1/screen_overlay_1.glb"
+        alt="Translucent clear full screen overlay with .005m thick frame and solid front and back panels for XR mobile game"
+        camera-controls
+        auto-rotate
+        rotation-per-second="15deg"
+        touch-action="pan-y"
+        shadow-intensity="0.6"
+        exposure="1.0"
+        ar
+        ar-modes="webxr scene-viewer quick-look">
+      </model-viewer>
+    </section>
+
+    <aside class="sidebar">
+      <div class="card">
+        <h3>Model Specifications</h3>
+        <div class="info-row">
+          <span>Asset Name:</span>
+          <span>screen_overlay_1.glb</span>
+        </div>
+        <div class="info-row">
+          <span>Model Path:</span>
+          <span>./meshy_test_0/models/screen_overlay_1/screen_overlay_1.glb</span>
+        </div>
+        <div class="info-row">
+          <span>Frame Thickness:</span>
+          <span>0.005 m (5 mm)</span>
+        </div>
+        <div class="info-row">
+          <span>Dimensions:</span>
+          <span>1.60m &times; 0.90m &times; 0.005m</span>
+        </div>
+        <div class="info-row">
+          <span>Aspect Ratio:</span>
+          <span>16:9 Widescreen (XR Mobile)</span>
+        </div>
+        <div class="info-row">
+          <span>Alpha Mode:</span>
+          <span>BLEND (Translucent Clear)</span>
+        </div>
+        <div class="info-row">
+          <span>Authoring Tool:</span>
+          <span>Blender 5.2.0 LTS</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Engine Components</h3>
+        <div>
+          <span class="component-pill">Frame_005m_Thick</span>
+          <span class="component-pill">Translucent_Clear_Screen</span>
+          <span class="component-pill">Solid_Front_Panel</span>
+          <span class="component-pill">Solid_Back_Panel</span>
+          <span class="component-pill">Cyan_Accents</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Asset Downloads & Links</h3>
+        <div class="btn-group">
+          <a class="btn" href="./models/screen_overlay_1/screen_overlay_1.glb" download>Download screen_overlay_1.glb</a>
+          <a class="btn" href="./models/screen_overlay_1/screen_overlay_1.blend" download>Download screen_overlay_1.blend</a>
+          <a class="btn" href="./models/screen_overlay_1/screen_overlay_1.obj" download>Download Wavefront .OBJ/.MTL</a>
+          <a class="btn" href="./models/screen_overlay_1/screen_overlay_1_materials.json" target="_blank">View Materials Metadata JSON</a>
+          <a class="btn" href="./overlay_viewer.html">Compare with Meshy Base Overlay</a>
+        </div>
+      </div>
+    </aside>
+  </main>
+</body>
+</html>

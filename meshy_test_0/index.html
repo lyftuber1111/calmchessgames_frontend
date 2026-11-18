@@ -1860,7 +1860,7 @@
   <!-- UI Top Header Overlay -->
   <header>
     <div class="brand">
-      <h1 id="brand-title">🏎️ Meshy 3D Viewer</h1>
+      <h1 id="brand-title">Meshy 3D Viewer</h1>
       <span class="pill">WebXR Studio</span>
     </div>
     <div class="nav-links-pills">
@@ -1978,7 +1978,7 @@
         <div class="input-group">
           <label for="model-file-input">Model File Name / Path (meshy_test_0/ or models/)</label>
           <div class="input-with-action">
-            <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/red_race_car.glb or red_race_car.glb" value="models/red_race_car.glb" spellcheck="false" autocomplete="off" />
+            <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/screen_decals_overlay_3/screen_decals_overlay_3.glb or browse" value="" spellcheck="false" autocomplete="off" />
             <label for="local-file-picker" class="btn-icon" title="Browse 3D file, materials & textures from meshy_test_0/models or device">
               <span>📁 Browse</span>
               <input type="file" id="local-file-picker" accept=".glb,.gltf,.obj,.mtl,.bin,.fbx,.stl,.png,.jpg,.jpeg,.webp" multiple style="display:none;" />
@@ -2037,7 +2037,7 @@
           </select>
         </div>
 
-        <div id="model-load-msg" class="model-msg">Current: models/red_race_car.glb</div>
+        <div id="model-load-msg" class="model-msg">No model loaded. Choose a 3D model above or click Browse.</div>
 
         <!-- Divider -->
         <div class="section-divider"></div>
@@ -2058,10 +2058,10 @@
         <div class="loaded-asset-badge">
           <span id="loaded-asset-icon" style="font-size:1.4rem;">🧊</span>
           <div style="flex:1; min-width:0;">
-            <div id="loaded-asset-name" style="font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">red_race_car.glb</div>
-            <div id="loaded-asset-source" style="font-size:0.68rem; color:var(--text-muted);">Source: meshy_test_0/models/red_race_car.glb</div>
+            <div id="loaded-asset-name" style="font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">No 3D Model Loaded</div>
+            <div id="loaded-asset-source" style="font-size:0.68rem; color:var(--text-muted);">Source: None</div>
           </div>
-          <span class="badge-format" id="loaded-asset-ext">GLB</span>
+          <span class="badge-format" id="loaded-asset-ext">-</span>
         </div>
 
         <!-- Materials, Textures & Colors Inspection & Move Options -->
@@ -2108,7 +2108,7 @@
           <div class="move-options-row">
             <label class="checkbox-option">
               <input type="checkbox" id="chk-move-primary-model" checked disabled />
-              <span>✓ Move Primary 3D Model (<span id="model-move-primary-name">red_race_car.glb</span>)</span>
+              <span>✓ Move Primary 3D Model (<span id="model-move-primary-name">No Model</span>)</span>
             </label>
             <label class="checkbox-option">
               <input type="checkbox" id="chk-move-materials-textures" checked />
@@ -2116,7 +2116,7 @@
             </label>
             <label class="checkbox-option">
               <input type="checkbox" id="chk-move-colors-json" checked />
-              <span>✓ Move Material Colors Config (<span id="json-model-basename">red_race_car</span>_materials.json)</span>
+              <span>✓ Move Material Colors Config (<span id="json-model-basename">model</span>_materials.json)</span>
             </label>
           </div>
         </div>
@@ -2126,7 +2126,7 @@
           <label for="panel-dest-path-input">Destination Path (Starting from calmchessgames.com root)</label>
           <div class="dest-input-wrap">
             <span class="dest-prefix">calmchessgames.com/</span>
-            <input type="text" id="panel-dest-path-input" value="wormhole0/warp_origin_images/red_race_car.glb" placeholder="wormhole0/warp_origin_images/red_race_car.glb" autocomplete="off" />
+            <input type="text" id="panel-dest-path-input" value="" placeholder="e.g. wormhole0/warp_origin_images/model.glb" autocomplete="off" />
           </div>
         </div>
 
@@ -2310,7 +2310,7 @@
           <div class="controls-subgroup" id="decals-quick-controls-group">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span class="subgroup-title">💥 Screen Decals &amp; Damage</span>
-              <span id="quick-decal-status" style="font-size: 0.72rem; color: #00ffaa; font-weight: 600;">Active (16 Decals)</span>
+              <span id="quick-decal-status" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">No Decals Loaded</span>
             </div>
             <div class="btn-row" style="flex-wrap: wrap;">
               <button id="btn-quick-decal-toggle-all" class="btn active" type="button" title="Toggle all decals on or off">
@@ -2593,30 +2593,28 @@
             <div style="font-weight: 700; color: #fff; font-size: 0.95rem;">XR Screen Decals &amp; Damage Settings</div>
             <div class="section-subtitle">Toggle laser burns, missile strikes, and full-screen overlays</div>
           </div>
-          <span class="card-badge" id="decal-status-badge" style="background: rgba(0, 255, 170, 0.15); color: #00ffaa; border-color: #00ffaa;">16 Active</span>
+          <span class="card-badge" id="decal-status-badge" style="background: rgba(255, 255, 255, 0.08); color: #94a3b8; border-color: #475569;">0 Decals</span>
         </div>
 
         <div class="controls-grid">
-          <!-- 1. Overlay Mounting & Viewport Mode -->
+          <!-- 1. Loaded Model Target & Decal Status -->
           <div class="controls-subgroup">
-            <span class="subgroup-title">Overlay Model &amp; Viewport Mounting</span>
-            <div style="display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
-              <select id="decal-model-select" style="flex: 1; min-width: 220px; background: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 6px; padding: 6px 10px; font-size: 0.78rem; font-weight: 600; cursor: pointer;">
-                <option value="models/screen_decals_overlay_3/screen_decals_overlay_3.glb" selected>screen_decals_overlay_3.glb (Smooth Organic - No Lines)</option>
-                <option value="models/screen_decals__overlay_2/screen_decals_overlay_2.glb">screen_decals_overlay_2.glb (Explosive Spoke Starburst)</option>
-                <option value="models/cockpit_burn_decal/cockpit_burn_decal.glb">cockpit_burn_decal.glb (Single Cockpit Scorch)</option>
-                <option value="models/screen_overlay_1/screen_overlay_1.glb">screen_overlay_1.glb (.005m Frame Clear Overlay)</option>
-              </select>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+              <span class="subgroup-title">Loaded Model Target</span>
+              <span id="decal-target-file-badge" style="font-size: 0.72rem; padding: 2px 7px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); color: var(--text-muted); font-family: monospace;">No Model Loaded</span>
             </div>
-            <div class="btn-row" style="flex-wrap: wrap;">
-              <button id="btn-decal-mount-toggle" class="btn active" type="button" title="Mount or Unmount Screen Overlay in 3D Viewport">
-                <span>🪟</span> <span id="label-decal-mount">Overlay: MOUNTED</span>
+            <div id="decal-model-notice" style="font-size: 0.78rem; color: var(--text-muted); padding: 8px 10px; background: rgba(0,0,0,0.25); border-radius: 6px; border: 1px dashed rgba(255,255,255,0.1); margin-bottom: 0.5rem;">
+              No 3D model containing decals is currently loaded. Select or load a 3D model containing decals to control its decals:
+            </div>
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="decal-quick-load-row">
+              <button type="button" class="btn btn-sm" id="btn-decal-load-overlay3" style="border-color: #00ffaa; color: #00ffaa;" title="Load screen_decals_overlay_3.glb into viewer">
+                <span>✨</span> <span>Load Overlay 3 (No Lines)</span>
               </button>
-              <button id="btn-decal-hud-mode" class="btn active" type="button" title="Lock overlay to camera (HUD Visor) or place in World">
-                <span>🥽</span> <span id="label-decal-hud">Mode: Camera HUD</span>
+              <button type="button" class="btn btn-sm" id="btn-decal-load-overlay2" style="border-color: #ff7700; color: #ff7700;" title="Load screen_decals_overlay_2.glb into viewer">
+                <span>💥</span> <span>Load Overlay 2 (Starburst)</span>
               </button>
-              <button id="btn-decal-load-as-main" class="btn btn-subtle" type="button" title="Load this overlay as the primary inspected model in viewer">
-                <span>⚡</span> <span>Inspect Model</span>
+              <button type="button" class="btn btn-sm" id="btn-decal-load-cockpit" style="border-color: #38bdf8; color: #38bdf8;" title="Load cockpit_burn_decal.glb into viewer">
+                <span>🔥</span> <span>Load Cockpit Decal</span>
               </button>
             </div>
           </div>
@@ -2665,7 +2663,7 @@
           <div class="controls-subgroup">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
               <span class="subgroup-title">Targetable Decal Meshes (Click to Toggle)</span>
-              <span id="decal-individual-count" style="font-size: 0.72rem; color: #00ffaa; font-weight: 600;">16 / 16 Visible</span>
+              <span id="decal-individual-count" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">0 / 0 Decals</span>
             </div>
             
             <div style="font-size: 0.74rem; font-weight: 600; color: #ff9933; margin-bottom: 0.25rem;">LASER BURNS (SCORCH CRATERS)</div>
@@ -3137,14 +3135,8 @@
       return clean;
     }
 
-    // Currently loaded asset state
-    let currentLoadedAsset = {
-      file: null,
-      sourcePath: 'meshy_test_0/models/red_race_car.glb',
-      fileName: 'red_race_car.glb',
-      ext: 'glb',
-      sizeStr: 'Default Model'
-    };
+    // Currently loaded asset state (null until a model is explicitly loaded)
+    let currentLoadedAsset = null;
 
     function formatBytes(bytes) {
       if (!bytes || bytes === 0) return '0 B';
@@ -4840,10 +4832,21 @@
         setMessage(`✓ Loaded: ${displayName}. Choose path/quick links and click Approve to move asset, materials & textures.`, 'success');
         hideLoader();
 
+        if (!currentLoadedAsset || currentLoadedAsset.fileName !== displayName) {
+          currentLoadedAsset = {
+            file: null,
+            sourcePath: sourcePathDesc || rawUrl,
+            fileName: displayName,
+            ext: ext,
+            sizeStr: 'Loaded'
+          };
+          updateLoadedAssetUI();
+        }
+
         // Inspect and display materials, textures, and color swatches
         analyzeModelMaterialsAndColors(carModel, displayName, sourcePathDesc);
-        if (typeof applyDecalsVisibility === 'function') {
-          applyDecalsVisibility();
+        if (typeof scanLoadedModelForDecals === 'function') {
+          scanLoadedModelForDecals(carModel, displayName);
         }
       } catch (err) {
         console.error('Failed to load model:', err);
@@ -6449,200 +6452,212 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
     document.getElementById('btn-hud-copy-js')?.addEventListener('click', copyStageJsHandler);
 
     // =========================================================================
-    // SCREEN DECALS & DAMAGE OVERLAYS SETTINGS SYSTEM
+    // SCREEN DECALS & DAMAGE OVERLAYS SETTINGS SYSTEM (Active Loaded Model Target)
     // =========================================================================
     const DECAL_CONFIG = {
       allEnabled: true,
       burnsEnabled: true,
       strikesEnabled: true,
-      opacity: 1.0,
-      overlayMounted: true,
-      attachedToCamera: true,
-      selectedModel: 'models/screen_decals_overlay_3/screen_decals_overlay_3.glb'
+      opacity: 1.0
     };
 
-    const DECAL_NAMES = {
-      burns: [
-        "Decal_LaserBurn_01", "Decal_LaserBurn_02", "Decal_LaserBurn_03", "Decal_LaserBurn_04",
-        "Decal_LaserBurn_05", "Decal_LaserBurn_06", "Decal_LaserBurn_07", "Decal_LaserBurn_08"
-      ],
-      strikes: [
-        "Decal_MissileStrike_01", "Decal_MissileStrike_02", "Decal_MissileStrike_03", "Decal_MissileStrike_04",
-        "Decal_MissileStrike_05", "Decal_MissileStrike_06", "Decal_MissileStrike_07", "Decal_MissileStrike_08"
-      ]
-    };
+    // Store detected decal meshes from the currently loaded model (carModel)
+    let loadedDecalMeshes = []; // Array of { mesh, name, type: 'burn'|'strike'|'other', initialOpacity }
+    const individualDecalMap = new Map(); // meshName/uuid -> boolean (visible)
 
-    const individualDecalMap = new Map();
-    [...DECAL_NAMES.burns, ...DECAL_NAMES.strikes].forEach(name => {
-      individualDecalMap.set(name, true);
-    });
+    // Scan the loaded carModel to discover all decal meshes
+    function scanLoadedModelForDecals(model, displayName = '') {
+      loadedDecalMeshes = [];
+      individualDecalMap.clear();
 
-    let mountedDecalOverlay = null;
-
-    // Apply visibility states to all targets (both mounted overlay and active carModel)
-    function applyDecalsVisibility() {
-      const targets = [];
-      if (mountedDecalOverlay) targets.push(mountedDecalOverlay);
-      if (carModel) targets.push(carModel);
-
-      let activeCount = 0;
-      let totalFound = 0;
-
-      targets.forEach(root => {
-        root.traverse(child => {
+      if (model) {
+        model.traverse(child => {
           if (child.isMesh) {
-            const name = child.name;
-            const isBurn = name.startsWith('Decal_LaserBurn_') || name.includes('LaserBurn');
-            const isStrike = name.startsWith('Decal_MissileStrike_') || name.includes('MissileStrike');
-            const isAnyDecal = isBurn || isStrike || name.toLowerCase().includes('decal') || name.toLowerCase().includes('burn') || name.toLowerCase().includes('strike');
+            const name = child.name || '';
+            const lower = name.toLowerCase();
+            const isBurn = name.startsWith('Decal_LaserBurn_') || lower.includes('laserburn') || lower.includes('burn');
+            const isStrike = name.startsWith('Decal_MissileStrike_') || lower.includes('missilestrike') || lower.includes('strike') || lower.includes('blast');
+            const isOtherDecal = !isBurn && !isStrike && (lower.includes('decal') || lower.includes('scorch') || lower.includes('soot') || lower.includes('impact'));
 
-            if (isAnyDecal) {
-              totalFound++;
-              let visible = DECAL_CONFIG.allEnabled;
-              if (visible) {
-                if (isBurn && !DECAL_CONFIG.burnsEnabled) visible = false;
-                if (isStrike && !DECAL_CONFIG.strikesEnabled) visible = false;
-                if (individualDecalMap.has(name) && !individualDecalMap.get(name)) visible = false;
-              }
-              child.visible = visible;
-              if (visible) activeCount++;
+            if (isBurn || isStrike || isOtherDecal) {
+              const type = isBurn ? 'burn' : (isStrike ? 'strike' : 'other');
+              const key = name || `Decal_Mesh_${child.id}`;
+              individualDecalMap.set(key, child.visible !== false);
 
+              // Cache initial opacity
+              let initOp = 1.0;
               if (child.material) {
-                const mats = Array.isArray(child.material) ? child.material : [child.material];
-                mats.forEach(m => {
-                  if (m.transparent) {
-                    m.opacity = DECAL_CONFIG.opacity;
-                    m.needsUpdate = true;
-                  }
-                });
+                const m = Array.isArray(child.material) ? child.material[0] : child.material;
+                if (m && m.opacity !== undefined) initOp = m.opacity;
               }
+
+              loadedDecalMeshes.push({
+                mesh: child,
+                name: key,
+                type: type,
+                initialOpacity: initOp
+              });
             }
           }
         });
+      }
+
+      // Re-populate individual UI toggles based on actual discovered decals
+      populateDecalsGrid(displayName);
+      applyDecalsVisibility();
+    }
+
+    // Apply visibility states exclusively to the currently loaded model (carModel)
+    function applyDecalsVisibility() {
+      let activeCount = 0;
+      const totalFound = loadedDecalMeshes.length;
+
+      if (!carModel || totalFound === 0) {
+        updateDecalsUI(0, 0);
+        return;
+      }
+
+      loadedDecalMeshes.forEach(item => {
+        const { mesh, name, type } = item;
+        let visible = DECAL_CONFIG.allEnabled;
+        if (visible) {
+          if (type === 'burn' && !DECAL_CONFIG.burnsEnabled) visible = false;
+          if (type === 'strike' && !DECAL_CONFIG.strikesEnabled) visible = false;
+          if (individualDecalMap.has(name) && !individualDecalMap.get(name)) visible = false;
+        }
+
+        mesh.visible = visible;
+        if (visible) activeCount++;
+
+        // Update opacity
+        if (mesh.material) {
+          const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+          mats.forEach(m => {
+            if (m.transparent) {
+              m.opacity = DECAL_CONFIG.opacity;
+              m.needsUpdate = true;
+            }
+          });
+        }
       });
 
       updateDecalsUI(activeCount, totalFound);
     }
 
-    // Load or switch the mounted decal overlay
-    async function loadDecalOverlay(modelPath) {
-      if (mountedDecalOverlay) {
-        if (mountedDecalOverlay.parent) {
-          mountedDecalOverlay.parent.remove(mountedDecalOverlay);
-        }
-        disposeHierarchy(mountedDecalOverlay);
-        mountedDecalOverlay = null;
-      }
-
-      if (!DECAL_CONFIG.overlayMounted) {
-        applyDecalsVisibility();
-        return;
-      }
-
-      try {
-        const rawUrl = resolveModelUrl(modelPath);
-        const gltf = await new Promise((res, rej) => gltfLoader.load(rawUrl, res, undefined, rej));
-        mountedDecalOverlay = gltf.scene;
-        mountedDecalOverlay.name = "MountedDecalOverlayRoot";
-
-        if (DECAL_CONFIG.attachedToCamera) {
-          mountedDecalOverlay.position.set(0, 0, -1.65);
-          mountedDecalOverlay.rotation.set(0, 0, 0);
-          mountedDecalOverlay.scale.set(0.95, 0.95, 0.95);
-          camera.add(mountedDecalOverlay);
-        } else {
-          mountedDecalOverlay.position.set(0, 0.5, 0);
-          mountedDecalOverlay.rotation.set(0, 0, 0);
-          mountedDecalOverlay.scale.set(1.0, 1.0, 1.0);
-          scene.add(mountedDecalOverlay);
-        }
-
-        applyDecalsVisibility();
-      } catch (err) {
-        console.warn('Could not load decal overlay:', err);
-      }
-    }
-
     // Refresh Decals UI Buttons & Status Badges
     function updateDecalsUI(activeCount, totalFound) {
+      const modelName = currentLoadedAsset ? (currentLoadedAsset.fileName || 'Model') : '';
+      const targetBadge = document.getElementById('decal-target-file-badge');
+      const noticeElem = document.getElementById('decal-model-notice');
+
+      if (totalFound > 0) {
+        if (targetBadge) {
+          targetBadge.textContent = `${modelName} (${totalFound} Decals)`;
+          targetBadge.style.color = '#00ffaa';
+          targetBadge.style.background = 'rgba(0, 255, 170, 0.15)';
+        }
+        if (noticeElem) {
+          noticeElem.innerHTML = `<span style="color:#00ffaa; font-weight:600;">✓ Active:</span> Controlling <strong>${totalFound}</strong> decals inside loaded model <code>${modelName}</code>.`;
+          noticeElem.style.borderColor = 'rgba(0, 255, 170, 0.3)';
+        }
+      } else {
+        if (targetBadge) {
+          targetBadge.textContent = modelName ? `${modelName} (0 Decals)` : 'No Model Loaded';
+          targetBadge.style.color = 'var(--text-muted)';
+          targetBadge.style.background = 'rgba(255, 255, 255, 0.08)';
+        }
+        if (noticeElem) {
+          if (modelName) {
+            noticeElem.innerHTML = `Loaded model <code>${modelName}</code> does not contain decals. Click a quick-load button below or load a model containing decals to control them:`;
+          } else {
+            noticeElem.innerHTML = `No 3D model containing decals is currently loaded. Click a quick-load button below or load a model to control decals:`;
+          }
+          noticeElem.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+        }
+      }
+
       const statusBadge = document.getElementById('decal-status-badge');
       if (statusBadge) {
-        statusBadge.textContent = `${activeCount} Active`;
-        statusBadge.style.background = activeCount > 0 ? 'rgba(0, 255, 170, 0.15)' : 'rgba(255, 255, 255, 0.08)';
-        statusBadge.style.color = activeCount > 0 ? '#00ffaa' : '#94a3b8';
-        statusBadge.style.borderColor = activeCount > 0 ? '#00ffaa' : '#475569';
+        if (totalFound === 0) {
+          statusBadge.textContent = '0 Decals';
+          statusBadge.style.background = 'rgba(255, 255, 255, 0.08)';
+          statusBadge.style.color = '#94a3b8';
+          statusBadge.style.borderColor = '#475569';
+        } else {
+          statusBadge.textContent = `${activeCount} / ${totalFound} Active`;
+          statusBadge.style.background = activeCount > 0 ? 'rgba(0, 255, 170, 0.15)' : 'rgba(255, 255, 255, 0.08)';
+          statusBadge.style.color = activeCount > 0 ? '#00ffaa' : '#94a3b8';
+          statusBadge.style.borderColor = activeCount > 0 ? '#00ffaa' : '#475569';
+        }
       }
 
       const quickStatus = document.getElementById('quick-decal-status');
       if (quickStatus) {
-        quickStatus.textContent = activeCount > 0 ? `Active (${activeCount} Decals)` : 'Decals Disabled';
-        quickStatus.style.color = activeCount > 0 ? '#00ffaa' : '#94a3b8';
+        if (totalFound === 0) {
+          quickStatus.textContent = modelName ? 'No Decals in Model' : 'No Model Loaded';
+          quickStatus.style.color = '#94a3b8';
+        } else {
+          quickStatus.textContent = activeCount > 0 ? `Active (${activeCount} / ${totalFound})` : 'Decals Off';
+          quickStatus.style.color = activeCount > 0 ? '#00ffaa' : '#94a3b8';
+        }
       }
 
       const countElem = document.getElementById('decal-individual-count');
       if (countElem) {
-        countElem.textContent = `${activeCount} / ${totalFound || 16} Visible`;
+        countElem.textContent = `${activeCount} / ${totalFound} Visible`;
       }
 
       // Master button
       const btnAll = document.getElementById('btn-decal-toggle-all');
       const labelAll = document.getElementById('label-decal-all');
-      if (btnAll) btnAll.classList.toggle('active', DECAL_CONFIG.allEnabled);
+      if (btnAll) btnAll.classList.toggle('active', DECAL_CONFIG.allEnabled && totalFound > 0);
       if (labelAll) labelAll.textContent = DECAL_CONFIG.allEnabled ? 'All Decals: ON' : 'All Decals: OFF';
 
       const btnQuickAll = document.getElementById('btn-quick-decal-toggle-all');
       const labelQuickAll = document.getElementById('label-quick-decal-all');
-      if (btnQuickAll) btnQuickAll.classList.toggle('active', DECAL_CONFIG.allEnabled);
+      if (btnQuickAll) btnQuickAll.classList.toggle('active', DECAL_CONFIG.allEnabled && totalFound > 0);
       if (labelQuickAll) labelQuickAll.textContent = DECAL_CONFIG.allEnabled ? 'All: ON' : 'All: OFF';
 
       // Burns button
+      const burnCount = loadedDecalMeshes.filter(m => m.type === 'burn').length;
       const btnBurns = document.getElementById('btn-decal-toggle-burns');
       const labelBurns = document.getElementById('label-decal-burns');
-      if (btnBurns) btnBurns.classList.toggle('active', DECAL_CONFIG.burnsEnabled);
-      if (labelBurns) labelBurns.textContent = DECAL_CONFIG.burnsEnabled ? 'Laser Burns (8): ON' : 'Laser Burns (8): OFF';
+      if (btnBurns) btnBurns.classList.toggle('active', DECAL_CONFIG.burnsEnabled && burnCount > 0);
+      if (labelBurns) labelBurns.textContent = `Laser Burns (${burnCount}): ${DECAL_CONFIG.burnsEnabled ? 'ON' : 'OFF'}`;
 
       const btnQuickBurns = document.getElementById('btn-quick-decal-burns');
       const labelQuickBurns = document.getElementById('label-quick-burns');
-      if (btnQuickBurns) btnQuickBurns.classList.toggle('active', DECAL_CONFIG.burnsEnabled);
-      if (labelQuickBurns) labelQuickBurns.textContent = DECAL_CONFIG.burnsEnabled ? 'Burns: ON' : 'Burns: OFF';
+      if (btnQuickBurns) btnQuickBurns.classList.toggle('active', DECAL_CONFIG.burnsEnabled && burnCount > 0);
+      if (labelQuickBurns) labelQuickBurns.textContent = `Burns: ${DECAL_CONFIG.burnsEnabled ? 'ON' : 'OFF'}`;
 
       // Strikes button
+      const strikeCount = loadedDecalMeshes.filter(m => m.type === 'strike').length;
       const btnStrikes = document.getElementById('btn-decal-toggle-strikes');
       const labelStrikes = document.getElementById('label-decal-strikes');
-      if (btnStrikes) btnStrikes.classList.toggle('active', DECAL_CONFIG.strikesEnabled);
-      if (labelStrikes) labelStrikes.textContent = DECAL_CONFIG.strikesEnabled ? 'Missile Strikes (8): ON' : 'Missile Strikes (8): OFF';
+      if (btnStrikes) btnStrikes.classList.toggle('active', DECAL_CONFIG.strikesEnabled && strikeCount > 0);
+      if (labelStrikes) labelStrikes.textContent = `Missile Strikes (${strikeCount}): ${DECAL_CONFIG.strikesEnabled ? 'ON' : 'OFF'}`;
 
       const btnQuickStrikes = document.getElementById('btn-quick-decal-strikes');
       const labelQuickStrikes = document.getElementById('label-quick-strikes');
-      if (btnQuickStrikes) btnQuickStrikes.classList.toggle('active', DECAL_CONFIG.strikesEnabled);
-      if (labelQuickStrikes) labelQuickStrikes.textContent = DECAL_CONFIG.strikesEnabled ? 'Strikes: ON' : 'Strikes: OFF';
-
-      // Mount button
-      const btnMount = document.getElementById('btn-decal-mount-toggle');
-      const labelMount = document.getElementById('label-decal-mount');
-      if (btnMount) btnMount.classList.toggle('active', DECAL_CONFIG.overlayMounted);
-      if (labelMount) labelMount.textContent = DECAL_CONFIG.overlayMounted ? 'Overlay: MOUNTED' : 'Overlay: UNMOUNTED';
-
-      // HUD mode button
-      const btnHud = document.getElementById('btn-decal-hud-mode');
-      const labelHud = document.getElementById('label-decal-hud');
-      if (btnHud) btnHud.classList.toggle('active', DECAL_CONFIG.attachedToCamera);
-      if (labelHud) labelHud.textContent = DECAL_CONFIG.attachedToCamera ? 'Mode: Camera HUD' : 'Mode: World Space';
+      if (btnQuickStrikes) btnQuickStrikes.classList.toggle('active', DECAL_CONFIG.strikesEnabled && strikeCount > 0);
+      if (labelQuickStrikes) labelQuickStrikes.textContent = `Strikes: ${DECAL_CONFIG.strikesEnabled ? 'ON' : 'OFF'}`;
 
       // Update grid button active classes
       individualDecalMap.forEach((isVisible, name) => {
         const btn = document.getElementById(`btn-mesh-${name}`);
         if (btn) {
+          const item = loadedDecalMeshes.find(m => m.name === name);
+          const type = item ? item.type : 'other';
           const effectiveVisible = DECAL_CONFIG.allEnabled && isVisible &&
-            ((name.includes('LaserBurn') ? DECAL_CONFIG.burnsEnabled : true) &&
-             (name.includes('MissileStrike') ? DECAL_CONFIG.strikesEnabled : true));
+            ((type === 'burn' ? DECAL_CONFIG.burnsEnabled : true) &&
+             (type === 'strike' ? DECAL_CONFIG.strikesEnabled : true));
           btn.classList.toggle('active', effectiveVisible);
         }
       });
     }
 
-    // Build Individual Decals Buttons in Grid
-    function populateDecalsGrid() {
+    // Build Individual Decals Buttons in Grid dynamically for the loaded model
+    function populateDecalsGrid(displayName = '') {
       const burnsGrid = document.getElementById('decal-burns-grid');
       const strikesGrid = document.getElementById('decal-strikes-grid');
       if (!burnsGrid || !strikesGrid) return;
@@ -6650,76 +6665,91 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
       burnsGrid.innerHTML = '';
       strikesGrid.innerHTML = '';
 
-      DECAL_NAMES.burns.forEach((name, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = `btn-mesh-${name}`;
-        btn.className = 'decal-mesh-btn burn active';
-        btn.innerHTML = `<span>Burn ${idx + 1}</span><span class="decal-indicator-dot"></span>`;
-        btn.onclick = () => {
-          const current = individualDecalMap.get(name) !== false;
-          individualDecalMap.set(name, !current);
-          applyDecalsVisibility();
-        };
-        burnsGrid.appendChild(btn);
-      });
+      if (loadedDecalMeshes.length === 0) {
+        const emptyMsg = `<div style="grid-column: 1/-1; padding: 12px; text-align: center; color: var(--text-muted); font-size: 0.74rem;">${displayName ? 'No decal meshes found in ' + displayName : 'No 3D model loaded.'}</div>`;
+        burnsGrid.innerHTML = emptyMsg;
+        strikesGrid.innerHTML = emptyMsg;
+        return;
+      }
 
-      DECAL_NAMES.strikes.forEach((name, idx) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.id = `btn-mesh-${name}`;
-        btn.className = 'decal-mesh-btn strike active';
-        btn.innerHTML = `<span>Strike ${idx + 1}</span><span class="decal-indicator-dot"></span>`;
-        btn.onclick = () => {
-          const current = individualDecalMap.get(name) !== false;
-          individualDecalMap.set(name, !current);
-          applyDecalsVisibility();
-        };
-        strikesGrid.appendChild(btn);
-      });
+      const burns = loadedDecalMeshes.filter(m => m.type === 'burn' || m.type === 'other');
+      const strikes = loadedDecalMeshes.filter(m => m.type === 'strike');
+
+      if (burns.length === 0) {
+        burnsGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 8px; text-align: center; color: var(--text-muted); font-size: 0.74rem;">No laser burn decals in loaded model</div>`;
+      } else {
+        burns.forEach((item, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.id = `btn-mesh-${item.name}`;
+          btn.className = 'decal-mesh-btn burn active';
+          const shortName = item.name.replace(/^Decal_LaserBurn_/, 'Burn ').replace(/^Decal_/, '').replace(/_/g, ' ');
+          btn.innerHTML = `<span title="${item.name}">${shortName || ('Burn ' + (idx + 1))}</span><span class="decal-indicator-dot"></span>`;
+          btn.onclick = () => {
+            const current = individualDecalMap.get(item.name) !== false;
+            individualDecalMap.set(item.name, !current);
+            applyDecalsVisibility();
+          };
+          burnsGrid.appendChild(btn);
+        });
+      }
+
+      if (strikes.length === 0) {
+        strikesGrid.innerHTML = `<div style="grid-column: 1/-1; padding: 8px; text-align: center; color: var(--text-muted); font-size: 0.74rem;">No missile strike decals in loaded model</div>`;
+      } else {
+        strikes.forEach((item, idx) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.id = `btn-mesh-${item.name}`;
+          btn.className = 'decal-mesh-btn strike active';
+          const shortName = item.name.replace(/^Decal_MissileStrike_/, 'Strike ').replace(/^Decal_/, '').replace(/_/g, ' ');
+          btn.innerHTML = `<span title="${item.name}">${shortName || ('Strike ' + (idx + 1))}</span><span class="decal-indicator-dot"></span>`;
+          btn.onclick = () => {
+            const current = individualDecalMap.get(item.name) !== false;
+            individualDecalMap.set(item.name, !current);
+            applyDecalsVisibility();
+          };
+          strikesGrid.appendChild(btn);
+        });
+      }
     }
 
     // Wire Event Listeners
     function setupDecalsListeners() {
-      // Model select dropdown
-      const selModel = document.getElementById('decal-model-select');
-      if (selModel) {
-        selModel.addEventListener('change', () => {
-          DECAL_CONFIG.selectedModel = selModel.value;
-          loadDecalOverlay(DECAL_CONFIG.selectedModel);
-        });
-      }
+      // Quick Load Buttons inside Decals Tab
+      document.getElementById('btn-decal-load-overlay3')?.addEventListener('click', () => {
+        loadModel(
+          'models/screen_decals_overlay_3/screen_decals_overlay_3.glb',
+          '',
+          'screen_decals_overlay_3.glb',
+          'meshy_test_0/models/screen_decals_overlay_3/screen_decals_overlay_3.glb'
+        );
+      });
 
-      // Mount toggle
-      const btnMount = document.getElementById('btn-decal-mount-toggle');
-      if (btnMount) {
-        btnMount.addEventListener('click', () => {
-          DECAL_CONFIG.overlayMounted = !DECAL_CONFIG.overlayMounted;
-          loadDecalOverlay(DECAL_CONFIG.selectedModel);
-        });
-      }
+      document.getElementById('btn-decal-load-overlay2')?.addEventListener('click', () => {
+        loadModel(
+          'models/screen_decals__overlay_2/screen_decals_overlay_2.glb',
+          '',
+          'screen_decals_overlay_2.glb',
+          'meshy_test_0/models/screen_decals__overlay_2/screen_decals_overlay_2.glb'
+        );
+      });
 
-      // HUD mode toggle (Camera vs World)
-      const btnHud = document.getElementById('btn-decal-hud-mode');
-      if (btnHud) {
-        btnHud.addEventListener('click', () => {
-          DECAL_CONFIG.attachedToCamera = !DECAL_CONFIG.attachedToCamera;
-          loadDecalOverlay(DECAL_CONFIG.selectedModel);
-        });
-      }
-
-      // Load as primary inspected model in viewer
-      const btnLoadAsMain = document.getElementById('btn-decal-load-as-main');
-      if (btnLoadAsMain) {
-        btnLoadAsMain.addEventListener('click', () => {
-          const path = DECAL_CONFIG.selectedModel;
-          const name = path.split('/').pop();
-          loadModel(path, '', name, `meshy_test_0/${path}`);
-        });
-      }
+      document.getElementById('btn-decal-load-cockpit')?.addEventListener('click', () => {
+        loadModel(
+          'models/cockpit_burn_decal/cockpit_burn_decal.glb',
+          '',
+          'cockpit_burn_decal.glb',
+          'meshy_test_0/models/cockpit_burn_decal/cockpit_burn_decal.glb'
+        );
+      });
 
       // Master all toggle
       const toggleAll = () => {
+        if (loadedDecalMeshes.length === 0) {
+          showToast('No decal model loaded.');
+          return;
+        }
         DECAL_CONFIG.allEnabled = !DECAL_CONFIG.allEnabled;
         applyDecalsVisibility();
       };
@@ -6728,6 +6758,10 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
 
       // Burns toggle
       const toggleBurns = () => {
+        if (loadedDecalMeshes.length === 0) {
+          showToast('No decal model loaded.');
+          return;
+        }
         DECAL_CONFIG.burnsEnabled = !DECAL_CONFIG.burnsEnabled;
         applyDecalsVisibility();
       };
@@ -6736,6 +6770,10 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
 
       // Strikes toggle
       const toggleStrikes = () => {
+        if (loadedDecalMeshes.length === 0) {
+          showToast('No decal model loaded.');
+          return;
+        }
         DECAL_CONFIG.strikesEnabled = !DECAL_CONFIG.strikesEnabled;
         applyDecalsVisibility();
       };
@@ -6770,6 +6808,7 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
 
       // Clear all
       const clearAll = () => {
+        if (loadedDecalMeshes.length === 0) return;
         individualDecalMap.forEach((_, key) => individualDecalMap.set(key, false));
         DECAL_CONFIG.allEnabled = false;
         applyDecalsVisibility();
@@ -6778,6 +6817,7 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
 
       // Show all
       const showAll = () => {
+        if (loadedDecalMeshes.length === 0) return;
         individualDecalMap.forEach((_, key) => individualDecalMap.set(key, true));
         DECAL_CONFIG.allEnabled = true;
         DECAL_CONFIG.burnsEnabled = true;
@@ -6788,21 +6828,25 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
 
       // Simulate combat hits
       const simCombat = () => {
+        if (loadedDecalMeshes.length === 0) {
+          showToast('No decal model loaded to simulate hits on.');
+          return;
+        }
         individualDecalMap.forEach((_, key) => individualDecalMap.set(key, false));
         DECAL_CONFIG.allEnabled = true;
         DECAL_CONFIG.burnsEnabled = true;
         DECAL_CONFIG.strikesEnabled = true;
         applyDecalsVisibility();
 
-        const all = [...DECAL_NAMES.strikes, ...DECAL_NAMES.burns].sort(() => 0.5 - Math.random());
+        const allItems = [...loadedDecalMeshes].sort(() => 0.5 - Math.random());
         let step = 0;
         const interval = setInterval(() => {
-          if (step >= all.length) {
+          if (step >= allItems.length) {
             clearInterval(interval);
             return;
           }
-          const name = all[step];
-          individualDecalMap.set(name, true);
+          const item = allItems[step];
+          individualDecalMap.set(item.name, true);
           applyDecalsVisibility();
 
           // Camera micro-shake
@@ -6821,15 +6865,15 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
       document.getElementById('btn-quick-decal-sim')?.addEventListener('click', simCombat);
     }
 
-    // Initialize Decal Overlay System
-    populateDecalsGrid();
+    // Initialize Decal System in idle / empty state
+    populateDecalsGrid('');
     setupDecalsListeners();
-    loadDecalOverlay(DECAL_CONFIG.selectedModel);
+    updateDecalsUI(0, 0);
 
     // Expose decals controls globally for console & external calls
     window.DECAL_CONFIG = DECAL_CONFIG;
     window.applyDecalsVisibility = applyDecalsVisibility;
-    window.loadDecalOverlay = loadDecalOverlay;
+    window.scanLoadedModelForDecals = scanLoadedModelForDecals;
     window.toggleDecalMesh = (name, visible) => {
       if (individualDecalMap.has(name)) {
         individualDecalMap.set(name, visible !== undefined ? visible : !individualDecalMap.get(name));
@@ -6887,8 +6931,7 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
       }
     });
 
-    // Initial Model Load
-    loadModel('models/red_race_car.glb', '', 'red_race_car.glb', 'meshy_test_0/models/red_race_car.glb');
+    // No model loaded by default - viewer starts clean ready for user model or quick decal selection
   </script>
 </body>
 </html>

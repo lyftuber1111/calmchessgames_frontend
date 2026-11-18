@@ -1,0 +1,59 @@
+{
+    "model": "cyan_laser_rod_1.glb",
+    "base_name": "cyan_laser_rod_1",
+    "exported_at": "2026-11-18T01:33:08.000Z",
+    "specifications": {
+        "circumference_meters": 0.025,
+        "radius_meters": 0.003979,
+        "diameter_meters": 0.007958,
+        "length_meters": 23.809525,
+        "blender_coordinates": {
+            "pivot_point": [0.0, 0.0, 0.0],
+            "start_coordinate": [0.0, 0.0, 0.0],
+            "end_coordinate": [0.0, -23.809525, 0.0],
+            "forward_axis": "-Y (Blender Front / Forward)",
+            "both_ends_capped": true
+        },
+        "xr_gltf_coordinates": {
+            "pivot_point": [0.0, 0.0, 0.0],
+            "start_coordinate": [0.0, 0.0, 0.0],
+            "end_coordinate": [0.0, 0.0, 23.809525],
+            "forward_axis": "+Z (XR / glTF Forward)",
+            "both_ends_capped": true
+        },
+        "animation": {
+            "name": "Laser_Flight_Extension",
+            "blender_extension_axis": "-Y",
+            "xr_extension_axis": "+Z",
+            "duration_seconds": 0.8,
+            "keyframes": "Scale extends from 0.001 to 1.000 starting at origin (0, 0, 0)"
+        }
+    },
+    "color_palette": [
+        "#FFFFFF",
+        "#00F8FF"
+    ],
+    "materials": [
+        {
+            "name": "Material_Cyan_Laser",
+            "type": "MeshStandardMaterial",
+            "color": "#FFFFFF",
+            "emissive": "#00F8FF",
+            "roughness": 0.15,
+            "metalness": 0.85,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": {
+                "base_color": "texture_0_base_color",
+                "normal": "texture_0_normal",
+                "roughness": "texture_0_metallicRoughness",
+                "metallic": "texture_0_metallicRoughness"
+            }
+        }
+    ],
+    "companion_files": [
+        "cyan_laser_rod_1.glb",
+        "cyan_laser_rod_1.obj",
+        "cyan_laser_rod_1.mtl"
+    ]
+}

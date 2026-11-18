@@ -1,7 +1,7 @@
 {
     "model": "cyan_laser_rod_4.glb",
     "base_name": "cyan_laser_rod_4",
-    "exported_at": "2026-11-18T02:52:00.000Z",
+    "exported_at": "2026-11-18T02:57:00.000Z",
     "specifications": {
         "circumference_meters": 0.25,
         "radius_meters": 0.039789,
@@ -49,10 +49,10 @@
             "name": "Laser_Flight_Extension",
             "blender_extension_axis": "-Y",
             "xr_extension_axis": "+Z",
-            "duration_seconds": 0.8,
+            "duration_seconds": 3.0,
             "fps": 30,
-            "total_frames": 24,
-            "keyframes": "Strict linear extension starting at length 0.000m (t=0.00s, scale=[1,1,0]) and extending continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis with constant 0.25m circumference"
+            "total_frames": 90,
+            "keyframes": "Strict linear extension taking exactly 3.0 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) and extends continuously to 28.000m (t=3.00s, scale=[1,1,1]) down +Z axis with constant 0.25m circumference"
         }
     },
     "color_palette": [

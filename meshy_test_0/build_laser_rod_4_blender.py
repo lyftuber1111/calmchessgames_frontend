@@ -33,7 +33,7 @@ DEST_MESHY_TEX_DIR.mkdir(parents=True, exist_ok=True)
 DEST_YEST_TEX_DIR.mkdir(parents=True, exist_ok=True)
 
 print("==================================================")
-print("BUILDING CYAN LASER ROD 4 (STRICT LINEAR 0m -> 28m EXTENSION)")
+print("BUILDING CYAN LASER ROD 4 (3.0s STRICT LINEAR 0m -> 28m)")
 print("Circumference: 0.25m | Pivot at +Z 0 extending down +Z")
 print("==================================================")
 
@@ -78,6 +78,9 @@ obj.select_set(True)
 TARGET_CIRCUMFERENCE = 0.25 # meters
 TARGET_RADIUS = TARGET_CIRCUMFERENCE / (2.0 * math.pi) # ~0.03978873577 m
 LENGTH = 28.0 # meters (strictly 28m long as requested)
+DURATION_SECONDS = 3.0 # strictly 3 seconds duration
+FPS = 30
+TOTAL_FRAMES = int(DURATION_SECONDS * FPS) # 90 frames
 
 # Current bounds
 xs = [v.co.x for v in mesh.vertices]
@@ -125,12 +128,11 @@ print(f"Start cap vertices (at Y=0.0): {len(cap_start)}")
 print(f"End cap vertices (at Y=-{LENGTH:.1f}m): {len(cap_end)}")
 
 # Animation setup:
-# Strictly linear extension from 0.0 meters to 28.0 meters across duration
-# 24 frames @ 30 FPS = 0.80 seconds duration
-bpy.context.scene.render.fps = 30
+# Strictly linear extension from 0.0 meters to 28.0 meters across exactly 3.0 seconds (90 frames @ 30 FPS)
+bpy.context.scene.render.fps = FPS
 bpy.context.scene.render.fps_base = 1.0
 bpy.context.scene.frame_start = 0
-bpy.context.scene.frame_end = 24
+bpy.context.scene.frame_end = TOTAL_FRAMES
 
 for act in list(bpy.data.actions):
     bpy.data.actions.remove(act)
@@ -142,17 +144,11 @@ obj.animation_data_create()
 action = bpy.data.actions.new(name="Laser_Flight_Extension")
 obj.animation_data.action = action
 
-# Blender forward is -Y. In glTF export with export_yup=True:
-# Blender -Y maps to XR +Z forward.
-# Scaling along Blender Y axis scales along XR +Z forward axis!
-#
-# STRICT SPECIFICATION:
-# Animation starts with a length of ZERO at t=0.0s (scale Y = 0.000)
-# and extends continuously, linearly to 28.0 METERS at t=0.8s (scale Y = 1.000).
-# Circumference remains exactly 0.25m throughout (scale X = 1.000, scale Z = 1.000).
+# Keyframes across 3.0 seconds (0 to 90 frames @ 30 FPS):
+# Starts at length 0.0m (t=0.0s, scale Y=0.000) and extends linearly to 28.0m (t=3.0s, scale Y=1.000)
 keyframes = [
-    (0.0,  (1.000, 0.000, 1.000)), # Frame 0 (t = 0.00s): starts at length 0.000m (pivot at +Z 0)
-    (24.0, (1.000, 1.000, 1.000)), # Frame 24 (t = 0.80s): extends to full 28.000m down +Z
+    (0.0,                (1.000, 0.000, 1.000)), # Frame 0  (t = 0.00s): starts at length 0.000m (pivot at +Z 0)
+    (float(TOTAL_FRAMES), (1.000, 1.000, 1.000)), # Frame 90 (t = 3.00s): extends to full 28.000m down +Z
 ]
 
 for frame, scale in keyframes:
@@ -209,7 +205,7 @@ for f in src_tex_dir.glob("*.png"):
 materials_data = {
     "model": f"{MODEL_NAME}.glb",
     "base_name": MODEL_NAME,
-    "exported_at": "2026-11-18T02:52:00.000Z",
+    "exported_at": "2026-11-18T02:57:00.000Z",
     "specifications": {
         "circumference_meters": 0.25,
         "radius_meters": round(TARGET_RADIUS, 6),
@@ -233,10 +229,10 @@ materials_data = {
             "name": "Laser_Flight_Extension",
             "blender_extension_axis": "-Y",
             "xr_extension_axis": "+Z",
-            "duration_seconds": 0.8,
+            "duration_seconds": 3.0,
             "fps": 30,
-            "total_frames": 24,
-            "keyframes": "Strict linear extension starting at length 0.000m (t=0.00s, scale=[1,1,0]) and extending continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis with constant 0.25m circumference"
+            "total_frames": 90,
+            "keyframes": "Strict linear extension taking exactly 3.0 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) and extends continuously to 28.000m (t=3.00s, scale=[1,1,1]) down +Z axis with constant 0.25m circumference"
         }
     },
     "color_palette": [

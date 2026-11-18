@@ -1,0 +1,51 @@
+{
+  "model_name": "screen_decals_overlay_3",
+  "directory": "screen_decals_overlay_3",
+  "glb_path": "./meshy_test_0/models/screen_decals_overlay_3/screen_decals_overlay_3.glb",
+  "blend_path": "./meshy_test_0/models/screen_decals_overlay_3/screen_decals_overlay_3.blend",
+  "description": "Translucent clear full screen overlay .005m thick frame with solid front and back panels and 16 targetable laser burn / missile strike decals without radiating lines",
+  "dimensions": {
+    "width_meters": 1.6,
+    "height_meters": 0.9,
+    "frame_thickness_meters": 0.005,
+    "aspect_ratio": "16:9"
+  },
+  "components": {
+    "root": "Screen_Decals_Overlay_3_Root",
+    "glass_screen": "Translucent_Clear_Screen",
+    "frame": "Frame_005m_Thick",
+    "front_panel": "Solid_Front_Panel",
+    "back_panel": "Solid_Back_Panel",
+    "cyber_accents": "Cyan_Cyber_Accents"
+  },
+  "laser_burn_decals": [
+    "Decal_LaserBurn_01",
+    "Decal_LaserBurn_02",
+    "Decal_LaserBurn_03",
+    "Decal_LaserBurn_04",
+    "Decal_LaserBurn_05",
+    "Decal_LaserBurn_06",
+    "Decal_LaserBurn_07",
+    "Decal_LaserBurn_08"
+  ],
+  "missile_strike_decals": [
+    "Decal_MissileStrike_01",
+    "Decal_MissileStrike_02",
+    "Decal_MissileStrike_03",
+    "Decal_MissileStrike_04",
+    "Decal_MissileStrike_05",
+    "Decal_MissileStrike_06",
+    "Decal_MissileStrike_07",
+    "Decal_MissileStrike_08"
+  ],
+  "decal_style": {
+    "radiating_lines": false,
+    "effect": "Smooth organic smoky soot clouds, heavy carbon crater pit, molten thermal breach"
+  },
+  "code_targeting_examples": {
+    "threejs_toggle_single": "const decal = scene.getObjectByName('Decal_LaserBurn_01'); decal.visible = !decal.visible;",
+    "threejs_toggle_burns": "scene.traverse(obj => { if (obj.name.startsWith('Decal_LaserBurn_')) obj.visible = false; });",
+    "threejs_toggle_strikes": "scene.traverse(obj => { if (obj.name.startsWith('Decal_MissileStrike_')) obj.visible = false; });",
+    "unity_csharp": "GameObject decal = transform.Find(\"Decal_LaserBurn_01\").gameObject; decal.SetActive(false);"
+  }
+}

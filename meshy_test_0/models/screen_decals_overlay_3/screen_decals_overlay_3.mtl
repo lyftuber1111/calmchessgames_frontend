@@ -1,0 +1,75 @@
+# Blender 5.2.0 LTS MTL File: 'screen_decals_overlay_3.blend'
+# www.blender.org
+
+newmtl M_Cyan_Accent
+Ns 774.400024
+Ka 0.100000 0.100000 0.100000
+Kd 0.000000 0.940000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 3.290000 3.500000
+Ni 1.500000
+d 1.000000
+illum 3
+
+newmtl M_Laser_Burn_Decal_NoLines
+Ka 0.050000 0.050000 0.050000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 3
+map_Kd screen_decals_overlay_3_textures/decal_laser_burn_diffuse.png
+map_Ns screen_decals_overlay_3_textures/decal_laser_burn_roughness.png
+map_d screen_decals_overlay_3_textures/decal_laser_burn_diffuse.png
+map_Bump -bm 1.000000 screen_decals_overlay_3_textures/decal_laser_burn_normal.png
+
+newmtl M_Missile_Strike_Decal_NoLines
+Ka 0.080000 0.080000 0.080000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+illum 3
+map_Kd screen_decals_overlay_3_textures/decal_missile_strike_diffuse.png
+map_Ns screen_decals_overlay_3_textures/decal_missile_strike_roughness.png
+map_d screen_decals_overlay_3_textures/decal_missile_strike_diffuse.png
+map_Bump -bm 1.000000 screen_decals_overlay_3_textures/decal_missile_strike_normal.png
+
+newmtl M_Solid_Back_Panel
+Ns 422.499969
+Ka 0.650000 0.650000 0.650000
+Kd 0.070000 0.080000 0.110000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 3
+
+newmtl M_Solid_Frame
+Ka 0.850000 0.850000 0.850000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 3
+map_Kd screen_decals_overlay_3_textures/texture_0_base_color.png
+map_Ns screen_decals_overlay_3_textures/texture_0_roughness.png
+map_Bump -bm 1.000000 screen_decals_overlay_3_textures/texture_0_normal.png
+
+newmtl M_Solid_Front_Panel
+Ns 577.599976
+Ka 0.720000 0.720000 0.720000
+Kd 0.090000 0.110000 0.150000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 3
+
+newmtl M_Translucent_Clear_Glass
+Ns 940.900024
+Ka 0.030000 0.030000 0.030000
+Kd 0.920000 0.960000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 0.220000
+illum 6

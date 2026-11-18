@@ -1,16 +1,18 @@
 {
     "model": "cyan_laser_rod_4.glb",
     "base_name": "cyan_laser_rod_4",
-    "exported_at": "2026-11-18T06:02:00.000Z",
+    "exported_at": "2026-11-18T06:20:00.000Z",
     "specifications": {
-        "width_meters": 0.25,
-        "height_meters": 0.25,
-        "radius_meters": 0.125,
-        "diameter_meters": 0.25,
+        "circumference_meters": 0.25,
+        "radius_meters": 0.039789,
+        "diameter_meters": 0.079577,
+        "width_meters": 0.079577,
+        "height_meters": 0.079577,
         "length_meters": 28.0,
         "base_dimensions": {
-            "width": 0.25,
-            "height": 0.25,
+            "circumference": 0.25,
+            "width": 0.079577,
+            "height": 0.079577,
             "length": 28.0
         },
         "user_camera": {
@@ -18,7 +20,7 @@
             "position": [
                 0.0,
                 0.0,
-                28.0
+                28.25
             ],
             "target": [
                 0.0,
@@ -30,9 +32,10 @@
                 0.0,
                 -1.0
             ],
-            "distance_meters": 28.0,
+            "distance_meters": 28.25,
+            "strike_point_distance_to_camera_meters": 0.25,
             "fov_lens_mm": 35,
-            "description": "User's camera positioned at +Z 28.0m looking directly down -Z at the origin (0, 0, 0). The animation extends from the beginning (0, 0, 0) all the way into the user's camera lens."
+            "description": "User's player camera positioned at +Z 28.25m looking directly down -Z at the origin (0, 0, 0). The laser rod expands 28.0m down +Z over 0.8s, so when it reaches maximum length at t=0.8s, its front point arrives at exactly 0.25m in front of the player camera lens."
         },
         "blender_coordinates": {
             "pivot_point": [
@@ -51,8 +54,9 @@
                 28.0
             ],
             "forward_axis": "+Z (Blender +Z forward/length axis)",
-            "cross_section_width_x": 0.25,
-            "cross_section_height_y": 0.25,
+            "circumference_meters": 0.25,
+            "cross_section_width_x": 0.079577,
+            "cross_section_height_y": 0.079577,
             "both_ends_capped": true
         },
         "xr_gltf_coordinates": {
@@ -72,8 +76,9 @@
                 28.0
             ],
             "forward_axis": "+Z (XR / glTF Forward)",
-            "cross_section_width_x": 0.25,
-            "cross_section_height_y": 0.25,
+            "circumference_meters": 0.25,
+            "cross_section_width_x": 0.079577,
+            "cross_section_height_y": 0.079577,
             "both_ends_capped": true
         },
         "animation": {
@@ -88,7 +93,7 @@
                 1.0,
                 1.0
             ],
-            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) at the beginning (0, 0, 0) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis all the way to the user's camera at (0, 0, 28.0)"
+            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) at origin (0, 0, 0) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis, with its front point reaching 0.25m in front of the player camera at (0, 0, 28.25)"
         }
     },
     "color_palette": [

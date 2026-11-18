@@ -153,9 +153,9 @@
     <div class="viewer-card">
       <model-viewer
         id="laser-viewer"
-        src="models/cyan_laser_rod/cyan_laser_rod.glb"
-        alt="Animated Cyan Laser Rod"
-        poster="models/cyan_laser_rod/cyan_laser_rod_textures/thumbnail.png"
+        src="models/cyan_laser_rod_4/cyan_laser_rod_4.glb"
+        alt="Animated Cyan Laser Rod 4"
+        poster="models/cyan_laser_rod_4/cyan_laser_rod_4_textures/thumbnail.png"
         auto-rotate
         camera-controls
         autoplay
@@ -176,32 +176,32 @@
       </div>
 
       <div class="stat-box">
-        <span class="stat-label">Origin Coordinate &amp; Axis</span>
-        <span class="stat-val">Starts (0, 0, 0) &bull; Along +Z</span>
-        <span class="stat-sub">+Z is forward vector towards cockpit screen</span>
+        <span class="stat-label">Origin &amp; Base Scale</span>
+        <span class="stat-val">Starts +Z 0 &bull; Scale [1, 1, 1]</span>
+        <span class="stat-sub">+Z forward along length axis</span>
       </div>
 
       <div class="stat-box">
-        <span class="stat-label">Length &amp; Cockpit Distance</span>
-        <span class="stat-val">23.8095 m (10,000 KM / 420)</span>
-        <span class="stat-sub">Warp Origin enemies firing distance in Three.js units</span>
+        <span class="stat-label">Length &amp; Camera Strike Point</span>
+        <span class="stat-val">28.0 m &bull; Point 0.25 m from Camera</span>
+        <span class="stat-sub">Camera at +Z 28.25m, tip arrives at +Z 28.0m</span>
       </div>
 
       <div class="stat-box">
         <span class="stat-label">Animation Duration</span>
-        <span class="stat-val">0.80 Seconds (Flight Cadence)</span>
-        <span class="stat-sub">Time to reach target enemy in wormhole0.js</span>
+        <span class="stat-val">0.80 Seconds (24 frames @ 30 FPS)</span>
+        <span class="stat-sub">Linear expansion from 0m to 28m</span>
       </div>
     </div>
 
     <div style="width:100%; display:flex; justify-content:center; flex-wrap:wrap; gap:0.75rem; margin-top:1rem;">
-      <button class="btn" onclick="loadModel('models/cyan_laser_rod_4/cyan_laser_rod_4.glb', 'models/cyan_laser_rod_4/cyan_laser_rod_4_textures/thumbnail.png', 'Cyan Laser Rod 4 (28m, w/h 0.25m)')">⚡ Load Rod 4 (28m User Camera)</button>
+      <button class="btn" onclick="loadModel('models/cyan_laser_rod_4/cyan_laser_rod_4.glb', 'models/cyan_laser_rod_4/cyan_laser_rod_4_textures/thumbnail.png', 'Cyan Laser Rod 4 (28m, C: 0.25m, Strike: 0.25m)')">⚡ Load Rod 4 (28m Strike Point)</button>
       <button class="btn" onclick="loadModel('models/cyan_laser_rod/cyan_laser_rod.glb', 'models/cyan_laser_rod/cyan_laser_rod_textures/thumbnail.png', 'Cyan Laser Rod (23.8m)')">Load Rod 1 (23.8m)</button>
       <button class="btn" onclick="document.getElementById('laser-viewer').play()">▶ Play</button>
       <button class="btn" onclick="document.getElementById('laser-viewer').pause()">⏸ Pause</button>
-      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '0deg 90deg 28m'">Side View</button>
-      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '0deg 0deg 30m'">Front View (+Z)</button>
-      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '180deg 90deg 1m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 28m'">User Camera POV (+Z 28m)</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '90deg 90deg 35m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 14m'">Side View (Full 28m)</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '0deg 0deg 32m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 14m'">Front View (+Z)</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '180deg 90deg 0.25m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 28m'">🎯 Player Camera Strike POV (0.25m)</button>
     </div>
   </main>
 

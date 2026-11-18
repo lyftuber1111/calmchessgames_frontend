@@ -34,21 +34,25 @@ DEST_MESHY_TEX_DIR.mkdir(parents=True, exist_ok=True)
 DEST_YEST_TEX_DIR.mkdir(parents=True, exist_ok=True)
 
 # Target specs:
-# Width and height strictly 0.25m in XR (diameter = 0.25m, radius = 0.125m)
+# Circumference strictly 0.25m in XR
+# Radius = 0.25 / (2 * pi) ~= 0.0397887358 m
+# Diameter = 0.25 / pi ~= 0.0795774715 m
 # Length strictly 28.0m in XR
-# Base dimensions at scale [1.0, 1.0, 1.0] are: width 0.25m, height 0.25m, length 28.0m
-TARGET_WIDTH = 0.25 # meters (cross-section X width)
-TARGET_HEIGHT = 0.25 # meters (cross-section Y height)
-TARGET_RADIUS = 0.125 # meters (0.25 / 2.0)
-TARGET_DIAMETER = 0.25 # meters
+# Base dimensions at scale [1.0, 1.0, 1.0] are: width 0.079577m, height 0.079577m, length 28.0m (circumference 0.25m)
+CIRCUMFERENCE = 0.25 # meters (circumference strictly 0.25m)
+TARGET_RADIUS = CIRCUMFERENCE / (2.0 * math.pi) # ~0.03978873577 m
+TARGET_DIAMETER = TARGET_RADIUS * 2.0 # ~0.0795774715 m
+TARGET_WIDTH = TARGET_DIAMETER # cross-section X width (0.079577m)
+TARGET_HEIGHT = TARGET_DIAMETER # cross-section Y height (0.079577m)
 LENGTH = 28.0 # meters (strictly 28m long)
+CAMERA_DISTANCE = 28.25 # meters (User camera at +Z 28.25m so when 28m rod strikes, its point is exactly 0.25m from camera)
 DURATION_SECONDS = 0.8 # strictly 0.8 seconds duration
 FPS = 30
 TOTAL_FRAMES = int(round(DURATION_SECONDS * FPS)) # 24 frames
 
 print("==================================================")
-print(f"BUILDING CYAN LASER ROD 4 (WIDTH: {TARGET_WIDTH}m, HEIGHT: {TARGET_HEIGHT}m, LENGTH: {LENGTH}m, DURATION: {DURATION_SECONDS}s)")
-print(f"Radius: {TARGET_RADIUS:.6f}m, Diameter: {TARGET_DIAMETER:.6f}m | Pivot at +Z 0 extending down +Z")
+print(f"BUILDING CYAN LASER ROD 4 (CIRCUMFERENCE: {CIRCUMFERENCE}m, RADIUS: {TARGET_RADIUS:.6f}m, LENGTH: {LENGTH}m, DURATION: {DURATION_SECONDS}s)")
+print(f"Width/Height: {TARGET_WIDTH:.6f}m | Camera at +Z {CAMERA_DISTANCE}m (Strike Point: {CAMERA_DISTANCE - LENGTH:.2f}m from lens)")
 print("==================================================")
 
 # Clean Blender state
@@ -207,20 +211,21 @@ elif hasattr(action, 'layers'):
                     for kp in fc.keyframe_points:
                         kp.interpolation = 'LINEAR'
 
-# Set base/rest scale to frame 24 (full scale 1.0, 1.0, 1.0) so default node dimensions match base OBJ (0.25m width/height x 28m length)
+# Set base/rest scale to frame 24 (full scale 1.0, 1.0, 1.0) so default node dimensions match base OBJ (circumference 0.25m, width/height 0.079577m x 28m length)
 bpy.context.scene.frame_set(TOTAL_FRAMES)
 obj.scale = (1.000, 1.000, 1.000)
 
-# Create and position User_Camera at the end of the laser extension (Z = 28.0m)
+# Create and position User_Camera at +Z 28.25m
 # The camera looks down -Z directly towards the laser origin (0, 0, 0)
-# This ensures the animation extends from the beginning (0, 0, 0) all the way into the user's camera
+# The rod expands 28.0m down +Z over 0.8s, so when it reaches maximum length at t=0.8s,
+# its front point arrives at exactly 0.25m in front of the player camera lens (28.25m - 28.0m = 0.25m strike point)
 cam_data = bpy.data.cameras.new("User_Camera")
 cam_data.lens = 35 # Wide-angle FOV for immersive XR perspective
 cam_data.clip_start = 0.05
 cam_data.clip_end = 250.0
 cam_obj = bpy.data.objects.new("User_Camera", cam_data)
 bpy.context.scene.collection.objects.link(cam_obj)
-cam_obj.location = (0.0, 0.0, LENGTH) # Exactly at +Z 28.0m
+cam_obj.location = (0.0, 0.0, CAMERA_DISTANCE) # Exactly at +Z 28.25m
 cam_obj.rotation_euler = (0.0, 0.0, 0.0) # Local -Z faces global -Z straight to (0,0,0)
 bpy.context.scene.camera = cam_obj
 
@@ -233,7 +238,7 @@ bpy.ops.export_scene.gltf(
     export_animations=True
 )
 
-# Post-process GLB to explicitly ensure base mesh rest scale is [1.0, 1.0, 1.0] and camera is positioned at [0, 0, 28]
+# Post-process GLB to explicitly ensure base mesh rest scale is [1.0, 1.0, 1.0] and camera is positioned at [0, 0, 28.25]
 with open(str(TEMP_EXPORT_GLB), 'rb') as f:
     glb_data = f.read()
 
@@ -248,7 +253,7 @@ for node in gltf_json.get('nodes', []):
         node['rotation'] = [0.0, 0.0, 0.0, 1.0]
         node['scale'] = [1.0, 1.0, 1.0]
     elif node.get('name') == 'User_Camera':
-        node['translation'] = [0.0, 0.0, float(LENGTH)]
+        node['translation'] = [0.0, 0.0, float(CAMERA_DISTANCE)]
         node['rotation'] = [0.0, 0.0, 0.0, 1.0]
 
 new_json_bytes = json.dumps(gltf_json, separators=(',', ':')).encode('utf-8')
@@ -305,32 +310,36 @@ for f in src_tex_dir.glob("*.png"):
 materials_data = {
     "model": f"{MODEL_NAME}.glb",
     "base_name": MODEL_NAME,
-    "exported_at": "2026-11-18T06:02:00.000Z",
+    "exported_at": "2026-11-18T06:20:00.000Z",
     "specifications": {
-        "width_meters": round(TARGET_WIDTH, 6),
-        "height_meters": round(TARGET_HEIGHT, 6),
+        "circumference_meters": round(CIRCUMFERENCE, 6),
         "radius_meters": round(TARGET_RADIUS, 6),
         "diameter_meters": round(TARGET_DIAMETER, 6),
+        "width_meters": round(TARGET_WIDTH, 6),
+        "height_meters": round(TARGET_HEIGHT, 6),
         "length_meters": round(LENGTH, 6),
         "base_dimensions": {
-            "width": 0.25,
-            "height": 0.25,
-            "length": 28.0
+            "circumference": round(CIRCUMFERENCE, 6),
+            "width": round(TARGET_WIDTH, 6),
+            "height": round(TARGET_HEIGHT, 6),
+            "length": round(LENGTH, 6)
         },
         "user_camera": {
             "name": "User_Camera",
-            "position": [0.0, 0.0, round(LENGTH, 6)],
+            "position": [0.0, 0.0, round(CAMERA_DISTANCE, 6)],
             "target": [0.0, 0.0, 0.0],
             "forward_vector": [0.0, 0.0, -1.0],
-            "distance_meters": round(LENGTH, 6),
+            "distance_meters": round(CAMERA_DISTANCE, 6),
+            "strike_point_distance_to_camera_meters": round(CAMERA_DISTANCE - LENGTH, 6),
             "fov_lens_mm": 35,
-            "description": "User's camera positioned at +Z 28.0m looking directly down -Z at the origin (0, 0, 0). The animation extends from the beginning (0, 0, 0) all the way into the user's camera lens."
+            "description": "User's player camera positioned at +Z 28.25m looking directly down -Z at the origin (0, 0, 0). The laser rod expands 28.0m down +Z over 0.8s, so when it reaches maximum length at t=0.8s, its front point arrives at exactly 0.25m in front of the player camera lens."
         },
         "blender_coordinates": {
             "pivot_point": [0.0, 0.0, 0.0],
             "start_coordinate": [0.0, 0.0, 0.0],
             "end_coordinate": [0.0, 0.0, round(LENGTH, 6)],
             "forward_axis": "+Z (Blender +Z forward/length axis)",
+            "circumference_meters": round(CIRCUMFERENCE, 6),
             "cross_section_width_x": round(TARGET_WIDTH, 6),
             "cross_section_height_y": round(TARGET_HEIGHT, 6),
             "both_ends_capped": True
@@ -340,6 +349,7 @@ materials_data = {
             "start_coordinate": [0.0, 0.0, 0.0],
             "end_coordinate": [0.0, 0.0, round(LENGTH, 6)],
             "forward_axis": "+Z (XR / glTF Forward)",
+            "circumference_meters": round(CIRCUMFERENCE, 6),
             "cross_section_width_x": round(TARGET_WIDTH, 6),
             "cross_section_height_y": round(TARGET_HEIGHT, 6),
             "both_ends_capped": True
@@ -352,7 +362,7 @@ materials_data = {
             "fps": 30,
             "total_frames": 24,
             "base_scale": [1.0, 1.0, 1.0],
-            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) at the beginning (0, 0, 0) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis all the way to the user's camera at (0, 0, 28.0)"
+            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) at origin (0, 0, 0) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis, with its front point reaching 0.25m in front of the player camera at (0, 0, 28.25)"
         }
     },
     "color_palette": [

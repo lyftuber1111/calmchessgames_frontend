@@ -1,0 +1,46 @@
+{
+  "id": "01a1f016-0394-7037-a720-a2bf3ccffda3",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 1475669660,
+  "prompt": "A futuristic translucent clear full screen glass visor overlay HUD panel for an XR mobile game, ultra clear transparent tempered glass surface, subtle iridescent specular edge reflections, sleek minimal futuristic cyan holographic framing along the outer screen perimeter, crystal clear optical glass viewport, hard surface sci-fi XR game asset, glb",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795029339504,
+  "progress": 100,
+  "started_at": 1795029339519,
+  "finished_at": 1795029380298,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/model.glb?Expires=4948560000&Signature=fCo~J3zbC9Ssds9mE6yWk4X~l79H2vXf~HiaXgOcK1cE3BYDIkKEPyMd~8ChLdHqMe7vDkZOuTVjTnasMMRWy5ZKVKZEpZduUkJnPlo8S6ev7BBVXN~HnPJRad80QxS021mar6P8uTZUS~A82jG~Uf8YXokAalsx4Wjlg9cqDeMoi4VstERDqQxNdXZef8QCaUdZl4Hd1tUXm6tRjOhtebY5BYOMSZBvXE76q-oozVZLJVVvdvpXRxDAR~7CuNXs1IQZZ0A~-8X2XXpSbh3fsTCrsPzln3U4qAWFBIa8slefkhF4EsHghOIgmbnaLYcPXd-9pFJ78U9lOGb3D1mn-A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/model.fbx?Expires=4948560000&Signature=bHUoxLH9VrmhZ21GwcVNhlbGVGEOyYGgK8D3HgHQd0uE4hFnQDUf~kNrT2Pc9loxp7VZSiYZ0W4hbsw4YF4qKmc9QOX1TU35yaFKIGvJv4bwayD9V~M5-QenJzpxey5~nWJpmeOP~iHCk-bokAqzNGmSSgnNfOcu3ex-WtWN0D969MUEkl1oWJCFGzJDed3TpCKHR-7W9prKYWQsCYJ-An1L17~rnH6NxxZXkvZRXgVUr9yQzj0XiuNuiUjVcdSjzCqhRBuNvsGlFepiUxQmHLCxLBeoAW6AXJJ73yePyadjcR4kfRxBuwSuI6KEhpXBVosaLwV~xiIEQHxM6K51AA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/model.usdz?Expires=4948560000&Signature=oIEi0H4ouCMb41-H70Lc7~JEGdspttREyEH5pucdPTkYWd9M8ZZJjz5NvH8QnPBPs7k7eNVfjEN482p7LXd5ephDu1GRG~XTXx6sT~T8nzPi3rOlUjxfSmsY72GJDzSLJmd5f2rAKb9~GILEh-~VFB7rIVDNK1AfQKQYJmbGs3sZYUJBLGy14xvpWg274NhnrHTJ5xBZtRLoyQMltWcnZ8-xtH4klXMxhXJLJH90bFiM5CyUpXYPoiaxEhJb-gELZIvsazXYSEXNoInQL-R1UAEE~nGhyW6Zfc8xUQBUqptSSwf76IIn1YOEU4yM~zkW4npPMuW1Zd7Unp7-gUkZ4w__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/model.obj?Expires=4948560000&Signature=JrpByvtS1mj9dQruKHctHyULEnBwVvktLIfruyvm0Fm9WNiVCfy9rgFdtAYEBTwobnmXwqAPKu~8FE69RuwiE2Eri3JGULKaKMciTU96niK6dwiGC9-0aE2ayjnqmbSD90LFMGTpdNvTqY6uhuHtPYWGEf4pJocwKRIVe6zOfVzo238-gyavRBm0YFY-zTzEbt5Z9TVZa~lkQXxgAkkPDVH5OruOAqk60Vnze~Xyr91qDPuz84PqeSiVz06HDU6ahYRMsxrlWCicwge95apHYO7k5y4su3z5dcpK6HXsYnj3tPwyMrSdEJYTBYOY2Wqne2ePs5mrxykvosf~vITaVQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/model.stl?Expires=4948560000&Signature=PJWYX9jCPTSUbH2ti8sTTbrRPI7vGhoa9v2ntrdgiV8tytQ-yCc4ty1iEyRr1cEhw9W7j02eWikI4GPDrRac4Hy2Ff6GED3mhi7UTgaZqBL6lEuS4oKTLOy061~mYvY2O48A3yLPrlg~8ZK8vzR0vE8tVRwkhNZpJD-YDLESnKgLlPRpueOlFqKYeVP-3luctCbMR9fOEabdWxutokrYc4rzjhkezfPusau-I9QmYCsTFei8sH4FldNQvjXJ0pI4iHjyJw2objVLc-Idzpteh1P7Jo6zB~B6knHI-9CgMpJZResoMY0WOPT4uawHvX8FzYe4fqC6B-ybgJG6ZlBHkg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/preview.png?Expires=4948560000&Signature=avzvJ-qrQi~L~OcJvCH0THFtwLdSVU6ieubxntBIjhY8zuALDg8UMWeIOm1TobRIOS2w0E3b4lO7KYyATdLgWDLTsfSnFXxIMPJ04ufn41CzmpmSXIhQqaqcD77wwrx6xshuzPqhXbUEuyTSCQSTHCkuW4jDeZ0zPZztDxFqe-PqihHb8QU8MoKB-3-~KGigcfG7ap1Y5Pp9PIRW7Ii-puv56KJeB4AtLU-SVqBkTK4Op3ijI~lh9ZlWvzhfmVy7uTJqSOlE3Ewa6J-q8cAIh14UjdoL7qGmIeYBbndLgJVIp1XfkosoFpHyljU3lDKTy9S3tejlUi~4G48Hu-TS3A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "mode": "preview",
+    "prompt": "A futuristic translucent clear full screen glass visor overlay HUD panel for an XR mobile game, ultra clear transparent tempered glass surface, subtle iridescent specular edge reflections, sleek minimal futuristic cyan holographic framing along the outer screen perimeter, crystal clear optical glass viewport, hard surface sci-fi XR game asset, glb",
+    "should_remesh": true
+  },
+  "output": {
+    "seed": 1475669660,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/model.fbx?Expires=4948560000&Signature=bHUoxLH9VrmhZ21GwcVNhlbGVGEOyYGgK8D3HgHQd0uE4hFnQDUf~kNrT2Pc9loxp7VZSiYZ0W4hbsw4YF4qKmc9QOX1TU35yaFKIGvJv4bwayD9V~M5-QenJzpxey5~nWJpmeOP~iHCk-bokAqzNGmSSgnNfOcu3ex-WtWN0D969MUEkl1oWJCFGzJDed3TpCKHR-7W9prKYWQsCYJ-An1L17~rnH6NxxZXkvZRXgVUr9yQzj0XiuNuiUjVcdSjzCqhRBuNvsGlFepiUxQmHLCxLBeoAW6AXJJ73yePyadjcR4kfRxBuwSuI6KEhpXBVosaLwV~xiIEQHxM6K51AA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/model.glb?Expires=4948560000&Signature=fCo~J3zbC9Ssds9mE6yWk4X~l79H2vXf~HiaXgOcK1cE3BYDIkKEPyMd~8ChLdHqMe7vDkZOuTVjTnasMMRWy5ZKVKZEpZduUkJnPlo8S6ev7BBVXN~HnPJRad80QxS021mar6P8uTZUS~A82jG~Uf8YXokAalsx4Wjlg9cqDeMoi4VstERDqQxNdXZef8QCaUdZl4Hd1tUXm6tRjOhtebY5BYOMSZBvXE76q-oozVZLJVVvdvpXRxDAR~7CuNXs1IQZZ0A~-8X2XXpSbh3fsTCrsPzln3U4qAWFBIa8slefkhF4EsHghOIgmbnaLYcPXd-9pFJ78U9lOGb3D1mn-A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/model.obj?Expires=4948560000&Signature=JrpByvtS1mj9dQruKHctHyULEnBwVvktLIfruyvm0Fm9WNiVCfy9rgFdtAYEBTwobnmXwqAPKu~8FE69RuwiE2Eri3JGULKaKMciTU96niK6dwiGC9-0aE2ayjnqmbSD90LFMGTpdNvTqY6uhuHtPYWGEf4pJocwKRIVe6zOfVzo238-gyavRBm0YFY-zTzEbt5Z9TVZa~lkQXxgAkkPDVH5OruOAqk60Vnze~Xyr91qDPuz84PqeSiVz06HDU6ahYRMsxrlWCicwge95apHYO7k5y4su3z5dcpK6HXsYnj3tPwyMrSdEJYTBYOY2Wqne2ePs5mrxykvosf~vITaVQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/model.stl?Expires=4948560000&Signature=PJWYX9jCPTSUbH2ti8sTTbrRPI7vGhoa9v2ntrdgiV8tytQ-yCc4ty1iEyRr1cEhw9W7j02eWikI4GPDrRac4Hy2Ff6GED3mhi7UTgaZqBL6lEuS4oKTLOy061~mYvY2O48A3yLPrlg~8ZK8vzR0vE8tVRwkhNZpJD-YDLESnKgLlPRpueOlFqKYeVP-3luctCbMR9fOEabdWxutokrYc4rzjhkezfPusau-I9QmYCsTFei8sH4FldNQvjXJ0pI4iHjyJw2objVLc-Idzpteh1P7Jo6zB~B6knHI-9CgMpJZResoMY0WOPT4uawHvX8FzYe4fqC6B-ybgJG6ZlBHkg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/model.usdz?Expires=4948560000&Signature=oIEi0H4ouCMb41-H70Lc7~JEGdspttREyEH5pucdPTkYWd9M8ZZJjz5NvH8QnPBPs7k7eNVfjEN482p7LXd5ephDu1GRG~XTXx6sT~T8nzPi3rOlUjxfSmsY72GJDzSLJmd5f2rAKb9~GILEh-~VFB7rIVDNK1AfQKQYJmbGs3sZYUJBLGy14xvpWg274NhnrHTJ5xBZtRLoyQMltWcnZ8-xtH4klXMxhXJLJH90bFiM5CyUpXYPoiaxEhJb-gELZIvsazXYSEXNoInQL-R1UAEE~nGhyW6Zfc8xUQBUqptSSwf76IIn1YOEU4yM~zkW4npPMuW1Zd7Unp7-gUkZ4w__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a1f016-0394-7037-a720-a2bf3ccffda3/output/preview.png?Expires=4948560000&Signature=avzvJ-qrQi~L~OcJvCH0THFtwLdSVU6ieubxntBIjhY8zuALDg8UMWeIOm1TobRIOS2w0E3b4lO7KYyATdLgWDLTsfSnFXxIMPJ04ufn41CzmpmSXIhQqaqcD77wwrx6xshuzPqhXbUEuyTSCQSTHCkuW4jDeZ0zPZztDxFqe-PqihHb8QU8MoKB-3-~KGigcfG7ap1Y5Pp9PIRW7Ii-puv56KJeB4AtLU-SVqBkTK4Op3ijI~lh9ZlWvzhfmVy7uTJqSOlE3Ewa6J-q8cAIh14UjdoL7qGmIeYBbndLgJVIp1XfkosoFpHyljU3lDKTy9S3tejlUi~4G48Hu-TS3A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

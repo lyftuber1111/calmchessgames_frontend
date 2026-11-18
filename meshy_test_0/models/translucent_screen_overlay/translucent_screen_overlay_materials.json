@@ -1,0 +1,30 @@
+{
+  "model": "translucent_screen_overlay.glb",
+  "baseName": "translucent_screen_overlay",
+  "description": "A futuristic translucent clear full screen glass visor overlay HUD panel for an XR mobile game, ultra clear transparent tempered glass surface, subtle iridescent specular edge reflections, sleek minimal futuristic cyan holographic framing along the outer screen perimeter, crystal clear optical glass viewport, hard surface sci-fi XR game asset, glb",
+  "exported_at": "2026-11-18T19:17:06+00:00",
+  "destination": "./meshy_test_0/models/translucent_screen_overlay",
+  "textures_directory": "./meshy_test_0/models/translucent_screen_overlay/translucent_screen_overlay_textures",
+  "fallback_textures_directory": "./meshy_yest_0/models/translucent_screen_overlay/translucent_screen_overlay_textures",
+  "materials": {
+    "thumbnail": "./meshy_test_0/models/translucent_screen_overlay/translucent_screen_overlay_textures/thumbnail.png",
+    "texture_0_base_color": "./meshy_test_0/models/translucent_screen_overlay/translucent_screen_overlay_textures/texture_0_base_color.png",
+    "texture_0_metallic": "./meshy_test_0/models/translucent_screen_overlay/translucent_screen_overlay_textures/texture_0_metallic.png",
+    "texture_0_roughness": "./meshy_test_0/models/translucent_screen_overlay/translucent_screen_overlay_textures/texture_0_roughness.png",
+    "texture_0_normal": "./meshy_test_0/models/translucent_screen_overlay/translucent_screen_overlay_textures/texture_0_normal.png"
+  },
+  "companion_files": [
+    "final_result.json",
+    "preview_result.json",
+    "texture_0_base_color.png",
+    "texture_0_metallic.png",
+    "texture_0_normal.png",
+    "texture_0_roughness.png",
+    "thumbnail.png",
+    "translucent_screen_overlay.fbx",
+    "translucent_screen_overlay.glb",
+    "translucent_screen_overlay.mtl",
+    "translucent_screen_overlay.obj",
+    "translucent_screen_overlay_raw.glb"
+  ]
+}

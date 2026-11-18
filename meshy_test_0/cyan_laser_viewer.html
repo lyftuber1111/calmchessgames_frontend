@@ -194,12 +194,27 @@
       </div>
     </div>
 
-    <div style="width:100%; display:flex; justify-content:center; gap:1rem;">
-      <button class="btn" onclick="document.getElementById('laser-viewer').play()">▶ Play Animation</button>
-      <button class="btn" onclick="document.getElementById('laser-viewer').pause()">⏸ Pause Animation</button>
-      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '0deg 90deg 28m'">Reset View (Side)</button>
-      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '0deg 0deg 30m'">Reset View (Front +Z)</button>
+    <div style="width:100%; display:flex; justify-content:center; flex-wrap:wrap; gap:0.75rem; margin-top:1rem;">
+      <button class="btn" onclick="loadModel('models/cyan_laser_rod_4/cyan_laser_rod_4.glb', 'models/cyan_laser_rod_4/cyan_laser_rod_4_textures/thumbnail.png', 'Cyan Laser Rod 4 (28m, w/h 0.25m)')">⚡ Load Rod 4 (28m User Camera)</button>
+      <button class="btn" onclick="loadModel('models/cyan_laser_rod/cyan_laser_rod.glb', 'models/cyan_laser_rod/cyan_laser_rod_textures/thumbnail.png', 'Cyan Laser Rod (23.8m)')">Load Rod 1 (23.8m)</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').play()">▶ Play</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').pause()">⏸ Pause</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '0deg 90deg 28m'">Side View</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '0deg 0deg 30m'">Front View (+Z)</button>
+      <button class="btn" onclick="document.getElementById('laser-viewer').cameraOrbit = '180deg 90deg 1m'; document.getElementById('laser-viewer').cameraTarget = '0m 0m 28m'">User Camera POV (+Z 28m)</button>
     </div>
   </main>
+
+  <script>
+    function loadModel(src, poster, title) {
+      const viewer = document.getElementById('laser-viewer');
+      viewer.src = src;
+      if (poster) viewer.poster = poster;
+      showToast('Loaded: ' + title);
+    }
+    function showToast(msg) {
+      console.log(msg);
+    }
+  </script>
 </body>
 </html>

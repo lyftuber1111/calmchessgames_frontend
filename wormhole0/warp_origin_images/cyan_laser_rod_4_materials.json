@@ -1,7 +1,7 @@
 {
     "model": "cyan_laser_rod_4.glb",
     "base_name": "cyan_laser_rod_4",
-    "exported_at": "2026-11-18T05:50:00.000Z",
+    "exported_at": "2026-11-18T06:02:00.000Z",
     "specifications": {
         "width_meters": 0.25,
         "height_meters": 0.25,
@@ -12,6 +12,27 @@
             "width": 0.25,
             "height": 0.25,
             "length": 28.0
+        },
+        "user_camera": {
+            "name": "User_Camera",
+            "position": [
+                0.0,
+                0.0,
+                28.0
+            ],
+            "target": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "forward_vector": [
+                0.0,
+                0.0,
+                -1.0
+            ],
+            "distance_meters": 28.0,
+            "fov_lens_mm": 35,
+            "description": "User's camera positioned at +Z 28.0m looking directly down -Z at the origin (0, 0, 0). The animation extends from the beginning (0, 0, 0) all the way into the user's camera lens."
         },
         "blender_coordinates": {
             "pivot_point": [
@@ -67,7 +88,7 @@
                 1.0,
                 1.0
             ],
-            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis with base width 0.25m, height 0.25m, length 28.0m"
+            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) at the beginning (0, 0, 0) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis all the way to the user's camera at (0, 0, 28.0)"
         }
     },
     "color_palette": [

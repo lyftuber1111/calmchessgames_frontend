@@ -211,15 +211,29 @@ elif hasattr(action, 'layers'):
 bpy.context.scene.frame_set(TOTAL_FRAMES)
 obj.scale = (1.000, 1.000, 1.000)
 
-# Export GLB with export_yup=False so Blender +Z directly maps to glTF/XR +Z forward
+# Create and position User_Camera at the end of the laser extension (Z = 28.0m)
+# The camera looks down -Z directly towards the laser origin (0, 0, 0)
+# This ensures the animation extends from the beginning (0, 0, 0) all the way into the user's camera
+cam_data = bpy.data.cameras.new("User_Camera")
+cam_data.lens = 35 # Wide-angle FOV for immersive XR perspective
+cam_data.clip_start = 0.05
+cam_data.clip_end = 250.0
+cam_obj = bpy.data.objects.new("User_Camera", cam_data)
+bpy.context.scene.collection.objects.link(cam_obj)
+cam_obj.location = (0.0, 0.0, LENGTH) # Exactly at +Z 28.0m
+cam_obj.rotation_euler = (0.0, 0.0, 0.0) # Local -Z faces global -Z straight to (0,0,0)
+bpy.context.scene.camera = cam_obj
+
+# Export GLB with export_yup=False so Blender +Z directly maps to glTF/XR +Z forward, including User_Camera
 bpy.ops.export_scene.gltf(
     filepath=str(TEMP_EXPORT_GLB),
     export_format='GLB',
     export_yup=False,
+    export_cameras=True,
     export_animations=True
 )
 
-# Post-process GLB to explicitly ensure base node 0 rest scale is [1.0, 1.0, 1.0] (matching OBJ dimensions)
+# Post-process GLB to explicitly ensure base mesh rest scale is [1.0, 1.0, 1.0] and camera is positioned at [0, 0, 28]
 with open(str(TEMP_EXPORT_GLB), 'rb') as f:
     glb_data = f.read()
 
@@ -228,10 +242,14 @@ chunk0_len, chunk0_type = struct.unpack('<II', glb_data[12:20])
 json_bytes = glb_data[20:20+chunk0_len]
 gltf_json = json.loads(json_bytes.decode('utf-8'))
 
-# Set root node rest transform: translation [0, 0, 0], rotation [0, 0, 0, 1], scale [1, 1, 1]
-gltf_json['nodes'][0]['translation'] = [0.0, 0.0, 0.0]
-gltf_json['nodes'][0]['rotation'] = [0.0, 0.0, 0.0, 1.0]
-gltf_json['nodes'][0]['scale'] = [1.0, 1.0, 1.0]
+for node in gltf_json.get('nodes', []):
+    if node.get('name') == 'CyanLaserRod_Root':
+        node['translation'] = [0.0, 0.0, 0.0]
+        node['rotation'] = [0.0, 0.0, 0.0, 1.0]
+        node['scale'] = [1.0, 1.0, 1.0]
+    elif node.get('name') == 'User_Camera':
+        node['translation'] = [0.0, 0.0, float(LENGTH)]
+        node['rotation'] = [0.0, 0.0, 0.0, 1.0]
 
 new_json_bytes = json.dumps(gltf_json, separators=(',', ':')).encode('utf-8')
 pad = (4 - (len(new_json_bytes) % 4)) % 4
@@ -255,7 +273,11 @@ shutil.copy2(TEMP_EXPORT_GLB, DEST_MESHY_GLB)
 if os.path.exists(TEMP_EXPORT_GLB):
     os.remove(TEMP_EXPORT_GLB)
 
-# Export OBJ as companion asset with full unscaled 28m geometry (scale=1,1,1)
+# Export OBJ as companion asset with full unscaled 28m geometry (scale=1,1,1), selecting only mesh
+for o in bpy.data.objects:
+    o.select_set(False)
+obj.select_set(True)
+bpy.context.view_layer.objects.active = obj
 obj.scale = (1.000, 1.000, 1.000)
 bpy.ops.wm.obj_export(
     filepath=str(DEST_OBJ),
@@ -283,7 +305,7 @@ for f in src_tex_dir.glob("*.png"):
 materials_data = {
     "model": f"{MODEL_NAME}.glb",
     "base_name": MODEL_NAME,
-    "exported_at": "2026-11-18T05:50:00.000Z",
+    "exported_at": "2026-11-18T06:02:00.000Z",
     "specifications": {
         "width_meters": round(TARGET_WIDTH, 6),
         "height_meters": round(TARGET_HEIGHT, 6),
@@ -294,6 +316,15 @@ materials_data = {
             "width": 0.25,
             "height": 0.25,
             "length": 28.0
+        },
+        "user_camera": {
+            "name": "User_Camera",
+            "position": [0.0, 0.0, round(LENGTH, 6)],
+            "target": [0.0, 0.0, 0.0],
+            "forward_vector": [0.0, 0.0, -1.0],
+            "distance_meters": round(LENGTH, 6),
+            "fov_lens_mm": 35,
+            "description": "User's camera positioned at +Z 28.0m looking directly down -Z at the origin (0, 0, 0). The animation extends from the beginning (0, 0, 0) all the way into the user's camera lens."
         },
         "blender_coordinates": {
             "pivot_point": [0.0, 0.0, 0.0],
@@ -321,7 +352,7 @@ materials_data = {
             "fps": 30,
             "total_frames": 24,
             "base_scale": [1.0, 1.0, 1.0],
-            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis with base width 0.25m, height 0.25m, length 28.0m"
+            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) at the beginning (0, 0, 0) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis all the way to the user's camera at (0, 0, 28.0)"
         }
     },
     "color_palette": [

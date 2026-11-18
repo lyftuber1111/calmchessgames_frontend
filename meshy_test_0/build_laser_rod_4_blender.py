@@ -34,19 +34,20 @@ DEST_MESHY_TEX_DIR.mkdir(parents=True, exist_ok=True)
 DEST_YEST_TEX_DIR.mkdir(parents=True, exist_ok=True)
 
 # Target specs:
-# Circumference strictly 0.25 meters in XR (radius = 0.25 / (2*pi) ~= 0.0397887m, diameter ~= 0.0795775m)
-TARGET_CIRCUMFERENCE = 0.25 # meters
-TARGET_RADIUS = TARGET_CIRCUMFERENCE / (2.0 * math.pi) # ~0.03978873577 m
-TARGET_DIAMETER = TARGET_RADIUS * 2.0 # ~0.0795774715 m
-TARGET_WIDTH = TARGET_DIAMETER # ~0.0795775 m
-TARGET_HEIGHT = TARGET_DIAMETER # ~0.0795775 m
+# Width and height strictly 0.25m in XR (diameter = 0.25m, radius = 0.125m)
+# Length strictly 28.0m in XR
+# Base dimensions at scale [1.0, 1.0, 1.0] are: width 0.25m, height 0.25m, length 28.0m
+TARGET_WIDTH = 0.25 # meters (cross-section X width)
+TARGET_HEIGHT = 0.25 # meters (cross-section Y height)
+TARGET_RADIUS = 0.125 # meters (0.25 / 2.0)
+TARGET_DIAMETER = 0.25 # meters
 LENGTH = 28.0 # meters (strictly 28m long)
 DURATION_SECONDS = 0.8 # strictly 0.8 seconds duration
 FPS = 30
 TOTAL_FRAMES = int(round(DURATION_SECONDS * FPS)) # 24 frames
 
 print("==================================================")
-print(f"BUILDING CYAN LASER ROD 4 (CIRCUMFERENCE: {TARGET_CIRCUMFERENCE}m, LENGTH: {LENGTH}m, DURATION: {DURATION_SECONDS}s)")
+print(f"BUILDING CYAN LASER ROD 4 (WIDTH: {TARGET_WIDTH}m, HEIGHT: {TARGET_HEIGHT}m, LENGTH: {LENGTH}m, DURATION: {DURATION_SECONDS}s)")
 print(f"Radius: {TARGET_RADIUS:.6f}m, Diameter: {TARGET_DIAMETER:.6f}m | Pivot at +Z 0 extending down +Z")
 print("==================================================")
 
@@ -116,7 +117,7 @@ for v in mesh.vertices:
     old_x = v.co.x
     old_y = v.co.y
     old_z = v.co.z
-    # Cross section in X and Y centered around (0,0) with exact 0.25m circumference (radius = 0.039789m)
+    # Cross section in X and Y centered around (0,0) with exact 0.25m width and height (radius = 0.125m)
     v.co.x = (old_x - center_x) * scale_factor_x
     v.co.y = (old_z - center_z) * scale_factor_z
     
@@ -183,7 +184,7 @@ obj.animation_data.action = action
 
 # Keyframes across 0.8 seconds (0 to 24 frames @ 30 FPS):
 # Starts at length 0.0m (t=0.0s, scale Z=0.000) and extends linearly to 28.0m (t=0.8s, scale Z=1.000)
-# Circumference remains strictly 0.25m throughout (scale X=1.000, scale Y=1.000)
+# Base width and height remain strictly 0.25m throughout (scale X=1.000, scale Y=1.000)
 keyframes = [
     (0.0,                 (1.000, 1.000, 0.000)), # Frame 0  (t = 0.00s): starts at length 0.000m (pivot at +Z 0)
     (float(TOTAL_FRAMES), (1.000, 1.000, 1.000)), # Frame 24 (t = 0.80s): extends to full 28.000m down +Z
@@ -206,7 +207,7 @@ elif hasattr(action, 'layers'):
                     for kp in fc.keyframe_points:
                         kp.interpolation = 'LINEAR'
 
-# Set base/rest scale to frame 24 (full scale 1.0, 1.0, 1.0) so default node dimensions match OBJ (0.25m circumference x 28m)
+# Set base/rest scale to frame 24 (full scale 1.0, 1.0, 1.0) so default node dimensions match base OBJ (0.25m width/height x 28m length)
 bpy.context.scene.frame_set(TOTAL_FRAMES)
 obj.scale = (1.000, 1.000, 1.000)
 
@@ -282,14 +283,18 @@ for f in src_tex_dir.glob("*.png"):
 materials_data = {
     "model": f"{MODEL_NAME}.glb",
     "base_name": MODEL_NAME,
-    "exported_at": "2026-11-18T04:47:00.000Z",
+    "exported_at": "2026-11-18T05:50:00.000Z",
     "specifications": {
-        "circumference_meters": 0.25,
-        "radius_meters": round(TARGET_RADIUS, 6),
-        "diameter_meters": round(TARGET_DIAMETER, 6),
         "width_meters": round(TARGET_WIDTH, 6),
         "height_meters": round(TARGET_HEIGHT, 6),
+        "radius_meters": round(TARGET_RADIUS, 6),
+        "diameter_meters": round(TARGET_DIAMETER, 6),
         "length_meters": round(LENGTH, 6),
+        "base_dimensions": {
+            "width": 0.25,
+            "height": 0.25,
+            "length": 28.0
+        },
         "blender_coordinates": {
             "pivot_point": [0.0, 0.0, 0.0],
             "start_coordinate": [0.0, 0.0, 0.0],
@@ -316,7 +321,7 @@ materials_data = {
             "fps": 30,
             "total_frames": 24,
             "base_scale": [1.0, 1.0, 1.0],
-            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis with constant 0.25m circumference"
+            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis with base width 0.25m, height 0.25m, length 28.0m"
         }
     },
     "color_palette": [

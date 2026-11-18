@@ -1,14 +1,18 @@
 {
     "model": "cyan_laser_rod_4.glb",
     "base_name": "cyan_laser_rod_4",
-    "exported_at": "2026-11-18T04:47:00.000Z",
+    "exported_at": "2026-11-18T05:50:00.000Z",
     "specifications": {
-        "circumference_meters": 0.25,
-        "radius_meters": 0.039789,
-        "diameter_meters": 0.079577,
-        "width_meters": 0.079577,
-        "height_meters": 0.079577,
+        "width_meters": 0.25,
+        "height_meters": 0.25,
+        "radius_meters": 0.125,
+        "diameter_meters": 0.25,
         "length_meters": 28.0,
+        "base_dimensions": {
+            "width": 0.25,
+            "height": 0.25,
+            "length": 28.0
+        },
         "blender_coordinates": {
             "pivot_point": [
                 0.0,
@@ -26,8 +30,8 @@
                 28.0
             ],
             "forward_axis": "+Z (Blender +Z forward/length axis)",
-            "cross_section_width_x": 0.079577,
-            "cross_section_height_y": 0.079577,
+            "cross_section_width_x": 0.25,
+            "cross_section_height_y": 0.25,
             "both_ends_capped": true
         },
         "xr_gltf_coordinates": {
@@ -47,8 +51,8 @@
                 28.0
             ],
             "forward_axis": "+Z (XR / glTF Forward)",
-            "cross_section_width_x": 0.079577,
-            "cross_section_height_y": 0.079577,
+            "cross_section_width_x": 0.25,
+            "cross_section_height_y": 0.25,
             "both_ends_capped": true
         },
         "animation": {
@@ -63,7 +67,7 @@
                 1.0,
                 1.0
             ],
-            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis with constant 0.25m circumference"
+            "keyframes": "Strict linear extension taking 0.8 seconds: starts at length 0.000m (t=0.00s, scale=[1,1,0]) and extends continuously to 28.000m (t=0.80s, scale=[1,1,1]) down +Z axis with base width 0.25m, height 0.25m, length 28.0m"
         }
     },
     "color_palette": [

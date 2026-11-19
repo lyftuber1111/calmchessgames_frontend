@@ -13,13 +13,32 @@ import { VRButton } from 'three/addons/webxr/VRButton.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-import { MeshPool, StageObjectPool } from './object_pool.js';
+import {
+  MeshPool,
+  StageObjectPool,
+  setupCockpitCracksHierarchy,
+  setupCockpitOverlayHierarchy,
+  fitCockpitCracksToCamera,
+  fitCockpitOverlayToCamera,
+  toggleRandomWeaponDecal,
+  toggleBrokenCoreDecal,
+  toggleGameOverDecals,
+  resetCockpitOverlayDecals
+} from './object_pool.js';
 
 // Expose THREE and ObjectPool globally on window for dynamic stage modules and decoupled enemy systems
 if (typeof window !== 'undefined') {
   if (!window.THREE) window.THREE = THREE;
   window.MeshPool = MeshPool;
   window.StageObjectPool = StageObjectPool;
+  window.setupCockpitCracksHierarchy = setupCockpitCracksHierarchy;
+  window.setupCockpitOverlayHierarchy = setupCockpitOverlayHierarchy;
+  window.fitCockpitCracksToCamera = fitCockpitCracksToCamera;
+  window.fitCockpitOverlayToCamera = fitCockpitOverlayToCamera;
+  window.toggleRandomWeaponDecal = toggleRandomWeaponDecal;
+  window.toggleBrokenCoreDecal = toggleBrokenCoreDecal;
+  window.toggleGameOverDecals = toggleGameOverDecals;
+  window.resetCockpitOverlayDecals = resetCockpitOverlayDecals;
 }
 
 const gltfLoader = new GLTFLoader();
@@ -313,6 +332,7 @@ let currentActiveStage = 1;
 let currentActiveDeviceType = 'desktop';
 let activeStageModule = null;
 let currentStageObjectPool = null;
+let activeGameOverTimeout = null;
 
 // Application & Flight state
 const state = {
@@ -5058,12 +5078,10 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       else if (mod.default && typeof mod.default.handleStageEvent === 'function') activeStageEventHandler = mod.default.handleStageEvent;
     }
 
-    // At level change: check all admin console game manager database values and update the game values
-    try {
-      await syncGameManagerFromDatabase(stage.level, deviceType);
-    } catch (syncErr) {
+    // At level change: asynchronously sync game manager values in background without blocking stage switch
+    syncGameManagerFromDatabase(stage.level, deviceType).catch(syncErr => {
       console.warn('[Wormhole XR Engine] Game Manager database sync error on level change:', syncErr);
-    }
+    });
 
     // Keep DOM script tag synchronized for DevTools Elements panel inspection
     try {
@@ -5211,6 +5229,9 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       }
 
       window.stageObjectPool = currentStageObjectPool;
+      if (currentStageObjectPool && camera) {
+        currentStageObjectPool.getCockpitCracksOverlay(camera);
+      }
       console.log(`[Wormhole XR Engine] Stage object pool active for Stage ${stage.level}: ${stage.slug}`, currentStageObjectPool);
     } catch (poolInitErr) {
       console.warn('[Wormhole XR Engine] Stage object pool initialization warning:', poolInitErr);
@@ -5236,6 +5257,12 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
 async function abortCurrentStageAndStartFresh(targetStage = 1) {
   const stageNum = parseInt(targetStage) || 1;
   console.log(`[Wormhole XR Engine] Aborting current stage (${currentActiveStage}) and starting Stage ${stageNum} fresh...`);
+
+  // Clear any active game over modal display timer
+  if (typeof activeGameOverTimeout !== 'undefined' && activeGameOverTimeout) {
+    clearTimeout(activeGameOverTimeout);
+    activeGameOverTimeout = null;
+  }
 
   // 1. Hide Game Over modal if showing
   const modal = document.getElementById('game-over-modal');
@@ -5287,6 +5314,7 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
   document.body.classList.add('portrait-dismissed');
 
   // 6. Clean up ALL active enemies, weapon meshes, lasers, projectiles, explosions, powerups, special effects
+  state.waveSpawnInProgress = false;
   if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
     currentStageObjectPool.despawnAll();
   }
@@ -5296,21 +5324,25 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
   clearActiveSpecialEffects();
 
   // 7. Reset and hide cockpit cracks overlay, damage vignette, and red hit edges
+  const cracks = (camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
+    || (currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
+  if (cracks && typeof resetCockpitOverlayDecals === 'function') {
+    resetCockpitOverlayDecals(cracks);
+  }
   if (currentStageObjectPool && typeof currentStageObjectPool.hideCockpitCracks === 'function') {
     currentStageObjectPool.hideCockpitCracks();
   } else if (typeof window !== 'undefined' && typeof window.hideCockpitCracks === 'function') {
     try { window.hideCockpitCracks(); } catch (e) {}
-  } else if (camera) {
-    const cracks = camera.getObjectByName('cockpit_cracks_overlay');
-    if (cracks) {
-      cracks.visible = false;
-      cracks.traverse((child) => {
-        if (child.isMesh && child.material) {
+  } else if (cracks) {
+    cracks.traverse((child) => {
+      if (child.isMesh && child.userData && child.userData.isDecal) {
+        child.visible = false;
+        if (child.material) {
           child.material.opacity = 0.0;
           child.material.needsUpdate = true;
         }
-      });
-    }
+      }
+    });
   }
   if (typeof document !== 'undefined') {
     const redEdges = document.getElementById('cockpit-edges-red');
@@ -5440,14 +5472,14 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
   state.currentWave = 0;
   state.waveStartTime = performance.now();
   state.waveCompleted = false;
+  state.waveSpawnInProgress = false;
   lastEnemySpawnCheckTime = performance.now();
   const api = getEngineApi();
   if (typeof activeStageWaveHandler === 'function') {
-    activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies });
-  } else {
-    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+    try { activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies }); } catch (e) {}
   }
+  const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+  spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
 
   // 18. Auto-close the top Telemetry & Modes panel if auto-close is enabled
   const chkAutoClose = document.getElementById('chk-auto-close-top');
@@ -5483,12 +5515,6 @@ if (selectStageJumpEl) {
     const targetStage = parseInt(e.target.value) || 1;
     console.log(`[Wormhole XR Debug] Stage jump selected in Telemetry & Modes: Stage ${targetStage}`);
     await abortCurrentStageAndStartFresh(targetStage);
-  });
-  // Check for any newly created stages when dropdown is opened/focused
-  selectStageJumpEl.addEventListener('focus', () => {
-    if (typeof syncStagesDropdownFromDatabase === 'function') {
-      syncStagesDropdownFromDatabase(false);
-    }
   });
 }
 
@@ -10996,18 +11022,26 @@ function applyDamageToPlayer(rawDamage, weapon = null) {
   }
 
   // Trigger cockpit decal hit for detected weapon type (laser burns vs missile strikes)
-  if (typeof triggerCockpitCracksHit === 'function') {
-    triggerCockpitCracksHit(weapon);
+  const overlayMesh = (camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
+    || (currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
+  if (overlayMesh && typeof toggleRandomWeaponDecal === 'function') {
+    toggleRandomWeaponDecal(overlayMesh, weapon);
+  }
+  if (currentStageObjectPool && typeof currentStageObjectPool.triggerWeaponDecal === 'function') {
+    currentStageObjectPool.triggerWeaponDecal(weapon);
   } else if (typeof window !== 'undefined' && typeof window.triggerCockpitCracksHit === 'function') {
-    window.triggerCockpitCracksHit(weapon);
+    try { window.triggerCockpitCracksHit(weapon); } catch (e) {}
   }
 
   // When shield reaches 0%, BrokenSpiderWeb Core decal turns on
   if (shieldBefore > 0 && state.playerShield <= 0) {
-    if (typeof triggerShieldDepletedCockpitCracks === 'function') {
-      triggerShieldDepletedCockpitCracks();
+    if (overlayMesh && typeof toggleBrokenCoreDecal === 'function') {
+      toggleBrokenCoreDecal(overlayMesh);
+    }
+    if (currentStageObjectPool && typeof currentStageObjectPool.triggerShieldDepletedDecal === 'function') {
+      currentStageObjectPool.triggerShieldDepletedDecal();
     } else if (typeof window !== 'undefined' && typeof window.triggerShieldDepletedCockpitCracks === 'function') {
-      window.triggerShieldDepletedCockpitCracks();
+      try { window.triggerShieldDepletedCockpitCracks(); } catch (e) {}
     }
   }
 
@@ -11182,7 +11216,12 @@ function triggerGameOver() {
   }
 
   // Delay the game over modal display for 4 seconds (4000 ms) so both BrokenSpiderWeb Core and Broken SpiderWeb Screen decals are displayed
-  setTimeout(() => {
+  if (activeGameOverTimeout) {
+    clearTimeout(activeGameOverTimeout);
+    activeGameOverTimeout = null;
+  }
+  activeGameOverTimeout = setTimeout(() => {
+    activeGameOverTimeout = null;
     // Show Game Over modal overlay
     const modal = document.getElementById('game-over-modal');
     if (modal) {
@@ -11396,11 +11435,10 @@ function executeMissionCountdown(isRestart = false) {
     lastEnemySpawnCheckTime = performance.now();
     const api = getEngineApi();
     if (typeof activeStageWaveHandler === 'function') {
-      activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies });
-    } else {
-      const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-      spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+      try { activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies }); } catch (e) {}
     }
+    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
 
     // Ensure keyboard focus is restored and request crosshair capture if on desktop
     try {
@@ -11474,8 +11512,15 @@ function executeMissionCountdown(isRestart = false) {
   }, 1000);
 }
 
-function restartGame() {
-  return abortCurrentStageAndStartFresh(currentActiveStage || 1);
+async function restartGame() {
+  if (activeGameOverTimeout) {
+    clearTimeout(activeGameOverTimeout);
+    activeGameOverTimeout = null;
+  }
+  const modal = document.getElementById('game-over-modal');
+  if (modal) modal.style.display = 'none';
+  await abortCurrentStageAndStartFresh(currentActiveStage || 1);
+  executeMissionCountdown(true);
 }
 
 function quitGame() {
@@ -12848,9 +12893,11 @@ async function syncStagesDropdownFromDatabase(showNotification = false) {
       const activeStages = json.stages.filter(s => parseInt(s.is_enabled) === 1);
       const stageList = activeStages.length > 0 ? activeStages : json.stages;
 
-      const currentVal = jumpSelect.value;
+      const currentVal = jumpSelect.value || String(currentActiveStage || 1);
+      const allLevels = new Set(Object.keys(STAGE_REGISTRY).map(Number));
       stageList.forEach(s => {
         const lvl = parseInt(s.stage_level) || 1;
+        allLevels.add(lvl);
         if (!STAGE_REGISTRY[lvl]) {
           STAGE_REGISTRY[lvl] = {
             level: lvl,
@@ -12859,10 +12906,11 @@ async function syncStagesDropdownFromDatabase(showNotification = false) {
           };
         }
       });
-      jumpSelect.innerHTML = stageList.map(s => {
-        const lvl = parseInt(s.stage_level) || 1;
+      const sortedLevels = Array.from(allLevels).sort((a, b) => a - b);
+      jumpSelect.innerHTML = sortedLevels.map(lvl => {
+        const st = STAGE_REGISTRY[lvl];
         const icon = lvl === 1 ? '🚀' : (lvl === 2 ? '🌌' : (lvl === 3 ? '🕳️' : (lvl === 4 ? '⚛️' : (lvl === 5 ? '👑' : '🪐'))));
-        return `<option value="${lvl}">${icon} Stage ${lvl}: ${s.stage_name}</option>`;
+        return `<option value="${lvl}">${icon} Stage ${lvl}: ${st.name}</option>`;
       }).join('');
 
       jumpSelect.value = currentVal;
@@ -13985,11 +14033,15 @@ if (btnSplashExit) {
 // Restart button & keyboard shortcut listener for Game Over screen
 const btnRestartGame = document.getElementById('btn-restart-game');
 if (btnRestartGame) {
+  let restartDebounceTime = 0;
   const onRestart = (e) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
+    const now = performance.now();
+    if (now - restartDebounceTime < 500) return;
+    restartDebounceTime = now;
     restartGame();
   };
   btnRestartGame.addEventListener('click', onRestart);

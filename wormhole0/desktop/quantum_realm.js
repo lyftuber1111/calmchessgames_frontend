@@ -5,19 +5,10 @@ import {
   loadCockpitCracksGlbAsset,
   loadCockpitCracksAsset,
   setupCockpitCracksHierarchy,
-  setupCockpitOverlayHierarchy,
-  flashCockpitCracksOverlay,
-  showGameOverCockpitCracksOverlay,
-  fitCockpitCracksToCamera,
-  fitCockpitOverlayToCamera,
   toggleRandomWeaponDecal,
   toggleBrokenCoreDecal,
   toggleGameOverDecals,
   resetCockpitOverlayDecals,
-  triggerCockpitCracksHit,
-  triggerShieldDepletedCockpitCracks,
-  triggerGameOverCockpitCracks,
-  hideCockpitCracks,
   COCKPIT_CRACKS_GLB_URL
 } from './quantum_realm_pool.js';
 
@@ -375,6 +366,19 @@ export function updateStageWaves(pool, activeEnemies, stageKills, scene) {
 let activeCockpitCracksMesh = null;
 let activeCockpitCracksPool = null;
 
+function getActiveOverlay() {
+  const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+  if (cam) {
+    const onCam = cam.getObjectByName('cockpit_overlay_object') || cam.getObjectByName('cockpit_cracks_overlay');
+    if (onCam) return onCam;
+  }
+  if (activeCockpitCracksMesh) return activeCockpitCracksMesh;
+  if (activeCockpitCracksPool && activeCockpitCracksPool.cockpitCracksMesh) {
+    return activeCockpitCracksPool.cockpitCracksMesh;
+  }
+  return null;
+}
+
 export async function setupCockpitCracksOverlay(camera, pool = null, scene = null) {
   if (!camera) {
     camera = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
@@ -383,17 +387,22 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
     scene = (typeof window !== 'undefined' && window.scene) ? window.scene : null;
   }
 
-  if (camera) {
-    const existing = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
-    if (existing) {
-      camera.remove(existing);
-    }
-  }
-
   if (pool && typeof pool.getCockpitCracksOverlay === 'function') {
     activeCockpitCracksPool = pool;
     activeCockpitCracksMesh = pool.getCockpitCracksOverlay(camera);
     if (activeCockpitCracksMesh) {
+      if (camera && activeCockpitCracksMesh.parent !== camera) {
+        camera.add(activeCockpitCracksMesh);
+      }
+      fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
+      return activeCockpitCracksMesh;
+    }
+  }
+
+  if (camera) {
+    const existing = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
+    if (existing) {
+      activeCockpitCracksMesh = existing;
       fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
       return activeCockpitCracksMesh;
     }
@@ -502,10 +511,11 @@ export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
     }
   }
 
-  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.triggerWeaponDecal === 'function') {
+  const overlay = getActiveOverlay();
+  if (overlay) {
+    toggleRandomWeaponDecal(overlay, weaponType);
+  } else if (activeCockpitCracksPool && typeof activeCockpitCracksPool.triggerWeaponDecal === 'function') {
     activeCockpitCracksPool.triggerWeaponDecal(weaponType);
-  } else if (activeCockpitCracksMesh) {
-    toggleRandomWeaponDecal(activeCockpitCracksMesh, weaponType);
   }
 
   if (typeof document !== 'undefined') {
@@ -520,18 +530,20 @@ export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
 }
 
 export function triggerShieldDepletedCockpitCracks() {
-  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.triggerShieldDepletedDecal === 'function') {
+  const overlay = getActiveOverlay();
+  if (overlay) {
+    toggleBrokenCoreDecal(overlay);
+  } else if (activeCockpitCracksPool && typeof activeCockpitCracksPool.triggerShieldDepletedDecal === 'function') {
     activeCockpitCracksPool.triggerShieldDepletedDecal();
-  } else if (activeCockpitCracksMesh) {
-    toggleBrokenCoreDecal(activeCockpitCracksMesh);
   }
 }
 
 export function triggerGameOverCockpitCracks(durationMs = 4000) {
-  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.showGameOverCockpitCracks === 'function') {
+  const overlay = getActiveOverlay();
+  if (overlay) {
+    toggleGameOverDecals(overlay, durationMs);
+  } else if (activeCockpitCracksPool && typeof activeCockpitCracksPool.showGameOverCockpitCracks === 'function') {
     activeCockpitCracksPool.showGameOverCockpitCracks(durationMs);
-  } else if (activeCockpitCracksMesh) {
-    toggleGameOverDecals(activeCockpitCracksMesh, durationMs);
   }
   if (typeof document !== 'undefined') {
     const redEdges = document.getElementById('cockpit-edges-red');
@@ -542,10 +554,11 @@ export function triggerGameOverCockpitCracks(durationMs = 4000) {
 }
 
 export function hideCockpitCracks() {
-  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.hideCockpitCracks === 'function') {
+  const overlay = getActiveOverlay();
+  if (overlay) {
+    resetCockpitOverlayDecals(overlay);
+  } else if (activeCockpitCracksPool && typeof activeCockpitCracksPool.hideCockpitCracks === 'function') {
     activeCockpitCracksPool.hideCockpitCracks();
-  } else if (activeCockpitCracksMesh) {
-    resetCockpitOverlayDecals(activeCockpitCracksMesh);
   }
   if (typeof document !== 'undefined') {
     const redEdges = document.getElementById('cockpit-edges-red');
@@ -556,7 +569,7 @@ export function hideCockpitCracks() {
 }
 
 export function getActiveCockpitCracksOverlay() {
-  return activeCockpitCracksMesh;
+  return getActiveOverlay();
 }
 
 export function handleStageEvent(eventName, payload, engineApi) {

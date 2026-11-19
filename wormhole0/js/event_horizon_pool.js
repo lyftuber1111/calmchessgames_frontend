@@ -254,14 +254,14 @@ export class EventHorizonObjectPool extends StageObjectPool {
             return clone;
           }
         );
-        console.log(`[StageObjectPool] Pre-allocated Cockpit Overlay pool from: ${glbUrl}`);
+        console.log(`[EventHorizonObjectPool] Pre-allocated Cockpit Overlay pool from: ${glbUrl}`);
+        const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+        if (cam) {
+          this.getCockpitCracksOverlay(cam);
+        }
       }
     } catch (err) {
-      console.warn('[StageObjectPool] Cockpit overlay pooling warning:', err);
-    }
-  }
-} catch (err) {
-      console.warn('[EventHorizonObjectPool] Cockpit cracks pooling warning:', err);
+      console.warn('[EventHorizonObjectPool] Cockpit overlay pooling warning:', err);
     }
   }
 }

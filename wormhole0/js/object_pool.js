@@ -64,7 +64,15 @@ export function setupCockpitCracksHierarchy(root) {
       // Laser burns: burn 01 thru burn 08 (toggled off by default)
       if (name.includes('laserburn') || (name.includes('burn') && /0?[1-8]/.test(name))) {
         child.visible = false;
-        if (child.material) child.material.opacity = 0.0;
+        child.renderOrder = 10000;
+        if (child.material) {
+          child.material.opacity = 0.0;
+          if (child.material.map) {
+            child.material.emissive = new THREE.Color(0xffffff);
+            child.material.emissiveMap = child.material.map;
+            child.material.emissiveIntensity = 1.0;
+          }
+        }
         child.userData.isDecal = true;
         child.userData.decalType = 'laser';
         decals.laserBurns.push(child);
@@ -74,7 +82,15 @@ export function setupCockpitCracksHierarchy(root) {
       // Missile strikes: strike 01 thru strike 08 (toggled off by default)
       if (name.includes('missilestrike') || (name.includes('strike') && /0?[1-8]/.test(name))) {
         child.visible = false;
-        if (child.material) child.material.opacity = 0.0;
+        child.renderOrder = 10000;
+        if (child.material) {
+          child.material.opacity = 0.0;
+          if (child.material.map) {
+            child.material.emissive = new THREE.Color(0xffffff);
+            child.material.emissiveMap = child.material.map;
+            child.material.emissiveIntensity = 1.0;
+          }
+        }
         child.userData.isDecal = true;
         child.userData.decalType = 'missile';
         decals.missileStrikes.push(child);
@@ -84,7 +100,15 @@ export function setupCockpitCracksHierarchy(root) {
       // Special decal: BrokenSpiderWeb Core (toggled off by default)
       if (name.includes('brokenspiderweb_core') || (name.includes('spiderweb') && name.includes('core'))) {
         child.visible = false;
-        if (child.material) child.material.opacity = 0.0;
+        child.renderOrder = 10000;
+        if (child.material) {
+          child.material.opacity = 0.0;
+          if (child.material.map) {
+            child.material.emissive = new THREE.Color(0xffffff);
+            child.material.emissiveMap = child.material.map;
+            child.material.emissiveIntensity = 1.0;
+          }
+        }
         child.userData.isDecal = true;
         child.userData.decalType = 'core';
         decals.brokenCore = child;
@@ -94,7 +118,15 @@ export function setupCockpitCracksHierarchy(root) {
       // Special decal: BrokenSpiderWeb Screen (toggled off by default)
       if (name.includes('brokenspiderweb_screen') || (name.includes('spiderweb') && name.includes('screen'))) {
         child.visible = false;
-        if (child.material) child.material.opacity = 0.0;
+        child.renderOrder = 10000;
+        if (child.material) {
+          child.material.opacity = 0.0;
+          if (child.material.map) {
+            child.material.emissive = new THREE.Color(0xffffff);
+            child.material.emissiveMap = child.material.map;
+            child.material.emissiveIntensity = 1.0;
+          }
+        }
         child.userData.isDecal = true;
         child.userData.decalType = 'screen';
         decals.brokenScreen = child;
@@ -104,12 +136,15 @@ export function setupCockpitCracksHierarchy(root) {
       // Non-decal HUD elements: subtle cockpit frame / glass / accents
       if (name.includes('translucent') || name.includes('clear_screen') || name.includes('glass')) {
         child.visible = true;
-        if (child.material) child.material.opacity = 0.15;
+        child.renderOrder = 9998;
+        if (child.material) child.material.opacity = 0.08;
       } else if (name.includes('cyan') || name.includes('accent')) {
         child.visible = true;
+        child.renderOrder = 9999;
         if (child.material) child.material.opacity = 0.85;
       } else if (name.includes('frame')) {
         child.visible = true;
+        child.renderOrder = 9999;
         if (child.material) child.material.opacity = 0.90;
       }
     }
@@ -167,6 +202,7 @@ export const setupCockpitOverlayHierarchy = setupCockpitCracksHierarchy;
  */
 export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
   if (!mesh) return;
+  mesh.visible = true;
   const decals = (mesh.userData && mesh.userData.decals) || null;
   if (!decals) return;
 
@@ -185,6 +221,7 @@ export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
 
   if (chosen) {
     chosen.visible = true;
+    if (chosen.parent && !chosen.parent.visible) chosen.parent.visible = true;
     if (chosen.material) {
       chosen.material.opacity = 1.0;
       chosen.material.needsUpdate = true;
@@ -197,9 +234,11 @@ export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
  */
 export function toggleBrokenCoreDecal(mesh) {
   if (!mesh) return;
+  mesh.visible = true;
   const decals = (mesh.userData && mesh.userData.decals) || null;
   if (decals && decals.brokenCore) {
     decals.brokenCore.visible = true;
+    if (decals.brokenCore.parent && !decals.brokenCore.parent.visible) decals.brokenCore.parent.visible = true;
     if (decals.brokenCore.material) {
       decals.brokenCore.material.opacity = 1.0;
       decals.brokenCore.material.needsUpdate = true;
@@ -213,10 +252,12 @@ export function toggleBrokenCoreDecal(mesh) {
  */
 export function toggleGameOverDecals(mesh, durationMs = 4000) {
   if (!mesh) return;
+  mesh.visible = true;
   const decals = (mesh.userData && mesh.userData.decals) || null;
   if (decals) {
     if (decals.brokenCore) {
       decals.brokenCore.visible = true;
+      if (decals.brokenCore.parent && !decals.brokenCore.parent.visible) decals.brokenCore.parent.visible = true;
       if (decals.brokenCore.material) {
         decals.brokenCore.material.opacity = 1.0;
         decals.brokenCore.material.needsUpdate = true;
@@ -224,6 +265,7 @@ export function toggleGameOverDecals(mesh, durationMs = 4000) {
     }
     if (decals.brokenScreen) {
       decals.brokenScreen.visible = true;
+      if (decals.brokenScreen.parent && !decals.brokenScreen.parent.visible) decals.brokenScreen.parent.visible = true;
       if (decals.brokenScreen.material) {
         decals.brokenScreen.material.opacity = 1.0;
         decals.brokenScreen.material.needsUpdate = true;
@@ -1418,6 +1460,10 @@ export class StageObjectPool {
           }
         );
         console.log(`[StageObjectPool] Pre-allocated Cockpit Overlay pool from: ${glbUrl}`);
+        const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+        if (cam) {
+          this.getCockpitCracksOverlay(cam);
+        }
       }
     } catch (err) {
       console.warn('[StageObjectPool] Cockpit overlay pooling warning:', err);
@@ -1425,15 +1471,21 @@ export class StageObjectPool {
   }
 
   getCockpitCracksOverlay(camera = null) {
+    if (!camera && typeof window !== 'undefined' && window.camera) {
+      camera = window.camera;
+    }
     if (!this.cockpitCracksMesh && this.cockpitCracksOverlayPool) {
       this.cockpitCracksMesh = this.cockpitCracksOverlayPool.spawn();
     }
-    if (this.cockpitCracksMesh && camera && this.cockpitCracksMesh.parent !== camera) {
+    if (this.cockpitCracksMesh && camera) {
       const existing = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
       if (existing && existing !== this.cockpitCracksMesh) {
         camera.remove(existing);
       }
-      camera.add(this.cockpitCracksMesh);
+      if (this.cockpitCracksMesh.parent !== camera) {
+        camera.add(this.cockpitCracksMesh);
+      }
+      this.cockpitCracksMesh.visible = true;
       fitCockpitCracksToCamera(this.cockpitCracksMesh, camera);
     }
     return this.cockpitCracksMesh;
@@ -1444,32 +1496,44 @@ export class StageObjectPool {
   }
 
   triggerWeaponDecal(weaponType = 'laser') {
-    if (this.cockpitCracksMesh) {
-      toggleRandomWeaponDecal(this.cockpitCracksMesh, weaponType);
+    const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+    const mesh = (cam && (cam.getObjectByName('cockpit_overlay_object') || cam.getObjectByName('cockpit_cracks_overlay')))
+      || this.cockpitCracksMesh;
+    if (mesh) {
+      toggleRandomWeaponDecal(mesh, weaponType);
     }
   }
 
   triggerShieldDepletedDecal() {
-    if (this.cockpitCracksMesh) {
-      toggleBrokenCoreDecal(this.cockpitCracksMesh);
+    const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+    const mesh = (cam && (cam.getObjectByName('cockpit_overlay_object') || cam.getObjectByName('cockpit_cracks_overlay')))
+      || this.cockpitCracksMesh;
+    if (mesh) {
+      toggleBrokenCoreDecal(mesh);
     }
   }
 
   flashCockpitCracks(durationMs = 280) {
-    if (this.cockpitCracksMesh) {
-      toggleRandomWeaponDecal(this.cockpitCracksMesh, 'laser');
-    }
+    this.triggerWeaponDecal('laser');
   }
 
   showGameOverCockpitCracks(durationMs = 4000) {
-    if (this.cockpitCracksMesh) {
-      showGameOverCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
+    const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+    const mesh = (cam && (cam.getObjectByName('cockpit_overlay_object') || cam.getObjectByName('cockpit_cracks_overlay')))
+      || this.cockpitCracksMesh;
+    if (mesh) {
+      mesh.visible = true;
+      toggleGameOverDecals(mesh, durationMs);
+      if (cam) fitCockpitCracksToCamera(mesh, cam);
     }
   }
 
   hideCockpitCracks() {
-    if (this.cockpitCracksMesh) {
-      resetCockpitOverlayDecals(this.cockpitCracksMesh);
+    const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+    const mesh = (cam && (cam.getObjectByName('cockpit_overlay_object') || cam.getObjectByName('cockpit_cracks_overlay')))
+      || this.cockpitCracksMesh;
+    if (mesh) {
+      resetCockpitOverlayDecals(mesh);
     }
   }
 }

@@ -647,20 +647,14 @@ export class WarpOriginObjectPool extends StageObjectPool {
             return clone;
           }
         );
-        console.log(`[StageObjectPool] Pre-allocated Cockpit Overlay pool from: ${glbUrl}`);
+        console.log(`[WarpOriginObjectPool] Pre-allocated Cockpit Overlay pool from: ${glbUrl}`);
+        const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
+        if (cam) {
+          this.getCockpitCracksOverlay(cam);
+        }
       }
     } catch (err) {
-      console.warn('[StageObjectPool] Cockpit overlay pooling warning:', err);
-    }
-  }
-} catch (err) {
-      console.warn('[WarpOriginObjectPool] Cockpit cracks pooling warning:', err);
-    }
-  }
-        console.log(`[WarpOriginObjectPool] Pre-allocated Cockpit Cracks 3D GLB/GLTF overlay pool from: ${glbUrl}`);
-      }
-    } catch (err) {
-      console.warn('[WarpOriginObjectPool] Cockpit cracks pooling warning:', err);
+      console.warn('[WarpOriginObjectPool] Cockpit overlay pooling warning:', err);
     }
   }
 }

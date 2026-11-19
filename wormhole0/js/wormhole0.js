@@ -8752,14 +8752,36 @@ function applyPowerupEffect(powerupInstance) {
   showShieldAndHealthOnHit(1200);
   updatePlayerDefenseHUD();
 
-  // If shield % increased back above 0%, turn off BrokenSpiderWeb Core decal
-  if ((state.playerShield || 0) > 0 && !state.isGameOver) {
-    ensureCockpitOverlayMounted((overlayMesh) => {
+  // Sync decal threshold baseline with restored shield/health and turn off BrokenSpiderWeb Core decal if shield > 0%
+  const maxS = state.maxShield || 100;
+  const maxH = state.maxHealth || 100;
+  const shieldPct = Math.max(0, Math.min(100, ((state.playerShield || 0) / maxS) * 100));
+  const healthPct = Math.max(0, Math.min(100, ((state.playerHealth || 0) / maxH) * 100));
+
+  ensureCockpitOverlayMounted((overlayMesh) => {
+    if (typeof window !== 'undefined' && typeof window.syncCockpitDecalThreshold === 'function') {
+      window.syncCockpitDecalThreshold(overlayMesh, shieldPct, healthPct);
+    } else if (overlayMesh) {
+      const t = overlayMesh._cockpitDecalThreshold || (typeof window !== 'undefined' && window.__cockpitDecalThreshold) || {
+        anchorShieldPct: 100,
+        anchorHealthPct: 100,
+        lastObservedShieldPct: 100,
+        lastObservedHealthPct: 100
+      };
+      if (shieldPct > t.lastObservedShieldPct + 1e-6 || shieldPct >= 100 - 1e-6) t.anchorShieldPct = shieldPct;
+      if (healthPct > t.lastObservedHealthPct + 1e-6 || healthPct >= 100 - 1e-6) t.anchorHealthPct = healthPct;
+      t.lastObservedShieldPct = shieldPct;
+      t.lastObservedHealthPct = healthPct;
+      overlayMesh._cockpitDecalThreshold = t;
+      if (typeof window !== 'undefined') window.__cockpitDecalThreshold = t;
+    }
+
+    if ((state.playerShield || 0) > 0 && !state.isGameOver) {
       if (overlayMesh && typeof toggleBrokenCoreDecal === 'function') {
         toggleBrokenCoreDecal(overlayMesh, false);
       }
-    });
-  }
+    }
+  });
 
   // Prune any uncollected powerups that become invalid following the energy boost
   pruneUncollectedPowerupsByEnergyState();
@@ -10299,11 +10321,16 @@ function updateEnemiesCombat(delta) {
       const normX = Math.max(-0.9, Math.min(0.9, offset.x / cockpitRadius));
       const normY = Math.max(-0.9, Math.min(0.9, offset.y / cockpitRadius));
 
-      // Trigger weapon-specific special FX on the cockpit screen
-      triggerCockpitWeaponImpactFx(b, normX, normY);
+      // Direct enemy weapon impact on player FIRST so shield/health reduction
+      // drives the cockpit decal threshold (100% / available decals)
+      if (typeof window !== 'undefined' && typeof window.applyDamageToPlayer === 'function') {
+        window.applyDamageToPlayer(b.damage, b);
+      } else {
+        applyDamageToPlayer(b.damage, b);
+      }
 
-      // Direct enemy weapon impact on player!
-      applyDamageToPlayer(b.damage, b);
+      // Trigger weapon-specific special FX on the cockpit screen (red edges / procedural FX)
+      triggerCockpitWeaponImpactFx(b, normX, normY);
       if (b.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemyWeapon === 'function') {
         currentStageObjectPool.despawnEnemyWeapon(b.mesh, b.type);
       } else {
@@ -10562,20 +10589,8 @@ function triggerCockpitWeaponImpactFx(bolt, normX = 0, normY = 0) {
   const redEdges = document.getElementById('cockpit-edges-red');
   const fxCanvas = document.getElementById('cockpit-fx-canvas');
 
-  // Always trigger 3D Cockpit Overlay weapon-specific decal (laser burn 01-08 vs missile strike 01-08) on enemy weapon impact
-  ensureCockpitOverlayMounted((overlayMesh) => {
-    if (overlayMesh && typeof toggleRandomWeaponDecal === 'function') {
-      const now = performance.now();
-      const alreadyTriggered = bolt && typeof bolt === 'object' && bolt._decalTriggeredAt && (now - bolt._decalTriggeredAt) < 50;
-      if (!alreadyTriggered) {
-        if (bolt && typeof bolt === 'object') {
-          bolt._decalTriggeredAt = now;
-          bolt._decalTriggered = true;
-        }
-        toggleRandomWeaponDecal(overlayMesh, bolt);
-      }
-    }
-  });
+  // Ensure 3D Cockpit Overlay stays mounted; weapon decal toggling is gated by shield/health step thresholds in applyDamageToPlayer
+  ensureCockpitOverlayMounted();
 
   // Custom Procedural Script handling
   if (specialFx === 'custom_procedural_file' || specialFxType === 'procedural') {
@@ -11134,6 +11149,7 @@ function applyDamageToPlayer(rawDamage, weapon = null) {
   if (!state.hasStarted || state.isHyperWarping || state.isInvulnerable || state.isGameOver) return;
   const dmg = rawDamage || 8;
   const shieldBefore = state.playerShield;
+  const healthBefore = state.playerHealth;
 
   // Requirement: Health does NOT deplete until the shield reaches 0%.
   // Deflector shield absorbs 100% of incoming damage first.
@@ -11150,18 +11166,85 @@ function applyDamageToPlayer(rawDamage, weapon = null) {
     state.playerHealth = Math.max(0, state.playerHealth - dmg);
   }
 
-  // Trigger cockpit decal hit for detected weapon type (laser burns 01-08 vs missile strikes 01-08)
+  const shieldAfter = state.playerShield;
+  const healthAfter = state.playerHealth;
+  const maxShield = state.maxShield || 100;
+  const maxHealth = state.maxHealth || 100;
+  const handledByStageWrapper = Boolean(
+    typeof window !== 'undefined' &&
+    window.applyDamageToPlayer &&
+    window.applyDamageToPlayer._inStageWrapper
+  );
+
+  // Trigger cockpit decal hit only when shield or health crosses the next 100% / availableDecals threshold
   ensureCockpitOverlayMounted((overlayMesh) => {
     if (!overlayMesh) return;
-    const now = performance.now();
-    const alreadyTriggered = weapon && typeof weapon === 'object' && weapon._decalTriggeredAt && (now - weapon._decalTriggeredAt) < 50;
-    if (!alreadyTriggered) {
-      if (weapon && typeof weapon === 'object') {
-        weapon._decalTriggeredAt = now;
-        weapon._decalTriggered = true;
-      }
-      if (typeof toggleRandomWeaponDecal === 'function') {
-        toggleRandomWeaponDecal(overlayMesh, weapon || 'laser');
+    if (!handledByStageWrapper) {
+      if (typeof window !== 'undefined' && typeof window.triggerCockpitCracksHit === 'function') {
+        window.triggerCockpitCracksHit(weapon || 'laser', 280, {
+          shieldBefore,
+          shieldAfter,
+          healthBefore,
+          healthAfter,
+          maxShield,
+          maxHealth
+        });
+      } else {
+        const now = performance.now();
+        const lastEval = weapon && typeof weapon === 'object' ? (weapon._decalEvaluatedAt || weapon._decalTriggeredAt || 0) : 0;
+        const alreadyTriggered = Boolean(lastEval && (now - lastEval) < 50);
+        if (!alreadyTriggered) {
+          if (weapon && typeof weapon === 'object') {
+            weapon._decalEvaluatedAt = now;
+            weapon._decalTriggeredAt = now;
+            weapon._decalTriggered = true;
+          }
+          const EPS = 1e-6;
+          const decals = overlayMesh._cockpitDecals || (overlayMesh.userData && overlayMesh.userData.decals);
+          const avail = decals
+            ? ((decals.laserBurns ? decals.laserBurns.length : 0) +
+               (decals.missileStrikes ? decals.missileStrikes.length : 0) +
+               (decals.brokenCore ? 1 : 0) +
+               (decals.brokenScreen ? 1 : 0)) || 18
+            : 18;
+          const stepPct = 100 / Math.max(1, avail);
+          const tracker = overlayMesh._cockpitDecalThreshold || (typeof window !== 'undefined' && window.__cockpitDecalThreshold) || {
+            anchorShieldPct: 100,
+            anchorHealthPct: 100,
+            lastObservedShieldPct: 100,
+            lastObservedHealthPct: 100
+          };
+          const sBeforePct = Math.max(0, Math.min(100, (shieldBefore / maxShield) * 100));
+          const sAfterPct = Math.max(0, Math.min(100, (shieldAfter / maxShield) * 100));
+          const hBeforePct = Math.max(0, Math.min(100, (healthBefore / maxHealth) * 100));
+          const hAfterPct = Math.max(0, Math.min(100, (healthAfter / maxHealth) * 100));
+          if (sBeforePct > tracker.lastObservedShieldPct + EPS) tracker.anchorShieldPct = sBeforePct;
+          if (hBeforePct > tracker.lastObservedHealthPct + EPS) tracker.anchorHealthPct = hBeforePct;
+          let shouldTrigger = false;
+          if (sAfterPct < sBeforePct - EPS) {
+            const sDrop = tracker.anchorShieldPct - sAfterPct;
+            if (sDrop >= stepPct - EPS) {
+              const steps = Math.floor((sDrop + EPS) / stepPct);
+              tracker.anchorShieldPct = Math.max(0, tracker.anchorShieldPct - steps * stepPct);
+              shouldTrigger = true;
+            }
+          }
+          if (hAfterPct < hBeforePct - EPS) {
+            const hDrop = tracker.anchorHealthPct - hAfterPct;
+            if (hDrop >= stepPct - EPS) {
+              const steps = Math.floor((hDrop + EPS) / stepPct);
+              tracker.anchorHealthPct = Math.max(0, tracker.anchorHealthPct - steps * stepPct);
+              shouldTrigger = true;
+            }
+          }
+          tracker.lastObservedShieldPct = sAfterPct;
+          tracker.lastObservedHealthPct = hAfterPct;
+          overlayMesh._cockpitDecalThreshold = tracker;
+          if (typeof window !== 'undefined') window.__cockpitDecalThreshold = tracker;
+          if (shouldTrigger && typeof toggleRandomWeaponDecal === 'function') {
+            toggleRandomWeaponDecal(overlayMesh, weapon || 'laser');
+          }
+        }
       }
     }
     // When shield reaches 0%, BrokenSpiderWeb Core decal turns on and remains on unless shield % increases back above 0%
@@ -13594,6 +13677,15 @@ function updateFlight(delta) {
       // Replenish shields & hull for victorious arrival into next stage
       state.playerShield = 100;
       state.playerHealth = 100;
+      ensureCockpitOverlayMounted((overlayMesh) => {
+        if (typeof window !== 'undefined' && typeof window.syncCockpitDecalThreshold === 'function') {
+          window.syncCockpitDecalThreshold(overlayMesh, 100, 100);
+        } else if (overlayMesh) {
+          const fresh = { anchorShieldPct: 100, anchorHealthPct: 100, lastObservedShieldPct: 100, lastObservedHealthPct: 100 };
+          overlayMesh._cockpitDecalThreshold = fresh;
+          if (typeof window !== 'undefined') window.__cockpitDecalThreshold = fresh;
+        }
+      });
       state.stageKills = 0;
       state.isWarpReady = false;
       if (typeof updatePlayerDefenseHUD === 'function') {

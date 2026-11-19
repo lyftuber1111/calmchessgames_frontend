@@ -730,6 +730,189 @@ function getActiveOverlay() {
   return null;
 }
 
+function createDefaultDecalThresholdState(shieldPct = 100, healthPct = 100) {
+  const s = Math.max(0, Math.min(100, Number.isFinite(shieldPct) ? shieldPct : 100));
+  const h = Math.max(0, Math.min(100, Number.isFinite(healthPct) ? healthPct : 100));
+  return {
+    anchorShieldPct: s,
+    anchorHealthPct: h,
+    lastObservedShieldPct: s,
+    lastObservedHealthPct: h
+  };
+}
+
+function getDecalThresholdTracker(overlay = null) {
+  const target = overlay || getActiveOverlay();
+  const win = (typeof window !== 'undefined') ? window : null;
+  if (target) {
+    if (!target._cockpitDecalThreshold) {
+      target._cockpitDecalThreshold = (win && win.__cockpitDecalThreshold)
+        ? win.__cockpitDecalThreshold
+        : createDefaultDecalThresholdState(100, 100);
+    }
+    if (win) {
+      win.__cockpitDecalThreshold = target._cockpitDecalThreshold;
+    }
+    return target._cockpitDecalThreshold;
+  }
+  if (win) {
+    if (!win.__cockpitDecalThreshold) {
+      win.__cockpitDecalThreshold = createDefaultDecalThresholdState(100, 100);
+    }
+    return win.__cockpitDecalThreshold;
+  }
+  return createDefaultDecalThresholdState(100, 100);
+}
+
+export function getAvailableCockpitDecalCount(overlay = null) {
+  const target = overlay || getActiveOverlay();
+  if (!target) return 18;
+  let decals = target._cockpitDecals || (target.userData && target.userData.decals) || null;
+  if (!decals && typeof setupCockpitCracksHierarchy === 'function') {
+    setupCockpitCracksHierarchy(target, false);
+    decals = target._cockpitDecals || (target.userData && target.userData.decals) || null;
+  }
+  if (!decals) return 18;
+  const count =
+    (Array.isArray(decals.laserBurns) ? decals.laserBurns.length : 0) +
+    (Array.isArray(decals.missileStrikes) ? decals.missileStrikes.length : 0) +
+    (decals.brokenCore ? 1 : 0) +
+    (decals.brokenScreen ? 1 : 0);
+  return count > 0 ? count : 18;
+}
+
+export function resetCockpitDecalThreshold(overlay = null) {
+  const fresh = createDefaultDecalThresholdState(100, 100);
+  const target = overlay || getActiveOverlay();
+  if (target) {
+    target._cockpitDecalThreshold = fresh;
+  }
+  if (typeof window !== 'undefined') {
+    window.__cockpitDecalThreshold = fresh;
+  }
+  return fresh;
+}
+
+export function syncCockpitDecalThreshold(overlay = null, shieldPct = null, healthPct = null) {
+  const EPS = 1e-6;
+  const target = overlay || getActiveOverlay();
+  const tracker = getDecalThresholdTracker(target);
+  const st = (typeof window !== 'undefined' && window.state) ? window.state : null;
+  const maxS = (st && st.maxShield > 0) ? st.maxShield : 100;
+  const maxH = (st && st.maxHealth > 0) ? st.maxHealth : 100;
+
+  if (typeof shieldPct === 'number' && Number.isFinite(shieldPct)) {
+    const sPct = Math.max(0, Math.min(100, shieldPct));
+    if (sPct > tracker.lastObservedShieldPct + EPS || sPct >= 100 - EPS) {
+      tracker.anchorShieldPct = sPct;
+    }
+    tracker.lastObservedShieldPct = sPct;
+  } else if (st && typeof st.playerShield === 'number') {
+    const sPct = Math.max(0, Math.min(100, (st.playerShield / maxS) * 100));
+    if (sPct > tracker.lastObservedShieldPct + EPS || sPct >= 100 - EPS) {
+      tracker.anchorShieldPct = sPct;
+    }
+    tracker.lastObservedShieldPct = sPct;
+  }
+
+  if (typeof healthPct === 'number' && Number.isFinite(healthPct)) {
+    const hPct = Math.max(0, Math.min(100, healthPct));
+    if (hPct > tracker.lastObservedHealthPct + EPS || hPct >= 100 - EPS) {
+      tracker.anchorHealthPct = hPct;
+    }
+    tracker.lastObservedHealthPct = hPct;
+  } else if (st && typeof st.playerHealth === 'number') {
+    const hPct = Math.max(0, Math.min(100, (st.playerHealth / maxH) * 100));
+    if (hPct > tracker.lastObservedHealthPct + EPS || hPct >= 100 - EPS) {
+      tracker.anchorHealthPct = hPct;
+    }
+    tracker.lastObservedHealthPct = hPct;
+  }
+
+  return tracker;
+}
+
+export function evaluateWeaponDecalThreshold(overlay = null, damageContext = null) {
+  const EPS = 1e-6;
+  const target = overlay || getActiveOverlay();
+  const tracker = getDecalThresholdTracker(target);
+  const availableDecals = getAvailableCockpitDecalCount(target);
+  const stepPct = 100 / Math.max(1, availableDecals);
+
+  const ctx = (damageContext && typeof damageContext === 'object') ? damageContext : {};
+  const st = (typeof window !== 'undefined' && window.state) ? window.state : null;
+  const maxShield = (typeof ctx.maxShield === 'number' && ctx.maxShield > 0)
+    ? ctx.maxShield
+    : ((st && st.maxShield > 0) ? st.maxShield : 100);
+  const maxHealth = (typeof ctx.maxHealth === 'number' && ctx.maxHealth > 0)
+    ? ctx.maxHealth
+    : ((st && st.maxHealth > 0) ? st.maxHealth : 100);
+
+  const rawShieldAfter = (typeof ctx.shieldAfter === 'number' && Number.isFinite(ctx.shieldAfter))
+    ? (ctx.shieldAfter / maxShield) * 100
+    : ((st && typeof st.playerShield === 'number') ? (st.playerShield / maxShield) * 100 : tracker.lastObservedShieldPct);
+  const rawHealthAfter = (typeof ctx.healthAfter === 'number' && Number.isFinite(ctx.healthAfter))
+    ? (ctx.healthAfter / maxHealth) * 100
+    : ((st && typeof st.playerHealth === 'number') ? (st.playerHealth / maxHealth) * 100 : tracker.lastObservedHealthPct);
+
+  const shieldAfterPct = Math.max(0, Math.min(100, rawShieldAfter));
+  const healthAfterPct = Math.max(0, Math.min(100, rawHealthAfter));
+
+  const shieldBeforePct = (typeof ctx.shieldBefore === 'number' && Number.isFinite(ctx.shieldBefore))
+    ? Math.max(0, Math.min(100, (ctx.shieldBefore / maxShield) * 100))
+    : tracker.lastObservedShieldPct;
+  const healthBeforePct = (typeof ctx.healthBefore === 'number' && Number.isFinite(ctx.healthBefore))
+    ? Math.max(0, Math.min(100, (ctx.healthBefore / maxHealth) * 100))
+    : tracker.lastObservedHealthPct;
+
+  if (shieldBeforePct > tracker.lastObservedShieldPct + EPS) {
+    tracker.anchorShieldPct = shieldBeforePct;
+  }
+  if (healthBeforePct > tracker.lastObservedHealthPct + EPS) {
+    tracker.anchorHealthPct = healthBeforePct;
+  }
+  if (shieldAfterPct > tracker.lastObservedShieldPct + EPS) {
+    tracker.anchorShieldPct = shieldAfterPct;
+  }
+  if (healthAfterPct > tracker.lastObservedHealthPct + EPS) {
+    tracker.anchorHealthPct = healthAfterPct;
+  }
+
+  const shieldReduced = shieldAfterPct < shieldBeforePct - EPS;
+  const healthReduced = healthAfterPct < healthBeforePct - EPS;
+
+  let shouldTrigger = false;
+  if (shieldReduced) {
+    const shieldDrop = tracker.anchorShieldPct - shieldAfterPct;
+    if (shieldDrop >= stepPct - EPS) {
+      const stepsCrossed = Math.floor((shieldDrop + EPS) / stepPct);
+      tracker.anchorShieldPct = Math.max(0, tracker.anchorShieldPct - stepsCrossed * stepPct);
+      shouldTrigger = true;
+    }
+  }
+  if (healthReduced) {
+    const healthDrop = tracker.anchorHealthPct - healthAfterPct;
+    if (healthDrop >= stepPct - EPS) {
+      const stepsCrossed = Math.floor((healthDrop + EPS) / stepPct);
+      tracker.anchorHealthPct = Math.max(0, tracker.anchorHealthPct - stepsCrossed * stepPct);
+      shouldTrigger = true;
+    }
+  }
+
+  tracker.lastObservedShieldPct = shieldAfterPct;
+  tracker.lastObservedHealthPct = healthAfterPct;
+
+  return {
+    shouldTrigger,
+    availableDecals,
+    stepPct,
+    shieldAfterPct,
+    healthAfterPct,
+    anchorShieldPct: tracker.anchorShieldPct,
+    anchorHealthPct: tracker.anchorHealthPct
+  };
+}
+
 export async function setupCockpitCracksOverlay(camera, pool = null, scene = null) {
   if (!camera) {
     camera = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
@@ -806,10 +989,12 @@ export function fitCockpitCracksToCamera(mesh, camera) {
 export const fitCockpitOverlayToCamera = fitCockpitCracksToCamera;
 export const setupCockpitOverlayHierarchy = setupCockpitCracksHierarchy;
 
-export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
+export function triggerCockpitCracksHit(weapon = null, durationMs = 280, damageContext = null) {
   const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
   if (weapon && typeof weapon === 'object') {
-    if (weapon._decalTriggeredAt && (now - weapon._decalTriggeredAt) < 50) return;
+    const lastEval = weapon._decalEvaluatedAt || weapon._decalTriggeredAt || 0;
+    if (lastEval && (now - lastEval) < 50) return false;
+    weapon._decalEvaluatedAt = now;
     weapon._decalTriggeredAt = now;
     weapon._decalTriggered = true;
   }
@@ -837,10 +1022,13 @@ export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
   }
 
   const overlay = getActiveOverlay();
-  if (overlay) {
-    toggleRandomWeaponDecal(overlay, weaponType);
-  } else if (activeCockpitCracksPool && typeof activeCockpitCracksPool.triggerWeaponDecal === 'function') {
-    activeCockpitCracksPool.triggerWeaponDecal(weaponType);
+  const evalResult = evaluateWeaponDecalThreshold(overlay, damageContext);
+  if (evalResult.shouldTrigger) {
+    if (overlay) {
+      toggleRandomWeaponDecal(overlay, weaponType);
+    } else if (activeCockpitCracksPool && typeof activeCockpitCracksPool.triggerWeaponDecal === 'function') {
+      activeCockpitCracksPool.triggerWeaponDecal(weaponType);
+    }
   }
 
   if (typeof document !== 'undefined') {
@@ -852,6 +1040,7 @@ export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
       }, durationMs);
     }
   }
+  return evalResult.shouldTrigger;
 }
 
 export function triggerShieldDepletedCockpitCracks(visible = true) {
@@ -885,6 +1074,7 @@ export function hideCockpitCracks() {
   } else if (activeCockpitCracksPool && typeof activeCockpitCracksPool.hideCockpitCracks === 'function') {
     activeCockpitCracksPool.hideCockpitCracks();
   }
+  resetCockpitDecalThreshold(overlay);
   if (typeof document !== 'undefined') {
     const redEdges = document.getElementById('cockpit-edges-red');
     if (redEdges) {
@@ -956,29 +1146,51 @@ export function applyStage(engineApi) {
 
   // Resize and orientation handlers to maintain perfect cockpit fit dynamically scaling overlay with FOV
   if (typeof window !== 'undefined') {
-    const onResizeFit = () => {
-      const cam = (engineApi && engineApi.camera) || window.camera;
-      if (activeCockpitCracksMesh && cam) {
-        fitCockpitCracksToCamera(activeCockpitCracksMesh, cam);
-      }
-    };
-    window.addEventListener('resize', onResizeFit);
-    window.addEventListener('orientationchange', () => setTimeout(onResizeFit, 200));
+    if (!window._cockpitCracksResizeBound) {
+      const onResizeFit = () => {
+        const cam = window.camera;
+        const ov = (typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null) || getActiveOverlay();
+        if (ov && cam && typeof window.fitCockpitCracksToCamera === 'function') {
+          window.fitCockpitCracksToCamera(ov, cam);
+        }
+      };
+      window.addEventListener('resize', onResizeFit);
+      window.addEventListener('orientationchange', () => setTimeout(onResizeFit, 200));
+      window._cockpitCracksResizeBound = true;
+    }
 
     // Hook enemy hit detection:
-    if (typeof window.applyDamageToPlayer === 'function' && !window.applyDamageToPlayer._cockpitCracksHooked) {
-      const prevDamage = window.applyDamageToPlayer;
-      window.applyDamageToPlayer = function(dmg, ...args) {
+    if (typeof window.applyDamageToPlayer === 'function') {
+      const baseDamage = window.applyDamageToPlayer._baseApplyDamage || window.applyDamageToPlayer;
+      const wrappedApplyDamage = function(dmg, ...args) {
         const weapon = args[0] || (typeof dmg === 'object' ? dmg : null);
-        const shieldBefore = (typeof window.state !== 'undefined' && window.state) ? window.state.playerShield : 100;
+        const st = (typeof window.state !== 'undefined' && window.state) ? window.state : null;
+        const maxShield = (st && st.maxShield > 0) ? st.maxShield : 100;
+        const maxHealth = (st && st.maxHealth > 0) ? st.maxHealth : 100;
+        const shieldBefore = st && typeof st.playerShield === 'number' ? st.playerShield : maxShield;
+        const healthBefore = st && typeof st.playerHealth === 'number' ? st.playerHealth : maxHealth;
 
-        const ret = prevDamage.apply(this, [dmg, ...args]);
+        wrappedApplyDamage._inStageWrapper = true;
+        let ret;
+        try {
+          ret = baseDamage.apply(this, [dmg, ...args]);
+        } finally {
+          wrappedApplyDamage._inStageWrapper = false;
+        }
 
-        const shieldAfter = (typeof window.state !== 'undefined' && window.state) ? window.state.playerShield : 0;
-        const healthAfter = (typeof window.state !== 'undefined' && window.state) ? window.state.playerHealth : 100;
+        const shieldAfter = st && typeof st.playerShield === 'number' ? st.playerShield : 0;
+        const healthAfter = st && typeof st.playerHealth === 'number' ? st.playerHealth : maxHealth;
 
-        // When hit, detect weapon type and toggle random decal for weapon
-        triggerCockpitCracksHit(weapon);
+        // Only turn on a weapon decal when shield or health (whichever is being reduced)
+        // drops by 100% / availableDecals (e.g., 100 / 18 = 5.55% per decal)
+        triggerCockpitCracksHit(weapon, 280, {
+          shieldBefore,
+          shieldAfter,
+          healthBefore,
+          healthAfter,
+          maxShield,
+          maxHealth
+        });
 
         // When shield reaches 0%, BrokenSpiderWeb Core decal remains on unless shield % increases back above 0%
         if (shieldAfter <= 0 || healthAfter <= 0) {
@@ -994,22 +1206,30 @@ export function applyStage(engineApi) {
 
         return ret;
       };
-      window.applyDamageToPlayer._cockpitCracksHooked = true;
+      wrappedApplyDamage._cockpitCracksHooked = true;
+      wrappedApplyDamage._baseApplyDamage = baseDamage;
+      wrappedApplyDamage._inStageWrapper = false;
+      window.applyDamageToPlayer = wrappedApplyDamage;
     }
 
-    window.addEventListener('cockpitHit', (e) => triggerCockpitCracksHit(e.detail));
-    window.addEventListener('playerDamage', (e) => triggerCockpitCracksHit(e.detail));
-    window.addEventListener('cockpitImpact', (e) => triggerCockpitCracksHit(e.detail));
-    window.addEventListener('shieldDepleted', () => triggerShieldDepletedCockpitCracks());
-    window.addEventListener('gameOverCracks', () => triggerGameOverCockpitCracks(4000));
+    if (!window._cockpitCracksEventsBound) {
+      window.addEventListener('cockpitHit', (e) => window.triggerCockpitCracksHit && window.triggerCockpitCracksHit(e.detail));
+      window.addEventListener('playerDamage', (e) => window.triggerCockpitCracksHit && window.triggerCockpitCracksHit(e.detail));
+      window.addEventListener('cockpitImpact', (e) => window.triggerCockpitCracksHit && window.triggerCockpitCracksHit(e.detail));
+      window.addEventListener('shieldDepleted', () => window.triggerShieldDepletedCockpitCracks && window.triggerShieldDepletedCockpitCracks());
+      window.addEventListener('gameOverCracks', () => window.triggerGameOverCockpitCracks && window.triggerGameOverCockpitCracks(4000));
+      window._cockpitCracksEventsBound = true;
+    }
 
-    const prevCustomFx = window.executeCustomWeaponImpactFx;
-    window.executeCustomWeaponImpactFx = function(bolt, normX, normY, canvas) {
-      if (typeof prevCustomFx === 'function') {
-        try { prevCustomFx(bolt, normX, normY, canvas); } catch (e) {}
+    const baseCustomFx = (window.executeCustomWeaponImpactFx && window.executeCustomWeaponImpactFx._baseCustomFx) || window.executeCustomWeaponImpactFx;
+    const wrappedCustomFx = function(bolt, normX, normY, canvas) {
+      if (typeof baseCustomFx === 'function') {
+        try { baseCustomFx(bolt, normX, normY, canvas); } catch (e) {}
       }
       triggerCockpitCracksHit(bolt);
     };
+    wrappedCustomFx._baseCustomFx = baseCustomFx;
+    window.executeCustomWeaponImpactFx = wrappedCustomFx;
 
     window.triggerCockpitCracksHit = triggerCockpitCracksHit;
     window.triggerCockpitOverlayHit = triggerCockpitCracksHit;
@@ -1023,6 +1243,10 @@ export function applyStage(engineApi) {
     window.fitCockpitCracksToCamera = fitCockpitCracksToCamera;
     window.fitCockpitOverlayToCamera = fitCockpitCracksToCamera;
     window.getActiveCockpitCracksOverlay = getActiveCockpitCracksOverlay;
+    window.getAvailableCockpitDecalCount = getAvailableCockpitDecalCount;
+    window.resetCockpitDecalThreshold = resetCockpitDecalThreshold;
+    window.syncCockpitDecalThreshold = syncCockpitDecalThreshold;
+    window.evaluateWeaponDecalThreshold = evaluateWeaponDecalThreshold;
   }
 
   return stageConfig;
@@ -1044,5 +1268,9 @@ export default {
   hideCockpitCracks,
   fitCockpitCracksToCamera,
   fitCockpitOverlayToCamera,
-  getActiveCockpitCracksOverlay
+  getActiveCockpitCracksOverlay,
+  getAvailableCockpitDecalCount,
+  resetCockpitDecalThreshold,
+  syncCockpitDecalThreshold,
+  evaluateWeaponDecalThreshold
 };

@@ -68,6 +68,13 @@ export function setupCockpitCracksHierarchy(root, forceReset = false) {
 
   // If already initialized and not explicitly forcing a full reset, preserve currently active decals
   if (!forceReset && root._cockpitDecals && root.userData._cockpitHierarchyInitialized) {
+    if (!root._cockpitDecalThreshold) {
+      const win = typeof window !== 'undefined' ? window : null;
+      root._cockpitDecalThreshold = (win && win.__cockpitDecalThreshold)
+        ? win.__cockpitDecalThreshold
+        : createDefaultDecalThresholdState(100, 100);
+      if (win) win.__cockpitDecalThreshold = root._cockpitDecalThreshold;
+    }
     if (!root.userData.decals) {
       Object.defineProperty(root.userData, 'decals', {
         value: root._cockpitDecals,
@@ -111,8 +118,8 @@ export function setupCockpitCracksHierarchy(root, forceReset = false) {
         return;
       }
 
-      // Laser burns: burn 01 thru burn 08 (toggled off by default)
-      if (name.includes('laserburn') || (name.includes('burn') && /0?[1-8]/.test(name))) {
+      // Laser burns: burn 01 thru burn N (toggled off by default)
+      if (name.includes('laserburn') || (name.includes('burn') && /\d+/.test(name))) {
         child.visible = false;
         child.renderOrder = 10000;
         if (child.material) {
@@ -124,8 +131,8 @@ export function setupCockpitCracksHierarchy(root, forceReset = false) {
         return;
       }
 
-      // Missile strikes: strike 01 thru strike 08 (toggled off by default)
-      if (name.includes('missilestrike') || (name.includes('strike') && /0?[1-8]/.test(name))) {
+      // Missile strikes: strike 01 thru strike N (toggled off by default)
+      if (name.includes('missilestrike') || (name.includes('strike') && /\d+/.test(name))) {
         child.visible = false;
         child.renderOrder = 10000;
         if (child.material) {
@@ -198,6 +205,13 @@ export function setupCockpitCracksHierarchy(root, forceReset = false) {
   decals.laserBurns.sort((a, b) => a.name.localeCompare(b.name));
   decals.missileStrikes.sort((a, b) => a.name.localeCompare(b.name));
   root._cockpitDecals = decals;
+  if (forceReset || !root._cockpitDecalThreshold) {
+    const win = typeof window !== 'undefined' ? window : null;
+    root._cockpitDecalThreshold = (forceReset || !win || !win.__cockpitDecalThreshold)
+      ? createDefaultDecalThresholdState(100, 100)
+      : win.__cockpitDecalThreshold;
+    if (win) win.__cockpitDecalThreshold = root._cockpitDecalThreshold;
+  }
   root.userData._cockpitHierarchyInitialized = true;
   Object.defineProperty(root.userData, 'decals', {
     value: decals,
@@ -259,6 +273,196 @@ function getOrInitDecals(mesh) {
     decals = mesh._cockpitDecals || (mesh.userData && mesh.userData.decals) || null;
   }
   return decals;
+}
+
+function createDefaultDecalThresholdState(shieldPct = 100, healthPct = 100) {
+  const s = Math.max(0, Math.min(100, Number.isFinite(shieldPct) ? shieldPct : 100));
+  const h = Math.max(0, Math.min(100, Number.isFinite(healthPct) ? healthPct : 100));
+  return {
+    anchorShieldPct: s,
+    anchorHealthPct: h,
+    lastObservedShieldPct: s,
+    lastObservedHealthPct: h
+  };
+}
+
+function getDecalThresholdTracker(mesh = null) {
+  const win = typeof window !== 'undefined' ? window : null;
+  if (mesh) {
+    if (!mesh._cockpitDecalThreshold) {
+      mesh._cockpitDecalThreshold = (win && win.__cockpitDecalThreshold)
+        ? win.__cockpitDecalThreshold
+        : createDefaultDecalThresholdState(100, 100);
+    }
+    if (win) {
+      win.__cockpitDecalThreshold = mesh._cockpitDecalThreshold;
+    }
+    return mesh._cockpitDecalThreshold;
+  }
+  if (win) {
+    if (!win.__cockpitDecalThreshold) {
+      win.__cockpitDecalThreshold = createDefaultDecalThresholdState(100, 100);
+    }
+    return win.__cockpitDecalThreshold;
+  }
+  return createDefaultDecalThresholdState(100, 100);
+}
+
+export function getAvailableCockpitDecalCount(mesh = null) {
+  let target = mesh;
+  if (!target && typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
+    target = window.getActiveCockpitCracksOverlay();
+  }
+  if (!target) return 18;
+  const decals = getOrInitDecals(target);
+  if (!decals) return 18;
+  const count =
+    (Array.isArray(decals.laserBurns) ? decals.laserBurns.length : 0) +
+    (Array.isArray(decals.missileStrikes) ? decals.missileStrikes.length : 0) +
+    (decals.brokenCore ? 1 : 0) +
+    (decals.brokenScreen ? 1 : 0);
+  return count > 0 ? count : 18;
+}
+
+export function resetCockpitDecalThreshold(mesh = null) {
+  const fresh = createDefaultDecalThresholdState(100, 100);
+  let target = mesh;
+  if (!target && typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
+    target = window.getActiveCockpitCracksOverlay();
+  }
+  if (target) {
+    target._cockpitDecalThreshold = fresh;
+  }
+  if (typeof window !== 'undefined') {
+    window.__cockpitDecalThreshold = fresh;
+  }
+  return fresh;
+}
+
+export function syncCockpitDecalThreshold(mesh = null, shieldPct = null, healthPct = null) {
+  const EPS = 1e-6;
+  let target = mesh;
+  if (!target && typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
+    target = window.getActiveCockpitCracksOverlay();
+  }
+  const tracker = getDecalThresholdTracker(target);
+  const st = (typeof window !== 'undefined' && window.state) ? window.state : null;
+  const maxS = (st && st.maxShield > 0) ? st.maxShield : 100;
+  const maxH = (st && st.maxHealth > 0) ? st.maxHealth : 100;
+
+  if (typeof shieldPct === 'number' && Number.isFinite(shieldPct)) {
+    const sPct = Math.max(0, Math.min(100, shieldPct));
+    if (sPct > tracker.lastObservedShieldPct + EPS || sPct >= 100 - EPS) {
+      tracker.anchorShieldPct = sPct;
+    }
+    tracker.lastObservedShieldPct = sPct;
+  } else if (st && typeof st.playerShield === 'number') {
+    const sPct = Math.max(0, Math.min(100, (st.playerShield / maxS) * 100));
+    if (sPct > tracker.lastObservedShieldPct + EPS || sPct >= 100 - EPS) {
+      tracker.anchorShieldPct = sPct;
+    }
+    tracker.lastObservedShieldPct = sPct;
+  }
+
+  if (typeof healthPct === 'number' && Number.isFinite(healthPct)) {
+    const hPct = Math.max(0, Math.min(100, healthPct));
+    if (hPct > tracker.lastObservedHealthPct + EPS || hPct >= 100 - EPS) {
+      tracker.anchorHealthPct = hPct;
+    }
+    tracker.lastObservedHealthPct = hPct;
+  } else if (st && typeof st.playerHealth === 'number') {
+    const hPct = Math.max(0, Math.min(100, (st.playerHealth / maxH) * 100));
+    if (hPct > tracker.lastObservedHealthPct + EPS || hPct >= 100 - EPS) {
+      tracker.anchorHealthPct = hPct;
+    }
+    tracker.lastObservedHealthPct = hPct;
+  }
+
+  return tracker;
+}
+
+export function evaluateWeaponDecalThreshold(mesh = null, damageContext = null) {
+  const EPS = 1e-6;
+  let target = mesh;
+  if (!target && typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
+    target = window.getActiveCockpitCracksOverlay();
+  }
+  const tracker = getDecalThresholdTracker(target);
+  const availableDecals = getAvailableCockpitDecalCount(target);
+  const stepPct = 100 / Math.max(1, availableDecals);
+
+  const ctx = (damageContext && typeof damageContext === 'object') ? damageContext : {};
+  const st = (typeof window !== 'undefined' && window.state) ? window.state : null;
+  const maxShield = (typeof ctx.maxShield === 'number' && ctx.maxShield > 0)
+    ? ctx.maxShield
+    : ((st && st.maxShield > 0) ? st.maxShield : 100);
+  const maxHealth = (typeof ctx.maxHealth === 'number' && ctx.maxHealth > 0)
+    ? ctx.maxHealth
+    : ((st && st.maxHealth > 0) ? st.maxHealth : 100);
+
+  const rawShieldAfter = (typeof ctx.shieldAfter === 'number' && Number.isFinite(ctx.shieldAfter))
+    ? (ctx.shieldAfter / maxShield) * 100
+    : ((st && typeof st.playerShield === 'number') ? (st.playerShield / maxShield) * 100 : tracker.lastObservedShieldPct);
+  const rawHealthAfter = (typeof ctx.healthAfter === 'number' && Number.isFinite(ctx.healthAfter))
+    ? (ctx.healthAfter / maxHealth) * 100
+    : ((st && typeof st.playerHealth === 'number') ? (st.playerHealth / maxHealth) * 100 : tracker.lastObservedHealthPct);
+
+  const shieldAfterPct = Math.max(0, Math.min(100, rawShieldAfter));
+  const healthAfterPct = Math.max(0, Math.min(100, rawHealthAfter));
+
+  const shieldBeforePct = (typeof ctx.shieldBefore === 'number' && Number.isFinite(ctx.shieldBefore))
+    ? Math.max(0, Math.min(100, (ctx.shieldBefore / maxShield) * 100))
+    : tracker.lastObservedShieldPct;
+  const healthBeforePct = (typeof ctx.healthBefore === 'number' && Number.isFinite(ctx.healthBefore))
+    ? Math.max(0, Math.min(100, (ctx.healthBefore / maxHealth) * 100))
+    : tracker.lastObservedHealthPct;
+
+  if (shieldBeforePct > tracker.lastObservedShieldPct + EPS) {
+    tracker.anchorShieldPct = shieldBeforePct;
+  }
+  if (healthBeforePct > tracker.lastObservedHealthPct + EPS) {
+    tracker.anchorHealthPct = healthBeforePct;
+  }
+  if (shieldAfterPct > tracker.lastObservedShieldPct + EPS) {
+    tracker.anchorShieldPct = shieldAfterPct;
+  }
+  if (healthAfterPct > tracker.lastObservedHealthPct + EPS) {
+    tracker.anchorHealthPct = healthAfterPct;
+  }
+
+  const shieldReduced = shieldAfterPct < shieldBeforePct - EPS;
+  const healthReduced = healthAfterPct < healthBeforePct - EPS;
+
+  let shouldTrigger = false;
+  if (shieldReduced) {
+    const shieldDrop = tracker.anchorShieldPct - shieldAfterPct;
+    if (shieldDrop >= stepPct - EPS) {
+      const stepsCrossed = Math.floor((shieldDrop + EPS) / stepPct);
+      tracker.anchorShieldPct = Math.max(0, tracker.anchorShieldPct - stepsCrossed * stepPct);
+      shouldTrigger = true;
+    }
+  }
+  if (healthReduced) {
+    const healthDrop = tracker.anchorHealthPct - healthAfterPct;
+    if (healthDrop >= stepPct - EPS) {
+      const stepsCrossed = Math.floor((healthDrop + EPS) / stepPct);
+      tracker.anchorHealthPct = Math.max(0, tracker.anchorHealthPct - stepsCrossed * stepPct);
+      shouldTrigger = true;
+    }
+  }
+
+  tracker.lastObservedShieldPct = shieldAfterPct;
+  tracker.lastObservedHealthPct = healthAfterPct;
+
+  return {
+    shouldTrigger,
+    availableDecals,
+    stepPct,
+    shieldAfterPct,
+    healthAfterPct,
+    anchorShieldPct: tracker.anchorShieldPct,
+    anchorHealthPct: tracker.anchorHealthPct
+  };
 }
 
 export function detectWeaponDecalType(weaponType = 'laser') {
@@ -404,27 +608,29 @@ export function toggleGameOverDecals(mesh, durationMs = 4000) {
  * Note: The screen overlay mesh itself remains visible at all times.
  */
 export function resetCockpitOverlayDecals(mesh) {
-  if (!mesh) return;
-  mesh.visible = true;
-  const decals = getOrInitDecals(mesh);
-  if (decals) {
-    (decals.laserBurns || []).forEach(d => {
-      d.visible = false;
-      if (d.material) d.material.opacity = 0.0;
-    });
-    (decals.missileStrikes || []).forEach(d => {
-      d.visible = false;
-      if (d.material) d.material.opacity = 0.0;
-    });
-    if (decals.brokenCore) {
-      decals.brokenCore.visible = false;
-      if (decals.brokenCore.material) decals.brokenCore.material.opacity = 0.0;
-    }
-    if (decals.brokenScreen) {
-      decals.brokenScreen.visible = false;
-      if (decals.brokenScreen.material) decals.brokenScreen.material.opacity = 0.0;
+  if (mesh) {
+    mesh.visible = true;
+    const decals = getOrInitDecals(mesh);
+    if (decals) {
+      (decals.laserBurns || []).forEach(d => {
+        d.visible = false;
+        if (d.material) d.material.opacity = 0.0;
+      });
+      (decals.missileStrikes || []).forEach(d => {
+        d.visible = false;
+        if (d.material) d.material.opacity = 0.0;
+      });
+      if (decals.brokenCore) {
+        decals.brokenCore.visible = false;
+        if (decals.brokenCore.material) decals.brokenCore.material.opacity = 0.0;
+      }
+      if (decals.brokenScreen) {
+        decals.brokenScreen.visible = false;
+        if (decals.brokenScreen.material) decals.brokenScreen.material.opacity = 0.0;
+      }
     }
   }
+  resetCockpitDecalThreshold(mesh);
 }
 
 /**
@@ -743,20 +949,27 @@ export function showGameOverCockpitCracksOverlay(mesh, durationMs = 4000) {
   toggleGameOverDecals(mesh, durationMs);
 }
 
-export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
+export function triggerCockpitCracksHit(weapon = null, durationMs = 280, damageContext = null) {
   const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
   if (weapon && typeof weapon === 'object') {
-    if (weapon._decalTriggeredAt && (now - weapon._decalTriggeredAt) < 50) return;
+    const lastEval = weapon._decalEvaluatedAt || weapon._decalTriggeredAt || 0;
+    if (lastEval && (now - lastEval) < 50) return false;
+    weapon._decalEvaluatedAt = now;
     weapon._decalTriggeredAt = now;
     weapon._decalTriggered = true;
   }
   const weaponType = detectWeaponDecalType(weapon);
+  const overlayMesh = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' && window.getActiveCockpitCracksOverlay())
+    || (typeof window !== 'undefined' && window.stageObjectPool && window.stageObjectPool.cockpitCracksMesh)
+    || null;
 
-  if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.triggerWeaponDecal === 'function') {
-    window.stageObjectPool.triggerWeaponDecal(weaponType);
-  } else if (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
-    const mesh = window.getActiveCockpitCracksOverlay();
-    if (mesh) toggleRandomWeaponDecal(mesh, weaponType);
+  const evalResult = evaluateWeaponDecalThreshold(overlayMesh, damageContext);
+  if (evalResult.shouldTrigger) {
+    if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.triggerWeaponDecal === 'function') {
+      window.stageObjectPool.triggerWeaponDecal(weaponType);
+    } else if (overlayMesh) {
+      toggleRandomWeaponDecal(overlayMesh, weaponType);
+    }
   }
 
   if (typeof document !== 'undefined') {
@@ -768,6 +981,7 @@ export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
       }, durationMs);
     }
   }
+  return evalResult.shouldTrigger;
 }
 
 export function triggerShieldDepletedCockpitCracks(visible = true) {

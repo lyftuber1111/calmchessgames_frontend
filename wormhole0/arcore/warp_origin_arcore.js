@@ -31,7 +31,7 @@ export const stageConfig = {
     missionObjectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
     eventsWithin: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
     endLevelEvent: 'Warp Horizon Jump Gate Initialized',
-    cockpitOverlayAsset: '/scene_images/screen_decals_spider_web_overlay_4.glb'
+    cockpitOverlayAsset: 'scene_images/screen_decals_spider_web_overlay_4.glb'
   },
   stage_level: 1,
   stage_name: 'Warp Origin',
@@ -40,11 +40,11 @@ export const stageConfig = {
   device: 'arcore',
   xr_mode: 'mobile-ar',
   cockpit_overlay: {
-    model_3d_url: '/scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: '/scene_images/screen_decals_spider_web_overlay_4.glb',
+    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
     asset_type: '3d_model'
   },
-  cockpit_overlay_asset: '/scene_images/screen_decals_spider_web_overlay_4.glb',
+  cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
   events_within_level: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
   end_level_event: 'Warp Horizon Jump Gate Initialized',
   mission_objectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
@@ -799,7 +799,7 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   try {
     const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url))
       || stageConfig.cockpit_overlay_asset
-      || '/scene_images/screen_decals_spider_web_overlay_4.glb'
+      || 'scene_images/screen_decals_spider_web_overlay_4.glb'
       || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 

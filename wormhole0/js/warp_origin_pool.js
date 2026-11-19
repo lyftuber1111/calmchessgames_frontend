@@ -10,7 +10,7 @@ import {
   showGameOverCockpitCracksOverlay
 } from './object_pool.js';
 
-export const STAGE_COCKPIT_CRACKS_GLB_URL = '/scene_images/screen_decals_spider_web_overlay_4.glb';
+export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
 
 export {
   COCKPIT_CRACKS_GLB_URL,
@@ -38,11 +38,11 @@ export class WarpOriginObjectPool extends StageObjectPool {
       stage_slug: 'warp_origin',
       environment_theme: 'Warp Cyan Corridor',
       cockpit_overlay: {
-        model_3d_url: '/scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: '/scene_images/screen_decals_spider_web_overlay_4.glb',
+        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
         asset_type: '3d_model'
       },
-      cockpit_overlay_asset: '/scene_images/screen_decals_spider_web_overlay_4.glb',
+      cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
@@ -592,7 +592,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
     try {
       const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
         || (this.stageConfig && this.stageConfig.cockpit_overlay_asset)
-        || '/scene_images/screen_decals_spider_web_overlay_4.glb'
+        || 'scene_images/screen_decals_spider_web_overlay_4.glb'
         || COCKPIT_CRACKS_GLB_URL;
 
       const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);

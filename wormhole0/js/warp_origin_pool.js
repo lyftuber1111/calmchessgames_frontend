@@ -10,7 +10,7 @@ import {
   showGameOverCockpitCracksOverlay
 } from './object_pool.js';
 
-export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/cockpit_cracks.glb';
+export const STAGE_COCKPIT_CRACKS_GLB_URL = '/scene_images/screen_decals_spider_web_overlay_4.glb';
 
 export {
   COCKPIT_CRACKS_GLB_URL,
@@ -26,8 +26,8 @@ export {
  * Calm Chess Games / Wormhole XR (c) 2026. All Rights Reserved.
  *
  * Pre-allocates enemies and weapons graphic objects.
- * Sets 3D graphic models, scales, physical dimensions, and weapons attributes
- * pulled dynamically from the Game Manager admin database.
+ * Sets 3D graphic models, scales, physical dimensions, weapons, powerups,
+ * and cosmic environment attributes pulled dynamically from the Game Manager admin database.
  */
 
 export class WarpOriginObjectPool extends StageObjectPool {
@@ -38,11 +38,11 @@ export class WarpOriginObjectPool extends StageObjectPool {
       stage_slug: 'warp_origin',
       environment_theme: 'Warp Cyan Corridor',
       cockpit_overlay: {
-        model_3d_url: 'scene_images/cockpit_cracks.glb',
-        model_url: 'scene_images/cockpit_cracks.glb',
+        model_3d_url: '/scene_images/screen_decals_spider_web_overlay_4.glb',
+        model_url: '/scene_images/screen_decals_spider_web_overlay_4.glb',
         asset_type: '3d_model'
       },
-      cockpit_overlay_asset: 'scene_images/cockpit_cracks.glb',
+      cockpit_overlay_asset: '/scene_images/screen_decals_spider_web_overlay_4.glb',
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
@@ -493,6 +493,94 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "destruction_particle_scale": 1
     }
 ],
+      powerups: [
+    {
+        "id": 1,
+        "powerup_id": "health_pack_s1",
+        "powerup_name": "Sub-Space Nanite Repair Kit",
+        "powerup_type": "health",
+        "icon": "💖",
+        "model_3d_type": "capsule",
+        "model_3d_url": "",
+        "color_hex": "#00ff88",
+        "scale": 1.5,
+        "length": 2.5,
+        "height": 2.5,
+        "depth": 2.5,
+        "circumference": 6,
+        "stage_level": 1,
+        "device_type": "all",
+        "trigger_events": "Asteroid Debris Belt, Anomaly Alpha Spike",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 60,
+        "enemy_id": "void_recon_drone",
+        "boost_percentage": 25,
+        "description": "Rapid nano-repair canister synthesized during debris fields and scout incursions. Restores 25% hull integrity.",
+        "is_enabled": 1
+    },
+    {
+        "id": 2,
+        "powerup_id": "shield_cell_s1",
+        "powerup_name": "Deflector Shield Overcharger",
+        "powerup_type": "shield",
+        "icon": "🛡️",
+        "model_3d_type": "octahedron",
+        "model_3d_url": "",
+        "color_hex": "#00f0ff",
+        "scale": 1.5,
+        "length": 2.5,
+        "height": 2.5,
+        "depth": 2.5,
+        "circumference": 6,
+        "stage_level": 1,
+        "device_type": "all",
+        "trigger_events": "Nav-Beacon Calibration, Plasma Surge Alert",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 75,
+        "enemy_id": "all",
+        "boost_percentage": 30,
+        "description": "High-frequency deflector charge harmonic. Overcharges magnetic shield buffer by +30%.",
+        "is_enabled": 1
+    }
+],
+      environment: {
+    "id": 1,
+    "env_id": "env_warp_origin_desktop",
+    "env_name": "Warp Origin (Cyan Relativistic Flow)",
+    "env_category": "wormhole_singularity",
+    "stage_level": 1,
+    "device_type": "desktop",
+    "model_3d_type": "custom_glb",
+    "model_3d_url": "/meshy_test_0/models/recon_drone_2.8m.glb",
+    "image_asset_url": "mobile/event_horizon_images/singularity_corona.png",
+    "image_asset_type": "corona_sprite",
+    "scale": "1.00",
+    "event_horizon_radius": "7.50",
+    "accretion_disk_radius": "38.00",
+    "length": "300.00",
+    "height": "80.00",
+    "depth": "300.00",
+    "circumference": "47.12",
+    "color_primary": "#00f0ff",
+    "color_edge": "#003366",
+    "color_core": "#00f0ff",
+    "color_hot": "#d6ffff",
+    "color_halo": "#00f0ff",
+    "ambient_light": "#002233",
+    "center_light": "#00f0ff",
+    "rotation_speed": "0.650",
+    "distortion_intensity": "1.00",
+    "particle_count": 4500,
+    "quick_effect_primary": "none",
+    "quick_effect_secondary": "none",
+    "quick_effect_color": "#00f0ff",
+    "quick_effect_intensity": "1.00",
+    "quick_effect_speed": "1.00",
+    "description": "",
+    "is_enabled": 1,
+    "created_at": "2026-11-10 04:03:56",
+    "updated_at": "2026-11-10 23:17:00"
+},
       ...stageConfig
     };
 
@@ -504,7 +592,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
     try {
       const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
         || (this.stageConfig && this.stageConfig.cockpit_overlay_asset)
-        || 'scene_images/cockpit_cracks.glb'
+        || '/scene_images/screen_decals_spider_web_overlay_4.glb'
         || COCKPIT_CRACKS_GLB_URL;
 
       const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);

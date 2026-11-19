@@ -31,7 +31,7 @@ export const stageConfig = {
     missionObjectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
     eventsWithin: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
     endLevelEvent: 'Warp Horizon Jump Gate Initialized',
-    cockpitOverlayAsset: 'scene_images/cockpit_cracks.glb'
+    cockpitOverlayAsset: '/scene_images/screen_decals_spider_web_overlay_4.glb'
   },
   stage_level: 1,
   stage_name: 'Warp Origin',
@@ -40,11 +40,11 @@ export const stageConfig = {
   device: 'arcore',
   xr_mode: 'mobile-ar',
   cockpit_overlay: {
-    model_3d_url: 'scene_images/cockpit_cracks.glb',
-    model_url: 'scene_images/cockpit_cracks.glb',
+    model_3d_url: '/scene_images/screen_decals_spider_web_overlay_4.glb',
+    model_url: '/scene_images/screen_decals_spider_web_overlay_4.glb',
     asset_type: '3d_model'
   },
-  cockpit_overlay_asset: 'scene_images/cockpit_cracks.glb',
+  cockpit_overlay_asset: '/scene_images/screen_decals_spider_web_overlay_4.glb',
   events_within_level: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
   end_level_event: 'Warp Horizon Jump Gate Initialized',
   mission_objectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
@@ -61,17 +61,17 @@ export const stageConfig = {
       panelBorder: 'rgba(0, 240, 255, 0.40)'
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color(0x003366),
-      uColorCore: new THREE.Color(0x00f0ff),
-      uColorHot: new THREE.Color(0xd6ffff),
-      uHaloColor: new THREE.Color(0x00f0ff)
+      uColorEdge: new THREE.Color('#003366'),
+      uColorCore: new THREE.Color('#00f0ff'),
+      uColorHot: new THREE.Color('#d6ffff'),
+      uHaloColor: new THREE.Color('#00f0ff')
     },
     lighting: {
-      ambient: 0x002233,
-      center: 0x00f0ff
+      ambient: new THREE.Color('#002233').getHex(),
+      center: new THREE.Color('#00f0ff').getHex()
     },
     particles: {
-    "count": 1800,
+    "count": 2000,
     "starCount": 600,
     "dustCount": 200,
     "speed": 0.85
@@ -81,7 +81,18 @@ export const stageConfig = {
     "boostMultiplier": 1.9,
     "pitchSpeed": 0.0022,
     "yawSpeed": 0.0022
-}
+},
+    environmentParams: {
+      rotationSpeed: 0.65,
+      distortionIntensity: 1,
+      imageAssetUrl: 'mobile/event_horizon_images/singularity_corona.png',
+      model3dUrl: '/meshy_test_0/models/recon_drone_2.8m.glb',
+      quickEffectPrimary: 'none',
+      quickEffectSecondary: 'none',
+      quickEffectColor: '#00f0ff',
+      quickEffectIntensity: 1,
+      quickEffectSpeed: 1
+    }
   },
   weapons: {
     "initial": {
@@ -513,6 +524,94 @@ export const stageConfig = {
         "destruction_particle_scale": 1
     }
 ],
+  powerups: [
+    {
+        "id": 1,
+        "powerup_id": "health_pack_s1",
+        "powerup_name": "Sub-Space Nanite Repair Kit",
+        "powerup_type": "health",
+        "icon": "💖",
+        "model_3d_type": "capsule",
+        "model_3d_url": "",
+        "color_hex": "#00ff88",
+        "scale": 1.5,
+        "length": 2.5,
+        "height": 2.5,
+        "depth": 2.5,
+        "circumference": 6,
+        "stage_level": 1,
+        "device_type": "all",
+        "trigger_events": "Asteroid Debris Belt, Anomaly Alpha Spike",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 60,
+        "enemy_id": "void_recon_drone",
+        "boost_percentage": 25,
+        "description": "Rapid nano-repair canister synthesized during debris fields and scout incursions. Restores 25% hull integrity.",
+        "is_enabled": 1
+    },
+    {
+        "id": 2,
+        "powerup_id": "shield_cell_s1",
+        "powerup_name": "Deflector Shield Overcharger",
+        "powerup_type": "shield",
+        "icon": "🛡️",
+        "model_3d_type": "octahedron",
+        "model_3d_url": "",
+        "color_hex": "#00f0ff",
+        "scale": 1.5,
+        "length": 2.5,
+        "height": 2.5,
+        "depth": 2.5,
+        "circumference": 6,
+        "stage_level": 1,
+        "device_type": "all",
+        "trigger_events": "Nav-Beacon Calibration, Plasma Surge Alert",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 75,
+        "enemy_id": "all",
+        "boost_percentage": 30,
+        "description": "High-frequency deflector charge harmonic. Overcharges magnetic shield buffer by +30%.",
+        "is_enabled": 1
+    }
+],
+  environment: {
+    "id": 1,
+    "env_id": "env_warp_origin_desktop",
+    "env_name": "Warp Origin (Cyan Relativistic Flow)",
+    "env_category": "wormhole_singularity",
+    "stage_level": 1,
+    "device_type": "desktop",
+    "model_3d_type": "custom_glb",
+    "model_3d_url": "/meshy_test_0/models/recon_drone_2.8m.glb",
+    "image_asset_url": "mobile/event_horizon_images/singularity_corona.png",
+    "image_asset_type": "corona_sprite",
+    "scale": "1.00",
+    "event_horizon_radius": "7.50",
+    "accretion_disk_radius": "38.00",
+    "length": "300.00",
+    "height": "80.00",
+    "depth": "300.00",
+    "circumference": "47.12",
+    "color_primary": "#00f0ff",
+    "color_edge": "#003366",
+    "color_core": "#00f0ff",
+    "color_hot": "#d6ffff",
+    "color_halo": "#00f0ff",
+    "ambient_light": "#002233",
+    "center_light": "#00f0ff",
+    "rotation_speed": "0.650",
+    "distortion_intensity": "1.00",
+    "particle_count": 4500,
+    "quick_effect_primary": "none",
+    "quick_effect_secondary": "none",
+    "quick_effect_color": "#00f0ff",
+    "quick_effect_intensity": "1.00",
+    "quick_effect_speed": "1.00",
+    "description": "",
+    "is_enabled": 1,
+    "created_at": "2026-11-10 04:03:56",
+    "updated_at": "2026-11-10 23:17:00"
+},
   objectives: [
     {
         "id": "kills",
@@ -662,7 +761,6 @@ export function updateStageWaves(pool, activeEnemies, stageKills, scene) {
   }
 }
 
-
 // =========================================================================
 // COCKPIT CRACKS TRANSPARENT OVERLAY POOL & GAME OVER MANAGEMENT
 // Model: mobile/warp_origin_images/cockpit_cracks.glb
@@ -701,7 +799,7 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   try {
     const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url))
       || stageConfig.cockpit_overlay_asset
-      || 'scene_images/cockpit_cracks.glb'
+      || '/scene_images/screen_decals_spider_web_overlay_4.glb'
       || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
@@ -832,6 +930,12 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setPowerups === 'function' && stageConfig.powerups) {
+    engineApi.setPowerups(stageConfig.powerups);
+  }
+  if (typeof engineApi.setEnvironment === 'function' && stageConfig.environment) {
+    engineApi.setEnvironment(stageConfig.environment);
+  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -844,7 +948,6 @@ export function applyStage(engineApi) {
   if (typeof engineApi.showToast === 'function') {
     engineApi.showToast('🚀 STAGE 1: WARP ORIGIN [ARCORE] LOADED');
   }
-
 
   // --- Mount Cockpit Cracks Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);

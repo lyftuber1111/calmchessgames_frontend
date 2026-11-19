@@ -594,12 +594,14 @@ export class WarpOriginObjectPool extends StageObjectPool {
 
   async initCockpitCracksPool() {
     try {
-      const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
+      const assetUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
         || (this.stageConfig && this.stageConfig.cockpit_overlay_asset)
         || 'scene_images/screen_decals_spider_web_overlay_4.glb'
+        || STAGE_COCKPIT_CRACKS_ASSET_URL
         || COCKPIT_CRACKS_GLB_URL;
 
-      const loadedMesh = (typeof loadCockpitCracksAsset === 'function' ? await loadCockpitCracksAsset(glbUrl) : await loadCockpitCracksGlbAsset(glbUrl));
+      const loadFn = typeof loadCockpitCracksAsset === 'function' ? loadCockpitCracksAsset : loadCockpitCracksGlbAsset;
+      const loadedMesh = await loadFn(assetUrl);
       if (loadedMesh) {
         this.cockpitCracksMesh = loadedMesh;
         this.cockpitCracksOverlayPool = new MeshPool(
@@ -609,6 +611,12 @@ export class WarpOriginObjectPool extends StageObjectPool {
           1,
           () => loadedMesh.clone(true)
         );
+        console.log(`[WarpOriginObjectPool] Pre-allocated Cockpit Cracks overlay pool (3d_model) from: ${assetUrl}`);
+      }
+    } catch (err) {
+      console.warn('[WarpOriginObjectPool] Cockpit cracks pooling warning:', err);
+    }
+  }
         console.log(`[WarpOriginObjectPool] Pre-allocated Cockpit Cracks 3D GLB/GLTF overlay pool from: ${glbUrl}`);
       }
     } catch (err) {

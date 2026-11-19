@@ -8,7 +8,9 @@ import {
   flashCockpitCracksOverlay,
   showGameOverCockpitCracksOverlay,
   fitCockpitCracksToCamera,
-  COCKPIT_CRACKS_GLB_URL
+  COCKPIT_CRACKS_GLB_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_TYPE
 } from './warp_origin_pool.js';
 
 /**
@@ -798,13 +800,15 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   }
 
   try {
-    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url))
+    const assetUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url))
       || stageConfig.cockpit_overlay_asset
       || 'scene_images/screen_decals_spider_web_overlay_4.glb'
+      || (typeof STAGE_COCKPIT_CRACKS_ASSET_URL !== 'undefined' ? STAGE_COCKPIT_CRACKS_ASSET_URL : '')
       || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
-    const loadedMesh = (typeof loadCockpitCracksAsset === 'function' ? await loadCockpitCracksAsset(glbUrl) : await loadCockpitCracksGlbAsset(glbUrl));
+    const loadFn = typeof loadCockpitCracksAsset === 'function' ? loadCockpitCracksAsset : loadCockpitCracksGlbAsset;
+    const loadedMesh = await loadFn(assetUrl);
     if (loadedMesh) {
       setupCockpitCracksHierarchy(loadedMesh);
 
@@ -823,7 +827,7 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
         camera.add(activeCockpitCracksMesh);
         fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
       }
-      console.log(`[Stage 1: Warp Origin] Cockpit cracks GLB loaded with pool and mounted across cockpit view`);
+      console.log(`[Stage 1: Warp Origin] Cockpit cracks overlay loaded (3d_model) with pool and mounted across cockpit view`);
     }
   } catch (err) {
     console.warn(`[Stage 1: Warp Origin] Error setting up cockpit cracks overlay:`, err);

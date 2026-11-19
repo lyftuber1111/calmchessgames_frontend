@@ -1,0 +1,28 @@
+{
+  "model": "screen_decals_spider_web_overlay.glb",
+  "base_name": "screen_decals_spider_web_overlay",
+  "description": "XR Mobile Game Translucent Screen Overlay with Full-Screen Broken Spider Web Decal, 0.001m thin border frame, solid front/back panels, and 16 targetable laser burn / missile strike decals",
+  "dimensions": {
+    "width_meters": 1.6,
+    "height_meters": 0.9,
+    "border_width_meters": 0.001,
+    "frame_thickness_meters": 0.001,
+    "inner_width_meters": 1.598,
+    "inner_height_meters": 0.898,
+    "aspect_ratio": "16:9"
+  },
+  "components": {
+    "root": "screen_decals_spider_web_overlay_4_Root",
+    "glass_screen": "Translucent_Clear_Screen",
+    "frame": "Frame_005m_Thick",
+    "front_panel": "Solid_Front_Panel",
+    "back_panel": "Solid_Back_Panel",
+    "cyber_accents": "Cyan_Cyber_Accents",
+    "spider_web_full_screen": "Decal_BrokenSpiderWeb_Screen",
+    "spider_web_focal_core": "Decal_BrokenSpiderWeb_Core"
+  },
+  "spider_web_decals": [
+    "Decal_BrokenSpiderWeb_Screen",
+    "Decal_BrokenSpiderWeb_Core"
+  ]
+}

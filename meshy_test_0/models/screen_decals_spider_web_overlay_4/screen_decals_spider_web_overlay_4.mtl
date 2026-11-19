@@ -7,10 +7,10 @@ Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 illum 3
-map_Kd screen_decals_spider_web_overlay_4_textures/decal_spider_web_diffuse.png
-map_Ns screen_decals_spider_web_overlay_4_textures/decal_spider_web_roughness.png
-map_d screen_decals_spider_web_overlay_4_textures/decal_spider_web_diffuse.png
-map_Bump -bm 1.000000 screen_decals_spider_web_overlay_4_textures/decal_spider_web_normal.png
+map_Kd decal_spider_web_diffuse.png
+map_Ns decal_spider_web_roughness.png
+map_d decal_spider_web_diffuse.png
+map_Bump -bm 1.000000 decal_spider_web_normal.png
 
 newmtl M_Cyan_Accent
 Ns 774.400024
@@ -23,24 +23,26 @@ d 1.000000
 illum 3
 
 newmtl M_Laser_Burn_Decal_NoLines
-Ns 250.000000
-Ka 1.000000 1.000000 1.000000
-Kd 0.800000 0.800000 0.800000
+Ka 0.050000 0.050000 0.050000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000
-d 1.000000
-illum 2
+illum 3
+map_Kd screen_decals_spider_web_overlay_4_textures/decal_laser_burn_diffuse.png
+map_Ns screen_decals_spider_web_overlay_4_textures/decal_laser_burn_roughness.png
+map_d screen_decals_spider_web_overlay_4_textures/decal_laser_burn_diffuse.png
+map_Bump -bm 1.000000 screen_decals_spider_web_overlay_4_textures/decal_laser_burn_normal.png
 
 newmtl M_Missile_Strike_Decal_NoLines
-Ns 250.000000
-Ka 1.000000 1.000000 1.000000
-Kd 0.800000 0.800000 0.800000
+Ka 0.080000 0.080000 0.080000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000
-d 1.000000
-illum 2
+illum 3
+map_Kd screen_decals_spider_web_overlay_4_textures/decal_missile_strike_diffuse.png
+map_Ns screen_decals_spider_web_overlay_4_textures/decal_missile_strike_roughness.png
+map_d screen_decals_spider_web_overlay_4_textures/decal_missile_strike_diffuse.png
+map_Bump -bm 1.000000 screen_decals_spider_web_overlay_4_textures/decal_missile_strike_normal.png
 
 newmtl M_Solid_Back_Panel
 Ns 422.499969
@@ -53,14 +55,16 @@ d 1.000000
 illum 3
 
 newmtl M_Solid_Frame
-Ns 250.000000
-Ka 1.000000 1.000000 1.000000
-Kd 0.800000 0.800000 0.800000
+Ka 0.850000 0.850000 0.850000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000
 d 1.000000
-illum 2
+illum 3
+map_Kd screen_decals_spider_web_overlay_4_textures/texture_0_base_color.png
+map_Ns screen_decals_spider_web_overlay_4_textures/texture_0_roughness.png
+map_refl screen_decals_spider_web_overlay_4_textures/texture_0_metallic.png
+map_Bump -bm 1.000000 screen_decals_spider_web_overlay_4_textures/texture_0_normal.png
 
 newmtl M_Solid_Front_Panel
 Ns 577.599976
@@ -75,7 +79,7 @@ illum 3
 newmtl M_Translucent_Clear_Glass
 Ns 940.900024
 Ka 0.030000 0.030000 0.030000
-Kd 0.920000 0.960000 1.000000
+Kd 0.900000 0.950000 1.000000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.500000

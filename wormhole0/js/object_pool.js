@@ -568,12 +568,17 @@ export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) 
     const candidateUrls = [
       normalizedKey,
       assetUrl,
+      'scene_images/screen_decals_spider_web_overlay.glb',
       'scene_images/screen_decals_spider_web_overlay_4.glb',
       assetUrl.startsWith('/') ? assetUrl.slice(1) : ('/' + assetUrl),
       'wormhole0/' + assetUrl.replace(/^(\.\/|\/)/, ''),
+      'wormhole0/scene_images/screen_decals_spider_web_overlay.glb',
       'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb',
+      '/wormhole0/scene_images/screen_decals_spider_web_overlay.glb',
       '/wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb',
+      '../scene_images/screen_decals_spider_web_overlay.glb',
       '../scene_images/screen_decals_spider_web_overlay_4.glb',
+      'warp_origin_images/screen_decals_spider_web_overlay.glb',
       'warp_origin_images/screen_decals_spider_web_overlay_4.glb'
     ];
 

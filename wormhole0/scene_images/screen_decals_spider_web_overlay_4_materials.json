@@ -1,123 +1,28 @@
 {
-    "model": "screen_decals_spider_web_overlay_4.glb",
-    "base_name": "screen_decals_spider_web_overlay_4",
-    "exported_at": "2026-11-19T00:09:31.203Z",
-    "color_palette": [
-        "#00F8FF",
-        "#FFFFFF",
-        "#4B505D",
-        "#555D6C",
-        "#F6FAFF"
-    ],
-    "materials": [
-        {
-            "name": "M_Cyan_Accent",
-            "type": "MeshStandardMaterial",
-            "color": "#00F8FF",
-            "emissive": "#00F8FF",
-            "roughness": 0.12,
-            "metalness": 0.1,
-            "opacity": 1,
-            "wireframe": false,
-            "textures": []
-        },
-        {
-            "name": "M_Broken_Spider_Web_Decal",
-            "type": "MeshStandardMaterial",
-            "color": "#FFFFFF",
-            "emissive": null,
-            "roughness": 1,
-            "metalness": 0.05,
-            "opacity": 1,
-            "wireframe": false,
-            "textures": {
-                "base_color": "decal_spider_web_diffuse",
-                "normal": "decal_spider_web_normal",
-                "roughness": "decal_spider_web_roughness",
-                "metallic": "decal_spider_web_roughness"
-            }
-        },
-        {
-            "name": "M_Laser_Burn_Decal_NoLines",
-            "type": "MeshStandardMaterial",
-            "color": "#FFFFFF",
-            "emissive": null,
-            "roughness": 1,
-            "metalness": 0.05,
-            "opacity": 1,
-            "wireframe": false,
-            "textures": {
-                "base_color": "decal_laser_burn_diffuse",
-                "normal": "decal_laser_burn_normal",
-                "roughness": "decal_laser_burn_roughness",
-                "metallic": "decal_laser_burn_roughness"
-            }
-        },
-        {
-            "name": "M_Missile_Strike_Decal_NoLines",
-            "type": "MeshStandardMaterial",
-            "color": "#FFFFFF",
-            "emissive": null,
-            "roughness": 1,
-            "metalness": 0.08,
-            "opacity": 1,
-            "wireframe": false,
-            "textures": {
-                "base_color": "decal_missile_strike_diffuse",
-                "normal": "decal_missile_strike_normal",
-                "roughness": "decal_missile_strike_roughness",
-                "metallic": "decal_missile_strike_roughness"
-            }
-        },
-        {
-            "name": "M_Solid_Frame",
-            "type": "MeshStandardMaterial",
-            "color": "#FFFFFF",
-            "emissive": null,
-            "roughness": 1,
-            "metalness": 0.85,
-            "opacity": 1,
-            "wireframe": false,
-            "textures": {
-                "base_color": "texture_0_base_color",
-                "normal": "texture_0_normal",
-                "roughness": "texture_0_roughness",
-                "metallic": "texture_0_roughness"
-            }
-        },
-        {
-            "name": "M_Solid_Back_Panel",
-            "type": "MeshStandardMaterial",
-            "color": "#4B505D",
-            "emissive": null,
-            "roughness": 0.35,
-            "metalness": 0.65,
-            "opacity": 1,
-            "wireframe": false,
-            "textures": []
-        },
-        {
-            "name": "M_Solid_Front_Panel",
-            "type": "MeshStandardMaterial",
-            "color": "#555D6C",
-            "emissive": null,
-            "roughness": 0.24,
-            "metalness": 0.72,
-            "opacity": 1,
-            "wireframe": false,
-            "textures": []
-        },
-        {
-            "name": "M_Translucent_Clear_Glass",
-            "type": "MeshPhysicalMaterial",
-            "color": "#F6FAFF",
-            "emissive": null,
-            "roughness": 0.03,
-            "metalness": 0.03,
-            "opacity": 0.22,
-            "wireframe": false,
-            "textures": []
-        }
-    ],
-    "companion_files": []
+  "model": "screen_decals_spider_web_overlay.glb",
+  "base_name": "screen_decals_spider_web_overlay",
+  "description": "XR Mobile Game Translucent Screen Overlay with Full-Screen Broken Spider Web Decal, 0.001m thin border frame, solid front/back panels, and 16 targetable laser burn / missile strike decals",
+  "dimensions": {
+    "width_meters": 1.6,
+    "height_meters": 0.9,
+    "border_width_meters": 0.001,
+    "frame_thickness_meters": 0.001,
+    "inner_width_meters": 1.598,
+    "inner_height_meters": 0.898,
+    "aspect_ratio": "16:9"
+  },
+  "components": {
+    "root": "screen_decals_spider_web_overlay_4_Root",
+    "glass_screen": "Translucent_Clear_Screen",
+    "frame": "Frame_005m_Thick",
+    "front_panel": "Solid_Front_Panel",
+    "back_panel": "Solid_Back_Panel",
+    "cyber_accents": "Cyan_Cyber_Accents",
+    "spider_web_full_screen": "Decal_BrokenSpiderWeb_Screen",
+    "spider_web_focal_core": "Decal_BrokenSpiderWeb_Core"
+  },
+  "spider_web_decals": [
+    "Decal_BrokenSpiderWeb_Screen",
+    "Decal_BrokenSpiderWeb_Core"
+  ]
 }

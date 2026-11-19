@@ -1,13 +1,14 @@
 {
-  "model_name": "screen_decals_spider_web_overlay_4",
-  "directory": "screen_decals_spider_web_overlay_4",
-  "glb_path": "./meshy_test_0/models/screen_decals_spider_web_overlay_4/screen_decals_spider_web_overlay_4.glb",
-  "blend_path": "./meshy_test_0/models/screen_decals_spider_web_overlay_4/screen_decals_spider_web_overlay_4.blend",
-  "description": "XR Mobile Game Translucent Screen Overlay with Full-Screen Broken Spider Web Decal, 0.005m thick frame, solid front/back panels, and 16 targetable laser burn / missile strike decals",
+  "model": "screen_decals_spider_web_overlay.glb",
+  "base_name": "screen_decals_spider_web_overlay",
+  "description": "XR Mobile Game Translucent Screen Overlay with Full-Screen Broken Spider Web Decal, 0.001m thin border frame, solid front/back panels, and 16 targetable laser burn / missile strike decals",
   "dimensions": {
     "width_meters": 1.6,
     "height_meters": 0.9,
-    "frame_thickness_meters": 0.005,
+    "border_width_meters": 0.001,
+    "frame_thickness_meters": 0.001,
+    "inner_width_meters": 1.598,
+    "inner_height_meters": 0.898,
     "aspect_ratio": "16:9"
   },
   "components": {
@@ -23,13 +24,5 @@
   "spider_web_decals": [
     "Decal_BrokenSpiderWeb_Screen",
     "Decal_BrokenSpiderWeb_Core"
-  ],
-  "code_targeting_examples": {
-    "threejs_toggle_spiderweb": "const web = scene.getObjectByName('Decal_BrokenSpiderWeb_Screen'); web.visible = !web.visible;",
-    "threejs_turn_off_spiderweb": "scene.getObjectByName('Decal_BrokenSpiderWeb_Screen').visible = false;",
-    "threejs_turn_on_spiderweb": "scene.getObjectByName('Decal_BrokenSpiderWeb_Screen').visible = true;",
-    "unity_csharp_toggle": "GameObject web = transform.Find(\"Decal_BrokenSpiderWeb_Screen\").gameObject; web.SetActive(!web.activeSelf);",
-    "unreal_blueprint_toggle": "Find Component by Class / Tag 'Decal_BrokenSpiderWeb_Screen' -> Set Visibility (false/true)",
-    "global_ui_helper": "window.toggleDecalMesh('Decal_BrokenSpiderWeb_Screen', false);"
-  }
+  ]
 }

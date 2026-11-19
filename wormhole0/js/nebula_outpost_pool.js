@@ -6,17 +6,21 @@ import {
   setupCockpitCracksHierarchy,
   fitCockpitCracksToCamera,
   loadCockpitCracksGlbAsset,
+  loadCockpitCracksAsset,
   flashCockpitCracksOverlay,
   showGameOverCockpitCracksOverlay
 } from './object_pool.js';
 
 export const STAGE_COCKPIT_CRACKS_GLB_URL = 'mobile/warp_origin_images/cockpit_cracks.glb';
+export const STAGE_COCKPIT_CRACKS_ASSET_URL = 'mobile/warp_origin_images/cockpit_cracks.glb';
+export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = '3d_model';
 
 export {
   COCKPIT_CRACKS_GLB_URL,
   setupCockpitCracksHierarchy,
   fitCockpitCracksToCamera,
   loadCockpitCracksGlbAsset,
+  loadCockpitCracksAsset,
   flashCockpitCracksOverlay,
   showGameOverCockpitCracksOverlay
 };
@@ -294,7 +298,7 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
         || 'mobile/warp_origin_images/cockpit_cracks.glb'
         || COCKPIT_CRACKS_GLB_URL;
 
-      const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+      const loadedMesh = (typeof loadCockpitCracksAsset === 'function' ? await loadCockpitCracksAsset(glbUrl) : await loadCockpitCracksGlbAsset(glbUrl));
       if (loadedMesh) {
         this.cockpitCracksMesh = loadedMesh;
         this.cockpitCracksOverlayPool = new MeshPool(

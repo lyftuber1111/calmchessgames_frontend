@@ -58,18 +58,142 @@ export function fitCockpitCracksToCamera(mesh, camera) {
   const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
   const visibleW = visibleH * aspect;
 
-  // Base model bounds: width ~1.90, height ~1.41
-  const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
-  mesh.scale.set(scale, scale, 1.0);
+  if (mesh.userData && mesh.userData.is2DOverlay) {
+    // 2D plane geometry is 1x1, scale directly to match frustum width and height
+    mesh.scale.set(visibleW, visibleH, 1.0);
+  } else {
+    // Base 3D model bounds: width ~1.90, height ~1.41
+    const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
+    mesh.scale.set(scale, scale, 1.0);
+  }
 }
 
 /**
- * Loads the Cockpit Cracks 3D GLB model asset with multi-path fallbacks.
+ * Loads the Cockpit Cracks & Impact Overlay Graphics Asset.
+ * Supports: .glb, .gltf, .obj (3D meshes) and .png, .jpg, .webp, .svg (2D HUD overlays).
  */
-export async function loadCockpitCracksGlbAsset(glbUrl = COCKPIT_CRACKS_GLB_URL) {
+export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) {
   return new Promise((resolve) => {
+    if (!assetUrl) {
+      assetUrl = COCKPIT_CRACKS_GLB_URL;
+    }
+
+    const cleanPath = assetUrl.replace(/[?#].*$/, '');
+    const ext = (cleanPath.split('.').pop() || '').toLowerCase();
+
+    // 1. Handle 2D Image Overlay formats (.png, .jpg, .jpeg, .webp, .svg)
+    if (['png', 'jpg', 'jpeg', 'webp', 'svg'].includes(ext)) {
+      const textureLoader = new THREE.TextureLoader();
+      const candidatePaths = [
+        assetUrl,
+        assetUrl.startsWith('/') ? assetUrl.slice(1) : ('/' + assetUrl),
+        'wormhole0/' + assetUrl.replace(/^(\.\/|\/)/, ''),
+        'mobile/warp_origin_images/' + assetUrl.split('/').pop()
+      ];
+
+      function tryLoadTexture(idx = 0) {
+        if (idx >= candidatePaths.length) {
+          console.warn(`[CockpitCracks] Failed to load 2D texture from all candidate paths for: ${assetUrl}`);
+          resolve(null);
+          return;
+        }
+        const curPath = candidatePaths[idx];
+        textureLoader.load(
+          curPath,
+          (texture) => {
+            if ('colorSpace' in texture) {
+              texture.colorSpace = THREE.SRGBColorSpace;
+            }
+            const mat = new THREE.MeshBasicMaterial({
+              map: texture,
+              transparent: true,
+              opacity: 0.0,
+              depthTest: false,
+              depthWrite: false,
+              side: THREE.DoubleSide
+            });
+            const planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), mat);
+            planeMesh.userData = {
+              isCockpitCracks: true,
+              isOverlay: true,
+              is2DOverlay: true,
+              assetType: 'image_overlay',
+              assetUrl: curPath
+            };
+            setupCockpitCracksHierarchy(planeMesh);
+            console.log(`[CockpitCracks] Successfully loaded 2D overlay texture: ${curPath}`);
+            resolve(planeMesh);
+          },
+          undefined,
+          () => tryLoadTexture(idx + 1)
+        );
+      }
+
+      tryLoadTexture(0);
+      return;
+    }
+
+    // 2. Handle OBJ 3D Model format (.obj)
+    if (ext === 'obj') {
+      const candidatePaths = [
+        assetUrl,
+        assetUrl.startsWith('/') ? assetUrl.slice(1) : ('/' + assetUrl),
+        'wormhole0/' + assetUrl.replace(/^(\.\/|\/)/, '')
+      ];
+
+      function tryLoadObj(idx = 0) {
+        if (idx >= candidatePaths.length) {
+          console.warn(`[CockpitCracks] Failed to load OBJ from all candidate paths for: ${assetUrl}`);
+          resolve(null);
+          return;
+        }
+        const curPath = candidatePaths[idx];
+
+        const doLoadWithObjLoader = (OBJLoaderClass) => {
+          try {
+            const loader = new OBJLoaderClass();
+            loader.load(
+              curPath,
+              (obj) => {
+                obj.userData = obj.userData || {};
+                obj.userData.isCockpitCracks = true;
+                obj.userData.isOverlay = true;
+                obj.userData.assetType = 'obj_model';
+                obj.userData.assetUrl = curPath;
+                setupCockpitCracksHierarchy(obj);
+                console.log(`[CockpitCracks] Successfully loaded OBJ mesh: ${curPath}`);
+                resolve(obj);
+              },
+              undefined,
+              () => tryLoadObj(idx + 1)
+            );
+          } catch (e) {
+            tryLoadObj(idx + 1);
+          }
+        };
+
+        if (typeof THREE !== 'undefined' && THREE.OBJLoader) {
+          doLoadWithObjLoader(THREE.OBJLoader);
+        } else {
+          import('three/addons/loaders/OBJLoader.js')
+            .then(({ OBJLoader }) => doLoadWithObjLoader(OBJLoader))
+            .catch(() => {
+              import('three/examples/jsm/loaders/OBJLoader.js')
+                .then(({ OBJLoader }) => doLoadWithObjLoader(OBJLoader))
+                .catch(() => tryLoadObj(idx + 1));
+            });
+        }
+      }
+
+      tryLoadObj(0);
+      return;
+    }
+
+    // 3. Handle GLB / GLTF 3D Model formats (.glb, .gltf)
     const candidateUrls = [
-      glbUrl,
+      assetUrl,
+      assetUrl.startsWith('/') ? assetUrl.slice(1) : ('/' + assetUrl),
+      'wormhole0/' + assetUrl.replace(/^(\.\/|\/)/, ''),
       'mobile/warp_origin_images/cockpit_cracks.glb',
       'wormhole0/mobile/warp_origin_images/cockpit_cracks.glb',
       'worm_hole0/mobile/warp_origin_images/cockpit_cracks.glb',
@@ -80,7 +204,7 @@ export async function loadCockpitCracksGlbAsset(glbUrl = COCKPIT_CRACKS_GLB_URL)
 
     if (typeof window !== 'undefined' && typeof window.load3DAssetModel === 'function') {
       window.load3DAssetModel(
-        glbUrl,
+        assetUrl,
         (cloned) => {
           if (cloned) {
             setupCockpitCracksHierarchy(cloned);
@@ -98,7 +222,7 @@ export async function loadCockpitCracksGlbAsset(glbUrl = COCKPIT_CRACKS_GLB_URL)
 
     function fallbackLoader(index = 0) {
       if (index >= candidateUrls.length) {
-        console.warn('[CockpitCracks] Failed to load GLB from all candidate paths');
+        console.warn(`[CockpitCracks] Failed to load GLB/GLTF from all candidate paths for: ${assetUrl}`);
         resolve(null);
         return;
       }
@@ -126,6 +250,14 @@ export async function loadCockpitCracksGlbAsset(glbUrl = COCKPIT_CRACKS_GLB_URL)
         });
     }
   });
+}
+
+/**
+ * Loads the Cockpit Cracks 3D GLB model asset with multi-path fallbacks.
+ * Retained as alias to loadCockpitCracksAsset for backwards compatibility.
+ */
+export async function loadCockpitCracksGlbAsset(glbUrl = COCKPIT_CRACKS_GLB_URL) {
+  return loadCockpitCracksAsset(glbUrl);
 }
 
 /**
@@ -998,7 +1130,7 @@ export class StageObjectPool {
         || (this.stageConfig && this.stageConfig.cockpit_cracks_asset)
         || COCKPIT_CRACKS_GLB_URL;
 
-      const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+      const loadedMesh = await loadCockpitCracksAsset(glbUrl);
       if (loadedMesh) {
         this.cockpitCracksMesh = loadedMesh;
         this.cockpitCracksOverlayPool = new MeshPool(
@@ -1008,7 +1140,7 @@ export class StageObjectPool {
           1,
           () => loadedMesh.clone(true)
         );
-        console.log(`[StageObjectPool] Pre-allocated Cockpit Cracks 3D GLB overlay pool from: ${glbUrl}`);
+        console.log(`[StageObjectPool] Pre-allocated Cockpit Cracks overlay pool from: ${glbUrl}`);
       }
     } catch (err) {
       console.warn('[StageObjectPool] Cockpit cracks pooling warning:', err);

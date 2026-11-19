@@ -2,8 +2,8 @@
 /**
  * Wormhole XR - Stage & Object Pool File Provisioner
  * Synchronizes stage configuration, enemy 3D models (.glb/.gltf/.obj), scaling,
- * dimensions, multiple weapons, fire rates (seconds, ms, times/sec), powerups,
- * cosmic environment shaders, and stage object pools across Desktop, Mobile, VR, and ARCore.
+ * dimensions, multiple weapons, fire rates (seconds, ms, times/sec), and stage object pools
+ * across Desktop, Mobile, VR, and ARCore device profiles.
  * Calm Chess Games (c) 2026. All Rights Reserved.
  */
 
@@ -91,274 +91,9 @@ if (!function_exists('toPascalCaseSlug')) {
     }
 }
 
-/**
- * Returns the designated temporary directory for stage generation.
- * Follows the user requirement: /var/www/html/admin/temp_stage_0
- * with seamless local development fallback (__DIR__ . '/temp_stage_0').
- */
-if (!function_exists('getWormholeTempStageDir')) {
-    function getWormholeTempStageDir(): string {
-        $candidates = [
-            '/var/www/html/admin/temp_stage_0',
-            (isset($_SERVER['DOCUMENT_ROOT']) && $_SERVER['DOCUMENT_ROOT'] ? rtrim(str_replace('\\', '/', $_SERVER['DOCUMENT_ROOT']), '/') . '/admin/temp_stage_0' : ''),
-            str_replace('\\', '/', __DIR__) . '/temp_stage_0'
-        ];
-        foreach ($candidates as $cand) {
-            if (empty($cand)) continue;
-            if (!is_dir($cand)) {
-                @mkdir($cand, 0777, true);
-                @chmod($cand, 0777);
-            }
-            if (is_dir($cand)) {
-                $subdirs = ['js', 'mobile', 'desktop', 'vr', 'arcore'];
-                foreach ($subdirs as $sub) {
-                    $subPath = $cand . '/' . $sub;
-                    if (!is_dir($subPath)) {
-                        @mkdir($subPath, 0777, true);
-                        @chmod($subPath, 0777);
-                    }
-                }
-                return $cand;
-            }
-        }
-        $fallback = str_replace('\\', '/', __DIR__) . '/temp_stage_0';
-        if (!is_dir($fallback)) {
-            @mkdir($fallback, 0777, true);
-        }
-        return $fallback;
-    }
-}
-
-/**
- * Returns all recognized candidate base paths for the frontend repo
- * (/var/www/updated_html_js_0/calmchessgames_frontend and local equivalents).
- */
-if (!function_exists('getWormholeFrontendBaseDirs')) {
-    function getWormholeFrontendBaseDirs(): array {
-        $candidates = [
-            '/var/www/updated_html_js_0/calmchessgames_frontend',
-            'C:/Users/lyftu/gemini_3/updated_html_js_0/calmchessgames_frontend',
-            dirname(dirname(dirname(__DIR__))) . '/updated_html_js_0/calmchessgames_frontend',
-            dirname(dirname(__DIR__)) . '/updated_html_js_0/calmchessgames_frontend',
-            dirname(__DIR__) . '/../updated_html_js_0/calmchessgames_frontend',
-            '/var/www/calmchessgames_frontend',
-            '/var/www/calmchessgames_front_end',
-            '/var/www/calmchessgames'
-        ];
-        $valid = [];
-        foreach ($candidates as $c) {
-            if (empty($c)) continue;
-            if (is_dir($c)) {
-                $real = realpath($c);
-                $path = $real ? str_replace('\\', '/', $real) : str_replace('\\', '/', $c);
-                if (!in_array($path, $valid, true)) {
-                    $valid[] = $path;
-                }
-            }
-        }
-        return $valid;
-    }
-}
-
-/**
- * Uses Symfony Process to commit and push changes in the frontend repository:
- *   git add .
- *   git commit -m "<message>"
- *   git push origin main
- */
-if (!function_exists('gitCommitAndPushFrontendWithSymfony')) {
-    function gitCommitAndPushFrontendWithSymfony(string $frontendRepoDir, string $commitMessage): array {
-        $results = [];
-        $frontendRepoDir = rtrim(str_replace('\\', '/', $frontendRepoDir), '/');
-        if (!is_dir($frontendRepoDir . '/.git')) {
-            return [
-                'success' => false,
-                'message' => "Directory is not a git repository: {$frontendRepoDir}",
-                'log' => []
-            ];
-        }
-
-        $autoloadCandidates = [
-            __DIR__ . '/../vendor/autoload.php',
-            dirname(__DIR__) . '/vendor/autoload.php',
-            '/var/www/send_with_git_php_0/calmchessgames_backend_php/vendor/autoload.php',
-            '/var/www/html/vendor/autoload.php',
-            'C:/Users/lyftu/gemini_3/send_with_git_php_0/calmchessgames_backend_php/vendor/autoload.php'
-        ];
-        foreach ($autoloadCandidates as $al) {
-            if (file_exists($al)) {
-                require_once $al;
-                break;
-            }
-        }
-
-        $commands = [
-            ['git', 'add', '.'],
-            ['git', 'commit', '-m', $commitMessage],
-            ['git', 'push', 'origin', 'main']
-        ];
-
-        $hasSymfonyProcess = class_exists('\\Symfony\\Component\\Process\\Process');
-
-        foreach ($commands as $cmd) {
-            $cmdStr = implode(' ', $cmd);
-            if ($hasSymfonyProcess) {
-                try {
-                    $process = new \Symfony\Component\Process\Process($cmd, $frontendRepoDir);
-                    $process->setTimeout(90);
-                    $process->run();
-                    $output = trim($process->getOutput());
-                    $errOutput = trim($process->getErrorOutput());
-                    $exitCode = $process->getExitCode();
-
-                    $isNothingToCommit = ($cmd[1] === 'commit' && (stripos($output, 'nothing to commit') !== false || stripos($errOutput, 'nothing to commit') !== false));
-                    $isSuccess = ($exitCode === 0) || $isNothingToCommit;
-
-                    $results[] = [
-                        'cmd' => $cmdStr,
-                        'exit_code' => $exitCode,
-                        'success' => $isSuccess,
-                        'output' => $output,
-                        'error' => $errOutput,
-                        'driver' => 'symfony_process'
-                    ];
-                } catch (\Throwable $pe) {
-                    $results[] = [
-                        'cmd' => $cmdStr,
-                        'exit_code' => -1,
-                        'success' => false,
-                        'error' => $pe->getMessage(),
-                        'driver' => 'symfony_process'
-                    ];
-                }
-            } else {
-                $escapedCmd = 'cd ' . escapeshellarg($frontendRepoDir) . ' && ' . implode(' ', array_map('escapeshellarg', $cmd));
-                $outputLines = [];
-                $retCode = 0;
-                @exec($escapedCmd . ' 2>&1', $outputLines, $retCode);
-                $combinedOutput = implode("\n", $outputLines);
-                $isNothingToCommit = ($cmd[1] === 'commit' && stripos($combinedOutput, 'nothing to commit') !== false);
-                $isSuccess = ($retCode === 0) || $isNothingToCommit;
-
-                $results[] = [
-                    'cmd' => $cmdStr,
-                    'exit_code' => $retCode,
-                    'success' => $isSuccess,
-                    'output' => $combinedOutput,
-                    'driver' => 'shell_exec_fallback'
-                ];
-            }
-        }
-
-        $overallSuccess = true;
-        foreach ($results as $r) {
-            if (empty($r['success'])) {
-                $overallSuccess = false;
-                break;
-            }
-        }
-
-        return [
-            'success' => $overallSuccess,
-            'repo' => $frontendRepoDir,
-            'commit_message' => $commitMessage,
-            'log' => $results
-        ];
-    }
-}
-
-/**
- * Synchronizes stage files from the temp directory into the destination frontend folder(s)
- * under wormhole0, then triggers the Symfony git commit and push pipeline.
- */
-if (!function_exists('syncStageFilesFromTempToFrontend')) {
-    function syncStageFilesFromTempToFrontend(string $tempDir, array $createdTempFiles, string $stageSlug, bool $doGit = true, string $commitMsg = ''): array {
-        $syncedFiles = [];
-        $gitReports = [];
-        $tempDirNorm = rtrim(str_replace('\\', '/', $tempDir), '/');
-
-        $frontendBases = getWormholeFrontendBaseDirs();
-
-        // Also sync to backend's wormhole0 if present
-        $backendWormholeCandidates = [
-            dirname(__DIR__) . '/wormhole0',
-            dirname(dirname(__DIR__)) . '/send_with_git_php_0/calmchessgames_backend_php/wormhole0',
-            'C:/Users/lyftu/gemini_3/send_with_git_php_0/calmchessgames_backend_php/wormhole0'
-        ];
-        $allTargetWormholeDirs = [];
-
-        foreach ($frontendBases as $fb) {
-            $w0 = $fb . '/wormhole0';
-            if (!in_array($w0, $allTargetWormholeDirs, true)) {
-                $allTargetWormholeDirs[] = $w0;
-            }
-        }
-        foreach ($backendWormholeCandidates as $bw) {
-            if (is_dir($bw)) {
-                $real = realpath($bw);
-                $path = $real ? str_replace('\\', '/', $real) : str_replace('\\', '/', $bw);
-                if (!in_array($path, $allTargetWormholeDirs, true)) {
-                    $allTargetWormholeDirs[] = $path;
-                }
-            }
-        }
-
-        foreach ($allTargetWormholeDirs as $targetWormhole) {
-            if (!is_dir($targetWormhole)) {
-                @mkdir($targetWormhole, 0777, true);
-                @chmod($targetWormhole, 0777);
-            }
-            foreach (['js', 'mobile', 'desktop', 'vr', 'arcore'] as $devSub) {
-                $dPath = $targetWormhole . '/' . $devSub;
-                if (!is_dir($dPath)) {
-                    @mkdir($dPath, 0777, true);
-                    @chmod($dPath, 0777);
-                }
-            }
-
-            foreach ($createdTempFiles as $srcFile) {
-                $srcFileNorm = str_replace('\\', '/', $srcFile);
-                if (strpos($srcFileNorm, $tempDirNorm . '/') === 0) {
-                    $relPath = substr($srcFileNorm, strlen($tempDirNorm) + 1);
-                } else {
-                    $relPath = basename($srcFileNorm);
-                }
-                $destFile = $targetWormhole . '/' . $relPath;
-                $destDir = dirname($destFile);
-                if (!is_dir($destDir)) {
-                    @mkdir($destDir, 0777, true);
-                    @chmod($destDir, 0777);
-                }
-                if (@copy($srcFile, $destFile)) {
-                    @chmod($destFile, 0666);
-                    $syncedFiles[] = $destFile;
-                }
-            }
-        }
-
-        if ($doGit) {
-            $msg = !empty($commitMsg) ? $commitMsg : "[GameManager] Updated stage {$stageSlug} configurations across js, mobile, desktop, vr, arcore";
-            foreach ($frontendBases as $fb) {
-                if (is_dir($fb . '/.git')) {
-                    $gitReports[] = gitCommitAndPushFrontendWithSymfony($fb, $msg);
-                }
-            }
-        }
-
-        return [
-            'synced_files' => array_values(array_unique($syncedFiles)),
-            'git_reports' => $gitReports
-        ];
-    }
-}
-
 if (!function_exists('provisionWormholeStageFilesAndAudio')) {
     /**
-     * Provisions stage files, enemy graphics definitions, weapons, powerups, environment,
-     * and object pools for a stage level.
-     * Writes first to the temporary directory /var/www/html/admin/temp_stage_0 (or local temp_stage_0),
-     * moves/synchronizes to /var/www/updated_html_js_0/calmchessgames_frontend/wormhole0,
-     * and performs a Symfony Process git commit & push to origin main.
+     * Provisions stage files, enemy graphics definitions, and object pools for a stage level.
      */
     function provisionWormholeStageFilesAndAudio(
         $stageLevel,
@@ -371,8 +106,7 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
         $missionObjectives = '',
         $requiredEnemyKills = 10,
         $warpTargetDistance = 50000,
-        $cockpitOverlayAsset = 'mobile/warp_origin_images/cockpit_cracks.glb',
-        bool $doGit = true
+        $cockpitOverlayAsset = 'mobile/warp_origin_images/cockpit_cracks.glb'
     ) {
         $stageSlug = strtolower(preg_replace('/[^a-zA-Z0-9_]/', '', str_replace(' ', '_', trim($stageName))));
         if (empty($stageSlug)) {
@@ -407,9 +141,39 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
         $cockpitExt = strtolower(pathinfo(parse_url($cleanCockpitAsset, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
         $cockpitAssetType = ($cockpitExt === 'gltf' || $cockpitExt === 'glb') ? '3d_model' : ($cockpitExt === 'obj' ? 'obj_model' : 'image_overlay');
 
-        // Resolve designated temporary stage generation folder:
-        // /var/www/html/admin/temp_stage_0 or __DIR__ . '/temp_stage_0'
-        $tempDir = getWormholeTempStageDir();
+        $candidateBases = [
+            'C:/Users/lyftu/gemini_3/updated_html_js_0/calmchessgames_frontend/wormhole0',
+            'C:/Users/lyftu/gemini_3/send_with_git_php_0/calmchessgames_backend_php/wormhole0',
+            dirname(dirname(dirname(__DIR__))) . '/updated_html_js_0/calmchessgames_frontend/wormhole0',
+            dirname(dirname(dirname(__DIR__))) . '/send_with_git_php_0/calmchessgames_backend_php/wormhole0',
+            dirname(dirname(__DIR__)) . '/updated_html_js_0/calmchessgames_frontend/wormhole0',
+            dirname(dirname(__DIR__)) . '/send_with_git_php_0/calmchessgames_backend_php/wormhole0',
+            dirname(__DIR__) . '/../updated_html_js_0/calmchessgames_frontend/wormhole0',
+            dirname(__DIR__) . '/../send_with_git_php_0/calmchessgames_backend_php/wormhole0',
+            dirname(__DIR__) . '/wormhole0',
+            '/var/www/calmchessgames_frontend/wormhole0',
+            '/var/www/calmchessgames_front_end/wormhole0',
+            '/var/www/calmchessgames/wormhole0',
+            (isset($_SERVER['DOCUMENT_ROOT']) && $_SERVER['DOCUMENT_ROOT'] ? $_SERVER['DOCUMENT_ROOT'] . '/wormhole0' : ''),
+            '/var/www/html/wormhole0',
+            __DIR__ . '/temp_stage_0'
+        ];
+
+        $validWormholeDirs = [];
+        foreach ($candidateBases as $cand) {
+            if (!$cand) continue;
+            if (!is_dir($cand)) {
+                @mkdir($cand, 0777, true);
+                @chmod($cand, 0777);
+            }
+            if (is_dir($cand)) {
+                $real = realpath($cand);
+                $pathToAdd = $real ? $real : $cand;
+                if (!in_array($pathToAdd, $validWormholeDirs, true)) {
+                    $validWormholeDirs[] = $pathToAdd;
+                }
+            }
+        }
 
         $createdFiles = [];
         $audioFolders = [];
@@ -418,8 +182,6 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
         $initialWeapon = null;
         $acquirableWeapons = [];
         $enemiesList = [];
-        $powerupsList = [];
-        $environmentRecord = null;
 
         try {
             $pdo = getDbConnection();
@@ -678,54 +440,6 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
                     'destruction_particle_scale'=> floatval($de['destruction_particle_scale'] ?? 1.00)
                 ];
             }
-
-            // 3. Fetch powerups for stage (stage specific + global stage_level = 0)
-            try {
-                $pStmt = $pdo->prepare("SELECT * FROM `wormhole_game_powerups` WHERE (`stage_level` = :stage OR `stage_level` = 0) AND (`is_enabled` = 1) ORDER BY `stage_level` ASC, `id` ASC");
-                $pStmt->execute(['stage' => $stageLevel]);
-                $dbPowerups = $pStmt->fetchAll(PDO::FETCH_ASSOC);
-                foreach ($dbPowerups as $dp) {
-                    $powerupsList[] = [
-                        'id'                 => intval($dp['id']),
-                        'powerup_id'         => $dp['powerup_id'],
-                        'powerup_name'       => $dp['powerup_name'],
-                        'powerup_type'       => $dp['powerup_type'],
-                        'icon'               => $dp['icon'] ?? '⚡',
-                        'model_3d_type'      => $dp['model_3d_type'] ?? 'octahedron',
-                        'model_3d_url'       => $dp['model_3d_url'] ?? '',
-                        'color_hex'          => $dp['color_hex'] ?? '#00f0ff',
-                        'scale'              => floatval($dp['scale'] ?? 1.0),
-                        'length'             => floatval($dp['length'] ?? 2.5),
-                        'height'             => floatval($dp['height'] ?? 2.5),
-                        'depth'              => floatval($dp['depth'] ?? 2.5),
-                        'circumference'      => floatval($dp['circumference'] ?? 6.0),
-                        'stage_level'        => intval($dp['stage_level']),
-                        'device_type'        => $dp['device_type'] ?? 'all',
-                        'trigger_events'     => $dp['trigger_events'] ?? '',
-                        'drop_on_enemy_kill' => intval($dp['drop_on_enemy_kill'] ?? 1),
-                        'drop_chance_pct'    => floatval($dp['drop_chance_pct'] ?? 65),
-                        'enemy_id'           => $dp['enemy_id'] ?? 'all',
-                        'boost_percentage'   => floatval($dp['boost_percentage'] ?? 25),
-                        'description'        => $dp['description'] ?? '',
-                        'is_enabled'         => intval($dp['is_enabled'] ?? 1)
-                    ];
-                }
-            } catch (Throwable $eP) {
-                error_log("provisionWormholeStage powerups query warning: " . $eP->getMessage());
-            }
-
-            // 4. Fetch environment configuration for stage
-            try {
-                $envStmt = $pdo->prepare("SELECT * FROM `wormhole_game_environments` WHERE (`stage_level` = :stage OR `stage_level` = 0) AND (`is_enabled` = 1) ORDER BY `stage_level` DESC, `id` ASC");
-                $envStmt->execute(['stage' => $stageLevel]);
-                $dbEnvs = $envStmt->fetchAll(PDO::FETCH_ASSOC);
-                if (!empty($dbEnvs)) {
-                    $environmentRecord = $dbEnvs[0];
-                }
-            } catch (Throwable $eEnv) {
-                error_log("provisionWormholeStage environment query warning: " . $eEnv->getMessage());
-            }
-
         } catch (Throwable $e) {
             error_log("provisionWormholeStageFilesAndAudio db query error: " . $e->getMessage());
         }
@@ -808,8 +522,6 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
         ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         $enemiesJsonFormatted = json_encode($enemiesList, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $powerupsJsonFormatted = json_encode($powerupsList, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        $environmentJsonFormatted = json_encode($environmentRecord ?: [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
         // Build Stage Objectives Array
         $stageObjectivesArray = [
@@ -868,7 +580,7 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
         }
         $objectivesJsonFormatted = json_encode($stageObjectivesArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        // Device target profiles: desktop, mobile, arcore, and vr
+        // Device target profiles: mobile, desktop, arcore, and vr
         $deviceProfiles = [
             'desktop' => [
                 'device' => 'desktop',
@@ -928,93 +640,62 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
             ]
         ];
 
-        // Atmosphere colors: prioritize database environment values, fallback to theme-derived defaults
         $themeLower = strtolower($theme);
         $primaryColor = '#00f0ff';
         $glowColor = 'rgba(0, 240, 255, 0.45)';
         $panelBg = 'rgba(2, 14, 26, 0.88)';
         $panelBorder = 'rgba(0, 240, 255, 0.40)';
-        $uColorEdge = '#003366';
-        $uColorCore = '#00f0ff';
-        $uColorHot = '#d6ffff';
-        $uHaloColor = '#00f0ff';
-        $ambientLight = '#002233';
-        $centerLight = '#00f0ff';
+        $uColorEdge = '0x003366';
+        $uColorCore = '0x00f0ff';
+        $uColorHot = '0xd6ffff';
+        $uHaloColor = '0x00f0ff';
+        $ambientLight = '0x002233';
+        $centerLight = '0x00f0ff';
 
         if (strpos($themeLower, 'amber') !== false || strpos($themeLower, 'gold') !== false || strpos($themeLower, 'orange') !== false) {
             $primaryColor = '#ffd166';
             $glowColor = 'rgba(255, 209, 102, 0.45)';
             $panelBg = 'rgba(24, 14, 2, 0.88)';
             $panelBorder = 'rgba(255, 209, 102, 0.40)';
-            $uColorEdge = '#663300';
-            $uColorCore = '#ff9900';
-            $uColorHot = '#fff4d6';
-            $uHaloColor = '#ffaa00';
-            $ambientLight = '#331a00';
-            $centerLight = '#ffaa00';
+            $uColorEdge = '0x663300';
+            $uColorCore = '0xff9900';
+            $uColorHot = '0xfff4d6';
+            $uHaloColor = '0xffaa00';
+            $ambientLight = '0x331a00';
+            $centerLight = '0xffaa00';
         } elseif (strpos($themeLower, 'violet') !== false || strpos($themeLower, 'purple') !== false || strpos($themeLower, 'singularity') !== false) {
             $primaryColor = '#c084fc';
             $glowColor = 'rgba(192, 132, 252, 0.45)';
             $panelBg = 'rgba(18, 6, 28, 0.88)';
             $panelBorder = 'rgba(192, 132, 252, 0.40)';
-            $uColorEdge = '#330066';
-            $uColorCore = '#9933ff';
-            $uColorHot = '#f5e6ff';
-            $uHaloColor = '#a855f7';
-            $ambientLight = '#1a0033';
-            $centerLight = '#a855f7';
+            $uColorEdge = '0x330066';
+            $uColorCore = '0x9933ff';
+            $uColorHot = '0xf5e6ff';
+            $uHaloColor = '0xa855f7';
+            $ambientLight = '0x1a0033';
+            $centerLight = '0xa855f7';
         } elseif (strpos($themeLower, 'magenta') !== false || strpos($themeLower, 'pink') !== false || strpos($themeLower, 'crimson') !== false || strpos($themeLower, 'quantum') !== false || strpos($themeLower, 'overlord') !== false) {
             $primaryColor = '#f43f5e';
             $glowColor = 'rgba(244, 63, 94, 0.45)';
             $panelBg = 'rgba(28, 4, 12, 0.88)';
             $panelBorder = 'rgba(244, 63, 94, 0.40)';
-            $uColorEdge = '#66001a';
-            $uColorCore = '#ff0055';
-            $uColorHot = '#ffe6ee';
-            $uHaloColor = '#f43f5e';
-            $ambientLight = '#330011';
-            $centerLight = '#f43f5e';
+            $uColorEdge = '0x66001a';
+            $uColorCore = '0xff0055';
+            $uColorHot = '0xffe6ee';
+            $uHaloColor = '0xf43f5e';
+            $ambientLight = '0x330011';
+            $centerLight = '0xf43f5e';
         } elseif (strpos($themeLower, 'green') !== false || strpos($themeLower, 'emerald') !== false) {
             $primaryColor = '#10b981';
             $glowColor = 'rgba(16, 185, 129, 0.45)';
             $panelBg = 'rgba(2, 24, 16, 0.88)';
             $panelBorder = 'rgba(16, 185, 129, 0.40)';
-            $uColorEdge = '#003322';
-            $uColorCore = '#00ff88';
-            $uColorHot = '#d6fff0';
-            $uHaloColor = '#10b981';
-            $ambientLight = '#002211';
-            $centerLight = '#10b981';
-        }
-
-        // Apply database environment overrides if present
-        $envRotationSpeed = 0.65;
-        $envDistortion = 1.0;
-        $envImageCorona = '';
-        $envModel3d = '';
-        $envQuickPrimary = 'none';
-        $envQuickSecondary = 'none';
-        $envQuickColor = $primaryColor;
-        $envQuickIntensity = 1.0;
-        $envQuickSpeed = 1.0;
-
-        if ($environmentRecord) {
-            if (!empty($environmentRecord['color_primary'])) $primaryColor = $environmentRecord['color_primary'];
-            if (!empty($environmentRecord['color_edge'])) $uColorEdge = $environmentRecord['color_edge'];
-            if (!empty($environmentRecord['color_core'])) $uColorCore = $environmentRecord['color_core'];
-            if (!empty($environmentRecord['color_hot'])) $uColorHot = $environmentRecord['color_hot'];
-            if (!empty($environmentRecord['color_halo'])) $uHaloColor = $environmentRecord['color_halo'];
-            if (!empty($environmentRecord['ambient_light'])) $ambientLight = $environmentRecord['ambient_light'];
-            if (!empty($environmentRecord['center_light'])) $centerLight = $environmentRecord['center_light'];
-            $envRotationSpeed = floatval($environmentRecord['rotation_speed'] ?? 0.65);
-            $envDistortion = floatval($environmentRecord['distortion_intensity'] ?? 1.0);
-            $envImageCorona = sanitizeWormholeAssetUrl($environmentRecord['image_asset_url'] ?? '');
-            $envModel3d = sanitizeWormholeAssetUrl($environmentRecord['model_3d_url'] ?? '');
-            $envQuickPrimary = $environmentRecord['quick_effect_primary'] ?? 'none';
-            $envQuickSecondary = $environmentRecord['quick_effect_secondary'] ?? 'none';
-            $envQuickColor = $environmentRecord['quick_effect_color'] ?? $primaryColor;
-            $envQuickIntensity = floatval($environmentRecord['quick_effect_intensity'] ?? 1.0);
-            $envQuickSpeed = floatval($environmentRecord['quick_effect_speed'] ?? 1.0);
+            $uColorEdge = '0x003322';
+            $uColorCore = '0x00ff88';
+            $uColorHot = '0xd6fff0';
+            $uHaloColor = '0x10b981';
+            $ambientLight = '0x002211';
+            $centerLight = '0x10b981';
         }
 
         $cleanStageName = addslashes($stageName);
@@ -1032,38 +713,39 @@ if (!function_exists('provisionWormholeStageFilesAndAudio')) {
         }
         $eventsJsonFormatted = json_encode($eventsList, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-        // -----------------------------------------------------------------
-        // WRITE ALL FILES TO THE TEMPORARY STAGE DIRECTORY ($tempDir)
-        // -----------------------------------------------------------------
+        foreach ($validWormholeDirs as $wormholeDir) {
+            // Ensure audio directory for this stage
+            $stageAudioDir = $wormholeDir . DIRECTORY_SEPARATOR . 'audio' . DIRECTORY_SEPARATOR . $stageSlug;
+            if (!is_dir($stageAudioDir)) {
+                @mkdir($stageAudioDir, 0777, true);
+                @chmod($stageAudioDir, 0777);
+            }
+            if (is_dir($stageAudioDir)) {
+                $audioFolders[] = $stageAudioDir;
+            }
 
-        // Ensure temp audio and image directories for this stage
-        $stageAudioDir = $tempDir . '/audio/' . $stageSlug;
-        if (!is_dir($stageAudioDir)) {
-            @mkdir($stageAudioDir, 0777, true);
-            @chmod($stageAudioDir, 0777);
-        }
-        if (is_dir($stageAudioDir)) {
-            $audioFolders[] = $stageAudioDir;
-        }
+            // Ensure images directory for this stage
+            $stageImageDir = $wormholeDir . DIRECTORY_SEPARATOR . "{$stageSlug}_images";
+            if (!is_dir($stageImageDir)) {
+                @mkdir($stageImageDir, 0777, true);
+                @chmod($stageImageDir, 0777);
+            }
+            if (is_dir($stageImageDir)) {
+                $imageFolders[] = $stageImageDir;
+            }
 
-        $stageImageDir = $tempDir . '/' . "{$stageSlug}_images";
-        if (!is_dir($stageImageDir)) {
-            @mkdir($stageImageDir, 0777, true);
-            @chmod($stageImageDir, 0777);
-        }
-        if (is_dir($stageImageDir)) {
-            $imageFolders[] = $stageImageDir;
-        }
+            // Ensure js directory exists
+            $jsDir = $wormholeDir . DIRECTORY_SEPARATOR . 'js';
+            if (!is_dir($jsDir)) {
+                @mkdir($jsDir, 0777, true);
+                @chmod($jsDir, 0777);
+            }
 
-        // 1. GENERATE CANONICAL STAGE OBJECT POOL SCRIPT in temp_stage_0/js/{$stageSlug}_pool.js
-        $tempJsDir = $tempDir . '/js';
-        if (!is_dir($tempJsDir)) {
-            @mkdir($tempJsDir, 0777, true);
-            @chmod($tempJsDir, 0777);
-        }
-
-        $canonicalPoolJs = $tempJsDir . '/' . "{$stageSlug}_pool.js";
-        $poolJsCode = <<<JS
+            // -----------------------------------------------------------------
+            // 1. GENERATE CANONICAL STAGE OBJECT POOL SCRIPT in js/{$stageSlug}_pool.js
+            // -----------------------------------------------------------------
+            $canonicalPoolJs = $jsDir . DIRECTORY_SEPARATOR . "{$stageSlug}_pool.js";
+            $poolJsCode = <<<JS
 import * as THREE from 'three';
 import {
   MeshPool,
@@ -1092,8 +774,8 @@ export {
  * Calm Chess Games / Wormhole XR (c) 2026. All Rights Reserved.
  *
  * Pre-allocates enemies and weapons graphic objects.
- * Sets 3D graphic models, scales, physical dimensions, weapons, powerups,
- * and cosmic environment attributes pulled dynamically from the Game Manager admin database.
+ * Sets 3D graphic models, scales, physical dimensions, and weapons attributes
+ * pulled dynamically from the Game Manager admin database.
  */
 
 export class {$pascalSlug}ObjectPool extends StageObjectPool {
@@ -1131,8 +813,6 @@ export class {$pascalSlug}ObjectPool extends StageObjectPool {
       wave_interval_seconds: 15,
       weapons: {$weaponsJsonFormatted},
       enemies: {$enemiesJsonFormatted},
-      powerups: {$powerupsJsonFormatted},
-      environment: {$environmentJsonFormatted},
       ...stageConfig
     };
 
@@ -1173,73 +853,47 @@ export default createStagePool;
 export { MeshPool };
 JS;
 
-        if (@file_put_contents($canonicalPoolJs, $poolJsCode) !== false) {
-            @chmod($canonicalPoolJs, 0666);
-            $createdFiles[] = $canonicalPoolJs;
-        }
-
-        // 2. ROOT POOL RE-EXPORT in temp_stage_0/{$stageSlug}_pool.js
-        $rootPoolJs = $tempDir . '/' . "{$stageSlug}_pool.js";
-        $rootPoolCode = <<<JS
-export * from './js/{$stageSlug}_pool.js';
-export { default } from './js/{$stageSlug}_pool.js';
-JS;
-        if (@file_put_contents($rootPoolJs, $rootPoolCode) !== false) {
-            @chmod($rootPoolJs, 0666);
-            $createdFiles[] = $rootPoolJs;
-        }
-
-        // 3. GENERATE DEVICE-SPECIFIC MODULES in temp_stage_0/desktop, mobile, arcore, vr
-        foreach ($deviceProfiles as $targetFolder => $prof) {
-            $deviceDir = $tempDir . '/' . $targetFolder;
-            if (!is_dir($deviceDir)) {
-                @mkdir($deviceDir, 0777, true);
-                @chmod($deviceDir, 0777);
+            if (@file_put_contents($canonicalPoolJs, $poolJsCode) !== false) {
+                @chmod($canonicalPoolJs, 0666);
+                $createdFiles[] = $canonicalPoolJs;
+            } else {
+                error_log("provisionWormholeStageFilesAndAudio: Failed to write " . $canonicalPoolJs);
             }
 
-            $deviceAudioDir = $deviceDir . '/audio/' . $stageSlug;
-            if (!is_dir($deviceAudioDir)) {
-                @mkdir($deviceAudioDir, 0777, true);
-                @chmod($deviceAudioDir, 0777);
-            }
-            if (is_dir($deviceAudioDir)) {
-                $audioFolders[] = $deviceAudioDir;
-            }
+            // -----------------------------------------------------------------
+            // 2. GENERATE DEVICE-SPECIFIC MODULES
+            // -----------------------------------------------------------------
+            foreach ($deviceProfiles as $targetFolder => $prof) {
+                $deviceDir = $wormholeDir . DIRECTORY_SEPARATOR . $targetFolder;
+                if (!is_dir($deviceDir)) {
+                    @mkdir($deviceDir, 0777, true);
+                    @chmod($deviceDir, 0777);
+                }
 
-            $deviceImageDir = $deviceDir . '/' . "{$stageSlug}_images";
-            if (!is_dir($deviceImageDir)) {
-                @mkdir($deviceImageDir, 0777, true);
-                @chmod($deviceImageDir, 0777);
-            }
-            if (is_dir($deviceImageDir)) {
-                $imageFolders[] = $deviceImageDir;
-            }
+                $deviceAudioDir = $deviceDir . DIRECTORY_SEPARATOR . 'audio' . DIRECTORY_SEPARATOR . $stageSlug;
+                if (!is_dir($deviceAudioDir)) {
+                    @mkdir($deviceAudioDir, 0777, true);
+                    @chmod($deviceAudioDir, 0777);
+                }
+                if (is_dir($deviceAudioDir)) {
+                    $audioFolders[] = $deviceAudioDir;
+                }
 
-            // Write device directory pool re-export {$deviceDir}/{$stageSlug}_pool.js
-            $devPoolJs = $deviceDir . '/' . "{$stageSlug}_pool.js";
-            $devPoolCode = <<<JS
-export * from '../js/{$stageSlug}_pool.js';
-export { default } from '../js/{$stageSlug}_pool.js';
-JS;
-            if (@file_put_contents($devPoolJs, $devPoolCode) !== false) {
-                @chmod($devPoolJs, 0666);
-                $createdFiles[] = $devPoolJs;
-            }
+                $deviceImageDir = $deviceDir . DIRECTORY_SEPARATOR . "{$stageSlug}_images";
+                if (!is_dir($deviceImageDir)) {
+                    @mkdir($deviceImageDir, 0777, true);
+                    @chmod($deviceImageDir, 0777);
+                }
+                if (is_dir($deviceImageDir)) {
+                    $imageFolders[] = $deviceImageDir;
+                }
 
-            $upperDevice = strtoupper($prof['device']);
-            $deviceParticles = $prof['particles'];
-            if ($environmentRecord && !empty($environmentRecord['particle_count'])) {
-                $customCount = intval($environmentRecord['particle_count']);
-                if ($targetFolder === 'mobile') $customCount = min($customCount, 2500);
-                elseif ($targetFolder === 'arcore') $customCount = min($customCount, 2000);
-                elseif ($targetFolder === 'vr') $customCount = min($customCount, 4000);
-                $deviceParticles['count'] = $customCount;
-            }
-            $particlesJson = json_encode($deviceParticles, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            $flightJson = json_encode($prof['flight'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-            $controlsJson = json_encode($prof['controls'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                $upperDevice = strtoupper($prof['device']);
+                $particlesJson = json_encode($prof['particles'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                $flightJson = json_encode($prof['flight'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+                $controlsJson = json_encode($prof['controls'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
-            $jsCode = <<<JS
+                $jsCode = <<<JS
 import * as THREE from 'three';
 import {
   createStagePool,
@@ -1303,33 +957,20 @@ export const stageConfig = {
       panelBorder: '{$panelBorder}'
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color('{$uColorEdge}'),
-      uColorCore: new THREE.Color('{$uColorCore}'),
-      uColorHot: new THREE.Color('{$uColorHot}'),
-      uHaloColor: new THREE.Color('{$uHaloColor}')
+      uColorEdge: new THREE.Color({$uColorEdge}),
+      uColorCore: new THREE.Color({$uColorCore}),
+      uColorHot: new THREE.Color({$uColorHot}),
+      uHaloColor: new THREE.Color({$uHaloColor})
     },
     lighting: {
-      ambient: new THREE.Color('{$ambientLight}').getHex(),
-      center: new THREE.Color('{$centerLight}').getHex()
+      ambient: {$ambientLight},
+      center: {$centerLight}
     },
     particles: {$particlesJson},
-    flight: {$flightJson},
-    environmentParams: {
-      rotationSpeed: {$envRotationSpeed},
-      distortionIntensity: {$envDistortion},
-      imageAssetUrl: '{$envImageCorona}',
-      model3dUrl: '{$envModel3d}',
-      quickEffectPrimary: '{$envQuickPrimary}',
-      quickEffectSecondary: '{$envQuickSecondary}',
-      quickEffectColor: '{$envQuickColor}',
-      quickEffectIntensity: {$envQuickIntensity},
-      quickEffectSpeed: {$envQuickSpeed}
-    }
+    flight: {$flightJson}
   },
   weapons: {$weaponsJsonFormatted},
   enemies: {$enemiesJsonFormatted},
-  powerups: {$powerupsJsonFormatted},
-  environment: {$environmentJsonFormatted},
   objectives: {$objectivesJsonFormatted},
   controls: {$controlsJson}
 };
@@ -1444,6 +1085,7 @@ export function updateStageWaves(pool, activeEnemies, stageKills, scene) {
     return pool.getPoolStats();
   }
 }
+
 
 // =========================================================================
 // COCKPIT CRACKS TRANSPARENT OVERLAY POOL & GAME OVER MANAGEMENT
@@ -1614,12 +1256,6 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
-  if (typeof engineApi.setPowerups === 'function' && stageConfig.powerups) {
-    engineApi.setPowerups(stageConfig.powerups);
-  }
-  if (typeof engineApi.setEnvironment === 'function' && stageConfig.environment) {
-    engineApi.setEnvironment(stageConfig.environment);
-  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -1632,6 +1268,7 @@ export function applyStage(engineApi) {
   if (typeof engineApi.showToast === 'function') {
     engineApi.showToast('🚀 STAGE {$stageLevel}: {$upperStageName} [{$upperDevice}] LOADED');
   }
+
 
   // --- Mount Cockpit Cracks Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
@@ -1689,30 +1326,27 @@ export function applyStage(engineApi) {
 export default { stageConfig, applyStage, fireEnemyWeapon, updateEnemyMovement, updateStageWaves, handleStageEvent, stageEvents, setupCockpitCracksOverlay, triggerCockpitCracksHit, triggerGameOverCockpitCracks, hideCockpitCracks, fitCockpitCracksToCamera, getActiveCockpitCracksOverlay };
 JS;
 
-            $primaryJs = $deviceDir . '/' . "{$stageSlug}_{$targetFolder}.js";
-            if (@file_put_contents($primaryJs, $jsCode) !== false) {
-                @chmod($primaryJs, 0666);
-                $createdFiles[] = $primaryJs;
-            }
+                $primaryJs = $deviceDir . DIRECTORY_SEPARATOR . "{$stageSlug}_{$targetFolder}.js";
+                if (@file_put_contents($primaryJs, $jsCode) !== false) {
+                    @chmod($primaryJs, 0666);
+                    $createdFiles[] = $primaryJs;
+                } else {
+                    error_log("provisionWormholeStageFilesAndAudio: Failed to write " . $primaryJs);
+                }
 
-            $genericJs = $deviceDir . '/' . "{$stageSlug}.js";
-            if (@file_put_contents($genericJs, $jsCode) !== false) {
-                @chmod($genericJs, 0666);
-                $createdFiles[] = $genericJs;
+                $genericJs = $deviceDir . DIRECTORY_SEPARATOR . "{$stageSlug}.js";
+                if (@file_put_contents($genericJs, $jsCode) !== false) {
+                    @chmod($genericJs, 0666);
+                    $createdFiles[] = $genericJs;
+                } else {
+                    error_log("provisionWormholeStageFilesAndAudio: Failed to write " . $genericJs);
+                }
             }
         }
 
-        // -----------------------------------------------------------------
-        // SYNCHRONIZE FILES FROM TEMP DIRECTORY TO FRONTEND AND COMMIT/PUSH
-        // -----------------------------------------------------------------
-        $syncResult = syncStageFilesFromTempToFrontend($tempDir, $createdFiles, $stageSlug, $doGit, "[GameManager] Updated stage {$stageLevel}: {$stageSlug} configurations across js, mobile, desktop, vr, arcore");
-
         return [
-            'stage_slug'    => $stageSlug,
-            'temp_dir'      => $tempDir,
+            'stage_slug' => $stageSlug,
             'created_files' => array_values(array_unique($createdFiles)),
-            'synced_files'  => $syncResult['synced_files'] ?? [],
-            'git_status'    => $syncResult['git_reports'] ?? [],
             'audio_folders' => array_values(array_unique($audioFolders)),
             'image_folders' => array_values(array_unique($imageFolders))
         ];
@@ -1720,13 +1354,7 @@ JS;
 }
 
 if (!function_exists('provisionAllWormholeStageFilesAndAudio')) {
-    /**
-     * Provisions all stages across js, mobile, desktop, vr, arcore.
-     * Generates all files into the temporary directory /var/www/html/admin/temp_stage_0 (or local),
-     * moves/synchronizes them to /var/www/updated_html_js_0/calmchessgames_frontend/wormhole0,
-     * and performs a single consolidated Symfony Process git commit and push to origin main.
-     */
-    function provisionAllWormholeStageFilesAndAudio(bool $doGit = true) {
+    function provisionAllWormholeStageFilesAndAudio() {
         $results = [];
         try {
             $pdo = getDbConnection();
@@ -1754,32 +1382,12 @@ if (!function_exists('provisionAllWormholeStageFilesAndAudio')) {
                     $s['mission_objectives'] ?? '',
                     intval($s['required_enemy_kills'] ?? 10),
                     intval($s['warp_target_distance'] ?? 50000),
-                    $s['cockpit_overlay_asset'] ?? 'mobile/warp_origin_images/cockpit_cracks.glb',
-                    false // defer git push to consolidated batch step
+                    $s['cockpit_overlay_asset'] ?? 'mobile/warp_origin_images/cockpit_cracks.glb'
                 );
             }
-
-            // Consolidated Symfony Process git commit & push for all updated stage files
-            $gitLog = [];
-            if ($doGit) {
-                $frontendBases = getWormholeFrontendBaseDirs();
-                $commitMsg = "[GameManager] Synchronized all stage files across js, mobile, desktop, vr, arcore";
-                foreach ($frontendBases as $fb) {
-                    if (is_dir($fb . '/.git')) {
-                        $gitLog[] = gitCommitAndPushFrontendWithSymfony($fb, $commitMsg);
-                    }
-                }
-            }
-            return [
-                'stages' => $results,
-                'git_status' => $gitLog
-            ];
         } catch (Throwable $e) {
             error_log("provisionAllWormholeStageFilesAndAudio error: " . $e->getMessage());
-            return [
-                'stages' => $results,
-                'error' => $e->getMessage()
-            ];
         }
+        return $results;
     }
 }

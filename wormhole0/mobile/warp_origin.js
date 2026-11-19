@@ -686,8 +686,9 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     : (enemyObj.weapons && enemyObj.weapons[0]) || (enemyObj.config && enemyObj.config.weapons && enemyObj.config.weapons[0]) || null;
   const cfg = enemyObj.config || enemyObj || {};
   const wName = (w && w.name) || cfg.weapon_name || 'Plasma Pulse';
-  const wType = (w && w.type) ? w.type.toLowerCase() : ((/missile|torpedo|rocket/i.test(wName)) ? 'missile' : 'beam');
-  const isMissile = wType === 'missile';
+  const rawWType = (w && w.type) ? w.type.toLowerCase() : '';
+  const isMissile = rawWType === 'missile' || rawWType === 'torpedo' || /missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test(`${rawWType} ${wName} ${(w && w.id) || ''} ${(w && w.model_url) || ''}`);
+  const wType = isMissile ? 'missile' : (rawWType || 'beam');
   const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#00f0ff';
   const boltColorHex = parseInt(String(rawColor).replace('#', '0x'), 16) || 0xff0055;
   const wDamage = (w && w.damage !== undefined) ? parseInt(w.damage) : (enemyObj.weaponDmg || cfg.weapon_damage || 6);
@@ -1211,28 +1212,31 @@ export const fitCockpitOverlayToCamera = fitCockpitCracksToCamera;
 export const setupCockpitOverlayHierarchy = setupCockpitCracksHierarchy;
 
 export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
+  const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
   if (weapon && typeof weapon === 'object') {
-    if (weapon._decalTriggered) return;
+    if (weapon._decalTriggeredAt && (now - weapon._decalTriggeredAt) < 50) return;
+    weapon._decalTriggeredAt = now;
     weapon._decalTriggered = true;
   }
   let weaponType = 'laser';
   if (typeof weapon === 'string') {
     const s = weapon.toLowerCase();
-    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
+    if (/missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test(s)) {
       weaponType = 'missile';
     }
   } else if (weapon && typeof weapon === 'object') {
-    const s = (
-      weapon.type ||
-      weapon.weaponType ||
-      weapon.weapon_type ||
-      weapon.weaponName ||
-      weapon.weapon_name ||
-      weapon.name ||
-      weapon.id ||
-      ''
-    ).toLowerCase();
-    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
+    const s = [
+      weapon.type,
+      weapon.weaponType,
+      weapon.weapon_type,
+      weapon.weaponName,
+      weapon.weapon_name,
+      weapon.name,
+      weapon.id,
+      weapon.weaponId,
+      weapon.model_url
+    ].filter(Boolean).join(' ').toLowerCase();
+    if (/missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test(s)) {
       weaponType = 'missile';
     }
   }
@@ -1255,12 +1259,12 @@ export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
   }
 }
 
-export function triggerShieldDepletedCockpitCracks() {
+export function triggerShieldDepletedCockpitCracks(visible = true) {
   const overlay = getActiveOverlay();
   if (overlay) {
-    toggleBrokenCoreDecal(overlay);
+    toggleBrokenCoreDecal(overlay, visible);
   } else if (activeCockpitCracksPool && typeof activeCockpitCracksPool.triggerShieldDepletedDecal === 'function') {
-    activeCockpitCracksPool.triggerShieldDepletedDecal();
+    activeCockpitCracksPool.triggerShieldDepletedDecal(visible);
   }
 }
 
@@ -1386,9 +1390,11 @@ export function applyStage(engineApi) {
         // When hit, detect weapon type and toggle random decal for weapon
         triggerCockpitCracksHit(weapon);
 
-        // When shield reaches 0%, BrokenSpiderWeb Core decal turns on
-        if (shieldBefore > 0 && shieldAfter <= 0) {
-          triggerShieldDepletedCockpitCracks();
+        // When shield reaches 0%, BrokenSpiderWeb Core decal remains on unless shield % increases back above 0%
+        if (shieldAfter <= 0 || healthAfter <= 0) {
+          triggerShieldDepletedCockpitCracks(true);
+        } else if (shieldAfter > 0 && healthAfter > 0) {
+          triggerShieldDepletedCockpitCracks(false);
         }
 
         // When health reaches 0%, both BrokenSpiderWeb Core and BrokenSpiderWeb Screen decals turn on for 4 seconds

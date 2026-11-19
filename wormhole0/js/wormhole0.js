@@ -8752,6 +8752,15 @@ function applyPowerupEffect(powerupInstance) {
   showShieldAndHealthOnHit(1200);
   updatePlayerDefenseHUD();
 
+  // If shield % increased back above 0%, turn off BrokenSpiderWeb Core decal
+  if ((state.playerShield || 0) > 0 && !state.isGameOver) {
+    ensureCockpitOverlayMounted((overlayMesh) => {
+      if (overlayMesh && typeof toggleBrokenCoreDecal === 'function') {
+        toggleBrokenCoreDecal(overlayMesh, false);
+      }
+    });
+  }
+
   // Prune any uncollected powerups that become invalid following the energy boost
   pruneUncollectedPowerupsByEnergyState();
 
@@ -10556,8 +10565,11 @@ function triggerCockpitWeaponImpactFx(bolt, normX = 0, normY = 0) {
   // Always trigger 3D Cockpit Overlay weapon-specific decal (laser burn 01-08 vs missile strike 01-08) on enemy weapon impact
   ensureCockpitOverlayMounted((overlayMesh) => {
     if (overlayMesh && typeof toggleRandomWeaponDecal === 'function') {
-      if (!bolt || !bolt._decalTriggered) {
+      const now = performance.now();
+      const alreadyTriggered = bolt && typeof bolt === 'object' && bolt._decalTriggeredAt && (now - bolt._decalTriggeredAt) < 50;
+      if (!alreadyTriggered) {
         if (bolt && typeof bolt === 'object') {
+          bolt._decalTriggeredAt = now;
           bolt._decalTriggered = true;
         }
         toggleRandomWeaponDecal(overlayMesh, bolt);
@@ -11139,20 +11151,26 @@ function applyDamageToPlayer(rawDamage, weapon = null) {
   }
 
   // Trigger cockpit decal hit for detected weapon type (laser burns 01-08 vs missile strikes 01-08)
-  const shieldJustDepleted = (shieldBefore > 0 && state.playerShield <= 0);
   ensureCockpitOverlayMounted((overlayMesh) => {
     if (!overlayMesh) return;
-    if (!weapon || !weapon._decalTriggered) {
+    const now = performance.now();
+    const alreadyTriggered = weapon && typeof weapon === 'object' && weapon._decalTriggeredAt && (now - weapon._decalTriggeredAt) < 50;
+    if (!alreadyTriggered) {
       if (weapon && typeof weapon === 'object') {
+        weapon._decalTriggeredAt = now;
         weapon._decalTriggered = true;
       }
       if (typeof toggleRandomWeaponDecal === 'function') {
-        toggleRandomWeaponDecal(overlayMesh, weapon);
+        toggleRandomWeaponDecal(overlayMesh, weapon || 'laser');
       }
     }
-    // When shield reaches 0%, BrokenSpiderWeb Core decal turns on
-    if (shieldJustDepleted && typeof toggleBrokenCoreDecal === 'function') {
-      toggleBrokenCoreDecal(overlayMesh);
+    // When shield reaches 0%, BrokenSpiderWeb Core decal turns on and remains on unless shield % increases back above 0%
+    if (typeof toggleBrokenCoreDecal === 'function') {
+      if (state.playerShield <= 0 || state.isGameOver || state.playerHealth <= 0) {
+        toggleBrokenCoreDecal(overlayMesh, true);
+      } else {
+        toggleBrokenCoreDecal(overlayMesh, false);
+      }
     }
   });
 
@@ -12579,6 +12597,23 @@ function updatePlayerDefenseHUD() {
   if (telemHealth) telemHealth.textContent = `${healthPct}%`;
   const telemKills = document.getElementById('telemetry-kills-val');
   if (telemKills) telemKills.textContent = `${state.stageKills} / ${state.stageRequiredKills}`;
+
+  // Synchronize BrokenSpiderWeb Core decal with shield percentage:
+  // Remains ON while shield <= 0%, turns back OFF when shield % increases above 0%
+  const overlayMesh = (typeof camera !== 'undefined' && camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
+    || (typeof currentStageObjectPool !== 'undefined' && currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
+  if (overlayMesh && overlayMesh._cockpitDecals && overlayMesh._cockpitDecals.brokenCore && typeof toggleBrokenCoreDecal === 'function') {
+    const coreDecal = overlayMesh._cockpitDecals.brokenCore;
+    if (state.isGameOver || (state.hasStarted && state.playerShield <= 0)) {
+      if (!coreDecal.visible || (coreDecal.material && coreDecal.material.opacity < 1.0)) {
+        toggleBrokenCoreDecal(overlayMesh, true);
+      }
+    } else if (state.playerShield > 0 && !state.isGameOver) {
+      if (coreDecal.visible || (coreDecal.material && coreDecal.material.opacity > 0.0)) {
+        toggleBrokenCoreDecal(overlayMesh, false);
+      }
+    }
+  }
 }
 
 // =============================================================================

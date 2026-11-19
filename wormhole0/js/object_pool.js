@@ -57,7 +57,7 @@ function convertToLightweightOverlayMaterial(mat, defaultOpacity = 1.0) {
  * Converts overlay materials to lightweight unlit MeshBasicMaterial to eliminate
  * KHR_materials_transmission double-scene render passes and PBR shader compilation lag.
  */
-export function setupCockpitCracksHierarchy(root) {
+export function setupCockpitCracksHierarchy(root, forceReset = false) {
   if (!root) return;
   root.name = 'cockpit_overlay_object';
   root.visible = true;
@@ -65,6 +65,19 @@ export function setupCockpitCracksHierarchy(root) {
   root.userData.isCockpitCracks = true;
   root.userData.isCockpitOverlay = true;
   root.userData.isOverlay = true;
+
+  // If already initialized and not explicitly forcing a full reset, preserve currently active decals
+  if (!forceReset && root._cockpitDecals && root.userData._cockpitHierarchyInitialized) {
+    if (!root.userData.decals) {
+      Object.defineProperty(root.userData, 'decals', {
+        value: root._cockpitDecals,
+        writable: true,
+        configurable: true,
+        enumerable: false
+      });
+    }
+    return root._cockpitDecals;
+  }
 
   const decals = {
     laserBurns: [],
@@ -82,9 +95,10 @@ export function setupCockpitCracksHierarchy(root) {
       // Prevent 3D raycaster from intersecting full-screen cockpit overlay
       child.raycast = () => {};
 
-      if (child.material && !child.userData._overlayBasicMatConfigured) {
+      if (child.material && (!child.userData._overlayBasicMatConfigured || child.material._ownerMesh !== child)) {
         const srcMat = Array.isArray(child.material) ? child.material[0] : child.material;
         child.material = convertToLightweightOverlayMaterial(srcMat, 1.0);
+        child.material._ownerMesh = child;
         child.userData._overlayBasicMatConfigured = true;
       }
 
@@ -184,12 +198,14 @@ export function setupCockpitCracksHierarchy(root) {
   decals.laserBurns.sort((a, b) => a.name.localeCompare(b.name));
   decals.missileStrikes.sort((a, b) => a.name.localeCompare(b.name));
   root._cockpitDecals = decals;
+  root.userData._cockpitHierarchyInitialized = true;
   Object.defineProperty(root.userData, 'decals', {
     value: decals,
     writable: true,
     configurable: true,
     enumerable: false
   });
+  return decals;
 }
 
 /**
@@ -239,10 +255,43 @@ function getOrInitDecals(mesh) {
   if (!mesh) return null;
   let decals = mesh._cockpitDecals || (mesh.userData && mesh.userData.decals) || null;
   if (!decals) {
-    setupCockpitCracksHierarchy(mesh);
+    setupCockpitCracksHierarchy(mesh, false);
     decals = mesh._cockpitDecals || (mesh.userData && mesh.userData.decals) || null;
   }
   return decals;
+}
+
+export function detectWeaponDecalType(weaponType = 'laser') {
+  if (typeof weaponType === 'string') {
+    const s = weaponType.toLowerCase();
+    if (/missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test(s)) {
+      return 'missile';
+    }
+    return 'laser';
+  }
+  if (weaponType && typeof weaponType === 'object') {
+    const parts = [
+      weaponType.type,
+      weaponType.weaponType,
+      weaponType.weapon_type,
+      weaponType.weaponName,
+      weaponType.weapon_name,
+      weaponType.name,
+      weaponType.id,
+      weaponType.weaponId,
+      weaponType.model_url,
+      weaponType.mesh && weaponType.mesh.name,
+      weaponType.mesh && weaponType.mesh.userData && weaponType.mesh.userData.weaponType,
+      weaponType.mesh && weaponType.mesh.userData && weaponType.mesh.userData.weaponId,
+      weaponType.userData && weaponType.userData.weaponType,
+      weaponType.userData && weaponType.userData.weaponId
+    ].filter(v => typeof v === 'string' && v.length > 0);
+    const combined = parts.join(' ').toLowerCase();
+    if (/missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test(combined)) {
+      return 'missile';
+    }
+  }
+  return 'laser';
 }
 
 /**
@@ -255,28 +304,7 @@ export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
   const decals = getOrInitDecals(mesh);
   if (!decals) return;
 
-  let typeStr = 'laser';
-  if (typeof weaponType === 'string') {
-    const s = weaponType.toLowerCase();
-    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
-      typeStr = 'missile';
-    }
-  } else if (weaponType && typeof weaponType === 'object') {
-    const s = (
-      weaponType.type ||
-      weaponType.weaponType ||
-      weaponType.weapon_type ||
-      weaponType.weaponName ||
-      weaponType.weapon_name ||
-      weaponType.name ||
-      weaponType.id ||
-      ''
-    ).toLowerCase();
-    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
-      typeStr = 'missile';
-    }
-  }
-
+  const typeStr = detectWeaponDecalType(weaponType);
   const targetList = (typeStr === 'missile') ? decals.missileStrikes : decals.laserBurns;
   if (!targetList || targetList.length === 0) return;
 
@@ -309,17 +337,26 @@ export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
 }
 
 /**
- * Turns on the BrokenSpiderWeb Core decal when player shield reaches 0%.
+ * Sets the BrokenSpiderWeb Core decal visibility state.
+ * Remains ON (visible = true) when player shield reaches 0% and while shield <= 0%.
+ * Turns back OFF (visible = false) when player shield % increases back above 0%.
  */
-export function toggleBrokenCoreDecal(mesh) {
+export function toggleBrokenCoreDecal(mesh, visible = true) {
   if (!mesh) return;
   mesh.visible = true;
   const decals = getOrInitDecals(mesh);
   if (decals && decals.brokenCore) {
-    decals.brokenCore.visible = true;
-    if (decals.brokenCore.parent && !decals.brokenCore.parent.visible) decals.brokenCore.parent.visible = true;
+    const isOn = Boolean(visible);
+    decals.brokenCore.visible = isOn;
+    if (isOn) {
+      let p = decals.brokenCore.parent;
+      while (p && p !== mesh) {
+        p.visible = true;
+        p = p.parent;
+      }
+    }
     if (decals.brokenCore.material) {
-      decals.brokenCore.material.opacity = 1.0;
+      decals.brokenCore.material.opacity = isOn ? 1.0 : 0.0;
       decals.brokenCore.material.transparent = true;
       decals.brokenCore.material.depthTest = false;
       decals.brokenCore.material.depthWrite = false;
@@ -702,31 +739,13 @@ export function showGameOverCockpitCracksOverlay(mesh, durationMs = 4000) {
 }
 
 export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
+  const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
   if (weapon && typeof weapon === 'object') {
-    if (weapon._decalTriggered) return;
+    if (weapon._decalTriggeredAt && (now - weapon._decalTriggeredAt) < 50) return;
+    weapon._decalTriggeredAt = now;
     weapon._decalTriggered = true;
   }
-  let weaponType = 'laser';
-  if (typeof weapon === 'string') {
-    const s = weapon.toLowerCase();
-    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
-      weaponType = 'missile';
-    }
-  } else if (weapon && typeof weapon === 'object') {
-    const s = (
-      weapon.type ||
-      weapon.weaponType ||
-      weapon.weapon_type ||
-      weapon.weaponName ||
-      weapon.weapon_name ||
-      weapon.name ||
-      weapon.id ||
-      ''
-    ).toLowerCase();
-    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
-      weaponType = 'missile';
-    }
-  }
+  const weaponType = detectWeaponDecalType(weapon);
 
   if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.triggerWeaponDecal === 'function') {
     window.stageObjectPool.triggerWeaponDecal(weaponType);
@@ -746,12 +765,12 @@ export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
   }
 }
 
-export function triggerShieldDepletedCockpitCracks() {
+export function triggerShieldDepletedCockpitCracks(visible = true) {
   if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.triggerShieldDepletedDecal === 'function') {
-    window.stageObjectPool.triggerShieldDepletedDecal();
+    window.stageObjectPool.triggerShieldDepletedDecal(visible);
   } else if (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
     const mesh = window.getActiveCockpitCracksOverlay();
-    if (mesh) toggleBrokenCoreDecal(mesh);
+    if (mesh) toggleBrokenCoreDecal(mesh, visible);
   }
 }
 
@@ -1154,7 +1173,7 @@ export class StageObjectPool {
         const wpnKey = wpn.id || wpn.name || 'ew_primary';
         if (this.enemyWeaponPools.has(wpnKey)) continue;
 
-        const isMiss = (wpn.type === 'missile' || /missile|torpedo/i.test(wpn.name || ''));
+        const isMiss = (detectWeaponDecalType(wpn) === 'missile');
         const rawCol = wpn.color || enemyCfg.weapon_color || '#ff0055';
         const colHex = parseInt(rawCol.replace('#', '0x'), 16) || 0xff0055;
         const wpnGeom = new THREE.CylinderGeometry(0.1 * (wpn.size_x || 1.0), 0.1 * (wpn.size_y || 1.0), 2.2 * (wpn.size_z || 1.0), 6);
@@ -1448,8 +1467,9 @@ export class StageObjectPool {
 
   spawnEnemyWeapon(weaponConfig, enemyConfig, position, quaternion = null, typeOverride = null) {
     const wpn = weaponConfig || {};
-    const wpnType = (typeOverride || wpn.type || (/missile|torpedo/i.test(wpn.name || '') ? 'missile' : 'beam')).toLowerCase();
-    const poolKey = wpnType === 'missile' ? 'missile' : 'beam';
+    const combinedStr = `${typeOverride || ''} ${wpn.type || ''} ${wpn.name || ''} ${wpn.id || ''} ${wpn.model_url || ''} ${(enemyConfig && enemyConfig.weapon_name) || ''}`;
+    const isMissileWpn = (detectWeaponDecalType(combinedStr) === 'missile');
+    const poolKey = isMissileWpn ? 'missile' : 'beam';
     const wpnId = wpn.id || wpn.name || '';
     const pool = (wpn.model_url && this.enemyWeaponPools.get(wpn.model_url))
       || (wpnId && this.enemyWeaponPools.get(wpnId))
@@ -1472,7 +1492,10 @@ export class StageObjectPool {
 
     const mesh = pool.spawn(position, quaternion, { x: finalScaleX, y: finalScaleY, z: finalScaleZ });
     mesh.scale.set(finalScaleX, finalScaleY, finalScaleZ);
+    mesh._decalTriggered = false;
+    mesh._decalTriggeredAt = 0;
     mesh.userData.fromPool = true;
+    mesh.userData._decalTriggered = false;
     mesh.userData.weaponType = poolKey;
     mesh.userData.weaponId = wpnId || poolKey;
     mesh.userData.poolKey = (wpn.model_url && this.enemyWeaponPools.has(wpn.model_url)) ? wpn.model_url : (wpnId && this.enemyWeaponPools.has(wpnId)) ? wpnId : poolKey;
@@ -1615,7 +1638,9 @@ export class StageObjectPool {
     if (camera) {
       const existing = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
       if (existing && (!this.cockpitCracksMesh || existing === this.cockpitCracksMesh)) {
-        setupCockpitCracksHierarchy(existing);
+        if (!existing._cockpitDecals || !existing.userData || !existing.userData._cockpitHierarchyInitialized) {
+          setupCockpitCracksHierarchy(existing, false);
+        }
         existing.userData = existing.userData || {};
         existing.userData.fromPool = true;
         existing.userData.pooledByStagePool = true;
@@ -1656,12 +1681,12 @@ export class StageObjectPool {
     }
   }
 
-  triggerShieldDepletedDecal() {
+  triggerShieldDepletedDecal(visible = true) {
     const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
     const mesh = (cam && (cam.getObjectByName('cockpit_overlay_object') || cam.getObjectByName('cockpit_cracks_overlay')))
       || this.cockpitCracksMesh;
     if (mesh) {
-      toggleBrokenCoreDecal(mesh);
+      toggleBrokenCoreDecal(mesh, visible);
     }
   }
 

@@ -137,15 +137,33 @@ export function setupCockpitCracksHierarchy(root) {
       if (name.includes('translucent') || name.includes('clear_screen') || name.includes('glass')) {
         child.visible = true;
         child.renderOrder = 9998;
-        if (child.material) child.material.opacity = 0.08;
+        if (child.material) {
+          child.material.opacity = 0.15;
+          child.material.transparent = true;
+          child.material.depthTest = false;
+          child.material.depthWrite = false;
+          child.material.needsUpdate = true;
+        }
       } else if (name.includes('cyan') || name.includes('accent')) {
         child.visible = true;
         child.renderOrder = 9999;
-        if (child.material) child.material.opacity = 0.85;
+        if (child.material) {
+          child.material.opacity = 0.85;
+          child.material.transparent = true;
+          child.material.depthTest = false;
+          child.material.depthWrite = false;
+          child.material.needsUpdate = true;
+        }
       } else if (name.includes('frame')) {
         child.visible = true;
         child.renderOrder = 9999;
-        if (child.material) child.material.opacity = 0.90;
+        if (child.material) {
+          child.material.opacity = 0.95;
+          child.material.transparent = true;
+          child.material.depthTest = false;
+          child.material.depthWrite = false;
+          child.material.needsUpdate = true;
+        }
       }
     }
   });
@@ -199,6 +217,7 @@ export const setupCockpitOverlayHierarchy = setupCockpitCracksHierarchy;
 
 /**
  * Toggles on a random decal for the detected weapon type (laser burns vs missile strikes).
+ * Handles both string ('laser', 'missile') and weapon/bolt objects.
  */
 export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
   if (!mesh) return;
@@ -206,7 +225,29 @@ export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
   const decals = (mesh.userData && mesh.userData.decals) || null;
   if (!decals) return;
 
-  const targetList = (weaponType === 'missile') ? decals.missileStrikes : decals.laserBurns;
+  let typeStr = 'laser';
+  if (typeof weaponType === 'string') {
+    const s = weaponType.toLowerCase();
+    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
+      typeStr = 'missile';
+    }
+  } else if (weaponType && typeof weaponType === 'object') {
+    const s = (
+      weaponType.type ||
+      weaponType.weaponType ||
+      weaponType.weapon_type ||
+      weaponType.weaponName ||
+      weaponType.weapon_name ||
+      weaponType.name ||
+      weaponType.id ||
+      ''
+    ).toLowerCase();
+    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
+      typeStr = 'missile';
+    }
+  }
+
+  const targetList = (typeStr === 'missile') ? decals.missileStrikes : decals.laserBurns;
   if (!targetList || targetList.length === 0) return;
 
   const inactive = targetList.filter(d => !d.visible || (d.material && d.material.opacity <= 0.05));
@@ -222,8 +263,12 @@ export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
   if (chosen) {
     chosen.visible = true;
     if (chosen.parent && !chosen.parent.visible) chosen.parent.visible = true;
+    if (mesh && !mesh.visible) mesh.visible = true;
     if (chosen.material) {
       chosen.material.opacity = 1.0;
+      chosen.material.transparent = true;
+      chosen.material.depthTest = false;
+      chosen.material.depthWrite = false;
       chosen.material.needsUpdate = true;
     }
   }
@@ -276,9 +321,11 @@ export function toggleGameOverDecals(mesh, durationMs = 4000) {
 
 /**
  * Resets all decals to off (toggled off by default).
+ * Note: The screen overlay mesh itself remains visible at all times.
  */
 export function resetCockpitOverlayDecals(mesh) {
   if (!mesh) return;
+  mesh.visible = true;
   const decals = (mesh.userData && mesh.userData.decals) || null;
   if (decals) {
     (decals.laserBurns || []).forEach(d => {
@@ -497,7 +544,8 @@ export async function loadCockpitCracksGlbAsset(glbUrl = COCKPIT_CRACKS_GLB_URL)
 }
 
 /**
- * Triggers an instant flash of the Cockpit Cracks transparent overlay, then smoothly returns to invisible.
+ * Triggers an instant flash of hit feedback on the Cockpit Overlay.
+ * Note: The screen overlay mesh itself remains visible at all times; only decals toggle on/off.
  */
 export function flashCockpitCracksOverlay(mesh, durationMs = 280) {
   if (!mesh) return;
@@ -512,46 +560,60 @@ export function flashCockpitCracksOverlay(mesh, durationMs = 280) {
   }
 
   mesh.visible = true;
-  mesh.traverse((child) => {
-    if (child.isMesh && child.material) {
-      child.material.transparent = true;
-      child.material.opacity = 0.95;
-      child.material.depthTest = false;
-      child.material.depthWrite = false;
-      child.material.needsUpdate = true;
-    }
-  });
 
-  activeFlashTimer = setTimeout(() => {
-    const startTime = performance.now();
-    const fadeDuration = 100;
+  if (mesh.userData && mesh.userData.is2DOverlay) {
+    mesh.traverse((child) => {
+      if (child.isMesh && child.material) {
+        child.material.transparent = true;
+        child.material.opacity = 0.95;
+        child.material.depthTest = false;
+        child.material.depthWrite = false;
+        child.material.needsUpdate = true;
+      }
+    });
 
-    function fade(now) {
-      const elapsed = now - startTime;
-      const progress = Math.min(1.0, elapsed / fadeDuration);
-      const curOpacity = 0.95 * (1.0 - progress);
+    activeFlashTimer = setTimeout(() => {
+      const startTime = performance.now();
+      const fadeDuration = 100;
 
-      mesh.traverse((child) => {
-        if (child.isMesh && child.material) {
-          child.material.opacity = curOpacity;
-          child.material.needsUpdate = true;
-        }
-      });
+      function fade(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(1.0, elapsed / fadeDuration);
+        const curOpacity = 0.95 * (1.0 - progress);
 
-      if (progress < 1.0) {
-        activeFadeRaf = requestAnimationFrame(fade);
-      } else {
-        mesh.visible = false;
         mesh.traverse((child) => {
           if (child.isMesh && child.material) {
-            child.material.opacity = 0.0;
+            child.material.opacity = curOpacity;
             child.material.needsUpdate = true;
           }
         });
+
+        if (progress < 1.0) {
+          activeFadeRaf = requestAnimationFrame(fade);
+        } else {
+          mesh.visible = false;
+          mesh.traverse((child) => {
+            if (child.isMesh && child.material) {
+              child.material.opacity = 0.0;
+              child.material.needsUpdate = true;
+            }
+          });
+        }
+      }
+      activeFadeRaf = requestAnimationFrame(fade);
+    }, durationMs);
+  } else {
+    // 3D GLB Overlay: The screen overlay is always visible; flash red border feedback
+    if (typeof document !== 'undefined') {
+      const redEdges = document.getElementById('cockpit-edges-red');
+      if (redEdges) {
+        redEdges.style.opacity = '1.0';
+        setTimeout(() => {
+          redEdges.style.opacity = '0';
+        }, durationMs);
       }
     }
-    activeFadeRaf = requestAnimationFrame(fade);
-  }, durationMs);
+  }
 }
 
 /**

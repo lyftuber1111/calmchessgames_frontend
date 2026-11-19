@@ -39,6 +39,16 @@ if (typeof window !== 'undefined') {
   window.toggleBrokenCoreDecal = toggleBrokenCoreDecal;
   window.toggleGameOverDecals = toggleGameOverDecals;
   window.resetCockpitOverlayDecals = resetCockpitOverlayDecals;
+  window.getActiveCockpitCracksOverlay = function() {
+    if (typeof camera !== 'undefined' && camera) {
+      const obj = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
+      if (obj) return obj;
+    }
+    if (typeof currentStageObjectPool !== 'undefined' && currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh) {
+      return currentStageObjectPool.cockpitCracksMesh;
+    }
+    return null;
+  };
 }
 
 const gltfLoader = new GLTFLoader();
@@ -5231,6 +5241,33 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       window.stageObjectPool = currentStageObjectPool;
       if (currentStageObjectPool && camera) {
         currentStageObjectPool.getCockpitCracksOverlay(camera);
+      }
+
+      // Ensure Cockpit Overlay is preloaded and mounted to camera so the screen overlay is always visible
+      const stageCockpitAsset = (currentStageConfig && (
+          (currentStageConfig.cockpit_overlay_object && (currentStageConfig.cockpit_overlay_object.model_3d_url || currentStageConfig.cockpit_overlay_object.model_url || currentStageConfig.cockpit_overlay_object.url))
+          || currentStageConfig.cockpit_overlay_asset
+          || (currentStageConfig.cockpit_overlay && (currentStageConfig.cockpit_overlay.model_3d_url || currentStageConfig.cockpit_overlay.model_url))
+        ))
+        || 'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb';
+
+      if (camera && !camera.getObjectByName('cockpit_overlay_object') && typeof load3DAssetModel === 'function') {
+        load3DAssetModel(stageCockpitAsset, (loadedModel) => {
+          if (loadedModel && camera && !camera.getObjectByName('cockpit_overlay_object')) {
+            if (typeof setupCockpitCracksHierarchy === 'function') {
+              setupCockpitCracksHierarchy(loadedModel);
+            }
+            loadedModel.name = 'cockpit_overlay_object';
+            loadedModel.visible = true;
+            camera.add(loadedModel);
+            if (typeof fitCockpitCracksToCamera === 'function') {
+              fitCockpitCracksToCamera(loadedModel, camera);
+            }
+            if (currentStageObjectPool) {
+              currentStageObjectPool.cockpitCracksMesh = loadedModel;
+            }
+          }
+        });
       }
       console.log(`[Wormhole XR Engine] Stage object pool active for Stage ${stage.level}: ${stage.slug}`, currentStageObjectPool);
     } catch (poolInitErr) {
@@ -10463,25 +10500,37 @@ function triggerCockpitWeaponImpactFx(bolt, normX = 0, normY = 0) {
     }
   }
 
-  // 1. Primary & First Special Effect: Transparent Cockpit Screen Cracks Overlay with glowing Red Edges for split second
-  if (specialFx === 'cockpit_cracks_red_edges' || specialFx === 'custom_graphics_file' || (!specialFx && specialFxFile)) {
+  // 1. Primary Special Effect: Cockpit Spider Web Decals (Laser Burns & Missile Strikes) or Cracks Overlay with glowing Red Edges
+  if (specialFx === 'cockpit_overlay_decals' || specialFx === 'cockpit_cracks_red_edges' || specialFx === 'custom_graphics_file' || (!specialFx && specialFxFile)) {
     const overlayPath = (specialFx === 'custom_graphics_file' && specialFxFile)
       ? specialFxFile
-      : (specialFxFile || 'desktop/warp_origin_images/cockpit_cracks_overlay.png');
+      : (specialFxFile || 'scene_images/screen_decals_spider_web_overlay_4.glb');
 
-    if (cracksOverlay) {
-      cracksOverlay.style.backgroundImage = `url("${overlayPath}")`;
-      cracksOverlay.style.opacity = '0.96';
-    }
+    // Trigger glowing red boundary edges for impact feedback
     if (redEdges) {
       redEdges.style.opacity = '1.0';
+      setTimeout(() => {
+        if (redEdges) redEdges.style.opacity = '0';
+      }, 280);
     }
 
-    // Split second flash duration: hold visibility for 260ms, smooth fade out by 380ms
-    setTimeout(() => {
-      if (cracksOverlay) cracksOverlay.style.opacity = '0';
-      if (redEdges) redEdges.style.opacity = '0';
-    }, 280);
+    // Trigger 3D Cockpit Overlay weapon-specific decal (laser burn vs missile strike)
+    const overlayMesh = (typeof camera !== 'undefined' && camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
+      || (typeof currentStageObjectPool !== 'undefined' && currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh)
+      || (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' && window.getActiveCockpitCracksOverlay());
+
+    if (overlayMesh && typeof toggleRandomWeaponDecal === 'function') {
+      toggleRandomWeaponDecal(overlayMesh, bolt);
+    }
+
+    // 2D image overlay fallback if using a flat image (.png, .webp, .jpg)
+    if (cracksOverlay && /\.(png|jpg|jpeg|webp|svg)($|\?)/i.test(overlayPath)) {
+      cracksOverlay.style.backgroundImage = `url("${overlayPath}")`;
+      cracksOverlay.style.opacity = '0.96';
+      setTimeout(() => {
+        if (cracksOverlay) cracksOverlay.style.opacity = '0';
+      }, 280);
+    }
     return;
   }
 
@@ -10983,8 +11032,8 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
     weaponId: (wpn && wpn.id) || '',
     weaponName: (wpn && wpn.name) || cfg.weapon_name || 'Plasma Pulse',
     weaponColor: weaponBoltColor,
-    specialFx: (wpn && wpn.special_fx) || cfg.weapon_special_fx || 'cockpit_cracks_red_edges',
-    specialFxFile: (wpn && wpn.special_fx_file) || cfg.weapon_special_fx_file || 'desktop/warp_origin_images/cockpit_cracks_overlay.png',
+    specialFx: (wpn && wpn.special_fx) || cfg.weapon_special_fx || 'cockpit_overlay_decals',
+    specialFxFile: (wpn && wpn.special_fx_file) || cfg.weapon_special_fx_file || 'scene_images/screen_decals_spider_web_overlay_4.glb',
     specialFxType: (wpn && wpn.special_fx_type) || cfg.weapon_special_fx_type || 'overlay',
     scale: wScale,
     scale_x: wScaleX,
@@ -11023,7 +11072,8 @@ function applyDamageToPlayer(rawDamage, weapon = null) {
 
   // Trigger cockpit decal hit for detected weapon type (laser burns vs missile strikes)
   const overlayMesh = (camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
-    || (currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
+    || (currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh)
+    || (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' && window.getActiveCockpitCracksOverlay());
   if (overlayMesh && typeof toggleRandomWeaponDecal === 'function') {
     toggleRandomWeaponDecal(overlayMesh, weapon);
   }
@@ -13696,6 +13746,13 @@ window.addEventListener('resize', () => {
   compositeShader.uniforms.uAspect.value = w / h;
 
   updateMobileSnapGrid();
+
+  // Dynamically refit Cockpit Overlay to camera frustum on resize across all screen dimensions & FOVs
+  const overlayMesh = (typeof camera !== 'undefined' && camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
+    || (typeof currentStageObjectPool !== 'undefined' && currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
+  if (overlayMesh && typeof fitCockpitCracksToCamera === 'function') {
+    fitCockpitCracksToCamera(overlayMesh, camera);
+  }
 
   const isLandscape = (w > h);
   if (isLandscape && state.hasStarted) {

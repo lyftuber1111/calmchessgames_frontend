@@ -3213,9 +3213,12 @@ try {
             $upd = $pdo->prepare("UPDATE `wormhole_game_weapons` SET `can_overheat` = :val, `updated_at` = NOW() WHERE `id` = :id");
             $upd->execute(['val' => $newVal, 'id' => $id]);
 
-            sendJsonResponse(true, "Weapon overheat status updated to " . ($newVal ? 'ENABLED' : 'DISABLED'), [
+            $provResults = provisionAllWormholeStageFilesAndAudio(true);
+
+            sendJsonResponse(true, "Weapon overheat status updated to " . ($newVal ? 'ENABLED' : 'DISABLED') . " and stage JS files synchronized.", [
                 'id' => $id,
-                'can_overheat' => $newVal
+                'can_overheat' => $newVal,
+                'provision_results' => $provResults
             ]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to toggle weapon overheat: ' . $e->getMessage(), [], 500);
@@ -3252,10 +3255,13 @@ try {
             $updStmt = $pdo->prepare("UPDATE `wormhole_game_weapons` SET `is_initial_weapon` = :init, `updated_at` = NOW() WHERE `id` = :id");
             $updStmt->execute(['init' => $newInit, 'id' => $id]);
 
-            sendJsonResponse(true, "'{$weapon['weapon_name']}' is " . ($newInit ? "now the INITIAL weapon for Stage {$stage}." : "no longer initial weapon for Stage {$stage}."), [
+            $provResults = provisionAllWormholeStageFilesAndAudio(true);
+
+            sendJsonResponse(true, "'{$weapon['weapon_name']}' is " . ($newInit ? "now the INITIAL weapon for Stage {$stage}." : "no longer initial weapon for Stage {$stage}.") . " Stage JS files synchronized.", [
                 'id' => $id,
                 'stage_level' => $stage,
-                'is_initial_weapon' => $newInit
+                'is_initial_weapon' => $newInit,
+                'provision_results' => $provResults
             ]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to update initial weapon: ' . $e->getMessage(), [], 500);
@@ -3303,8 +3309,11 @@ try {
                 $count++;
             }
 
-            sendJsonResponse(true, "Successfully initialized/reset {$count} default stage weapons into database.", [
-                'count' => $count
+            $provResults = provisionAllWormholeStageFilesAndAudio(true);
+
+            sendJsonResponse(true, "Successfully initialized/reset {$count} default stage weapons into database and synchronized stage JS files.", [
+                'count' => $count,
+                'provision_results' => $provResults
             ]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to seed weapons: ' . $e->getMessage(), [], 500);
@@ -3451,7 +3460,6 @@ try {
 
         try {
             $pdo = getDbConnection();
-            $provisionResult = provisionWormholeStageFilesAndAudio($stageLevel, $stageName, $theme, $eventsWithin, $endLevelEvent, $description, $parScore, $missionObjectives, $requiredEnemyKills, $warpTargetDistance, $cockpitOverlayAsset);
 
             if ($id > 0) {
                 $stmt = $pdo->prepare("
@@ -3485,14 +3493,6 @@ try {
                     ':par_score'      => $parScore,
                     ':is_enabled'     => $isEnabled,
                     ':id'             => $id
-                ]);
-                sendJsonResponse(true, "Stage '{$stageName}' updated successfully", [
-                    'id' => $id,
-                    'stage_slug' => $provisionResult['stage_slug'],
-                    'cockpit_overlay_asset' => $cockpitOverlayAsset,
-                    'created_files' => $provisionResult['created_files'],
-                    'audio_folders' => $provisionResult['audio_folders'],
-                    'image_folders' => $provisionResult['image_folders']
                 ]);
             } else {
                 $stmt = $pdo->prepare("
@@ -3528,16 +3528,25 @@ try {
                     ':par_score'      => $parScore,
                     ':is_enabled'     => $isEnabled
                 ]);
-                $newId = (int)$pdo->lastInsertId();
-                sendJsonResponse(true, "Stage '{$stageName}' created successfully", [
-                    'id' => $newId,
-                    'stage_slug' => $provisionResult['stage_slug'],
-                    'cockpit_overlay_asset' => $cockpitOverlayAsset,
-                    'created_files' => $provisionResult['created_files'],
-                    'audio_folders' => $provisionResult['audio_folders'],
-                    'image_folders' => $provisionResult['image_folders']
-                ]);
+                $id = (int)$pdo->lastInsertId();
             }
+
+            $provisionResult = provisionWormholeStageFilesAndAudio(
+                $stageLevel, $stageName, $theme, $eventsWithin, $endLevelEvent,
+                $description, $parScore, $missionObjectives, $requiredEnemyKills,
+                $warpTargetDistance, $cockpitOverlayAsset, true
+            );
+
+            sendJsonResponse(true, "Stage '{$stageName}' saved successfully and synchronized across device files", [
+                'id' => $id,
+                'stage_slug' => $provisionResult['stage_slug'] ?? '',
+                'cockpit_overlay_asset' => $cockpitOverlayAsset,
+                'created_files' => $provisionResult['created_files'] ?? [],
+                'synced_files' => $provisionResult['synced_files'] ?? [],
+                'git_status' => $provisionResult['git_status'] ?? [],
+                'audio_folders' => $provisionResult['audio_folders'] ?? [],
+                'image_folders' => $provisionResult['image_folders'] ?? []
+            ]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to save game stage: ' . $e->getMessage(), [], 500);
         }
@@ -3555,7 +3564,11 @@ try {
             $pdo = getDbConnection();
             $stmt = $pdo->prepare("DELETE FROM `wormhole_game_stages` WHERE `id` = :id");
             $stmt->execute(['id' => $id]);
-            sendJsonResponse(true, 'Stage deleted successfully', ['id' => $id]);
+            $provResults = provisionAllWormholeStageFilesAndAudio(true);
+            sendJsonResponse(true, 'Stage deleted successfully and stage files synchronized', [
+                'id' => $id,
+                'provision_results' => $provResults
+            ]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to delete stage: ' . $e->getMessage(), [], 500);
         }
@@ -3592,12 +3605,14 @@ try {
             $count = 0;
             foreach ($defaultStages as $s) {
                 $ins->execute($s);
-                provisionWormholeStageFilesAndAudio($s[0], $s[1], $s[2], $s[3], $s[4], $s[5], $s[6], '', 10, 50000, 'mobile/warp_origin_images/cockpit_cracks.glb');
                 $count++;
             }
 
-            sendJsonResponse(true, "Successfully initialized/reset {$count} default game stages into database.", [
-                'count' => $count
+            $provResults = provisionAllWormholeStageFilesAndAudio(true);
+
+            sendJsonResponse(true, "Successfully initialized/reset {$count} default game stages into database and synchronized stage JS files.", [
+                'count' => $count,
+                'provision_results' => $provResults
             ]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to seed stages: ' . $e->getMessage(), [], 500);
@@ -5144,7 +5159,8 @@ try {
                     ':enabled'   => $isEnabled,
                     ':id'        => $id
                 ]);
-                sendJsonResponse(true, "Power Up '{$powerupName}' updated successfully.", ['id' => $id, 'powerup_id' => $powerupId]);
+                $provResults = provisionAllWormholeStageFilesAndAudio(true);
+                sendJsonResponse(true, "Power Up '{$powerupName}' updated successfully and stage JS files synchronized.", ['id' => $id, 'powerup_id' => $powerupId, 'provision_results' => $provResults]);
             } else {
                 $insStmt = $pdo->prepare("
                     INSERT INTO `wormhole_game_powerups`
@@ -5175,7 +5191,8 @@ try {
                     ':enabled'   => $isEnabled
                 ]);
                 $newId = (int)$pdo->lastInsertId();
-                sendJsonResponse(true, "Power Up '{$powerupName}' added successfully.", ['id' => $newId, 'powerup_id' => $powerupId]);
+                $provResults = provisionAllWormholeStageFilesAndAudio(true);
+                sendJsonResponse(true, "Power Up '{$powerupName}' added successfully and stage JS files synchronized.", ['id' => $newId, 'powerup_id' => $powerupId, 'provision_results' => $provResults]);
             }
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to save game powerup: ' . $e->getMessage(), [], 500);
@@ -5201,7 +5218,8 @@ try {
                 $del = $pdo->prepare("DELETE FROM `wormhole_game_powerups` WHERE `powerup_id` = :pid");
                 $del->execute([':pid' => $powerupId]);
             }
-            sendJsonResponse(true, "Power Up deleted successfully.", ['id' => $id, 'powerup_id' => $powerupId]);
+            $provResults = provisionAllWormholeStageFilesAndAudio(true);
+            sendJsonResponse(true, "Power Up deleted successfully and stage JS files synchronized.", ['id' => $id, 'powerup_id' => $powerupId, 'provision_results' => $provResults]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to delete game powerup: ' . $e->getMessage(), [], 500);
         }
@@ -5225,9 +5243,12 @@ try {
             }
             $stmt->execute(['id' => $id]);
 
-            sendJsonResponse(true, 'Powerup field toggled successfully', [
+            $provResults = provisionAllWormholeStageFilesAndAudio(true);
+
+            sendJsonResponse(true, 'Powerup field toggled successfully and stage JS files synchronized', [
                 'id' => $id,
-                'field' => $field
+                'field' => $field,
+                'provision_results' => $provResults
             ]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to toggle powerup field: ' . $e->getMessage(), [], 500);
@@ -5260,7 +5281,9 @@ try {
                 $insP->execute($p);
             }
 
-            sendJsonResponse(true, "Default power ups initialized successfully.", ['count' => count($defaultsP)]);
+            $provResults = provisionAllWormholeStageFilesAndAudio(true);
+
+            sendJsonResponse(true, "Default power ups initialized successfully and stage JS files synchronized.", ['count' => count($defaultsP), 'provision_results' => $provResults]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to seed power ups: ' . $e->getMessage(), [], 500);
         }
@@ -5660,9 +5683,19 @@ try {
                     ':id'                    => $id
                 ]);
 
+                $provisionResult = [];
+                if (function_exists('provisionAllWormholeStageFilesAndAudio')) {
+                    try {
+                        $provisionResult = provisionAllWormholeStageFilesAndAudio(true);
+                    } catch (Throwable $pe) {
+                        error_log('Wormhole stage provision error on update environment: ' . $pe->getMessage());
+                    }
+                }
+
                 sendJsonResponse(true, "Environment asset '{$envName}' updated successfully", [
                     'id' => $id,
-                    'env_id' => $envId
+                    'env_id' => $envId,
+                    'provision' => $provisionResult
                 ]);
             } else {
                 $stmt = $pdo->prepare("
@@ -5740,9 +5773,19 @@ try {
                 ]);
                 $newId = (int)$pdo->lastInsertId();
 
+                $provisionResult = [];
+                if (function_exists('provisionAllWormholeStageFilesAndAudio')) {
+                    try {
+                        $provisionResult = provisionAllWormholeStageFilesAndAudio(true);
+                    } catch (Throwable $pe) {
+                        error_log('Wormhole stage provision error on create environment: ' . $pe->getMessage());
+                    }
+                }
+
                 sendJsonResponse(true, "Environment asset '{$envName}' created successfully", [
                     'id' => $newId,
-                    'env_id' => $envId
+                    'env_id' => $envId,
+                    'provision' => $provisionResult
                 ]);
             }
         } catch (Throwable $e) {
@@ -5769,7 +5812,15 @@ try {
                 $del = $pdo->prepare("DELETE FROM `wormhole_game_environments` WHERE `env_id` = :eid");
                 $del->execute([':eid' => $envId]);
             }
-            sendJsonResponse(true, "Environment asset deleted successfully.", ['id' => $id, 'env_id' => $envId]);
+            $provisionResult = [];
+            if (function_exists('provisionAllWormholeStageFilesAndAudio')) {
+                try {
+                    $provisionResult = provisionAllWormholeStageFilesAndAudio(true);
+                } catch (Throwable $pe) {
+                    error_log('Wormhole stage provision error on delete environment: ' . $pe->getMessage());
+                }
+            }
+            sendJsonResponse(true, "Environment asset deleted successfully.", ['id' => $id, 'env_id' => $envId, 'provision' => $provisionResult]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to delete environment asset: ' . $e->getMessage(), [], 500);
         }
@@ -5856,9 +5907,18 @@ try {
             ]);
 
             $newId = (int)$pdo->lastInsertId();
+            $provisionResult = [];
+            if (function_exists('provisionAllWormholeStageFilesAndAudio')) {
+                try {
+                    $provisionResult = provisionAllWormholeStageFilesAndAudio(true);
+                } catch (Throwable $pe) {
+                    error_log('Wormhole stage provision error on clone environment: ' . $pe->getMessage());
+                }
+            }
             sendJsonResponse(true, "Environment asset '{$newEnvName}' cloned successfully", [
                 'id' => $newId,
-                'env_id' => $newEnvId
+                'env_id' => $newEnvId,
+                'provision' => $provisionResult
             ]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to clone environment asset: ' . $e->getMessage(), [], 500);
@@ -6026,7 +6086,16 @@ try {
                 $insEnv->execute($de);
             }
 
-            sendJsonResponse(true, "Default environment assets initialized successfully.", ['count' => count($defaultEnvironments)]);
+            $provisionResult = [];
+            if (function_exists('provisionAllWormholeStageFilesAndAudio')) {
+                try {
+                    $provisionResult = provisionAllWormholeStageFilesAndAudio(true);
+                } catch (Throwable $pe) {
+                    error_log('Wormhole stage provision error on seed environments: ' . $pe->getMessage());
+                }
+            }
+
+            sendJsonResponse(true, "Default environment assets initialized successfully.", ['count' => count($defaultEnvironments), 'provision' => $provisionResult]);
         } catch (Throwable $e) {
             sendJsonResponse(false, 'Failed to seed default environments: ' . $e->getMessage(), [], 500);
         }

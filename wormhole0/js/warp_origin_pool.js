@@ -4,11 +4,21 @@ import {
   StageObjectPool,
   COCKPIT_CRACKS_GLB_URL,
   setupCockpitCracksHierarchy,
+  setupCockpitOverlayHierarchy,
   fitCockpitCracksToCamera,
+  fitCockpitOverlayToCamera,
   loadCockpitCracksGlbAsset,
   loadCockpitCracksAsset,
   flashCockpitCracksOverlay,
-  showGameOverCockpitCracksOverlay
+  showGameOverCockpitCracksOverlay,
+  toggleRandomWeaponDecal,
+  toggleBrokenCoreDecal,
+  toggleGameOverDecals,
+  resetCockpitOverlayDecals,
+  triggerCockpitCracksHit,
+  triggerShieldDepletedCockpitCracks,
+  triggerGameOverCockpitCracks,
+  hideCockpitCracks
 } from './object_pool.js';
 
 export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
@@ -18,11 +28,21 @@ export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = '3d_model';
 export {
   COCKPIT_CRACKS_GLB_URL,
   setupCockpitCracksHierarchy,
+  setupCockpitOverlayHierarchy,
   fitCockpitCracksToCamera,
+  fitCockpitOverlayToCamera,
   loadCockpitCracksGlbAsset,
   loadCockpitCracksAsset,
   flashCockpitCracksOverlay,
-  showGameOverCockpitCracksOverlay
+  showGameOverCockpitCracksOverlay,
+  toggleRandomWeaponDecal,
+  toggleBrokenCoreDecal,
+  toggleGameOverDecals,
+  resetCockpitOverlayDecals,
+  triggerCockpitCracksHit,
+  triggerShieldDepletedCockpitCracks,
+  triggerGameOverCockpitCracks,
+  hideCockpitCracks
 };
 
 /**
@@ -41,12 +61,17 @@ export class WarpOriginObjectPool extends StageObjectPool {
       stage_name: 'Warp Origin',
       stage_slug: 'warp_origin',
       environment_theme: 'Warp Cyan Corridor',
-      cockpit_overlay: {
+            cockpit_overlay_object: {
         model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
         model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
         asset_type: '3d_model'
       },
       cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+      cockpit_overlay: {
+        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+        asset_type: '3d_model'
+      },
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
@@ -592,28 +617,43 @@ export class WarpOriginObjectPool extends StageObjectPool {
     console.log(`[WarpOriginObjectPool] Pre-allocated graphics object pool for Stage 1: Warp Origin`);
   }
 
-  async initCockpitCracksPool() {
+    async initCockpitCracksPool() {
     try {
-      const assetUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
-        || (this.stageConfig && this.stageConfig.cockpit_overlay_asset)
-        || 'scene_images/screen_decals_spider_web_overlay_4.glb'
-        || STAGE_COCKPIT_CRACKS_ASSET_URL
-        || COCKPIT_CRACKS_GLB_URL;
+      const glbUrl = (this.stageConfig && (
+        (this.stageConfig.cockpit_overlay_object && (this.stageConfig.cockpit_overlay_object.model_3d_url || this.stageConfig.cockpit_overlay_object.model_url || this.stageConfig.cockpit_overlay_object.url))
+        || (this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
+        || this.stageConfig.cockpit_overlay_asset
+        || (typeof this.stageConfig.cockpit_overlay_object === 'string' && this.stageConfig.cockpit_overlay_object)
+        || this.stageConfig.cockpit_cracks_asset
+      ))
+      || STAGE_COCKPIT_CRACKS_ASSET_URL
+      || STAGE_COCKPIT_CRACKS_GLB_URL
+      || COCKPIT_CRACKS_GLB_URL
+      || 'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb';
 
       const loadFn = typeof loadCockpitCracksAsset === 'function' ? loadCockpitCracksAsset : loadCockpitCracksGlbAsset;
-      const loadedMesh = await loadFn(assetUrl);
+      const loadedMesh = await loadFn(glbUrl);
       if (loadedMesh) {
+        setupCockpitCracksHierarchy(loadedMesh);
         this.cockpitCracksMesh = loadedMesh;
         this.cockpitCracksOverlayPool = new MeshPool(
           this.scene,
           null,
           null,
           1,
-          () => loadedMesh.clone(true)
+          () => {
+            const clone = loadedMesh.clone(true);
+            setupCockpitCracksHierarchy(clone);
+            return clone;
+          }
         );
-        console.log(`[WarpOriginObjectPool] Pre-allocated Cockpit Cracks overlay pool (3d_model) from: ${assetUrl}`);
+        console.log(`[StageObjectPool] Pre-allocated Cockpit Overlay pool from: ${glbUrl}`);
       }
     } catch (err) {
+      console.warn('[StageObjectPool] Cockpit overlay pooling warning:', err);
+    }
+  }
+} catch (err) {
       console.warn('[WarpOriginObjectPool] Cockpit cracks pooling warning:', err);
     }
   }

@@ -8,21 +8,32 @@ import * as THREE from 'three';
  * to prevent frame drops, Garbage Collection pauses, and scene graph thrashing.
  */
 
-export const COCKPIT_CRACKS_GLB_URL = 'mobile/warp_origin_images/cockpit_cracks.glb';
+export const COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
 
 let activeFlashTimer = null;
 let activeFadeRaf = null;
 
 /**
- * Traverses and configures the Cockpit Cracks 3D mesh hierarchy as a transparent overlay.
+ * Traverses and configures the Cockpit Overlay / Decals 3D mesh hierarchy.
+ * The .glb contains toggleable decals burn 01 thru burn 08 for laser burns,
+ * strike 01 thru strike 08 for missile strikes, and two special decals
+ * BrokenSpiderWeb Core and Broken SpiderWeb Screen. All decals are toggled off by default.
  */
 export function setupCockpitCracksHierarchy(root) {
   if (!root) return;
-  root.name = 'cockpit_cracks_overlay';
-  root.visible = false;
+  root.name = 'cockpit_overlay_object';
+  root.visible = true;
   root.userData = root.userData || {};
   root.userData.isCockpitCracks = true;
+  root.userData.isCockpitOverlay = true;
   root.userData.isOverlay = true;
+
+  const decals = {
+    laserBurns: [],
+    missileStrikes: [],
+    brokenCore: null,
+    brokenScreen: null
+  };
 
   root.traverse((child) => {
     if (child.isMesh) {
@@ -30,41 +41,220 @@ export function setupCockpitCracksHierarchy(root) {
       child.receiveShadow = false;
       child.frustumCulled = false;
       child.renderOrder = 9999;
+
       if (child.material) {
         child.material = child.material.clone();
         child.material.transparent = true;
-        child.material.opacity = 0.0;
         child.material.depthTest = false;
         child.material.depthWrite = false;
         child.material.side = THREE.DoubleSide;
         child.material.blending = THREE.NormalBlending;
         child.material.needsUpdate = true;
       }
+
+      const name = (child.name || '').toLowerCase();
+
+      // Solid back/front panels must never obscure the player cockpit view
+      if (name.includes('solid_back') || name.includes('solid_front') || name.includes('solid_panel')) {
+        child.visible = false;
+        if (child.material) child.material.opacity = 0.0;
+        return;
+      }
+
+      // Laser burns: burn 01 thru burn 08 (toggled off by default)
+      if (name.includes('laserburn') || (name.includes('burn') && /0?[1-8]/.test(name))) {
+        child.visible = false;
+        if (child.material) child.material.opacity = 0.0;
+        child.userData.isDecal = true;
+        child.userData.decalType = 'laser';
+        decals.laserBurns.push(child);
+        return;
+      }
+
+      // Missile strikes: strike 01 thru strike 08 (toggled off by default)
+      if (name.includes('missilestrike') || (name.includes('strike') && /0?[1-8]/.test(name))) {
+        child.visible = false;
+        if (child.material) child.material.opacity = 0.0;
+        child.userData.isDecal = true;
+        child.userData.decalType = 'missile';
+        decals.missileStrikes.push(child);
+        return;
+      }
+
+      // Special decal: BrokenSpiderWeb Core (toggled off by default)
+      if (name.includes('brokenspiderweb_core') || (name.includes('spiderweb') && name.includes('core'))) {
+        child.visible = false;
+        if (child.material) child.material.opacity = 0.0;
+        child.userData.isDecal = true;
+        child.userData.decalType = 'core';
+        decals.brokenCore = child;
+        return;
+      }
+
+      // Special decal: BrokenSpiderWeb Screen (toggled off by default)
+      if (name.includes('brokenspiderweb_screen') || (name.includes('spiderweb') && name.includes('screen'))) {
+        child.visible = false;
+        if (child.material) child.material.opacity = 0.0;
+        child.userData.isDecal = true;
+        child.userData.decalType = 'screen';
+        decals.brokenScreen = child;
+        return;
+      }
+
+      // Non-decal HUD elements: subtle cockpit frame / glass / accents
+      if (name.includes('translucent') || name.includes('clear_screen') || name.includes('glass')) {
+        child.visible = true;
+        if (child.material) child.material.opacity = 0.15;
+      } else if (name.includes('cyan') || name.includes('accent')) {
+        child.visible = true;
+        if (child.material) child.material.opacity = 0.85;
+      } else if (name.includes('frame')) {
+        child.visible = true;
+        if (child.material) child.material.opacity = 0.90;
+      }
     }
   });
+
+  decals.laserBurns.sort((a, b) => a.name.localeCompare(b.name));
+  decals.missileStrikes.sort((a, b) => a.name.localeCompare(b.name));
+  root.userData.decals = decals;
 }
 
 /**
- * Fits the Cockpit Cracks 3D mesh across the camera frustum so it covers the entire cockpit window.
+ * Fits the Cockpit Overlay 3D mesh across the camera frustum dynamically scaling with FOV
+ * so it covers the entire cockpit window for each screen size across different devices.
  */
 export function fitCockpitCracksToCamera(mesh, camera) {
   if (!mesh || !camera) return;
   mesh.position.set(0, 0, -1.0);
   mesh.rotation.set(0, 0, 0);
 
-  const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
-  const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
-  const dist = 1.0;
-  const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
-  const visibleW = visibleH * aspect;
+  const aspect = camera.aspect || (typeof window !== 'undefined' && window.innerHeight > 0 ? window.innerWidth / window.innerHeight : 16 / 9);
+  let visibleH = 0;
+  let visibleW = 0;
+
+  if (camera.fov) {
+    const vFovRad = (camera.fov * Math.PI) / 180;
+    visibleH = 2 * Math.tan(vFovRad / 2) * 1.0;
+    visibleW = visibleH * aspect;
+  } else if (camera.projectionMatrix && camera.projectionMatrix.elements && camera.projectionMatrix.elements[5] > 0) {
+    visibleH = 2.0 / camera.projectionMatrix.elements[5];
+    visibleW = (camera.projectionMatrix.elements[0] > 0)
+      ? (2.0 / camera.projectionMatrix.elements[0])
+      : (visibleH * aspect);
+  } else {
+    const vFovRad = (65 * Math.PI) / 180;
+    visibleH = 2 * Math.tan(vFovRad / 2) * 1.0;
+    visibleW = visibleH * aspect;
+  }
 
   if (mesh.userData && mesh.userData.is2DOverlay) {
-    // 2D plane geometry is 1x1, scale directly to match frustum width and height
     mesh.scale.set(visibleW, visibleH, 1.0);
   } else {
-    // Base 3D model bounds: width ~1.90, height ~1.41
-    const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
+    // Model bounds for screen_decals_spider_web_overlay_4.glb:
+    // Base width: 1.60m, Base height: 0.90m (16:9 widescreen)
+    // Scale dynamically to fill 100% of the screen across all device aspect ratios & FOVs
+    const scale = Math.max(visibleW / 1.60, visibleH / 0.90) * 1.05;
     mesh.scale.set(scale, scale, 1.0);
+  }
+}
+
+export const fitCockpitOverlayToCamera = fitCockpitCracksToCamera;
+export const setupCockpitOverlayHierarchy = setupCockpitCracksHierarchy;
+
+/**
+ * Toggles on a random decal for the detected weapon type (laser burns vs missile strikes).
+ */
+export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
+  if (!mesh) return;
+  const decals = (mesh.userData && mesh.userData.decals) || null;
+  if (!decals) return;
+
+  const targetList = (weaponType === 'missile') ? decals.missileStrikes : decals.laserBurns;
+  if (!targetList || targetList.length === 0) return;
+
+  const inactive = targetList.filter(d => !d.visible || (d.material && d.material.opacity <= 0.05));
+  let chosen = null;
+  if (inactive.length > 0) {
+    const idx = Math.floor(Math.random() * inactive.length);
+    chosen = inactive[idx];
+  } else {
+    const idx = Math.floor(Math.random() * targetList.length);
+    chosen = targetList[idx];
+  }
+
+  if (chosen) {
+    chosen.visible = true;
+    if (chosen.material) {
+      chosen.material.opacity = 1.0;
+      chosen.material.needsUpdate = true;
+    }
+  }
+}
+
+/**
+ * Turns on the BrokenSpiderWeb Core decal when player shield reaches 0%.
+ */
+export function toggleBrokenCoreDecal(mesh) {
+  if (!mesh) return;
+  const decals = (mesh.userData && mesh.userData.decals) || null;
+  if (decals && decals.brokenCore) {
+    decals.brokenCore.visible = true;
+    if (decals.brokenCore.material) {
+      decals.brokenCore.material.opacity = 1.0;
+      decals.brokenCore.material.needsUpdate = true;
+    }
+  }
+}
+
+/**
+ * Turns on Both BrokenSpiderWeb Core and BrokenSpiderWeb Screen decals for 4 seconds
+ * when player health reaches 0% before the game over screen displays.
+ */
+export function toggleGameOverDecals(mesh, durationMs = 4000) {
+  if (!mesh) return;
+  const decals = (mesh.userData && mesh.userData.decals) || null;
+  if (decals) {
+    if (decals.brokenCore) {
+      decals.brokenCore.visible = true;
+      if (decals.brokenCore.material) {
+        decals.brokenCore.material.opacity = 1.0;
+        decals.brokenCore.material.needsUpdate = true;
+      }
+    }
+    if (decals.brokenScreen) {
+      decals.brokenScreen.visible = true;
+      if (decals.brokenScreen.material) {
+        decals.brokenScreen.material.opacity = 1.0;
+        decals.brokenScreen.material.needsUpdate = true;
+      }
+    }
+  }
+}
+
+/**
+ * Resets all decals to off (toggled off by default).
+ */
+export function resetCockpitOverlayDecals(mesh) {
+  if (!mesh) return;
+  const decals = (mesh.userData && mesh.userData.decals) || null;
+  if (decals) {
+    (decals.laserBurns || []).forEach(d => {
+      d.visible = false;
+      if (d.material) d.material.opacity = 0.0;
+    });
+    (decals.missileStrikes || []).forEach(d => {
+      d.visible = false;
+      if (d.material) d.material.opacity = 0.0;
+    });
+    if (decals.brokenCore) {
+      decals.brokenCore.visible = false;
+      if (decals.brokenCore.material) decals.brokenCore.material.opacity = 0.0;
+    }
+    if (decals.brokenScreen) {
+      decals.brokenScreen.visible = false;
+      if (decals.brokenScreen.material) decals.brokenScreen.material.opacity = 0.0;
+    }
   }
 }
 
@@ -194,6 +384,10 @@ export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) 
       assetUrl,
       assetUrl.startsWith('/') ? assetUrl.slice(1) : ('/' + assetUrl),
       'wormhole0/' + assetUrl.replace(/^(\.\/|\/)/, ''),
+      'scene_images/screen_decals_spider_web_overlay_4.glb',
+      'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb',
+      '/wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb',
+      '../scene_images/screen_decals_spider_web_overlay_4.glb',
       'mobile/warp_origin_images/cockpit_cracks.glb',
       'wormhole0/mobile/warp_origin_images/cockpit_cracks.glb',
       'worm_hole0/mobile/warp_origin_images/cockpit_cracks.glb',
@@ -319,9 +513,10 @@ export function flashCockpitCracksOverlay(mesh, durationMs = 280) {
 }
 
 /**
- * Sets the Cockpit Cracks overlay across the cockpit view for 1 second before game over screen.
+ * Sets the Cockpit Overlay across the cockpit view for 4 seconds before game over screen.
+ * Both BrokenSpiderWeb Core and BrokenSpiderWeb Screen decals turn on for 4 seconds.
  */
-export function showGameOverCockpitCracksOverlay(mesh, durationMs = 1000) {
+export function showGameOverCockpitCracksOverlay(mesh, durationMs = 4000) {
   if (!mesh) return;
 
   if (activeFlashTimer) {
@@ -334,15 +529,87 @@ export function showGameOverCockpitCracksOverlay(mesh, durationMs = 1000) {
   }
 
   mesh.visible = true;
-  mesh.traverse((child) => {
-    if (child.isMesh && child.material) {
-      child.material.transparent = true;
-      child.material.opacity = 1.0;
-      child.material.depthTest = false;
-      child.material.depthWrite = false;
-      child.material.needsUpdate = true;
+  toggleGameOverDecals(mesh, durationMs);
+}
+
+export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
+  let weaponType = 'laser';
+  if (typeof weapon === 'string') {
+    const s = weapon.toLowerCase();
+    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
+      weaponType = 'missile';
     }
-  });
+  } else if (weapon && typeof weapon === 'object') {
+    const s = (
+      weapon.type ||
+      weapon.weaponType ||
+      weapon.weapon_type ||
+      weapon.weaponName ||
+      weapon.weapon_name ||
+      weapon.name ||
+      weapon.id ||
+      ''
+    ).toLowerCase();
+    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
+      weaponType = 'missile';
+    }
+  }
+
+  if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.triggerWeaponDecal === 'function') {
+    window.stageObjectPool.triggerWeaponDecal(weaponType);
+  } else if (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
+    const mesh = window.getActiveCockpitCracksOverlay();
+    if (mesh) toggleRandomWeaponDecal(mesh, weaponType);
+  }
+
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+      setTimeout(() => {
+        redEdges.style.opacity = '0';
+      }, durationMs);
+    }
+  }
+}
+
+export function triggerShieldDepletedCockpitCracks() {
+  if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.triggerShieldDepletedDecal === 'function') {
+    window.stageObjectPool.triggerShieldDepletedDecal();
+  } else if (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
+    const mesh = window.getActiveCockpitCracksOverlay();
+    if (mesh) toggleBrokenCoreDecal(mesh);
+  }
+}
+
+export function triggerGameOverCockpitCracks(durationMs = 4000) {
+  if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.showGameOverCockpitCracks === 'function') {
+    window.stageObjectPool.showGameOverCockpitCracks(durationMs);
+  } else if (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
+    const mesh = window.getActiveCockpitCracksOverlay();
+    if (mesh) toggleGameOverDecals(mesh, durationMs);
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '1.0';
+    }
+  }
+}
+
+export function hideCockpitCracks() {
+  if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.hideCockpitCracks === 'function') {
+    window.stageObjectPool.hideCockpitCracks();
+  } else if (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
+    const mesh = window.getActiveCockpitCracksOverlay();
+    if (mesh) resetCockpitOverlayDecals(mesh);
+  }
+  if (typeof document !== 'undefined') {
+    const redEdges = document.getElementById('cockpit-edges-red');
+    if (redEdges) {
+      redEdges.style.opacity = '0';
+    }
+  }
 }
 
 export class MeshPool {
@@ -1125,25 +1392,35 @@ export class StageObjectPool {
 
   async initCockpitCracksPool() {
     try {
-      const glbUrl = (this.stageConfig && this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
-        || (this.stageConfig && this.stageConfig.cockpit_overlay_asset)
-        || (this.stageConfig && this.stageConfig.cockpit_cracks_asset)
-        || COCKPIT_CRACKS_GLB_URL;
+      const glbUrl = (this.stageConfig && (
+        (this.stageConfig.cockpit_overlay_object && (this.stageConfig.cockpit_overlay_object.model_3d_url || this.stageConfig.cockpit_overlay_object.model_url || this.stageConfig.cockpit_overlay_object.url))
+        || (this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
+        || this.stageConfig.cockpit_overlay_asset
+        || (typeof this.stageConfig.cockpit_overlay_object === 'string' && this.stageConfig.cockpit_overlay_object)
+        || this.stageConfig.cockpit_cracks_asset
+      ))
+      || COCKPIT_CRACKS_GLB_URL
+      || 'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb';
 
       const loadedMesh = await loadCockpitCracksAsset(glbUrl);
       if (loadedMesh) {
+        setupCockpitCracksHierarchy(loadedMesh);
         this.cockpitCracksMesh = loadedMesh;
         this.cockpitCracksOverlayPool = new MeshPool(
           this.scene,
           null,
           null,
           1,
-          () => loadedMesh.clone(true)
+          () => {
+            const clone = loadedMesh.clone(true);
+            setupCockpitCracksHierarchy(clone);
+            return clone;
+          }
         );
-        console.log(`[StageObjectPool] Pre-allocated Cockpit Cracks overlay pool from: ${glbUrl}`);
+        console.log(`[StageObjectPool] Pre-allocated Cockpit Overlay pool from: ${glbUrl}`);
       }
     } catch (err) {
-      console.warn('[StageObjectPool] Cockpit cracks pooling warning:', err);
+      console.warn('[StageObjectPool] Cockpit overlay pooling warning:', err);
     }
   }
 
@@ -1152,7 +1429,7 @@ export class StageObjectPool {
       this.cockpitCracksMesh = this.cockpitCracksOverlayPool.spawn();
     }
     if (this.cockpitCracksMesh && camera && this.cockpitCracksMesh.parent !== camera) {
-      const existing = camera.getObjectByName('cockpit_cracks_overlay');
+      const existing = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
       if (existing && existing !== this.cockpitCracksMesh) {
         camera.remove(existing);
       }
@@ -1162,13 +1439,29 @@ export class StageObjectPool {
     return this.cockpitCracksMesh;
   }
 
-  flashCockpitCracks(durationMs = 280) {
+  getCockpitOverlay(camera = null) {
+    return this.getCockpitCracksOverlay(camera);
+  }
+
+  triggerWeaponDecal(weaponType = 'laser') {
     if (this.cockpitCracksMesh) {
-      flashCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
+      toggleRandomWeaponDecal(this.cockpitCracksMesh, weaponType);
     }
   }
 
-  showGameOverCockpitCracks(durationMs = 1000) {
+  triggerShieldDepletedDecal() {
+    if (this.cockpitCracksMesh) {
+      toggleBrokenCoreDecal(this.cockpitCracksMesh);
+    }
+  }
+
+  flashCockpitCracks(durationMs = 280) {
+    if (this.cockpitCracksMesh) {
+      toggleRandomWeaponDecal(this.cockpitCracksMesh, 'laser');
+    }
+  }
+
+  showGameOverCockpitCracks(durationMs = 4000) {
     if (this.cockpitCracksMesh) {
       showGameOverCockpitCracksOverlay(this.cockpitCracksMesh, durationMs);
     }
@@ -1176,13 +1469,7 @@ export class StageObjectPool {
 
   hideCockpitCracks() {
     if (this.cockpitCracksMesh) {
-      this.cockpitCracksMesh.visible = false;
-      this.cockpitCracksMesh.traverse((child) => {
-        if (child.isMesh && child.material) {
-          child.material.opacity = 0.0;
-          child.material.needsUpdate = true;
-        }
-      });
+      resetCockpitOverlayDecals(this.cockpitCracksMesh);
     }
   }
 }

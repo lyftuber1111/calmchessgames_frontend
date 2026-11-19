@@ -1,13 +1,23 @@
 import * as THREE from 'three';
 import {
-  createStagePool,
   MeshPool,
+  StageObjectPool,
   loadCockpitCracksGlbAsset,
   loadCockpitCracksAsset,
   setupCockpitCracksHierarchy,
+  setupCockpitOverlayHierarchy,
   flashCockpitCracksOverlay,
   showGameOverCockpitCracksOverlay,
   fitCockpitCracksToCamera,
+  fitCockpitOverlayToCamera,
+  toggleRandomWeaponDecal,
+  toggleBrokenCoreDecal,
+  toggleGameOverDecals,
+  resetCockpitOverlayDecals,
+  triggerCockpitCracksHit,
+  triggerShieldDepletedCockpitCracks,
+  triggerGameOverCockpitCracks,
+  hideCockpitCracks,
   COCKPIT_CRACKS_GLB_URL
 } from './event_horizon_pool.js';
 
@@ -32,7 +42,8 @@ export const stageConfig = {
     missionObjectives: 'Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.',
     eventsWithin: 'Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert',
     endLevelEvent: 'Singularity Perimeter Breach',
-    cockpitOverlayAsset: 'mobile/warp_origin_images/cockpit_cracks.glb'
+    cockpitOverlayAsset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+    cockpitOverlayObject: 'scene_images/screen_decals_spider_web_overlay_4.glb'
   },
   stage_level: 2,
   stage_name: 'Event Horizon',
@@ -40,12 +51,17 @@ export const stageConfig = {
   environment_theme: 'Event Horizon Amber',
   device: 'mobile',
   xr_mode: 'mobile-xr',
-  cockpit_overlay: {
-    model_3d_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
-    model_url: 'mobile/warp_origin_images/cockpit_cracks.glb',
+  cockpit_overlay_object: {
+    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
     asset_type: '3d_model'
   },
-  cockpit_overlay_asset: 'mobile/warp_origin_images/cockpit_cracks.glb',
+  cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+  cockpit_overlay: {
+    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+    asset_type: '3d_model'
+  },
   events_within_level: 'Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert',
   end_level_event: 'Singularity Perimeter Breach',
   mission_objectives: 'Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.',
@@ -359,11 +375,12 @@ export function updateStageWaves(pool, activeEnemies, stageKills, scene) {
 
 
 // =========================================================================
-// COCKPIT CRACKS TRANSPARENT OVERLAY POOL & GAME OVER MANAGEMENT
-// Model: mobile/warp_origin_images/cockpit_cracks.glb
-// Transparent overlay positioned across the cockpit window;
-// flashes visible for an instant on enemy hit and stays visible for 1 second
-// before game over screen appears. Loaded with the stage object pool.
+// COCKPIT OVERLAY & IMPACT DECALS MANAGEMENT
+// Model: scene_images/screen_decals_spider_web_overlay_4.glb
+// Full-screen overlay dynamically scaled via camera FOV for all device viewports.
+// Toggleable decals: burn 01-08 for laser burns, strike 01-08 for missile strikes,
+// BrokenSpiderWeb Core (on at 0% shield) and BrokenSpiderWeb Screen (on at 0% health
+// for 4 seconds before the game over modal displays). Loaded via stage object pool.
 // =========================================================================
 
 let activeCockpitCracksMesh = null;
@@ -378,7 +395,7 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   }
 
   if (camera) {
-    const existing = camera.getObjectByName('cockpit_cracks_overlay');
+    const existing = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
     if (existing) {
       camera.remove(existing);
     }
@@ -394,13 +411,16 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   }
 
   try {
-    const glbUrl = (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url))
+    const assetUrl = (stageConfig.cockpit_overlay_object && (stageConfig.cockpit_overlay_object.model_3d_url || stageConfig.cockpit_overlay_object.model_url || stageConfig.cockpit_overlay_object.url))
       || stageConfig.cockpit_overlay_asset
-      || 'mobile/warp_origin_images/cockpit_cracks.glb'
-      || COCKPIT_CRACKS_GLB_URL
-      || 'mobile/warp_origin_images/cockpit_cracks.glb';
+      || (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url))
+      || 'scene_images/screen_decals_spider_web_overlay_4.glb'
+      || (typeof STAGE_COCKPIT_CRACKS_ASSET_URL !== 'undefined' ? STAGE_COCKPIT_CRACKS_ASSET_URL : '')
+      || (typeof COCKPIT_CRACKS_GLB_URL !== 'undefined' ? COCKPIT_CRACKS_GLB_URL : '')
+      || 'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb';
 
-    const loadedMesh = (typeof loadCockpitCracksAsset === 'function' ? await loadCockpitCracksAsset(glbUrl) : await loadCockpitCracksGlbAsset(glbUrl));
+    const loadFn = typeof loadCockpitCracksAsset === 'function' ? loadCockpitCracksAsset : loadCockpitCracksGlbAsset;
+    const loadedMesh = await loadFn(assetUrl);
     if (loadedMesh) {
       setupCockpitCracksHierarchy(loadedMesh);
 
@@ -409,7 +429,11 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
         null,
         null,
         1,
-        () => loadedMesh.clone(true)
+        () => {
+          const clone = loadedMesh.clone(true);
+          setupCockpitCracksHierarchy(clone);
+          return clone;
+        }
       );
 
       activeCockpitCracksMesh = activeCockpitCracksPool.spawn();
@@ -419,10 +443,10 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
         camera.add(activeCockpitCracksMesh);
         fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
       }
-      console.log(`[Stage 2: Event Horizon] Cockpit cracks GLB loaded with pool and mounted across cockpit view`);
+      console.log(`[Cockpit Overlay] Cockpit screen overlay loaded with pool and mounted across cockpit view`);
     }
   } catch (err) {
-    console.warn(`[Stage 2: Event Horizon] Error setting up cockpit cracks overlay:`, err);
+    console.warn(`[Cockpit Overlay] Error setting up cockpit overlay:`, err);
   }
 
   return activeCockpitCracksMesh;
@@ -433,21 +457,66 @@ export function fitCockpitCracksToCamera(mesh, camera) {
   mesh.position.set(0, 0, -1.0);
   mesh.rotation.set(0, 0, 0);
 
-  const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
-  const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
-  const dist = 1.0;
-  const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
-  const visibleW = visibleH * aspect;
+  const aspect = camera.aspect || (typeof window !== 'undefined' && window.innerHeight > 0 ? window.innerWidth / window.innerHeight : 16 / 9);
+  let visibleH = 0;
+  let visibleW = 0;
 
-  const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
-  mesh.scale.set(scale, scale, 1.0);
+  if (camera.fov) {
+    const vFovRad = (camera.fov * Math.PI) / 180;
+    visibleH = 2 * Math.tan(vFovRad / 2) * 1.0;
+    visibleW = visibleH * aspect;
+  } else if (camera.projectionMatrix && camera.projectionMatrix.elements && camera.projectionMatrix.elements[5] > 0) {
+    visibleH = 2.0 / camera.projectionMatrix.elements[5];
+    visibleW = (camera.projectionMatrix.elements[0] > 0)
+      ? (2.0 / camera.projectionMatrix.elements[0])
+      : (visibleH * aspect);
+  } else {
+    const vFovRad = (65 * Math.PI) / 180;
+    visibleH = 2 * Math.tan(vFovRad / 2) * 1.0;
+    visibleW = visibleH * aspect;
+  }
+
+  if (mesh.userData && mesh.userData.is2DOverlay) {
+    mesh.scale.set(visibleW, visibleH, 1.0);
+  } else {
+    // Model bounds for screen_decals_spider_web_overlay_4.glb:
+    // Base width: 1.60m, Base height: 0.90m (16:9 widescreen)
+    // Scale dynamically using FOV so the overlay completely covers the screen for different devices
+    const scale = Math.max(visibleW / 1.60, visibleH / 0.90) * 1.05;
+    mesh.scale.set(scale, scale, 1.0);
+  }
 }
 
-export function triggerCockpitCracksHit(durationMs = 280) {
-  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.flashCockpitCracks === 'function') {
-    activeCockpitCracksPool.flashCockpitCracks(durationMs);
+export const fitCockpitOverlayToCamera = fitCockpitCracksToCamera;
+export const setupCockpitOverlayHierarchy = setupCockpitCracksHierarchy;
+
+export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
+  let weaponType = 'laser';
+  if (typeof weapon === 'string') {
+    const s = weapon.toLowerCase();
+    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
+      weaponType = 'missile';
+    }
+  } else if (weapon && typeof weapon === 'object') {
+    const s = (
+      weapon.type ||
+      weapon.weaponType ||
+      weapon.weapon_type ||
+      weapon.weaponName ||
+      weapon.weapon_name ||
+      weapon.name ||
+      weapon.id ||
+      ''
+    ).toLowerCase();
+    if (s.includes('missile') || s.includes('strike') || s.includes('torpedo') || s.includes('rocket')) {
+      weaponType = 'missile';
+    }
+  }
+
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.triggerWeaponDecal === 'function') {
+    activeCockpitCracksPool.triggerWeaponDecal(weaponType);
   } else if (activeCockpitCracksMesh) {
-    flashCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
+    toggleRandomWeaponDecal(activeCockpitCracksMesh, weaponType);
   }
 
   if (typeof document !== 'undefined') {
@@ -461,11 +530,19 @@ export function triggerCockpitCracksHit(durationMs = 280) {
   }
 }
 
-export function triggerGameOverCockpitCracks(durationMs = 1000) {
+export function triggerShieldDepletedCockpitCracks() {
+  if (activeCockpitCracksPool && typeof activeCockpitCracksPool.triggerShieldDepletedDecal === 'function') {
+    activeCockpitCracksPool.triggerShieldDepletedDecal();
+  } else if (activeCockpitCracksMesh) {
+    toggleBrokenCoreDecal(activeCockpitCracksMesh);
+  }
+}
+
+export function triggerGameOverCockpitCracks(durationMs = 4000) {
   if (activeCockpitCracksPool && typeof activeCockpitCracksPool.showGameOverCockpitCracks === 'function') {
     activeCockpitCracksPool.showGameOverCockpitCracks(durationMs);
   } else if (activeCockpitCracksMesh) {
-    showGameOverCockpitCracksOverlay(activeCockpitCracksMesh, durationMs);
+    toggleGameOverDecals(activeCockpitCracksMesh, durationMs);
   }
   if (typeof document !== 'undefined') {
     const redEdges = document.getElementById('cockpit-edges-red');
@@ -479,13 +556,7 @@ export function hideCockpitCracks() {
   if (activeCockpitCracksPool && typeof activeCockpitCracksPool.hideCockpitCracks === 'function') {
     activeCockpitCracksPool.hideCockpitCracks();
   } else if (activeCockpitCracksMesh) {
-    activeCockpitCracksMesh.visible = false;
-    activeCockpitCracksMesh.traverse((child) => {
-      if (child.isMesh && child.material) {
-        child.material.opacity = 0.0;
-        child.material.needsUpdate = true;
-      }
-    });
+    resetCockpitOverlayDecals(activeCockpitCracksMesh);
   }
   if (typeof document !== 'undefined') {
     const redEdges = document.getElementById('cockpit-edges-red');
@@ -541,7 +612,7 @@ export function applyStage(engineApi) {
   }
 
 
-  // --- Mount Cockpit Cracks Overlay Across Cockpit Window via Pool ---
+    // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
   const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
@@ -550,48 +621,93 @@ export function applyStage(engineApi) {
 
   setupCockpitCracksOverlay(camera, pool, scene);
 
-  // Resize handler to maintain perfect cockpit fit
+  // Resize and orientation handlers to maintain perfect cockpit fit dynamically scaling overlay with FOV
   if (typeof window !== 'undefined') {
-    window.addEventListener('resize', () => {
+    const onResizeFit = () => {
       const cam = (engineApi && engineApi.camera) || window.camera;
       if (activeCockpitCracksMesh && cam) {
         fitCockpitCracksToCamera(activeCockpitCracksMesh, cam);
       }
-    });
+    };
+    window.addEventListener('resize', onResizeFit);
+    window.addEventListener('orientationchange', () => setTimeout(onResizeFit, 200));
 
     // Hook enemy hit detection:
     if (typeof window.applyDamageToPlayer === 'function' && !window.applyDamageToPlayer._cockpitCracksHooked) {
       const prevDamage = window.applyDamageToPlayer;
       window.applyDamageToPlayer = function(dmg, ...args) {
+        const weapon = args[0] || (typeof dmg === 'object' ? dmg : null);
+        const shieldBefore = (typeof window.state !== 'undefined' && window.state) ? window.state.playerShield : 100;
+
         const ret = prevDamage.apply(this, [dmg, ...args]);
-        triggerCockpitCracksHit();
+
+        const shieldAfter = (typeof window.state !== 'undefined' && window.state) ? window.state.playerShield : 0;
+        const healthAfter = (typeof window.state !== 'undefined' && window.state) ? window.state.playerHealth : 100;
+
+        // When hit, detect weapon type and toggle random decal for weapon
+        triggerCockpitCracksHit(weapon);
+
+        // When shield reaches 0%, BrokenSpiderWeb Core decal turns on
+        if (shieldBefore > 0 && shieldAfter <= 0) {
+          triggerShieldDepletedCockpitCracks();
+        }
+
+        // When health reaches 0%, both BrokenSpiderWeb Core and BrokenSpiderWeb Screen decals turn on for 4 seconds
+        if (healthAfter <= 0) {
+          triggerGameOverCockpitCracks(4000);
+        }
+
         return ret;
       };
       window.applyDamageToPlayer._cockpitCracksHooked = true;
     }
 
-    window.addEventListener('cockpitHit', () => triggerCockpitCracksHit());
-    window.addEventListener('playerDamage', () => triggerCockpitCracksHit());
-    window.addEventListener('cockpitImpact', () => triggerCockpitCracksHit());
-    window.addEventListener('gameOverCracks', () => triggerGameOverCockpitCracks(1000));
+    window.addEventListener('cockpitHit', (e) => triggerCockpitCracksHit(e.detail));
+    window.addEventListener('playerDamage', (e) => triggerCockpitCracksHit(e.detail));
+    window.addEventListener('cockpitImpact', (e) => triggerCockpitCracksHit(e.detail));
+    window.addEventListener('shieldDepleted', () => triggerShieldDepletedCockpitCracks());
+    window.addEventListener('gameOverCracks', () => triggerGameOverCockpitCracks(4000));
 
     const prevCustomFx = window.executeCustomWeaponImpactFx;
     window.executeCustomWeaponImpactFx = function(bolt, normX, normY, canvas) {
       if (typeof prevCustomFx === 'function') {
         try { prevCustomFx(bolt, normX, normY, canvas); } catch (e) {}
       }
-      triggerCockpitCracksHit();
+      triggerCockpitCracksHit(bolt);
     };
 
     window.triggerCockpitCracksHit = triggerCockpitCracksHit;
+    window.triggerCockpitOverlayHit = triggerCockpitCracksHit;
     window.flashCockpitCracks = triggerCockpitCracksHit;
+    window.triggerShieldDepletedCockpitCracks = triggerShieldDepletedCockpitCracks;
     window.triggerGameOverCockpitCracks = triggerGameOverCockpitCracks;
     window.hideCockpitCracks = hideCockpitCracks;
+    window.resetCockpitOverlayDecals = resetCockpitOverlayDecals;
     window.setupCockpitCracksOverlay = setupCockpitCracksOverlay;
+    window.setupCockpitOverlayHierarchy = setupCockpitCracksHierarchy;
+    window.fitCockpitCracksToCamera = fitCockpitCracksToCamera;
+    window.fitCockpitOverlayToCamera = fitCockpitCracksToCamera;
     window.getActiveCockpitCracksOverlay = getActiveCockpitCracksOverlay;
   }
 
   return stageConfig;
 }
 
-export default { stageConfig, applyStage, fireEnemyWeapon, updateEnemyMovement, updateStageWaves, handleStageEvent, stageEvents, setupCockpitCracksOverlay, triggerCockpitCracksHit, triggerGameOverCockpitCracks, hideCockpitCracks, fitCockpitCracksToCamera, getActiveCockpitCracksOverlay };
+export default {
+  stageConfig,
+  applyStage,
+  fireEnemyWeapon,
+  updateEnemyMovement,
+  updateStageWaves,
+  handleStageEvent,
+  stageEvents,
+  setupCockpitCracksOverlay,
+  setupCockpitOverlayHierarchy,
+  triggerCockpitCracksHit,
+  triggerShieldDepletedCockpitCracks,
+  triggerGameOverCockpitCracks,
+  hideCockpitCracks,
+  fitCockpitCracksToCamera,
+  fitCockpitOverlayToCamera,
+  getActiveCockpitCracksOverlay
+};

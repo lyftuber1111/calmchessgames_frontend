@@ -10975,9 +10975,10 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
   });
 }
 
-function applyDamageToPlayer(rawDamage) {
+function applyDamageToPlayer(rawDamage, weapon = null) {
   if (!state.hasStarted || state.isHyperWarping || state.isInvulnerable || state.isGameOver) return;
   const dmg = rawDamage || 8;
+  const shieldBefore = state.playerShield;
 
   // Requirement: Health does NOT deplete until the shield reaches 0%.
   // Deflector shield absorbs 100% of incoming damage first.
@@ -10992,6 +10993,22 @@ function applyDamageToPlayer(rawDamage) {
   } else {
     // Shield is depleted (0%): Direct hull damage depletes health
     state.playerHealth = Math.max(0, state.playerHealth - dmg);
+  }
+
+  // Trigger cockpit decal hit for detected weapon type (laser burns vs missile strikes)
+  if (typeof triggerCockpitCracksHit === 'function') {
+    triggerCockpitCracksHit(weapon);
+  } else if (typeof window !== 'undefined' && typeof window.triggerCockpitCracksHit === 'function') {
+    window.triggerCockpitCracksHit(weapon);
+  }
+
+  // When shield reaches 0%, BrokenSpiderWeb Core decal turns on
+  if (shieldBefore > 0 && state.playerShield <= 0) {
+    if (typeof triggerShieldDepletedCockpitCracks === 'function') {
+      triggerShieldDepletedCockpitCracks();
+    } else if (typeof window !== 'undefined' && typeof window.triggerShieldDepletedCockpitCracks === 'function') {
+      window.triggerShieldDepletedCockpitCracks();
+    }
   }
 
   // Red damage vignette hit flash
@@ -11074,12 +11091,24 @@ function triggerGameOver() {
     mouseLockBtn.textContent = '🎯 Capture Crosshair';
   }
 
-  // Set worm_hole0/mobile/warp_origin_images/cockpit_cracks.glb across the cockpit as an overlay for 1 second before the game over screen appears load it with the pool
-  const stageCockpitAsset = (currentStageObjectPool && currentStageObjectPool.stageConfig && (currentStageObjectPool.stageConfig.cockpit_overlay_asset || (currentStageObjectPool.stageConfig.cockpit_overlay && (currentStageObjectPool.stageConfig.cockpit_overlay.model_3d_url || currentStageObjectPool.stageConfig.cockpit_overlay.model_url))))
-    || (typeof currentStageConfig !== 'undefined' && currentStageConfig && (currentStageConfig.cockpit_overlay_asset || (currentStageConfig.cockpit_overlay && (currentStageConfig.cockpit_overlay.model_3d_url || currentStageConfig.cockpit_overlay.model_url))))
-    || (typeof window !== 'undefined' && window.activeStageConfig && (window.activeStageConfig.cockpit_overlay_asset || (window.activeStageConfig.cockpit_overlay && (window.activeStageConfig.cockpit_overlay.model_3d_url || window.activeStageConfig.cockpit_overlay.model_url))))
+  // When health reaches 0% Both BrokenSpiderWeb Core and Broken SpiderWeb Screen decals turn on for 4 seconds before the game over screen displays
+  const stageCockpitAsset = (currentStageObjectPool && currentStageObjectPool.stageConfig && (
+    (currentStageObjectPool.stageConfig.cockpit_overlay_object && (currentStageObjectPool.stageConfig.cockpit_overlay_object.model_3d_url || currentStageObjectPool.stageConfig.cockpit_overlay_object.model_url || currentStageObjectPool.stageConfig.cockpit_overlay_object.url))
+    || currentStageObjectPool.stageConfig.cockpit_overlay_asset
+    || (currentStageObjectPool.stageConfig.cockpit_overlay && (currentStageObjectPool.stageConfig.cockpit_overlay.model_3d_url || currentStageObjectPool.stageConfig.cockpit_overlay.model_url))
+  ))
+    || (typeof currentStageConfig !== 'undefined' && currentStageConfig && (
+      (currentStageConfig.cockpit_overlay_object && (currentStageConfig.cockpit_overlay_object.model_3d_url || currentStageConfig.cockpit_overlay_object.model_url || currentStageConfig.cockpit_overlay_object.url))
+      || currentStageConfig.cockpit_overlay_asset
+      || (currentStageConfig.cockpit_overlay && (currentStageConfig.cockpit_overlay.model_3d_url || currentStageConfig.cockpit_overlay.model_url))
+    ))
+    || (typeof window !== 'undefined' && window.activeStageConfig && (
+      (window.activeStageConfig.cockpit_overlay_object && (window.activeStageConfig.cockpit_overlay_object.model_3d_url || window.activeStageConfig.cockpit_overlay_object.model_url || window.activeStageConfig.cockpit_overlay_object.url))
+      || window.activeStageConfig.cockpit_overlay_asset
+      || (window.activeStageConfig.cockpit_overlay && (window.activeStageConfig.cockpit_overlay.model_3d_url || window.activeStageConfig.cockpit_overlay.model_url))
+    ))
     || (typeof STAGE_REGISTRY !== 'undefined' && STAGE_REGISTRY[currentActiveStage] && STAGE_REGISTRY[currentActiveStage].cockpit_overlay_asset)
-    || 'mobile/warp_origin_images/cockpit_cracks.glb';
+    || 'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb';
 
   const is3DModelAsset = /\.(glb|gltf|obj)($|\?)/i.test(stageCockpitAsset);
 
@@ -11089,37 +11118,28 @@ function triggerGameOver() {
   } else if (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
     cracksOverlay = window.getActiveCockpitCracksOverlay();
   } else if (camera) {
-    cracksOverlay = camera.getObjectByName('cockpit_cracks_overlay');
+    cracksOverlay = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
   }
 
   // If 3D model asset (.glb/.gltf/.obj) and not yet instantiated, load and mount to camera
   if (!cracksOverlay && is3DModelAsset && camera && typeof load3DAssetModel === 'function') {
     load3DAssetModel(stageCockpitAsset, (loadedModel) => {
       if (loadedModel) {
-        loadedModel.name = 'cockpit_cracks_overlay';
+        if (typeof setupCockpitCracksHierarchy === 'function') {
+          setupCockpitCracksHierarchy(loadedModel);
+        } else if (typeof window !== 'undefined' && typeof window.setupCockpitOverlayHierarchy === 'function') {
+          window.setupCockpitOverlayHierarchy(loadedModel);
+        }
+        loadedModel.name = 'cockpit_overlay_object';
         loadedModel.visible = true;
-        loadedModel.traverse((child) => {
-          if (child.isMesh && child.material) {
-            child.material.transparent = true;
-            child.material.opacity = 1.0;
-            child.material.depthTest = false;
-            child.material.depthWrite = false;
-            child.material.needsUpdate = true;
-          }
-        });
         camera.add(loadedModel);
         if (typeof fitCockpitCracksToCamera === 'function') {
           fitCockpitCracksToCamera(loadedModel, camera);
-        } else {
-          const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
-          const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
-          const dist = 1.0;
-          const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
-          const visibleW = visibleH * aspect;
-          const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
-          loadedModel.position.set(0, 0, -1.0);
-          loadedModel.rotation.set(0, 0, 0);
-          loadedModel.scale.set(scale, scale, 1.0);
+        } else if (typeof window !== 'undefined' && typeof window.fitCockpitCracksToCamera === 'function') {
+          window.fitCockpitCracksToCamera(loadedModel, camera);
+        }
+        if (typeof toggleGameOverDecals === 'function') {
+          toggleGameOverDecals(loadedModel, 4000);
         }
       }
     });
@@ -11127,25 +11147,15 @@ function triggerGameOver() {
 
   if (cracksOverlay) {
     cracksOverlay.visible = true;
-    cracksOverlay.traverse((child) => {
-      if (child.isMesh && child.material) {
-        child.material.transparent = true;
-        child.material.opacity = 1.0;
-        child.material.depthTest = false;
-        child.material.depthWrite = false;
-        child.material.needsUpdate = true;
-      }
-    });
+    if (typeof toggleGameOverDecals === 'function') {
+      toggleGameOverDecals(cracksOverlay, 4000);
+    }
     if (camera) {
-      const aspect = camera.aspect || (typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 16 / 9);
-      const vFovRad = ((camera.fov || 65) * Math.PI) / 180;
-      const dist = 1.0;
-      const visibleH = 2 * Math.tan(vFovRad / 2) * dist;
-      const visibleW = visibleH * aspect;
-      const scale = Math.max((visibleW / 1.90) * 1.08, (visibleH / 1.41) * 1.08);
-      cracksOverlay.position.set(0, 0, -1.0);
-      cracksOverlay.rotation.set(0, 0, 0);
-      cracksOverlay.scale.set(scale, scale, 1.0);
+      if (typeof fitCockpitCracksToCamera === 'function') {
+        fitCockpitCracksToCamera(cracksOverlay, camera);
+      } else if (typeof window !== 'undefined' && typeof window.fitCockpitCracksToCamera === 'function') {
+        window.fitCockpitCracksToCamera(cracksOverlay, camera);
+      }
     }
   }
 
@@ -11160,15 +11170,18 @@ function triggerGameOver() {
 
   if (typeof window !== 'undefined') {
     if (typeof window.triggerGameOverCockpitCracks === 'function') {
-      try { window.triggerGameOverCockpitCracks(1000); } catch (e) {}
+      try { window.triggerGameOverCockpitCracks(4000); } catch (e) {}
     }
     const redEdges = document.getElementById('cockpit-edges-red');
     if (redEdges) {
       redEdges.style.opacity = '1.0';
+      setTimeout(() => {
+        redEdges.style.opacity = '0';
+      }, 4000);
     }
   }
 
-  // Delay the game over modal display for 1 second (1000 ms) so cockpit cracks overlay is seen across cockpit
+  // Delay the game over modal display for 4 seconds (4000 ms) so both BrokenSpiderWeb Core and Broken SpiderWeb Screen decals are displayed
   setTimeout(() => {
     // Show Game Over modal overlay
     const modal = document.getElementById('game-over-modal');

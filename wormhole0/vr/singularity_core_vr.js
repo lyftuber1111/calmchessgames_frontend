@@ -3,6 +3,7 @@ import {
   createStagePool,
   MeshPool,
   loadCockpitCracksGlbAsset,
+  loadCockpitCracksAsset,
   setupCockpitCracksHierarchy,
   flashCockpitCracksOverlay,
   showGameOverCockpitCracksOverlay,
@@ -388,7 +389,7 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
       || COCKPIT_CRACKS_GLB_URL
       || 'mobile/warp_origin_images/cockpit_cracks.glb';
 
-    const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+    const loadedMesh = (typeof loadCockpitCracksAsset === 'function' ? await loadCockpitCracksAsset(glbUrl) : await loadCockpitCracksGlbAsset(glbUrl));
     if (loadedMesh) {
       setupCockpitCracksHierarchy(loadedMesh);
 

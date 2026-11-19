@@ -6,17 +6,21 @@ import {
   setupCockpitCracksHierarchy,
   fitCockpitCracksToCamera,
   loadCockpitCracksGlbAsset,
+  loadCockpitCracksAsset,
   flashCockpitCracksOverlay,
   showGameOverCockpitCracksOverlay
 } from './object_pool.js';
 
 export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
+export const STAGE_COCKPIT_CRACKS_ASSET_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
+export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = '3d_model';
 
 export {
   COCKPIT_CRACKS_GLB_URL,
   setupCockpitCracksHierarchy,
   fitCockpitCracksToCamera,
   loadCockpitCracksGlbAsset,
+  loadCockpitCracksAsset,
   flashCockpitCracksOverlay,
   showGameOverCockpitCracksOverlay
 };
@@ -595,7 +599,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         || 'scene_images/screen_decals_spider_web_overlay_4.glb'
         || COCKPIT_CRACKS_GLB_URL;
 
-      const loadedMesh = await loadCockpitCracksGlbAsset(glbUrl);
+      const loadedMesh = (typeof loadCockpitCracksAsset === 'function' ? await loadCockpitCracksAsset(glbUrl) : await loadCockpitCracksGlbAsset(glbUrl));
       if (loadedMesh) {
         this.cockpitCracksMesh = loadedMesh;
         this.cockpitCracksOverlayPool = new MeshPool(

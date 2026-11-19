@@ -116,8 +116,8 @@ export const stageConfig = {
             "y": 1,
             "z": 1
         },
-        "special_fx": "cockpit_cracks_red_edges",
-        "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "special_fx": "cockpit_overlay_decals",
+        "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
         "special_fx_type": "overlay"
     },
     "acquirable": []
@@ -158,8 +158,8 @@ export const stageConfig = {
             "y": 1,
             "z": 1
         },
-        "weapon_special_fx": "cockpit_cracks_red_edges",
-        "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "weapon_special_fx": "cockpit_overlay_decals",
+        "weapon_special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
         "weapon_special_fx_type": "overlay",
         "fire_rate": 3,
         "fire_rate_seconds": 3,
@@ -194,8 +194,8 @@ export const stageConfig = {
                 "damage": 20,
                 "speed": 600,
                 "color": "#ffd166",
-                "special_fx": "cockpit_cracks_red_edges",
-                "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                "special_fx": "cockpit_overlay_decals",
+                "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
                 "special_fx_type": "overlay",
                 "is_enabled": 1
             }
@@ -270,8 +270,8 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   const wSizeY = Number(enemy.weapon_size_y ?? primaryW.size_y ?? (primaryW.dimensions && primaryW.dimensions.y) ?? 1.0);
   const wSizeZ = Number(enemy.weapon_size_z ?? primaryW.size_z ?? (primaryW.dimensions && primaryW.dimensions.z) ?? 1.0);
 
-  const wSpecialFx = primaryW.special_fx || enemy.weapon_special_fx || 'cockpit_cracks_red_edges';
-  const wSpecialFxFile = primaryW.special_fx_file || enemy.weapon_special_fx_file || 'desktop/warp_origin_images/cockpit_cracks_overlay.png';
+  const wSpecialFx = primaryW.special_fx || enemy.weapon_special_fx || 'cockpit_overlay_decals';
+  const wSpecialFxFile = primaryW.special_fx_file || enemy.weapon_special_fx_file || 'scene_images/screen_decals_spider_web_overlay_4.glb';
   const wSpecialFxType = primaryW.special_fx_type || enemy.weapon_special_fx_type || 'overlay';
   const wColor = enemy.weaponColor || enemy.weapon_color || primaryW.color || '#ffd166';
   const wName = primaryW.name || enemy.weapon_name || 'Enemy Laser';
@@ -282,6 +282,7 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
   let geometryList = [];
   let materialList = [];
 
+  const isMissile = (primaryW.type === 'missile' || enemy.weaponType === 'missile' || (wName && /missile|torpedo|disruptor|rocket/i.test(wName)));
   const target = (playerPos && playerPos.isVector3) ? playerPos : new THREE.Vector3(0, 0, 220);
   const direction = new THREE.Vector3().subVectors(target, enemy.mesh.position).normalize();
   const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
@@ -311,8 +312,6 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
     mesh.position.copy(enemy.mesh.position);
     mesh.quaternion.copy(boltQuat);
   }
-
-  const isMissile = (enemy.weaponType === 'missile' || (enemy.weaponName && enemy.weaponName.toLowerCase().includes('missile')));
   const boltSpeed = enemy.weaponSpeed || enemy.weapon_speed || 420;
   const boltDamage = enemy.weaponDamage || enemy.weapon_damage || 5;
 
@@ -491,8 +490,9 @@ export function fitCockpitCracksToCamera(mesh, camera) {
     // Model bounds for screen_decals_spider_web_overlay_4.glb:
     // Base width: 1.60m, Base height: 0.90m (16:9 widescreen)
     // Scale dynamically using FOV so the overlay completely covers the screen for different devices
-    const scale = Math.max(visibleW / 1.60, visibleH / 0.90) * 1.05;
-    mesh.scale.set(scale, scale, 1.0);
+    const scaleX = (visibleW / 1.60) * 1.01;
+    const scaleY = (visibleH / 0.90) * 1.01;
+    mesh.scale.set(scaleX, scaleY, 1.0);
   }
 }
 
@@ -500,6 +500,10 @@ export const fitCockpitOverlayToCamera = fitCockpitCracksToCamera;
 export const setupCockpitOverlayHierarchy = setupCockpitCracksHierarchy;
 
 export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
+  if (weapon && typeof weapon === 'object') {
+    if (weapon._decalTriggered) return;
+    weapon._decalTriggered = true;
+  }
   let weaponType = 'laser';
   if (typeof weapon === 'string') {
     const s = weapon.toLowerCase();

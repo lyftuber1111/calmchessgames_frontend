@@ -170,7 +170,13 @@ export function setupCockpitCracksHierarchy(root) {
 
   decals.laserBurns.sort((a, b) => a.name.localeCompare(b.name));
   decals.missileStrikes.sort((a, b) => a.name.localeCompare(b.name));
-  root.userData.decals = decals;
+  root._cockpitDecals = decals;
+  Object.defineProperty(root.userData, 'decals', {
+    value: decals,
+    writable: true,
+    configurable: true,
+    enumerable: false
+  });
 }
 
 /**
@@ -206,14 +212,25 @@ export function fitCockpitCracksToCamera(mesh, camera) {
   } else {
     // Model bounds for screen_decals_spider_web_overlay_4.glb:
     // Base width: 1.60m, Base height: 0.90m (16:9 widescreen)
-    // Scale dynamically to fill 100% of the screen across all device aspect ratios & FOVs
-    const scale = Math.max(visibleW / 1.60, visibleH / 0.90) * 1.05;
-    mesh.scale.set(scale, scale, 1.0);
+    // Scale X and Y dynamically to match the exact camera frustum across all device aspect ratios & FOVs
+    const scaleX = (visibleW / 1.60) * 1.01;
+    const scaleY = (visibleH / 0.90) * 1.01;
+    mesh.scale.set(scaleX, scaleY, 1.0);
   }
 }
 
 export const fitCockpitOverlayToCamera = fitCockpitCracksToCamera;
 export const setupCockpitOverlayHierarchy = setupCockpitCracksHierarchy;
+
+function getOrInitDecals(mesh) {
+  if (!mesh) return null;
+  let decals = mesh._cockpitDecals || (mesh.userData && mesh.userData.decals) || null;
+  if (!decals) {
+    setupCockpitCracksHierarchy(mesh);
+    decals = mesh._cockpitDecals || (mesh.userData && mesh.userData.decals) || null;
+  }
+  return decals;
+}
 
 /**
  * Toggles on a random decal for the detected weapon type (laser burns vs missile strikes).
@@ -222,7 +239,7 @@ export const setupCockpitOverlayHierarchy = setupCockpitCracksHierarchy;
 export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
   if (!mesh) return;
   mesh.visible = true;
-  const decals = (mesh.userData && mesh.userData.decals) || null;
+  const decals = getOrInitDecals(mesh);
   if (!decals) return;
 
   let typeStr = 'laser';
@@ -262,8 +279,12 @@ export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
 
   if (chosen) {
     chosen.visible = true;
-    if (chosen.parent && !chosen.parent.visible) chosen.parent.visible = true;
-    if (mesh && !mesh.visible) mesh.visible = true;
+    let p = chosen.parent;
+    while (p && p !== mesh) {
+      p.visible = true;
+      p = p.parent;
+    }
+    mesh.visible = true;
     if (chosen.material) {
       chosen.material.opacity = 1.0;
       chosen.material.transparent = true;
@@ -280,12 +301,15 @@ export function toggleRandomWeaponDecal(mesh, weaponType = 'laser') {
 export function toggleBrokenCoreDecal(mesh) {
   if (!mesh) return;
   mesh.visible = true;
-  const decals = (mesh.userData && mesh.userData.decals) || null;
+  const decals = getOrInitDecals(mesh);
   if (decals && decals.brokenCore) {
     decals.brokenCore.visible = true;
     if (decals.brokenCore.parent && !decals.brokenCore.parent.visible) decals.brokenCore.parent.visible = true;
     if (decals.brokenCore.material) {
       decals.brokenCore.material.opacity = 1.0;
+      decals.brokenCore.material.transparent = true;
+      decals.brokenCore.material.depthTest = false;
+      decals.brokenCore.material.depthWrite = false;
       decals.brokenCore.material.needsUpdate = true;
     }
   }
@@ -298,13 +322,16 @@ export function toggleBrokenCoreDecal(mesh) {
 export function toggleGameOverDecals(mesh, durationMs = 4000) {
   if (!mesh) return;
   mesh.visible = true;
-  const decals = (mesh.userData && mesh.userData.decals) || null;
+  const decals = getOrInitDecals(mesh);
   if (decals) {
     if (decals.brokenCore) {
       decals.brokenCore.visible = true;
       if (decals.brokenCore.parent && !decals.brokenCore.parent.visible) decals.brokenCore.parent.visible = true;
       if (decals.brokenCore.material) {
         decals.brokenCore.material.opacity = 1.0;
+        decals.brokenCore.material.transparent = true;
+        decals.brokenCore.material.depthTest = false;
+        decals.brokenCore.material.depthWrite = false;
         decals.brokenCore.material.needsUpdate = true;
       }
     }
@@ -313,6 +340,9 @@ export function toggleGameOverDecals(mesh, durationMs = 4000) {
       if (decals.brokenScreen.parent && !decals.brokenScreen.parent.visible) decals.brokenScreen.parent.visible = true;
       if (decals.brokenScreen.material) {
         decals.brokenScreen.material.opacity = 1.0;
+        decals.brokenScreen.material.transparent = true;
+        decals.brokenScreen.material.depthTest = false;
+        decals.brokenScreen.material.depthWrite = false;
         decals.brokenScreen.material.needsUpdate = true;
       }
     }
@@ -326,7 +356,7 @@ export function toggleGameOverDecals(mesh, durationMs = 4000) {
 export function resetCockpitOverlayDecals(mesh) {
   if (!mesh) return;
   mesh.visible = true;
-  const decals = (mesh.userData && mesh.userData.decals) || null;
+  const decals = getOrInitDecals(mesh);
   if (decals) {
     (decals.laserBurns || []).forEach(d => {
       d.visible = false;
@@ -637,6 +667,10 @@ export function showGameOverCockpitCracksOverlay(mesh, durationMs = 4000) {
 }
 
 export function triggerCockpitCracksHit(weapon = null, durationMs = 280) {
+  if (weapon && typeof weapon === 'object') {
+    if (weapon._decalTriggered) return;
+    weapon._decalTriggered = true;
+  }
   let weaponType = 'laser';
   if (typeof weapon === 'string') {
     const s = weapon.toLowerCase();
@@ -1536,14 +1570,20 @@ export class StageObjectPool {
     if (!camera && typeof window !== 'undefined' && window.camera) {
       camera = window.camera;
     }
+    if (camera) {
+      const existing = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
+      if (existing) {
+        getOrInitDecals(existing);
+        this.cockpitCracksMesh = existing;
+        existing.visible = true;
+        fitCockpitCracksToCamera(existing, camera);
+        return existing;
+      }
+    }
     if (!this.cockpitCracksMesh && this.cockpitCracksOverlayPool) {
       this.cockpitCracksMesh = this.cockpitCracksOverlayPool.spawn();
     }
     if (this.cockpitCracksMesh && camera) {
-      const existing = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
-      if (existing && existing !== this.cockpitCracksMesh) {
-        camera.remove(existing);
-      }
       if (this.cockpitCracksMesh.parent !== camera) {
         camera.add(this.cockpitCracksMesh);
       }

@@ -117,8 +117,8 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
             "y": 1,
             "z": 1
         },
-        "special_fx": "cockpit_cracks_red_edges",
-        "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "special_fx": "cockpit_overlay_decals",
+        "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
         "special_fx_type": "overlay"
     },
     "acquirable": []
@@ -159,8 +159,8 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
             "y": 0.5,
             "z": 1
         },
-        "weapon_special_fx": "cockpit_cracks_red_edges",
-        "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "weapon_special_fx": "cockpit_overlay_decals",
+        "weapon_special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
         "weapon_special_fx_type": "overlay",
         "fire_rate": 2,
         "fire_rate_seconds": 2,
@@ -195,8 +195,8 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
                 "damage": 5,
                 "speed": 450,
                 "color": "#00f0ff",
-                "special_fx": "cockpit_cracks_red_edges",
-                "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                "special_fx": "cockpit_overlay_decals",
+                "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
                 "special_fx_type": "overlay",
                 "is_enabled": 1
             }
@@ -251,8 +251,8 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
             "y": 1,
             "z": 1
         },
-        "weapon_special_fx": "cockpit_cracks_red_edges",
-        "weapon_special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+        "weapon_special_fx": "cockpit_overlay_decals",
+        "weapon_special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
         "weapon_special_fx_type": "overlay",
         "fire_rate": 2.5,
         "fire_rate_seconds": 2.5,
@@ -287,8 +287,8 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
                 "damage": 10,
                 "speed": 550,
                 "color": "#38bdf8",
-                "special_fx": "cockpit_cracks_red_edges",
-                "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
+                "special_fx": "cockpit_overlay_decals",
+                "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
                 "special_fx_type": "overlay",
                 "is_enabled": 1
             }
@@ -363,4 +363,4 @@ export function createStagePool(scene, stageConfig = {}, options = {}) {
 }
 
 export default createStagePool;
-export { MeshPool };
+export { MeshPool, StageObjectPool };

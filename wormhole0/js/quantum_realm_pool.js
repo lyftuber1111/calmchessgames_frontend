@@ -213,45 +213,8 @@ export class QuantumRealmObjectPool extends StageObjectPool {
     console.log(`[QuantumRealmObjectPool] Pre-allocated graphics object pool for Stage 4: Quantum Realm`);
   }
 
-    async initCockpitCracksPool() {
-    try {
-      const glbUrl = (this.stageConfig && (
-        (this.stageConfig.cockpit_overlay_object && (this.stageConfig.cockpit_overlay_object.model_3d_url || this.stageConfig.cockpit_overlay_object.model_url || this.stageConfig.cockpit_overlay_object.url))
-        || (this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
-        || this.stageConfig.cockpit_overlay_asset
-        || (typeof this.stageConfig.cockpit_overlay_object === 'string' && this.stageConfig.cockpit_overlay_object)
-        || this.stageConfig.cockpit_cracks_asset
-      ))
-      || STAGE_COCKPIT_CRACKS_ASSET_URL
-      || STAGE_COCKPIT_CRACKS_GLB_URL
-      || COCKPIT_CRACKS_GLB_URL
-      || 'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb';
-
-      const loadFn = typeof loadCockpitCracksAsset === 'function' ? loadCockpitCracksAsset : loadCockpitCracksGlbAsset;
-      const loadedMesh = await loadFn(glbUrl);
-      if (loadedMesh) {
-        setupCockpitCracksHierarchy(loadedMesh);
-        this.cockpitCracksMesh = loadedMesh;
-        this.cockpitCracksOverlayPool = new MeshPool(
-          this.scene,
-          null,
-          null,
-          1,
-          () => {
-            const clone = loadedMesh.clone(true);
-            setupCockpitCracksHierarchy(clone);
-            return clone;
-          }
-        );
-        console.log(`[QuantumRealmObjectPool] Pre-allocated Cockpit Overlay pool from: ${glbUrl}`);
-        const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
-        if (cam) {
-          this.getCockpitCracksOverlay(cam);
-        }
-      }
-    } catch (err) {
-      console.warn('[QuantumRealmObjectPool] Cockpit overlay pooling warning:', err);
-    }
+  async initCockpitCracksPool() {
+    return super.initCockpitCracksPool();
   }
 }
 

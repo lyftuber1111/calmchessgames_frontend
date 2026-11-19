@@ -244,77 +244,102 @@ export const stageEvents = [
     "Quantum Conduit Realignment & Safe Extraction"
 ];
 
-export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
-  if (!enemy || !enemy.mesh || !activeEnemyBolts || !scene) return false;
+export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
+  if (!enemyObj || !enemyObj.mesh) return false;
+  if (enemyObj.mesh.userData && (enemyObj.mesh.userData.inPool || enemyObj.mesh.userData.isActive === false || enemyObj.mesh.userData.weaponsActive === false)) return false;
 
-  const enemyBolts = activeEnemyBolts();
+  const isContextObj = context && typeof context === 'object' && !context.isVector3;
+  const scene = isContextObj ? context.scene : (typeof window !== 'undefined' ? window.scene : null);
+  const camera = isContextObj ? context.camera : (typeof window !== 'undefined' ? window.camera : null);
+  const state = isContextObj ? context.state : (typeof window !== 'undefined' ? window.state : null);
+  const cameraRig = isContextObj ? context.cameraRig : null;
+  const audioMgr = isContextObj ? context.audioMgr : null;
+  const enemyBolts = isContextObj ? context.enemyBolts : (typeof weaponOverride === 'function' ? weaponOverride() : null);
+
+  if (!scene || !camera || !enemyBolts) return false;
   if (enemyBolts.length > 80) return false;
 
-  const primaryW = (enemy.weapons && enemy.weapons[0]) || {};
-  const wScale = Number(enemy.weapon_scale ?? primaryW.scale ?? 1.0);
-  const wScaleX = Number(enemy.weapon_scale_x ?? primaryW.scale_x ?? 1.0);
-  const wScaleY = Number(enemy.weapon_scale_y ?? primaryW.scale_y ?? 1.0);
-  const wScaleZ = Number(enemy.weapon_scale_z ?? primaryW.scale_z ?? 1.0);
-  const wSizeX = Number(enemy.weapon_size_x ?? primaryW.size_x ?? (primaryW.dimensions && primaryW.dimensions.x) ?? 1.0);
-  const wSizeY = Number(enemy.weapon_size_y ?? primaryW.size_y ?? (primaryW.dimensions && primaryW.dimensions.y) ?? 1.0);
-  const wSizeZ = Number(enemy.weapon_size_z ?? primaryW.size_z ?? (primaryW.dimensions && primaryW.dimensions.z) ?? 1.0);
+  const playerPos = (isContextObj && context.playerPos)
+    ? context.playerPos
+    : (context && context.isVector3)
+      ? context
+      : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : camera.position));
 
-  const wSpecialFx = primaryW.special_fx || enemy.weapon_special_fx || 'cockpit_overlay_decals';
-  const wSpecialFxFile = primaryW.special_fx_file || enemy.weapon_special_fx_file || 'scene_images/screen_decals_spider_web_overlay_4.glb';
-  const wSpecialFxType = primaryW.special_fx_type || enemy.weapon_special_fx_type || 'overlay';
-  const wColor = enemy.weaponColor || enemy.weapon_color || primaryW.color || '#f43f5e';
-  const wName = primaryW.name || enemy.weapon_name || 'Enemy Laser';
-  const wId = primaryW.id || enemy.weapon_id || 'enemy_laser';
+  const w = (weaponOverride && typeof weaponOverride === 'object')
+    ? weaponOverride
+    : (enemyObj.weapons && enemyObj.weapons[0]) || (enemyObj.config && enemyObj.config.weapons && enemyObj.config.weapons[0]) || null;
+  const cfg = enemyObj.config || enemyObj || {};
+  const wName = (w && w.name) || cfg.weapon_name || 'Plasma Pulse';
+  const wType = (w && w.type) ? w.type.toLowerCase() : ((/missile|torpedo|rocket/i.test(wName)) ? 'missile' : 'beam');
+  const isMissile = wType === 'missile';
+  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#f43f5e';
+  const boltColorHex = parseInt(String(rawColor).replace('#', '0x'), 16) || 0xff0055;
+  const wDamage = (w && w.damage !== undefined) ? parseInt(w.damage) : (enemyObj.weaponDmg || cfg.weapon_damage || 6);
+  const wSpeedRaw = (w && w.speed !== undefined) ? parseInt(w.speed) : (enemyObj.weaponSpeed || cfg.weapon_speed || 480);
+  const boltSpeed = Math.max(45, Math.min(180, wSpeedRaw * (isMissile ? 0.16 : 0.24)));
+  const wMount = (w && w.mount) || 'nose_cannon';
+
+  const wScale = Number((w && w.scale) ?? cfg.weapon_scale ?? 1.0);
+  const wScaleX = Number((w && w.scale_x) ?? cfg.weapon_scale_x ?? 1.0);
+  const wScaleY = Number((w && w.scale_y) ?? cfg.weapon_scale_y ?? 1.0);
+  const wScaleZ = Number((w && w.scale_z) ?? cfg.weapon_scale_z ?? 1.0);
+  const wSizeX = Number((w && (w.size_x ?? (w.dimensions && w.dimensions.x))) ?? cfg.weapon_size_x ?? 1.0);
+  const wSizeY = Number((w && (w.size_y ?? (w.dimensions && w.dimensions.y))) ?? cfg.weapon_size_y ?? 1.0);
+  const wSizeZ = Number((w && (w.size_z ?? (w.dimensions && w.dimensions.z))) ?? cfg.weapon_size_z ?? 1.0);
+  const wSpecialFx = (w && w.special_fx) || cfg.weapon_special_fx || 'cockpit_overlay_decals';
+  const wSpecialFxFile = (w && w.special_fx_file) || cfg.weapon_special_fx_file || 'scene_images/screen_decals_spider_web_overlay_4.glb';
+  const wSpecialFxType = (w && w.special_fx_type) || cfg.weapon_special_fx_type || 'overlay';
+  const wId = (w && w.id) || (wName ? 'ew_' + wName.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'ew_primary');
+
+  const spawnOrigin = enemyObj.mesh.position.clone();
+  if (wMount === 'dual_wingtip') {
+    enemyObj._wingSide = (enemyObj._wingSide === 1) ? -1 : 1;
+    spawnOrigin.x += enemyObj._wingSide * 1.3 * (enemyObj.baseScale || 1.0);
+  } else if (wMount === 'turret_top') {
+    spawnOrigin.y += 0.9 * (enemyObj.baseScale || 1.0);
+  } else if (wMount === 'under_belly') {
+    spawnOrigin.y -= 0.9 * (enemyObj.baseScale || 1.0);
+  }
+
+  const targetPoint = new THREE.Vector3(
+    playerPos.x + (Math.random() - 0.5) * (isMissile ? 2.2 : 3.5),
+    playerPos.y + (Math.random() - 0.5) * (isMissile ? 2.2 : 3.5),
+    playerPos.z
+  );
+  const direction = new THREE.Vector3().subVectors(targetPoint, spawnOrigin).normalize();
+  const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
 
   let mesh = null;
   let fromPool = false;
-  let geometryList = [];
-  let materialList = [];
 
-  const isMissile = (primaryW.type === 'missile' || enemy.weaponType === 'missile' || (wName && /missile|torpedo|disruptor|rocket/i.test(wName)));
-  const target = (playerPos && playerPos.isVector3) ? playerPos : new THREE.Vector3(0, 0, 220);
-  const direction = new THREE.Vector3().subVectors(target, enemy.mesh.position).normalize();
-  const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), direction);
-
-  if (window.stageObjectPool && typeof window.stageObjectPool.spawnEnemyWeapon === 'function') {
-    mesh = window.stageObjectPool.spawnEnemyWeapon(primaryW, enemy, enemy.mesh.position, boltQuat, isMissile ? 'missile' : 'beam');
+  if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.spawnEnemyWeapon === 'function') {
+    mesh = window.stageObjectPool.spawnEnemyWeapon(w || { id: wId, name: wName, type: wType, color: rawColor }, cfg, spawnOrigin, boltQuat, isMissile ? 'missile' : 'beam');
     if (mesh) fromPool = true;
   }
 
   if (!mesh) {
-    const boltGeom = new THREE.CylinderGeometry(0.08 * wSizeX, 0.08 * wSizeY, 1.6 * wSizeZ, 6);
-    boltGeom.rotateX(Math.PI / 2);
-    const boltMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color(wColor),
-      wireframe: false
-    });
-
-    mesh = new THREE.Mesh(boltGeom, boltMat);
+    const geom = new THREE.CylinderGeometry(0.14 * wSizeX, 0.22 * wSizeY, 5.5 * wSizeZ, 6);
+    geom.rotateX(Math.PI / 2);
+    const mat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.95 });
+    mesh = new THREE.Mesh(geom, mat);
     mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
-    mesh.position.copy(enemy.mesh.position);
+    mesh.position.copy(spawnOrigin);
     mesh.quaternion.copy(boltQuat);
-
-    geometryList = [boltGeom];
-    materialList = [boltMat];
     scene.add(mesh);
   } else {
-    mesh.position.copy(enemy.mesh.position);
+    mesh.position.copy(spawnOrigin);
     mesh.quaternion.copy(boltQuat);
   }
-  const boltSpeed = enemy.weaponSpeed || enemy.weapon_speed || 420;
-  const boltDamage = enemy.weaponDamage || enemy.weapon_damage || 5;
 
   enemyBolts.push({
     mesh,
     fromPool,
-    geometryList,
-    materialList,
     direction,
     speed: boltSpeed,
-    damage: boltDamage,
+    damage: wDamage,
     weaponId: wId,
     weaponName: wName,
-    weaponColor: wColor,
+    weaponColor: rawColor,
     specialFx: wSpecialFx,
     specialFxFile: wSpecialFxFile,
     specialFxType: wSpecialFxType,
@@ -329,37 +354,352 @@ export function fireEnemyWeapon(enemy, playerPos, activeEnemyBolts, scene) {
     type: isMissile ? 'missile' : 'beam',
     spiralTime: Math.random() * Math.PI * 2,
     spawnTime: performance.now(),
-    lifetime: 4.8
+    lifetime: isMissile ? 7.5 : 4.8
   });
+
+  if (audioMgr && audioMgr.isInitialized && typeof audioMgr.playLaserBolt === 'function') {
+    try { audioMgr.playLaserBolt(); } catch (e) {}
+  }
+  return true;
+}
+
+export function updateEnemyMovement(e, delta, context) {
+  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) return false;
+  const isContextObj = context && typeof context === 'object' && !context.isVector3;
+  const now = (isContextObj && context.now) || performance.now();
+  const playerPos = (isContextObj && context.playerPos)
+    ? context.playerPos
+    : (context && context.isVector3)
+      ? context
+      : { x: 0, y: 0, z: 220 };
+  const laserBolts = (isContextObj && context.laserBolts) || [];
+  const activeEnemies = (isContextObj && context.activeEnemies) || [];
+  const enemyIndex = (isContextObj && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
+  const distToPlayer = e.mesh.position.distanceTo(playerPos);
+
+  const dist10k = 10000 / 420;
+  const dist5k = 5000 / 420;
+  const targetZ10k = playerPos.z - dist10k;
+  const targetZ5k = playerPos.z - dist5k;
+  const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
+  const baseScale = e.baseScale || 1.3;
+  const basePitchDown = 0.22;
+
+  if (!e.maneuverState) {
+    e.maneuverState = (e.phase === 'RUSH_OUT') ? 'RUSH_OUT' : 'CRUISE_10K';
+    e.levelPitchProgress = 0.0;
+    e.isLevel = false;
+    e.hasFiredThisLevel = false;
+    e.nextLevelTime = now + 1500 + Math.random() * 3500;
+  }
+
+  if (e.phase === 'RUSH_OUT' || e.maneuverState === 'RUSH_OUT') {
+    e.mesh.position.z += (e.speed || 45) * delta;
+    e.mesh.position.x += (playerPos.x + (e.targetScatterX || 0) * 0.25 - e.mesh.position.x) * delta * 0.55;
+    e.mesh.position.y += (playerPos.y + (e.targetScatterY || 0) * 0.25 - e.mesh.position.y) * delta * 0.55;
+
+    const totalDist = Math.max(10, targetZ10k - spawnZ);
+    const distTraveled = e.mesh.position.z - spawnZ;
+    const rushProgress = THREE.MathUtils.clamp(distTraveled / totalDist, 0.0, 1.0);
+    const curScale = THREE.MathUtils.lerp(0.12, baseScale, rushProgress);
+    e.mesh.scale.set(curScale, curScale, curScale);
+
+    const rushDx = playerPos.x - e.mesh.position.x;
+    const rushDy = playerPos.y - e.mesh.position.y;
+    const rushDz = Math.max(5.0, playerPos.z - e.mesh.position.z);
+    const rushLookYaw = THREE.MathUtils.clamp(Math.atan2(rushDx, rushDz), -0.35, 0.35);
+    const rushLookPitch = THREE.MathUtils.clamp(-Math.atan2(rushDy, rushDz), -0.20, 0.20);
+    e.levelPitchProgress = 0.0;
+    e.isLevel = false;
+    e.mesh.rotation.set(basePitchDown + rushLookPitch, rushLookYaw, 0, 'YXZ');
+
+    if (e.mesh.position.z >= targetZ10k || distToPlayer <= dist10k) {
+      e.mesh.position.z = targetZ10k;
+      e.phase = 'SCATTER_AND_EVADE';
+      e.maneuverState = 'CRUISE_10K';
+      e.stoppedTime = now;
+      e.nextLevelTime = now + 1500 + Math.random() * 3500;
+    }
+    return true;
+  }
+
+  const grid = (isContextObj && context.snapGrid) || (typeof window !== 'undefined' && window.snapGrid);
+  const cols = (grid && grid.cols) ? grid.cols : 15;
+  const rows = (grid && grid.rows) ? grid.rows : 7;
+  const cellW = 48.8 / cols;
+  const cellH = 27.5 / rows;
+
+  if (now > (e.scatterRetargetTime || 0)) {
+    e.scatterRetargetTime = now + 4000 + Math.random() * 4000;
+    const maxCol = Math.max(2, Math.floor(cols / 2) - 1);
+    const maxRow = Math.max(1, Math.floor(rows / 2) - 1);
+    const signX = Math.random() > 0.5 ? 1 : -1;
+    const colSlot = signX * (1 + Math.floor(Math.random() * maxCol));
+    const rowSlot = Math.floor((Math.random() * 2 - 1) * maxRow);
+    e.targetScatterX = colSlot * cellW;
+    e.targetScatterY = rowSlot * cellH;
+  }
+
+  const screenTargetX = playerPos.x + (e.targetScatterX || 0);
+  const screenTargetY = playerPos.y + (e.targetScatterY || 0);
+  e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
+  e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
+
+  const t = (now - (e.stoppedTime || now)) * 0.001;
+  const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0);
+  const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.4);
+  const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.6);
+  e.mesh.position.x += evaVx * delta;
+  e.mesh.position.y += evaVy * delta;
+  e.mesh.position.z += evaVz * delta;
+
+  if (now >= (e.nextJukeTime || 0)) {
+    e.nextJukeTime = now + 1400 + Math.random() * 2000;
+    e.jukeEndTime = now + 350 + Math.random() * 350;
+    if (e.jukeVelocity && typeof e.jukeVelocity.set === 'function') {
+      e.jukeVelocity.set(
+        (Math.random() - 0.5) * 30,
+        (Math.random() - 0.5) * 22,
+        (Math.random() - 0.5) * 6
+      );
+    }
+  }
+  if (e.jukeVelocity) {
+    if (now < e.jukeEndTime) {
+      e.mesh.position.addScaledVector(e.jukeVelocity, delta);
+    } else {
+      e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
+    }
+  }
+
+  for (let li = 0; li < laserBolts.length; li++) {
+    const lbolt = laserBolts[li];
+    if (!lbolt || !lbolt.mesh) continue;
+    const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
+    if (ldist < 7.2) {
+      const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
+      dodgeDir.z = 0;
+      if (dodgeDir.lengthSq() > 0.001) {
+        dodgeDir.normalize();
+        e.mesh.position.addScaledVector(dodgeDir, 20.0 * delta);
+      }
+      break;
+    }
+  }
+
+  switch (e.maneuverState) {
+    case 'CRUISE_10K': {
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 0) - delta * 3.0);
+      e.isLevel = false;
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+      if (now >= (e.nextLevelTime || 0)) {
+        e.maneuverState = 'LEVELING_OFF';
+        e.hasFiredThisLevel = false;
+      }
+      break;
+    }
+    case 'LEVELING_OFF': {
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 2.8);
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+      if (e.levelPitchProgress >= 0.96) {
+        e.levelPitchProgress = 1.0;
+        e.isLevel = true;
+        e.maneuverState = 'LEVEL_FIRING';
+        e.levelFireEndTime = now + 600;
+        if (!e.hasFiredThisLevel) {
+          e.hasFiredThisLevel = true;
+          fireEnemyWeapon(e, context);
+        }
+      }
+      break;
+    }
+    case 'LEVEL_FIRING': {
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = 1.0;
+      e.isLevel = true;
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+      if (now >= (e.levelFireEndTime || 0)) {
+        e.isLevel = false;
+        e.maneuverState = 'TILTING_FORWARD';
+      }
+      break;
+    }
+    case 'TILTING_FORWARD': {
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 2.8);
+      e.isLevel = false;
+      e.mesh.scale.set(baseScale, baseScale, baseScale);
+      if (e.levelPitchProgress <= 0.04) {
+        e.levelPitchProgress = 0.0;
+        e.maneuverState = 'ADVANCE_5K';
+      }
+      break;
+    }
+    case 'ADVANCE_5K': {
+      e.levelPitchProgress = 0.0;
+      e.isLevel = false;
+      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      const advanceProgress = THREE.MathUtils.clamp((e.mesh.position.z - targetZ10k) / (targetZ5k - targetZ10k), 0.0, 1.0);
+      const curScale = baseScale * (1.0 + 0.02 * advanceProgress);
+      e.mesh.scale.set(curScale, curScale, curScale);
+      if (advanceProgress >= 0.98 || Math.abs(targetZ5k - e.mesh.position.z) < 0.2) {
+        e.mesh.position.z = targetZ5k;
+        e.maneuverState = 'LEVELING_OFF_5K';
+        e.hasFiredThisLevel = false;
+      }
+      break;
+    }
+    case 'LEVELING_OFF_5K': {
+      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 3.0);
+      const curScale = baseScale * 1.02;
+      e.mesh.scale.set(curScale, curScale, curScale);
+      if (e.levelPitchProgress >= 0.96) {
+        e.levelPitchProgress = 1.0;
+        e.isLevel = true;
+        e.maneuverState = 'LEVEL_FIRING_5K';
+        e.hold5kEndTime = now + 2400;
+        if (!e.hasFiredThisLevel) {
+          e.hasFiredThisLevel = true;
+          fireEnemyWeapon(e, context);
+        }
+      }
+      break;
+    }
+    case 'LEVEL_FIRING_5K':
+    case 'HOLD_5K': {
+      e.levelPitchProgress = 1.0;
+      e.isLevel = true;
+      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      const curScale = baseScale * 1.02;
+      e.mesh.scale.set(curScale, curScale, curScale);
+      if (now >= (e.hold5kEndTime || 0)) {
+        e.isLevel = false;
+        e.maneuverState = 'TILTING_FORWARD_5K';
+      }
+      break;
+    }
+    case 'TILTING_FORWARD_5K': {
+      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 3.0);
+      e.isLevel = false;
+      const curScale = baseScale * 1.02;
+      e.mesh.scale.set(curScale, curScale, curScale);
+      if (e.levelPitchProgress <= 0.04) {
+        e.levelPitchProgress = 0.0;
+        e.maneuverState = 'RETREAT_10K';
+      }
+      break;
+    }
+    case 'RETREAT_10K': {
+      e.levelPitchProgress = 0.0;
+      e.isLevel = false;
+      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 2.8;
+      const retreatProgress = THREE.MathUtils.clamp((targetZ5k - e.mesh.position.z) / (targetZ5k - targetZ10k), 0.0, 1.0);
+      const curScale = baseScale * (1.02 - 0.02 * retreatProgress);
+      e.mesh.scale.set(curScale, curScale, curScale);
+      if (retreatProgress >= 0.98 || Math.abs(targetZ10k - e.mesh.position.z) < 0.2) {
+        e.mesh.position.z = targetZ10k;
+        e.mesh.scale.set(baseScale, baseScale, baseScale);
+        e.maneuverState = 'CRUISE_10K';
+        e.nextLevelTime = now + 2500 + Math.random() * 4500;
+      }
+      break;
+    }
+    default: {
+      e.maneuverState = 'CRUISE_10K';
+      break;
+    }
+  }
+
+  const dx = playerPos.x - e.mesh.position.x;
+  const dy = playerPos.y - e.mesh.position.y;
+  const dz = Math.max(5.0, playerPos.z - e.mesh.position.z);
+  const rawLookYaw = Math.atan2(dx, dz);
+  const rawLookPitch = -Math.atan2(dy, dz);
+  const gridYawStep = cellW / dist10k;
+  const gridPitchStep = cellH / dist10k;
+  const snappedYaw = Math.round(rawLookYaw / gridYawStep) * gridYawStep;
+  const snappedPitch = Math.round(rawLookPitch / gridPitchStep) * gridPitchStep;
+  const lookYaw = THREE.MathUtils.clamp(THREE.MathUtils.lerp(rawLookYaw, snappedYaw, 0.45), -0.45, 0.45);
+  const lookPitch = THREE.MathUtils.clamp(THREE.MathUtils.lerp(rawLookPitch, snappedPitch, 0.45), -0.28, 0.28);
+
+  const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
+  const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
+  const netVx = (screenTargetX - e.mesh.position.x) * 1.1 + jukeVx + evaVx;
+  const netVy = (screenTargetY - e.mesh.position.y) * 1.1 + jukeVy + evaVy;
+  const roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65);
+  const yaw = lookYaw + THREE.MathUtils.clamp(-netVx * 0.02, -0.22, 0.22);
+  const effectiveBasePitch = basePitchDown * (1.0 - (e.levelPitchProgress || 0));
+  const pitch = effectiveBasePitch + lookPitch + THREE.MathUtils.clamp(netVy * 0.035, -0.18, 0.18);
+  e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
+
+  if (e.mesh.userData && e.mesh.userData.spinRing) {
+    e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
+  }
+
+  for (let j = 0; j < activeEnemies.length; j++) {
+    if (j === enemyIndex) continue;
+    const other = activeEnemies[j];
+    if (!other || !other.mesh) continue;
+    const sepVec = new THREE.Vector3().subVectors(e.mesh.position, other.mesh.position);
+    const sepDist = sepVec.length();
+    const otherScale = (other.mesh.scale && typeof other.mesh.scale.x === 'number') ? other.mesh.scale.x : 1.0;
+    const curScaleX = (e.mesh.scale && typeof e.mesh.scale.x === 'number') ? e.mesh.scale.x : 1.0;
+    const minSafeSep = Math.max(5.5, (curScaleX + otherScale) * 2.8);
+    if (sepDist < minSafeSep && sepDist > 0.001) {
+      const overlapFactor = (minSafeSep - sepDist) / minSafeSep;
+      const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 20.0 * delta);
+      e.mesh.position.add(repulse);
+    }
+  }
 
   return true;
 }
 
-export function updateEnemyMovement(enemy, delta, playerPos, scene) {
-  if (!enemy || !enemy.mesh) return;
-  // Default forward intercept trajectory
-  if (typeof enemy.speed === 'number' && enemy.speed > 0) {
-    const dir = new THREE.Vector3().subVectors(playerPos, enemy.mesh.position).normalize();
-    enemy.mesh.position.addScaledVector(dir, enemy.speed * delta * 0.1);
-  }
+export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
+  const api = engineApi || (context && context.engineApi);
+  if (!api || typeof api.spawnEnemyWaveFromPool !== 'function') return [];
+
+  const waves = stageConfig.waves || [
+    { wave_number: 1, enemy_count: 5, interval_seconds: 0 },
+    { wave_number: 2, enemy_count: 10, interval_seconds: 15 }
+  ];
+  const waveCfg = waves.find(w => w.wave_number === waveNumber) || waves[waveNumber - 1] || {
+    wave_number: waveNumber,
+    enemy_count: waveNumber === 1 ? 5 : 10,
+    interval_seconds: waveNumber === 1 ? 0 : 15
+  };
+
+  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, stageConfig.enemies);
 }
 
-export function updateStageWaves(pool, activeEnemies, stageKills, scene) {
-  if (!pool) return;
-  // Waves boilerplate handler
-  if (typeof pool.getPoolStats === 'function') {
-    return pool.getPoolStats();
+export function updateStageWaves(engineApi, context = {}) {
+  const api = engineApi || (context && context.engineApi);
+  if (!api || !api.state) return;
+  const st = api.state;
+  if (!st.hasStarted || st.isPaused || st.isGameOver || st.isHyperWarping) return;
+
+  const now = context.now || performance.now();
+  const activeEnemies = context.activeEnemies || (typeof api.getActiveEnemies === 'function' ? api.getActiveEnemies() : []);
+  const totalWaves = stageConfig.total_waves || 2;
+  const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
+
+  if (st.currentWave === 0) {
+    pullEnemyWave(1, api, context);
+  } else if (st.currentWave === 1 && totalWaves >= 2) {
+    const waveElapsed = now - (st.waveStartTime || 0);
+    const wave1Remaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === 1).length;
+    if (waveElapsed >= waveIntervalMs || (wave1Remaining === 0 && waveElapsed >= 4500)) {
+      pullEnemyWave(2, api, context);
+    }
   }
 }
-
 
 // =========================================================================
 // COCKPIT OVERLAY & IMPACT DECALS MANAGEMENT
-// Model: scene_images/screen_decals_spider_web_overlay_4.glb
-// Full-screen overlay dynamically scaled via camera FOV for all device viewports.
-// Toggleable decals: burn 01-08 for laser burns, strike 01-08 for missile strikes,
-// BrokenSpiderWeb Core (on at 0% shield) and BrokenSpiderWeb Screen (on at 0% health
-// for 4 seconds before the game over modal displays). Loaded via stage object pool.
 // =========================================================================
 
 let activeCockpitCracksMesh = null;
@@ -382,19 +722,24 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
   if (!camera) {
     camera = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
   }
-  if (!scene) {
-    scene = (typeof window !== 'undefined' && window.scene) ? window.scene : null;
+  if (!pool && typeof window !== 'undefined' && window.stageObjectPool) {
+    pool = window.stageObjectPool;
   }
 
-  if (pool && typeof pool.getCockpitCracksOverlay === 'function') {
+  if (pool) {
     activeCockpitCracksPool = pool;
-    activeCockpitCracksMesh = pool.getCockpitCracksOverlay(camera);
-    if (activeCockpitCracksMesh) {
-      if (camera && activeCockpitCracksMesh.parent !== camera) {
-        camera.add(activeCockpitCracksMesh);
+    if (pool.cockpitOverlayReadyPromise) {
+      try { await pool.cockpitOverlayReadyPromise; } catch (_) {}
+    }
+    if (typeof pool.getCockpitCracksOverlay === 'function') {
+      activeCockpitCracksMesh = pool.getCockpitCracksOverlay(camera);
+      if (activeCockpitCracksMesh) {
+        if (camera && activeCockpitCracksMesh.parent !== camera) {
+          camera.add(activeCockpitCracksMesh);
+        }
+        fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
+        return activeCockpitCracksMesh;
       }
-      fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
-      return activeCockpitCracksMesh;
     }
   }
 
@@ -405,45 +750,6 @@ export async function setupCockpitCracksOverlay(camera, pool = null, scene = nul
       fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
       return activeCockpitCracksMesh;
     }
-  }
-
-  try {
-    const assetUrl = (stageConfig.cockpit_overlay_object && (stageConfig.cockpit_overlay_object.model_3d_url || stageConfig.cockpit_overlay_object.model_url || stageConfig.cockpit_overlay_object.url))
-      || stageConfig.cockpit_overlay_asset
-      || (stageConfig.cockpit_overlay && (stageConfig.cockpit_overlay.model_3d_url || stageConfig.cockpit_overlay.model_url))
-      || 'scene_images/screen_decals_spider_web_overlay_4.glb'
-      || (typeof STAGE_COCKPIT_CRACKS_ASSET_URL !== 'undefined' ? STAGE_COCKPIT_CRACKS_ASSET_URL : '')
-      || (typeof COCKPIT_CRACKS_GLB_URL !== 'undefined' ? COCKPIT_CRACKS_GLB_URL : '')
-      || 'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb';
-
-    const loadFn = typeof loadCockpitCracksAsset === 'function' ? loadCockpitCracksAsset : loadCockpitCracksGlbAsset;
-    const loadedMesh = await loadFn(assetUrl);
-    if (loadedMesh) {
-      setupCockpitCracksHierarchy(loadedMesh);
-
-      activeCockpitCracksPool = new MeshPool(
-        scene,
-        null,
-        null,
-        1,
-        () => {
-          const clone = loadedMesh.clone(true);
-          setupCockpitCracksHierarchy(clone);
-          return clone;
-        }
-      );
-
-      activeCockpitCracksMesh = activeCockpitCracksPool.spawn();
-      setupCockpitCracksHierarchy(activeCockpitCracksMesh);
-
-      if (camera) {
-        camera.add(activeCockpitCracksMesh);
-        fitCockpitCracksToCamera(activeCockpitCracksMesh, camera);
-      }
-      console.log(`[Cockpit Overlay] Cockpit screen overlay loaded with pool and mounted across cockpit view`);
-    }
-  } catch (err) {
-    console.warn(`[Cockpit Overlay] Error setting up cockpit overlay:`, err);
   }
 
   return activeCockpitCracksMesh;
@@ -610,8 +916,14 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setDeviceControls === 'function') {
     engineApi.setDeviceControls(stageConfig.controls);
   }
+  if (typeof engineApi.setEnemyMovementHandler === 'function') {
+    engineApi.setEnemyMovementHandler(updateEnemyMovement);
+  }
   if (typeof engineApi.setEnemyWeaponHandler === 'function') {
     engineApi.setEnemyWeaponHandler(fireEnemyWeapon);
+  }
+  if (typeof engineApi.setStageWaveHandler === 'function') {
+    engineApi.setStageWaveHandler(updateStageWaves);
   }
   if (typeof engineApi.showToast === 'function') {
     engineApi.showToast('🚀 STAGE 4: QUANTUM REALM [VR] LOADED');

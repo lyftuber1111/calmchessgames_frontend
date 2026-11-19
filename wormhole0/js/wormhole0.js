@@ -73,6 +73,13 @@ function normalizeAssetUrl(url) {
     url = url.substring(2);
   }
 
+  // Strip leading /wormhole0/ or wormhole0/ so relative paths resolve to a single canonical cache key
+  if (url.startsWith('/wormhole0/')) {
+    url = url.substring(11);
+  } else if (url.startsWith('wormhole0/')) {
+    url = url.substring(10);
+  }
+
   // Handle known models and redirect to active device directory
   if (url.includes('recon_drone_2.8m.glb')) {
     const dev = (typeof currentActiveDeviceType !== 'undefined' && currentActiveDeviceType) ? currentActiveDeviceType : 'desktop';
@@ -81,6 +88,9 @@ function normalizeAssetUrl(url) {
   if (url.includes('drone_phase_interceptor_3.glb')) {
     const dev = (typeof currentActiveDeviceType !== 'undefined' && currentActiveDeviceType) ? currentActiveDeviceType : 'desktop';
     return `${dev}/warp_origin_images/drone_phase_interceptor_3.glb`;
+  }
+  if (url.includes('screen_decals_spider_web_overlay_4.glb')) {
+    return 'scene_images/screen_decals_spider_web_overlay_4.glb';
   }
 
   // If path starts with meshy_test_0/ without leading slash, add leading slash so it resolves from domain root
@@ -91,14 +101,6 @@ function normalizeAssetUrl(url) {
     return url;
   }
 
-  // If path starts with /wormhole0/, return as-is
-  if (url.startsWith('/wormhole0/')) {
-    return url;
-  }
-  // If path starts with wormhole0/ without slash, make it /wormhole0/...
-  if (url.startsWith('wormhole0/')) {
-    return '/' + url;
-  }
   // If path starts with / (other root path), return as-is
   if (url.startsWith('/')) {
     return url;
@@ -154,31 +156,23 @@ if (typeof window !== 'undefined') {
 
 function cloneAssetModel(source) {
   const cloned = source.clone(true);
-  cloned.traverse((child) => {
-    if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
-      if (child.material) {
-        const mats = Array.isArray(child.material) ? child.material : [child.material];
-        mats.forEach(m => {
-          if (m) {
-            m.wireframe = false;
-            m.needsUpdate = true;
-          }
-        });
-      }
-    } else if (child.isLine || child.isLineSegments) {
-      child.visible = false;
+  if (source.userData) {
+    cloned.userData = cloned.userData || {};
+    if (source.userData.boundingBoxCenter) {
+      cloned.userData.boundingBoxCenter = source.userData.boundingBoxCenter.clone();
     }
-  });
+    if (source.userData.boundingMaxDim) {
+      cloned.userData.boundingMaxDim = source.userData.boundingMaxDim;
+    }
+  }
   return cloned;
 }
 
 function setupLoadedModelHierarchy(scene) {
   scene.traverse((child) => {
     if (child.isMesh) {
-      child.castShadow = true;
-      child.receiveShadow = true;
+      child.castShadow = false;
+      child.receiveShadow = false;
       if (child.material) {
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach(m => {
@@ -190,7 +184,6 @@ function setupLoadedModelHierarchy(scene) {
               if (m.roughness > 0.8) m.roughness = 0.55;
               if (m.map) {
                 m.map.colorSpace = THREE.SRGBColorSpace;
-                m.map.needsUpdate = true;
               }
               if (m.map && (!m.emissive || (m.emissive.r === 0 && m.emissive.g === 0 && m.emissive.b === 0))) {
                 m.emissive = new THREE.Color(0x334455);
@@ -198,7 +191,6 @@ function setupLoadedModelHierarchy(scene) {
                 m.emissiveIntensity = 0.38;
               }
             }
-            m.needsUpdate = true;
           }
         });
       }
@@ -206,6 +198,15 @@ function setupLoadedModelHierarchy(scene) {
       child.visible = false;
     }
   });
+  try {
+    const box = new THREE.Box3().setFromObject(scene);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+    scene.userData = scene.userData || {};
+    scene.userData.boundingBoxCenter = center.clone();
+    scene.userData.boundingMaxDim = maxDim;
+  } catch (_) {}
 }
 
 function load3DAssetModel(rawUrl, onLoaded, onError) {
@@ -5066,6 +5067,107 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     activeStageWaveHandler = null;
 
     const api = getEngineApi();
+    const activeCfg = (mod && mod.stageConfig) ? mod.stageConfig : (mod && mod.default && mod.default.stageConfig) ? mod.default.stageConfig : null;
+
+    // -------------------------------------------------------------------------
+    // 1. PRELOAD ALL STAGE 3D MODELS (ENEMIES, WEAPONS, OVERLAY) BEFORE POOL INIT
+    // -------------------------------------------------------------------------
+    try {
+      const enemiesToPreload = (activeCfg && activeCfg.enemies) ||
+        (window.activeStageEnemies) ||
+        (STAGE_REGISTRY[stage.level] && STAGE_REGISTRY[stage.level].enemies) ||
+        [];
+      const preloadUrls = [];
+      for (const ec of enemiesToPreload) {
+        if (!ec) continue;
+        if (ec.model_3d_url) preloadUrls.push(ec.model_3d_url);
+        if (ec.weapon_model_url) preloadUrls.push(ec.weapon_model_url);
+        if (ec.weaponModelUrl) preloadUrls.push(ec.weaponModelUrl);
+        if (Array.isArray(ec.weapons)) {
+          for (const w of ec.weapons) {
+            if (w && w.model_url) preloadUrls.push(w.model_url);
+          }
+        }
+      }
+      if (stage.level === 1) {
+        preloadUrls.push(
+          `${deviceType}/warp_origin_images/drone_phase_interceptor_3.glb`,
+          `${deviceType}/warp_origin_images/recon_drone_2.8m.glb`
+        );
+      }
+      const uniquePreloadUrls = [...new Set(preloadUrls.filter(Boolean))];
+      if (uniquePreloadUrls.length > 0) {
+        console.log(`[Wormhole XR Engine] Preloading ${uniquePreloadUrls.length} custom 3D models for Stage ${stage.level}...`);
+        await Promise.all(uniquePreloadUrls.map(u => preload3DAssetModel(u)));
+        console.log(`[Wormhole XR Engine] All 3D models preloaded and cached for Stage ${stage.level}.`);
+      }
+    } catch (preloadErr) {
+      console.warn('[Wormhole XR Engine] 3D model preloading warning:', preloadErr);
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. INITIALIZE STAGE OBJECT POOL (INCLUDING FULL-SCREEN OVERLAY POOL) FIRST
+    // Guarantees full-screen overlay, enemies, and weapons are pre-allocated in
+    // the pool before mod.applyStage(api) executes.
+    // -------------------------------------------------------------------------
+    try {
+      if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
+        currentStageObjectPool.despawnAll();
+      }
+      const candidatePoolPaths = [
+        `./${stage.slug}_pool.js?t=${timestamp}`,
+        `../js/${stage.slug}_pool.js?t=${timestamp}`,
+        `../${deviceType}/${stage.slug}_pool.js?t=${timestamp}`,
+        `./${deviceType}/${stage.slug}_pool.js?t=${timestamp}`
+      ];
+      let poolMod = null;
+      for (const pPath of candidatePoolPaths) {
+        try {
+          poolMod = await import(pPath);
+          if (poolMod) {
+            console.log(`[Wormhole XR Engine] Successfully loaded stage pool from: ${pPath}`);
+            break;
+          }
+        } catch (ignore) {}
+      }
+
+      const stagePoolCfg = activeCfg || (STAGE_REGISTRY[stage.level] ? { ...STAGE_REGISTRY[stage.level], enemies: window.activeStageEnemies } : stage);
+
+      if (poolMod) {
+        const createPoolFn = poolMod.createStagePool || poolMod.default;
+        if (typeof createPoolFn === 'function') {
+          currentStageObjectPool = createPoolFn(scene, stagePoolCfg, {
+            createEnemyMeshFn: (cfg) => create3DEnemyMesh(cfg),
+            createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn),
+            createEnemyWeaponMeshFn: (wpn, cfg) => createEnemyWeaponMesh(wpn, cfg)
+          });
+        }
+      } else {
+        currentStageObjectPool = new StageObjectPool(scene, stagePoolCfg, {
+          createEnemyMeshFn: (cfg) => create3DEnemyMesh(cfg),
+          createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn),
+          createEnemyWeaponMeshFn: (wpn, cfg) => createEnemyWeaponMesh(wpn, cfg)
+        });
+      }
+
+      window.stageObjectPool = currentStageObjectPool;
+      if (currentStageObjectPool && currentStageObjectPool.cockpitOverlayReadyPromise) {
+        await currentStageObjectPool.cockpitOverlayReadyPromise;
+      }
+      if (currentStageObjectPool && camera) {
+        const pooledOverlay = currentStageObjectPool.getCockpitCracksOverlay(camera);
+        if (pooledOverlay) {
+          activeCockpitOverlayRoot = pooledOverlay;
+        }
+      }
+      console.log(`[Wormhole XR Engine] Stage object pool active for Stage ${stage.level}: ${stage.slug}`, currentStageObjectPool);
+    } catch (poolInitErr) {
+      console.warn('[Wormhole XR Engine] Stage object pool initialization warning:', poolInitErr);
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. APPLY STAGE MODULE & BIND STAGE HANDLERS
+    // -------------------------------------------------------------------------
     if (mod && typeof mod.applyStage === 'function') {
       mod.applyStage(api);
     } else if (mod && mod.default && typeof mod.default.applyStage === 'function') {
@@ -5150,7 +5252,6 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     if (typeof despawnAllActiveEnemies === 'function') {
       despawnAllActiveEnemies();
     }
-    const activeCfg = (mod && mod.stageConfig) ? mod.stageConfig : (mod && mod.default && mod.default.stageConfig) ? mod.default.stageConfig : null;
     if (activeCfg) {
       if (activeCfg.required_enemy_kills) state.stageRequiredKills = parseInt(activeCfg.required_enemy_kills) || 10;
       if (activeCfg.warp_target_distance) state.stageTargetDistance = parseInt(activeCfg.warp_target_distance) || 50000;
@@ -5166,93 +5267,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     if (typeof renderStageObjectivesUI === 'function') {
       renderStageObjectivesUI();
     }
-
-    // -------------------------------------------------------------------------
-    // PRELOAD CUSTOM 3D MODELS BEFORE POOL PRE-ALLOCATION
-    // Guarantees all GLB models are cached in memory BEFORE pool pre-allocation
-    // so every pooled instance has the actual .glb model attached immediately,
-    // avoiding network saturation, memory thrashing, blue squares, and white dots.
-    // -------------------------------------------------------------------------
-    try {
-      const enemiesToPreload = (activeCfg && activeCfg.enemies) ||
-        (window.activeStageEnemies) ||
-        (STAGE_REGISTRY[stage.level] && STAGE_REGISTRY[stage.level].enemies) ||
-        [];
-      const preloadUrls = [];
-      for (const ec of enemiesToPreload) {
-        if (ec && ec.model_3d_url) preloadUrls.push(ec.model_3d_url);
-      }
-      if (stage.level === 1) {
-        preloadUrls.push(
-          `${deviceType}/warp_origin_images/drone_phase_interceptor_3.glb`,
-          `${deviceType}/warp_origin_images/recon_drone_2.8m.glb`
-        );
-      }
-      const uniquePreloadUrls = [...new Set(preloadUrls.filter(Boolean))];
-      if (uniquePreloadUrls.length > 0) {
-        console.log(`[Wormhole XR Engine] Preloading ${uniquePreloadUrls.length} custom 3D models for Stage ${stage.level}...`);
-        await Promise.all(uniquePreloadUrls.map(u => preload3DAssetModel(u)));
-        console.log(`[Wormhole XR Engine] All 3D models preloaded and cached for Stage ${stage.level}.`);
-      }
-    } catch (preloadErr) {
-      console.warn('[Wormhole XR Engine] 3D model preloading warning:', preloadErr);
-    }
-
-    // -------------------------------------------------------------------------
-    // DYNAMIC STAGE OBJECT POOL INITIALIZATION
-    // Pre-allocates enemies and weapons graphic objects for this stage
-    // -------------------------------------------------------------------------
-    try {
-      if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
-        currentStageObjectPool.despawnAll();
-      }
-      const candidatePoolPaths = [
-        `./${stage.slug}_pool.js?t=${timestamp}`,
-        `../js/${stage.slug}_pool.js?t=${timestamp}`,
-        `../${deviceType}/${stage.slug}_pool.js?t=${timestamp}`,
-        `./${deviceType}/${stage.slug}_pool.js?t=${timestamp}`,
-        `../${stage.slug}_pool.js?t=${timestamp}`,
-        `./js/${stage.slug}_pool.js?t=${timestamp}`
-      ];
-      let poolMod = null;
-      for (const pPath of candidatePoolPaths) {
-        try {
-          poolMod = await import(pPath);
-          if (poolMod) {
-            console.log(`[Wormhole XR Engine] Successfully loaded stage pool from: ${pPath}`);
-            break;
-          }
-        } catch (ignore) {}
-      }
-
-      const stagePoolCfg = activeCfg || (STAGE_REGISTRY[stage.level] ? { ...STAGE_REGISTRY[stage.level], enemies: window.activeStageEnemies } : stage);
-
-      if (poolMod) {
-        const createPoolFn = poolMod.createStagePool || poolMod.default;
-        if (typeof createPoolFn === 'function') {
-          currentStageObjectPool = createPoolFn(scene, stagePoolCfg, {
-            createEnemyMeshFn: (cfg) => create3DEnemyMesh(cfg),
-            createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn),
-            createEnemyWeaponMeshFn: (wpn, cfg) => createEnemyWeaponMesh(wpn, cfg)
-          });
-        }
-      } else {
-        currentStageObjectPool = new StageObjectPool(scene, stagePoolCfg, {
-          createEnemyMeshFn: (cfg) => create3DEnemyMesh(cfg),
-          createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn),
-          createEnemyWeaponMeshFn: (wpn, cfg) => createEnemyWeaponMesh(wpn, cfg)
-        });
-      }
-
-      window.stageObjectPool = currentStageObjectPool;
-      if (currentStageObjectPool && camera) {
-        currentStageObjectPool.getCockpitCracksOverlay(camera);
-      }
-      ensureCockpitOverlayMounted();
-      console.log(`[Wormhole XR Engine] Stage object pool active for Stage ${stage.level}: ${stage.slug}`, currentStageObjectPool);
-    } catch (poolInitErr) {
-      console.warn('[Wormhole XR Engine] Stage object pool initialization warning:', poolInitErr);
-    }
+    ensureCockpitOverlayMounted();
 
     window.dispatchEvent(new CustomEvent('wormholeStageChanged', {
       detail: { stageLevel: currentActiveStage, stageName: stage.name, deviceType, scriptPath: scriptRelative }
@@ -5495,8 +5510,10 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
   if (typeof activeStageWaveHandler === 'function') {
     try { activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies }); } catch (e) {}
   }
-  const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-  spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+  if (state.currentWave === 0 && active3DEnemies.length === 0) {
+    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+  }
 
   // 18. Auto-close the top Telemetry & Modes panel if auto-close is enabled
   const chkAutoClose = document.getElementById('chk-auto-close-top');
@@ -7111,6 +7128,8 @@ function collectPowerupInstance(p, powerupIndex = -1) {
  * Creates a standalone player laser bolt mesh.
  * Used for fallback creation or pre-allocation inside stage object pools.
  */
+const sharedPlayerLaserCache = new Map();
+
 function createPlayerLaserMesh(activeWpn) {
   const baseScale = Number(activeWpn.scale ?? 1.0);
   const scaleX = Number(activeWpn.scale_x ?? 1.0);
@@ -7122,36 +7141,34 @@ function createPlayerLaserMesh(activeWpn) {
 
   const boltLength = (activeWpn.boltLength || 7.5) * sizeZ;
   const boltRadius = (activeWpn.boltRadius || 0.14) * Math.max(sizeX, sizeY);
-  const geometry = new THREE.CylinderGeometry(boltRadius * 0.35, boltRadius, boltLength, 8);
-  geometry.rotateX(Math.PI / 2);
-
   const rawColor = activeWpn.color || activeWpn.color_hex || '#ff2244';
   const colorHex = activeWpn.colorHex !== undefined ? activeWpn.colorHex : (parseInt(rawColor.replace('#', '0x'), 16) || 0xff2244);
+  const cacheKey = `${activeWpn.id || 'laser'}_${colorHex}_${boltRadius.toFixed(3)}_${boltLength.toFixed(3)}`;
 
-  const material = new THREE.MeshBasicMaterial({
-    color: colorHex,
-    transparent: true,
-    opacity: 0.95,
-    blending: THREE.AdditiveBlending
-  });
+  let cached = sharedPlayerLaserCache.get(cacheKey);
+  if (!cached) {
+    const geometry = new THREE.CylinderGeometry(boltRadius * 0.35, boltRadius, boltLength, 8);
+    geometry.rotateX(Math.PI / 2);
+    const material = new THREE.MeshBasicMaterial({
+      color: colorHex,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending
+    });
+    const coreGeom = new THREE.CylinderGeometry(boltRadius * 0.15, boltRadius * 0.35, boltLength * 0.92, 6);
+    coreGeom.rotateX(Math.PI / 2);
+    const coreMat = new THREE.MeshBasicMaterial({
+      color: activeWpn.id === 'blue_laser' ? 0xe0ffff : (activeWpn.id === 'tachyon_lance' ? 0xfff4d6 : 0xffffff),
+      transparent: true,
+      opacity: 0.95
+    });
+    cached = { geometry, material, coreGeom, coreMat };
+    sharedPlayerLaserCache.set(cacheKey, cached);
+  }
 
-  const mesh = new THREE.Mesh(geometry, material);
-
-  // White-hot plasma core
-  const coreGeom = new THREE.CylinderGeometry(boltRadius * 0.15, boltRadius * 0.35, boltLength * 0.92, 6);
-  coreGeom.rotateX(Math.PI / 2);
-  const coreMat = new THREE.MeshBasicMaterial({
-    color: activeWpn.id === 'blue_laser' ? 0xe0ffff : (activeWpn.id === 'tachyon_lance' ? 0xfff4d6 : 0xffffff),
-    transparent: true,
-    opacity: 0.95
-  });
-  const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+  const mesh = new THREE.Mesh(cached.geometry, cached.material);
+  const coreMesh = new THREE.Mesh(cached.coreGeom, cached.coreMat);
   mesh.add(coreMesh);
-
-  // Dynamic laser point light glow
-  const light = new THREE.PointLight(colorHex, activeWpn.bulletLightIntensity || 3.5, 35);
-  light.position.set(0, 0, 0);
-  mesh.add(light);
 
   mesh.name = 'laser_bolt';
   mesh.scale.set(baseScale * scaleX, baseScale * scaleY, baseScale * scaleZ);
@@ -9266,22 +9283,25 @@ function create3DEnemyMesh(config) {
 
     const attachLoadedModel = (loadedModel) => {
       try {
-        // Auto-center model at its bounding box center using pivot sub-group
-        const box = new THREE.Box3().setFromObject(loadedModel);
-        const center = new THREE.Vector3();
-        box.getCenter(center);
+        // Use cached bounding box center & max dimension from setupLoadedModelHierarchy (avoid repeated Box3 scans)
+        let center = loadedModel.userData && loadedModel.userData.boundingBoxCenter;
+        let maxDim = loadedModel.userData && loadedModel.userData.boundingMaxDim;
+        if (!center || !maxDim) {
+          const box = new THREE.Box3().setFromObject(loadedModel);
+          center = box.getCenter(new THREE.Vector3());
+          const size = box.getSize(new THREE.Vector3());
+          maxDim = Math.max(size.x, size.y, size.z, 0.001);
+        }
         loadedModel.position.sub(center);
 
         // Requirement: Front natively faces the player (+Z):
         const targetRotY = getCustomModelRotationY(normUrl || config.model_3d_url || config.id);
         loadedModel.rotation.y = targetRotY;
+        loadedModel.userData = loadedModel.userData || {};
         loadedModel.userData.targetRotY = targetRotY;
         group.userData.modelUrl = normUrl;
 
         // Compute target span and auto-scale (calibrated directly to admin console physical meter dimensions)
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const maxDim = Math.max(size.x, size.y, size.z, 0.001);
         const targetSpan = (userLength || (userRadius * 2.4));
         const autoScale = targetSpan / maxDim;
 
@@ -9299,39 +9319,6 @@ function create3DEnemyMesh(config) {
           }
         }
         group.userData.spinRing = null;
-
-        // Configure shadows & meshes - calibrate PBR materials for crisp appearance
-        loadedModel.traverse((child) => {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-            if (child.material) {
-              const mats = Array.isArray(child.material) ? child.material : [child.material];
-              mats.forEach(m => {
-                if (m) {
-                  m.wireframe = false;
-                  // Enhance PBR materials so .glb models render as crisp textured ships, never dark shadows
-                  if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
-                    if (m.metalness > 0.45) m.metalness = 0.25;
-                    if (m.roughness > 0.8) m.roughness = 0.55;
-                    if (m.map) {
-                      m.map.colorSpace = THREE.SRGBColorSpace;
-                      m.map.needsUpdate = true;
-                    }
-                    if (m.map && (!m.emissive || (m.emissive.r === 0 && m.emissive.g === 0 && m.emissive.b === 0))) {
-                      m.emissive = new THREE.Color(0x334455);
-                      m.emissiveMap = m.map;
-                      m.emissiveIntensity = 0.38;
-                    }
-                  }
-                  m.needsUpdate = true;
-                }
-              });
-            }
-          } else if (child.isLine || child.isLineSegments) {
-            child.visible = false;
-          }
-        });
 
         group.add(pivot);
         group.userData.loadedAsset = loadedModel;
@@ -9473,10 +9460,6 @@ function create3DEnemyMesh(config) {
     gun.position.set(0, 0, -userRadius - 0.2);
     group.add(gun);
   }
-
-  // Dynamic point light for atmospheric radiance
-  const light = new THREE.PointLight(colorHex, 2.6, 32);
-  group.add(light);
 
   group.userData.config = config;
   group.userData.dimensions = {
@@ -10081,20 +10064,24 @@ function updateEnemiesCombat(delta) {
   // Controlled by active stage .js file (controls how many waves, enemy count per wave, and how often wave happens)
   const api = getEngineApi();
   if (typeof activeStageWaveHandler === 'function') {
-    activeStageWaveHandler(api, { now, delta, activeEnemies: active3DEnemies });
-  } else {
-    // Built-in fallback wave progression
-    const waveIntervalMs = (state.waveIntervalSeconds || 15) * 1000;
-    if (state.currentWave === 0 && state.hasStarted && !state.isGameOver && !state.isPaused) {
-      const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-      spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
-    } else if (state.currentWave === 1 && state.totalWaves >= 2) {
-      const waveElapsed = now - state.waveStartTime;
-      const wave1EnemiesLeft = active3DEnemies.filter(e => e.isActive && e.waveNumber === 1).length;
-      if (waveElapsed >= waveIntervalMs || (wave1EnemiesLeft === 0 && waveElapsed >= 5000)) {
-        const wave2Cfg = (state.stageWaves && state.stageWaves[1]) || { wave_number: 2, enemy_count: 10 };
-        spawnEnemyWaveFromPool(wave2Cfg.enemy_count || 10, wave2Cfg);
-      }
+    try {
+      activeStageWaveHandler(api, { now, delta, activeEnemies: active3DEnemies });
+    } catch (waveErr) {
+      console.warn('[StageWaveHandler Error]', waveErr);
+    }
+  }
+
+  // Built-in wave progression guarantee (ensures Wave 1 & Wave 2 always spawn even if stage wave handler is a stub)
+  const waveIntervalMs = (state.waveIntervalSeconds || 15) * 1000;
+  if (state.currentWave === 0 && active3DEnemies.length === 0 && state.hasStarted && !state.isGameOver && !state.isPaused) {
+    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+  } else if (state.currentWave === 1 && state.totalWaves >= 2) {
+    const waveElapsed = now - state.waveStartTime;
+    const wave1EnemiesLeft = active3DEnemies.filter(e => e.isActive && e.waveNumber === 1).length;
+    if (waveElapsed >= waveIntervalMs || (wave1EnemiesLeft === 0 && waveElapsed >= 5000)) {
+      const wave2Cfg = (state.stageWaves && state.stageWaves[1]) || { wave_number: 2, enemy_count: 10 };
+      spawnEnemyWaveFromPool(wave2Cfg.enemy_count || 10, wave2Cfg);
     }
   }
 
@@ -10105,6 +10092,13 @@ function updateEnemiesCombat(delta) {
     if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false) {
       continue;
     }
+    if (!Number.isFinite(e.mesh.position.x) || !Number.isFinite(e.mesh.position.y) || !Number.isFinite(e.mesh.position.z)) {
+      if (e.spawnPos) e.mesh.position.copy(e.spawnPos);
+      else e.mesh.position.set(0, 0, -10);
+    }
+    const prevPosX = e.mesh.position.x;
+    const prevPosY = e.mesh.position.y;
+    const prevPosZ = e.mesh.position.z;
     const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
     // Context bundle for decoupled stage movement and weapon handlers
@@ -10149,6 +10143,11 @@ function updateEnemiesCombat(delta) {
           console.warn('[StageModule.default updateEnemyMovement Error]', err);
         }
       }
+    }
+
+    if (!Number.isFinite(e.mesh.position.x) || !Number.isFinite(e.mesh.position.y) || !Number.isFinite(e.mesh.position.z)) {
+      e.mesh.position.set(prevPosX, prevPosY, prevPosZ);
+      moved = false;
     }
 
     if (!moved) {
@@ -10376,6 +10375,8 @@ function preloadCockpitImpactOverlay() {
 }
 preloadCockpitImpactOverlay();
 
+const sharedEnemyWeaponCache = new Map();
+
 /**
  * Creates enemy weapon 3D mesh instances for pre-allocation in Stage Object Pools
  */
@@ -10393,9 +10394,6 @@ function createEnemyWeaponMesh(wpn, cfg) {
     weaponGroup.userData.isCombatGraphic = true;
     weaponGroup.userData.weaponType = 'custom_model';
 
-    const light = new THREE.PointLight(boltColorHex, 3.5, 30);
-    weaponGroup.add(light);
-
     load3DAssetModel(wpnModelUrl, (clonedMesh) => {
       if (clonedMesh) {
         weaponGroup.add(clonedMesh);
@@ -10412,21 +10410,24 @@ function createEnemyWeaponMesh(wpn, cfg) {
     missileGroup.userData.isCombatGraphic = true;
     missileGroup.userData.weaponType = 'missile';
 
-    const bodyGeom = new THREE.CylinderGeometry(0.24, 0.4, 2.8, 8);
-    bodyGeom.rotateX(Math.PI / 2);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x2a2d34, metalness: 0.8, roughness: 0.3 });
-    const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
+    const cacheKey = `missile_${boltColorHex}`;
+    let cached = sharedEnemyWeaponCache.get(cacheKey);
+    if (!cached) {
+      const bodyGeom = new THREE.CylinderGeometry(0.24, 0.4, 2.8, 8);
+      bodyGeom.rotateX(Math.PI / 2);
+      const bodyMat = new THREE.MeshBasicMaterial({ color: 0x2a2d34 });
+      const tipGeom = new THREE.ConeGeometry(0.44, 1.1, 8);
+      tipGeom.rotateX(-Math.PI / 2);
+      tipGeom.translate(0, 0, -1.9);
+      const tipMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.95 });
+      cached = { bodyGeom, bodyMat, tipGeom, tipMat };
+      sharedEnemyWeaponCache.set(cacheKey, cached);
+    }
+
+    const bodyMesh = new THREE.Mesh(cached.bodyGeom, cached.bodyMat);
     missileGroup.add(bodyMesh);
-
-    const tipGeom = new THREE.ConeGeometry(0.44, 1.1, 8);
-    tipGeom.rotateX(-Math.PI / 2);
-    tipGeom.translate(0, 0, -1.9);
-    const tipMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.95 });
-    const tipMesh = new THREE.Mesh(tipGeom, tipMat);
+    const tipMesh = new THREE.Mesh(cached.tipGeom, cached.tipMat);
     missileGroup.add(tipMesh);
-
-    const light = new THREE.PointLight(boltColorHex, 3.5, 28);
-    missileGroup.add(light);
     return missileGroup;
   }
 
@@ -10438,20 +10439,23 @@ function createEnemyWeaponMesh(wpn, cfg) {
   beamGroup.userData.isCombatGraphic = true;
   beamGroup.userData.weaponType = 'beam';
 
-  const sheathGeom = new THREE.CylinderGeometry(0.44, 0.58, 8.2, 8);
-  sheathGeom.rotateX(Math.PI / 2);
-  const sheathMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending });
-  const sheathMesh = new THREE.Mesh(sheathGeom, sheathMat);
+  const cacheKey = `beam_${boltColorHex}`;
+  let cached = sharedEnemyWeaponCache.get(cacheKey);
+  if (!cached) {
+    const sheathGeom = new THREE.CylinderGeometry(0.44, 0.58, 8.2, 8);
+    sheathGeom.rotateX(Math.PI / 2);
+    const sheathMat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.92, blending: THREE.AdditiveBlending });
+    const coreGeom = new THREE.CylinderGeometry(0.18, 0.28, 7.5, 8);
+    coreGeom.rotateX(Math.PI / 2);
+    const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.96 });
+    cached = { sheathGeom, sheathMat, coreGeom, coreMat };
+    sharedEnemyWeaponCache.set(cacheKey, cached);
+  }
+
+  const sheathMesh = new THREE.Mesh(cached.sheathGeom, cached.sheathMat);
   beamGroup.add(sheathMesh);
-
-  const coreGeom = new THREE.CylinderGeometry(0.18, 0.28, 7.5, 8);
-  coreGeom.rotateX(Math.PI / 2);
-  const coreMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.96 });
-  const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+  const coreMesh = new THREE.Mesh(cached.coreGeom, cached.coreMat);
   beamGroup.add(coreMesh);
-
-  const light = new THREE.PointLight(boltColorHex, 3.5, 32);
-  beamGroup.add(light);
   return beamGroup;
 }
 
@@ -10460,19 +10464,17 @@ const pendingCockpitOverlayCallbacks = [];
 
 /**
  * Guarantees the 3D Cockpit Screen Overlay (screen_decals_spider_web_overlay_4.glb)
- * is loaded, mounted as a child of the camera, always visible, and fitted to camera FOV.
+ * is loaded by the Stage Object Pool, mounted as a child of the camera, always visible,
+ * and fitted to camera FOV.
  * Executes onReadyCallback(overlayMesh) immediately if mounted, or as soon as loaded.
  */
 function ensureCockpitOverlayMounted(onReadyCallback = null) {
   if (!camera) return null;
 
-  let existing = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
-  if (!existing && currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh) {
-    existing = currentStageObjectPool.cockpitCracksMesh;
-    if (existing.parent !== camera) {
-      camera.add(existing);
-    }
-  }
+  let existing = (currentStageObjectPool && typeof currentStageObjectPool.getCockpitCracksOverlay === 'function')
+    ? currentStageObjectPool.getCockpitCracksOverlay(camera)
+    : (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay'));
+
   if (!existing && typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
     const ext = window.getActiveCockpitCracksOverlay();
     if (ext) {
@@ -10491,6 +10493,8 @@ function ensureCockpitOverlayMounted(onReadyCallback = null) {
     }
     existing.name = 'cockpit_overlay_object';
     existing.visible = true;
+    existing.userData = existing.userData || {};
+    existing.userData.fromPool = true;
     if (typeof fitCockpitCracksToCamera === 'function') {
       fitCockpitCracksToCamera(existing, camera);
     }
@@ -10511,55 +10515,26 @@ function ensureCockpitOverlayMounted(onReadyCallback = null) {
     return null;
   }
 
-  const stageCockpitAsset = (currentStageObjectPool && currentStageObjectPool.stageConfig && (
-    (currentStageObjectPool.stageConfig.cockpit_overlay_object && (currentStageObjectPool.stageConfig.cockpit_overlay_object.model_3d_url || currentStageObjectPool.stageConfig.cockpit_overlay_object.model_url || currentStageObjectPool.stageConfig.cockpit_overlay_object.url))
-    || currentStageObjectPool.stageConfig.cockpit_overlay_asset
-    || (currentStageObjectPool.stageConfig.cockpit_overlay && (currentStageObjectPool.stageConfig.cockpit_overlay.model_3d_url || currentStageObjectPool.stageConfig.cockpit_overlay.model_url))
-  ))
-    || (typeof window !== 'undefined' && window.activeStageConfig && (
-      (window.activeStageConfig.cockpit_overlay_object && (window.activeStageConfig.cockpit_overlay_object.model_3d_url || window.activeStageConfig.cockpit_overlay_object.model_url || window.activeStageConfig.cockpit_overlay_object.url))
-      || window.activeStageConfig.cockpit_overlay_asset
-      || (window.activeStageConfig.cockpit_overlay && (window.activeStageConfig.cockpit_overlay.model_3d_url || window.activeStageConfig.cockpit_overlay.model_url))
-    ))
-    || (typeof STAGE_REGISTRY !== 'undefined' && STAGE_REGISTRY[currentActiveStage] && STAGE_REGISTRY[currentActiveStage].cockpit_overlay_asset)
-    || 'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb';
-
-  if (typeof load3DAssetModel === 'function') {
+  // Always await the Stage Object Pool's cockpit overlay pool initialization so the full-screen overlay is loaded exclusively by the pool
+  if (currentStageObjectPool && currentStageObjectPool.cockpitOverlayReadyPromise) {
     isMountingCockpitOverlay = true;
-    load3DAssetModel(stageCockpitAsset, (loadedModel) => {
-      isMountingCockpitOverlay = false;
-      if (!camera) return;
-      let targetMesh = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
-      if (!targetMesh && loadedModel) {
-        if (typeof setupCockpitCracksHierarchy === 'function') {
-          setupCockpitCracksHierarchy(loadedModel);
-        }
-        loadedModel.name = 'cockpit_overlay_object';
-        loadedModel.visible = true;
-        camera.add(loadedModel);
-        if (typeof fitCockpitCracksToCamera === 'function') {
-          fitCockpitCracksToCamera(loadedModel, camera);
-        }
-        targetMesh = loadedModel;
-      }
-      if (targetMesh) {
-        if (!targetMesh._cockpitDecals && (!targetMesh.userData || !targetMesh.userData.decals)) {
-          if (typeof setupCockpitCracksHierarchy === 'function') {
-            setupCockpitCracksHierarchy(targetMesh);
+    currentStageObjectPool.cockpitOverlayReadyPromise
+      .then(() => {
+        isMountingCockpitOverlay = false;
+        if (!camera || !currentStageObjectPool) return;
+        const pooledMesh = currentStageObjectPool.getCockpitCracksOverlay(camera);
+        if (pooledMesh) {
+          activeCockpitOverlayRoot = pooledMesh;
+          while (pendingCockpitOverlayCallbacks.length > 0) {
+            const cb = pendingCockpitOverlayCallbacks.shift();
+            try { cb(pooledMesh); } catch (e) {}
           }
         }
-        targetMesh.visible = true;
-        if (currentStageObjectPool) {
-          currentStageObjectPool.cockpitCracksMesh = targetMesh;
-        }
-        while (pendingCockpitOverlayCallbacks.length > 0) {
-          const cb = pendingCockpitOverlayCallbacks.shift();
-          try { cb(targetMesh); } catch (e) {}
-        }
-      }
-    }, () => {
-      isMountingCockpitOverlay = false;
-    });
+      })
+      .catch(() => {
+        isMountingCockpitOverlay = false;
+      });
+    return null;
   }
 
   return null;
@@ -11573,8 +11548,10 @@ function executeMissionCountdown(isRestart = false) {
     if (typeof activeStageWaveHandler === 'function') {
       try { activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies }); } catch (e) {}
     }
-    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+    if (state.currentWave === 0 && active3DEnemies.length === 0) {
+      const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+      spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+    }
 
     // Ensure keyboard focus is restored and request crosshair capture if on desktop
     try {
@@ -12475,6 +12452,25 @@ let customEnvironmentModelGroup = null;
 function applyCustomEnvironment3DModel(rawModelUrl, activeEnv = {}) {
   if (!rawModelUrl || !scene) return;
   const modelUrl = normalizeAssetUrl(rawModelUrl);
+
+  // Guard: never mount enemy drone, weapon projectile, or cockpit overlay GLBs as the central wormhole core environment model
+  const lowerUrl = modelUrl.toLowerCase();
+  if (
+    lowerUrl.includes('recon_drone') ||
+    lowerUrl.includes('interceptor') ||
+    lowerUrl.includes('cyan_laser') ||
+    lowerUrl.includes('cockpit_cracks') ||
+    lowerUrl.includes('screen_decals')
+  ) {
+    if (customEnvironmentModelGroup) {
+      while (customEnvironmentModelGroup.children.length > 0) {
+        const c = customEnvironmentModelGroup.children[0];
+        customEnvironmentModelGroup.remove(c);
+        try { disposeMeshHierarchy(c); } catch (e) {}
+      }
+    }
+    return;
+  }
 
   if (!customEnvironmentModelGroup) {
     customEnvironmentModelGroup = new THREE.Group();

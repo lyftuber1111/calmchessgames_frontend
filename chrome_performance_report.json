@@ -1,15 +1,15 @@
 {
-  "testTimestamp": "2026-11-15T12:40:17.293Z",
+  "testTimestamp": "2026-11-19T14:00:20.699Z",
   "gameOverVerification": {
     "allEnemiesDestroyedOnGameOver": true,
     "enemyBoltsCleanedUp": true,
-    "gameOverModalVisible": true,
+    "gameOverModalVisible": false,
     "playerHealthZero": true
   },
   "garbageCollectionVerification": {
-    "preGCHeapMB": "7.56",
-    "postGCHeapMB": "5.74",
-    "memoryFreedKB": "1864.64"
+    "preGCHeapMB": "9.16",
+    "postGCHeapMB": "7.55",
+    "memoryFreedKB": "1644.90"
   },
   "restartMissionVerification": {
     "cleanRestartSucceeded": true,
@@ -26,20 +26,20 @@
     "overlaysCleanlyDismissed": true
   },
   "chromePerformanceReport": {
-    "timestamp": 530244.578662,
+    "timestamp": 880648.338475,
     "documents": 1,
     "frames": 1,
-    "jsEventListeners": 180,
-    "nodes": 3997,
-    "layoutCount": 252,
-    "recalcStyleCount": 347,
-    "layoutDurationSeconds": 0.151163,
-    "recalcStyleDurationSeconds": 0.100182,
-    "scriptDurationSeconds": 2.879693,
-    "taskDurationSeconds": 9.020387,
-    "jsHeapUsedMB": "6.73",
-    "jsHeapTotalMB": "14.70",
-    "cpuProfileSampleCount": 6500,
-    "cpuProfileNodeCount": 262
+    "jsEventListeners": 248,
+    "nodes": 7541,
+    "layoutCount": 301,
+    "recalcStyleCount": 390,
+    "layoutDurationSeconds": 0.187792,
+    "recalcStyleDurationSeconds": 0.135791,
+    "scriptDurationSeconds": 0.687729,
+    "taskDurationSeconds": 8.605,
+    "jsHeapUsedMB": "9.41",
+    "jsHeapTotalMB": "17.83",
+    "cpuProfileSampleCount": 5451,
+    "cpuProfileNodeCount": 369
   }
 }

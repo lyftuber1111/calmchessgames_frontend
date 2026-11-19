@@ -12,12 +12,50 @@ export const COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_ove
 
 let activeFlashTimer = null;
 let activeFadeRaf = null;
+let sharedCockpitOverlayTemplate = null;
+let sharedCockpitOverlayLoadPromise = null;
+
+function convertToLightweightOverlayMaterial(mat, defaultOpacity = 1.0) {
+  if (!mat) {
+    return new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: defaultOpacity,
+      depthTest: false,
+      depthWrite: false,
+      side: THREE.DoubleSide
+    });
+  }
+  const texMap = mat.map || mat.emissiveMap || null;
+  if (texMap) {
+    if ('channel' in texMap && texMap.channel < 0) texMap.channel = 0;
+    if ('colorSpace' in texMap) texMap.colorSpace = THREE.SRGBColorSpace;
+  }
+  const baseColor = texMap
+    ? new THREE.Color(0xffffff)
+    : (mat.color ? mat.color.clone() : (mat.emissive ? mat.emissive.clone() : new THREE.Color(0xffffff)));
+
+  const basicMat = new THREE.MeshBasicMaterial({
+    color: baseColor,
+    map: texMap,
+    transparent: true,
+    opacity: defaultOpacity,
+    depthTest: false,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    blending: THREE.NormalBlending,
+    toneMapped: false
+  });
+  return basicMat;
+}
 
 /**
  * Traverses and configures the Cockpit Overlay / Decals 3D mesh hierarchy.
  * The .glb contains toggleable decals burn 01 thru burn 08 for laser burns,
  * strike 01 thru strike 08 for missile strikes, and two special decals
  * BrokenSpiderWeb Core and Broken SpiderWeb Screen. All decals are toggled off by default.
+ * Converts overlay materials to lightweight unlit MeshBasicMaterial to eliminate
+ * KHR_materials_transmission double-scene render passes and PBR shader compilation lag.
  */
 export function setupCockpitCracksHierarchy(root) {
   if (!root) return;
@@ -41,15 +79,13 @@ export function setupCockpitCracksHierarchy(root) {
       child.receiveShadow = false;
       child.frustumCulled = false;
       child.renderOrder = 9999;
+      // Prevent 3D raycaster from intersecting full-screen cockpit overlay
+      child.raycast = () => {};
 
-      if (child.material) {
-        child.material = child.material.clone();
-        child.material.transparent = true;
-        child.material.depthTest = false;
-        child.material.depthWrite = false;
-        child.material.side = THREE.DoubleSide;
-        child.material.blending = THREE.NormalBlending;
-        child.material.needsUpdate = true;
+      if (child.material && !child.userData._overlayBasicMatConfigured) {
+        const srcMat = Array.isArray(child.material) ? child.material[0] : child.material;
+        child.material = convertToLightweightOverlayMaterial(srcMat, 1.0);
+        child.userData._overlayBasicMatConfigured = true;
       }
 
       const name = (child.name || '').toLowerCase();
@@ -67,11 +103,6 @@ export function setupCockpitCracksHierarchy(root) {
         child.renderOrder = 10000;
         if (child.material) {
           child.material.opacity = 0.0;
-          if (child.material.map) {
-            child.material.emissive = new THREE.Color(0xffffff);
-            child.material.emissiveMap = child.material.map;
-            child.material.emissiveIntensity = 1.0;
-          }
         }
         child.userData.isDecal = true;
         child.userData.decalType = 'laser';
@@ -85,11 +116,6 @@ export function setupCockpitCracksHierarchy(root) {
         child.renderOrder = 10000;
         if (child.material) {
           child.material.opacity = 0.0;
-          if (child.material.map) {
-            child.material.emissive = new THREE.Color(0xffffff);
-            child.material.emissiveMap = child.material.map;
-            child.material.emissiveIntensity = 1.0;
-          }
         }
         child.userData.isDecal = true;
         child.userData.decalType = 'missile';
@@ -103,11 +129,6 @@ export function setupCockpitCracksHierarchy(root) {
         child.renderOrder = 10000;
         if (child.material) {
           child.material.opacity = 0.0;
-          if (child.material.map) {
-            child.material.emissive = new THREE.Color(0xffffff);
-            child.material.emissiveMap = child.material.map;
-            child.material.emissiveIntensity = 1.0;
-          }
         }
         child.userData.isDecal = true;
         child.userData.decalType = 'core';
@@ -121,11 +142,6 @@ export function setupCockpitCracksHierarchy(root) {
         child.renderOrder = 10000;
         if (child.material) {
           child.material.opacity = 0.0;
-          if (child.material.map) {
-            child.material.emissive = new THREE.Color(0xffffff);
-            child.material.emissiveMap = child.material.map;
-            child.material.emissiveIntensity = 1.0;
-          }
         }
         child.userData.isDecal = true;
         child.userData.decalType = 'screen';
@@ -138,11 +154,10 @@ export function setupCockpitCracksHierarchy(root) {
         child.visible = true;
         child.renderOrder = 9998;
         if (child.material) {
-          child.material.opacity = 0.15;
+          child.material.opacity = 0.06;
           child.material.transparent = true;
           child.material.depthTest = false;
           child.material.depthWrite = false;
-          child.material.needsUpdate = true;
         }
       } else if (name.includes('cyan') || name.includes('accent')) {
         child.visible = true;
@@ -152,7 +167,6 @@ export function setupCockpitCracksHierarchy(root) {
           child.material.transparent = true;
           child.material.depthTest = false;
           child.material.depthWrite = false;
-          child.material.needsUpdate = true;
         }
       } else if (name.includes('frame')) {
         child.visible = true;
@@ -162,7 +176,6 @@ export function setupCockpitCracksHierarchy(root) {
           child.material.transparent = true;
           child.material.depthTest = false;
           child.material.depthWrite = false;
-          child.material.needsUpdate = true;
         }
       }
     }
@@ -382,11 +395,23 @@ export function resetCockpitOverlayDecals(mesh) {
  * Supports: .glb, .gltf, .obj (3D meshes) and .png, .jpg, .webp, .svg (2D HUD overlays).
  */
 export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) {
-  return new Promise((resolve) => {
-    if (!assetUrl) {
-      assetUrl = COCKPIT_CRACKS_GLB_URL;
+  if (!assetUrl) {
+    assetUrl = COCKPIT_CRACKS_GLB_URL;
+  }
+  const normalizedKey = assetUrl.replace(/^(\.\/|\/)?(wormhole0\/)?/, '');
+  if (sharedCockpitOverlayTemplate && sharedCockpitOverlayTemplate.userData && sharedCockpitOverlayTemplate.userData._cachedOverlayKey === normalizedKey) {
+    setupCockpitCracksHierarchy(sharedCockpitOverlayTemplate);
+    return sharedCockpitOverlayTemplate;
+  }
+  if (sharedCockpitOverlayLoadPromise) {
+    const existing = await sharedCockpitOverlayLoadPromise;
+    if (existing) {
+      setupCockpitCracksHierarchy(existing);
+      return existing;
     }
+  }
 
+  sharedCockpitOverlayLoadPromise = new Promise((resolve) => {
     const cleanPath = assetUrl.replace(/[?#].*$/, '');
     const ext = (cleanPath.split('.').pop() || '').toLowerCase();
 
@@ -427,9 +452,11 @@ export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) 
               isOverlay: true,
               is2DOverlay: true,
               assetType: 'image_overlay',
-              assetUrl: curPath
+              assetUrl: curPath,
+              _cachedOverlayKey: normalizedKey
             };
             setupCockpitCracksHierarchy(planeMesh);
+            sharedCockpitOverlayTemplate = planeMesh;
             console.log(`[CockpitCracks] Successfully loaded 2D overlay texture: ${curPath}`);
             resolve(planeMesh);
           },
@@ -469,7 +496,9 @@ export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) 
                 obj.userData.isOverlay = true;
                 obj.userData.assetType = 'obj_model';
                 obj.userData.assetUrl = curPath;
+                obj.userData._cachedOverlayKey = normalizedKey;
                 setupCockpitCracksHierarchy(obj);
+                sharedCockpitOverlayTemplate = obj;
                 console.log(`[CockpitCracks] Successfully loaded OBJ mesh: ${curPath}`);
                 resolve(obj);
               },
@@ -500,27 +529,26 @@ export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) 
 
     // 3. Handle GLB / GLTF 3D Model formats (.glb, .gltf)
     const candidateUrls = [
+      normalizedKey,
       assetUrl,
+      'scene_images/screen_decals_spider_web_overlay_4.glb',
       assetUrl.startsWith('/') ? assetUrl.slice(1) : ('/' + assetUrl),
       'wormhole0/' + assetUrl.replace(/^(\.\/|\/)/, ''),
-      'scene_images/screen_decals_spider_web_overlay_4.glb',
       'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb',
       '/wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb',
       '../scene_images/screen_decals_spider_web_overlay_4.glb',
-      'mobile/warp_origin_images/cockpit_cracks.glb',
-      'wormhole0/mobile/warp_origin_images/cockpit_cracks.glb',
-      'worm_hole0/mobile/warp_origin_images/cockpit_cracks.glb',
-      '/wormhole0/mobile/warp_origin_images/cockpit_cracks.glb',
-      'warp_origin_images/cockpit_cracks.glb',
-      'wormhole0/warp_origin_images/cockpit_cracks.glb'
+      'warp_origin_images/screen_decals_spider_web_overlay_4.glb'
     ];
 
     if (typeof window !== 'undefined' && typeof window.load3DAssetModel === 'function') {
       window.load3DAssetModel(
-        assetUrl,
+        normalizedKey,
         (cloned) => {
           if (cloned) {
+            cloned.userData = cloned.userData || {};
+            cloned.userData._cachedOverlayKey = normalizedKey;
             setupCockpitCracksHierarchy(cloned);
+            sharedCockpitOverlayTemplate = cloned;
             resolve(cloned);
             return;
           }
@@ -548,7 +576,10 @@ export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) 
             curUrl,
             (gltf) => {
               const scene = gltf.scene || gltf.scenes[0] || gltf;
+              scene.userData = scene.userData || {};
+              scene.userData._cachedOverlayKey = normalizedKey;
               setupCockpitCracksHierarchy(scene);
+              sharedCockpitOverlayTemplate = scene;
               resolve(scene);
             },
             undefined,
@@ -563,6 +594,10 @@ export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) 
         });
     }
   });
+
+  const res = await sharedCockpitOverlayLoadPromise;
+  sharedCockpitOverlayLoadPromise = null;
+  return res;
 }
 
 /**
@@ -778,6 +813,8 @@ export class MeshPool {
     mesh.position.set(0, -1000, 0);
     mesh.visible = false; // Keep in scene graph, just hidden
     mesh.frustumCulled = true;
+    mesh.updateMatrix();
+    mesh.matrixAutoUpdate = false;
 
     // Movement logic, physics, weapons actions set to be inactive
     mesh.userData = mesh.userData || {};
@@ -798,6 +835,8 @@ export class MeshPool {
   spawn(position, quaternion, scale = null) {
     // Grab from pool or expand if empty
     const mesh = this.pool.length > 0 ? this.pool.pop() : this.createObject();
+
+    mesh.matrixAutoUpdate = true;
 
     // Reset transform without allocating new vectors
     if (position) mesh.position.copy(position);
@@ -837,6 +876,8 @@ export class MeshPool {
     // Return to pool: held at -1000, visibility false, movement/physics/weapons inactive
     mesh.position.set(0, -1000, 0);
     mesh.visible = false;
+    mesh.updateMatrix();
+    mesh.matrixAutoUpdate = false;
     mesh.userData = mesh.userData || {};
     mesh.userData.inPool = true;
     mesh.userData.isActive = false;
@@ -854,6 +895,8 @@ export class MeshPool {
     for (const mesh of this.active) {
       mesh.position.set(0, -1000, 0);
       mesh.visible = false;
+      mesh.updateMatrix();
+      mesh.matrixAutoUpdate = false;
       mesh.userData = mesh.userData || {};
       mesh.userData.inPool = true;
       mesh.userData.isActive = false;
@@ -909,7 +952,7 @@ export class StageObjectPool {
     // Pre-allocate Cockpit Cracks 3D GLB Overlay Pool
     this.cockpitCracksOverlayPool = null;
     this.cockpitCracksMesh = null;
-    this.initCockpitCracksPool();
+    this.cockpitOverlayReadyPromise = this.initCockpitCracksPool();
   }
 
   initPools() {
@@ -975,40 +1018,36 @@ export class StageObjectPool {
       const boltRadius = wpn.boltRadius || 0.14;
       const boltLength = wpn.boltLength || 7.5;
 
+      const sharedGeom = new THREE.CylinderGeometry(boltRadius * 0.35, boltRadius, boltLength, 8);
+      sharedGeom.rotateX(Math.PI / 2);
+      const sharedMat = new THREE.MeshBasicMaterial({
+        color: colorHex,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending
+      });
+      const sharedCoreGeom = new THREE.CylinderGeometry(boltRadius * 0.15, boltRadius * 0.35, boltLength * 0.92, 6);
+      sharedCoreGeom.rotateX(Math.PI / 2);
+      const sharedCoreMat = new THREE.MeshBasicMaterial({
+        color: wpnId === 'blue_laser' ? 0xe0ffff : (wpnId === 'tachyon_lance' ? 0xfff4d6 : 0xffffff),
+        transparent: true,
+        opacity: 0.95
+      });
+
+      const poolSize = Math.max(20, Math.min(wpn.pool_size || 45, 60));
       const pool = new MeshPool(
         this.scene,
         null,
         null,
-        wpn.pool_size || 300,
+        poolSize,
         () => {
           if (typeof this.options.createPlayerLaserMeshFn === 'function') {
             return this.options.createPlayerLaserMeshFn(wpn);
           }
-          // Default high-performance player laser bolt graphic object
-          const geom = new THREE.CylinderGeometry(boltRadius * 0.35, boltRadius, boltLength, 8);
-          geom.rotateX(Math.PI / 2);
-          const mat = new THREE.MeshBasicMaterial({
-            color: colorHex,
-            transparent: true,
-            opacity: 0.95,
-            blending: THREE.AdditiveBlending
-          });
-          const bolt = new THREE.Mesh(geom, mat);
-
-          // White-hot plasma core
-          const coreGeom = new THREE.CylinderGeometry(boltRadius * 0.15, boltRadius * 0.35, boltLength * 0.92, 6);
-          coreGeom.rotateX(Math.PI / 2);
-          const coreMat = new THREE.MeshBasicMaterial({
-            color: wpnId === 'blue_laser' ? 0xe0ffff : (wpnId === 'tachyon_lance' ? 0xfff4d6 : 0xffffff),
-            transparent: true,
-            opacity: 0.95
-          });
-          const coreMesh = new THREE.Mesh(coreGeom, coreMat);
+          // Default high-performance player laser bolt graphic object (shared geometry/material, no per-bolt PointLight)
+          const bolt = new THREE.Mesh(sharedGeom, sharedMat);
+          const coreMesh = new THREE.Mesh(sharedCoreGeom, sharedCoreMat);
           bolt.add(coreMesh);
-
-          // Dynamic light
-          const light = new THREE.PointLight(colorHex, wpn.bulletLightIntensity || 3.5, 35);
-          bolt.add(light);
 
           bolt.name = `pooled_laser_${wpnId}`;
           bolt.userData.isLaserBolt = true;
@@ -1024,27 +1063,25 @@ export class StageObjectPool {
   }
 
   initEnemyWeaponPools() {
-    // 1. Enemy Beam / Plasma Pulse Pool (Size = 300)
+    // 1. Enemy Beam / Plasma Pulse Pool (Size = 40, shared geometry/material, no PointLight)
+    const sharedBeamGeom = new THREE.CylinderGeometry(0.12, 0.12, 6.0, 6);
+    sharedBeamGeom.rotateX(Math.PI / 2);
+    const sharedBeamMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      transparent: true,
+      opacity: 0.95,
+      blending: THREE.AdditiveBlending
+    });
     const beamPool = new MeshPool(
       this.scene,
       null,
       null,
-      300,
+      40,
       () => {
         if (typeof this.options.createEnemyWeaponMeshFn === 'function') {
           return this.options.createEnemyWeaponMeshFn({ type: 'beam' }, {});
         }
-        const geom = new THREE.CylinderGeometry(0.12, 0.12, 6.0, 6);
-        geom.rotateX(Math.PI / 2);
-        const mat = new THREE.MeshBasicMaterial({
-          color: 0x38bdf8,
-          transparent: true,
-          opacity: 0.95,
-          blending: THREE.AdditiveBlending
-        });
-        const mesh = new THREE.Mesh(geom, mat);
-        const light = new THREE.PointLight(0x38bdf8, 2.5, 20);
-        mesh.add(light);
+        const mesh = new THREE.Mesh(sharedBeamGeom, sharedBeamMat);
         mesh.name = 'pooled_enemy_beam';
         mesh.userData.isEnemyBolt = true;
         mesh.userData.isWeapon = true;
@@ -1056,37 +1093,28 @@ export class StageObjectPool {
     );
     this.enemyWeaponPools.set('beam', beamPool);
 
-    // 2. Enemy Missile / Torpedo Pool (Size = 300)
+    // 2. Enemy Missile / Torpedo Pool (Size = 25, shared geometry/material, no PointLight)
+    const sharedMissileBodyGeom = new THREE.CylinderGeometry(0.2, 0.25, 2.8, 8);
+    sharedMissileBodyGeom.rotateX(Math.PI / 2);
+    const sharedMissileBodyMat = new THREE.MeshBasicMaterial({ color: 0xef476f });
+    const sharedMissileNoseGeom = new THREE.ConeGeometry(0.25, 1.0, 8);
+    sharedMissileNoseGeom.rotateX(-Math.PI / 2);
+    sharedMissileNoseGeom.translate(0, 0, 1.9);
+    const sharedMissileNoseMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
     const missilePool = new MeshPool(
       this.scene,
       null,
       null,
-      300,
+      25,
       () => {
         if (typeof this.options.createEnemyWeaponMeshFn === 'function') {
           return this.options.createEnemyWeaponMeshFn({ type: 'missile' }, {});
         }
         const group = new THREE.Group();
-        const bodyGeom = new THREE.CylinderGeometry(0.2, 0.25, 2.8, 8);
-        bodyGeom.rotateX(Math.PI / 2);
-        const bodyMat = new THREE.MeshStandardMaterial({
-          color: 0xef476f,
-          metalness: 0.8,
-          roughness: 0.3
-        });
-        const body = new THREE.Mesh(bodyGeom, bodyMat);
+        const body = new THREE.Mesh(sharedMissileBodyGeom, sharedMissileBodyMat);
         group.add(body);
-
-        const noseGeom = new THREE.ConeGeometry(0.25, 1.0, 8);
-        noseGeom.rotateX(-Math.PI / 2);
-        noseGeom.translate(0, 0, 1.9);
-        const noseMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
-        const nose = new THREE.Mesh(noseGeom, noseMat);
+        const nose = new THREE.Mesh(sharedMissileNoseGeom, sharedMissileNoseMat);
         group.add(nose);
-
-        const thruster = new THREE.PointLight(0xff0055, 3.0, 25);
-        thruster.position.set(0, 0, -1.5);
-        group.add(thruster);
 
         group.name = 'pooled_enemy_missile';
         group.userData.isEnemyBolt = true;
@@ -1126,11 +1154,19 @@ export class StageObjectPool {
         const wpnKey = wpn.id || wpn.name || 'ew_primary';
         if (this.enemyWeaponPools.has(wpnKey)) continue;
 
+        const isMiss = (wpn.type === 'missile' || /missile|torpedo/i.test(wpn.name || ''));
+        const rawCol = wpn.color || enemyCfg.weapon_color || '#ff0055';
+        const colHex = parseInt(rawCol.replace('#', '0x'), 16) || 0xff0055;
+        const wpnGeom = new THREE.CylinderGeometry(0.1 * (wpn.size_x || 1.0), 0.1 * (wpn.size_y || 1.0), 2.2 * (wpn.size_z || 1.0), 6);
+        wpnGeom.rotateX(Math.PI / 2);
+        const wpnMat = new THREE.MeshBasicMaterial({ color: colHex, transparent: true, opacity: 0.95 });
+        const wpnPoolSize = Math.max(15, Math.min(wpn.pool_size || 30, 40));
+
         const wpnPool = new MeshPool(
           this.scene,
           null,
           null,
-          wpn.pool_size || 60,
+          wpnPoolSize,
           () => {
             if (typeof this.options.createEnemyWeaponMeshFn === 'function') {
               const customMesh = this.options.createEnemyWeaponMeshFn(wpn, enemyCfg);
@@ -1140,15 +1176,7 @@ export class StageObjectPool {
                 return customMesh;
               }
             }
-            const isMiss = (wpn.type === 'missile' || /missile|torpedo/i.test(wpn.name || ''));
-            const rawCol = wpn.color || enemyCfg.weapon_color || '#ff0055';
-            const colHex = parseInt(rawCol.replace('#', '0x'), 16) || 0xff0055;
-            const geom = new THREE.CylinderGeometry(0.1 * (wpn.size_x || 1.0), 0.1 * (wpn.size_y || 1.0), 2.2 * (wpn.size_z || 1.0), 6);
-            geom.rotateX(Math.PI / 2);
-            const mat = new THREE.MeshBasicMaterial({ color: colHex, transparent: true, opacity: 0.95 });
-            const m = new THREE.Mesh(geom, mat);
-            const pLight = new THREE.PointLight(colHex, 3.0, 25);
-            m.add(pLight);
+            const m = new THREE.Mesh(wpnGeom, wpnMat);
             m.name = `pooled_enemy_wpn_${wpnKey}`;
             m.userData.isEnemyBolt = true;
             m.userData.isWeapon = true;
@@ -1181,7 +1209,7 @@ export class StageObjectPool {
             height: 2.8,
             depth: 2.8,
             color: '#00f0ff',
-            pool_size: 100
+            pool_size: 20
           }
         ];
 
@@ -1195,7 +1223,7 @@ export class StageObjectPool {
 
       if (this.enemyPools.has(primaryKey)) continue;
 
-      const poolSize = Math.max(15, Math.min(enemyCfg.pool_size || 30, 35));
+      const poolSize = Math.max(12, Math.min(enemyCfg.pool_size || 16, 20));
       const pool = new MeshPool(
         this.scene,
         null,
@@ -1543,13 +1571,17 @@ export class StageObjectPool {
       const loadedMesh = await loadCockpitCracksAsset(glbUrl);
       if (loadedMesh) {
         setupCockpitCracksHierarchy(loadedMesh);
-        this.cockpitCracksMesh = loadedMesh;
+        let usedPrimaryInstance = false;
         this.cockpitCracksOverlayPool = new MeshPool(
           this.scene,
           null,
           null,
           1,
           () => {
+            if (!usedPrimaryInstance) {
+              usedPrimaryInstance = true;
+              return loadedMesh;
+            }
             const clone = loadedMesh.clone(true);
             setupCockpitCracksHierarchy(clone);
             return clone;
@@ -1564,29 +1596,47 @@ export class StageObjectPool {
     } catch (err) {
       console.warn('[StageObjectPool] Cockpit overlay pooling warning:', err);
     }
+    return this.cockpitCracksMesh;
   }
 
   getCockpitCracksOverlay(camera = null) {
     if (!camera && typeof window !== 'undefined' && window.camera) {
       camera = window.camera;
     }
+    if (!this.cockpitCracksMesh && this.cockpitCracksOverlayPool) {
+      this.cockpitCracksMesh = this.cockpitCracksOverlayPool.spawn();
+      if (this.cockpitCracksMesh) {
+        this.cockpitCracksMesh.userData = this.cockpitCracksMesh.userData || {};
+        this.cockpitCracksMesh.userData.fromPool = true;
+        this.cockpitCracksMesh.userData.pooledByStagePool = true;
+        this.cockpitCracksMesh.userData.poolKey = 'cockpit_overlay_object';
+      }
+    }
     if (camera) {
       const existing = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
-      if (existing) {
-        getOrInitDecals(existing);
+      if (existing && (!this.cockpitCracksMesh || existing === this.cockpitCracksMesh)) {
+        setupCockpitCracksHierarchy(existing);
+        existing.userData = existing.userData || {};
+        existing.userData.fromPool = true;
+        existing.userData.pooledByStagePool = true;
         this.cockpitCracksMesh = existing;
         existing.visible = true;
         fitCockpitCracksToCamera(existing, camera);
         return existing;
+      } else if (existing && this.cockpitCracksMesh && existing !== this.cockpitCracksMesh) {
+        camera.remove(existing);
       }
     }
-    if (!this.cockpitCracksMesh && this.cockpitCracksOverlayPool) {
-      this.cockpitCracksMesh = this.cockpitCracksOverlayPool.spawn();
-    }
     if (this.cockpitCracksMesh && camera) {
+      if (this.cockpitCracksMesh.parent && this.cockpitCracksMesh.parent !== camera) {
+        this.cockpitCracksMesh.parent.remove(this.cockpitCracksMesh);
+      }
       if (this.cockpitCracksMesh.parent !== camera) {
         camera.add(this.cockpitCracksMesh);
       }
+      this.cockpitCracksMesh.userData = this.cockpitCracksMesh.userData || {};
+      this.cockpitCracksMesh.userData.fromPool = true;
+      this.cockpitCracksMesh.userData.pooledByStagePool = true;
       this.cockpitCracksMesh.visible = true;
       fitCockpitCracksToCamera(this.cockpitCracksMesh, camera);
     }

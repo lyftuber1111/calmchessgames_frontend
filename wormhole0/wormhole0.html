@@ -84,14 +84,30 @@
       cursor: crosshair;
     }
 
-    /* Sci-Fi Hologram Overlay HUD */
+    /* Full-Screen Cockpit FX & Damage Overlays (Strictly BELOW all UI Controls in Z-Order) */
+    #cockpit-fx-container,
+    #cockpit-cracks-overlay,
+    #cockpit-edges-red,
+    #cockpit-fx-canvas {
+      z-index: 5 !important;
+      pointer-events: none !important;
+      touch-action: none !important;
+    }
+
+    #damage-vignette {
+      z-index: 6 !important;
+      pointer-events: none !important;
+      touch-action: none !important;
+    }
+
+    /* Sci-Fi Hologram Overlay HUD (Strictly ABOVE Full-Screen Overlays) */
     #hud-layer {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 10;
+      z-index: 20;
       pointer-events: none;
       display: flex;
       flex-direction: column;
@@ -253,13 +269,14 @@
       bottom: 36px;
       display: flex;
       align-items: flex-start;
-      z-index: 50;
+      z-index: 55;
       transform: translateX(calc(-100% + 36px));
       transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     #left-drawer-container.open {
       transform: translateX(0) !important;
+      z-index: 110 !important;
     }
 
     .drawer-content {
@@ -443,7 +460,7 @@
       position: fixed;
       top: calc(8px + env(safe-area-inset-top, 0px));
       left: calc(72px + env(safe-area-inset-left, 0px));
-      z-index: 60;
+      z-index: 95;
       width: 32px;
       height: 32px;
       display: flex;
@@ -471,7 +488,7 @@
       position: fixed;
       top: calc(8px + env(safe-area-inset-top, 0px));
       left: calc(8px + env(safe-area-inset-left, 0px));
-      z-index: 60;
+      z-index: 95;
       width: 32px;
       height: 32px;
       display: flex;
@@ -1646,7 +1663,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      z-index: 45;
+      z-index: 50;
       width: min(1200px, calc(100vw - 20px));
       max-width: 1200px;
     }
@@ -1875,7 +1892,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      z-index: 45;
+      z-index: 50;
       width: min(1200px, calc(100vw - 20px));
       max-width: 1200px;
     }
@@ -2142,8 +2159,9 @@
       width: 100dvw;
       height: 100dvh;
       display: grid;
-      pointer-events: none;
-      z-index: 45;
+      pointer-events: none !important;
+      touch-action: none !important;
+      z-index: 4;
       opacity: 0;
       visibility: hidden;
     }
@@ -2239,12 +2257,13 @@
       height: 100%;
       height: 100dvh;
       pointer-events: none;
-      z-index: 60;
+      z-index: 80;
       box-sizing: border-box;
     }
 
     .virtual-stick-zone {
       pointer-events: auto;
+      z-index: 90;
       width: 110px;
       height: 110px;
       border-radius: 50%;
@@ -3370,6 +3389,12 @@
       z-index: 5 !important;
     }
 
+    body.in-xr-session #cockpit-fx-container,
+    body.in-xr-session #damage-vignette {
+      z-index: 10002 !important;
+      pointer-events: none !important;
+    }
+
     body.in-xr-session #hud-layer {
       display: flex !important;
       position: fixed !important;
@@ -3930,6 +3955,19 @@
 
   <!-- WebGL 3D Canvas Mount Point -->
   <div id="webgl-container" tabindex="0"></div>
+
+  <!-- Weapon Impact Cockpit Special FX Container (Placed right above WebGL canvas and strictly BELOW all UI controls) -->
+  <div id="cockpit-fx-container" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; touch-action:none; z-index:5; overflow:hidden;">
+    <!-- Cockpit Glass Cracks Transparent Image Overlay (Far apart cracks that don't obscure flight view) -->
+    <div id="cockpit-cracks-overlay" style="position:absolute; inset:0; width:100%; height:100%; background:center / cover no-repeat; opacity:0; pointer-events:none; touch-action:none; mix-blend-mode:screen; transition:opacity 0.08s ease-out;"></div>
+    <!-- Red glowing edges for split second weapon impact -->
+    <div id="cockpit-edges-red" style="position:absolute; inset:0; width:100%; height:100%; box-shadow:inset 0 0 95px 32px rgba(239, 35, 60, 0.95); opacity:0; pointer-events:none; touch-action:none; transition:opacity 0.08s ease-out;"></div>
+    <!-- Procedural FX Canvas (for vector cracks, plasma distortion, shield ripples) -->
+    <canvas id="cockpit-fx-canvas" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none; touch-action:none;"></canvas>
+  </div>
+
+  <!-- Fullscreen Player Damage Red Hit Flash Overlay (Strictly BELOW all UI controls) -->
+  <div id="damage-vignette" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; touch-action:none; z-index:6; box-shadow:inset 0 0 100px rgba(239, 68, 111, 0.95); opacity:0; transition:opacity 0.12s ease-out;"></div>
 
   <!-- Mobile Landscape Orientation Full-Screen Overlay with Animated Rotation Illustration -->
   <div id="landscape-rotate-prompt" class="landscape-rotate-fullscreen">
@@ -4831,21 +4869,8 @@
     </div>
   </div>
 
-  <!-- Weapon Impact Cockpit Special FX Container -->
-  <div id="cockpit-fx-container" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:9998; overflow:hidden;">
-    <!-- Cockpit Glass Cracks Transparent Image Overlay (Far apart cracks that don't obscure flight view) -->
-    <div id="cockpit-cracks-overlay" style="position:absolute; inset:0; width:100%; height:100%; background:center / cover no-repeat; opacity:0; pointer-events:none; mix-blend-mode:screen; transition:opacity 0.08s ease-out;"></div>
-    <!-- Red glowing edges for split second weapon impact -->
-    <div id="cockpit-edges-red" style="position:absolute; inset:0; width:100%; height:100%; box-shadow:inset 0 0 95px 32px rgba(239, 35, 60, 0.95); opacity:0; pointer-events:none; transition:opacity 0.08s ease-out;"></div>
-    <!-- Procedural FX Canvas (for vector cracks, plasma distortion, shield ripples) -->
-    <canvas id="cockpit-fx-canvas" style="position:absolute; inset:0; width:100%; height:100%; opacity:0; pointer-events:none;"></canvas>
-  </div>
-
-  <!-- Fullscreen Player Damage Red Hit Flash Overlay -->
-  <div id="damage-vignette" style="position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:9999; box-shadow:inset 0 0 100px rgba(239, 68, 111, 0.95); opacity:0; transition:opacity 0.12s ease-out;"></div>
-
   <!-- Primary Game Module with Decoupled Stage Profiles & Events -->
-  <script type="module" src="js/wormhole0.js?v=20261119_decals_v5"></script>
+  <script type="module" src="js/wormhole0.js?v=20261119_pooled_v6"></script>
 
   <!-- Calm Chess Computers 2026 -->
   <div style="display:none !important; visibility:hidden !important; opacity:0 !important; pointer-events:none !important;" aria-hidden="true">Calm Chess Computers 2026</div>

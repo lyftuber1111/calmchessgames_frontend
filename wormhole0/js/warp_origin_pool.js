@@ -579,8 +579,8 @@ export class WarpOriginObjectPool extends StageObjectPool {
     "env_category": "wormhole_singularity",
     "stage_level": 1,
     "device_type": "desktop",
-    "model_3d_type": "custom_glb",
-    "model_3d_url": "/meshy_test_0/models/recon_drone_2.8m.glb",
+    "model_3d_type": "procedural_wormhole",
+    "model_3d_url": "",
     "image_asset_url": "mobile/event_horizon_images/singularity_corona.png",
     "image_asset_type": "corona_sprite",
     "scale": "1.00",
@@ -617,45 +617,8 @@ export class WarpOriginObjectPool extends StageObjectPool {
     console.log(`[WarpOriginObjectPool] Pre-allocated graphics object pool for Stage 1: Warp Origin`);
   }
 
-    async initCockpitCracksPool() {
-    try {
-      const glbUrl = (this.stageConfig && (
-        (this.stageConfig.cockpit_overlay_object && (this.stageConfig.cockpit_overlay_object.model_3d_url || this.stageConfig.cockpit_overlay_object.model_url || this.stageConfig.cockpit_overlay_object.url))
-        || (this.stageConfig.cockpit_overlay && (this.stageConfig.cockpit_overlay.model_3d_url || this.stageConfig.cockpit_overlay.model_url))
-        || this.stageConfig.cockpit_overlay_asset
-        || (typeof this.stageConfig.cockpit_overlay_object === 'string' && this.stageConfig.cockpit_overlay_object)
-        || this.stageConfig.cockpit_cracks_asset
-      ))
-      || STAGE_COCKPIT_CRACKS_ASSET_URL
-      || STAGE_COCKPIT_CRACKS_GLB_URL
-      || COCKPIT_CRACKS_GLB_URL
-      || 'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb';
-
-      const loadFn = typeof loadCockpitCracksAsset === 'function' ? loadCockpitCracksAsset : loadCockpitCracksGlbAsset;
-      const loadedMesh = await loadFn(glbUrl);
-      if (loadedMesh) {
-        setupCockpitCracksHierarchy(loadedMesh);
-        this.cockpitCracksMesh = loadedMesh;
-        this.cockpitCracksOverlayPool = new MeshPool(
-          this.scene,
-          null,
-          null,
-          1,
-          () => {
-            const clone = loadedMesh.clone(true);
-            setupCockpitCracksHierarchy(clone);
-            return clone;
-          }
-        );
-        console.log(`[WarpOriginObjectPool] Pre-allocated Cockpit Overlay pool from: ${glbUrl}`);
-        const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
-        if (cam) {
-          this.getCockpitCracksOverlay(cam);
-        }
-      }
-    } catch (err) {
-      console.warn('[WarpOriginObjectPool] Cockpit overlay pooling warning:', err);
-    }
+  async initCockpitCracksPool() {
+    return super.initCockpitCracksPool();
   }
 }
 

@@ -115,7 +115,7 @@ export const stageConfig = {
         "color": "#a855f7",
         "damage": 3,
         "bullet_speed": 850,
-        "energy_drain_pct": 25,
+        "energy_drain_pct": 2,
         "can_overheat": 1,
         "cooldown_seconds": 7,
         "acquire_event": "warp_horizon_jump",

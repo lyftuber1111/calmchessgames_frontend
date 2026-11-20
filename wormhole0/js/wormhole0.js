@@ -40,12 +40,19 @@ if (typeof window !== 'undefined') {
   window.toggleGameOverDecals = toggleGameOverDecals;
   window.resetCockpitOverlayDecals = resetCockpitOverlayDecals;
   window.getActiveCockpitCracksOverlay = function() {
+    if (typeof cockpitOverlayCamera !== 'undefined' && cockpitOverlayCamera) {
+      const ovObj = cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay');
+      if (ovObj) return ovObj;
+    }
     if (typeof camera !== 'undefined' && camera) {
       const obj = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
       if (obj) return obj;
     }
     if (typeof currentStageObjectPool !== 'undefined' && currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh) {
       return currentStageObjectPool.cockpitCracksMesh;
+    }
+    if (typeof activeCockpitOverlayRoot !== 'undefined' && activeCockpitOverlayRoot) {
+      return activeCockpitOverlayRoot;
     }
     return null;
   };
@@ -57,7 +64,7 @@ const objLoader = new OBJLoader();
 // Global cache for 3D asset models (.glb, .gltf, .obj) to prevent duplicate downloads
 const cached3DAssetModels = new Map();
 const inFlight3DAssetLoads = new Map();
-const sessionAssetVersion = '20261115_glb_v2';
+const sessionAssetVersion = '20261119_overlay_fov_v9';
 
 function normalizeAssetUrl(url) {
   if (!url) return '';
@@ -519,12 +526,28 @@ if (container && !container.hasAttribute('tabindex')) {
 let scene = null;
 let camera = null;
 let renderer = null;
+let cockpitOverlayScene = null;
+let cockpitOverlayCamera = null;
+let cockpitOverlayRenderer = null;
+let activeCockpitOverlayRoot = null;
 let vrBtn = null;
 let webglInitError = null;
 let cameraRig = null;
 let activeVrFrameHook = null;
 let xrBasePoseCaptured = false;
 const xrBaseHmdPos = new THREE.Vector3();
+
+function getCockpitOverlayHostCamera(fallbackCamera = null) {
+  const inXrPresent = !!(state && state.isXR && renderer && renderer.xr && renderer.xr.isPresenting);
+  if (!inXrPresent && cockpitOverlayCamera && cockpitOverlayRenderer) {
+    return cockpitOverlayCamera;
+  }
+  return fallbackCamera || camera || null;
+}
+
+if (typeof window !== 'undefined') {
+  window.getCockpitOverlayHostCamera = getCockpitOverlayHostCamera;
+}
 
 const controllers = [];
 const controllerGrips = [];
@@ -565,6 +588,65 @@ try {
       renderer.xr.setReferenceSpaceType('local');
     }
     if (container) container.appendChild(renderer.domElement);
+    window.renderer = renderer;
+
+    // Dedicated Transparent 3D Cockpit Overlay Renderer (Higher Z-Index than UI Controls, Pass-Through Pointer Events)
+    try {
+      cockpitOverlayScene = new THREE.Scene();
+      cockpitOverlayCamera = new THREE.PerspectiveCamera(
+        camera.fov || 65,
+        window.innerWidth / Math.max(1, window.innerHeight),
+        0.05,
+        50
+      );
+      cockpitOverlayCamera.position.set(0, 0, 0);
+      cockpitOverlayCamera.rotation.set(0, 0, 0);
+      cockpitOverlayScene.add(cockpitOverlayCamera);
+
+      cockpitOverlayRenderer = new THREE.WebGLRenderer({
+        powerPreference: 'high-performance',
+        antialias: true,
+        alpha: true,
+        premultipliedAlpha: true,
+        stencil: false,
+        depth: true
+      });
+      cockpitOverlayRenderer.setClearColor(0x000000, 0);
+      cockpitOverlayRenderer.setSize(window.innerWidth, window.innerHeight);
+      cockpitOverlayRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+      cockpitOverlayRenderer.outputColorSpace = THREE.SRGBColorSpace;
+      cockpitOverlayRenderer.toneMapping = THREE.NoToneMapping;
+
+      const ovCanvas = cockpitOverlayRenderer.domElement;
+      ovCanvas.id = 'cockpit-overlay-3d-canvas';
+      ovCanvas.setAttribute('aria-hidden', 'true');
+      ovCanvas.style.cssText = 'position:fixed; inset:0; top:0; left:0; width:100vw; height:100vh; pointer-events:none; touch-action:none; background:transparent; z-index:150;';
+
+      let ovContainer = document.getElementById('cockpit-overlay-3d-container');
+      if (!ovContainer && document.body) {
+        ovContainer = document.createElement('div');
+        ovContainer.id = 'cockpit-overlay-3d-container';
+        ovContainer.setAttribute('aria-hidden', 'true');
+        ovContainer.style.cssText = 'position:fixed; inset:0; width:100vw; height:100vh; pointer-events:none; touch-action:none; z-index:150; background:transparent; overflow:hidden;';
+        if (container && container.parentNode) {
+          container.parentNode.insertBefore(ovContainer, container.nextSibling);
+        } else {
+          document.body.appendChild(ovContainer);
+        }
+      }
+      if (ovContainer) {
+        ovContainer.innerHTML = '';
+        ovContainer.appendChild(ovCanvas);
+      }
+      window.cockpitOverlayScene = cockpitOverlayScene;
+      window.cockpitOverlayCamera = cockpitOverlayCamera;
+      window.cockpitOverlayRenderer = cockpitOverlayRenderer;
+    } catch (ovErr) {
+      console.warn('[Wormhole XR] Dedicated cockpit overlay renderer unavailable, using main scene camera:', ovErr);
+      cockpitOverlayScene = null;
+      cockpitOverlayCamera = null;
+      cockpitOverlayRenderer = null;
+    }
 
     // WebXR Button - Configure sessionInit for XRWebGLLayer (no 'layers' projection override) + DOM Overlay
     try {
@@ -671,6 +753,24 @@ try {
       activateModeParameters('desktop-vr');
       loadStageDeviceModule(currentActiveStage, 'vr');
 
+      if (cockpitOverlayRenderer && cockpitOverlayRenderer.domElement) {
+        cockpitOverlayRenderer.domElement.style.display = 'none';
+      }
+      const xrOverlay = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function')
+        ? window.getActiveCockpitCracksOverlay()
+        : null;
+      if (xrOverlay && camera) {
+        if (xrOverlay.parent && xrOverlay.parent !== camera) {
+          xrOverlay.parent.remove(xrOverlay);
+        }
+        if (xrOverlay.parent !== camera) {
+          camera.add(xrOverlay);
+        }
+        if (typeof fitCockpitCracksToCamera === 'function') {
+          fitCockpitCracksToCamera(xrOverlay, camera);
+        }
+      }
+
       console.log('[Wormhole XR] WebXR session started. CameraRig locked at:', state.position.toArray());
     });
     renderer.xr.addEventListener('sessionend', () => {
@@ -692,6 +792,29 @@ try {
       camera.rotation.y = state.yaw;
       camera.rotation.x = state.pitch;
       camera.updateProjectionMatrix();
+
+      if (cockpitOverlayRenderer && cockpitOverlayRenderer.domElement) {
+        cockpitOverlayRenderer.domElement.style.display = 'block';
+      }
+      if (cockpitOverlayCamera) {
+        cockpitOverlayCamera.fov = camera.fov;
+        cockpitOverlayCamera.aspect = camera.aspect;
+        cockpitOverlayCamera.updateProjectionMatrix();
+        const retOverlay = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function')
+          ? window.getActiveCockpitCracksOverlay()
+          : null;
+        if (retOverlay) {
+          if (retOverlay.parent && retOverlay.parent !== cockpitOverlayCamera) {
+            retOverlay.parent.remove(retOverlay);
+          }
+          if (retOverlay.parent !== cockpitOverlayCamera) {
+            cockpitOverlayCamera.add(retOverlay);
+          }
+          if (typeof fitCockpitCracksToCamera === 'function') {
+            fitCockpitCracksToCamera(retOverlay, camera);
+          }
+        }
+      }
 
       if (sceneRenderTarget) {
         const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -5356,7 +5479,9 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
   clearActiveSpecialEffects();
 
   // 7. Reset and hide cockpit cracks overlay, damage vignette, and red hit edges
-  const cracks = (camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
+  const cracks = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null)
+    || (cockpitOverlayCamera && (cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay')))
+    || (camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
     || (currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
   if (cracks && typeof resetCockpitOverlayDecals === 'function') {
     resetCockpitOverlayDecals(cracks);
@@ -10506,22 +10631,35 @@ const pendingCockpitOverlayCallbacks = [];
  */
 function ensureCockpitOverlayMounted(onReadyCallback = null) {
   if (!camera) return null;
+  const hostCam = getCockpitOverlayHostCamera(camera);
 
   let existing = (currentStageObjectPool && typeof currentStageObjectPool.getCockpitCracksOverlay === 'function')
     ? currentStageObjectPool.getCockpitCracksOverlay(camera)
-    : (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay'));
+    : ((cockpitOverlayCamera && (cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay')))
+      || camera.getObjectByName('cockpit_overlay_object')
+      || camera.getObjectByName('cockpit_cracks_overlay'));
 
   if (!existing && typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
     const ext = window.getActiveCockpitCracksOverlay();
     if (ext) {
       existing = ext;
-      if (existing.parent !== camera) {
-        camera.add(existing);
-      }
     }
   }
 
   if (existing) {
+    if (hostCam) {
+      const otherCam = (hostCam === cockpitOverlayCamera) ? camera : cockpitOverlayCamera;
+      if (otherCam) {
+        const stray = otherCam.getObjectByName('cockpit_overlay_object') || otherCam.getObjectByName('cockpit_cracks_overlay');
+        if (stray) otherCam.remove(stray);
+      }
+      if (existing.parent && existing.parent !== hostCam) {
+        existing.parent.remove(existing);
+      }
+      if (existing.parent !== hostCam) {
+        hostCam.add(existing);
+      }
+    }
     if (!existing._cockpitDecals && (!existing.userData || !existing.userData.decals)) {
       if (typeof setupCockpitCracksHierarchy === 'function') {
         setupCockpitCracksHierarchy(existing);
@@ -10531,6 +10669,7 @@ function ensureCockpitOverlayMounted(onReadyCallback = null) {
     existing.visible = true;
     existing.userData = existing.userData || {};
     existing.userData.fromPool = true;
+    activeCockpitOverlayRoot = existing;
     if (typeof fitCockpitCracksToCamera === 'function') {
       fitCockpitCracksToCamera(existing, camera);
     }
@@ -11363,11 +11502,12 @@ function triggerGameOver() {
     cracksOverlay = currentStageObjectPool.getCockpitCracksOverlay(camera);
   } else if (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function') {
     cracksOverlay = window.getActiveCockpitCracksOverlay();
-  } else if (camera) {
-    cracksOverlay = camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay');
+  } else if (cockpitOverlayCamera || camera) {
+    cracksOverlay = (cockpitOverlayCamera && (cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay')))
+      || (camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')));
   }
 
-  // If 3D model asset (.glb/.gltf/.obj) and not yet instantiated, load and mount to camera
+  // If 3D model asset (.glb/.gltf/.obj) and not yet instantiated, load and mount to host camera
   if (!cracksOverlay && is3DModelAsset && camera && typeof load3DAssetModel === 'function') {
     load3DAssetModel(stageCockpitAsset, (loadedModel) => {
       if (loadedModel) {
@@ -11378,7 +11518,9 @@ function triggerGameOver() {
         }
         loadedModel.name = 'cockpit_overlay_object';
         loadedModel.visible = true;
-        camera.add(loadedModel);
+        const hostCam = getCockpitOverlayHostCamera(camera);
+        if (hostCam) hostCam.add(loadedModel);
+        activeCockpitOverlayRoot = loadedModel;
         if (typeof fitCockpitCracksToCamera === 'function') {
           fitCockpitCracksToCamera(loadedModel, camera);
         } else if (typeof window !== 'undefined' && typeof window.fitCockpitCracksToCamera === 'function') {
@@ -12683,7 +12825,9 @@ function updatePlayerDefenseHUD() {
 
   // Synchronize BrokenSpiderWeb Core decal with shield percentage:
   // Remains ON while shield <= 0%, turns back OFF when shield % increases above 0%
-  const overlayMesh = (typeof camera !== 'undefined' && camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
+  const overlayMesh = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null)
+    || (typeof cockpitOverlayCamera !== 'undefined' && cockpitOverlayCamera && (cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay')))
+    || (typeof camera !== 'undefined' && camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
     || (typeof currentStageObjectPool !== 'undefined' && currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
   if (overlayMesh && overlayMesh._cockpitDecals && overlayMesh._cockpitDecals.brokenCore && typeof toggleBrokenCoreDecal === 'function') {
     const coreDecal = overlayMesh._cockpitDecals.brokenCore;
@@ -13335,6 +13479,9 @@ function renderPostProcessing() {
   }
   try {
     if (state.isXR && renderer.xr && renderer.xr.isPresenting) {
+      if (typeof renderer.xr.updateCamera === 'function') {
+        renderer.xr.updateCamera(camera);
+      }
       const xrOutputTarget = renderer.getRenderTarget();
       const xrCam = renderer.xr.getCamera();
       const subCameras = (xrCam && Array.isArray(xrCam.cameras) && xrCam.cameras.length > 0)
@@ -13814,6 +13961,88 @@ if (btnDrawerAlign) {
   });
 }
 
+function syncAndRenderCockpitOverlay() {
+  if (!camera || !renderer) return;
+  const inXrPresent = !!(state.isXR && renderer.xr && renderer.xr.isPresenting);
+
+  if (cockpitOverlayRenderer && cockpitOverlayRenderer.domElement) {
+    const desiredDisp = inXrPresent ? 'none' : 'block';
+    if (cockpitOverlayRenderer.domElement.style.display !== desiredDisp) {
+      cockpitOverlayRenderer.domElement.style.display = desiredDisp;
+    }
+  }
+
+  let overlayMesh = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function')
+    ? window.getActiveCockpitCracksOverlay()
+    : null;
+  if (!overlayMesh && currentStageObjectPool && typeof currentStageObjectPool.getCockpitCracksOverlay === 'function') {
+    overlayMesh = currentStageObjectPool.getCockpitCracksOverlay(camera);
+  }
+  if (!overlayMesh) return;
+
+  const hostCam = getCockpitOverlayHostCamera(camera);
+  if (hostCam) {
+    const otherCam = (hostCam === cockpitOverlayCamera) ? camera : cockpitOverlayCamera;
+    if (otherCam) {
+      const stray = otherCam.getObjectByName('cockpit_overlay_object') || otherCam.getObjectByName('cockpit_cracks_overlay');
+      if (stray && stray !== overlayMesh) otherCam.remove(stray);
+    }
+    if (overlayMesh.parent && overlayMesh.parent !== hostCam) {
+      overlayMesh.parent.remove(overlayMesh);
+    }
+    if (overlayMesh.parent !== hostCam) {
+      hostCam.add(overlayMesh);
+    }
+  }
+
+  let activeProjCam = camera;
+  if (inXrPresent && renderer.xr && typeof renderer.xr.getCamera === 'function') {
+    const xrCam = renderer.xr.getCamera();
+    if (xrCam && Array.isArray(xrCam.cameras) && xrCam.cameras.length > 0) {
+      activeProjCam = xrCam.cameras[0];
+    } else if (xrCam) {
+      activeProjCam = xrCam;
+    }
+  } else if (cockpitOverlayCamera) {
+    const targetFov = (camera.fov && camera.fov > 0) ? camera.fov : 65;
+    const targetAspect = (camera.aspect && camera.aspect > 0)
+      ? camera.aspect
+      : (window.innerWidth / Math.max(1, window.innerHeight));
+    if (Math.abs(cockpitOverlayCamera.fov - targetFov) > 1e-4 || Math.abs(cockpitOverlayCamera.aspect - targetAspect) > 1e-4) {
+      cockpitOverlayCamera.fov = targetFov;
+      cockpitOverlayCamera.aspect = targetAspect;
+      cockpitOverlayCamera.updateProjectionMatrix();
+    }
+  }
+
+  const pm = (activeProjCam && activeProjCam.projectionMatrix && activeProjCam.projectionMatrix.elements)
+    ? activeProjCam.projectionMatrix.elements
+    : null;
+  const aspectVal = (activeProjCam && activeProjCam.aspect > 0)
+    ? activeProjCam.aspect
+    : (window.innerWidth / Math.max(1, window.innerHeight));
+  const sig = [
+    ((activeProjCam && activeProjCam.fov) || 0).toFixed(3),
+    aspectVal.toFixed(4),
+    pm ? pm[0].toFixed(4) : '',
+    pm ? pm[5].toFixed(4) : '',
+    pm ? pm[8].toFixed(4) : '',
+    pm ? pm[9].toFixed(4) : '',
+    inXrPresent ? 'xr' : '2d'
+  ].join('|');
+
+  const fitFn = (typeof window !== 'undefined' && typeof window.fitCockpitCracksToCamera === 'function')
+    ? window.fitCockpitCracksToCamera
+    : fitCockpitCracksToCamera;
+  if (typeof fitFn === 'function' && (!overlayMesh.userData || overlayMesh.userData._lastFitSig !== sig)) {
+    fitFn(overlayMesh, activeProjCam);
+  }
+
+  if (!inXrPresent && cockpitOverlayRenderer && cockpitOverlayScene && cockpitOverlayCamera) {
+    cockpitOverlayRenderer.render(cockpitOverlayScene, cockpitOverlayCamera);
+  }
+}
+
 // Main Animation Loop
 if (renderer) {
   renderer.setAnimationLoop((timestamp) => {
@@ -13825,6 +14054,7 @@ if (renderer) {
           activeVrFrameHook(0, getEngineApi());
         } catch (e) {}
       }
+      syncAndRenderCockpitOverlay();
       if (!state.postProcessingEnabled) {
         renderer.render(scene, camera);
       } else {
@@ -13841,6 +14071,7 @@ if (renderer) {
     // During 5-second countdown, render the scene smoothly while holding combat and flight
     if (state.isCountdownActive) {
       updateCrosshairPosition(delta);
+      syncAndRenderCockpitOverlay();
       if (!state.postProcessingEnabled) {
         renderer.render(scene, camera);
       } else {
@@ -13926,6 +14157,8 @@ if (renderer) {
     hudFluxEl.textContent = `${flux} TeV`;
   }
 
+  syncAndRenderCockpitOverlay();
+
   if (!state.postProcessingEnabled) {
     renderer.render(scene, camera);
   } else {
@@ -13947,6 +14180,16 @@ window.addEventListener('resize', () => {
   renderer.setSize(w, h);
   renderer.setPixelRatio(dpr);
 
+  if (cockpitOverlayCamera) {
+    cockpitOverlayCamera.fov = camera.fov || 65;
+    cockpitOverlayCamera.aspect = w / Math.max(1, h);
+    cockpitOverlayCamera.updateProjectionMatrix();
+  }
+  if (cockpitOverlayRenderer) {
+    cockpitOverlayRenderer.setSize(w, h);
+    cockpitOverlayRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+  }
+
   sceneRenderTarget.setSize(w * dpr, h * dpr);
   renderTargetA.setSize(w * 0.5, h * 0.5);
   renderTargetB.setSize(w * 0.5, h * 0.5);
@@ -13957,7 +14200,9 @@ window.addEventListener('resize', () => {
   updateMobileSnapGrid();
 
   // Dynamically refit Cockpit Overlay to camera frustum on resize across all screen dimensions & FOVs
-  const overlayMesh = (typeof camera !== 'undefined' && camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
+  const overlayMesh = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null)
+    || (typeof cockpitOverlayCamera !== 'undefined' && cockpitOverlayCamera && (cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay')))
+    || (typeof camera !== 'undefined' && camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
     || (typeof currentStageObjectPool !== 'undefined' && currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
   if (overlayMesh && typeof fitCockpitCracksToCamera === 'function') {
     fitCockpitCracksToCamera(overlayMesh, camera);

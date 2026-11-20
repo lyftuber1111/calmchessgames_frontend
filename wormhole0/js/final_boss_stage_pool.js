@@ -50,8 +50,8 @@ export {
  * Calm Chess Games / Wormhole XR (c) 2026. All Rights Reserved.
  *
  * Pre-allocates enemies and weapons graphic objects.
- * Sets 3D graphic models, scales, physical dimensions, and weapons attributes
- * pulled dynamically from the Game Manager admin database.
+ * Sets 3D graphic models, scales, physical dimensions, weapons, powerups,
+ * and cosmic environment attributes pulled dynamically from the Game Manager admin database.
  */
 
 export class FinalBossStageObjectPool extends StageObjectPool {
@@ -61,7 +61,7 @@ export class FinalBossStageObjectPool extends StageObjectPool {
       stage_name: 'Final Boss Stage',
       stage_slug: 'final_boss_stage',
       environment_theme: 'Warp Cyan Corridor',
-            cockpit_overlay_object: {
+      cockpit_overlay_object: {
         model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
         model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
         asset_type: '3d_model'
@@ -342,6 +342,8 @@ export class FinalBossStageObjectPool extends StageObjectPool {
         "destruction_particle_scale": 2
     }
 ],
+      powerups: [],
+      environment: [],
       ...stageConfig
     };
 

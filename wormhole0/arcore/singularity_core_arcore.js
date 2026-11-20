@@ -1,15 +1,20 @@
 import * as THREE from 'three';
 import {
+  createStagePool,
   MeshPool,
   StageObjectPool,
   loadCockpitCracksGlbAsset,
   loadCockpitCracksAsset,
   setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
   toggleRandomWeaponDecal,
   toggleBrokenCoreDecal,
   toggleGameOverDecals,
   resetCockpitOverlayDecals,
-  COCKPIT_CRACKS_GLB_URL
+  COCKPIT_CRACKS_GLB_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_TYPE
 } from './singularity_core_pool.js';
 
 /**
@@ -69,17 +74,17 @@ export const stageConfig = {
       panelBorder: 'rgba(192, 132, 252, 0.40)'
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color(0x330066),
-      uColorCore: new THREE.Color(0x9933ff),
-      uColorHot: new THREE.Color(0xf5e6ff),
-      uHaloColor: new THREE.Color(0xa855f7)
+      uColorEdge: new THREE.Color('#330066'),
+      uColorCore: new THREE.Color('#9933ff'),
+      uColorHot: new THREE.Color('#f5e6ff'),
+      uHaloColor: new THREE.Color('#a855f7')
     },
     lighting: {
-      ambient: 0x1a0033,
-      center: 0xa855f7
+      ambient: new THREE.Color('#1a0033').getHex(),
+      center: new THREE.Color('#a855f7').getHex()
     },
     particles: {
-    "count": 1800,
+    "count": 2000,
     "starCount": 600,
     "dustCount": 200,
     "speed": 0.85
@@ -89,7 +94,18 @@ export const stageConfig = {
     "boostMultiplier": 1.9,
     "pitchSpeed": 0.0022,
     "yawSpeed": 0.0022
-}
+},
+    environmentParams: {
+      rotationSpeed: 1.1,
+      distortionIntensity: 1.65,
+      imageAssetUrl: 'desktop/singularity_core_images/singularity_corona.png',
+      model3dUrl: '',
+      quickEffectPrimary: 'gravitational_vortex',
+      quickEffectSecondary: 'arc_lightning',
+      quickEffectColor: '#c084fc',
+      quickEffectIntensity: 1.4,
+      quickEffectSpeed: 1.3
+    }
   },
   weapons: {
     "initial": {
@@ -167,25 +183,36 @@ export const stageConfig = {
         "fire_rate_times_per_sec": 0.455,
         "weapons": [
             {
-                "id": "ew_void_guardian",
-                "name": "Void Disruptor",
+                "id": "ew_void_guardian_0",
+                "name": "Plasma Pulse",
                 "type": "beam",
-                "mount": "dual_wingtip",
+                "mount": "center",
                 "model_url": "",
                 "model_type": "",
                 "fire_point_x": 0,
                 "fire_point_y": -0.15,
                 "fire_point_z": 1.5,
                 "scale": 1,
+                "scale_x": 1,
+                "scale_y": 1,
+                "scale_z": 1,
                 "size_x": 1,
                 "size_y": 1,
                 "size_z": 1,
+                "dimensions": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
                 "fire_rate_times_per_sec": 0.455,
                 "fire_interval_ms": 2200,
                 "fire_rate_seconds": 2.2,
-                "damage": 35,
-                "speed": 400,
-                "color": "#a855f7",
+                "damage": 5,
+                "speed": 450,
+                "color": "#ff2255",
+                "special_fx": "cockpit_overlay_decals",
+                "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
+                "special_fx_type": "overlay",
                 "is_enabled": 1
             }
         ],
@@ -205,6 +232,94 @@ export const stageConfig = {
         "destruction_particle_scale": 1
     }
 ],
+  powerups: [
+    {
+        "id": 5,
+        "powerup_id": "health_pack_s3",
+        "powerup_name": "Graviton Integrity Restorer",
+        "powerup_type": "health",
+        "icon": "🧪",
+        "model_3d_type": "icosahedron",
+        "model_3d_url": "",
+        "color_hex": "#a855f7",
+        "scale": 1,
+        "length": 2.5,
+        "height": 2.5,
+        "depth": 2.5,
+        "circumference": 6,
+        "stage_level": 3,
+        "device_type": "all",
+        "trigger_events": "Gravitational Tidal Waves, Core Guardian Awakening",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 50,
+        "enemy_id": "tachyon_cruiser",
+        "boost_percentage": 45,
+        "description": "High-density graviton canister neutralizing gravitational shear. Restores 45% hull armor.",
+        "is_enabled": 1
+    },
+    {
+        "id": 6,
+        "powerup_id": "shield_cell_s3",
+        "powerup_name": "Singularity Void Barrier",
+        "powerup_type": "shield",
+        "icon": "🔷",
+        "model_3d_type": "sphere",
+        "model_3d_url": "",
+        "color_hex": "#6366f1",
+        "scale": 1,
+        "length": 3,
+        "height": 3,
+        "depth": 3,
+        "circumference": 7.5,
+        "stage_level": 3,
+        "device_type": "all",
+        "trigger_events": "Singularity Probe Deployment, Heavy Antimatter Eruptions",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 65,
+        "enemy_id": "void_guardian",
+        "boost_percentage": 50,
+        "description": "Generates temporary singularity deflection field. Recharges shields by +50%.",
+        "is_enabled": 1
+    }
+],
+  environment: {
+    "id": 3,
+    "env_id": "singularity_core_s3",
+    "env_name": "Void Violet Gravitational Collapse Singularity",
+    "env_category": "wormhole_singularity",
+    "stage_level": 3,
+    "device_type": "all",
+    "model_3d_type": "procedural_wormhole",
+    "model_3d_url": "",
+    "image_asset_url": "desktop/singularity_core_images/singularity_corona.png",
+    "image_asset_type": "corona_sprite",
+    "scale": "1.30",
+    "event_horizon_radius": "9.00",
+    "accretion_disk_radius": "46.00",
+    "length": "350.00",
+    "height": "90.00",
+    "depth": "350.00",
+    "circumference": "56.55",
+    "color_primary": "#c084fc",
+    "color_edge": "#330066",
+    "color_core": "#9933ff",
+    "color_hot": "#f5e6ff",
+    "color_halo": "#a855f7",
+    "ambient_light": "#1a0033",
+    "center_light": "#a855f7",
+    "rotation_speed": "1.100",
+    "distortion_intensity": "1.65",
+    "particle_count": 6000,
+    "quick_effect_primary": "gravitational_vortex",
+    "quick_effect_secondary": "arc_lightning",
+    "quick_effect_color": "#c084fc",
+    "quick_effect_intensity": "1.40",
+    "quick_effect_speed": "1.30",
+    "description": "Extreme gravitational collapse boundary with violent space-time tearing, dark void violet accretion flow, and deep gravitational vortex.",
+    "is_enabled": 1,
+    "created_at": "2026-11-10 04:03:56",
+    "updated_at": "2026-11-10 04:03:56"
+},
   objectives: [
     {
         "id": "kills",
@@ -1477,6 +1592,12 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setPowerups === 'function' && stageConfig.powerups) {
+    engineApi.setPowerups(stageConfig.powerups);
+  }
+  if (typeof engineApi.setEnvironment === 'function' && stageConfig.environment) {
+    engineApi.setEnvironment(stageConfig.environment);
+  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -1496,8 +1617,7 @@ export function applyStage(engineApi) {
     engineApi.showToast('🚀 STAGE 3: SINGULARITY CORE [ARCORE] LOADED');
   }
 
-
-    // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
+  // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
   const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
@@ -1670,6 +1790,7 @@ export default {
   applyStage,
   fireEnemyWeapon,
   updateEnemyMovement,
+  pullEnemyWave,
   updateStageWaves,
   handleStageEvent,
   stageEvents,

@@ -1,15 +1,20 @@
 import * as THREE from 'three';
 import {
+  createStagePool,
   MeshPool,
   StageObjectPool,
   loadCockpitCracksGlbAsset,
   loadCockpitCracksAsset,
   setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
   toggleRandomWeaponDecal,
   toggleBrokenCoreDecal,
   toggleGameOverDecals,
   resetCockpitOverlayDecals,
-  COCKPIT_CRACKS_GLB_URL
+  COCKPIT_CRACKS_GLB_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_TYPE
 } from './event_horizon_pool.js';
 
 /**
@@ -69,17 +74,17 @@ export const stageConfig = {
       panelBorder: 'rgba(255, 209, 102, 0.40)'
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color(0x663300),
-      uColorCore: new THREE.Color(0xff9900),
-      uColorHot: new THREE.Color(0xfff4d6),
-      uHaloColor: new THREE.Color(0xffaa00)
+      uColorEdge: new THREE.Color('#663300'),
+      uColorCore: new THREE.Color('#ff9900'),
+      uColorHot: new THREE.Color('#fff4d6'),
+      uHaloColor: new THREE.Color('#ffaa00')
     },
     lighting: {
-      ambient: 0x331a00,
-      center: 0xffaa00
+      ambient: new THREE.Color('#331a00').getHex(),
+      center: new THREE.Color('#ffaa00').getHex()
     },
     particles: {
-    "count": 1800,
+    "count": 2000,
     "starCount": 600,
     "dustCount": 200,
     "speed": 0.85
@@ -89,7 +94,18 @@ export const stageConfig = {
     "boostMultiplier": 1.9,
     "pitchSpeed": 0.0022,
     "yawSpeed": 0.0022
-}
+},
+    environmentParams: {
+      rotationSpeed: 0.85,
+      distortionIntensity: 1.35,
+      imageAssetUrl: 'desktop/event_horizon_images/singularity_corona.png',
+      model3dUrl: '',
+      quickEffectPrimary: 'tachyon_trail',
+      quickEffectSecondary: 'plasma_aura',
+      quickEffectColor: '#ffd166',
+      quickEffectIntensity: 1.2,
+      quickEffectSpeed: 1.15
+    }
   },
   weapons: {
     "initial": {
@@ -143,11 +159,11 @@ export const stageConfig = {
         "color": "#ffd166",
         "hits": 8,
         "armor": 50,
-        "shield": 4,
+        "shield": 2,
         "speed": 200,
         "attack_damage": 20,
         "weapon_name": "Tachyon Beam",
-        "weapon_damage": 20,
+        "weapon_damage": 2,
         "weapon_speed": 600,
         "weapon_color": "#ffd166",
         "weapon_scale": 1,
@@ -195,7 +211,7 @@ export const stageConfig = {
                 "fire_rate_times_per_sec": 0.333,
                 "fire_interval_ms": 3000,
                 "fire_rate_seconds": 3,
-                "damage": 20,
+                "damage": 2,
                 "speed": 600,
                 "color": "#ffd166",
                 "special_fx": "cockpit_overlay_decals",
@@ -220,6 +236,94 @@ export const stageConfig = {
         "destruction_particle_scale": 1
     }
 ],
+  powerups: [
+    {
+        "id": 3,
+        "powerup_id": "health_pack_s2",
+        "powerup_name": "Tachyon Infused Hull Matrix",
+        "powerup_type": "health",
+        "icon": "💚",
+        "model_3d_type": "dodecahedron",
+        "model_3d_url": "",
+        "color_hex": "#10b981",
+        "scale": 1,
+        "length": 2.5,
+        "height": 2.5,
+        "depth": 2.5,
+        "circumference": 6,
+        "stage_level": 2,
+        "device_type": "all",
+        "trigger_events": "Tachyon Flux Distortions, Interceptor Ambush Wave",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 50,
+        "enemy_id": "phase_interceptor",
+        "boost_percentage": 35,
+        "description": "Tachyon-stabilized cellular lattice repairing kinetic hull fissures. Restores 35% hull integrity.",
+        "is_enabled": 1
+    },
+    {
+        "id": 4,
+        "powerup_id": "shield_cell_s2",
+        "powerup_name": "Ion Shield Harmonizer",
+        "powerup_type": "shield",
+        "icon": "🔰",
+        "model_3d_type": "torus",
+        "model_3d_url": "",
+        "color_hex": "#38bdf8",
+        "scale": 1,
+        "length": 2.8,
+        "height": 2.8,
+        "depth": 2.8,
+        "circumference": 7,
+        "stage_level": 2,
+        "device_type": "all",
+        "trigger_events": "Ion Cloud Interference, Wormhole Coil Resonance Alert",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 70,
+        "enemy_id": "all",
+        "boost_percentage": 40,
+        "description": "Re-polarizes phase deflector shields against relativistic radiation. Boosts shield capacity by +40%.",
+        "is_enabled": 1
+    }
+],
+  environment: {
+    "id": 2,
+    "env_id": "event_horizon_singularity_s2",
+    "env_name": "Amber Event Horizon Relativistic Singularity",
+    "env_category": "wormhole_singularity",
+    "stage_level": 2,
+    "device_type": "all",
+    "model_3d_type": "procedural_wormhole",
+    "model_3d_url": "",
+    "image_asset_url": "desktop/event_horizon_images/singularity_corona.png",
+    "image_asset_type": "corona_sprite",
+    "scale": "1.15",
+    "event_horizon_radius": "8.20",
+    "accretion_disk_radius": "42.00",
+    "length": "320.00",
+    "height": "85.00",
+    "depth": "320.00",
+    "circumference": "51.52",
+    "color_primary": "#ffd166",
+    "color_edge": "#663300",
+    "color_core": "#ff9900",
+    "color_hot": "#fff4d6",
+    "color_halo": "#ffaa00",
+    "ambient_light": "#331a00",
+    "center_light": "#ffaa00",
+    "rotation_speed": "0.850",
+    "distortion_intensity": "1.35",
+    "particle_count": 5200,
+    "quick_effect_primary": "tachyon_trail",
+    "quick_effect_secondary": "plasma_aura",
+    "quick_effect_color": "#ffd166",
+    "quick_effect_intensity": "1.20",
+    "quick_effect_speed": "1.15",
+    "description": "High-velocity light-horizon boundary enveloped in incandescent amber relativistic shear and tachyon streaming emission.",
+    "is_enabled": 1,
+    "created_at": "2026-11-10 04:03:56",
+    "updated_at": "2026-11-10 04:03:56"
+},
   objectives: [
     {
         "id": "kills",
@@ -1492,6 +1596,12 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setPowerups === 'function' && stageConfig.powerups) {
+    engineApi.setPowerups(stageConfig.powerups);
+  }
+  if (typeof engineApi.setEnvironment === 'function' && stageConfig.environment) {
+    engineApi.setEnvironment(stageConfig.environment);
+  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -1511,8 +1621,7 @@ export function applyStage(engineApi) {
     engineApi.showToast('🚀 STAGE 2: EVENT HORIZON [ARCORE] LOADED');
   }
 
-
-    // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
+  // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
   const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
@@ -1685,6 +1794,7 @@ export default {
   applyStage,
   fireEnemyWeapon,
   updateEnemyMovement,
+  pullEnemyWave,
   updateStageWaves,
   handleStageEvent,
   stageEvents,

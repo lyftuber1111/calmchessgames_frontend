@@ -1,15 +1,20 @@
 import * as THREE from 'three';
 import {
+  createStagePool,
   MeshPool,
   StageObjectPool,
   loadCockpitCracksGlbAsset,
   loadCockpitCracksAsset,
   setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
   toggleRandomWeaponDecal,
   toggleBrokenCoreDecal,
   toggleGameOverDecals,
   resetCockpitOverlayDecals,
-  COCKPIT_CRACKS_GLB_URL
+  COCKPIT_CRACKS_GLB_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_TYPE
 } from './warp_origin_pool.js';
 
 /**
@@ -301,7 +306,7 @@ export const stageConfig = {
             {
                 "id": "ew_0_fzo0",
                 "name": "Plasma Pulse",
-                "type": "custom_model",
+                "type": "beam",
                 "mount": "center",
                 "model_url": "mobile/warp_origin_images/cyan_laser_rod_5.glb",
                 "model_type": "custom_glb",
@@ -393,9 +398,9 @@ export const stageConfig = {
             {
                 "id": "ew_0_jerr",
                 "name": "Dual Ion Cannon",
-                "type": "custom_model",
+                "type": "missile",
                 "mount": "center",
-                "model_url": "mobile/warp_origin_images/cyan_laser_rod_5.glb",
+                "model_url": "",
                 "model_type": "custom_glb",
                 "fire_point_x": 0,
                 "fire_point_y": -0.15,
@@ -1918,7 +1923,7 @@ export function applyStage(engineApi) {
     engineApi.showToast('🚀 STAGE 1: WARP ORIGIN [VR] LOADED');
   }
 
-    // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
+  // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
   const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
@@ -2091,6 +2096,7 @@ export default {
   applyStage,
   fireEnemyWeapon,
   updateEnemyMovement,
+  pullEnemyWave,
   updateStageWaves,
   handleStageEvent,
   stageEvents,

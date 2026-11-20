@@ -50,8 +50,8 @@ export {
  * Calm Chess Games / Wormhole XR (c) 2026. All Rights Reserved.
  *
  * Pre-allocates enemies and weapons graphic objects.
- * Sets 3D graphic models, scales, physical dimensions, and weapons attributes
- * pulled dynamically from the Game Manager admin database.
+ * Sets 3D graphic models, scales, physical dimensions, weapons, powerups,
+ * and cosmic environment attributes pulled dynamically from the Game Manager admin database.
  */
 
 export class EventHorizonObjectPool extends StageObjectPool {
@@ -61,7 +61,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
       stage_name: 'Event Horizon',
       stage_slug: 'event_horizon',
       environment_theme: 'Event Horizon Amber',
-            cockpit_overlay_object: {
+      cockpit_overlay_object: {
         model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
         model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
         asset_type: '3d_model'
@@ -144,11 +144,11 @@ export class EventHorizonObjectPool extends StageObjectPool {
         "color": "#ffd166",
         "hits": 8,
         "armor": 50,
-        "shield": 4,
+        "shield": 2,
         "speed": 200,
         "attack_damage": 20,
         "weapon_name": "Tachyon Beam",
-        "weapon_damage": 20,
+        "weapon_damage": 2,
         "weapon_speed": 600,
         "weapon_color": "#ffd166",
         "weapon_scale": 1,
@@ -196,7 +196,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
                 "fire_rate_times_per_sec": 0.333,
                 "fire_interval_ms": 3000,
                 "fire_rate_seconds": 3,
-                "damage": 20,
+                "damage": 2,
                 "speed": 600,
                 "color": "#ffd166",
                 "special_fx": "cockpit_overlay_decals",
@@ -221,6 +221,94 @@ export class EventHorizonObjectPool extends StageObjectPool {
         "destruction_particle_scale": 1
     }
 ],
+      powerups: [
+    {
+        "id": 3,
+        "powerup_id": "health_pack_s2",
+        "powerup_name": "Tachyon Infused Hull Matrix",
+        "powerup_type": "health",
+        "icon": "💚",
+        "model_3d_type": "dodecahedron",
+        "model_3d_url": "",
+        "color_hex": "#10b981",
+        "scale": 1,
+        "length": 2.5,
+        "height": 2.5,
+        "depth": 2.5,
+        "circumference": 6,
+        "stage_level": 2,
+        "device_type": "all",
+        "trigger_events": "Tachyon Flux Distortions, Interceptor Ambush Wave",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 50,
+        "enemy_id": "phase_interceptor",
+        "boost_percentage": 35,
+        "description": "Tachyon-stabilized cellular lattice repairing kinetic hull fissures. Restores 35% hull integrity.",
+        "is_enabled": 1
+    },
+    {
+        "id": 4,
+        "powerup_id": "shield_cell_s2",
+        "powerup_name": "Ion Shield Harmonizer",
+        "powerup_type": "shield",
+        "icon": "🔰",
+        "model_3d_type": "torus",
+        "model_3d_url": "",
+        "color_hex": "#38bdf8",
+        "scale": 1,
+        "length": 2.8,
+        "height": 2.8,
+        "depth": 2.8,
+        "circumference": 7,
+        "stage_level": 2,
+        "device_type": "all",
+        "trigger_events": "Ion Cloud Interference, Wormhole Coil Resonance Alert",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 70,
+        "enemy_id": "all",
+        "boost_percentage": 40,
+        "description": "Re-polarizes phase deflector shields against relativistic radiation. Boosts shield capacity by +40%.",
+        "is_enabled": 1
+    }
+],
+      environment: {
+    "id": 2,
+    "env_id": "event_horizon_singularity_s2",
+    "env_name": "Amber Event Horizon Relativistic Singularity",
+    "env_category": "wormhole_singularity",
+    "stage_level": 2,
+    "device_type": "all",
+    "model_3d_type": "procedural_wormhole",
+    "model_3d_url": "",
+    "image_asset_url": "desktop/event_horizon_images/singularity_corona.png",
+    "image_asset_type": "corona_sprite",
+    "scale": "1.15",
+    "event_horizon_radius": "8.20",
+    "accretion_disk_radius": "42.00",
+    "length": "320.00",
+    "height": "85.00",
+    "depth": "320.00",
+    "circumference": "51.52",
+    "color_primary": "#ffd166",
+    "color_edge": "#663300",
+    "color_core": "#ff9900",
+    "color_hot": "#fff4d6",
+    "color_halo": "#ffaa00",
+    "ambient_light": "#331a00",
+    "center_light": "#ffaa00",
+    "rotation_speed": "0.850",
+    "distortion_intensity": "1.35",
+    "particle_count": 5200,
+    "quick_effect_primary": "tachyon_trail",
+    "quick_effect_secondary": "plasma_aura",
+    "quick_effect_color": "#ffd166",
+    "quick_effect_intensity": "1.20",
+    "quick_effect_speed": "1.15",
+    "description": "High-velocity light-horizon boundary enveloped in incandescent amber relativistic shear and tachyon streaming emission.",
+    "is_enabled": 1,
+    "created_at": "2026-11-10 04:03:56",
+    "updated_at": "2026-11-10 04:03:56"
+},
       ...stageConfig
     };
 

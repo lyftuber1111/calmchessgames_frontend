@@ -61,7 +61,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
       stage_name: 'Warp Origin',
       stage_slug: 'warp_origin',
       environment_theme: 'Warp Cyan Corridor',
-            cockpit_overlay_object: {
+      cockpit_overlay_object: {
         model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
         model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
         asset_type: '3d_model'
@@ -291,7 +291,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
             {
                 "id": "ew_0_fzo0",
                 "name": "Plasma Pulse",
-                "type": "custom_model",
+                "type": "beam",
                 "mount": "center",
                 "model_url": "mobile/warp_origin_images/cyan_laser_rod_5.glb",
                 "model_type": "custom_glb",
@@ -383,9 +383,9 @@ export class WarpOriginObjectPool extends StageObjectPool {
             {
                 "id": "ew_0_jerr",
                 "name": "Dual Ion Cannon",
-                "type": "custom_model",
+                "type": "missile",
                 "mount": "center",
-                "model_url": "mobile/warp_origin_images/cyan_laser_rod_5.glb",
+                "model_url": "",
                 "model_type": "custom_glb",
                 "fire_point_x": 0,
                 "fire_point_y": -0.15,

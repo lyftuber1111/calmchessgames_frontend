@@ -1,15 +1,20 @@
 import * as THREE from 'three';
 import {
+  createStagePool,
   MeshPool,
   StageObjectPool,
   loadCockpitCracksGlbAsset,
   loadCockpitCracksAsset,
   setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
   toggleRandomWeaponDecal,
   toggleBrokenCoreDecal,
   toggleGameOverDecals,
   resetCockpitOverlayDecals,
-  COCKPIT_CRACKS_GLB_URL
+  COCKPIT_CRACKS_GLB_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_TYPE
 } from './final_boss_stage_pool.js';
 
 /**
@@ -69,14 +74,14 @@ export const stageConfig = {
       panelBorder: 'rgba(0, 240, 255, 0.40)'
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color(0x003366),
-      uColorCore: new THREE.Color(0x00f0ff),
-      uColorHot: new THREE.Color(0xd6ffff),
-      uHaloColor: new THREE.Color(0x00f0ff)
+      uColorEdge: new THREE.Color('#003366'),
+      uColorCore: new THREE.Color('#00f0ff'),
+      uColorHot: new THREE.Color('#d6ffff'),
+      uHaloColor: new THREE.Color('#00f0ff')
     },
     lighting: {
-      ambient: 0x002233,
-      center: 0x00f0ff
+      ambient: new THREE.Color('#002233').getHex(),
+      center: new THREE.Color('#00f0ff').getHex()
     },
     particles: {
     "count": 5500,
@@ -89,7 +94,18 @@ export const stageConfig = {
     "boostMultiplier": 2.2,
     "pitchSpeed": 0.0022,
     "yawSpeed": 0.0022
-}
+},
+    environmentParams: {
+      rotationSpeed: 0.65,
+      distortionIntensity: 1,
+      imageAssetUrl: '',
+      model3dUrl: '',
+      quickEffectPrimary: 'none',
+      quickEffectSecondary: 'none',
+      quickEffectColor: '#00f0ff',
+      quickEffectIntensity: 1,
+      quickEffectSpeed: 1
+    }
   },
   weapons: {
     "initial": {
@@ -341,6 +357,8 @@ export const stageConfig = {
         "destruction_particle_scale": 2
     }
 ],
+  powerups: [],
+  environment: [],
   objectives: [
     {
         "id": "kills",
@@ -1738,6 +1756,12 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setPowerups === 'function' && stageConfig.powerups) {
+    engineApi.setPowerups(stageConfig.powerups);
+  }
+  if (typeof engineApi.setEnvironment === 'function' && stageConfig.environment) {
+    engineApi.setEnvironment(stageConfig.environment);
+  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -1757,8 +1781,7 @@ export function applyStage(engineApi) {
     engineApi.showToast('🚀 STAGE 5: FINAL BOSS STAGE [DESKTOP] LOADED');
   }
 
-
-    // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
+  // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
   const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
@@ -1933,6 +1956,7 @@ export default {
   applyStage,
   fireEnemyWeapon,
   updateEnemyMovement,
+  pullEnemyWave,
   updateStageWaves,
   handleStageEvent,
   stageEvents,

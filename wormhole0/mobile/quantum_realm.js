@@ -1,15 +1,20 @@
 import * as THREE from 'three';
 import {
+  createStagePool,
   MeshPool,
   StageObjectPool,
   loadCockpitCracksGlbAsset,
   loadCockpitCracksAsset,
   setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
   toggleRandomWeaponDecal,
   toggleBrokenCoreDecal,
   toggleGameOverDecals,
   resetCockpitOverlayDecals,
-  COCKPIT_CRACKS_GLB_URL
+  COCKPIT_CRACKS_GLB_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_TYPE
 } from './quantum_realm_pool.js';
 
 /**
@@ -69,17 +74,17 @@ export const stageConfig = {
       panelBorder: 'rgba(244, 63, 94, 0.40)'
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color(0x66001a),
-      uColorCore: new THREE.Color(0xff0055),
-      uColorHot: new THREE.Color(0xffe6ee),
-      uHaloColor: new THREE.Color(0xf43f5e)
+      uColorEdge: new THREE.Color('#660022'),
+      uColorCore: new THREE.Color('#ff0055'),
+      uColorHot: new THREE.Color('#ffd6e6'),
+      uHaloColor: new THREE.Color('#ff0066')
     },
     lighting: {
-      ambient: 0x330011,
-      center: 0xf43f5e
+      ambient: new THREE.Color('#330011').getHex(),
+      center: new THREE.Color('#ff1166').getHex()
     },
     particles: {
-    "count": 2200,
+    "count": 2500,
     "starCount": 1200,
     "dustCount": 300,
     "speed": 0.85
@@ -89,7 +94,18 @@ export const stageConfig = {
     "boostMultiplier": 2.2,
     "pitchSpeed": 0.0022,
     "yawSpeed": 0.0022
-}
+},
+    environmentParams: {
+      rotationSpeed: 1.35,
+      distortionIntensity: 2,
+      imageAssetUrl: 'desktop/quantum_realm_images/singularity_corona.png',
+      model3dUrl: '',
+      quickEffectPrimary: 'quantum_phase_glow',
+      quickEffectSecondary: 'energy_shield_pulse',
+      quickEffectColor: '#f43f5e',
+      quickEffectIntensity: 1.6,
+      quickEffectSpeed: 1.5
+    }
   },
   weapons: {
     "initial": {
@@ -167,25 +183,36 @@ export const stageConfig = {
         "fire_rate_times_per_sec": 0.833,
         "weapons": [
             {
-                "id": "ew_quantum_dreadnought",
-                "name": "Quantum Annihilator",
+                "id": "ew_quantum_dreadnought_0",
+                "name": "Plasma Pulse",
                 "type": "beam",
-                "mount": "dual_wingtip",
+                "mount": "center",
                 "model_url": "",
                 "model_type": "",
                 "fire_point_x": 0,
                 "fire_point_y": -0.15,
                 "fire_point_z": 1.5,
                 "scale": 1,
+                "scale_x": 1,
+                "scale_y": 1,
+                "scale_z": 1,
                 "size_x": 1,
                 "size_y": 1,
                 "size_z": 1,
+                "dimensions": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
                 "fire_rate_times_per_sec": 0.833,
                 "fire_interval_ms": 1200,
                 "fire_rate_seconds": 1.2,
-                "damage": 60,
-                "speed": 650,
-                "color": "#ef476f",
+                "damage": 5,
+                "speed": 450,
+                "color": "#ff2255",
+                "special_fx": "cockpit_overlay_decals",
+                "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
+                "special_fx_type": "overlay",
                 "is_enabled": 1
             }
         ],
@@ -205,6 +232,94 @@ export const stageConfig = {
         "destruction_particle_scale": 1
     }
 ],
+  powerups: [
+    {
+        "id": 7,
+        "powerup_id": "health_pack_s4",
+        "powerup_name": "Quantum Regenerative Core",
+        "powerup_type": "health",
+        "icon": "💖",
+        "model_3d_type": "icosahedron",
+        "model_3d_url": "",
+        "color_hex": "#ec4899",
+        "scale": 1.1,
+        "length": 2.8,
+        "height": 2.8,
+        "depth": 2.8,
+        "circumference": 7,
+        "stage_level": 4,
+        "device_type": "all",
+        "trigger_events": "Phase-Shift Anomalies, Quantum Dreadnought Confrontation",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 60,
+        "enemy_id": "quantum_dreadnought",
+        "boost_percentage": 50,
+        "description": "Sub-atomic phase reconstructor restoring vessel structural integrity by +50%.",
+        "is_enabled": 1
+    },
+    {
+        "id": 8,
+        "powerup_id": "shield_cell_s4",
+        "powerup_name": "Omni-Phase Deflector Matrix",
+        "powerup_type": "shield",
+        "icon": "🛡️",
+        "model_3d_type": "octahedron",
+        "model_3d_url": "",
+        "color_hex": "#00f0ff",
+        "scale": 1.2,
+        "length": 3.2,
+        "height": 3.2,
+        "depth": 3.2,
+        "circumference": 8,
+        "stage_level": 4,
+        "device_type": "all",
+        "trigger_events": "Multi-Dimensional Phasing, Antimatter Vortex",
+        "drop_on_enemy_kill": 1,
+        "drop_chance_pct": 80,
+        "enemy_id": "all",
+        "boost_percentage": 60,
+        "description": "Multi-frequency quantum deflector battery. Restores +60% deflector shield power.",
+        "is_enabled": 1
+    }
+],
+  environment: {
+    "id": 4,
+    "env_id": "quantum_singularity_s4",
+    "env_name": "Quantum Phasor Magenta Singularity",
+    "env_category": "wormhole_singularity",
+    "stage_level": 4,
+    "device_type": "all",
+    "model_3d_type": "procedural_wormhole",
+    "model_3d_url": "",
+    "image_asset_url": "desktop/quantum_realm_images/singularity_corona.png",
+    "image_asset_type": "corona_sprite",
+    "scale": "1.45",
+    "event_horizon_radius": "10.00",
+    "accretion_disk_radius": "50.00",
+    "length": "380.00",
+    "height": "100.00",
+    "depth": "380.00",
+    "circumference": "62.83",
+    "color_primary": "#f43f5e",
+    "color_edge": "#660022",
+    "color_core": "#ff0055",
+    "color_hot": "#ffd6e6",
+    "color_halo": "#ff0066",
+    "ambient_light": "#330011",
+    "center_light": "#ff1166",
+    "rotation_speed": "1.350",
+    "distortion_intensity": "2.00",
+    "particle_count": 6800,
+    "quick_effect_primary": "quantum_phase_glow",
+    "quick_effect_secondary": "energy_shield_pulse",
+    "quick_effect_color": "#f43f5e",
+    "quick_effect_intensity": "1.60",
+    "quick_effect_speed": "1.50",
+    "description": "Sub-quantum realm boundary with multidimensional reality fractures, energetic magenta plasma bursts, and quantum phase oscillations.",
+    "is_enabled": 1,
+    "created_at": "2026-11-10 04:03:56",
+    "updated_at": "2026-11-10 04:03:56"
+},
   objectives: [
     {
         "id": "kills",
@@ -1477,6 +1592,12 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setPowerups === 'function' && stageConfig.powerups) {
+    engineApi.setPowerups(stageConfig.powerups);
+  }
+  if (typeof engineApi.setEnvironment === 'function' && stageConfig.environment) {
+    engineApi.setEnvironment(stageConfig.environment);
+  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -1496,8 +1617,7 @@ export function applyStage(engineApi) {
     engineApi.showToast('🚀 STAGE 4: QUANTUM REALM [MOBILE] LOADED');
   }
 
-
-    // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
+  // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
   const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
@@ -1670,6 +1790,7 @@ export default {
   applyStage,
   fireEnemyWeapon,
   updateEnemyMovement,
+  pullEnemyWave,
   updateStageWaves,
   handleStageEvent,
   stageEvents,

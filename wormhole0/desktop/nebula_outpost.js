@@ -1,15 +1,20 @@
 import * as THREE from 'three';
 import {
+  createStagePool,
   MeshPool,
   StageObjectPool,
   loadCockpitCracksGlbAsset,
   loadCockpitCracksAsset,
   setupCockpitCracksHierarchy,
+  flashCockpitCracksOverlay,
+  showGameOverCockpitCracksOverlay,
   toggleRandomWeaponDecal,
   toggleBrokenCoreDecal,
   toggleGameOverDecals,
   resetCockpitOverlayDecals,
-  COCKPIT_CRACKS_GLB_URL
+  COCKPIT_CRACKS_GLB_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_URL,
+  STAGE_COCKPIT_CRACKS_ASSET_TYPE
 } from './nebula_outpost_pool.js';
 
 /**
@@ -69,14 +74,14 @@ export const stageConfig = {
       panelBorder: 'rgba(16, 185, 129, 0.40)'
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color(0x003322),
-      uColorCore: new THREE.Color(0x00ff88),
-      uColorHot: new THREE.Color(0xd6fff0),
-      uHaloColor: new THREE.Color(0x10b981)
+      uColorEdge: new THREE.Color('#003322'),
+      uColorCore: new THREE.Color('#00ff88'),
+      uColorHot: new THREE.Color('#d6fff0'),
+      uHaloColor: new THREE.Color('#10b981')
     },
     lighting: {
-      ambient: 0x002211,
-      center: 0x10b981
+      ambient: new THREE.Color('#002211').getHex(),
+      center: new THREE.Color('#10b981').getHex()
     },
     particles: {
     "count": 5500,
@@ -89,7 +94,18 @@ export const stageConfig = {
     "boostMultiplier": 2.2,
     "pitchSpeed": 0.0022,
     "yawSpeed": 0.0022
-}
+},
+    environmentParams: {
+      rotationSpeed: 0.65,
+      distortionIntensity: 1,
+      imageAssetUrl: '',
+      model3dUrl: '',
+      quickEffectPrimary: 'none',
+      quickEffectSecondary: 'none',
+      quickEffectColor: '#10b981',
+      quickEffectIntensity: 1,
+      quickEffectSpeed: 1
+    }
   },
   weapons: {
     "initial": {
@@ -308,6 +324,8 @@ export const stageConfig = {
         "destruction_particle_scale": 1
     }
 ],
+  powerups: [],
+  environment: [],
   objectives: [
     {
         "id": "kills",
@@ -1708,6 +1726,12 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  if (typeof engineApi.setPowerups === 'function' && stageConfig.powerups) {
+    engineApi.setPowerups(stageConfig.powerups);
+  }
+  if (typeof engineApi.setEnvironment === 'function' && stageConfig.environment) {
+    engineApi.setEnvironment(stageConfig.environment);
+  }
   if (typeof engineApi.setStageObjectives === 'function') {
     engineApi.setStageObjectives(stageConfig.objectives || []);
   }
@@ -1727,8 +1751,7 @@ export function applyStage(engineApi) {
     engineApi.showToast('🚀 STAGE 6: NEBULA OUTPOST [DESKTOP] LOADED');
   }
 
-
-    // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
+  // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
   const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
@@ -1903,6 +1926,7 @@ export default {
   applyStage,
   fireEnemyWeapon,
   updateEnemyMovement,
+  pullEnemyWave,
   updateStageWaves,
   handleStageEvent,
   stageEvents,

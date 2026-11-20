@@ -3553,6 +3553,15 @@
       z-index: 10300 !important;
     }
 
+    body.in-xr-session #game-over-modal {
+      z-index: 1000001 !important;
+      pointer-events: auto !important;
+    }
+
+    body.in-xr-session #game-countdown-overlay {
+      z-index: 1000000 !important;
+    }
+
     @media (max-width: 1024px), (pointer: coarse), (hover: none) {
       .flight-sidebar {
         display: none;
@@ -3659,6 +3668,18 @@
 
     #game-countdown-overlay.active {
       display: flex !important;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    #game-over-modal {
+      pointer-events: auto !important;
+    }
+
+    #btn-restart-game,
+    #btn-quit-game {
+      pointer-events: auto !important;
+      touch-action: manipulation;
     }
 
     .countdown-card {
@@ -4896,7 +4917,7 @@
   </div>
 
   <!-- Primary Game Module with Decoupled Stage Profiles & Events -->
-  <script type="module" src="js/wormhole0.js?v=20261119_overlay_fov_v9"></script>
+  <script type="module" src="js/wormhole0.js?v=20261119_restart_fix_v10"></script>
 
   <!-- Calm Chess Computers 2026 -->
   <div style="display:none !important; visibility:hidden !important; opacity:0 !important; pointer-events:none !important;" aria-hidden="true">Calm Chess Computers 2026</div>

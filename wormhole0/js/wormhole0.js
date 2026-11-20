@@ -24,7 +24,7 @@ import {
   toggleBrokenCoreDecal,
   toggleGameOverDecals,
   resetCockpitOverlayDecals
-} from './object_pool.js';
+} from './object_pool.js?v=20261119_restart_fix_v10';
 
 // Expose THREE and ObjectPool globally on window for dynamic stage modules and decoupled enemy systems
 if (typeof window !== 'undefined') {
@@ -64,7 +64,8 @@ const objLoader = new OBJLoader();
 // Global cache for 3D asset models (.glb, .gltf, .obj) to prevent duplicate downloads
 const cached3DAssetModels = new Map();
 const inFlight3DAssetLoads = new Map();
-const sessionAssetVersion = '20261119_overlay_fov_v9';
+const failed3DAssetUrls = new Set();
+const sessionAssetVersion = '20261119_restart_fix_v10';
 
 function normalizeAssetUrl(url) {
   if (!url) return '';
@@ -180,11 +181,17 @@ function setupLoadedModelHierarchy(scene) {
     if (child.isMesh) {
       child.castShadow = false;
       child.receiveShadow = false;
+      if (child.geometry) {
+        child.geometry.userData = child.geometry.userData || {};
+        child.geometry.userData._isSharedAsset = true;
+      }
       if (child.material) {
         const mats = Array.isArray(child.material) ? child.material : [child.material];
         mats.forEach(m => {
           if (m) {
             m.wireframe = false;
+            m.userData = m.userData || {};
+            m.userData._isSharedAsset = true;
             // Enhance PBR materials so .glb models render as crisp textured ships, never dark shadows
             if (m.isMeshStandardMaterial || m.isMeshPhysicalMaterial) {
               if (m.metalness > 0.45) m.metalness = 0.25;
@@ -198,6 +205,12 @@ function setupLoadedModelHierarchy(scene) {
                 m.emissiveIntensity = 0.38;
               }
             }
+            ['map', 'emissiveMap', 'normalMap', 'roughnessMap', 'metalnessMap', 'alphaMap'].forEach(texKey => {
+              if (m[texKey]) {
+                m[texKey].userData = m[texKey].userData || {};
+                m[texKey].userData._isSharedAsset = true;
+              }
+            });
           }
         });
       }
@@ -220,6 +233,11 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
   const url = normalizeAssetUrl(rawUrl);
   if (!url) {
     if (onError) onError(new Error('Empty asset URL'));
+    return;
+  }
+
+  if (failed3DAssetUrls.has(url)) {
+    if (onError) onError(new Error(`Cached failed 3D asset URL: ${url}`));
     return;
   }
 
@@ -265,6 +283,7 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
         undefined,
         (err) => {
           inFlight3DAssetLoads.delete(url);
+          failed3DAssetUrls.add(url);
           console.warn(`[3DAsset] Failed to load .OBJ model from '${url}' (fetch: ${fetchUrl}):`, err);
           reject(err);
         }
@@ -281,6 +300,7 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
         undefined,
         (err) => {
           inFlight3DAssetLoads.delete(url);
+          failed3DAssetUrls.add(url);
           console.warn(`[3DAsset] Failed to load GLTF/GLB model from '${url}' (fetch: ${fetchUrl}):`, err);
           reject(err);
         }
@@ -301,7 +321,30 @@ function load3DAssetModel(rawUrl, onLoaded, onError) {
 
 function preload3DAssetModel(rawUrl) {
   return new Promise((resolve) => {
-    load3DAssetModel(rawUrl, (model) => resolve(model), (err) => resolve(null));
+    let settled = false;
+    const tid = setTimeout(() => {
+      if (!settled) {
+        settled = true;
+        resolve(null);
+      }
+    }, 2500);
+    load3DAssetModel(
+      rawUrl,
+      (model) => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(tid);
+          resolve(model);
+        }
+      },
+      () => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(tid);
+          resolve(null);
+        }
+      }
+    );
   });
 }
 
@@ -351,6 +394,7 @@ let currentActiveDeviceType = 'desktop';
 let activeStageModule = null;
 let currentStageObjectPool = null;
 let activeGameOverTimeout = null;
+let isRestartingMission = false;
 
 // Application & Flight state
 const state = {
@@ -5108,6 +5152,9 @@ function getEngineApi() {
     spawnWaveEnemies: (count, waveConfig, enemyPool) => {
       return spawnEnemyWaveFromPool(count, waveConfig, enemyPool);
     },
+    spawnEnemyWaveFromPool: (count, waveConfig, enemyPool) => {
+      return spawnEnemyWaveFromPool(count, waveConfig, enemyPool);
+    },
     getWaves: () => state.stageWaves,
     getCurrentWave: () => state.currentWave,
     getTotalWaves: () => state.totalWaves,
@@ -5145,6 +5192,7 @@ function getEngineApi() {
     stageObjectPool: () => currentStageObjectPool,
     setEnemyMovementHandler: (fn) => { activeEnemyMovementHandler = fn; },
     setEnemyWeaponHandler: (fn) => { activeEnemyWeaponHandler = fn; },
+    setStageWaveHandler: (fn) => { activeStageWaveHandler = fn; },
     setStageEventHandlers: (handlers) => { activeStageEventHandlers = handlers; },
     setStageEventHandler: (fn) => { activeStageEventHandler = fn; },
     getEnemyBolts: () => enemyBolts,
@@ -5221,7 +5269,10 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       const uniquePreloadUrls = [...new Set(preloadUrls.filter(Boolean))];
       if (uniquePreloadUrls.length > 0) {
         console.log(`[Wormhole XR Engine] Preloading ${uniquePreloadUrls.length} custom 3D models for Stage ${stage.level}...`);
-        await Promise.all(uniquePreloadUrls.map(u => preload3DAssetModel(u)));
+        await Promise.race([
+          Promise.all(uniquePreloadUrls.map(u => preload3DAssetModel(u))),
+          new Promise(resolve => setTimeout(resolve, 3000))
+        ]);
         console.log(`[Wormhole XR Engine] All 3D models preloaded and cached for Stage ${stage.level}.`);
       }
     } catch (preloadErr) {
@@ -5234,8 +5285,13 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     // the pool before mod.applyStage(api) executes.
     // -------------------------------------------------------------------------
     try {
-      if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
-        currentStageObjectPool.despawnAll();
+      if (currentStageObjectPool) {
+        if (typeof currentStageObjectPool.dispose === 'function') {
+          currentStageObjectPool.dispose();
+        } else if (typeof currentStageObjectPool.despawnAll === 'function') {
+          currentStageObjectPool.despawnAll();
+        }
+        currentStageObjectPool = null;
       }
       const candidatePoolPaths = [
         `./${stage.slug}_pool.js?t=${timestamp}`,
@@ -5275,7 +5331,10 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
 
       window.stageObjectPool = currentStageObjectPool;
       if (currentStageObjectPool && currentStageObjectPool.cockpitOverlayReadyPromise) {
-        await currentStageObjectPool.cockpitOverlayReadyPromise;
+        await Promise.race([
+          currentStageObjectPool.cockpitOverlayReadyPromise,
+          new Promise(resolve => setTimeout(resolve, 2500))
+        ]);
       }
       if (currentStageObjectPool && camera) {
         const pooledOverlay = currentStageObjectPool.getCockpitCracksOverlay(camera);
@@ -5324,20 +5383,20 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       console.warn('[Wormhole XR Engine] Game Manager database sync error on level change:', syncErr);
     });
 
-    // Keep DOM script tag synchronized for DevTools Elements panel inspection
+    // Keep DOM metadata tag synchronized for DevTools Elements panel inspection without redundant script refetch
     try {
       let stageScriptEl = document.getElementById('active-stage-script');
       if (!stageScriptEl) {
-        stageScriptEl = document.createElement('script');
+        stageScriptEl = document.createElement('meta');
         stageScriptEl.id = 'active-stage-script';
-        stageScriptEl.type = 'module';
+        stageScriptEl.name = 'active-stage-script';
         document.head.appendChild(stageScriptEl);
       }
-      stageScriptEl.src = `${deviceType}/${stage.slug}_${deviceType}.js?t=${timestamp}`;
+      stageScriptEl.dataset.scriptSrc = `${deviceType}/${stage.slug}_${deviceType}.js?t=${timestamp}`;
       stageScriptEl.dataset.stageLevel = stage.level;
       stageScriptEl.dataset.deviceType = deviceType;
     } catch (domErr) {
-      console.warn('[Wormhole XR Engine] Could not update active-stage-script tag:', domErr);
+      console.warn('[Wormhole XR Engine] Could not update active-stage-script metadata:', domErr);
     }
 
     // Synchronize UI headers and selectors
@@ -5409,8 +5468,9 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
  * resets vessel position/health/shield/stats, loads the new stage pool/assets,
  * and launches Wave 1 immediately.
  */
-async function abortCurrentStageAndStartFresh(targetStage = 1) {
+async function abortCurrentStageAndStartFresh(targetStage = 1, options = {}) {
   const stageNum = parseInt(targetStage) || 1;
+  const launchImmediately = options.launchImmediately !== false;
   console.log(`[Wormhole XR Engine] Aborting current stage (${currentActiveStage}) and starting Stage ${stageNum} fresh...`);
 
   // Clear any active game over modal display timer
@@ -5422,6 +5482,11 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
   // 1. Hide Game Over modal if showing
   const modal = document.getElementById('game-over-modal');
   if (modal) modal.style.display = 'none';
+
+  // Close weapon wheel if open
+  if (typeof closeWeaponWheel === 'function') {
+    try { closeWeaponWheel(); } catch (e) {}
+  }
 
   // 2. Dismiss and fade out splash screen if showing
   const splashEl = document.getElementById('wormhole-splash-screen');
@@ -5444,9 +5509,9 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
     }
   } catch (e) {}
 
-  // 4. Dismiss and hide any countdown overlay & clear active timers
+  // 4. Dismiss and hide any countdown overlay & clear active timers (only if launching immediately)
   const countdownOverlay = document.getElementById('game-countdown-overlay');
-  if (countdownOverlay) {
+  if (launchImmediately && countdownOverlay) {
     countdownOverlay.classList.remove('active');
     countdownOverlay.style.display = 'none';
   }
@@ -5468,8 +5533,34 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
   }
   document.body.classList.add('portrait-dismissed');
 
-  // 6. Clean up ALL active enemies, weapon meshes, lasers, projectiles, explosions, powerups, special effects
+  // 6. Reset combat/wave flags BEFORE async reload so animate()/updateEnemiesCombat() never spawn mid-restart
+  state.isGameOver = false;
+  state.isPaused = false;
+  state.hasStarted = false;
+  state.isCountdownActive = !launchImmediately;
+  state.currentWave = 0;
+  state.waveStartTime = 0;
+  state.waveCompleted = false;
+  state.waveEnemiesSpawned = 0;
+  state.waveEnemiesRemaining = 0;
   state.waveSpawnInProgress = false;
+  state.lastLaserShotTime = 0;
+  state.lockedTargetEnemy = null;
+  state.vectorLockEngaged = false;
+  state.scanProgress = 0;
+  state.isScanning = false;
+  document.body.classList.remove('game-paused', 'game-in-flight');
+
+  if (typeof setGamePaused === 'function') {
+    setGamePaused(false);
+  } else {
+    document.body.classList.remove('game-paused');
+    if (typeof updateLockoutHighlights === 'function') updateLockoutHighlights();
+  }
+  const btnQuickPause = document.getElementById('btn-quick-pause');
+  if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
+
+  // 7. Clean up ALL active enemies, weapon meshes, lasers, projectiles, explosions, powerups, special effects
   if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
     currentStageObjectPool.despawnAll();
   }
@@ -5478,7 +5569,7 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
   despawnAllActivePowerups();
   clearActiveSpecialEffects();
 
-  // 7. Reset and hide cockpit cracks overlay, damage vignette, and red hit edges
+  // 8. Reset and hide cockpit cracks overlay, damage vignette, and red hit edges
   const cracks = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null)
     || (cockpitOverlayCamera && (cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay')))
     || (camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
@@ -5504,19 +5595,11 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
   if (typeof document !== 'undefined') {
     const redEdges = document.getElementById('cockpit-edges-red');
     if (redEdges) redEdges.style.opacity = '0';
+    const htmlOverlay = document.getElementById('cockpit-cracks-overlay');
+    if (htmlOverlay) htmlOverlay.style.opacity = '0';
   }
   const damageVignette = document.getElementById('damage-vignette');
   if (damageVignette) damageVignette.style.opacity = '0';
-
-  // 8. Completely reset pause & game over states across entire game - start flight immediately!
-  state.isGameOver = false;
-  state.isPaused = false;
-  state.hasStarted = true;
-  state.isCountdownActive = false;
-  document.body.classList.remove('game-paused');
-  document.body.classList.add('game-in-flight');
-  const btnQuickPause = document.getElementById('btn-quick-pause');
-  if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
 
   // 9. Reset keyboard and mouse capture states
   for (const k in keys) {
@@ -5616,7 +5699,27 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
     jumpSelect.value = stageNum.toString();
   }
 
-  // 16. Update player defense HUD, stage objectives, wormhole center, and crosshair reticle
+  // 16. Reset cockpit overlay decals & decal threshold tracker on the newly mounted overlay
+  const mountedOverlay = ensureCockpitOverlayMounted()
+    || (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null)
+    || (currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
+  if (mountedOverlay && typeof resetCockpitOverlayDecals === 'function') {
+    resetCockpitOverlayDecals(mountedOverlay);
+  }
+  if (typeof window !== 'undefined' && typeof window.syncCockpitDecalThreshold === 'function') {
+    window.syncCockpitDecalThreshold(mountedOverlay, 100, 100);
+  }
+  if (typeof window !== 'undefined' && typeof window.hideCockpitCracks === 'function') {
+    try { window.hideCockpitCracks(); } catch (e) {}
+  }
+  if (typeof document !== 'undefined') {
+    const htmlOverlayPostLoad = document.getElementById('cockpit-cracks-overlay');
+    if (htmlOverlayPostLoad) htmlOverlayPostLoad.style.opacity = '0';
+    const redEdgesPostLoad = document.getElementById('cockpit-edges-red');
+    if (redEdgesPostLoad) redEdgesPostLoad.style.opacity = '0';
+  }
+
+  // 17. Update player defense HUD, stage objectives, wormhole center, and crosshair reticle
   updatePlayerDefenseHUD();
   renderStageObjectivesUI();
   centerWormholeOnScreen(true);
@@ -5625,21 +5728,6 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
   // Reset frame timestamp to prevent delta time explosion
   state.lastFrameTime = performance.now();
 
-  // 17. Trigger Stage Wave 1 immediately fresh (pulling enemies from pool)
-  state.currentWave = 0;
-  state.waveStartTime = performance.now();
-  state.waveCompleted = false;
-  state.waveSpawnInProgress = false;
-  lastEnemySpawnCheckTime = performance.now();
-  const api = getEngineApi();
-  if (typeof activeStageWaveHandler === 'function') {
-    try { activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies }); } catch (e) {}
-  }
-  if (state.currentWave === 0 && active3DEnemies.length === 0) {
-    const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-    spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
-  }
-
   // 18. Auto-close the top Telemetry & Modes panel if auto-close is enabled
   const chkAutoClose = document.getElementById('chk-auto-close-top');
   const topDrawer = document.getElementById('top-drawer-container');
@@ -5647,9 +5735,41 @@ async function abortCurrentStageAndStartFresh(targetStage = 1) {
     topDrawer.classList.remove('open');
   }
 
-  // 19. Ensure keyboard focus and request crosshair capture if on desktop
-  if (!isMobileInUse() && !state.isPointerLocked) {
-    requestCrosshairCapture(true);
+  // 19. Launch immediately only if requested (e.g. jumpToStage); during restartGame(), wait for countdown
+  if (launchImmediately) {
+    state.isGameOver = false;
+    state.isPaused = false;
+    state.isCountdownActive = false;
+    state.hasStarted = true;
+    document.body.classList.add('game-in-flight');
+
+    state.currentWave = 0;
+    state.waveStartTime = performance.now();
+    state.waveCompleted = false;
+    state.waveSpawnInProgress = false;
+    lastEnemySpawnCheckTime = performance.now();
+    const api = getEngineApi();
+    if (typeof activeStageWaveHandler === 'function') {
+      try { activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies }); } catch (e) {}
+    }
+    if (state.currentWave === 0 && active3DEnemies.length === 0) {
+      const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+      spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+    }
+    if (state.currentWave === 0 && active3DEnemies.length > 0) {
+      state.currentWave = 1;
+      state.waveStartTime = performance.now();
+    }
+
+    if (!isMobileInUse() && !state.isPointerLocked) {
+      requestCrosshairCapture(true);
+    }
+  } else {
+    state.hasStarted = false;
+    state.currentWave = 0;
+    state.waveStartTime = 0;
+    state.waveCompleted = false;
+    state.waveSpawnInProgress = false;
   }
 
   console.log(`[Wormhole XR Engine] Stage ${stageNum} aborted previous state and started fresh.`);
@@ -7312,7 +7432,7 @@ function createPlayerLaserMesh(activeWpn) {
 }
 
 function fireLaserBeam() {
-  if (state.isPaused) return;
+  if (state.isPaused || state.isGameOver || state.isCountdownActive || !state.hasStarted) return;
   if (!scene || !camera) return;
 
   const activeWpn = weaponsSystem.getActiveWeapon();
@@ -7947,7 +8067,7 @@ document.addEventListener('pointerlockchange', () => {
 
 function isInteractiveUiElement(target, event = null) {
   const selector =
-    '#game-over-modal, .device-modal-overlay, ' +
+    '#game-over-modal, #game-countdown-overlay, .device-modal-overlay, ' +
     '#left-drawer-container, #top-drawer-container, #bottom-drawer-container, ' +
     '#mobile-touch-controls, #unsupported-device-modal, .weapon-wheel-overlay, ' +
     '#wormhole-splash-screen, ' +
@@ -7988,7 +8108,7 @@ function requestCrosshairCapture(forceInXr = false) {
 
 // Window focus event captures crosshair when focusing into the window
 window.addEventListener('focus', () => {
-  if (!state.isXR && !state.isGameOver && !state.isPaused) {
+  if (!state.isXR && !state.isGameOver && !state.isPaused && !state.isCountdownActive) {
     requestCrosshairCapture();
   }
 });
@@ -8213,7 +8333,7 @@ function alignToWormhole() {
 
 // Prevent browser viewport scrolling/bouncing unless inside a dedicated scrollable panel
 window.addEventListener('touchmove', (e) => {
-  if (!e.target.closest('.drawer-content, .hud-header, .hud-footer, #landscape-rotate-prompt, .throttle-slider-container')) {
+  if (!e.target.closest('.drawer-content, .hud-header, .hud-footer, #landscape-rotate-prompt, .throttle-slider-container, #game-over-modal')) {
     if (e.cancelable) e.preventDefault();
   }
 }, { passive: false });
@@ -8833,20 +8953,20 @@ function update3DPowerups(delta) {
 function disposeMeshHierarchy(obj) {
   if (!obj) return;
   obj.traverse((child) => {
-    if (child.geometry) {
+    if (child.geometry && !(child.geometry.userData && child.geometry.userData._isSharedAsset)) {
       child.geometry.dispose();
     }
     if (child.material) {
       const mats = Array.isArray(child.material) ? child.material : [child.material];
       mats.forEach(m => {
-        if (!m) return;
-        if (m.map && typeof m.map.dispose === 'function') m.map.dispose();
-        if (m.alphaMap && typeof m.alphaMap.dispose === 'function') m.alphaMap.dispose();
-        if (m.lightMap && typeof m.lightMap.dispose === 'function') m.lightMap.dispose();
-        if (m.normalMap && typeof m.normalMap.dispose === 'function') m.normalMap.dispose();
-        if (m.roughnessMap && typeof m.roughnessMap.dispose === 'function') m.roughnessMap.dispose();
-        if (m.metalnessMap && typeof m.metalnessMap.dispose === 'function') m.metalnessMap.dispose();
-        m.dispose();
+        if (!m || (m.userData && m.userData._isSharedAsset)) return;
+        ['map', 'alphaMap', 'lightMap', 'normalMap', 'roughnessMap', 'metalnessMap'].forEach(texKey => {
+          const tex = m[texKey];
+          if (tex && !(tex.userData && tex.userData._isSharedAsset) && typeof tex.dispose === 'function') {
+            tex.dispose();
+          }
+        });
+        if (typeof m.dispose === 'function') m.dispose();
       });
     }
     if (typeof child.dispose === 'function') {
@@ -9296,11 +9416,12 @@ function cleanupAllWeaponsAndCombatGraphics() {
       const child = scene.children[i];
       if (!child) continue;
 
-      // Keep core engine infrastructure safe
+      // Keep core engine infrastructure and pooled meshes safe (pools manage their own meshes)
       if (typeof camera !== 'undefined' && child === camera) continue;
       if (typeof cameraRig !== 'undefined' && child === cameraRig) continue;
       if (typeof starfield !== 'undefined' && child === starfield) continue;
       if (typeof particleSystem !== 'undefined' && child === particleSystem) continue;
+      if (child.userData && (child.userData.fromPool || child.userData.isEnemyGraphic || child.userData.pooledEnemyKey)) continue;
       if (child.userData && (child.userData.isWormholeMesh || child.userData.isWormholeGroup || child.userData.isPermanentEnvironment || child.userData.isWormholeRing)) continue;
 
       let shouldPurge = false;
@@ -11576,6 +11697,12 @@ function triggerGameOver() {
   }
   activeGameOverTimeout = setTimeout(() => {
     activeGameOverTimeout = null;
+    if (!state.isGameOver) return;
+    if (document.pointerLockElement) {
+      try { document.exitPointerLock(); } catch (e) {}
+    }
+    state.isPointerLocked = false;
+
     // Show Game Over modal overlay
     const modal = document.getElementById('game-over-modal');
     if (modal) {
@@ -11585,7 +11712,13 @@ function triggerGameOver() {
       if (scoreEl) scoreEl.textContent = state.score.toLocaleString();
       if (stageEl) stageEl.textContent = `Stage ${currentActiveStage}`;
       if (killsEl) killsEl.textContent = String(state.totalKills ? state.totalKills + state.stageKills : state.stageKills);
+      modal.style.pointerEvents = 'auto';
       modal.style.display = 'flex';
+      const btnRestart = document.getElementById('btn-restart-game');
+      if (btnRestart) {
+        btnRestart.disabled = false;
+        btnRestart.style.pointerEvents = 'auto';
+      }
     }
 
     if (audioMgr && typeof audioMgr.playOverheatAlert === 'function') {
@@ -11776,8 +11909,11 @@ function executeMissionCountdown(isRestart = false) {
       countdownOverlay.classList.remove('active');
       countdownOverlay.style.display = 'none';
     }
+    state.isGameOver = false;
+    state.isPaused = false;
     state.isCountdownActive = false;
     state.hasStarted = true;
+    state.waveSpawnInProgress = false;
     document.body.classList.add('game-in-flight');
     state.lastFrameTime = performance.now();
     centerWormholeOnScreen(true);
@@ -11794,6 +11930,10 @@ function executeMissionCountdown(isRestart = false) {
     if (state.currentWave === 0 && active3DEnemies.length === 0) {
       const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
       spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+    }
+    if (state.currentWave === 0 && active3DEnemies.length > 0) {
+      state.currentWave = 1;
+      state.waveStartTime = performance.now();
     }
 
     // Ensure keyboard focus is restored and request crosshair capture if on desktop
@@ -11829,6 +11969,10 @@ function executeMissionCountdown(isRestart = false) {
 
   if (countdownOverlay) {
     countdownOverlay.onclick = skipCountdown;
+    countdownOverlay.ontouchend = (e) => {
+      if (e && e.cancelable) e.preventDefault();
+      skipCountdown();
+    };
   }
 
   const updateCountdownDisplay = () => {
@@ -11869,14 +12013,57 @@ function executeMissionCountdown(isRestart = false) {
 }
 
 async function restartGame() {
-  if (activeGameOverTimeout) {
-    clearTimeout(activeGameOverTimeout);
-    activeGameOverTimeout = null;
+  if (isRestartingMission) {
+    console.log('[Wormhole XR Engine] Restart already in progress, ignoring duplicate trigger.');
+    return;
   }
-  const modal = document.getElementById('game-over-modal');
-  if (modal) modal.style.display = 'none';
-  await abortCurrentStageAndStartFresh(currentActiveStage || 1);
-  executeMissionCountdown(true);
+  isRestartingMission = true;
+  try {
+    if (activeGameOverTimeout) {
+      clearTimeout(activeGameOverTimeout);
+      activeGameOverTimeout = null;
+    }
+    const modal = document.getElementById('game-over-modal');
+    if (modal) modal.style.display = 'none';
+
+    // Immediately transition flags so no stale Game Over state or combat ticks interfere
+    state.isGameOver = false;
+    state.isPaused = false;
+    state.hasStarted = false;
+    state.isCountdownActive = true;
+
+    // Show countdown overlay immediately for instant visual feedback while stage resets
+    const countdownOverlay = document.getElementById('game-countdown-overlay');
+    const countdownText = document.getElementById('countdown-text-num');
+    const headerLabel = document.getElementById('countdown-header-label');
+    const tipLabel = document.getElementById('countdown-tip-label');
+    if (countdownOverlay) {
+      countdownOverlay.style.display = '';
+      countdownOverlay.classList.add('active');
+    }
+    if (countdownText) countdownText.textContent = '5';
+    if (headerLabel) headerLabel.textContent = 'MISSION RE-ENGAGEMENT';
+    if (tipLabel) tipLabel.textContent = 'REINITIALIZING SECTOR...';
+
+    try {
+      await abortCurrentStageAndStartFresh(currentActiveStage || 1, { launchImmediately: false });
+    } catch (abortErr) {
+      console.error('[Wormhole XR Engine] Stage reset encountered error during restart, forcing clean recovery:', abortErr);
+      state.playerShield = 100;
+      state.playerHealth = 100;
+      state.score = 0;
+      state.stageKills = 0;
+      state.totalKills = 0;
+      state.currentWave = 0;
+      state.waveSpawnInProgress = false;
+      destroyAllRemainingEnemies(false);
+      updatePlayerDefenseHUD();
+    }
+
+    executeMissionCountdown(true);
+  } finally {
+    isRestartingMission = false;
+  }
 }
 
 function quitGame() {
@@ -14470,7 +14657,7 @@ if (typeof window !== 'undefined') {
   window.loadStageDeviceModule = loadStageDeviceModule;
   window.reloadActiveStage = () => abortCurrentStageAndStartFresh(currentActiveStage);
   window.restartStage = () => abortCurrentStageAndStartFresh(currentActiveStage || 1);
-  window.restartMission = () => abortCurrentStageAndStartFresh(currentActiveStage || 1);
+  window.restartMission = () => restartGame();
   window.currentActiveStage = () => currentActiveStage;
   window.currentActiveDeviceType = () => currentActiveDeviceType;
   window.syncGameManagerFromDatabase = syncGameManagerFromDatabase;
@@ -14543,20 +14730,28 @@ if (btnSplashExit) {
 
 // Restart button & keyboard shortcut listener for Game Over screen
 const btnRestartGame = document.getElementById('btn-restart-game');
+const gameOverModalEl = document.getElementById('game-over-modal');
+let restartDebounceTime = 0;
+const onRestartMissionTrigger = (e) => {
+  if (e) {
+    if (e.cancelable) e.preventDefault();
+    e.stopPropagation();
+  }
+  const now = performance.now();
+  if (now - restartDebounceTime < 500) return;
+  restartDebounceTime = now;
+  restartGame();
+};
 if (btnRestartGame) {
-  let restartDebounceTime = 0;
-  const onRestart = (e) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
+  btnRestartGame.addEventListener('click', onRestartMissionTrigger);
+  btnRestartGame.addEventListener('touchend', onRestartMissionTrigger, { passive: false });
+}
+if (gameOverModalEl) {
+  gameOverModalEl.addEventListener('click', (e) => {
+    if (e && e.target && e.target.closest && e.target.closest('#btn-restart-game')) {
+      onRestartMissionTrigger(e);
     }
-    const now = performance.now();
-    if (now - restartDebounceTime < 500) return;
-    restartDebounceTime = now;
-    restartGame();
-  };
-  btnRestartGame.addEventListener('click', onRestart);
-  btnRestartGame.addEventListener('touchend', onRestart);
+  });
 }
 
 // Quit button listener for Game Over screen (returns to calmchessgames.com)
@@ -14564,17 +14759,20 @@ const btnQuitGame = document.getElementById('btn-quit-game');
 if (btnQuitGame) {
   const onQuit = (e) => {
     if (e) {
-      e.preventDefault();
+      if (e.cancelable) e.preventDefault();
       e.stopPropagation();
     }
     quitGame();
   };
   btnQuitGame.addEventListener('click', onQuit);
-  btnQuitGame.addEventListener('touchend', onQuit);
+  btnQuitGame.addEventListener('touchend', onQuit, { passive: false });
 }
 
 window.addEventListener('keydown', (e) => {
-  if (state.isGameOver) {
+  if (e.repeat) return;
+  const modal = document.getElementById('game-over-modal');
+  const isModalVisible = !!(modal && modal.style.display === 'flex');
+  if (state.isGameOver && isModalVisible) {
     if (e.code === 'KeyR' || e.code === 'Enter' || e.code === 'Space') {
       e.preventDefault();
       restartGame();

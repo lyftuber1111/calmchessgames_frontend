@@ -1345,16 +1345,23 @@ export class MeshPool {
   dispose() {
     this.despawnAll();
     for (const mesh of this.pool) {
-      if (this.scene && mesh.parent === this.scene) {
+      if (!mesh) continue;
+      if (mesh.parent) {
+        mesh.parent.remove(mesh);
+      } else if (this.scene && mesh.parent === this.scene) {
         this.scene.remove(mesh);
       }
-      if (mesh.geometry && typeof mesh.geometry.dispose === 'function') {
+      if (mesh.geometry && !(mesh.geometry.userData && mesh.geometry.userData._isSharedAsset) && typeof mesh.geometry.dispose === 'function') {
         mesh.geometry.dispose();
       }
       if (mesh.material) {
         if (Array.isArray(mesh.material)) {
-          mesh.material.forEach(m => m && typeof m.dispose === 'function' && m.dispose());
-        } else if (typeof mesh.material.dispose === 'function') {
+          mesh.material.forEach(m => {
+            if (m && !(m.userData && m.userData._isSharedAsset) && typeof m.dispose === 'function') {
+              m.dispose();
+            }
+          });
+        } else if (!(mesh.material.userData && mesh.material.userData._isSharedAsset) && typeof mesh.material.dispose === 'function') {
           mesh.material.dispose();
         }
       }
@@ -1976,18 +1983,21 @@ export class StageObjectPool {
   }
 
   dispose() {
-    for (const pool of this.enemyPools.values()) {
-      pool.dispose();
+    const uniqueEnemyPools = new Set(this.enemyPools.values());
+    for (const pool of uniqueEnemyPools) {
+      if (pool && typeof pool.dispose === 'function') pool.dispose();
     }
     this.enemyPools.clear();
 
-    for (const pool of this.playerWeaponPools.values()) {
-      pool.dispose();
+    const uniquePlayerWeaponPools = new Set(this.playerWeaponPools.values());
+    for (const pool of uniquePlayerWeaponPools) {
+      if (pool && typeof pool.dispose === 'function') pool.dispose();
     }
     this.playerWeaponPools.clear();
 
-    for (const pool of this.enemyWeaponPools.values()) {
-      pool.dispose();
+    const uniqueEnemyWeaponPools = new Set(this.enemyWeaponPools.values());
+    for (const pool of uniqueEnemyWeaponPools) {
+      if (pool && typeof pool.dispose === 'function') pool.dispose();
     }
     this.enemyWeaponPools.clear();
   }

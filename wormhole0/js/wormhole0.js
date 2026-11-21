@@ -24,7 +24,7 @@ import {
   toggleBrokenCoreDecal,
   toggleGameOverDecals,
   resetCockpitOverlayDecals
-} from './object_pool.js?v=20261119_restart_fix_v10';
+} from './object_pool.js';
 
 // Expose THREE and ObjectPool globally on window for dynamic stage modules and decoupled enemy systems
 if (typeof window !== 'undefined') {
@@ -65,7 +65,7 @@ const objLoader = new OBJLoader();
 const cached3DAssetModels = new Map();
 const inFlight3DAssetLoads = new Map();
 const failed3DAssetUrls = new Set();
-const sessionAssetVersion = '20261119_restart_fix_v10';
+const sessionAssetVersion = '20261120_clean_telemetry_v12';
 
 function normalizeAssetUrl(url) {
   if (!url) return '';
@@ -394,7 +394,10 @@ let currentActiveDeviceType = 'desktop';
 let activeStageModule = null;
 let currentStageObjectPool = null;
 let activeGameOverTimeout = null;
+let activeGameOverRedEdgesTimeout = null;
 let isRestartingMission = false;
+let activeStageTransitionSeq = 0;
+let isStageTransitionInProgress = false;
 
 // Application & Flight state
 const state = {
@@ -795,7 +798,7 @@ try {
       const selMode = document.getElementById('select-mode');
       if (selMode) selMode.value = 'desktop-vr';
       activateModeParameters('desktop-vr');
-      loadStageDeviceModule(currentActiveStage, 'vr');
+      loadStageDeviceModule(currentActiveStage, 'vr', ++activeStageTransitionSeq);
 
       if (cockpitOverlayRenderer && cockpitOverlayRenderer.domElement) {
         cockpitOverlayRenderer.domElement.style.display = 'none';
@@ -2256,18 +2259,31 @@ class WeaponsSystem {
     this.unlockWeapon(id);
   }
 
-  resetForMission() {
+  resetForMission(targetStage = 1) {
+    const lvl = parseInt(targetStage) || 1;
+    let initialId = null;
     for (const id in this.weapons) {
       const w = this.weapons[id];
-      if (w) {
-        w.energy = 100;
-        w.isOverheated = false;
-        w.overheatRemainingMs = 0;
+      if (!w) continue;
+      w.energy = 100;
+      w.isOverheated = false;
+      w.overheatRemainingMs = 0;
+
+      const wStage = parseInt(w.stageUnlocked) || 1;
+      const unlockedAtStage = (wStage < lvl) || (wStage === lvl && (w.isInitialWeapon || w.acquireEvent === 'default_start'));
+      w.acquired = unlockedAtStage;
+      w.isAvailable = unlockedAtStage;
+
+      if (wStage === lvl && w.isInitialWeapon && unlockedAtStage) {
+        initialId = w.id;
       }
     }
-    this.activeWeaponId = 'red_laser';
+    this.activeWeaponId = initialId || (this.weapons['red_laser'] ? 'red_laser' : Object.keys(this.weapons)[0]);
     this.updateCrosshairWeaponRing();
     this.notify();
+    if (typeof renderWeaponWheel === 'function') {
+      renderWeaponWheel();
+    }
   }
 
   equipWeapon(id) {
@@ -2798,7 +2814,8 @@ async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = nu
 function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
   if (!data) return false;
   lastGameManagerData = data;
-  const currentStage = stageLevel || currentActiveStage || 1;
+  const currentStage = parseInt(stageLevel || currentActiveStage) || 1;
+  if (currentStage !== currentActiveStage) return false;
   const currentDev = (deviceType || currentActiveDeviceType || 'desktop').toLowerCase();
 
   console.log(`[GameManagerSync] 🔄 Analyzing & integrating Game Manager database values for Stage ${currentStage} on [${currentDev.toUpperCase()}]...`);
@@ -2808,14 +2825,20 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
   // ---------------------------------------------------------------------------
   let initialWeaponForStage = null;
   const dbWeapons = Array.isArray(data.weapons) ? data.weapons : [];
+  const modInitWpnId =
+    (activeStageModule && activeStageModule.stageConfig && activeStageModule.stageConfig.weapons && activeStageModule.stageConfig.weapons.initial && activeStageModule.stageConfig.weapons.initial.id) ||
+    (activeStageModule && activeStageModule.default && activeStageModule.default.stageConfig && activeStageModule.default.stageConfig.weapons && activeStageModule.default.stageConfig.weapons.initial && activeStageModule.default.stageConfig.weapons.initial.id) ||
+    null;
 
   if (dbWeapons.length > 0 && weaponsSystem) {
+    const seenWeaponIds = new Set();
     for (const rawW of dbWeapons) {
       const wid = rawW.weapon_id;
       if (!wid) continue;
+      seenWeaponIds.add(wid);
 
       const wStage = parseInt(rawW.stage_level) || 1;
-      const isInit = (rawW.is_initial_weapon == 1 || rawW.is_initial_weapon === true || rawW.is_initial_weapon === '1');
+      const isInit = (rawW.is_initial_weapon == 1 || rawW.is_initial_weapon === true || rawW.is_initial_weapon === '1') || (wid === modInitWpnId && wStage === currentStage);
       const isAcq = (rawW.is_acquirable == 1 || rawW.is_acquirable === true || rawW.is_acquirable === '1' || rawW.is_acquirable === undefined);
       const acqEvent = rawW.acquire_event || 'default_start';
       const drainPct = parseFloat(rawW.energy_drain_pct) !== undefined && !isNaN(parseFloat(rawW.energy_drain_pct)) ? parseFloat(rawW.energy_drain_pct) : 10.0;
@@ -2881,8 +2904,8 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
         existing.isAcquirable = isAcq;                    // ACQUIRABLE
         existing.acquireEvent = acqEvent;                 // EVENT
         existing.description = rawW.description || existing.description;
-        existing.isAvailable = isAvailable || existing.isAvailable;
-        existing.acquired = isAcquired || existing.acquired;
+        existing.isAvailable = isAvailable;
+        existing.acquired = isAcquired;
       } else {
         // Register new weapon from database
         weaponsSystem.registerWeapon({
@@ -2909,10 +2932,22 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
       }
     }
 
+    // Ensure higher-stage weapons not present in DB rows are also re-locked on earlier stages
+    for (const w of Object.values(weaponsSystem.weapons)) {
+      if (!w || seenWeaponIds.has(w.id)) continue;
+      const wStage = parseInt(w.stageUnlocked) || 1;
+      if (wStage > currentStage) {
+        w.acquired = false;
+        w.isAvailable = false;
+      }
+    }
+
     // Auto-equip the initial weapon for this stage!
     if (initialWeaponForStage && weaponsSystem.weapons[initialWeaponForStage]) {
       console.log(`[GameManagerSync] 🎯 Equipped Stage ${currentStage} initial weapon from database: ${initialWeaponForStage}`);
       weaponsSystem.equipWeapon(initialWeaponForStage);
+    } else if (modInitWpnId && weaponsSystem.weapons[modInitWpnId]) {
+      weaponsSystem.equipWeapon(modInitWpnId);
     } else {
       // Fallback: equip first available weapon for this stage
       const stageWpns = Object.values(weaponsSystem.weapons).filter(w => w.stageUnlocked === currentStage && w.isAvailable && w.acquired);
@@ -2994,7 +3029,8 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
     });
 
     const chosenEnemies = stageEnemies.length > 0 ? stageEnemies : dbEnemies.filter(e => parseInt(e.stage_level) === currentStage);
-    window.activeStageEnemies = chosenEnemies.map(e => {
+    if (chosenEnemies.length > 0) {
+      window.activeStageEnemies = chosenEnemies.map(e => {
       let wpns = [];
       if (e.weapons && Array.isArray(e.weapons) && e.weapons.length > 0) {
         wpns = e.weapons;
@@ -3075,84 +3111,86 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
         fire_rate_seconds: frSec,
         custom_from_db: true
       };
-    });
-    state.stageEnemies = window.activeStageEnemies;
+      });
+      window.activeStageEnemiesStageLevel = currentStage;
+      state.stageEnemies = window.activeStageEnemies;
 
-    // Retain 3D model cache to prevent repeated re-downloads during routine level sync
+      // Retain 3D model cache to prevent repeated re-downloads during routine level sync
 
-    // Hot-update already spawned enemies on screen if their threat profile graphic asset changed
-    if (typeof active3DEnemies !== 'undefined' && Array.isArray(active3DEnemies) && active3DEnemies.length > 0) {
-      for (const ae of active3DEnemies) {
-        if (!ae || !ae.mesh) continue;
-        const matchingCfg = window.activeStageEnemies.find(e => (e.enemy_id === ae.enemyId || e.id === ae.enemyId));
-        if (matchingCfg && matchingCfg.model_3d_url) {
-          const normUrl = normalizeAssetUrl(matchingCfg.model_3d_url);
-          if (ae.currentModelUrl !== normUrl) {
-            ae.currentModelUrl = normUrl;
-            load3DAssetModel(normUrl, (newModel) => {
-              if (!ae.mesh) return;
-              if (ae.mesh.userData && ae.mesh.userData.loadedAsset) {
-                ae.mesh.remove(ae.mesh.userData.loadedAsset);
-                try { disposeMeshHierarchy(ae.mesh.userData.loadedAsset); } catch (e) {}
-              }
-              // Strip all existing procedural placeholders, hulls, toruses, wireframes, and rings so ONLY the 3D model is visible
-              for (let ci = ae.mesh.children.length - 1; ci >= 0; ci--) {
-                const c = ae.mesh.children[ci];
-                if (c && !c.isLight && c !== newModel) {
-                  ae.mesh.remove(c);
-                  try { disposeMeshHierarchy(c); } catch (e) {}
+      // Hot-update already spawned enemies on screen if their threat profile graphic asset changed
+      if (typeof active3DEnemies !== 'undefined' && Array.isArray(active3DEnemies) && active3DEnemies.length > 0) {
+        for (const ae of active3DEnemies) {
+          if (!ae || !ae.mesh) continue;
+          const matchingCfg = window.activeStageEnemies.find(e => (e.enemy_id === ae.enemyId || e.id === ae.enemyId));
+          if (matchingCfg && matchingCfg.model_3d_url) {
+            const normUrl = normalizeAssetUrl(matchingCfg.model_3d_url);
+            if (ae.currentModelUrl !== normUrl) {
+              ae.currentModelUrl = normUrl;
+              load3DAssetModel(normUrl, (newModel) => {
+                if (!ae.mesh) return;
+                if (ae.mesh.userData && ae.mesh.userData.loadedAsset) {
+                  ae.mesh.remove(ae.mesh.userData.loadedAsset);
+                  try { disposeMeshHierarchy(ae.mesh.userData.loadedAsset); } catch (e) {}
                 }
-              }
-              ae.mesh.userData.spinRing = null;
-
-              const box = new THREE.Box3().setFromObject(newModel);
-              const center = new THREE.Vector3();
-              box.getCenter(center);
-              newModel.position.sub(center);
-
-              // Requirement: Ensure custom 3D model asset maintains its front-facing orientation (+Z is forward, pointing at player):
-              // All custom 3D GLB models natively have +Z forward with 0 rad rotation (un-rotated)
-              const targetRotY = getCustomModelRotationY(matchingCfg.model_3d_url || matchingCfg.id);
-              newModel.rotation.y = targetRotY;
-              newModel.userData.targetRotY = targetRotY;
-              ae.mesh.userData.modelUrl = normUrl;
-
-              const size = new THREE.Vector3();
-              box.getSize(size);
-              const maxDim = Math.max(size.x, size.y, size.z, 0.001);
-              const uScale = parseFloat(matchingCfg.scale || 1.0) || 1.0;
-              const uLen = parseFloat(matchingCfg.length || 3.0) || 3.0;
-              const autoScale = (uLen * uScale) / maxDim;
-              newModel.scale.set(autoScale, autoScale, autoScale);
-
-              newModel.traverse((child) => {
-                if (child.isMesh) {
-                  child.castShadow = true;
-                  child.receiveShadow = true;
-                  if (child.material) {
-                    const mats = Array.isArray(child.material) ? child.material : [child.material];
-                    mats.forEach(m => {
-                      if (m) {
-                        m.wireframe = false;
-                        m.needsUpdate = true;
-                      }
-                    });
+                // Strip all existing procedural placeholders, hulls, toruses, wireframes, and rings so ONLY the 3D model is visible
+                for (let ci = ae.mesh.children.length - 1; ci >= 0; ci--) {
+                  const c = ae.mesh.children[ci];
+                  if (c && !c.isLight && c !== newModel) {
+                    ae.mesh.remove(c);
+                    try { disposeMeshHierarchy(c); } catch (e) {}
                   }
-                } else if (child.isLine || child.isLineSegments) {
-                  child.visible = false;
                 }
-              });
+                ae.mesh.userData.spinRing = null;
 
-              ae.mesh.add(newModel);
-              ae.mesh.userData.loadedAsset = newModel;
-            });
+                const box = new THREE.Box3().setFromObject(newModel);
+                const center = new THREE.Vector3();
+                box.getCenter(center);
+                newModel.position.sub(center);
+
+                // Requirement: Ensure custom 3D model asset maintains its front-facing orientation (+Z is forward, pointing at player):
+                // All custom 3D GLB models natively have +Z forward with 0 rad rotation (un-rotated)
+                const targetRotY = getCustomModelRotationY(matchingCfg.model_3d_url || matchingCfg.id);
+                newModel.rotation.y = targetRotY;
+                newModel.userData.targetRotY = targetRotY;
+                ae.mesh.userData.modelUrl = normUrl;
+
+                const size = new THREE.Vector3();
+                box.getSize(size);
+                const maxDim = Math.max(size.x, size.y, size.z, 0.001);
+                const uScale = parseFloat(matchingCfg.scale || 1.0) || 1.0;
+                const uLen = parseFloat(matchingCfg.length || 3.0) || 3.0;
+                const autoScale = (uLen * uScale) / maxDim;
+                newModel.scale.set(autoScale, autoScale, autoScale);
+
+                newModel.traverse((child) => {
+                  if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    if (child.material) {
+                      const mats = Array.isArray(child.material) ? child.material : [child.material];
+                      mats.forEach(m => {
+                        if (m) {
+                          m.wireframe = false;
+                          m.needsUpdate = true;
+                        }
+                      });
+                    }
+                  } else if (child.isLine || child.isLineSegments) {
+                    child.visible = false;
+                  }
+                });
+
+                ae.mesh.add(newModel);
+                ae.mesh.userData.loadedAsset = newModel;
+              });
+            }
           }
         }
       }
-    }
 
-    console.log(`[GameManagerSync] ✅ Verified ${window.activeStageEnemies.length} threat enemy profiles from database for Stage ${currentStage} on device [${currentDev.toUpperCase()}]`);
-    updateTacticalEnemiesUI(window.activeStageEnemies);
+      console.log(`[GameManagerSync] ✅ Verified ${window.activeStageEnemies.length} threat enemy profiles from database for Stage ${currentStage} on device [${currentDev.toUpperCase()}]`);
+      updateTacticalEnemiesUI(window.activeStageEnemies);
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -3201,9 +3239,6 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
     let activeEnv = dbEnvironments.find(e => parseInt(e.stage_level) === currentStage && ((e.device_type || 'all').toLowerCase() === currentDev || (e.device_type || 'all').toLowerCase() === 'all') && (e.is_enabled === undefined || e.is_enabled == 1));
     if (!activeEnv) {
       activeEnv = dbEnvironments.find(e => parseInt(e.stage_level) === currentStage && (e.is_enabled === undefined || e.is_enabled == 1));
-    }
-    if (!activeEnv && dbEnvironments.length > 0) {
-      activeEnv = dbEnvironments[0];
     }
 
     if (activeEnv) {
@@ -3304,11 +3339,21 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
   return true;
 }
 
-async function syncGameManagerFromDatabase(stageLevel = null, deviceType = null) {
-  const targetLvl = stageLevel || currentActiveStage || 1;
-  const dev = deviceType || currentActiveDeviceType || 'desktop';
+async function syncGameManagerFromDatabase(stageLevel = null, deviceType = null, expectedTransitionSeq = null) {
+  const targetLvl = parseInt(stageLevel || currentActiveStage) || 1;
+  const dev = (deviceType || currentActiveDeviceType || 'desktop').toLowerCase();
+  const seqAtStart = (expectedTransitionSeq !== null && expectedTransitionSeq !== undefined)
+    ? expectedTransitionSeq
+    : activeStageTransitionSeq;
   try {
     const data = await fetchGameManagerDatabaseValues(targetLvl, dev);
+    if (
+      targetLvl !== currentActiveStage ||
+      dev !== (currentActiveDeviceType || 'desktop').toLowerCase() ||
+      seqAtStart !== activeStageTransitionSeq
+    ) {
+      return false;
+    }
     if (data) {
       applyGameManagerValues(data, targetLvl, dev);
       return true;
@@ -3825,7 +3870,10 @@ function setGamePaused(paused, skipDrawer = false) {
 
     // Resume audio drone if sound is enabled
     if (!CONFIG.audioMuted && audioMgr && audioMgr.droneAudio) {
-      try { audioMgr.droneAudio.play(); } catch(e) {}
+      try {
+        const p = audioMgr.droneAudio.play();
+        if (p && typeof p.catch === 'function') p.catch(() => {});
+      } catch(e) {}
     }
   }
 }
@@ -4942,6 +4990,17 @@ function getDeviceTypeFromMode(mode) {
   return 'desktop';
 }
 
+function applyColorTarget(targetColor, val) {
+  if (!targetColor || val === undefined || val === null) return;
+  if (val && val.isColor) {
+    targetColor.copy(val);
+  } else if (typeof val === 'number') {
+    targetColor.setHex(val);
+  } else if (typeof val === 'string') {
+    targetColor.setStyle(val);
+  }
+}
+
 function getEngineApi() {
   return {
     state,
@@ -4997,47 +5056,47 @@ function getEngineApi() {
     },
     setThemeColors: (visual) => {
       if (!visual) return;
-      if (visual.primaryColor) {
-        document.documentElement.style.setProperty('--cyan-neon', visual.primaryColor);
-        document.documentElement.style.setProperty('--cyan-glow', visual.glowColor || 'rgba(0, 240, 255, 0.45)');
+      const primaryColor = visual.primaryColor || (visual.colors && visual.colors.primary);
+      const glowColor = visual.glowColor || (visual.colors && visual.colors.glow) || 'rgba(0, 240, 255, 0.45)';
+      const panelBg = visual.panelBg || (visual.colors && visual.colors.panelBg);
+      const panelBorder = visual.panelBorder || (visual.colors && visual.colors.panelBorder);
+      if (primaryColor) {
+        document.documentElement.style.setProperty('--cyan-neon', primaryColor);
+        document.documentElement.style.setProperty('--cyan-glow', glowColor);
       }
-      if (visual.panelBg) {
-        document.documentElement.style.setProperty('--panel-bg', visual.panelBg);
+      if (panelBg) {
+        document.documentElement.style.setProperty('--panel-bg', panelBg);
       }
-      if (visual.panelBorder) {
-        document.documentElement.style.setProperty('--panel-border', visual.panelBorder);
+      if (panelBorder) {
+        document.documentElement.style.setProperty('--panel-border', panelBorder);
       }
-      if (visual.uniforms) {
+      const uniforms = visual.uniforms || visual.shaderUniforms;
+      if (uniforms) {
         if (typeof accretionUniforms !== 'undefined' && accretionUniforms) {
-          if (accretionUniforms.uColorEdge && visual.uniforms.uColorEdge) {
-            accretionUniforms.uColorEdge.value.setHex(visual.uniforms.uColorEdge);
-          }
-          if (accretionUniforms.uColorCore && visual.uniforms.uColorCore) {
-            accretionUniforms.uColorCore.value.setHex(visual.uniforms.uColorCore);
-          }
-          if (accretionUniforms.uColorHot && visual.uniforms.uColorHot) {
-            accretionUniforms.uColorHot.value.setHex(visual.uniforms.uColorHot);
-          }
+          applyColorTarget(accretionUniforms.uColorEdge && accretionUniforms.uColorEdge.value, uniforms.uColorEdge);
+          applyColorTarget(accretionUniforms.uColorCore && accretionUniforms.uColorCore.value, uniforms.uColorCore);
+          applyColorTarget(accretionUniforms.uColorHot && accretionUniforms.uColorHot.value, uniforms.uColorHot);
         }
-        if (typeof secondaryDiskMaterial !== 'undefined' && secondaryDiskMaterial && secondaryDiskMaterial.uniforms && visual.uniforms.uColorEdge) {
-          secondaryDiskMaterial.uniforms.uColorEdge.value.setHex(visual.uniforms.uColorEdge);
+        if (typeof secondaryDiskMaterial !== 'undefined' && secondaryDiskMaterial && secondaryDiskMaterial.uniforms && uniforms.uColorEdge) {
+          applyColorTarget(secondaryDiskMaterial.uniforms.uColorEdge && secondaryDiskMaterial.uniforms.uColorEdge.value, uniforms.uColorEdge);
         }
-        if (typeof photonRingMaterial !== 'undefined' && photonRingMaterial && photonRingMaterial.uniforms && photonRingMaterial.uniforms.uHaloColor && visual.uniforms.uHaloColor) {
-          photonRingMaterial.uniforms.uHaloColor.value.setHex(visual.uniforms.uHaloColor);
+        if (typeof photonRingMaterial !== 'undefined' && photonRingMaterial && photonRingMaterial.uniforms && photonRingMaterial.uniforms.uHaloColor && uniforms.uHaloColor) {
+          applyColorTarget(photonRingMaterial.uniforms.uHaloColor.value, uniforms.uHaloColor);
         }
       }
-      if (visual.lights) {
-        if (typeof ambientLight !== 'undefined' && ambientLight && visual.lights.ambient) {
-          ambientLight.color.setHex(visual.lights.ambient);
+      const lights = visual.lights || visual.lighting;
+      if (lights) {
+        if (typeof ambientLight !== 'undefined' && ambientLight && lights.ambient) {
+          applyColorTarget(ambientLight.color, lights.ambient);
         }
-        if (typeof wormholeCoreLight !== 'undefined' && wormholeCoreLight && visual.lights.center) {
-          wormholeCoreLight.color.setHex(visual.lights.center);
+        if (typeof wormholeCoreLight !== 'undefined' && wormholeCoreLight && lights.center) {
+          applyColorTarget(wormholeCoreLight.color, lights.center);
         }
-        if (typeof wormholeCenterLight !== 'undefined' && wormholeCenterLight && visual.lights.center) {
-          wormholeCenterLight.color.setHex(visual.lights.center);
+        if (typeof wormholeCenterLight !== 'undefined' && wormholeCenterLight && lights.center) {
+          applyColorTarget(wormholeCenterLight.color, lights.center);
         }
-        if (typeof secondaryLight !== 'undefined' && secondaryLight && visual.lights.center) {
-          secondaryLight.color.setHex(visual.lights.center);
+        if (typeof secondaryLight !== 'undefined' && secondaryLight && lights.center) {
+          applyColorTarget(secondaryLight.color, lights.center);
         }
       }
     },
@@ -5128,13 +5187,22 @@ function getEngineApi() {
       }
     },
     setEnemies: (enemiesConfig) => {
-      // If we already loaded customized enemies from the live database for this stage,
-      // preserve the database model_3d_url and customizations rather than blowing them away with static defaults!
-      if (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.some(e => e.model_3d_url || e.custom_from_db)) {
+      // Preserve live database enemy profiles ONLY if they belong to the currently active stage
+      if (
+        window.activeStageEnemiesStageLevel === currentActiveStage &&
+        Array.isArray(window.activeStageEnemies) &&
+        window.activeStageEnemies.length > 0 &&
+        window.activeStageEnemies.some(e => e && e.custom_from_db)
+      ) {
         console.log('[Wormhole XR Engine] Preserving live database enemy profiles with custom models/assets.');
         return;
       }
-      window.activeStageEnemies = enemiesConfig;
+      window.activeStageEnemies = Array.isArray(enemiesConfig) ? enemiesConfig : [];
+      state.stageEnemies = window.activeStageEnemies;
+      window.activeStageEnemiesStageLevel = currentActiveStage;
+      if (typeof updateTacticalEnemiesUI === 'function') {
+        updateTacticalEnemiesUI(window.activeStageEnemies);
+      }
     },
     setWaves: (waves, options = {}) => {
       if (Array.isArray(waves) && waves.length > 0) {
@@ -5203,7 +5271,39 @@ function getEngineApi() {
   };
 }
 
-async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
+function resetStageEnvironmentVisuals() {
+  if (typeof wormholeEnvEffectGroup !== 'undefined' && wormholeEnvEffectGroup) {
+    while (wormholeEnvEffectGroup.children.length > 0) {
+      const c = wormholeEnvEffectGroup.children[0];
+      wormholeEnvEffectGroup.remove(c);
+      try { disposeMeshHierarchy(c); } catch (e) {}
+    }
+  }
+  if (typeof customEnvironmentModelGroup !== 'undefined' && customEnvironmentModelGroup) {
+    while (customEnvironmentModelGroup.children.length > 0) {
+      const c = customEnvironmentModelGroup.children[0];
+      customEnvironmentModelGroup.remove(c);
+      try { disposeMeshHierarchy(c); } catch (e) {}
+    }
+  }
+  if (typeof customEnvironmentCoronaSprite !== 'undefined' && customEnvironmentCoronaSprite) {
+    customEnvironmentCoronaSprite.visible = false;
+  }
+  CONFIG.eventHorizonRadius = 7.2;
+  CONFIG.accretionDiskRadius = 36.0;
+  CONFIG.rotationSpeed = 0.85;
+  if (typeof horizonMesh !== 'undefined' && horizonMesh) horizonMesh.scale.set(1, 1, 1);
+  if (typeof photonSphere !== 'undefined' && photonSphere) photonSphere.scale.set(1, 1, 1);
+  if (typeof photonRingMesh !== 'undefined' && photonRingMesh) photonRingMesh.scale.set(1, 1, 1);
+  if (typeof accretionDiskMesh !== 'undefined' && accretionDiskMesh) accretionDiskMesh.scale.set(1, 1, 1);
+  if (typeof accretionDiskMesh2 !== 'undefined' && accretionDiskMesh2) accretionDiskMesh2.scale.set(1, 1, 1);
+}
+
+async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop', transitionSeq = null) {
+  const mySeq = (transitionSeq !== null && transitionSeq !== undefined)
+    ? transitionSeq
+    : ++activeStageTransitionSeq;
+
   const stage = STAGE_REGISTRY[stageLevel] || {
     level: stageLevel,
     name: `Stage ${stageLevel}`,
@@ -5211,6 +5311,25 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
   };
   currentActiveStage = stage.level;
   currentActiveDeviceType = deviceType;
+
+  // Clear stale per-stage arrays and reset stage defaults before async module import
+  window.activeStageEnemies = [];
+  state.stageEnemies = [];
+  window.activeStageEnemiesStageLevel = null;
+  window.activeStagePowerups = [];
+  state.stagePowerups = [];
+  window.activeStageConfig = null;
+  state.stageRequiredKills = 10;
+  state.stageTargetDistance = 50000;
+  state.stageMissionBriefing = '';
+  state.activeStageObjectives = [];
+  state.stageWaves = [
+    { wave_number: 1, enemy_count: 5, interval_seconds: 0, delay_ms: 0, description: 'Wave 1: Recon Vanguard (5 Enemies)' },
+    { wave_number: 2, enemy_count: 10, interval_seconds: 15, delay_ms: 15000, description: 'Wave 2: Full Assault Swarm (10 Enemies)' }
+  ];
+  state.totalWaves = 2;
+  state.waveIntervalSeconds = 15;
+  resetStageEnvironmentVisuals();
 
   // Dynamic cache-busting timestamp guarantees browser fetches & executes fresh stage JS on every switch/reload
   const timestamp = Date.now();
@@ -5229,6 +5348,11 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
         console.warn(`[Wormhole XR Engine] Dynamic import fallback for ${stage.slug}:`, e2);
       }
     }
+    if (mySeq !== activeStageTransitionSeq) {
+      console.log(`[Wormhole XR Engine] Cancelled stale Stage ${stage.level} load (seq ${mySeq} < ${activeStageTransitionSeq}).`);
+      return null;
+    }
+
     activeStageModule = mod;
     activeVrFrameHook = null;
     activeEnemyMovementHandler = null;
@@ -5239,6 +5363,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
 
     const api = getEngineApi();
     const activeCfg = (mod && mod.stageConfig) ? mod.stageConfig : (mod && mod.default && mod.default.stageConfig) ? mod.default.stageConfig : null;
+    window.activeStageConfig = activeCfg || stage;
 
     // -------------------------------------------------------------------------
     // 1. PRELOAD ALL STAGE 3D MODELS (ENEMIES, WEAPONS, OVERLAY) BEFORE POOL INIT
@@ -5273,11 +5398,17 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
           Promise.all(uniquePreloadUrls.map(u => preload3DAssetModel(u))),
           new Promise(resolve => setTimeout(resolve, 3000))
         ]);
+        if (mySeq !== activeStageTransitionSeq) {
+          console.log(`[Wormhole XR Engine] Cancelled stale Stage ${stage.level} load after preload.`);
+          return null;
+        }
         console.log(`[Wormhole XR Engine] All 3D models preloaded and cached for Stage ${stage.level}.`);
       }
     } catch (preloadErr) {
       console.warn('[Wormhole XR Engine] 3D model preloading warning:', preloadErr);
     }
+
+    if (mySeq !== activeStageTransitionSeq) return null;
 
     // -------------------------------------------------------------------------
     // 2. INITIALIZE STAGE OBJECT POOL (INCLUDING FULL-SCREEN OVERLAY POOL) FIRST
@@ -5292,6 +5423,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
           currentStageObjectPool.despawnAll();
         }
         currentStageObjectPool = null;
+        window.stageObjectPool = null;
       }
       const candidatePoolPaths = [
         `./${stage.slug}_pool.js?t=${timestamp}`,
@@ -5310,32 +5442,48 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
         } catch (ignore) {}
       }
 
+      if (mySeq !== activeStageTransitionSeq) return null;
+
       const stagePoolCfg = activeCfg || (STAGE_REGISTRY[stage.level] ? { ...STAGE_REGISTRY[stage.level], enemies: window.activeStageEnemies } : stage);
 
+      let newPool = null;
       if (poolMod) {
         const createPoolFn = poolMod.createStagePool || poolMod.default;
         if (typeof createPoolFn === 'function') {
-          currentStageObjectPool = createPoolFn(scene, stagePoolCfg, {
+          newPool = createPoolFn(scene, stagePoolCfg, {
             createEnemyMeshFn: (cfg) => create3DEnemyMesh(cfg),
             createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn),
             createEnemyWeaponMeshFn: (wpn, cfg) => createEnemyWeaponMesh(wpn, cfg)
           });
         }
       } else {
-        currentStageObjectPool = new StageObjectPool(scene, stagePoolCfg, {
+        newPool = new StageObjectPool(scene, stagePoolCfg, {
           createEnemyMeshFn: (cfg) => create3DEnemyMesh(cfg),
           createPlayerLaserMeshFn: (wpn) => createPlayerLaserMesh(wpn),
           createEnemyWeaponMeshFn: (wpn, cfg) => createEnemyWeaponMesh(wpn, cfg)
         });
       }
 
-      window.stageObjectPool = currentStageObjectPool;
-      if (currentStageObjectPool && currentStageObjectPool.cockpitOverlayReadyPromise) {
+      currentStageObjectPool = newPool;
+      window.stageObjectPool = newPool;
+      if (newPool && newPool.cockpitOverlayReadyPromise) {
         await Promise.race([
-          currentStageObjectPool.cockpitOverlayReadyPromise,
+          newPool.cockpitOverlayReadyPromise,
           new Promise(resolve => setTimeout(resolve, 2500))
         ]);
       }
+
+      if (mySeq !== activeStageTransitionSeq) {
+        if (newPool && typeof newPool.dispose === 'function') {
+          newPool.dispose();
+        }
+        if (currentStageObjectPool === newPool) {
+          currentStageObjectPool = null;
+          window.stageObjectPool = null;
+        }
+        return null;
+      }
+
       if (currentStageObjectPool && camera) {
         const pooledOverlay = currentStageObjectPool.getCockpitCracksOverlay(camera);
         if (pooledOverlay) {
@@ -5346,6 +5494,8 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     } catch (poolInitErr) {
       console.warn('[Wormhole XR Engine] Stage object pool initialization warning:', poolInitErr);
     }
+
+    if (mySeq !== activeStageTransitionSeq) return null;
 
     // -------------------------------------------------------------------------
     // 3. APPLY STAGE MODULE & BIND STAGE HANDLERS
@@ -5379,7 +5529,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     }
 
     // At level change: asynchronously sync game manager values in background without blocking stage switch
-    syncGameManagerFromDatabase(stage.level, deviceType).catch(syncErr => {
+    syncGameManagerFromDatabase(stage.level, deviceType, mySeq).catch(syncErr => {
       console.warn('[Wormhole XR Engine] Game Manager database sync error on level change:', syncErr);
     });
 
@@ -5399,10 +5549,10 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
       console.warn('[Wormhole XR Engine] Could not update active-stage-script metadata:', domErr);
     }
 
-    // Synchronize UI headers and selectors
-    const jumpSelect = document.getElementById('select-stage-jump');
-    if (jumpSelect && parseInt(jumpSelect.value) !== currentActiveStage) {
-      jumpSelect.value = currentActiveStage.toString();
+    // Synchronize UI headers
+    const hudStatus = document.getElementById('hud-status');
+    if (hudStatus) {
+      hudStatus.textContent = `STAGE ${stage.level}: ${stage.name.toUpperCase()}`;
     }
 
     const splashSub = document.querySelector('.splash-game-sub');
@@ -5434,14 +5584,20 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
     if (typeof despawnAllActiveEnemies === 'function') {
       despawnAllActiveEnemies();
     }
+    const poolWaves = (currentStageObjectPool && Array.isArray(currentStageObjectPool.waves) && currentStageObjectPool.waves.length > 0)
+      ? currentStageObjectPool.waves
+      : null;
     if (activeCfg) {
       if (activeCfg.required_enemy_kills) state.stageRequiredKills = parseInt(activeCfg.required_enemy_kills) || 10;
       if (activeCfg.warp_target_distance) state.stageTargetDistance = parseInt(activeCfg.warp_target_distance) || 50000;
       if (activeCfg.mission_objectives) state.stageMissionBriefing = activeCfg.mission_objectives;
       if (activeCfg.objectives) state.activeStageObjectives = activeCfg.objectives;
-      if (activeCfg.waves) state.stageWaves = activeCfg.waves;
+      if (Array.isArray(activeCfg.waves) && activeCfg.waves.length > 0) state.stageWaves = activeCfg.waves;
+      else if (poolWaves) state.stageWaves = poolWaves;
       if (activeCfg.total_waves) state.totalWaves = parseInt(activeCfg.total_waves) || 2;
       if (activeCfg.wave_interval_seconds) state.waveIntervalSeconds = parseFloat(activeCfg.wave_interval_seconds) || 15;
+    } else if (poolWaves) {
+      state.stageWaves = poolWaves;
     }
     state.currentWave = 0;
     state.waveStartTime = 0;
@@ -5471,308 +5627,340 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop') {
 async function abortCurrentStageAndStartFresh(targetStage = 1, options = {}) {
   const stageNum = parseInt(targetStage) || 1;
   const launchImmediately = options.launchImmediately !== false;
-  console.log(`[Wormhole XR Engine] Aborting current stage (${currentActiveStage}) and starting Stage ${stageNum} fresh...`);
+  const preserveCampaignScore = options.preserveCampaignScore === true;
+  const mySeq = (options.transitionSeq !== undefined && options.transitionSeq !== null)
+    ? options.transitionSeq
+    : ++activeStageTransitionSeq;
 
-  // Clear any active game over modal display timer
-  if (typeof activeGameOverTimeout !== 'undefined' && activeGameOverTimeout) {
-    clearTimeout(activeGameOverTimeout);
-    activeGameOverTimeout = null;
-  }
+  console.log(`[Wormhole XR Engine] Aborting current stage (${currentActiveStage}) and starting Stage ${stageNum} fresh (seq ${mySeq})...`);
+  isStageTransitionInProgress = true;
 
-  // 1. Hide Game Over modal if showing
-  const modal = document.getElementById('game-over-modal');
-  if (modal) modal.style.display = 'none';
-
-  // Close weapon wheel if open
-  if (typeof closeWeaponWheel === 'function') {
-    try { closeWeaponWheel(); } catch (e) {}
-  }
-
-  // 2. Dismiss and fade out splash screen if showing
-  const splashEl = document.getElementById('wormhole-splash-screen');
-  if (splashEl && splashEl.parentNode) {
-    splashEl.classList.add('splash-fade-out');
-    setTimeout(() => {
-      try { if (splashEl.parentNode) splashEl.remove(); } catch (e) {}
-    }, 400);
-  }
-
-  // 3. Restore window/container focus so keyboard/touch input is received immediately
   try {
-    if (document.activeElement && document.activeElement.blur) {
-      document.activeElement.blur();
+    // Update active stage immediately so subsequent transitions/UI reflect the chosen target
+    currentActiveStage = stageNum;
+
+    // Clear any active game over modal display timer or red edges timer
+    if (typeof activeGameOverTimeout !== 'undefined' && activeGameOverTimeout) {
+      clearTimeout(activeGameOverTimeout);
+      activeGameOverTimeout = null;
     }
-    window.focus();
-    if (container) {
-      container.tabIndex = 0;
-      if (container.focus) container.focus();
+    if (typeof activeGameOverRedEdgesTimeout !== 'undefined' && activeGameOverRedEdgesTimeout) {
+      clearTimeout(activeGameOverRedEdgesTimeout);
+      activeGameOverRedEdgesTimeout = null;
     }
-  } catch (e) {}
 
-  // 4. Dismiss and hide any countdown overlay & clear active timers (only if launching immediately)
-  const countdownOverlay = document.getElementById('game-countdown-overlay');
-  if (launchImmediately && countdownOverlay) {
-    countdownOverlay.classList.remove('active');
-    countdownOverlay.style.display = 'none';
-  }
-  if (countdownTimerInterval) {
-    clearInterval(countdownTimerInterval);
-    countdownTimerInterval = null;
-  }
-  if (countdownCompletionTimeout) {
-    clearTimeout(countdownCompletionTimeout);
-    countdownCompletionTimeout = null;
-  }
+    // 1. Hide Game Over modal if showing
+    const modal = document.getElementById('game-over-modal');
+    if (modal) modal.style.display = 'none';
 
-  // 5. Dismiss and hide any rotate orientation prompt to prevent freeze/lockout
-  const rotatePrompt = document.getElementById('landscape-rotate-prompt');
-  if (rotatePrompt) {
-    rotatePrompt.classList.remove('active');
-    rotatePrompt.classList.add('dismissed');
-    rotatePrompt.style.display = 'none';
-  }
-  document.body.classList.add('portrait-dismissed');
+    // Close weapon wheel if open
+    if (typeof closeWeaponWheel === 'function') {
+      try { closeWeaponWheel(); } catch (e) {}
+    }
 
-  // 6. Reset combat/wave flags BEFORE async reload so animate()/updateEnemiesCombat() never spawn mid-restart
-  state.isGameOver = false;
-  state.isPaused = false;
-  state.hasStarted = false;
-  state.isCountdownActive = !launchImmediately;
-  state.currentWave = 0;
-  state.waveStartTime = 0;
-  state.waveCompleted = false;
-  state.waveEnemiesSpawned = 0;
-  state.waveEnemiesRemaining = 0;
-  state.waveSpawnInProgress = false;
-  state.lastLaserShotTime = 0;
-  state.lockedTargetEnemy = null;
-  state.vectorLockEngaged = false;
-  state.scanProgress = 0;
-  state.isScanning = false;
-  document.body.classList.remove('game-paused', 'game-in-flight');
+    // 2. Dismiss and fade out splash screen if showing
+    const splashEl = document.getElementById('wormhole-splash-screen');
+    if (splashEl && splashEl.parentNode) {
+      splashEl.classList.add('splash-fade-out');
+      setTimeout(() => {
+        try { if (splashEl.parentNode) splashEl.remove(); } catch (e) {}
+      }, 400);
+    }
 
-  if (typeof setGamePaused === 'function') {
-    setGamePaused(false);
-  } else {
-    document.body.classList.remove('game-paused');
-    if (typeof updateLockoutHighlights === 'function') updateLockoutHighlights();
-  }
-  const btnQuickPause = document.getElementById('btn-quick-pause');
-  if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
-
-  // 7. Clean up ALL active enemies, weapon meshes, lasers, projectiles, explosions, powerups, special effects
-  if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
-    currentStageObjectPool.despawnAll();
-  }
-  cleanupAllWeaponsAndCombatGraphics();
-  destroyAllRemainingEnemies(false);
-  despawnAllActivePowerups();
-  clearActiveSpecialEffects();
-
-  // 8. Reset and hide cockpit cracks overlay, damage vignette, and red hit edges
-  const cracks = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null)
-    || (cockpitOverlayCamera && (cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay')))
-    || (camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
-    || (currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
-  if (cracks && typeof resetCockpitOverlayDecals === 'function') {
-    resetCockpitOverlayDecals(cracks);
-  }
-  if (currentStageObjectPool && typeof currentStageObjectPool.hideCockpitCracks === 'function') {
-    currentStageObjectPool.hideCockpitCracks();
-  } else if (typeof window !== 'undefined' && typeof window.hideCockpitCracks === 'function') {
-    try { window.hideCockpitCracks(); } catch (e) {}
-  } else if (cracks) {
-    cracks.traverse((child) => {
-      if (child.isMesh && child.userData && child.userData.isDecal) {
-        child.visible = false;
-        if (child.material) {
-          child.material.opacity = 0.0;
-          child.material.needsUpdate = true;
-        }
+    // 3. Restore window/container focus so keyboard/touch input is received immediately
+    try {
+      if (document.activeElement && document.activeElement.blur) {
+        document.activeElement.blur();
       }
-    });
-  }
-  if (typeof document !== 'undefined') {
-    const redEdges = document.getElementById('cockpit-edges-red');
-    if (redEdges) redEdges.style.opacity = '0';
-    const htmlOverlay = document.getElementById('cockpit-cracks-overlay');
-    if (htmlOverlay) htmlOverlay.style.opacity = '0';
-  }
-  const damageVignette = document.getElementById('damage-vignette');
-  if (damageVignette) damageVignette.style.opacity = '0';
+      window.focus();
+      if (container) {
+        container.tabIndex = 0;
+        if (container.focus) container.focus();
+      }
+    } catch (e) {}
 
-  // 9. Reset keyboard and mouse capture states
-  for (const k in keys) {
-    delete keys[k];
-  }
-  state.keys = {};
-  state.isPointerLocked = false;
-  state.isLeftMouseDown = false;
-  state.isRightMouseDown = false;
-  state.isMouseDown = false;
-  state.aimActive = false;
-  const mouseLockBtn = document.getElementById('btn-mouse-lock');
-  if (mouseLockBtn) {
-    mouseLockBtn.classList.remove('active');
-    mouseLockBtn.textContent = '🎯 Capture Crosshair';
-  }
+    // 4. Dismiss and hide any countdown overlay & clear active timers (only if launching immediately)
+    const countdownOverlay = document.getElementById('game-countdown-overlay');
+    if (launchImmediately && countdownOverlay) {
+      countdownOverlay.onclick = null;
+      countdownOverlay.ontouchend = null;
+      countdownOverlay.classList.remove('active');
+      countdownOverlay.style.display = 'none';
+    }
+    if (countdownTimerInterval) {
+      clearInterval(countdownTimerInterval);
+      countdownTimerInterval = null;
+    }
+    if (countdownCompletionTimeout) {
+      clearTimeout(countdownCompletionTimeout);
+      countdownCompletionTimeout = null;
+    }
 
-  // 10. Reset mobile touch controls & virtual sticks to exact center (0px, 0px)
-  state.touchActive = false;
-  state.touchMove = { x: 0, y: 0 };
-  state.aimMove = { x: 0, y: 0 };
-  flightTouchId = null;
-  aimTouchId = null;
-  isMouseFlight = false;
-  isMouseAim = false;
-  flightTapStartTime = 0;
-  mouseFlightStartTime = 0;
-  sliderInteracting = false;
-  touchTriggeredStop = false;
-  touchLookPitch = 0;
-  touchLookYaw = 0;
-  lastGyroYaw = 0;
-  lastGyroPitch = 0;
-  const flightKnob = document.getElementById('touch-stick-knob') || document.getElementById('flight-stick-knob');
-  if (flightKnob) flightKnob.style.transform = 'translate(0px, 0px)';
-  const aimKnob = document.getElementById('aim-stick-knob');
-  if (aimKnob) aimKnob.style.transform = 'translate(0px, 0px)';
+    // 5. Dismiss and hide any rotate orientation prompt to prevent freeze/lockout
+    const rotatePrompt = document.getElementById('landscape-rotate-prompt');
+    if (rotatePrompt) {
+      rotatePrompt.classList.remove('active');
+      rotatePrompt.classList.add('dismissed');
+      rotatePrompt.style.display = 'none';
+    }
+    document.body.classList.add('portrait-dismissed');
 
-  // 11. Cancel any active automated thruster turns (180 / 360) & reset throttle
-  cancelTurn();
-  stopThrottle('STAGE ABORT');
-  state.throttleValue = 0;
-  setThrottleLockout(false);
-  state.throttleLockoutUntil = 0;
-
-  // 12. Reset player stats cleanly from the beginning
-  state.playerShield = 100;
-  state.playerHealth = 100;
-  state.score = 0;
-  state.stageKills = 0;
-  state.totalKills = 0;
-  state.isWarpReady = false;
-  state.isHyperWarping = false;
-  state.warpJumpTimer = 0;
-  state.distance = 0;
-  state.flightLockoutUntil = 0;
-  state.isAligningToWormhole = false;
-  state.frameCount = 0;
-  state.lastFpsUpdate = performance.now();
-
-  // 13. Reset vessel position to safe distance away from wormhole singularity
-  const respawnDistance = CONFIG.wormholeDistance || 220;
-  state.position.set(0, 0, respawnDistance);
-  if (!state.isXR && camera) {
-    camera.position.set(0, 0, respawnDistance);
-    camera.rotation.set(0, 0, 0);
-    camera.fov = 75;
-    camera.updateProjectionMatrix();
-  } else if (cameraRig) {
-    cameraRig.position.set(0, 0, respawnDistance);
-    cameraRig.rotation.set(0, 0, 0);
-  }
-  state.velocity.set(0, 0, 0);
-  state.pitch = 0;
-  state.yaw = 0;
-  state.roll = 0;
-  state.targetYaw = 0;
-  state.targetPitch = 0;
-
-  if (typeof triggeredPowerupEventSet !== 'undefined') {
-    triggeredPowerupEventSet.clear();
-  }
-  state.completedObjectiveEvents = {};
-
-  // 14. Reset weapons system to initial state (energy restored, overheat cleared, red laser selected)
-  if (weaponsSystem && typeof weaponsSystem.resetForMission === 'function') {
-    weaponsSystem.resetForMission();
-  }
-
-  // 15. Load the target stage module & configure stage pool and assets
-  currentActiveStage = stageNum;
-  await loadStageDeviceModule(stageNum, currentActiveDeviceType);
-
-  // Synchronize jump dropdown value in Telemetry & Modes panel
-  const jumpSelect = document.getElementById('select-stage-jump');
-  if (jumpSelect && parseInt(jumpSelect.value) !== stageNum) {
-    jumpSelect.value = stageNum.toString();
-  }
-
-  // 16. Reset cockpit overlay decals & decal threshold tracker on the newly mounted overlay
-  const mountedOverlay = ensureCockpitOverlayMounted()
-    || (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null)
-    || (currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
-  if (mountedOverlay && typeof resetCockpitOverlayDecals === 'function') {
-    resetCockpitOverlayDecals(mountedOverlay);
-  }
-  if (typeof window !== 'undefined' && typeof window.syncCockpitDecalThreshold === 'function') {
-    window.syncCockpitDecalThreshold(mountedOverlay, 100, 100);
-  }
-  if (typeof window !== 'undefined' && typeof window.hideCockpitCracks === 'function') {
-    try { window.hideCockpitCracks(); } catch (e) {}
-  }
-  if (typeof document !== 'undefined') {
-    const htmlOverlayPostLoad = document.getElementById('cockpit-cracks-overlay');
-    if (htmlOverlayPostLoad) htmlOverlayPostLoad.style.opacity = '0';
-    const redEdgesPostLoad = document.getElementById('cockpit-edges-red');
-    if (redEdgesPostLoad) redEdgesPostLoad.style.opacity = '0';
-  }
-
-  // 17. Update player defense HUD, stage objectives, wormhole center, and crosshair reticle
-  updatePlayerDefenseHUD();
-  renderStageObjectivesUI();
-  centerWormholeOnScreen(true);
-  snapCrosshairToCurrentGridCenter();
-
-  // Reset frame timestamp to prevent delta time explosion
-  state.lastFrameTime = performance.now();
-
-  // 18. Auto-close the top Telemetry & Modes panel if auto-close is enabled
-  const chkAutoClose = document.getElementById('chk-auto-close-top');
-  const topDrawer = document.getElementById('top-drawer-container');
-  if (topDrawer && (!chkAutoClose || chkAutoClose.checked)) {
-    topDrawer.classList.remove('open');
-  }
-
-  // 19. Launch immediately only if requested (e.g. jumpToStage); during restartGame(), wait for countdown
-  if (launchImmediately) {
+    // 6. Reset combat/wave flags BEFORE async reload so animate()/updateEnemiesCombat() never spawn mid-restart
     state.isGameOver = false;
     state.isPaused = false;
-    state.isCountdownActive = false;
-    state.hasStarted = true;
-    document.body.classList.add('game-in-flight');
-
-    state.currentWave = 0;
-    state.waveStartTime = performance.now();
-    state.waveCompleted = false;
-    state.waveSpawnInProgress = false;
-    lastEnemySpawnCheckTime = performance.now();
-    const api = getEngineApi();
-    if (typeof activeStageWaveHandler === 'function') {
-      try { activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies }); } catch (e) {}
-    }
-    if (state.currentWave === 0 && active3DEnemies.length === 0) {
-      const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
-      spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
-    }
-    if (state.currentWave === 0 && active3DEnemies.length > 0) {
-      state.currentWave = 1;
-      state.waveStartTime = performance.now();
-    }
-
-    if (!isMobileInUse() && !state.isPointerLocked) {
-      requestCrosshairCapture(true);
-    }
-  } else {
     state.hasStarted = false;
+    state.isCountdownActive = !launchImmediately;
     state.currentWave = 0;
     state.waveStartTime = 0;
     state.waveCompleted = false;
+    state.waveEnemiesSpawned = 0;
+    state.waveEnemiesRemaining = 0;
     state.waveSpawnInProgress = false;
-  }
+    state.lastLaserShotTime = 0;
+    state.lockedTargetEnemy = null;
+    state.vectorLockEngaged = false;
+    state.scanProgress = 0;
+    state.isScanning = false;
+    state.coils = [false, false, false];
+    state.isVectorAligned = false;
+    state.isInRange = false;
+    lastCheckedDistMilestone = 100000;
+    document.body.classList.remove('game-paused', 'game-in-flight');
 
-  console.log(`[Wormhole XR Engine] Stage ${stageNum} aborted previous state and started fresh.`);
+    if (typeof setGamePaused === 'function') {
+      setGamePaused(false);
+    } else {
+      document.body.classList.remove('game-paused');
+      if (typeof updateLockoutHighlights === 'function') updateLockoutHighlights();
+    }
+    const btnQuickPause = document.getElementById('btn-quick-pause');
+    if (btnQuickPause) btnQuickPause.classList.remove('is-paused');
+
+    // 7. Clean up ALL active enemies, weapon meshes, lasers, projectiles, explosions, powerups, special effects
+    if (currentStageObjectPool && typeof currentStageObjectPool.despawnAll === 'function') {
+      currentStageObjectPool.despawnAll();
+    }
+    cleanupAllWeaponsAndCombatGraphics();
+    destroyAllRemainingEnemies(false);
+    despawnAllActivePowerups();
+    clearActiveSpecialEffects();
+
+    // 8. Reset and hide cockpit cracks overlay, damage vignette, and red hit edges
+    const cracks = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null)
+      || (cockpitOverlayCamera && (cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay')))
+      || (camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
+      || (currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
+    if (cracks && typeof resetCockpitOverlayDecals === 'function') {
+      resetCockpitOverlayDecals(cracks);
+    }
+    if (currentStageObjectPool && typeof currentStageObjectPool.hideCockpitCracks === 'function') {
+      currentStageObjectPool.hideCockpitCracks();
+    } else if (typeof window !== 'undefined' && typeof window.hideCockpitCracks === 'function') {
+      try { window.hideCockpitCracks(); } catch (e) {}
+    } else if (cracks) {
+      cracks.traverse((child) => {
+        if (child.isMesh && child.userData && child.userData.isDecal) {
+          child.visible = false;
+          if (child.material) {
+            child.material.opacity = 0.0;
+            child.material.needsUpdate = true;
+          }
+        }
+      });
+    }
+    if (typeof document !== 'undefined') {
+      const redEdges = document.getElementById('cockpit-edges-red');
+      if (redEdges) redEdges.style.opacity = '0';
+      const htmlOverlay = document.getElementById('cockpit-cracks-overlay');
+      if (htmlOverlay) htmlOverlay.style.opacity = '0';
+    }
+    const damageVignette = document.getElementById('damage-vignette');
+    if (damageVignette) damageVignette.style.opacity = '0';
+
+    // 9. Reset keyboard and mouse capture states
+    for (const k in keys) {
+      delete keys[k];
+    }
+    state.keys = {};
+    state.isPointerLocked = false;
+    state.isLeftMouseDown = false;
+    state.isRightMouseDown = false;
+    state.isMouseDown = false;
+    state.aimActive = false;
+    const mouseLockBtn = document.getElementById('btn-mouse-lock');
+    if (mouseLockBtn) {
+      mouseLockBtn.classList.remove('active');
+      mouseLockBtn.textContent = '🎯 Capture Crosshair';
+    }
+
+    // 10. Reset mobile touch controls & virtual sticks to exact center (0px, 0px)
+    state.touchActive = false;
+    state.touchMove = { x: 0, y: 0 };
+    state.aimMove = { x: 0, y: 0 };
+    flightTouchId = null;
+    aimTouchId = null;
+    isMouseFlight = false;
+    isMouseAim = false;
+    flightTapStartTime = 0;
+    mouseFlightStartTime = 0;
+    sliderInteracting = false;
+    touchTriggeredStop = false;
+    touchLookPitch = 0;
+    touchLookYaw = 0;
+    lastGyroYaw = 0;
+    lastGyroPitch = 0;
+    const flightKnob = document.getElementById('touch-stick-knob') || document.getElementById('flight-stick-knob');
+    if (flightKnob) flightKnob.style.transform = 'translate(0px, 0px)';
+    const aimKnob = document.getElementById('aim-stick-knob');
+    if (aimKnob) aimKnob.style.transform = 'translate(0px, 0px)';
+
+    // 11. Cancel any active automated thruster turns (180 / 360) & reset throttle
+    cancelTurn();
+    stopThrottle('STAGE ABORT');
+    state.throttleValue = 0;
+    setThrottleLockout(false);
+    state.throttleLockoutUntil = 0;
+
+    // 12. Reset player stats cleanly from the beginning
+    state.playerShield = 100;
+    state.playerHealth = 100;
+    if (!preserveCampaignScore) {
+      state.score = 0;
+      state.totalKills = 0;
+    }
+    state.stageKills = 0;
+    state.isWarpReady = false;
+    state.isHyperWarping = false;
+    state.warpJumpTimer = 0;
+    state.distance = 0;
+    state.flightLockoutUntil = 0;
+    state.isAligningToWormhole = false;
+    state.frameCount = 0;
+    state.lastFpsUpdate = performance.now();
+
+    // 13. Reset vessel position to safe distance away from wormhole singularity
+    const respawnDistance = CONFIG.wormholeDistance || 220;
+    state.position.set(0, 0, respawnDistance);
+    if (!state.isXR && camera) {
+      camera.position.set(0, 0, respawnDistance);
+      camera.rotation.set(0, 0, 0);
+      camera.fov = 75;
+      camera.updateProjectionMatrix();
+    } else if (cameraRig) {
+      cameraRig.position.set(0, 0, respawnDistance);
+      cameraRig.rotation.set(0, 0, 0);
+    }
+    state.velocity.set(0, 0, 0);
+    state.pitch = 0;
+    state.yaw = 0;
+    state.roll = 0;
+    state.targetYaw = 0;
+    state.targetPitch = 0;
+
+    if (typeof triggeredPowerupEventSet !== 'undefined') {
+      triggeredPowerupEventSet.clear();
+    }
+    state.unlockedEvents = {};
+    state.completedObjectiveEvents = {};
+    state.objectiveActionStates = {};
+
+    // 14. Reset weapons system to target stage initial state (energy restored, overheat cleared, stage-gated availability)
+    if (weaponsSystem && typeof weaponsSystem.resetForMission === 'function') {
+      weaponsSystem.resetForMission(stageNum);
+    }
+
+    // 15. Load the target stage module & configure stage pool and assets
+    currentActiveStage = stageNum;
+    const loadedMod = await loadStageDeviceModule(stageNum, currentActiveDeviceType, mySeq);
+
+    // Abort cleanly if another stage selection superseded this transition while awaiting module/pool load
+    if (mySeq !== activeStageTransitionSeq || !loadedMod) {
+      if (mySeq !== activeStageTransitionSeq) {
+        console.log(`[Wormhole XR Engine] Aborting stale Stage ${stageNum} transition (seq ${mySeq} < ${activeStageTransitionSeq}).`);
+        return { aborted: true, stage: stageNum, transitionSeq: mySeq };
+      }
+    }
+
+    // 16. Reset cockpit overlay decals & decal threshold tracker on the newly mounted overlay
+    const mountedOverlay = ensureCockpitOverlayMounted()
+      || (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null)
+      || (currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
+    if (mountedOverlay && typeof resetCockpitOverlayDecals === 'function') {
+      resetCockpitOverlayDecals(mountedOverlay);
+    }
+    if (typeof window !== 'undefined' && typeof window.syncCockpitDecalThreshold === 'function') {
+      window.syncCockpitDecalThreshold(mountedOverlay, 100, 100);
+    }
+    if (typeof window !== 'undefined' && typeof window.hideCockpitCracks === 'function') {
+      try { window.hideCockpitCracks(); } catch (e) {}
+    }
+    if (typeof document !== 'undefined') {
+      const htmlOverlayPostLoad = document.getElementById('cockpit-cracks-overlay');
+      if (htmlOverlayPostLoad) htmlOverlayPostLoad.style.opacity = '0';
+      const redEdgesPostLoad = document.getElementById('cockpit-edges-red');
+      if (redEdgesPostLoad) redEdgesPostLoad.style.opacity = '0';
+    }
+
+    // 17. Update player defense HUD, stage objectives, wormhole center, and crosshair reticle
+    updatePlayerDefenseHUD();
+    renderStageObjectivesUI();
+    centerWormholeOnScreen(true);
+    snapCrosshairToCurrentGridCenter();
+
+    // Reset frame timestamp to prevent delta time explosion
+    state.lastFrameTime = performance.now();
+
+    // 18. Auto-close the top Telemetry & Modes panel if auto-close is enabled
+    const chkAutoClose = document.getElementById('chk-auto-close-top');
+    const topDrawer = document.getElementById('top-drawer-container');
+    if (topDrawer && (!chkAutoClose || chkAutoClose.checked)) {
+      topDrawer.classList.remove('open');
+    }
+
+    // 19. Launch immediately only if requested (e.g. jumpToStage); during restartGame(), wait for countdown
+    if (launchImmediately) {
+      state.isGameOver = false;
+      state.isPaused = false;
+      state.isCountdownActive = false;
+      state.hasStarted = true;
+      document.body.classList.add('game-in-flight');
+
+      state.currentWave = 0;
+      state.waveStartTime = performance.now();
+      state.waveCompleted = false;
+      state.waveSpawnInProgress = false;
+      lastEnemySpawnCheckTime = performance.now();
+      const api = getEngineApi();
+      if (typeof activeStageWaveHandler === 'function') {
+        try { activeStageWaveHandler(api, { now: performance.now(), activeEnemies: active3DEnemies }); } catch (e) {}
+      }
+      if (state.currentWave === 0 && active3DEnemies.length === 0) {
+        const wave1Cfg = (state.stageWaves && state.stageWaves[0]) || { wave_number: 1, enemy_count: 5 };
+        spawnEnemyWaveFromPool(wave1Cfg.enemy_count || 5, wave1Cfg);
+      }
+      if (state.currentWave === 0 && active3DEnemies.length > 0) {
+        state.currentWave = 1;
+        state.waveStartTime = performance.now();
+      }
+
+      if (!isMobileInUse() && !state.isPointerLocked) {
+        requestCrosshairCapture(true);
+      }
+    } else {
+      state.hasStarted = false;
+      state.currentWave = 0;
+      state.waveStartTime = 0;
+      state.waveCompleted = false;
+      state.waveSpawnInProgress = false;
+    }
+
+    console.log(`[Wormhole XR Engine] Stage ${stageNum} aborted previous state and started fresh.`);
+    return { aborted: false, stage: stageNum, transitionSeq: mySeq };
+  } finally {
+    if (mySeq === activeStageTransitionSeq) {
+      isStageTransitionInProgress = false;
+    }
+  }
 }
 
 // MULTI-PLATFORM & XR MODE SWITCHER
@@ -5783,26 +5971,7 @@ if (selectModeEl) {
     state.xrMode = e.target.value;
     handleModeChange(state.xrMode);
     const devType = getDeviceTypeFromMode(state.xrMode);
-    loadStageDeviceModule(currentActiveStage, devType);
-  });
-}
-
-// Stage Jump Debug Selector & Live Sync Button
-const selectStageJumpEl = document.getElementById('select-stage-jump');
-if (selectStageJumpEl) {
-  selectStageJumpEl.addEventListener('change', async (e) => {
-    const targetStage = parseInt(e.target.value) || 1;
-    console.log(`[Wormhole XR Debug] Stage jump selected in Telemetry & Modes: Stage ${targetStage}`);
-    await abortCurrentStageAndStartFresh(targetStage);
-  });
-}
-
-const btnRefreshStagesEl = document.getElementById('btn-refresh-stages');
-if (btnRefreshStagesEl) {
-  btnRefreshStagesEl.addEventListener('click', () => {
-    if (typeof syncStagesDropdownFromDatabase === 'function') {
-      syncStagesDropdownFromDatabase(true);
-    }
+    loadStageDeviceModule(currentActiveStage, devType, ++activeStageTransitionSeq);
   });
 }
 
@@ -11684,8 +11853,14 @@ function triggerGameOver() {
     const redEdges = document.getElementById('cockpit-edges-red');
     if (redEdges) {
       redEdges.style.opacity = '1.0';
-      setTimeout(() => {
-        redEdges.style.opacity = '0';
+      if (activeGameOverRedEdgesTimeout) {
+        clearTimeout(activeGameOverRedEdgesTimeout);
+      }
+      activeGameOverRedEdgesTimeout = setTimeout(() => {
+        activeGameOverRedEdgesTimeout = null;
+        if (state.isGameOver) {
+          redEdges.style.opacity = '0';
+        }
       }, 4000);
     }
   }
@@ -11851,7 +12026,11 @@ function startCountdownAndLaunchGame(isRestart = false) {
   executeMissionCountdown(isRestart);
 }
 
-function executeMissionCountdown(isRestart = false) {
+function executeMissionCountdown(isRestart = false, expectedSeq = null) {
+  const countdownSeq = (expectedSeq !== null && expectedSeq !== undefined)
+    ? expectedSeq
+    : activeStageTransitionSeq;
+
   if (countdownTimerInterval) {
     clearInterval(countdownTimerInterval);
     countdownTimerInterval = null;
@@ -11903,8 +12082,23 @@ function executeMissionCountdown(isRestart = false) {
   const totalSeconds = 5;
   const circumference = 408;
 
+  const cancelStaleCountdown = () => {
+    if (countdownTimerInterval) {
+      clearInterval(countdownTimerInterval);
+      countdownTimerInterval = null;
+    }
+    if (countdownCompletionTimeout) {
+      clearTimeout(countdownCompletionTimeout);
+      countdownCompletionTimeout = null;
+    }
+  };
+
   const finishCountdown = () => {
     countdownCompletionTimeout = null;
+    if (countdownSeq !== activeStageTransitionSeq) {
+      cancelStaleCountdown();
+      return;
+    }
     if (countdownOverlay) {
       countdownOverlay.classList.remove('active');
       countdownOverlay.style.display = 'none';
@@ -11953,6 +12147,10 @@ function executeMissionCountdown(isRestart = false) {
   };
 
   const skipCountdown = () => {
+    if (countdownSeq !== activeStageTransitionSeq) {
+      cancelStaleCountdown();
+      return;
+    }
     if (state.isCountdownActive && remaining > 0) {
       remaining = 0;
       if (countdownTimerInterval) {
@@ -11976,6 +12174,7 @@ function executeMissionCountdown(isRestart = false) {
   }
 
   const updateCountdownDisplay = () => {
+    if (countdownSeq !== activeStageTransitionSeq) return;
     if (countdownText) {
       countdownText.textContent = remaining > 0 ? String(remaining) : 'GO!';
     }
@@ -11998,6 +12197,10 @@ function executeMissionCountdown(isRestart = false) {
   updateCountdownDisplay();
 
   countdownTimerInterval = setInterval(() => {
+    if (countdownSeq !== activeStageTransitionSeq) {
+      cancelStaleCountdown();
+      return;
+    }
     remaining--;
     if (remaining > 0) {
       updateCountdownDisplay();
@@ -12017,11 +12220,25 @@ async function restartGame() {
     console.log('[Wormhole XR Engine] Restart already in progress, ignoring duplicate trigger.');
     return;
   }
+  const targetStage = currentActiveStage || 1;
+  const mySeq = ++activeStageTransitionSeq;
   isRestartingMission = true;
   try {
     if (activeGameOverTimeout) {
       clearTimeout(activeGameOverTimeout);
       activeGameOverTimeout = null;
+    }
+    if (activeGameOverRedEdgesTimeout) {
+      clearTimeout(activeGameOverRedEdgesTimeout);
+      activeGameOverRedEdgesTimeout = null;
+    }
+    if (countdownTimerInterval) {
+      clearInterval(countdownTimerInterval);
+      countdownTimerInterval = null;
+    }
+    if (countdownCompletionTimeout) {
+      clearTimeout(countdownCompletionTimeout);
+      countdownCompletionTimeout = null;
     }
     const modal = document.getElementById('game-over-modal');
     if (modal) modal.style.display = 'none';
@@ -12033,20 +12250,27 @@ async function restartGame() {
     state.isCountdownActive = true;
 
     // Show countdown overlay immediately for instant visual feedback while stage resets
+    const stageName = (STAGE_REGISTRY[targetStage] && STAGE_REGISTRY[targetStage].name) || `Stage ${targetStage}`;
     const countdownOverlay = document.getElementById('game-countdown-overlay');
     const countdownText = document.getElementById('countdown-text-num');
     const headerLabel = document.getElementById('countdown-header-label');
     const tipLabel = document.getElementById('countdown-tip-label');
     if (countdownOverlay) {
+      countdownOverlay.onclick = null;
+      countdownOverlay.ontouchend = null;
       countdownOverlay.style.display = '';
       countdownOverlay.classList.add('active');
     }
     if (countdownText) countdownText.textContent = '5';
     if (headerLabel) headerLabel.textContent = 'MISSION RE-ENGAGEMENT';
-    if (tipLabel) tipLabel.textContent = 'REINITIALIZING SECTOR...';
+    if (tipLabel) tipLabel.textContent = `STAGE ${targetStage}: ${stageName.toUpperCase()} — REINITIALIZING...`;
 
+    let resetRes = null;
     try {
-      await abortCurrentStageAndStartFresh(currentActiveStage || 1, { launchImmediately: false });
+      resetRes = await abortCurrentStageAndStartFresh(targetStage, {
+        launchImmediately: false,
+        transitionSeq: mySeq
+      });
     } catch (abortErr) {
       console.error('[Wormhole XR Engine] Stage reset encountered error during restart, forcing clean recovery:', abortErr);
       state.playerShield = 100;
@@ -12060,7 +12284,12 @@ async function restartGame() {
       updatePlayerDefenseHUD();
     }
 
-    executeMissionCountdown(true);
+    if (mySeq !== activeStageTransitionSeq || (resetRes && resetRes.aborted)) {
+      console.log(`[Wormhole XR Engine] Restart for Stage ${targetStage} superseded by newer stage transition.`);
+      return;
+    }
+
+    executeMissionCountdown(true, mySeq);
   } finally {
     isRestartingMission = false;
   }
@@ -13463,44 +13692,6 @@ function triggerWarpJump() {
   renderStageObjectivesUI();
 }
 
-async function syncStagesDropdownFromDatabase(showNotification = false) {
-  const jumpSelect = document.getElementById('select-stage-jump');
-  if (!jumpSelect) return;
-
-  try {
-    const res = await fetch('https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_stages');
-    const json = await res.json();
-    if (json && json.success && Array.isArray(json.stages) && json.stages.length > 0) {
-      const activeStages = json.stages.filter(s => parseInt(s.is_enabled) === 1);
-      const stageList = activeStages.length > 0 ? activeStages : json.stages;
-
-      const currentVal = jumpSelect.value || String(currentActiveStage || 1);
-      const allLevels = new Set(Object.keys(STAGE_REGISTRY).map(Number));
-      stageList.forEach(s => {
-        const lvl = parseInt(s.stage_level) || 1;
-        allLevels.add(lvl);
-        if (!STAGE_REGISTRY[lvl]) {
-          STAGE_REGISTRY[lvl] = {
-            level: lvl,
-            name: s.stage_name,
-            slug: s.stage_name.toLowerCase().replace(/[^a-z0-9_]/g, '_')
-          };
-        }
-      });
-      const sortedLevels = Array.from(allLevels).sort((a, b) => a - b);
-      jumpSelect.innerHTML = sortedLevels.map(lvl => {
-        const st = STAGE_REGISTRY[lvl];
-        const icon = lvl === 1 ? '🚀' : (lvl === 2 ? '🌌' : (lvl === 3 ? '🕳️' : (lvl === 4 ? '⚛️' : (lvl === 5 ? '👑' : '🪐'))));
-        return `<option value="${lvl}">${icon} Stage ${lvl}: ${st.name}</option>`;
-      }).join('');
-
-      jumpSelect.value = currentVal;
-    }
-  } catch (err) {
-    console.warn('[Wormhole XR] Sync stages error:', err);
-  }
-}
-
 if (warpBtn) {
   warpBtn.addEventListener('click', triggerWarpJump);
 }
@@ -14028,7 +14219,7 @@ function updateFlight(delta) {
       if (typeof despawnAllActivePowerups === 'function') {
         despawnAllActivePowerups();
       }
-      loadStageDeviceModule(nextStage, currentActiveDeviceType);
+      abortCurrentStageAndStartFresh(nextStage, { launchImmediately: true, preserveCampaignScore: true });
     }
   } else {
     if (accel.lengthSq() > 0) {
@@ -14677,7 +14868,6 @@ if (typeof window !== 'undefined') {
   window.renderStageObjectivesUI = renderStageObjectivesUI;
   window.updateStageDistanceObjective = updateStageDistanceObjective;
   window.getWormholeDistanceKm = getWormholeDistanceKm;
-  window.syncStagesDropdownFromDatabase = syncStagesDropdownFromDatabase;
   window.isMobileInUse = isMobileInUse;
   window.updateMobileControlsVisibility = updateMobileControlsVisibility;
   window.showShieldAndHealthOnHit = showShieldAndHealthOnHit;
@@ -14789,13 +14979,15 @@ updateMobileSnapGrid();
 // Auto-synchronize Game Manager whenever player switches back to game tab from Admin Console
 if (typeof window !== 'undefined') {
   window.addEventListener('focus', () => {
-    syncGameManagerFromDatabase(currentActiveStage, currentActiveDeviceType);
+    if (isStageTransitionInProgress || state.isGameOver || state.isCountdownActive) return;
+    syncGameManagerFromDatabase(currentActiveStage, currentActiveDeviceType, activeStageTransitionSeq);
   });
 }
 if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
-      syncGameManagerFromDatabase(currentActiveStage, currentActiveDeviceType);
+      if (isStageTransitionInProgress || state.isGameOver || state.isCountdownActive) return;
+      syncGameManagerFromDatabase(currentActiveStage, currentActiveDeviceType, activeStageTransitionSeq);
     }
   });
 }

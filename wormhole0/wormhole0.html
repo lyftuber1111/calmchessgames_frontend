@@ -19,7 +19,8 @@
     {
       "imports": {
         "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+        "./js/object_pool.js": "./js/object_pool.js?v=20261120_clean_telemetry_v12"
       }
     }
   </script>
@@ -4615,19 +4616,6 @@
           <option value="mobile-ar">🌐 MOBILE AR (ARCore)</option>
         </select>
 
-        <!-- Debug Stage Jump Selector & Live Sync -->
-        <div style="display:inline-flex; align-items:center; gap:4px;">
-          <select id="select-stage-jump" class="hud-select" title="Jump to Stage/Level for Debug Purposes">
-            <option value="1" selected>🚀 Stage 1: Warp Origin</option>
-            <option value="2">🌌 Stage 2: Event Horizon</option>
-            <option value="3">🕳️ Stage 3: Singularity Core</option>
-            <option value="4">⚛️ Stage 4: Quantum Realm</option>
-            <option value="5">👑 Stage 5: Final Boss Stage</option>
-            <option value="6">🪐 Stage 6: Nebula Outpost</option>
-          </select>
-          <button type="button" id="btn-refresh-stages" class="hud-btn" style="padding:5px 8px; font-size:0.75rem; border-color:#00f0ff; color:#00f0ff; background:rgba(0,240,255,0.18);" title="Check database for newly created stages & refresh dropdown">🔄 Sync</button>
-        </div>
-
         <!-- Specific Hardware Device Selector -->
         <select id="select-device" class="hud-select" title="Target Hardware Device Profile">
           <option value="auto" selected>⚡ Auto-Detect Device</option>
@@ -4917,7 +4905,7 @@
   </div>
 
   <!-- Primary Game Module with Decoupled Stage Profiles & Events -->
-  <script type="module" src="js/wormhole0.js?v=20261119_restart_fix_v10"></script>
+  <script type="module" src="js/wormhole0.js?v=20261120_clean_telemetry_v12"></script>
 
   <!-- Calm Chess Computers 2026 -->
   <div style="display:none !important; visibility:hidden !important; opacity:0 !important; pointer-events:none !important;" aria-hidden="true">Calm Chess Computers 2026</div>

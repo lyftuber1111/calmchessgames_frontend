@@ -1344,27 +1344,46 @@ export class MeshPool {
 
   dispose() {
     this.despawnAll();
+    const geometriesToDispose = new Set();
+    const materialsToDispose = new Set();
+
+    const collectDisposables = (node) => {
+      if (!node) return;
+      if (node.geometry && !(node.geometry.userData && node.geometry.userData._isSharedAsset) && typeof node.geometry.dispose === 'function') {
+        geometriesToDispose.add(node.geometry);
+      }
+      if (node.material) {
+        if (Array.isArray(node.material)) {
+          node.material.forEach(m => {
+            if (m && !(m.userData && m.userData._isSharedAsset) && typeof m.dispose === 'function') {
+              materialsToDispose.add(m);
+            }
+          });
+        } else if (!(node.material.userData && node.material.userData._isSharedAsset) && typeof node.material.dispose === 'function') {
+          materialsToDispose.add(node.material);
+        }
+      }
+    };
+
     for (const mesh of this.pool) {
       if (!mesh) continue;
+      if (typeof mesh.traverse === 'function') {
+        mesh.traverse(collectDisposables);
+      } else {
+        collectDisposables(mesh);
+      }
       if (mesh.parent) {
         mesh.parent.remove(mesh);
       } else if (this.scene && mesh.parent === this.scene) {
         this.scene.remove(mesh);
       }
-      if (mesh.geometry && !(mesh.geometry.userData && mesh.geometry.userData._isSharedAsset) && typeof mesh.geometry.dispose === 'function') {
-        mesh.geometry.dispose();
-      }
-      if (mesh.material) {
-        if (Array.isArray(mesh.material)) {
-          mesh.material.forEach(m => {
-            if (m && !(m.userData && m.userData._isSharedAsset) && typeof m.dispose === 'function') {
-              m.dispose();
-            }
-          });
-        } else if (!(mesh.material.userData && mesh.material.userData._isSharedAsset) && typeof mesh.material.dispose === 'function') {
-          mesh.material.dispose();
-        }
-      }
+    }
+
+    for (const geom of geometriesToDispose) {
+      try { geom.dispose(); } catch (e) {}
+    }
+    for (const mat of materialsToDispose) {
+      try { mat.dispose(); } catch (e) {}
     }
     this.pool = [];
   }
@@ -1376,6 +1395,7 @@ export class MeshPool {
  */
 export class StageObjectPool {
   constructor(scene, stageConfig = {}, options = {}) {
+    this._disposed = false;
     this.scene = scene;
     this.stageConfig = stageConfig;
     this.options = options;
@@ -1983,6 +2003,7 @@ export class StageObjectPool {
   }
 
   dispose() {
+    this._disposed = true;
     const uniqueEnemyPools = new Set(this.enemyPools.values());
     for (const pool of uniqueEnemyPools) {
       if (pool && typeof pool.dispose === 'function') pool.dispose();
@@ -2000,6 +2021,9 @@ export class StageObjectPool {
       if (pool && typeof pool.dispose === 'function') pool.dispose();
     }
     this.enemyWeaponPools.clear();
+
+    this.cockpitCracksOverlayPool = null;
+    this.cockpitCracksMesh = null;
   }
 
   // --- COCKPIT CRACKS OVERLAY POOL METHODS ---
@@ -2017,6 +2041,7 @@ export class StageObjectPool {
       || 'wormhole0/scene_images/screen_decals_spider_web_overlay_4.glb';
 
       const loadedMesh = await loadCockpitCracksAsset(glbUrl);
+      if (this._disposed) return null;
       if (loadedMesh) {
         setupCockpitCracksHierarchy(loadedMesh);
         let usedPrimaryInstance = false;
@@ -2037,7 +2062,7 @@ export class StageObjectPool {
         );
         console.log(`[StageObjectPool] Pre-allocated Cockpit Overlay pool from: ${glbUrl}`);
         const cam = (typeof window !== 'undefined' && window.camera) ? window.camera : null;
-        if (cam) {
+        if (cam && !this._disposed) {
           this.getCockpitCracksOverlay(cam);
         }
       }

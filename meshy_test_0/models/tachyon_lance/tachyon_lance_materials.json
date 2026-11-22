@@ -1,0 +1,36 @@
+{
+  "model": "tachyon_lance.glb",
+  "baseName": "tachyon_lance",
+  "description": "A high-tech Tachyon Lance weapon projectile and emitter spear engineered to pierce reinforced particle shields in relativistic space. Sleek linear accelerator lance barrel, glowing violet and electric purple superluminal phase particle coils, sharp focused armor-piercing lance tip, hard surface sci-fi 3D game asset, optimized low-to-mid poly triangle topology for mobile, desktop, VR, and ARCore WebXR.",
+  "topology": "triangle",
+  "target_polycount": 20000,
+  "device_targets": [
+    "mobile",
+    "desktop",
+    "vr",
+    "arcore"
+  ],
+  "exported_at": "2026-11-22T19:19:45+00:00",
+  "destination": "./meshy_test_0/models/tachyon_lance",
+  "textures_directory": "./meshy_test_0/models/tachyon_lance/tachyon_lance_textures",
+  "fallback_textures_directory": "./meshy_yest_0/models/tachyon_lance/tachyon_lance_textures",
+  "materials": {
+    "thumbnail": "./meshy_test_0/models/tachyon_lance/tachyon_lance_textures/thumbnail.png",
+    "texture_0_base_color": "./meshy_test_0/models/tachyon_lance/tachyon_lance_textures/texture_0_base_color.png",
+    "texture_0_metallic": "./meshy_test_0/models/tachyon_lance/tachyon_lance_textures/texture_0_metallic.png",
+    "texture_0_roughness": "./meshy_test_0/models/tachyon_lance/tachyon_lance_textures/texture_0_roughness.png",
+    "texture_0_normal": "./meshy_test_0/models/tachyon_lance/tachyon_lance_textures/texture_0_normal.png"
+  },
+  "companion_files": [
+    "final_result.json",
+    "tachyon_lance.fbx",
+    "tachyon_lance.glb",
+    "tachyon_lance.mtl",
+    "tachyon_lance.obj",
+    "texture_0_base_color.png",
+    "texture_0_metallic.png",
+    "texture_0_normal.png",
+    "texture_0_roughness.png",
+    "thumbnail.png"
+  ]
+}

@@ -117,8 +117,10 @@ export const stageConfig = {
             "z": 1
         },
         "special_fx": "cockpit_overlay_decals",
-        "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
-        "special_fx_type": "overlay"
+        "special_fx_file": "scene_images/tachyon_lance_pierced_shield.glb",
+        "special_fx_type": "overlay",
+        "model_url": "arcore/warp_origin_images/tachyon_lance.glb",
+        "graphic_object": "arcore/warp_origin_images/tachyon_lance.glb"
     },
     "acquirable": []
 },
@@ -130,7 +132,9 @@ export const stageConfig = {
         "enemy_class": "Heavy Cruiser",
         "icon": "🛰️",
         "model_3d_type": "cruiser",
-        "model_3d_url": "",
+        "model_3d_url": "arcore/warp_origin_images/relativistic_reinforced_hull.glb",
+        "shield_model_url": "arcore/warp_origin_images/reinforced_particle_shield.glb",
+        "pierced_shield_fx": "scene_images/tachyon_lance_pierced_shield.glb",
         "scale": 1.25,
         "length": 3.5,
         "height": 2.5,

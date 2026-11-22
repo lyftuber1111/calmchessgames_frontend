@@ -1,0 +1,36 @@
+{
+  "model": "relativistic_reinforced_hull.glb",
+  "baseName": "relativistic_reinforced_hull",
+  "description": "A reinforced hull of an advanced starship traversing relativistic space at near-light velocity. Heavy multi-layered tungsten-titanium ablative armor plating, forward deflection bow with reinforced bulkheads, angled relativistic particle deflection baffles, sub-light ion thrust nozzles, glowing cyan relativistic energy conduits, hard surface sci-fi 3D game asset, optimized low-to-mid poly triangle topology for mobile, desktop, VR, and ARCore WebXR.",
+  "topology": "triangle",
+  "target_polycount": 20000,
+  "device_targets": [
+    "mobile",
+    "desktop",
+    "vr",
+    "arcore"
+  ],
+  "exported_at": "2026-11-22T19:19:36+00:00",
+  "destination": "./meshy_test_0/models/relativistic_reinforced_hull",
+  "textures_directory": "./meshy_test_0/models/relativistic_reinforced_hull/relativistic_reinforced_hull_textures",
+  "fallback_textures_directory": "./meshy_yest_0/models/relativistic_reinforced_hull/relativistic_reinforced_hull_textures",
+  "materials": {
+    "thumbnail": "./meshy_test_0/models/relativistic_reinforced_hull/relativistic_reinforced_hull_textures/thumbnail.png",
+    "texture_0_base_color": "./meshy_test_0/models/relativistic_reinforced_hull/relativistic_reinforced_hull_textures/texture_0_base_color.png",
+    "texture_0_metallic": "./meshy_test_0/models/relativistic_reinforced_hull/relativistic_reinforced_hull_textures/texture_0_metallic.png",
+    "texture_0_roughness": "./meshy_test_0/models/relativistic_reinforced_hull/relativistic_reinforced_hull_textures/texture_0_roughness.png",
+    "texture_0_normal": "./meshy_test_0/models/relativistic_reinforced_hull/relativistic_reinforced_hull_textures/texture_0_normal.png"
+  },
+  "companion_files": [
+    "final_result.json",
+    "relativistic_reinforced_hull.fbx",
+    "relativistic_reinforced_hull.glb",
+    "relativistic_reinforced_hull.mtl",
+    "relativistic_reinforced_hull.obj",
+    "texture_0_base_color.png",
+    "texture_0_metallic.png",
+    "texture_0_normal.png",
+    "texture_0_roughness.png",
+    "thumbnail.png"
+  ]
+}

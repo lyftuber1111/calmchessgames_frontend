@@ -427,7 +427,7 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   const cfg = enemyObj.config || enemyObj || {};
   const wName = (w && w.name) || cfg.weapon_name || 'Plasma Pulse';
   const rawWType = (w && w.type) ? w.type.toLowerCase() : '';
-  const isMissile = rawWType === 'missile' || rawWType === 'torpedo' || /missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test(`${rawWType} ${wName} ${(w && w.id) || ''} ${(w && w.model_url) || ''}`);
+  const isMissile = rawWType === 'missile' || rawWType === 'torpedo' || /missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test([rawWType, wName, (w && w.id) || '', (w && w.model_url) || ''].join(' '));
   const wType = isMissile ? 'missile' : (rawWType || 'beam');
   const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#10b981';
   const boltColorHex = parseInt(String(rawColor).replace('#', '0x'), 16) || 0xff0055;
@@ -544,8 +544,9 @@ export function updateEnemyMovement(e, delta, context) {
   const enemyIndex = (isContextObj && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
   const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
-  const dist10k = WEAPON_MAX_RANGE_UNITS;
-  const dist5k = 5000 / KM_PER_WORLD_UNIT;
+  // Exact distance definitions: at 420 KM per Three.js unit
+  const dist10k = WEAPON_MAX_RANGE_UNITS; // 10,000 KM (~23.8095 units)
+  const dist5k = 5000 / KM_PER_WORLD_UNIT; // 5,000 KM (~11.9048 units)
   const targetZ10k = playerPos.z - dist10k;
   const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
   const baseScale = e.baseScale || 1.3;
@@ -900,6 +901,11 @@ export function updateStageWaves(engineApi, context = {}) {
 
 // =========================================================================
 // COCKPIT OVERLAY & IMPACT DECALS MANAGEMENT
+// Model: scene_images/screen_decals_spider_web_overlay_4.glb
+// Full-screen overlay dynamically scaled via camera FOV for all device viewports.
+// Toggleable decals: burn 01-08 for laser burns, strike 01-08 for missile strikes,
+// BrokenSpiderWeb Core (on at 0% shield) and BrokenSpiderWeb Screen (on at 0% health
+// for 4 seconds before the game over modal displays). Loaded via stage object pool.
 // =========================================================================
 
 let activeCockpitCracksMesh = null;
@@ -1578,7 +1584,6 @@ export function handleStageEvent(eventName, payload, engineApi) {
     }
   }
 }
-
 
 export function setupDesktopPointerCapture(engineApi) {
   if (typeof window === 'undefined' || typeof document === 'undefined') return false;

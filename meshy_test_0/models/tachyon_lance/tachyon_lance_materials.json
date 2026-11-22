@@ -1,16 +1,18 @@
 {
   "model": "tachyon_lance.glb",
   "baseName": "tachyon_lance",
-  "description": "A high-tech Tachyon Lance weapon projectile and emitter spear engineered to pierce reinforced particle shields in relativistic space. Sleek linear accelerator lance barrel, glowing violet and electric purple superluminal phase particle coils, sharp focused armor-piercing lance tip, hard surface sci-fi 3D game asset, optimized low-to-mid poly triangle topology for mobile, desktop, VR, and ARCore WebXR.",
+  "description": "A sleek superluminal Tachyon Lance projectile and high-tech energy weapon engineered to pierce reinforced particle shields in relativistic space. Vivid multi-colored chassis contrasting boldly with deep black cosmic space: polished gold and chrome alloy casing, glowing neon cyan magnetic acceleration rails, pulsing intense ultraviolet and magenta tachyon phase coils, with a brilliant focused piercing lance tip. Hard surface sci-fi 3D game asset with optimized triangle topology for WebXR mobile, desktop, VR, and ARCore.",
+  "texture_prompt": "Multi-colored tachyon lance weapon, polished gold and chrome metal casing, glowing cyan acceleration rails, radiant ultraviolet and magenta energy coils, piercing glowing tip, extreme contrast against black space, PBR textures.",
   "topology": "triangle",
   "target_polycount": 20000,
+  "color_scheme": "multi-colored high-contrast against black cosmic background (gold armor, cyan ion engines, emerald telemetry, violet phase)",
   "device_targets": [
     "mobile",
     "desktop",
     "vr",
     "arcore"
   ],
-  "exported_at": "2026-11-22T19:19:45+00:00",
+  "exported_at": "2026-11-22T22:22:53+00:00",
   "destination": "./meshy_test_0/models/tachyon_lance",
   "textures_directory": "./meshy_test_0/models/tachyon_lance/tachyon_lance_textures",
   "fallback_textures_directory": "./meshy_yest_0/models/tachyon_lance/tachyon_lance_textures",
@@ -27,6 +29,7 @@
     "tachyon_lance.glb",
     "tachyon_lance.mtl",
     "tachyon_lance.obj",
+    "tachyon_lance_materials.json",
     "texture_0_base_color.png",
     "texture_0_metallic.png",
     "texture_0_normal.png",

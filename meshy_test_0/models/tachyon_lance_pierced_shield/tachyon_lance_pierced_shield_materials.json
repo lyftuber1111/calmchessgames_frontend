@@ -1,16 +1,18 @@
 {
   "model": "tachyon_lance_pierced_shield.glb",
   "baseName": "tachyon_lance_pierced_shield",
-  "description": "A reinforced particle shield barrier pierced and punctured by a Tachyon Lance impact. Shattered glowing hexagonal energy shield grid, superluminal violet tachyon lance penetrating through the breach into reinforced starship hull plating, radial fracture cracks, high-energy plasma sparks and ionization flare, hard surface sci-fi 3D game asset, optimized low-to-mid poly triangle topology for mobile, desktop, VR, and ARCore WebXR.",
+  "description": "A dramatic relativistic space encounter featuring a multi-colored reinforced starship hull with its reinforced particle shield actively pierced and shattered by a Tachyon Lance impact. Brilliant high-contrast multi-colored spectacle designed for maximum contrast against black cosmic void: shattered glowing golden-amber hexagonal particle shield plates, radiant violet and cyan tachyon lance beam piercing through the breach, explosive magenta ionization flares, bright cyan plasma ripples across the golden hull armor. Hard surface sci-fi 3D asset with optimized triangle topology for WebXR mobile, desktop, VR, and ARCore.",
+  "texture_prompt": "High-contrast multi-colored space impact, golden armor hull, shattered amber-gold hexagonal energy shield, piercing bright violet tachyon lance, glowing cyan plasma shockwaves, magenta ionization sparks, contrasting brightly on black background, PBR textures.",
   "topology": "triangle",
   "target_polycount": 20000,
+  "color_scheme": "multi-colored high-contrast against black cosmic background (gold armor, cyan ion engines, emerald telemetry, violet phase)",
   "device_targets": [
     "mobile",
     "desktop",
     "vr",
     "arcore"
   ],
-  "exported_at": "2026-11-22T19:19:49+00:00",
+  "exported_at": "2026-11-22T22:22:58+00:00",
   "destination": "./meshy_test_0/models/tachyon_lance_pierced_shield",
   "textures_directory": "./meshy_test_0/models/tachyon_lance_pierced_shield/tachyon_lance_pierced_shield_textures",
   "fallback_textures_directory": "./meshy_yest_0/models/tachyon_lance_pierced_shield/tachyon_lance_pierced_shield_textures",
@@ -27,6 +29,7 @@
     "tachyon_lance_pierced_shield.glb",
     "tachyon_lance_pierced_shield.mtl",
     "tachyon_lance_pierced_shield.obj",
+    "tachyon_lance_pierced_shield_materials.json",
     "texture_0_base_color.png",
     "texture_0_metallic.png",
     "texture_0_normal.png",

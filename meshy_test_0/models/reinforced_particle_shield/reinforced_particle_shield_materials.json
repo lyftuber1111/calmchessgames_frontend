@@ -1,16 +1,18 @@
 {
   "model": "reinforced_particle_shield.glb",
   "baseName": "reinforced_particle_shield",
-  "description": "A reinforced particle shield defensive barrier and forcefield generator matrix for a relativistic spacecraft. Translucent glowing crystalline hexagonal particle shield plates, energy dispersal emitter nodes, high-frequency particle shield projectors, pulsating cyan and amber energy barrier grid, hard surface sci-fi 3D game asset, optimized low-to-mid poly triangle topology for mobile, desktop, VR, and ARCore WebXR.",
+  "description": "A reinforced particle shield defensive barrier and forcefield generator matrix enveloping a relativistic spacecraft. Multi-colored high-contrast energy shield designed to contrast starkly against black cosmic void: glowing radiant amber-gold hexagonal particle deflection lattices, vibrant pulsing cyan plasma emitter nodes, electric magenta dispersion waves, and emerald harmonic resonance bands. Low-to-mid poly triangle topology optimized for WebXR across mobile, desktop, VR, and ARCore.",
+  "texture_prompt": "Vibrant multi-colored energy forcefield, luminous golden amber hexagonal particle grid, electric cyan emitter nodes, magenta harmonic waves, high contrast against pitch black space, translucent emissive PBR textures.",
   "topology": "triangle",
   "target_polycount": 20000,
+  "color_scheme": "multi-colored high-contrast against black cosmic background (gold armor, cyan ion engines, emerald telemetry, violet phase)",
   "device_targets": [
     "mobile",
     "desktop",
     "vr",
     "arcore"
   ],
-  "exported_at": "2026-11-22T19:19:40+00:00",
+  "exported_at": "2026-11-22T22:22:49+00:00",
   "destination": "./meshy_test_0/models/reinforced_particle_shield",
   "textures_directory": "./meshy_test_0/models/reinforced_particle_shield/reinforced_particle_shield_textures",
   "fallback_textures_directory": "./meshy_yest_0/models/reinforced_particle_shield/reinforced_particle_shield_textures",
@@ -27,6 +29,7 @@
     "reinforced_particle_shield.glb",
     "reinforced_particle_shield.mtl",
     "reinforced_particle_shield.obj",
+    "reinforced_particle_shield_materials.json",
     "texture_0_base_color.png",
     "texture_0_metallic.png",
     "texture_0_normal.png",

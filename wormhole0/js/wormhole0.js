@@ -65,7 +65,7 @@ const objLoader = new OBJLoader();
 const cached3DAssetModels = new Map();
 const inFlight3DAssetLoads = new Map();
 const failed3DAssetUrls = new Set();
-const sessionAssetVersion = '20261120_clean_telemetry_v12';
+const sessionAssetVersion = '20261121_weapon_range_10k_v13';
 
 function normalizeAssetUrl(url) {
   if (!url) return '';
@@ -378,6 +378,55 @@ const CONFIG = {
   yawSpeed: 0.0022,
   gamepadDeadzone: 0.14
 };
+
+// =============================================================================
+// WEAPON ENGAGEMENT RANGE CONSTANTS & ENFORCEMENT (10,000 KM MAX RANGE)
+// =============================================================================
+// Both enemy weapons and player weapons have a 10,000 KM maximum effective range.
+// Enemies may fire while approaching (> 10,000 KM), but cannot hit/damage the
+// player until the enemy reaches 10,000 KM or less of the player.
+// The player likewise cannot hit/destroy an enemy until it reaches 10,000 KM or less.
+const WEAPON_MAX_RANGE_KM = 10000;
+const KM_PER_WORLD_UNIT = 420;
+const WEAPON_MAX_RANGE_UNITS = WEAPON_MAX_RANGE_KM / KM_PER_WORLD_UNIT; // ~23.8095238 units
+
+function getActivePlayerPosition() {
+  if (typeof state !== 'undefined' && state && state.isXR && typeof cameraRig !== 'undefined' && cameraRig) {
+    return cameraRig.position;
+  }
+  if (typeof state !== 'undefined' && state && state.position) {
+    return state.position;
+  }
+  if (typeof camera !== 'undefined' && camera && camera.position) {
+    return camera.position;
+  }
+  return new THREE.Vector3(0, 0, CONFIG.wormholeDistance);
+}
+
+function isEnemyWithinWeaponRange(enemyOrPos, playerPos = null) {
+  const pPos = playerPos || getActivePlayerPosition();
+  if (!enemyOrPos || !pPos) return false;
+  const pos = enemyOrPos.mesh ? enemyOrPos.mesh.position : (enemyOrPos.position || enemyOrPos);
+  if (!pos || typeof pos.distanceTo !== 'function') return false;
+  return pos.distanceTo(pPos) <= WEAPON_MAX_RANGE_UNITS;
+}
+
+function canEnemyHitPlayer(enemyOrBolt, playerPos = null) {
+  if (!enemyOrBolt) return false;
+  if (enemyOrBolt.canHitPlayer === false || enemyOrBolt.firedWithinRange === false) return false;
+  const maxRange = (typeof enemyOrBolt.maxRangeUnits === 'number' && enemyOrBolt.maxRangeUnits > 0)
+    ? enemyOrBolt.maxRangeUnits
+    : WEAPON_MAX_RANGE_UNITS;
+  if (typeof enemyOrBolt.distanceTraveled === 'number' && enemyOrBolt.distanceTraveled > maxRange + 1e-4) {
+    return false;
+  }
+  if (enemyOrBolt.firedWithinRange === true) return true;
+  return isEnemyWithinWeaponRange(enemyOrBolt.sourceEnemy || enemyOrBolt, playerPos || getActivePlayerPosition());
+}
+
+function canPlayerDestroyEnemy(enemyObj, playerPos = null) {
+  return isEnemyWithinWeaponRange(enemyObj, playerPos || getActivePlayerPosition());
+}
 
 // Dynamic Multi-Stage Device System Configuration
 const STAGE_REGISTRY = {
@@ -7463,8 +7512,15 @@ function isTargetInCrosshairOutsideCircle(targetMesh, customRadius3D = null) {
  * Destroys an active 3D enemy instance upon laser bolt hit, triggering full explosion,
  * score increment, powerup drop evaluation, warp readiness evaluation, and objectives update.
  */
-function destroyEnemyInstance(e, enemyIndex = -1) {
-  if (!e || !e.mesh) return;
+function destroyEnemyInstance(e, enemyIndex = -1, forceIgnoreRange = false) {
+  if (!e || !e.mesh) return false;
+  if (!forceIgnoreRange) {
+    const playerPos = getActivePlayerPosition();
+    const canDestroy = (activeStageModule && typeof activeStageModule.canPlayerDestroyEnemy === 'function')
+      ? activeStageModule.canPlayerDestroyEnemy(e, playerPos)
+      : canPlayerDestroyEnemy(e, playerPos);
+    if (!canDestroy) return false;
+  }
   const deathPos = e.mesh.position.clone();
   const deathCfg = e.config || {};
   triggerEnemyExplosion(deathPos, deathCfg);
@@ -7667,15 +7723,18 @@ function fireLaserBeam() {
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera(new THREE.Vector2(ndcX, ndcY), camera);
 
-  // Target prioritization: If an enemy or powerup is inside the crosshair outside circle,
-  // aim the blaster bolt straight into the target!
+  // Target prioritization: If an enemy (within <= 10,000 KM weapon range) or powerup
+  // is inside the crosshair outside circle, aim the blaster bolt straight into the target!
   let targetPoint = null;
   let nearestTargetDist = Infinity;
+  const playerPosForAim = getActivePlayerPosition();
 
   if (typeof active3DEnemies !== 'undefined' && Array.isArray(active3DEnemies)) {
     for (let ei = active3DEnemies.length - 1; ei >= 0; ei--) {
       const e = active3DEnemies[ei];
       if (e && e.mesh && isTargetInCrosshairOutsideCircle(e.mesh)) {
+        const distFromPlayer = e.mesh.position.distanceTo(playerPosForAim);
+        if (distFromPlayer > WEAPON_MAX_RANGE_UNITS) continue;
         const d = camWorldPos.distanceTo(e.mesh.position);
         if (d < nearestTargetDist) {
           nearestTargetDist = d;
@@ -7698,7 +7757,7 @@ function fireLaserBeam() {
     }
   }
 
-  // Fallback target point 1200 units deep into cosmos
+  // Fallback target point at max weapon range along crosshair ray
   if (!targetPoint) {
     targetPoint = raycaster.ray.origin.clone().add(raycaster.ray.direction.clone().multiplyScalar(1200));
   }
@@ -7742,6 +7801,12 @@ function fireLaserBeam() {
   laserBolts.push({
     mesh,
     fromPool,
+    spawnOrigin: spawnOrigin.clone(),
+    prevPosition: spawnOrigin.clone(),
+    distanceTraveled: 0,
+    maxRangeKm: WEAPON_MAX_RANGE_KM,
+    maxRangeUnits: WEAPON_MAX_RANGE_UNITS,
+    rangeExpired: false,
     direction,
     speed: activeWpn.bulletSpeed || 550, // units per second
     damage: activeWpn.damagePerHit || 1, // Damage hits for weapons from Game Manager
@@ -7769,7 +7834,18 @@ function updateLaserBolts(delta) {
   const now = performance.now();
   for (let i = laserBolts.length - 1; i >= 0; i--) {
     const bolt = laserBolts[i];
-    bolt.mesh.position.addScaledVector(bolt.direction, bolt.speed * delta);
+    bolt.prevPosition = bolt.mesh.position.clone();
+    const maxRangeUnits = (typeof bolt.maxRangeUnits === 'number' && bolt.maxRangeUnits > 0)
+      ? bolt.maxRangeUnits
+      : WEAPON_MAX_RANGE_UNITS;
+    const remainingRange = Math.max(0, maxRangeUnits - (bolt.distanceTraveled || 0));
+    const desiredStep = bolt.speed * delta;
+    const actualStep = Math.min(desiredStep, remainingRange);
+    bolt.mesh.position.addScaledVector(bolt.direction, actualStep);
+    bolt.distanceTraveled = (bolt.distanceTraveled || 0) + actualStep;
+    if (bolt.distanceTraveled >= maxRangeUnits - 1e-4) {
+      bolt.rangeExpired = true;
+    }
 
     // Requirement: Allow collecting powerups on laser bolt hit (in 3D or within crosshair outside circle)!
     let boltConsumed = false;
@@ -7805,7 +7881,10 @@ function updateLaserBolts(delta) {
       continue;
     }
 
-    if ((now - bolt.spawnTime) * 0.001 > bolt.lifetime) {
+    // When combat is active, defer despawning rangeExpired bolts until updateEnemiesCombat
+    // runs swept hit-testing up to the exact 10,000 KM weapon range boundary this frame.
+    const expiredByRange = bolt.rangeExpired && (!state.hasStarted || state.isPaused || state.isGameOver);
+    if (expiredByRange || (now - bolt.spawnTime) * 0.001 > bolt.lifetime) {
       if (bolt.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnPlayerLaser === 'function') {
         currentStageObjectPool.despawnPlayerLaser(bolt.mesh, bolt.weaponId);
       } else {
@@ -10168,10 +10247,9 @@ function defaultEnemyMovement(e, delta, context) {
   const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
   // Exact distance definitions: at 420 KM per Three.js unit
-  const dist10k = 10000 / 420; // ~23.8095 units
-  const dist5k = 5000 / 420;   // ~11.9048 units
+  const dist10k = WEAPON_MAX_RANGE_UNITS; // 10,000 KM (~23.8095 units)
+  const dist5k = 5000 / KM_PER_WORLD_UNIT; // 5,000 KM (~11.9048 units)
   const targetZ10k = playerPos.z - dist10k;
-  const targetZ5k = playerPos.z - dist5k;
   const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
   const baseScale = e.baseScale || 1.3;
 
@@ -10223,8 +10301,12 @@ function defaultEnemyMovement(e, delta, context) {
     e.isLevel = false;
     e.mesh.rotation.set(basePitchDown + rushLookPitch, rushLookYaw, 0, 'YXZ');
 
-    if (e.mesh.position.z >= targetZ10k || distToPlayer <= dist10k) {
-      e.mesh.position.z = targetZ10k;
+    const postRushDist = e.mesh.position.distanceTo(playerPos);
+    e.distanceToPlayerUnits = postRushDist;
+    e.distanceToPlayerKm = postRushDist * KM_PER_WORLD_UNIT;
+    e.inWeaponRange = postRushDist <= dist10k;
+
+    if (postRushDist <= dist10k || e.mesh.position.z >= playerPos.z - 2.0) {
       e.phase = 'SCATTER_AND_EVADE';
       e.maneuverState = 'CRUISE_10K';
       e.stoppedTime = now;
@@ -10252,8 +10334,23 @@ function defaultEnemyMovement(e, delta, context) {
     e.targetScatterY = rowSlot * cellH;
   }
 
-  const screenTargetX = playerPos.x + (e.targetScatterX || 0);
-  const screenTargetY = playerPos.y + (e.targetScatterY || 0);
+  // Project lateral scatter onto spherical shell <= 10,000 KM so enemies stay genuinely within 10,000 KM weapon range
+  const rawScatterX = e.targetScatterX || 0;
+  const rawScatterY = e.targetScatterY || 0;
+  const scatterDirLen = Math.hypot(rawScatterX, rawScatterY, dist10k) || dist10k;
+  const shellRadius10k = dist10k * 0.94;
+  const isAt5kPhase = (
+    e.maneuverState === 'ADVANCE_5K' ||
+    e.maneuverState === 'LEVELING_OFF_5K' ||
+    e.maneuverState === 'LEVEL_FIRING_5K' ||
+    e.maneuverState === 'HOLD_5K' ||
+    e.maneuverState === 'TILTING_FORWARD_5K'
+  );
+  const activeShellRadius = isAt5kPhase ? dist5k : shellRadius10k;
+  const screenTargetX = playerPos.x + (rawScatterX / scatterDirLen) * activeShellRadius;
+  const screenTargetY = playerPos.y + (rawScatterY / scatterDirLen) * activeShellRadius;
+  const shellTargetZ10k = playerPos.z - (dist10k / scatterDirLen) * shellRadius10k;
+  const shellTargetZ5k = playerPos.z - (dist10k / scatterDirLen) * dist5k;
   e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
   e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
 
@@ -10305,8 +10402,8 @@ function defaultEnemyMovement(e, delta, context) {
   // --- Tactical State Machine: Level Off, Fire Weapon, Tilt Forward, Fly to 5000 KM (+2% Scale), Hold 3s, Return to 10000 KM (-2% Scale) ---
   switch (e.maneuverState) {
     case 'CRUISE_10K': {
-      // Locking Z proximity around 10,000 KM
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      // Locking Z proximity around 10,000 KM sphere
+      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
       e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 0) - delta * 3.0);
       e.isLevel = false;
 
@@ -10323,7 +10420,7 @@ function defaultEnemyMovement(e, delta, context) {
 
     case 'LEVELING_OFF': {
       // Smoothly transition pitch to level (levelPitchProgress -> 1.0)
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
       e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 2.8);
       e.mesh.scale.set(baseScale, baseScale, baseScale);
 
@@ -10348,7 +10445,7 @@ function defaultEnemyMovement(e, delta, context) {
 
     case 'LEVEL_FIRING': {
       // Maintain level orientation and allow weapon fire
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
       e.levelPitchProgress = 1.0;
       e.isLevel = true;
       e.mesh.scale.set(baseScale, baseScale, baseScale);
@@ -10362,7 +10459,7 @@ function defaultEnemyMovement(e, delta, context) {
 
     case 'TILTING_FORWARD': {
       // Smoothly tilt back forward (levelPitchProgress -> 0.0)
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
       e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 2.8);
       e.isLevel = false;
       e.mesh.scale.set(baseScale, baseScale, baseScale);
@@ -10379,16 +10476,17 @@ function defaultEnemyMovement(e, delta, context) {
       e.levelPitchProgress = 0.0;
       e.isLevel = false;
 
-      // Smooth flight forward towards targetZ5k
-      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      // Smooth flight forward towards shellTargetZ5k
+      e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
 
-      const advanceProgress = THREE.MathUtils.clamp((e.mesh.position.z - targetZ10k) / (targetZ5k - targetZ10k), 0.0, 1.0);
+      const zSpan5k = Math.max(0.5, shellTargetZ5k - shellTargetZ10k);
+      const advanceProgress = THREE.MathUtils.clamp((e.mesh.position.z - shellTargetZ10k) / zSpan5k, 0.0, 1.0);
       const scaleFactor = 1.0 + 0.02 * advanceProgress; // 2% bigger as it gets closer
       const curScale = baseScale * scaleFactor;
       e.mesh.scale.set(curScale, curScale, curScale);
 
-      if (advanceProgress >= 0.98 || Math.abs(targetZ5k - e.mesh.position.z) < 0.2) {
-        e.mesh.position.z = targetZ5k;
+      if (advanceProgress >= 0.98 || Math.abs(shellTargetZ5k - e.mesh.position.z) < 0.2) {
+        e.mesh.position.z = shellTargetZ5k;
         e.maneuverState = 'HOLD_5K';
         e.hold5kEndTime = now + 3000; // Hold for 3 seconds
       }
@@ -10399,7 +10497,7 @@ function defaultEnemyMovement(e, delta, context) {
       // Maintain position at 5,000 KM for 3 seconds, staying 2% bigger and tilted forward
       e.levelPitchProgress = 0.0;
       e.isLevel = false;
-      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
 
       const curScale = baseScale * 1.02; // Stays 2% bigger
       e.mesh.scale.set(curScale, curScale, curScale);
@@ -10415,15 +10513,16 @@ function defaultEnemyMovement(e, delta, context) {
       e.levelPitchProgress = 0.0;
       e.isLevel = false;
 
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 2.8;
+      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 2.8;
 
-      const retreatProgress = THREE.MathUtils.clamp((targetZ5k - e.mesh.position.z) / (targetZ5k - targetZ10k), 0.0, 1.0);
+      const zSpanRetreat = Math.max(0.5, shellTargetZ5k - shellTargetZ10k);
+      const retreatProgress = THREE.MathUtils.clamp((shellTargetZ5k - e.mesh.position.z) / zSpanRetreat, 0.0, 1.0);
       const scaleFactor = 1.02 - 0.02 * retreatProgress; // Scales back down by 2%
       const curScale = baseScale * scaleFactor;
       e.mesh.scale.set(curScale, curScale, curScale);
 
-      if (retreatProgress >= 0.98 || Math.abs(targetZ10k - e.mesh.position.z) < 0.2) {
-        e.mesh.position.z = targetZ10k;
+      if (retreatProgress >= 0.98 || Math.abs(shellTargetZ10k - e.mesh.position.z) < 0.2) {
+        e.mesh.position.z = shellTargetZ10k;
         e.mesh.scale.set(baseScale, baseScale, baseScale);
         e.maneuverState = 'CRUISE_10K';
         e.nextLevelTime = now + 2500 + Math.random() * 4500; // Random next cycle
@@ -10497,6 +10596,11 @@ function defaultEnemyMovement(e, delta, context) {
       e.mesh.position.add(repulse);
     }
   }
+
+  const finalDistToPlayer = e.mesh.position.distanceTo(playerPos);
+  e.distanceToPlayerUnits = finalDistToPlayer;
+  e.distanceToPlayerKm = finalDistToPlayer * KM_PER_WORLD_UNIT;
+  e.inWeaponRange = finalDistToPlayer <= dist10k;
 
   return true;
 }
@@ -10600,6 +10704,11 @@ function updateEnemiesCombat(delta) {
       defaultEnemyMovement(e, delta, enemyCtx);
     }
 
+    const postMoveDist = e.mesh.position.distanceTo(playerPos);
+    e.distanceToPlayerUnits = postMoveDist;
+    e.distanceToPlayerKm = postMoveDist * KM_PER_WORLD_UNIT;
+    e.inWeaponRange = postMoveDist <= WEAPON_MAX_RANGE_UNITS;
+
     // Decoupled Enemy Multi-Weapon Firing: each weapon checks its own millisecond cadence timer
     if (e.weapons && Array.isArray(e.weapons) && e.weapons.length > 0) {
       for (const w of e.weapons) {
@@ -10674,16 +10783,29 @@ function updateEnemiesCombat(delta) {
     }
   }
 
-  // 3. Update Enemy Weapon Beams and Missiles & Test Player Collision
+  // 3. Update Enemy Weapon Beams and Missiles & Test Player Collision (10,000 KM Weapon Range)
   for (let i = enemyBolts.length - 1; i >= 0; i--) {
     const b = enemyBolts[i];
 
     // Record previous position for swept ray / segment testing against tunneling
     const prevPos = (b.prevPosition || b.mesh.position).clone();
     b.prevPosition = b.mesh.position.clone();
+    if (!b.spawnOrigin) {
+      b.spawnOrigin = prevPos.clone();
+    }
+
+    // Enforce 10,000 KM maximum weapon range travel distance
+    const maxRangeUnits = (typeof b.maxRangeUnits === 'number' && b.maxRangeUnits > 0)
+      ? b.maxRangeUnits
+      : WEAPON_MAX_RANGE_UNITS;
+    const remainingRange = Math.max(0, maxRangeUnits - (b.distanceTraveled || 0));
+    const desiredStep = b.speed * delta;
+    const actualStep = Math.min(desiredStep, remainingRange);
 
     // Trajectory movement
-    b.mesh.position.addScaledVector(b.direction, b.speed * delta);
+    b.mesh.position.addScaledVector(b.direction, actualStep);
+    b.distanceTraveled = (b.distanceTraveled || 0) + actualStep;
+    const boltRangeExhausted = b.distanceTraveled >= maxRangeUnits - 1e-4;
     const currPos = b.mesh.position;
 
     // Dynamic missile weaving / spiral homing
@@ -10702,35 +10824,44 @@ function updateEnemiesCombat(delta) {
 
     // Cockpit screen is centered at playerPos with effective screen radius ~4.2 units
     const cockpitRadius = 4.2;
+
+    // Weapon Range Enforcement: Enemy can fire from > 10,000 KM, but cannot hit/damage player
+    // until the enemy reaches 10,000 KM or less of the player.
+    const boltCanHitPlayer = (activeStageModule && typeof activeStageModule.canEnemyHitPlayer === 'function')
+      ? activeStageModule.canEnemyHitPlayer(b, playerPos)
+      : canEnemyHitPlayer(b, playerPos);
+
     let hitCockpit = false;
     let hitContactPoint = currTip.clone();
 
-    // 1. Direct tip distance check: when the leading tip reaches the cockpit screen plane
-    if (currTip.distanceTo(playerPos) <= cockpitRadius) {
-      hitCockpit = true;
-      hitContactPoint = currTip.clone();
-    }
-    // 2. Direct center distance check (for tiny, scaled-down, or point-like projectiles)
-    else if (currPos.distanceTo(playerPos) <= cockpitRadius) {
-      hitCockpit = true;
-      hitContactPoint = currPos.clone();
-    }
-    // 3. Swept segment check between prevTip and currTip against playerPos (prevents tunneling at high velocities)
-    else {
-      const segVec = new THREE.Vector3().subVectors(currTip, prevTip);
-      const segLenSq = segVec.lengthSq();
-      if (segLenSq > 0.0001) {
-        const toPlayer = new THREE.Vector3().subVectors(playerPos, prevTip);
-        const t = Math.max(0, Math.min(1, toPlayer.dot(segVec) / segLenSq));
-        const closestPoint = prevTip.clone().addScaledVector(segVec, t);
-        if (closestPoint.distanceTo(playerPos) <= cockpitRadius) {
-          hitCockpit = true;
-          hitContactPoint = closestPoint;
+    if (boltCanHitPlayer) {
+      // 1. Direct tip distance check: when the leading tip reaches the cockpit screen plane
+      if (currTip.distanceTo(playerPos) <= cockpitRadius) {
+        hitCockpit = true;
+        hitContactPoint = currTip.clone();
+      }
+      // 2. Direct center distance check (for tiny, scaled-down, or point-like projectiles)
+      else if (currPos.distanceTo(playerPos) <= cockpitRadius) {
+        hitCockpit = true;
+        hitContactPoint = currPos.clone();
+      }
+      // 3. Swept segment check between prevTip and currTip against playerPos (prevents tunneling at high velocities)
+      else {
+        const segVec = new THREE.Vector3().subVectors(currTip, prevTip);
+        const segLenSq = segVec.lengthSq();
+        if (segLenSq > 0.0001) {
+          const toPlayer = new THREE.Vector3().subVectors(playerPos, prevTip);
+          const t = Math.max(0, Math.min(1, toPlayer.dot(segVec) / segLenSq));
+          const closestPoint = prevTip.clone().addScaledVector(segVec, t);
+          if (closestPoint.distanceTo(playerPos) <= cockpitRadius) {
+            hitCockpit = true;
+            hitContactPoint = closestPoint;
+          }
         }
       }
     }
 
-    if (hitCockpit) {
+    if (hitCockpit && boltCanHitPlayer) {
       // Calculate normalized screen coordinates (-1 to 1) for localized impact FX
       const offset = new THREE.Vector3().subVectors(hitContactPoint, playerPos);
       const normX = Math.max(-0.9, Math.min(0.9, offset.x / cockpitRadius));
@@ -10760,8 +10891,9 @@ function updateEnemiesCombat(delta) {
       continue;
     }
 
-    // Lifetime expiration or passed far behind player
-    if ((now - b.spawnTime) * 0.001 > b.lifetime || b.mesh.position.z > playerPos.z + 30) {
+    // Dissipate out-of-range enemy bolts cleanly before cockpit contact, or when 10,000 KM range / lifetime expires
+    const outOfRangeNearCockpit = !boltCanHitPlayer && (currPos.distanceTo(playerPos) <= cockpitRadius + 1.0);
+    if (boltRangeExhausted || outOfRangeNearCockpit || (now - b.spawnTime) * 0.001 > b.lifetime || b.mesh.position.z > playerPos.z + 30) {
       if (b.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemyWeapon === 'function') {
         currentStageObjectPool.despawnEnemyWeapon(b.mesh, b.type);
       } else {
@@ -10776,23 +10908,45 @@ function updateEnemiesCombat(delta) {
     }
   }
 
-  // 4. Test Player Lasers against 3D Enemy Meshes (Destroyable on Laser Bolt Hit and Crosshair Circle Hit)
+  // 4. Test Player Lasers against 3D Enemy Meshes (10,000 KM Weapon Range: Cannot destroy enemy until <= 10,000 KM)
   for (let bi = laserBolts.length - 1; bi >= 0; bi--) {
     const bolt = laserBolts[bi];
     let boltConsumed = false;
+    const boltPrevPos = bolt.prevPosition || bolt.mesh.position;
+    const boltCurrPos = bolt.mesh.position;
 
     for (let ei = active3DEnemies.length - 1; ei >= 0; ei--) {
       const e = active3DEnemies[ei];
-      if (!e || !e.mesh) continue;
+      if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false) continue;
+
+      // Weapon Range Enforcement: Player cannot destroy an enemy until it reaches 10,000 KM or less of the player
+      const canDestroyByRange = (activeStageModule && typeof activeStageModule.canPlayerDestroyEnemy === 'function')
+        ? activeStageModule.canPlayerDestroyEnemy(e, playerPos)
+        : canPlayerDestroyEnemy(e, playerPos);
+      if (!canDestroyByRange) continue;
+
       const dims = e.mesh.userData && e.mesh.userData.dimensions;
       const maxDim = dims ? Math.max(dims.length, dims.height, dims.depth, dims.radius * 2) : 3.0;
       const collisionRadius = Math.max(2.8, (e.mesh.scale.x / (dims ? dims.scale : 1.0)) * maxDim * 0.65);
-      const dist = bolt.mesh.position.distanceTo(e.mesh.position);
-      const insideCrosshair = isTargetInCrosshairOutsideCircle(e.mesh, collisionRadius);
       const laserRadius = Math.max(0.4, (bolt.size_x || (bolt.dimensions && bolt.dimensions.x) || 1.0) * (bolt.scale || 1.0) * 0.4);
+      const hitThreshold = collisionRadius + laserRadius;
 
-      if (dist < (collisionRadius + laserRadius) || insideCrosshair) {
-        // Laser impact! Enemy destroyed on laser bolt hit!
+      let dist = boltCurrPos.distanceTo(e.mesh.position);
+      if (dist >= hitThreshold) {
+        const segVec = new THREE.Vector3().subVectors(boltCurrPos, boltPrevPos);
+        const segLenSq = segVec.lengthSq();
+        if (segLenSq > 0.0001) {
+          const toEnemy = new THREE.Vector3().subVectors(e.mesh.position, boltPrevPos);
+          const t = Math.max(0, Math.min(1, toEnemy.dot(segVec) / segLenSq));
+          const closestPt = boltPrevPos.clone().addScaledVector(segVec, t);
+          dist = Math.min(dist, closestPt.distanceTo(e.mesh.position));
+        }
+      }
+
+      const insideCrosshair = isTargetInCrosshairOutsideCircle(e.mesh, collisionRadius);
+
+      if (dist < hitThreshold || insideCrosshair) {
+        // Laser impact! Enemy within <= 10,000 KM destroyed on laser bolt hit!
         boltConsumed = true;
         e.currentHits = 0;
         destroyEnemyInstance(e, ei);
@@ -10800,7 +10954,7 @@ function updateEnemiesCombat(delta) {
       }
     }
 
-    if (boltConsumed) {
+    if (boltConsumed || bolt.rangeExpired) {
       if (bolt.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnPlayerLaser === 'function') {
         currentStageObjectPool.despawnPlayerLaser(bolt.mesh, bolt.weaponId);
       } else {
@@ -11282,8 +11436,9 @@ function drawShieldRipple(canvas, normX, normY, color) {
 
 function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
   if (!state.hasStarted || state.isPaused || state.isGameOver || !scene) return;
-  // Strict requirement: Only fire weapon when level
-  if (enemyObj.isLevel === false) return;
+  // Allow enemy to fire visually during approach (RUSH_OUT) as well as when level;
+  // weapon range (10,000 KM) enforces that bolts fired > 10,000 KM cannot hit the player.
+  if (enemyObj.isLevel === false && enemyObj.phase !== 'RUSH_OUT') return;
   const cfg = enemyObj.config || {};
   const wpn = weaponOverride || (enemyObj.weapons && enemyObj.weapons[0]) || {};
   const wpnName = (wpn.name || cfg.weapon_name || enemyObj.weaponName || '').toLowerCase();
@@ -11545,9 +11700,24 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
   }
   }
 
+  const enemyDistAtFire = (enemyObj && enemyObj.mesh && playerPos)
+    ? enemyObj.mesh.position.distanceTo(playerPos)
+    : Infinity;
+  const firedWithinRange = enemyDistAtFire <= WEAPON_MAX_RANGE_UNITS;
+
   enemyBolts.push({
     mesh,
     fromPool,
+    spawnOrigin: spawnOrigin.clone(),
+    prevPosition: spawnOrigin.clone(),
+    distanceTraveled: 0,
+    maxRangeKm: WEAPON_MAX_RANGE_KM,
+    maxRangeUnits: WEAPON_MAX_RANGE_UNITS,
+    sourceEnemy: enemyObj,
+    enemyDistAtFireUnits: enemyDistAtFire,
+    enemyDistAtFireKm: enemyDistAtFire * KM_PER_WORLD_UNIT,
+    firedWithinRange,
+    canHitPlayer: firedWithinRange,
     geometryList,
     materialList,
     direction,
@@ -11576,6 +11746,10 @@ function fireEnemyWeaponBolt(enemyObj, weaponOverride = null) {
 
 function applyDamageToPlayer(rawDamage, weapon = null) {
   if (!state.hasStarted || state.isHyperWarping || state.isInvulnerable || state.isGameOver) return;
+  // Weapon Range Gate (10,000 KM): enemy weapons fired from > 10,000 KM cannot hit or damage the player
+  if (weapon && typeof weapon === 'object' && (weapon.canHitPlayer === false || weapon.firedWithinRange === false)) {
+    return;
+  }
   const dmg = rawDamage || 8;
   const shieldBefore = state.playerShield;
   const healthBefore = state.playerHealth;
@@ -14900,6 +15074,12 @@ if (typeof window !== 'undefined') {
   window.state = state;
   window.weaponsSystem = weaponsSystem;
   window.executeMissionCountdown = executeMissionCountdown;
+  window.WEAPON_MAX_RANGE_KM = WEAPON_MAX_RANGE_KM;
+  window.KM_PER_WORLD_UNIT = KM_PER_WORLD_UNIT;
+  window.WEAPON_MAX_RANGE_UNITS = WEAPON_MAX_RANGE_UNITS;
+  window.isEnemyWithinWeaponRange = isEnemyWithinWeaponRange;
+  window.canEnemyHitPlayer = canEnemyHitPlayer;
+  window.canPlayerDestroyEnemy = canPlayerDestroyEnemy;
 }
 
 // Quick Red X Exit buttons (HUD and Splash) -> returns to calmchessgames.com

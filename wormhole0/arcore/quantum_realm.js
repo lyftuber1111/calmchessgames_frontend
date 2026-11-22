@@ -244,6 +244,34 @@ export const stageEvents = [
     "Quantum Conduit Realignment & Safe Extraction"
 ];
 
+export const WEAPON_MAX_RANGE_KM = 10000;
+export const KM_PER_WORLD_UNIT = 420;
+export const WEAPON_MAX_RANGE_UNITS = WEAPON_MAX_RANGE_KM / KM_PER_WORLD_UNIT;
+
+export function isEnemyWithinWeaponRange(enemyOrPos, playerPos) {
+  if (!enemyOrPos || !playerPos) return false;
+  const pos = enemyOrPos.mesh ? enemyOrPos.mesh.position : (enemyOrPos.position || enemyOrPos);
+  if (!pos || typeof pos.distanceTo !== 'function') return false;
+  return pos.distanceTo(playerPos) <= WEAPON_MAX_RANGE_UNITS;
+}
+
+export function canEnemyHitPlayer(enemyOrBolt, playerPos) {
+  if (!enemyOrBolt) return false;
+  if (enemyOrBolt.canHitPlayer === false || enemyOrBolt.firedWithinRange === false) return false;
+  const maxRange = (typeof enemyOrBolt.maxRangeUnits === 'number' && enemyOrBolt.maxRangeUnits > 0)
+    ? enemyOrBolt.maxRangeUnits
+    : WEAPON_MAX_RANGE_UNITS;
+  if (typeof enemyOrBolt.distanceTraveled === 'number' && enemyOrBolt.distanceTraveled > maxRange + 1e-4) {
+    return false;
+  }
+  if (enemyOrBolt.firedWithinRange === true) return true;
+  return isEnemyWithinWeaponRange(enemyOrBolt.sourceEnemy || enemyOrBolt, playerPos);
+}
+
+export function canPlayerDestroyEnemy(enemyObj, playerPos) {
+  return isEnemyWithinWeaponRange(enemyObj, playerPos);
+}
+
 export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   if (!enemyObj || !enemyObj.mesh) return false;
   if (enemyObj.mesh.userData && (enemyObj.mesh.userData.inPool || enemyObj.mesh.userData.isActive === false || enemyObj.mesh.userData.weaponsActive === false)) return false;
@@ -264,6 +292,13 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     : (context && context.isVector3)
       ? context
       : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : camera.position));
+
+  // Enemy can fire its weapon at any distance, but weapon range is 10,000 KM:
+  // bolts fired while enemy is > 10,000 KM from player cannot hit/damage the player.
+  const enemyDistAtFire = (playerPos && typeof enemyObj.mesh.position.distanceTo === 'function')
+    ? enemyObj.mesh.position.distanceTo(playerPos)
+    : Infinity;
+  const firedWithinRange = enemyDistAtFire <= WEAPON_MAX_RANGE_UNITS;
 
   const w = (weaponOverride && typeof weaponOverride === 'object')
     ? weaponOverride
@@ -335,6 +370,16 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   enemyBolts.push({
     mesh,
     fromPool,
+    spawnOrigin: spawnOrigin.clone(),
+    prevPosition: spawnOrigin.clone(),
+    distanceTraveled: 0,
+    maxRangeKm: WEAPON_MAX_RANGE_KM,
+    maxRangeUnits: WEAPON_MAX_RANGE_UNITS,
+    sourceEnemy: enemyObj,
+    enemyDistAtFireUnits: enemyDistAtFire,
+    enemyDistAtFireKm: enemyDistAtFire * KM_PER_WORLD_UNIT,
+    firedWithinRange,
+    canHitPlayer: firedWithinRange,
     direction,
     speed: boltSpeed,
     damage: wDamage,
@@ -378,10 +423,9 @@ export function updateEnemyMovement(e, delta, context) {
   const enemyIndex = (isContextObj && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
   const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
-  const dist10k = 10000 / 420;
-  const dist5k = 5000 / 420;
+  const dist10k = WEAPON_MAX_RANGE_UNITS;
+  const dist5k = 5000 / KM_PER_WORLD_UNIT;
   const targetZ10k = playerPos.z - dist10k;
-  const targetZ5k = playerPos.z - dist5k;
   const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
   const baseScale = e.baseScale || 1.3;
   const basePitchDown = 0.22;
@@ -414,8 +458,12 @@ export function updateEnemyMovement(e, delta, context) {
     e.isLevel = false;
     e.mesh.rotation.set(basePitchDown + rushLookPitch, rushLookYaw, 0, 'YXZ');
 
-    if (e.mesh.position.z >= targetZ10k || distToPlayer <= dist10k) {
-      e.mesh.position.z = targetZ10k;
+    const postRushDist = e.mesh.position.distanceTo(playerPos);
+    e.distanceToPlayerUnits = postRushDist;
+    e.distanceToPlayerKm = postRushDist * KM_PER_WORLD_UNIT;
+    e.inWeaponRange = postRushDist <= dist10k;
+
+    if (postRushDist <= dist10k || e.mesh.position.z >= playerPos.z - 2.0) {
       e.phase = 'SCATTER_AND_EVADE';
       e.maneuverState = 'CRUISE_10K';
       e.stoppedTime = now;
@@ -441,8 +489,24 @@ export function updateEnemyMovement(e, delta, context) {
     e.targetScatterY = rowSlot * cellH;
   }
 
-  const screenTargetX = playerPos.x + (e.targetScatterX || 0);
-  const screenTargetY = playerPos.y + (e.targetScatterY || 0);
+  // Project lateral scatter onto spherical shell <= 10,000 KM so enemies maintain
+  // full on-screen spread while staying genuinely within 10,000 KM 3D weapon range
+  const rawScatterX = e.targetScatterX || 0;
+  const rawScatterY = e.targetScatterY || 0;
+  const scatterDirLen = Math.hypot(rawScatterX, rawScatterY, dist10k) || dist10k;
+  const shellRadius10k = dist10k * 0.94;
+  const isAt5kPhase = (
+    e.maneuverState === 'ADVANCE_5K' ||
+    e.maneuverState === 'LEVELING_OFF_5K' ||
+    e.maneuverState === 'LEVEL_FIRING_5K' ||
+    e.maneuverState === 'HOLD_5K' ||
+    e.maneuverState === 'TILTING_FORWARD_5K'
+  );
+  const activeShellRadius = isAt5kPhase ? dist5k : shellRadius10k;
+  const screenTargetX = playerPos.x + (rawScatterX / scatterDirLen) * activeShellRadius;
+  const screenTargetY = playerPos.y + (rawScatterY / scatterDirLen) * activeShellRadius;
+  const shellTargetZ10k = playerPos.z - (dist10k / scatterDirLen) * shellRadius10k;
+  const shellTargetZ5k = playerPos.z - (dist10k / scatterDirLen) * dist5k;
   e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
   e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
 
@@ -490,7 +554,7 @@ export function updateEnemyMovement(e, delta, context) {
 
   switch (e.maneuverState) {
     case 'CRUISE_10K': {
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
       e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 0) - delta * 3.0);
       e.isLevel = false;
       e.mesh.scale.set(baseScale, baseScale, baseScale);
@@ -501,7 +565,7 @@ export function updateEnemyMovement(e, delta, context) {
       break;
     }
     case 'LEVELING_OFF': {
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
       e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 2.8);
       e.mesh.scale.set(baseScale, baseScale, baseScale);
       if (e.levelPitchProgress >= 0.96) {
@@ -517,7 +581,7 @@ export function updateEnemyMovement(e, delta, context) {
       break;
     }
     case 'LEVEL_FIRING': {
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
       e.levelPitchProgress = 1.0;
       e.isLevel = true;
       e.mesh.scale.set(baseScale, baseScale, baseScale);
@@ -528,7 +592,7 @@ export function updateEnemyMovement(e, delta, context) {
       break;
     }
     case 'TILTING_FORWARD': {
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 3.2;
+      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
       e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 2.8);
       e.isLevel = false;
       e.mesh.scale.set(baseScale, baseScale, baseScale);
@@ -541,19 +605,20 @@ export function updateEnemyMovement(e, delta, context) {
     case 'ADVANCE_5K': {
       e.levelPitchProgress = 0.0;
       e.isLevel = false;
-      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
-      const advanceProgress = THREE.MathUtils.clamp((e.mesh.position.z - targetZ10k) / (targetZ5k - targetZ10k), 0.0, 1.0);
+      e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
+      const zSpan5k = Math.max(0.5, shellTargetZ5k - shellTargetZ10k);
+      const advanceProgress = THREE.MathUtils.clamp((e.mesh.position.z - shellTargetZ10k) / zSpan5k, 0.0, 1.0);
       const curScale = baseScale * (1.0 + 0.02 * advanceProgress);
       e.mesh.scale.set(curScale, curScale, curScale);
-      if (advanceProgress >= 0.98 || Math.abs(targetZ5k - e.mesh.position.z) < 0.2) {
-        e.mesh.position.z = targetZ5k;
+      if (advanceProgress >= 0.98 || Math.abs(shellTargetZ5k - e.mesh.position.z) < 0.2) {
+        e.mesh.position.z = shellTargetZ5k;
         e.maneuverState = 'LEVELING_OFF_5K';
         e.hasFiredThisLevel = false;
       }
       break;
     }
     case 'LEVELING_OFF_5K': {
-      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
       e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 3.0);
       const curScale = baseScale * 1.02;
       e.mesh.scale.set(curScale, curScale, curScale);
@@ -573,7 +638,7 @@ export function updateEnemyMovement(e, delta, context) {
     case 'HOLD_5K': {
       e.levelPitchProgress = 1.0;
       e.isLevel = true;
-      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
       const curScale = baseScale * 1.02;
       e.mesh.scale.set(curScale, curScale, curScale);
       if (now >= (e.hold5kEndTime || 0)) {
@@ -583,7 +648,7 @@ export function updateEnemyMovement(e, delta, context) {
       break;
     }
     case 'TILTING_FORWARD_5K': {
-      e.mesh.position.z += (targetZ5k - e.mesh.position.z) * delta * 3.5;
+      e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
       e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 3.0);
       e.isLevel = false;
       const curScale = baseScale * 1.02;
@@ -597,12 +662,13 @@ export function updateEnemyMovement(e, delta, context) {
     case 'RETREAT_10K': {
       e.levelPitchProgress = 0.0;
       e.isLevel = false;
-      e.mesh.position.z += (targetZ10k - e.mesh.position.z) * delta * 2.8;
-      const retreatProgress = THREE.MathUtils.clamp((targetZ5k - e.mesh.position.z) / (targetZ5k - targetZ10k), 0.0, 1.0);
+      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 2.8;
+      const zSpanRetreat = Math.max(0.5, shellTargetZ5k - shellTargetZ10k);
+      const retreatProgress = THREE.MathUtils.clamp((shellTargetZ5k - e.mesh.position.z) / zSpanRetreat, 0.0, 1.0);
       const curScale = baseScale * (1.02 - 0.02 * retreatProgress);
       e.mesh.scale.set(curScale, curScale, curScale);
-      if (retreatProgress >= 0.98 || Math.abs(targetZ10k - e.mesh.position.z) < 0.2) {
-        e.mesh.position.z = targetZ10k;
+      if (retreatProgress >= 0.98 || Math.abs(shellTargetZ10k - e.mesh.position.z) < 0.2) {
+        e.mesh.position.z = shellTargetZ10k;
         e.mesh.scale.set(baseScale, baseScale, baseScale);
         e.maneuverState = 'CRUISE_10K';
         e.nextLevelTime = now + 2500 + Math.random() * 4500;
@@ -656,6 +722,11 @@ export function updateEnemyMovement(e, delta, context) {
       e.mesh.position.add(repulse);
     }
   }
+
+  const finalDistToPlayer = e.mesh.position.distanceTo(playerPos);
+  e.distanceToPlayerUnits = finalDistToPlayer;
+  e.distanceToPlayerKm = finalDistToPlayer * KM_PER_WORLD_UNIT;
+  e.inWeaponRange = finalDistToPlayer <= dist10k;
 
   return true;
 }
@@ -1362,6 +1433,10 @@ export function applyStage(engineApi) {
       const baseDamage = window.applyDamageToPlayer._baseApplyDamage || window.applyDamageToPlayer;
       const wrappedApplyDamage = function(dmg, ...args) {
         const weapon = args[0] || (typeof dmg === 'object' ? dmg : null);
+        // Weapon Range Gate (10,000 KM): enemy weapons fired from > 10,000 KM cannot hit or damage the player
+        if (weapon && typeof weapon === 'object' && (weapon.canHitPlayer === false || weapon.firedWithinRange === false)) {
+          return;
+        }
         const st = (typeof window.state !== 'undefined' && window.state) ? window.state : null;
         const maxShield = (st && st.maxShield > 0) ? st.maxShield : 100;
         const maxHealth = (st && st.maxHealth > 0) ? st.maxHealth : 100;
@@ -1445,6 +1520,11 @@ export function applyStage(engineApi) {
     window.resetCockpitDecalThreshold = resetCockpitDecalThreshold;
     window.syncCockpitDecalThreshold = syncCockpitDecalThreshold;
     window.evaluateWeaponDecalThreshold = evaluateWeaponDecalThreshold;
+    window.WEAPON_MAX_RANGE_KM = WEAPON_MAX_RANGE_KM;
+    window.WEAPON_MAX_RANGE_UNITS = WEAPON_MAX_RANGE_UNITS;
+    window.isEnemyWithinWeaponRange = isEnemyWithinWeaponRange;
+    window.canEnemyHitPlayer = canEnemyHitPlayer;
+    window.canPlayerDestroyEnemy = canPlayerDestroyEnemy;
   }
 
   return stageConfig;
@@ -1452,6 +1532,12 @@ export function applyStage(engineApi) {
 
 export default {
   stageConfig,
+  WEAPON_MAX_RANGE_KM,
+  KM_PER_WORLD_UNIT,
+  WEAPON_MAX_RANGE_UNITS,
+  isEnemyWithinWeaponRange,
+  canEnemyHitPlayer,
+  canPlayerDestroyEnemy,
   applyStage,
   fireEnemyWeapon,
   updateEnemyMovement,

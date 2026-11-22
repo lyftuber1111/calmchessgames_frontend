@@ -1,0 +1,52 @@
+{
+  "model_name": "screen_decals_tachyon_lance",
+  "source_blend_copied_from": "screen_decals_spider_web_overlay_4.blend",
+  "directory": "meshy_test_0/models/screen_decals_tachyon_lance",
+  "files": {
+    "blend": "./meshy_test_0/models/screen_decals_tachyon_lance/screen_decals_tachyon_lance.blend",
+    "glb": "./meshy_test_0/models/screen_decals_tachyon_lance/screen_decals_tachyon_lance.glb",
+    "fbx": "./meshy_test_0/models/screen_decals_tachyon_lance/screen_decals_tachyon_lance.fbx",
+    "obj": "./meshy_test_0/models/screen_decals_tachyon_lance/screen_decals_tachyon_lance.obj",
+    "mtl": "./meshy_test_0/models/screen_decals_tachyon_lance/screen_decals_tachyon_lance.mtl"
+  },
+  "stats": {
+    "total_vertices": 240,
+    "total_triangles": 296
+  },
+  "description": "Copied from screen_decals_spider_web_overlay_4.blend with all spider-web, laser-burn, and missile-strike decals replaced by high-contrast Tachyon Lance piercing decals for black backgrounds.",
+  "decal_mapping": {
+    "non_lethal_glancing_hits": [
+      "Decal_LaserBurn_01",
+      "Decal_LaserBurn_02",
+      "Decal_LaserBurn_03",
+      "Decal_LaserBurn_04",
+      "Decal_LaserBurn_05",
+      "Decal_LaserBurn_06",
+      "Decal_LaserBurn_07",
+      "Decal_LaserBurn_08"
+    ],
+    "non_lethal_heavy_hits": [
+      "Decal_MissileStrike_01",
+      "Decal_MissileStrike_02",
+      "Decal_MissileStrike_03",
+      "Decal_MissileStrike_04",
+      "Decal_MissileStrike_05",
+      "Decal_MissileStrike_06",
+      "Decal_MissileStrike_07",
+      "Decal_MissileStrike_08"
+    ],
+    "core_breach_replaced_spiderweb_core": "Decal_BrokenSpiderWeb_Core",
+    "fullscreen_shatter_replaced_spiderweb_screen": "Decal_BrokenSpiderWeb_Screen"
+  },
+  "materials": [
+    "M_Cyan_Accent",
+    "M_Solid_Back_Panel",
+    "M_Solid_Frame",
+    "M_Solid_Front_Panel",
+    "M_Tachyon_Lance_Core_Breach_Decal",
+    "M_Tachyon_Lance_FullScreen_Shatter_Decal",
+    "M_Tachyon_Lance_Pierce_Glancing_Decal",
+    "M_Tachyon_Lance_Pierce_Heavy_Decal",
+    "M_Translucent_Clear_Glass"
+  ]
+}

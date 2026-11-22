@@ -1,0 +1,35 @@
+{
+  "model_name": "tachyon_lance",
+  "description": "Standalone Superluminal Tachyon Lance projectile with violet-magenta phase helices, incandescent needle tip, and gold/cyan acceleration rings.",
+  "directory": "meshy_test_0/models/stage_2/Tachyon",
+  "files": {
+    "blend": "./meshy_test_0/models/stage_2/Tachyon/tachyon_lance.blend",
+    "glb": "./meshy_test_0/models/stage_2/Tachyon/tachyon_lance.glb",
+    "fbx": "./meshy_test_0/models/stage_2/Tachyon/tachyon_lance.fbx",
+    "obj": "./meshy_test_0/models/stage_2/Tachyon/tachyon_lance.obj",
+    "mtl": "./meshy_test_0/models/stage_2/Tachyon/tachyon_lance.mtl"
+  },
+  "stats": {
+    "total_vertices": 492,
+    "total_triangles": 944,
+    "dimensions_blender_m": {
+      "x": 0.4738,
+      "y": 3.2,
+      "z": 0.4738
+    },
+    "parts": {
+      "Tachyon_Lance_Mesh": {
+        "vertices": 492,
+        "triangles": 944
+      }
+    }
+  },
+  "materials": [
+    "M_Tachyon_Lance_Core",
+    "M_Tachyon_Lance_HotTip",
+    "M_Tachyon_Lance_Aura",
+    "M_Cruiser_Cyan_Engine",
+    "M_Cruiser_Gold_Armor"
+  ],
+  "hardpoints": []
+}

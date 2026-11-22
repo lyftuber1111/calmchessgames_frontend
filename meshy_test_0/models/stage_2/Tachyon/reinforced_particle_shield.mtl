@@ -1,0 +1,22 @@
+# Blender 5.2.0 LTS MTL File: 'reinforced_particle_shield.blend'
+# www.blender.org
+
+newmtl M_Particle_Shield_HexFrame
+Ns 722.500000
+Ka 0.150000 0.150000 0.150000
+Kd 1.000000 0.800000 0.240000
+Ks 0.500000 0.500000 0.500000
+Ke 2.200000 1.584000 0.308000
+Ni 1.500000
+d 0.780000
+illum 6
+
+newmtl M_Particle_Shield_Shell
+Ns 846.400024
+Ka 0.050000 0.050000 0.050000
+Kd 0.200000 0.880000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.098000 0.546000 0.700000
+Ni 1.500000
+d 0.090000
+illum 6

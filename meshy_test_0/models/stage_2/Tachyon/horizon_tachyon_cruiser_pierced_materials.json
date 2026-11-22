@@ -1,0 +1,84 @@
+{
+  "model_name": "horizon_tachyon_cruiser_pierced",
+  "description": "Horizon Tachyon Cruiser Pierced: Shielded Horizon Tachyon Cruiser with reinforced particle shield breached by an incoming superluminal Tachyon Lance.",
+  "directory": "meshy_test_0/models/stage_2/Tachyon",
+  "files": {
+    "blend": "./meshy_test_0/models/stage_2/Tachyon/horizon_tachyon_cruiser_pierced.blend",
+    "glb": "./meshy_test_0/models/stage_2/Tachyon/horizon_tachyon_cruiser_pierced.glb",
+    "fbx": "./meshy_test_0/models/stage_2/Tachyon/horizon_tachyon_cruiser_pierced.fbx",
+    "obj": "./meshy_test_0/models/stage_2/Tachyon/horizon_tachyon_cruiser_pierced.obj",
+    "mtl": "./meshy_test_0/models/stage_2/Tachyon/horizon_tachyon_cruiser_pierced.mtl"
+  },
+  "stats": {
+    "total_vertices": 3240,
+    "total_triangles": 5880,
+    "dimensions_blender_m": {
+      "x": 4.7724,
+      "y": 6.1988,
+      "z": 2.3079
+    },
+    "parts": {
+      "Cruiser_Reinforced_Hull_Core": {
+        "vertices": 158,
+        "triangles": 268
+      },
+      "Cruiser_Command_Bridge_And_Spine": {
+        "vertices": 152,
+        "triangles": 236
+      },
+      "Cruiser_Forward_Swept_Wings_And_Armor": {
+        "vertices": 116,
+        "triangles": 184
+      },
+      "Cruiser_Cyan_Engine_Nacelles": {
+        "vertices": 624,
+        "triangles": 1152
+      },
+      "Cruiser_Laser_Mounts": {
+        "vertices": 384,
+        "triangles": 672
+      },
+      "Cruiser_Missile_Mounts": {
+        "vertices": 464,
+        "triangles": 792
+      },
+      "Cruiser_Shield_Projectors": {
+        "vertices": 96,
+        "triangles": 160
+      },
+      "Cruiser_Reinforced_Particle_Shield": {
+        "vertices": 42,
+        "triangles": 80
+      },
+      "Cruiser_Particle_Shield_HexReinforcement": {
+        "vertices": 624,
+        "triangles": 1248
+      },
+      "Tachyon_Lance_Piercing_FX": {
+        "vertices": 580,
+        "triangles": 1088
+      }
+    }
+  },
+  "materials": [
+    "M_Cruiser_Gold_Armor",
+    "M_Cruiser_Pearl_Titanium",
+    "M_Cruiser_Cobalt_Trim",
+    "M_Cruiser_Cyan_Engine",
+    "M_Cruiser_Laser_Emitter",
+    "M_Cruiser_Missile_Warhead",
+    "M_Particle_Shield_Shell",
+    "M_Particle_Shield_HexFrame",
+    "M_Tachyon_Lance_Core",
+    "M_Tachyon_Lance_HotTip",
+    "M_Tachyon_Lance_Aura",
+    "M_Tachyon_Breach_Ring"
+  ],
+  "hardpoints": [
+    "Hardpoint_Laser_Center",
+    "Hardpoint_Laser_Port",
+    "Hardpoint_Laser_Starboard",
+    "Hardpoint_Missile_Port",
+    "Hardpoint_Missile_Starboard"
+  ]
+}

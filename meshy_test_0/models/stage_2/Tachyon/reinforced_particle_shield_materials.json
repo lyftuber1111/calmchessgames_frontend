@@ -1,0 +1,36 @@
+{
+  "model_name": "reinforced_particle_shield",
+  "description": "Standalone Reinforced Particle Shield geodesic cyan barrier with luminous amber-gold lattice ribs and emitter hex nodes.",
+  "directory": "meshy_test_0/models/stage_2/Tachyon",
+  "files": {
+    "blend": "./meshy_test_0/models/stage_2/Tachyon/reinforced_particle_shield.blend",
+    "glb": "./meshy_test_0/models/stage_2/Tachyon/reinforced_particle_shield.glb",
+    "fbx": "./meshy_test_0/models/stage_2/Tachyon/reinforced_particle_shield.fbx",
+    "obj": "./meshy_test_0/models/stage_2/Tachyon/reinforced_particle_shield.obj",
+    "mtl": "./meshy_test_0/models/stage_2/Tachyon/reinforced_particle_shield.mtl"
+  },
+  "stats": {
+    "total_vertices": 666,
+    "total_triangles": 1328,
+    "dimensions_blender_m": {
+      "x": 4.2433,
+      "y": 6.1988,
+      "z": 2.3079
+    },
+    "parts": {
+      "Cruiser_Reinforced_Particle_Shield": {
+        "vertices": 42,
+        "triangles": 80
+      },
+      "Cruiser_Particle_Shield_HexReinforcement": {
+        "vertices": 624,
+        "triangles": 1248
+      }
+    }
+  },
+  "materials": [
+    "M_Particle_Shield_Shell",
+    "M_Particle_Shield_HexFrame"
+  ],
+  "hardpoints": []
+}

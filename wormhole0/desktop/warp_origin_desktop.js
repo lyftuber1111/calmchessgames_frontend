@@ -645,8 +645,8 @@ export const stageConfig = {
 ],
   controls: {
     "inputMode": "keyboard_mouse",
-    "showVirtualJoysticks": "false",
-    "enablePointerLock": "true",
+    "showVirtualJoysticks": false,
+    "enablePointerLock": true,
     "description": "WASD flight thrust, Mouse aim, Space boost, Tab HUD toggle, Left-Click fire laser"
 }
 };
@@ -1874,6 +1874,134 @@ export function handleStageEvent(eventName, payload, engineApi) {
   }
 }
 
+
+export function setupDesktopPointerCapture(engineApi) {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return false;
+  const controls = (stageConfig && stageConfig.controls) ? stageConfig.controls : {};
+  const pointerLockEnabled = controls.enablePointerLock === true || controls.enablePointerLock === 'true';
+  if (!pointerLockEnabled) return false;
+
+  const isMobile = (engineApi && typeof engineApi.isMobileInUse === 'function')
+    ? engineApi.isMobileInUse()
+    : (typeof window.isMobileInUse === 'function' ? window.isMobileInUse() : false);
+  if (isMobile) return false;
+
+  // Bind desktop click-to-capture and ESC-to-release coordinator once across all stage transitions
+  if (!window._wormholeDesktopPointerCaptureBound) {
+    const getTargetContainer = () => {
+      if (engineApi && typeof engineApi.getCanvasContainer === 'function') {
+        const c = engineApi.getCanvasContainer();
+        if (c) return c;
+      }
+      return document.getElementById('webgl-container');
+    };
+
+    const isInteractiveTarget = (target) => {
+      if (!target || typeof target.closest !== 'function') return false;
+      return !!target.closest(
+        '#game-over-modal, #game-countdown-overlay, .device-modal-overlay, ' +
+        '#left-drawer-container, #top-drawer-container, #bottom-drawer-container, ' +
+        '#mobile-touch-controls, #unsupported-device-modal, .weapon-wheel-overlay, ' +
+        '#wormhole-splash-screen, .hud-weapon-pill, .hud-btn, .drawer-pause-btn, ' +
+        '.hud-pause-icon-btn, .hud-exit-icon-btn, button, input, select, textarea, a, [role="button"], [role="tab"]'
+      );
+    };
+
+    const canCaptureNow = () => {
+      const st = window.state;
+      if (!st) return false;
+      if (st.isPaused || st.isGameOver || st.isCountdownActive || st.isXR) return false;
+      if (st.desktopPointerLockEnabled === false) return false;
+      if (typeof window.isMobileInUse === 'function' && window.isMobileInUse()) return false;
+      const splash = document.getElementById('wormhole-splash-screen');
+      if (splash && splash.parentNode && window.getComputedStyle(splash).display !== 'none' && !splash.classList.contains('splash-fade-out')) {
+        return false;
+      }
+      const wheel = document.getElementById('weapon-wheel-overlay');
+      if (wheel && window.getComputedStyle(wheel).display === 'flex') return false;
+      return true;
+    };
+
+    const triggerCapture = () => {
+      if (!canCaptureNow()) return false;
+      if (typeof window.requestCrosshairCapture === 'function') {
+        return window.requestCrosshairCapture(false, { fromUserGesture: true, source: 'desktop-stage' });
+      }
+      const targetEl = getTargetContainer();
+      if (targetEl && document.pointerLockElement !== targetEl && typeof targetEl.requestPointerLock === 'function') {
+        try {
+          const p = targetEl.requestPointerLock();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+          return true;
+        } catch (e) {}
+      }
+      return false;
+    };
+
+    const triggerRelease = (reason = 'escape') => {
+      if (typeof window.releaseCrosshairCapture === 'function') {
+        window.releaseCrosshairCapture(reason);
+        return;
+      }
+      if (document.pointerLockElement && typeof document.exitPointerLock === 'function') {
+        try { document.exitPointerLock(); } catch (e) {}
+      }
+      if (window.state) {
+        window.state.isPointerLocked = false;
+        window.state.isLeftMouseDown = false;
+        window.state.isRightMouseDown = false;
+        window.state.isMouseDown = false;
+        window.state.lastPointerLockExitTime = performance.now();
+      }
+      if (document.body) {
+        document.body.classList.remove('crosshair-captured');
+      }
+    };
+
+    // Capture mouse cursor into crosshair on gameplay click
+    window.addEventListener('click', (e) => {
+      if (e.button !== 0) return;
+      if (e.pointerType === 'touch' || (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents)) return;
+      if (isInteractiveTarget(e.target)) return;
+      if (!canCaptureNow()) return;
+      const targetEl = getTargetContainer();
+      const alreadyLocked = !!(document.pointerLockElement && targetEl && (document.pointerLockElement === targetEl || targetEl.contains(document.pointerLockElement)));
+      if (!alreadyLocked || (window.state && !window.state.isPointerLocked)) {
+        triggerCapture();
+      }
+    }, false);
+
+    // Release captured mouse cursor immediately when Escape key is pressed
+    window.addEventListener('keydown', (e) => {
+      if (e.code !== 'Escape' && e.key !== 'Escape') return;
+      const st = window.state;
+      const targetEl = getTargetContainer();
+      const lockedNow = !!(document.pointerLockElement && (!targetEl || document.pointerLockElement === targetEl || targetEl.contains(document.pointerLockElement)));
+      if (lockedNow || (st && st.isPointerLocked)) {
+        e.preventDefault();
+        e.stopPropagation();
+        triggerRelease('escape');
+      }
+    }, true);
+
+    window._wormholeDesktopPointerCaptureBound = true;
+    window._wormholeDesktopTriggerCapture = triggerCapture;
+    window._wormholeDesktopTriggerRelease = triggerRelease;
+  }
+
+  // On every desktop stage entry, synchronize and arm pointer capture cleanly
+  const stageTag = 'stage_' + (stageConfig && stageConfig.level ? stageConfig.level : 1) + '_applyStage';
+  if (engineApi && typeof engineApi.armDesktopPointerCapture === 'function') {
+    engineApi.armDesktopPointerCapture(stageTag);
+  } else if (typeof window.armDesktopPointerCaptureForStage === 'function') {
+    window.armDesktopPointerCaptureForStage(stageTag);
+  } else if (typeof window.requestCrosshairCapture === 'function' && window.state && window.state.hasStarted && !window.state.isPaused && !window.state.isGameOver && !window.state.isCountdownActive) {
+    window.requestCrosshairCapture(false, { source: stageTag });
+  }
+
+  return true;
+}
+
 export function applyStage(engineApi) {
   if (!engineApi) return stageConfig;
   console.log(`[Stage 1: Warp Origin] Applying Desktop Profile configuration...`);
@@ -2074,7 +2202,9 @@ export function applyStage(engineApi) {
     window.canEnemyHitPlayer = canEnemyHitPlayer;
     window.canPlayerDestroyEnemy = canPlayerDestroyEnemy;
 
+    window.setupDesktopPointerCapture = setupDesktopPointerCapture;
     clearCockpitDecalsIfFullDefense();
+    setupDesktopPointerCapture(engineApi);
   }
 
   return stageConfig;
@@ -2108,5 +2238,6 @@ export default {
   syncCockpitDecalThreshold,
   evaluateWeaponDecalThreshold,
   hasAnyCockpitDecalActive,
-  clearCockpitDecalsIfFullDefense
+  clearCockpitDecalsIfFullDefense,
+  setupDesktopPointerCapture
 };

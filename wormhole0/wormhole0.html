@@ -85,6 +85,14 @@
       cursor: crosshair;
     }
 
+    /* Desktop Crosshair Capture: Hide OS Mouse Cursor While Captured (Released by ESC) */
+    body.crosshair-captured,
+    body.crosshair-captured #webgl-container,
+    body.crosshair-captured #webgl-container canvas,
+    body.crosshair-captured #hud-layer {
+      cursor: none !important;
+    }
+
     /* Full-Screen 3D Cockpit Overlay & Impact FX (Ahead of Gameplay UI Controls in Z-Order, Strictly Pass-Through) */
     #cockpit-overlay-3d-container,
     #cockpit-overlay-3d-canvas {
@@ -4905,7 +4913,7 @@
   </div>
 
   <!-- Primary Game Module with Decoupled Stage Profiles & Events -->
-  <script type="module" src="js/wormhole0.js?v=20261121_full_defense_decals_off_v14"></script>
+  <script type="module" src="js/wormhole0.js?v=20261121_desktop_cursor_capture_v15"></script>
 
   <!-- Calm Chess Computers 2026 -->
   <div style="display:none !important; visibility:hidden !important; opacity:0 !important; pointer-events:none !important;" aria-hidden="true">Calm Chess Computers 2026</div>

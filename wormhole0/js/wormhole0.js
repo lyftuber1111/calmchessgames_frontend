@@ -476,6 +476,8 @@ const state = {
   pitch: 0,
   yaw: 0,
   isPointerLocked: false,
+  desktopPointerLockEnabled: true,
+  awaitingDesktopPointerCapture: false,
   isMouseDown: false,
   isLeftMouseDown: false,
   isRightMouseDown: false,
@@ -813,10 +815,15 @@ try {
       xrBaseHmdPos.set(0, 0, 0);
       document.body.classList.add('in-xr-session');
 
-      if (document.pointerLockElement) {
-        try { document.exitPointerLock(); } catch (e) {}
+      if (typeof releaseCrosshairCapture === 'function') {
+        releaseCrosshairCapture('xr-session-start');
+      } else {
+        if (document.pointerLockElement) {
+          try { document.exitPointerLock(); } catch (e) {}
+        }
+        state.isPointerLocked = false;
+        document.body.classList.remove('crosshair-captured');
       }
-      state.isPointerLocked = false;
 
       const splashEl = document.getElementById('wormhole-splash-screen');
       if (splashEl) {
@@ -3885,11 +3892,16 @@ function setGamePaused(paused, skipDrawer = false) {
     document.body.classList.add('game-paused');
 
     // Release pointer lock if active
-    if (document.pointerLockElement) {
-      try { document.exitPointerLock(); } catch(e) {}
+    if (typeof releaseCrosshairCapture === 'function') {
+      releaseCrosshairCapture('pause');
+    } else {
+      if (document.pointerLockElement) {
+        try { document.exitPointerLock(); } catch(e) {}
+      }
+      state.isPointerLocked = false;
+      state.isMouseDown = false;
+      document.body.classList.remove('crosshair-captured');
     }
-    state.isPointerLocked = false;
-    state.isMouseDown = false;
 
     // Clear any held movement keys
     Object.keys(keys).forEach(k => { keys[k] = false; });
@@ -4589,17 +4601,24 @@ document.querySelectorAll('.chk-auto-close').forEach(chk => {
 
 // Keyboard shortcuts for toggling panels & pause
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'Escape') {
+  if (e.code === 'Escape' || e.key === 'Escape') {
     // 1. If crosshair is captured or was just released by Esc via browser native pointerlock exit, release capture and do NOT toggle pause
-    if (state.isPointerLocked || document.pointerLockElement || (performance.now() - state.lastPointerLockExitTime < 250)) {
+    const lockedNow = typeof isContainerPointerLocked === 'function' ? isContainerPointerLocked() : !!document.pointerLockElement;
+    if (state.isPointerLocked || lockedNow || document.pointerLockElement || (performance.now() - state.lastPointerLockExitTime < 450)) {
       e.preventDefault();
       e.stopPropagation();
-      if (document.pointerLockElement) {
-        try { document.exitPointerLock(); } catch(err) {}
+      if (typeof releaseCrosshairCapture === 'function') {
+        releaseCrosshairCapture('escape');
+      } else {
+        if (document.pointerLockElement) {
+          try { document.exitPointerLock(); } catch(err) {}
+        }
+        state.isPointerLocked = false;
+        state.isLeftMouseDown = false;
+        state.isRightMouseDown = false;
+        state.isMouseDown = false;
+        document.body.classList.remove('crosshair-captured');
       }
-      state.isPointerLocked = false;
-      state.isLeftMouseDown = false;
-      state.isRightMouseDown = false;
       return;
     }
     // 2. If weapon wheel is open, close it
@@ -5288,11 +5307,38 @@ function getEngineApi() {
     },
     setDeviceControls: (controls) => {
       if (!controls) return;
+      const showVirtual = typeof parseControlBoolean === 'function'
+        ? parseControlBoolean(controls.showVirtualJoysticks, false)
+        : (controls.showVirtualJoysticks === true || controls.showVirtualJoysticks === 'true');
+      const enableLock = typeof parseControlBoolean === 'function'
+        ? parseControlBoolean(controls.enablePointerLock, currentActiveDeviceType === 'desktop')
+        : (controls.enablePointerLock === undefined
+          ? (currentActiveDeviceType === 'desktop')
+          : (controls.enablePointerLock === true || controls.enablePointerLock === 'true'));
+      state.desktopPointerLockEnabled = enableLock;
       const aimStick = document.getElementById('aim-stick-zone');
       const touchThrottle = document.getElementById('touch-throttle-zone');
-      if (aimStick) aimStick.style.display = controls.showVirtualJoysticks ? 'flex' : 'none';
-      if (touchThrottle) touchThrottle.style.display = controls.showVirtualJoysticks ? 'flex' : 'none';
+      if (aimStick) aimStick.style.display = showVirtual ? 'flex' : 'none';
+      if (touchThrottle) touchThrottle.style.display = showVirtual ? 'flex' : 'none';
+      if (!showVirtual && currentActiveDeviceType === 'desktop') {
+        document.body.classList.remove('show-touch-controls');
+      }
+      if (enableLock && !isMobileInUse()) {
+        if (typeof armDesktopPointerCaptureForStage === 'function') {
+          armDesktopPointerCaptureForStage('setDeviceControls');
+        }
+      } else if (!enableLock && document.pointerLockElement) {
+        if (typeof releaseCrosshairCapture === 'function') {
+          releaseCrosshairCapture('controls-disabled');
+        }
+      }
     },
+    requestCrosshairCapture: (forceInXr = false, opts = {}) => requestCrosshairCapture(forceInXr, opts),
+    releaseCrosshairCapture: (reason = 'stage') => releaseCrosshairCapture(reason),
+    armDesktopPointerCapture: (reason = 'stage') => armDesktopPointerCaptureForStage(reason),
+    isPointerLocked: () => isContainerPointerLocked(),
+    isMobileInUse: () => isMobileInUse(),
+    getCanvasContainer: () => container,
     setSpinAudioEnabled: (enabled) => {
       if (audioMgr && typeof audioMgr.setSpinAudioEnabled === 'function') {
         audioMgr.setSpinAudioEnabled(enabled);
@@ -5664,6 +5710,10 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop', tra
       detail: { stageLevel: currentActiveStage, stageName: stage.name, deviceType, scriptPath: scriptRelative }
     }));
 
+    if (deviceType === 'desktop' && !isMobileInUse() && typeof armDesktopPointerCaptureForStage === 'function') {
+      armDesktopPointerCaptureForStage(`loadStageDeviceModule_stage_${currentActiveStage}`);
+    }
+
     return mod;
   } catch (err) {
     console.error(`[Wormhole XR Engine] Failed to load stage module: ${scriptRelative}`, err);
@@ -5830,20 +5880,33 @@ async function abortCurrentStageAndStartFresh(targetStage = 1, options = {}) {
     const damageVignette = document.getElementById('damage-vignette');
     if (damageVignette) damageVignette.style.opacity = '0';
 
-    // 9. Reset keyboard and mouse capture states
+    // 9. Reset keyboard and mouse capture states (preserve & sync live desktop pointer lock on seamless stage transitions)
     for (const k in keys) {
       delete keys[k];
     }
     state.keys = {};
-    state.isPointerLocked = false;
     state.isLeftMouseDown = false;
     state.isRightMouseDown = false;
     state.isMouseDown = false;
     state.aimActive = false;
-    const mouseLockBtn = document.getElementById('btn-mouse-lock');
-    if (mouseLockBtn) {
-      mouseLockBtn.classList.remove('active');
-      mouseLockBtn.textContent = '🎯 Capture Crosshair';
+    if (!launchImmediately) {
+      if (typeof releaseCrosshairCapture === 'function') {
+        releaseCrosshairCapture('stage-reset-countdown');
+      } else {
+        if (document.pointerLockElement) {
+          try { document.exitPointerLock(); } catch (e) {}
+        }
+        state.isPointerLocked = false;
+        document.body.classList.remove('crosshair-captured');
+      }
+    } else {
+      const lockedNow = typeof isContainerPointerLocked === 'function' ? isContainerPointerLocked() : (document.pointerLockElement === container);
+      if (typeof syncPointerLockUI === 'function') {
+        syncPointerLockUI(lockedNow);
+      } else {
+        state.isPointerLocked = lockedNow;
+      }
+      state.awaitingDesktopPointerCapture = !lockedNow;
     }
 
     // 10. Reset mobile touch controls & virtual sticks to exact center (0px, 0px)
@@ -5996,8 +6059,12 @@ async function abortCurrentStageAndStartFresh(targetStage = 1, options = {}) {
         state.waveStartTime = performance.now();
       }
 
-      if (!isMobileInUse() && !state.isPointerLocked) {
-        requestCrosshairCapture(true);
+      if (!isMobileInUse()) {
+        if (typeof armDesktopPointerCaptureForStage === 'function') {
+          armDesktopPointerCaptureForStage(`stage_${stageNum}_launch_immediate`);
+        } else if (!state.isPointerLocked) {
+          requestCrosshairCapture(true);
+        }
       }
     } else {
       state.hasStarted = false;
@@ -8287,37 +8354,122 @@ window.addEventListener('keyup', (e) => {
   keys[e.code] = false;
 });
 
+let pointerLockRequestPending = false;
+let pointerLockRequestStartedAt = 0;
+
+function parseControlBoolean(val, fallback = false) {
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'string') {
+    const lower = val.trim().toLowerCase();
+    if (lower === 'true' || lower === '1' || lower === 'yes') return true;
+    if (lower === 'false' || lower === '0' || lower === 'no' || lower === '') return false;
+  }
+  if (typeof val === 'number') return val !== 0;
+  return fallback;
+}
+
+function isContainerPointerLocked() {
+  if (!document.pointerLockElement || !container) return false;
+  return document.pointerLockElement === container || container.contains(document.pointerLockElement);
+}
+
+function syncPointerLockUI(locked) {
+  const isLocked = !!locked;
+  state.isPointerLocked = isLocked;
+  if (isLocked) {
+    state.awaitingDesktopPointerCapture = false;
+  }
+  if (document.body) {
+    document.body.classList.toggle('crosshair-captured', isLocked);
+  }
+  if (container) {
+    container.style.cursor = isLocked ? 'none' : 'crosshair';
+  }
+  if (typeof renderer !== 'undefined' && renderer && renderer.domElement) {
+    renderer.domElement.style.cursor = isLocked ? 'none' : 'crosshair';
+  }
+  const btn = document.getElementById('btn-mouse-lock');
+  if (btn) {
+    btn.classList.toggle('active', isLocked);
+    btn.textContent = isLocked ? '🎯 CROSSHAIR CAPTURED (ESC)' : '🎯 Capture Crosshair';
+  }
+}
+
+function isDesktopPointerCaptureAllowed(forceInXr = false) {
+  if (!container) return false;
+  if (state.isPaused || state.isGameOver || state.isCountdownActive) return false;
+  if (state.isXR && !forceInXr) return false;
+  if (isMobileInUse()) return false;
+  if (state.desktopPointerLockEnabled === false) return false;
+  const splashEl = document.getElementById('wormhole-splash-screen');
+  if (splashEl && splashEl.parentNode && window.getComputedStyle(splashEl).display !== 'none' && !splashEl.classList.contains('splash-fade-out')) {
+    return false;
+  }
+  if (typeof isWeaponWheelOpen === 'function' && isWeaponWheelOpen()) {
+    return false;
+  }
+  const unsupportedModal = document.getElementById('unsupported-device-modal');
+  if (unsupportedModal && unsupportedModal.style.display === 'flex') {
+    return false;
+  }
+  return true;
+}
+
+function releaseCrosshairCapture(reason = 'manual') {
+  pointerLockRequestPending = false;
+  const wasLocked = state.isPointerLocked || isContainerPointerLocked() || !!document.pointerLockElement;
+  if (document.pointerLockElement && typeof document.exitPointerLock === 'function') {
+    try {
+      document.exitPointerLock();
+    } catch (e) {}
+  }
+  if (wasLocked || reason === 'escape') {
+    state.lastPointerLockExitTime = performance.now();
+  }
+  state.isLeftMouseDown = false;
+  state.isRightMouseDown = false;
+  state.isMouseDown = false;
+  state.awaitingDesktopPointerCapture = true;
+  syncPointerLockUI(false);
+}
+
 const mouseLockBtn = document.getElementById('btn-mouse-lock');
 if (mouseLockBtn) {
   mouseLockBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (!audioMgr.isInitialized) audioMgr.init();
-    if (document.pointerLockElement === container) {
-      document.exitPointerLock();
+    if (isContainerPointerLocked() || state.isPointerLocked) {
+      releaseCrosshairCapture('button');
     } else {
-      requestCrosshairCapture(true);
+      requestCrosshairCapture(true, { fromUserGesture: true, source: 'hud-button' });
     }
   });
 }
 
 document.addEventListener('pointerlockchange', () => {
-  if (state.isGameOver && document.pointerLockElement) {
-    try {
-      document.exitPointerLock();
-    } catch (e) {}
-    state.isPointerLocked = false;
+  pointerLockRequestPending = false;
+  if ((state.isGameOver || state.isPaused) && document.pointerLockElement) {
+    releaseCrosshairCapture(state.isGameOver ? 'game-over' : 'paused');
     return;
   }
   const wasLocked = state.isPointerLocked;
-  state.isPointerLocked = (document.pointerLockElement === container);
-  if (wasLocked && !state.isPointerLocked) {
+  const nowLocked = isContainerPointerLocked();
+  syncPointerLockUI(nowLocked);
+  if (wasLocked && !nowLocked) {
     state.lastPointerLockExitTime = performance.now();
     state.isLeftMouseDown = false;
     state.isRightMouseDown = false;
+    state.isMouseDown = false;
+    state.awaitingDesktopPointerCapture = true;
   }
-  if (mouseLockBtn) {
-    mouseLockBtn.classList.toggle('active', state.isPointerLocked);
-    mouseLockBtn.textContent = state.isPointerLocked ? '🎯 CROSSHAIR CAPTURED (ESC)' : '🎯 Capture Crosshair';
+});
+
+document.addEventListener('pointerlockerror', () => {
+  pointerLockRequestPending = false;
+  const nowLocked = isContainerPointerLocked();
+  syncPointerLockUI(nowLocked);
+  if (!nowLocked) {
+    state.awaitingDesktopPointerCapture = true;
   }
 });
 
@@ -8327,7 +8479,7 @@ function isInteractiveUiElement(target, event = null) {
     '#left-drawer-container, #top-drawer-container, #bottom-drawer-container, ' +
     '#mobile-touch-controls, #unsupported-device-modal, .weapon-wheel-overlay, ' +
     '#wormhole-splash-screen, ' +
-    '.hud-weapon-pill, .hud-btn, .drawer-pause-btn, .hud-pause-icon-btn, ' +
+    '.hud-weapon-pill, .hud-btn, .drawer-pause-btn, .hud-pause-icon-btn, .hud-exit-icon-btn, ' +
     'button, input, select, textarea, a, [role="button"], [role="tab"]';
 
   if (event && typeof event.composedPath === 'function') {
@@ -8351,23 +8503,106 @@ function isInteractiveUiElement(target, event = null) {
   return !!(target.closest && target.closest(selector));
 }
 
-function requestCrosshairCapture(forceInXr = false) {
-  if (state.isPaused || state.isGameOver || !container) return;
-  if (state.isXR && !forceInXr) return;
-  if (document.pointerLockElement !== container) {
-    try {
-      const p = container.requestPointerLock();
-      if (p && p.catch) p.catch(() => {});
-    } catch (err) {}
+function requestCrosshairCapture(forceInXr = false, options = {}) {
+  if (!isDesktopPointerCaptureAllowed(forceInXr)) {
+    if (isContainerPointerLocked()) {
+      releaseCrosshairCapture('capture-disallowed');
+    }
+    return false;
+  }
+  // If browser already holds pointer lock on container, immediately resync JS/UI state
+  if (isContainerPointerLocked()) {
+    pointerLockRequestPending = false;
+    syncPointerLockUI(true);
+    return true;
+  }
+  if (typeof container.requestPointerLock !== 'function') {
+    return false;
+  }
+  const now = performance.now();
+  if (pointerLockRequestPending && (now - pointerLockRequestStartedAt) < 600) {
+    return false;
+  }
+  try {
+    pointerLockRequestPending = true;
+    pointerLockRequestStartedAt = now;
+    const p = container.requestPointerLock();
+    if (p && typeof p.then === 'function') {
+      p.then(() => {
+        pointerLockRequestPending = false;
+        syncPointerLockUI(isContainerPointerLocked());
+      }).catch(() => {
+        pointerLockRequestPending = false;
+        const lockedNow = isContainerPointerLocked();
+        syncPointerLockUI(lockedNow);
+        if (!lockedNow) {
+          state.awaitingDesktopPointerCapture = true;
+        }
+      });
+    } else {
+      // Fallback for browsers where requestPointerLock() does not return a Promise
+      setTimeout(() => {
+        pointerLockRequestPending = false;
+        syncPointerLockUI(isContainerPointerLocked());
+      }, 150);
+    }
+    return true;
+  } catch (err) {
+    pointerLockRequestPending = false;
+    state.awaitingDesktopPointerCapture = true;
+    return false;
   }
 }
 
-// Window focus event captures crosshair when focusing into the window
+function armDesktopPointerCaptureForStage(reason = 'stage-enter') {
+  if (isMobileInUse() || state.isXR || state.desktopPointerLockEnabled === false) {
+    return false;
+  }
+  const alreadyLocked = isContainerPointerLocked();
+  if (alreadyLocked) {
+    syncPointerLockUI(true);
+    return true;
+  }
+  syncPointerLockUI(false);
+  state.awaitingDesktopPointerCapture = true;
+  if (state.hasStarted && !state.isPaused && !state.isGameOver && !state.isCountdownActive) {
+    requestCrosshairCapture(false, { source: reason });
+  }
+  return true;
+}
+
+// Window focus event synchronizes pointer lock state and captures crosshair when returning to active desktop gameplay
 window.addEventListener('focus', () => {
-  if (!state.isXR && !state.isGameOver && !state.isPaused && !state.isCountdownActive) {
-    requestCrosshairCapture();
+  const lockedNow = isContainerPointerLocked();
+  if (lockedNow !== state.isPointerLocked) {
+    syncPointerLockUI(lockedNow);
+  }
+  if (state.hasStarted && !isMobileInUse() && !state.isXR && !state.isGameOver && !state.isPaused && !state.isCountdownActive && !lockedNow) {
+    requestCrosshairCapture(false, { source: 'window-focus' });
   }
 });
+
+function snapCrosshairToClientPoint(clientX, clientY) {
+  state.crosshair.x = Math.max(10, Math.min(window.innerWidth - 10, clientX));
+  state.crosshair.y = Math.max(10, Math.min(window.innerHeight - 10, clientY));
+  if (typeof snapGrid !== 'undefined' && snapGrid.cellWidth > 0 && snapGrid.cellHeight > 0) {
+    snapGrid.virtualX = state.crosshair.x;
+    snapGrid.virtualY = state.crosshair.y;
+    snapGrid.currentCol = Math.min(snapGrid.cols - 1, Math.max(0, Math.floor(state.crosshair.x / snapGrid.cellWidth)));
+    snapGrid.currentRow = Math.min(snapGrid.rows - 1, Math.max(0, Math.floor(state.crosshair.y / snapGrid.cellHeight)));
+    highlightActiveGridBox(snapGrid.currentCol, snapGrid.currentRow);
+  }
+  const crosshairEl = document.getElementById('center-crosshair');
+  if (crosshairEl) {
+    crosshairEl.style.left = `${state.crosshair.x}px`;
+    crosshairEl.style.top = `${state.crosshair.y}px`;
+  }
+  const vectorRing = document.getElementById('vector-alignment-ring');
+  if (vectorRing) {
+    vectorRing.style.left = `${state.crosshair.x}px`;
+    vectorRing.style.top = `${state.crosshair.y}px`;
+  }
+}
 
 // Window mouse interaction: captures crosshair and fires active weapon on left click
 window.addEventListener('mousedown', (e) => {
@@ -8396,34 +8631,24 @@ window.addEventListener('mousedown', (e) => {
   // If clicking on an interactive UI element (including Immersive Web Emulator Shadow DOM controls), let it handle the event
   if (isInteractiveUiElement(e.target, e)) return;
 
+  // Do not capture or fire while paused or during mission countdown
+  if (state.isPaused || state.isCountdownActive) return;
+
   // In WebXR / Immersive Web Emulator mode, let clicks on the emulator gizmo canvas pass through without moving the centered crosshair
   if (state.isXR && !state.isPointerLocked) return;
 
   if (!audioMgr.isInitialized) audioMgr.init();
 
-  // If crosshair is not currently captured, capture it and snap crosshair to click
-  if (!state.isPointerLocked) {
-    state.crosshair.x = Math.max(10, Math.min(window.innerWidth - 10, e.clientX));
-    state.crosshair.y = Math.max(10, Math.min(window.innerHeight - 10, e.clientY));
-    if (typeof snapGrid !== 'undefined' && snapGrid.cellWidth > 0 && snapGrid.cellHeight > 0) {
-      snapGrid.virtualX = state.crosshair.x;
-      snapGrid.virtualY = state.crosshair.y;
-      snapGrid.currentCol = Math.min(snapGrid.cols - 1, Math.max(0, Math.floor(state.crosshair.x / snapGrid.cellWidth)));
-      snapGrid.currentRow = Math.min(snapGrid.rows - 1, Math.max(0, Math.floor(state.crosshair.y / snapGrid.cellHeight)));
-      highlightActiveGridBox(snapGrid.currentCol, snapGrid.currentRow);
-    }
-    const crosshairEl = document.getElementById('center-crosshair');
-    if (crosshairEl) {
-      crosshairEl.style.left = `${state.crosshair.x}px`;
-      crosshairEl.style.top = `${state.crosshair.y}px`;
-    }
-    const vectorRing = document.getElementById('vector-alignment-ring');
-    if (vectorRing) {
-      vectorRing.style.left = `${state.crosshair.x}px`;
-      vectorRing.style.top = `${state.crosshair.y}px`;
-    }
+  // Keep state synced with actual browser pointer lock element before deciding to capture
+  const actuallyLocked = isContainerPointerLocked();
+  if (actuallyLocked && !state.isPointerLocked) {
+    syncPointerLockUI(true);
+  }
 
-    requestCrosshairCapture();
+  // If crosshair is not currently captured, capture it on click and snap crosshair to click
+  if (!actuallyLocked) {
+    snapCrosshairToClientPoint(e.clientX, e.clientY);
+    requestCrosshairCapture(false, { fromUserGesture: true, source: 'mousedown' });
   }
 
   // When left mouse button is pressed, fire active weapon ONE SHOT at a time
@@ -8443,6 +8668,21 @@ window.addEventListener('mousedown', (e) => {
     fireLaserBeam();
     state.flightLockoutUntil = performance.now() + 2000;
   }
+});
+
+// Secondary click-gesture guarantee for desktop pointer capture (covers browsers/states where mousedown request was deferred or rejected)
+window.addEventListener('click', (e) => {
+  if (e.button !== 0) return;
+  if (e.pointerType === 'touch' || (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents)) return;
+  if (isInteractiveUiElement(e.target, e)) return;
+  if (!isDesktopPointerCaptureAllowed(false)) return;
+  const actuallyLocked = isContainerPointerLocked();
+  if (actuallyLocked) {
+    if (!state.isPointerLocked) syncPointerLockUI(true);
+    return;
+  }
+  snapCrosshairToClientPoint(e.clientX, e.clientY);
+  requestCrosshairCapture(false, { fromUserGesture: true, source: 'click' });
 });
 
 window.addEventListener('mouseup', (e) => {
@@ -8612,6 +8852,10 @@ if (leftDrawerTabHandle) {
 }
 
 window.addEventListener('mousemove', (e) => {
+  const lockedNow = isContainerPointerLocked();
+  if (lockedNow !== state.isPointerLocked) {
+    syncPointerLockUI(lockedNow);
+  }
   if (state.isPointerLocked) {
     const speedScale = (state.crosshairSpeedMultiplier || 4.00) / 4.00;
     state.crosshair.x += e.movementX * speedScale;
@@ -11932,15 +12176,7 @@ function triggerGameOver() {
   clearActiveSpecialEffects();
 
   // Requirement: when the game over screen appears if the crosshair has captured the mouse pointer automatically un capture it
-  if (document.pointerLockElement) {
-    try {
-      document.exitPointerLock();
-    } catch (e) {}
-  }
-  state.isPointerLocked = false;
-  state.isLeftMouseDown = false;
-  state.isRightMouseDown = false;
-  state.isMouseDown = false;
+  releaseCrosshairCapture('game-over');
   state.aimActive = false;
   state.aimMove.x = 0;
   state.aimMove.y = 0;
@@ -12070,10 +12306,7 @@ function triggerGameOver() {
   activeGameOverTimeout = setTimeout(() => {
     activeGameOverTimeout = null;
     if (!state.isGameOver) return;
-    if (document.pointerLockElement) {
-      try { document.exitPointerLock(); } catch (e) {}
-    }
-    state.isPointerLocked = false;
+    releaseCrosshairCapture('game-over-modal');
 
     // Show Game Over modal overlay
     const modal = document.getElementById('game-over-modal');
@@ -12338,8 +12571,8 @@ function executeMissionCountdown(isRestart = false, expectedSeq = null) {
         if (container.focus) container.focus();
       }
     } catch (e) {}
-    if (!isMobileInUse() && !state.isPointerLocked) {
-      requestCrosshairCapture(true);
+    if (!isMobileInUse()) {
+      armDesktopPointerCaptureForStage('countdown-complete');
     }
   };
 
@@ -15111,6 +15344,9 @@ if (typeof window !== 'undefined') {
   window.startCountdownAndLaunchGame = startCountdownAndLaunchGame;
   window.keys = keys;
   window.requestCrosshairCapture = requestCrosshairCapture;
+  window.releaseCrosshairCapture = releaseCrosshairCapture;
+  window.armDesktopPointerCaptureForStage = armDesktopPointerCaptureForStage;
+  window.isContainerPointerLocked = isContainerPointerLocked;
   window.destroyAllRemainingEnemies = destroyAllRemainingEnemies;
   window.clearAllActiveExplosionIntervals = clearAllActiveExplosionIntervals;
   window.clearActiveLaserBolts = clearActiveLaserBolts;

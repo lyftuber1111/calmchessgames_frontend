@@ -23,7 +23,9 @@ import {
   toggleRandomWeaponDecal,
   toggleBrokenCoreDecal,
   toggleGameOverDecals,
-  resetCockpitOverlayDecals
+  resetCockpitOverlayDecals,
+  hasAnyCockpitDecalActive,
+  clearCockpitDecalsIfFullDefense
 } from './object_pool.js';
 
 // Expose THREE and ObjectPool globally on window for dynamic stage modules and decoupled enemy systems
@@ -39,6 +41,8 @@ if (typeof window !== 'undefined') {
   window.toggleBrokenCoreDecal = toggleBrokenCoreDecal;
   window.toggleGameOverDecals = toggleGameOverDecals;
   window.resetCockpitOverlayDecals = resetCockpitOverlayDecals;
+  window.hasAnyCockpitDecalActive = hasAnyCockpitDecalActive;
+  window.clearCockpitDecalsIfFullDefense = clearCockpitDecalsIfFullDefense;
   window.getActiveCockpitCracksOverlay = function() {
     if (typeof cockpitOverlayCamera !== 'undefined' && cockpitOverlayCamera) {
       const ovObj = cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay');
@@ -7576,7 +7580,11 @@ function collectPowerupInstance(p, powerupIndex = -1) {
   if (!p || p.collected || !p.mesh) return;
   p.collected = true;
 
-  applyPowerupEffect(p);
+  if (typeof window !== 'undefined' && typeof window.applyPowerupEffect === 'function') {
+    window.applyPowerupEffect(p);
+  } else {
+    applyPowerupEffect(p);
+  }
   triggerPowerupCollectFx(p.mesh.position, p.colorHex);
 
   if (scene) scene.remove(p.mesh);
@@ -9269,7 +9277,16 @@ function applyPowerupEffect(powerupInstance) {
       if (typeof window !== 'undefined') window.__cockpitDecalThreshold = t;
     }
 
-    if ((state.playerShield || 0) > 0 && !state.isGameOver) {
+    // When both health and shield reach 100% (restored by powerups or never hit), turn off all active decals
+    if (!state.isGameOver && shieldPct >= 100 - 1e-6 && healthPct >= 100 - 1e-6) {
+      if (typeof window !== 'undefined' && typeof window.clearCockpitDecalsIfFullDefense === 'function') {
+        window.clearCockpitDecalsIfFullDefense(overlayMesh, shieldPct, healthPct);
+      } else if (typeof clearCockpitDecalsIfFullDefense === 'function') {
+        clearCockpitDecalsIfFullDefense(overlayMesh, shieldPct, healthPct);
+      } else if (overlayMesh && typeof resetCockpitOverlayDecals === 'function') {
+        resetCockpitOverlayDecals(overlayMesh);
+      }
+    } else if ((state.playerShield || 0) > 0 && !state.isGameOver) {
       if (overlayMesh && typeof toggleBrokenCoreDecal === 'function') {
         toggleBrokenCoreDecal(overlayMesh, false);
       }
@@ -11844,6 +11861,12 @@ function applyDamageToPlayer(rawDamage, weapon = null) {
           tracker.lastObservedHealthPct = hAfterPct;
           overlayMesh._cockpitDecalThreshold = tracker;
           if (typeof window !== 'undefined') window.__cockpitDecalThreshold = tracker;
+          if (!state.isGameOver && sAfterPct >= 100 - EPS && hAfterPct >= 100 - EPS) {
+            shouldTrigger = false;
+            if (typeof clearCockpitDecalsIfFullDefense === 'function') {
+              clearCockpitDecalsIfFullDefense(overlayMesh, sAfterPct, hAfterPct);
+            }
+          }
           if (shouldTrigger && typeof toggleRandomWeaponDecal === 'function') {
             toggleRandomWeaponDecal(overlayMesh, weapon || 'laser');
           }
@@ -13413,12 +13436,27 @@ function updatePlayerDefenseHUD() {
   const telemKills = document.getElementById('telemetry-kills-val');
   if (telemKills) telemKills.textContent = `${state.stageKills} / ${state.stageRequiredKills}`;
 
-  // Synchronize BrokenSpiderWeb Core decal with shield percentage:
-  // Remains ON while shield <= 0%, turns back OFF when shield % increases above 0%
+  // Synchronize cockpit decals with player shield & health percentages:
+  // 1) When both health and shield reach 100% (never been hit or restored by powerups), turn off all active decals.
+  // 2) BrokenSpiderWeb Core decal remains ON while shield <= 0%, turns back OFF when shield % increases above 0%.
+  const maxS = (state.maxShield > 0) ? state.maxShield : 100;
+  const maxH = (state.maxHealth > 0) ? state.maxHealth : 100;
+  const exactShieldPct = Math.max(0, Math.min(100, ((state.playerShield || 0) / maxS) * 100));
+  const exactHealthPct = Math.max(0, Math.min(100, ((state.playerHealth || 0) / maxH) * 100));
+
   const overlayMesh = (typeof window !== 'undefined' && typeof window.getActiveCockpitCracksOverlay === 'function' ? window.getActiveCockpitCracksOverlay() : null)
     || (typeof cockpitOverlayCamera !== 'undefined' && cockpitOverlayCamera && (cockpitOverlayCamera.getObjectByName('cockpit_overlay_object') || cockpitOverlayCamera.getObjectByName('cockpit_cracks_overlay')))
     || (typeof camera !== 'undefined' && camera && (camera.getObjectByName('cockpit_overlay_object') || camera.getObjectByName('cockpit_cracks_overlay')))
     || (typeof currentStageObjectPool !== 'undefined' && currentStageObjectPool && currentStageObjectPool.cockpitCracksMesh);
+  if (!state.isGameOver && exactShieldPct >= 100 - 1e-6 && exactHealthPct >= 100 - 1e-6) {
+    if (typeof window !== 'undefined' && typeof window.clearCockpitDecalsIfFullDefense === 'function') {
+      window.clearCockpitDecalsIfFullDefense(overlayMesh, exactShieldPct, exactHealthPct);
+    } else if (typeof clearCockpitDecalsIfFullDefense === 'function') {
+      clearCockpitDecalsIfFullDefense(overlayMesh, exactShieldPct, exactHealthPct);
+    } else if (overlayMesh && typeof resetCockpitOverlayDecals === 'function') {
+      resetCockpitOverlayDecals(overlayMesh);
+    }
+  }
   if (overlayMesh && overlayMesh._cockpitDecals && overlayMesh._cockpitDecals.brokenCore && typeof toggleBrokenCoreDecal === 'function') {
     const coreDecal = overlayMesh._cockpitDecals.brokenCore;
     if (state.isGameOver || (state.hasStarted && state.playerShield <= 0)) {
@@ -14383,6 +14421,13 @@ function updateFlight(delta) {
           const fresh = { anchorShieldPct: 100, anchorHealthPct: 100, lastObservedShieldPct: 100, lastObservedHealthPct: 100 };
           overlayMesh._cockpitDecalThreshold = fresh;
           if (typeof window !== 'undefined') window.__cockpitDecalThreshold = fresh;
+        }
+        if (typeof window !== 'undefined' && typeof window.clearCockpitDecalsIfFullDefense === 'function') {
+          window.clearCockpitDecalsIfFullDefense(overlayMesh, 100, 100);
+        } else if (typeof clearCockpitDecalsIfFullDefense === 'function') {
+          clearCockpitDecalsIfFullDefense(overlayMesh, 100, 100);
+        } else if (overlayMesh && typeof resetCockpitOverlayDecals === 'function') {
+          resetCockpitOverlayDecals(overlayMesh);
         }
       });
       state.stageKills = 0;

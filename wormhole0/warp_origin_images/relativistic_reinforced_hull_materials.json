@@ -1,13 +1,13 @@
 {
     "model": "relativistic_reinforced_hull.glb",
     "base_name": "relativistic_reinforced_hull",
-    "exported_at": "2026-11-22T23:32:17.743Z",
+    "exported_at": "2026-11-23T00:17:48.144Z",
     "color_palette": [
         "#FFFFFF"
     ],
     "materials": [
         {
-            "name": "Material_1",
+            "name": "Material_0",
             "type": "MeshStandardMaterial",
             "color": "#FFFFFF",
             "emissive": null,
@@ -16,10 +16,10 @@
             "opacity": 1,
             "wireframe": false,
             "textures": {
-                "base_color": "texture_0_base_color.png",
-                "normal": "texture_0_normal.png",
-                "roughness": "texture_0_roughness.png",
-                "metallic": "texture_0_metallic.png"
+                "base_color": "texture_0_base_color",
+                "normal": "texture_0_normal",
+                "roughness": "texture_0_base_color",
+                "metallic": "texture_0_base_color"
             }
         }
     ],

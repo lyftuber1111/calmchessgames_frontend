@@ -344,17 +344,17 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
         "weapon_damage": 9,
         "weapon_speed": 620,
         "weapon_color": "#ff0055",
-        "weapon_scale": 1.5,
-        "weapon_scale_x": 1.2,
+        "weapon_scale": 2.2,
+        "weapon_scale_x": 1.8,
         "weapon_scale_y": 1.3,
         "weapon_scale_z": 2.4,
         "weapon_size_x": 0.8,
         "weapon_size_y": 0.9,
-        "weapon_size_z": 3.1,
+        "weapon_size_z": 4.4,
         "weapon_dimensions": {
             "x": 0.8,
             "y": 0.9,
-            "z": 3.1
+            "z": 4.4
         },
         "weapon_special_fx": "none",
         "weapon_special_fx_file": "",
@@ -374,17 +374,17 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
                 "fire_point_x": 0,
                 "fire_point_y": -0.15,
                 "fire_point_z": 1.5,
-                "scale": 1.5,
-                "scale_x": 1.2,
+                "scale": 2.2,
+                "scale_x": 1.8,
                 "scale_y": 1.3,
                 "scale_z": 2.4,
                 "size_x": 0.8,
                 "size_y": 0.9,
-                "size_z": 3.1,
+                "size_z": 4.4,
                 "dimensions": {
                     "x": 0.8,
                     "y": 0.9,
-                    "z": 3.1
+                    "z": 4.4
                 },
                 "fire_rate_times_per_sec": 0.667,
                 "fire_interval_ms": 1500,

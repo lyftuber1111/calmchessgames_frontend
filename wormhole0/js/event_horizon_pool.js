@@ -250,7 +250,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
     {
         "id": "tachyon_cruiser_lego",
         "enemy_id": "tachyon_cruiser_lego",
-        "name": "Horizon Tachyon Cruiser (Lego)",
+        "name": "Horizon Tachyon Cruiser (Lego) (Universal)",
         "device_type": "all",
         "enemy_class": "Heavy Cruiser",
         "icon": "🛰️",

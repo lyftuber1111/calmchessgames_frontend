@@ -1,0 +1,114 @@
+{
+    "model": "horizon_tachyon_cruiser.glb",
+    "base_name": "horizon_tachyon_cruiser",
+    "exported_at": "2026-11-23T03:43:09.111Z",
+    "color_palette": [
+        "#FFE57C",
+        "#7C6726",
+        "#ECF2FA",
+        "#475260",
+        "#59BCFD",
+        "#2B6189",
+        "#61FAFF",
+        "#38F3FF",
+        "#FFE26F",
+        "#FFD350",
+        "#FF8661",
+        "#FF7C45",
+        "#FFE786",
+        "#FFDD69",
+        "#7CF1FF",
+        "#58C3DA"
+    ],
+    "materials": [
+        {
+            "name": "M_Cruiser_Gold_Armor",
+            "type": "MeshStandardMaterial",
+            "color": "#FFE57C",
+            "emissive": "#7C6726",
+            "roughness": 0.24,
+            "metalness": 0.62,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": []
+        },
+        {
+            "name": "M_Cruiser_Pearl_Titanium",
+            "type": "MeshStandardMaterial",
+            "color": "#ECF2FA",
+            "emissive": "#475260",
+            "roughness": 0.26,
+            "metalness": 0.55,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": []
+        },
+        {
+            "name": "M_Cruiser_Cobalt_Trim",
+            "type": "MeshStandardMaterial",
+            "color": "#59BCFD",
+            "emissive": "#2B6189",
+            "roughness": 0.26,
+            "metalness": 0.52,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": []
+        },
+        {
+            "name": "M_Cruiser_Cyan_Engine",
+            "type": "MeshStandardMaterial",
+            "color": "#61FAFF",
+            "emissive": "#38F3FF",
+            "roughness": 0.12,
+            "metalness": 0.05,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": []
+        },
+        {
+            "name": "M_Cruiser_Laser_Emitter",
+            "type": "MeshStandardMaterial",
+            "color": "#FFE26F",
+            "emissive": "#FFD350",
+            "roughness": 0.18,
+            "metalness": 0.2,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": []
+        },
+        {
+            "name": "M_Cruiser_Missile_Warhead",
+            "type": "MeshStandardMaterial",
+            "color": "#FF8661",
+            "emissive": "#FF7C45",
+            "roughness": 0.24,
+            "metalness": 0.28,
+            "opacity": 1,
+            "wireframe": false,
+            "textures": []
+        },
+        {
+            "name": "M_Particle_Shield_HexFrame",
+            "type": "MeshStandardMaterial",
+            "color": "#FFE786",
+            "emissive": "#FFDD69",
+            "roughness": 0.15,
+            "metalness": 0.15,
+            "opacity": 0.78,
+            "wireframe": false,
+            "textures": []
+        },
+        {
+            "name": "M_Particle_Shield_Shell",
+            "type": "MeshStandardMaterial",
+            "color": "#7CF1FF",
+            "emissive": "#58C3DA",
+            "roughness": 0.08,
+            "metalness": 0.05,
+            "opacity": 0.09,
+            "wireframe": false,
+            "textures": []
+        }
+    ],
+    "companion_files": []
+}

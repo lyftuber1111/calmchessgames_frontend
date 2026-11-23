@@ -1118,6 +1118,10 @@
       gap: 0.6rem;
     }
 
+    .stats-grid-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
     .stat-card {
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -1126,6 +1130,11 @@
       display: flex;
       flex-direction: column;
       gap: 0.2rem;
+    }
+
+    .stat-card-circumference {
+      background: rgba(56, 189, 248, 0.05);
+      border-color: rgba(56, 189, 248, 0.18);
     }
 
     .stat-card .stat-lbl {
@@ -1139,6 +1148,53 @@
       font-size: 0.95rem;
       font-weight: 700;
       color: #f1f5f9;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-card-circumference .stat-val {
+      color: #38bdf8;
+    }
+
+    .stat-card .stat-formula {
+      font-size: 0.65rem;
+      color: #94a3b8;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      line-height: 1.25;
+      word-break: break-word;
+    }
+
+    .plane-toggle-group {
+      display: inline-flex;
+      gap: 0.25rem;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.18rem;
+    }
+
+    .btn-plane-opt {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 0.22rem 0.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+      touch-action: manipulation;
+    }
+
+    .btn-plane-opt:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-plane-opt.active {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: rgba(56, 189, 248, 0.5);
+      color: #38bdf8;
     }
 
     .stat-badge-fps {
@@ -2232,6 +2288,40 @@
           <div class="stat-card">
             <span class="stat-lbl">Real Height</span>
             <span class="stat-val" id="spec-height">-</span>
+          </div>
+        </div>
+
+        <!-- Circumference & Perimeter Section -->
+        <div class="section-divider"></div>
+        <div class="panel-section-header" style="flex-wrap: wrap;">
+          <span class="section-subtitle" style="font-weight: 600; color: #e2e8f0;">Circumference &amp; Perimeter</span>
+          <div class="plane-toggle-group" id="spec-plane-toggle" role="group" aria-label="Cross-section plane">
+            <button type="button" class="btn-plane-opt active" data-plane="xz" title="Horizontal Base (Length × Width)">Base (L×W)</button>
+            <button type="button" class="btn-plane-opt" data-plane="xy" title="Front Cross-Section (Width × Height)">Front (W×H)</button>
+            <button type="button" class="btn-plane-opt" data-plane="zy" title="Side Cross-Section (Length × Height)">Side (L×H)</button>
+          </div>
+        </div>
+
+        <div class="stats-grid stats-grid-2">
+          <div class="stat-card stat-card-circumference">
+            <span class="stat-lbl">Circle (Circumference)</span>
+            <span class="stat-val" id="spec-circ-circle">-</span>
+            <span class="stat-formula" id="spec-circ-circle-meta">π × d</span>
+          </div>
+          <div class="stat-card stat-card-circumference">
+            <span class="stat-lbl">Oval / Ellipse (Ramanujan)</span>
+            <span class="stat-val" id="spec-circ-oval">-</span>
+            <span class="stat-formula" id="spec-circ-oval-meta">π[3(a+b) − √((3a+b)(a+3b))]</span>
+          </div>
+          <div class="stat-card stat-card-circumference">
+            <span class="stat-lbl">Rectangle (Perimeter)</span>
+            <span class="stat-val" id="spec-circ-rect">-</span>
+            <span class="stat-formula" id="spec-circ-rect-meta">2 × (L + W)</span>
+          </div>
+          <div class="stat-card stat-card-circumference">
+            <span class="stat-lbl">Square (Perimeter)</span>
+            <span class="stat-val" id="spec-circ-square">-</span>
+            <span class="stat-formula" id="spec-circ-square-meta">4 × s</span>
           </div>
         </div>
 
@@ -4847,6 +4937,7 @@
         document.getElementById('spec-length').textContent = `~${finalSize.z.toFixed(2)} m`;
         document.getElementById('spec-width').textContent = `~${finalSize.x.toFixed(2)} m`;
         document.getElementById('spec-height').textContent = `~${finalSize.y.toFixed(2)} m`;
+        updateCircumferenceSpecs(finalSize.x, finalSize.y, finalSize.z);
         const isDestroyed = displayName.toLowerCase().includes('destroy') || displayName.toLowerCase().includes('explod');
         const icon = isDestroyed ? '💥' : ((displayName.toLowerCase().includes('figure') || displayName.toLowerCase().includes('stretch')) ? '🧘' : ((displayName.toLowerCase().includes('drone') || displayName.toLowerCase().includes('interceptor')) ? '🛸' : '🏎️'));
         brandTitle.textContent = `${icon} ${displayName}`;
@@ -5406,6 +5497,7 @@
       if (lenElem) lenElem.textContent = `~${finalSize.z.toFixed(2)} m`;
       if (widElem) widElem.textContent = `~${finalSize.x.toFixed(2)} m`;
       if (hgtElem) hgtElem.textContent = `~${finalSize.y.toFixed(2)} m`;
+      updateCircumferenceSpecs(finalSize.x, finalSize.y, finalSize.z);
 
       // Keep controls target centered vertically on the model and update floor safety threshold
       const targetCenter = finalBbox.getCenter(new THREE.Vector3());
@@ -5420,6 +5512,135 @@
 
     window.updateReferenceGizmos = updateReferenceGizmos;
     window.applyManualModelRotation = applyManualModelRotation;
+
+    // =========================================================================
+    // CIRCUMFERENCE & PERIMETER CALCULATOR (FILE SPECS)
+    // =========================================================================
+    let activeSpecPlane = 'xz';
+    let lastMeasuredDims = { width: 0, height: 0, length: 0 };
+
+    function calculateShapeCircumferences(dim1, dim2) {
+      const d1 = Math.max(0, Number(dim1) || 0);
+      const d2 = Math.max(0, Number(dim2) || 0);
+
+      // 1. Circle / Cylinder (Circular Cross-Section): C = π × d
+      const diameter = (d1 + d2) / 2;
+      const circle = Math.PI * diameter;
+
+      // 2. Oval / Elliptical Cylinder (Ramanujan's Approximation):
+      //    a = semi-major axis, b = semi-minor axis
+      //    C ≈ π * [3(a + b) - sqrt((3a + b)(a + 3b))]
+      const a = Math.max(d1, d2) / 2;
+      const b = Math.min(d1, d2) / 2;
+      const oval = Math.PI * (3 * (a + b) - Math.sqrt((3 * a + b) * (a + 3 * b)));
+
+      // 3. Rectangular Box (Perimeter): P = 2 × (Length + Depth)
+      const rectangle = 2 * (d1 + d2);
+
+      // 4. Square (Perimeter): P = 4 × side
+      const squareSide = Math.max(d1, d2);
+      const square = 4 * squareSide;
+
+      return {
+        dim1: d1,
+        dim2: d2,
+        diameter,
+        circle,
+        a,
+        b,
+        oval,
+        rectangle,
+        squareSide,
+        square,
+        isEqualSides: Math.abs(d1 - d2) < 0.005
+      };
+    }
+
+    function updateCircumferenceSpecs(width, height, length) {
+      if (typeof width === 'number' && typeof height === 'number' && typeof length === 'number') {
+        lastMeasuredDims = { width, height, length };
+      }
+
+      const w = lastMeasuredDims.width;
+      const h = lastMeasuredDims.height;
+      const l = lastMeasuredDims.length;
+
+      let dim1 = l;
+      let dim2 = w;
+      let lbl1 = 'L';
+      let lbl2 = 'W';
+      if (activeSpecPlane === 'xy') {
+        dim1 = w;
+        dim2 = h;
+        lbl1 = 'W';
+        lbl2 = 'H';
+      } else if (activeSpecPlane === 'zy') {
+        dim1 = l;
+        dim2 = h;
+        lbl1 = 'L';
+        lbl2 = 'H';
+      }
+
+      const elCircle = document.getElementById('spec-circ-circle');
+      const elCircleMeta = document.getElementById('spec-circ-circle-meta');
+      const elOval = document.getElementById('spec-circ-oval');
+      const elOvalMeta = document.getElementById('spec-circ-oval-meta');
+      const elRect = document.getElementById('spec-circ-rect');
+      const elRectMeta = document.getElementById('spec-circ-rect-meta');
+      const elSquare = document.getElementById('spec-circ-square');
+      const elSquareMeta = document.getElementById('spec-circ-square-meta');
+
+      if (dim1 <= 0 && dim2 <= 0) {
+        if (elCircle) elCircle.textContent = '-';
+        if (elOval) elOval.textContent = '-';
+        if (elRect) elRect.textContent = '-';
+        if (elSquare) elSquare.textContent = '-';
+        if (elCircleMeta) elCircleMeta.textContent = 'π × d';
+        if (elOvalMeta) elOvalMeta.textContent = 'π[3(a+b) − √((3a+b)(a+3b))]';
+        if (elRectMeta) elRectMeta.textContent = `2 × (${lbl1} + ${lbl2})`;
+        if (elSquareMeta) elSquareMeta.textContent = '4 × s';
+        return;
+      }
+
+      const res = calculateShapeCircumferences(dim1, dim2);
+
+      if (elCircle) elCircle.textContent = `~${res.circle.toFixed(2)} m`;
+      if (elCircleMeta) {
+        elCircleMeta.textContent = res.isEqualSides
+          ? `π × ${res.diameter.toFixed(2)} m (d)`
+          : `π × ${res.diameter.toFixed(2)} m (avg d)`;
+      }
+
+      if (elOval) elOval.textContent = `~${res.oval.toFixed(2)} m`;
+      if (elOvalMeta) {
+        elOvalMeta.textContent = `a=${res.a.toFixed(2)} m, b=${res.b.toFixed(2)} m`;
+      }
+
+      if (elRect) elRect.textContent = `~${res.rectangle.toFixed(2)} m`;
+      if (elRectMeta) {
+        elRectMeta.textContent = `2 × (${res.dim1.toFixed(2)} + ${res.dim2.toFixed(2)}) m`;
+      }
+
+      if (elSquare) elSquare.textContent = `~${res.square.toFixed(2)} m`;
+      if (elSquareMeta) {
+        elSquareMeta.textContent = res.isEqualSides
+          ? `4 × ${res.squareSide.toFixed(2)} m`
+          : `4 × ${res.squareSide.toFixed(2)} m (max s)`;
+      }
+    }
+
+    window.calculateShapeCircumferences = calculateShapeCircumferences;
+    window.updateCircumferenceSpecs = updateCircumferenceSpecs;
+
+    document.querySelectorAll('#spec-plane-toggle .btn-plane-opt').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeSpecPlane = btn.dataset.plane || 'xz';
+        document.querySelectorAll('#spec-plane-toggle .btn-plane-opt').forEach(b => {
+          b.classList.toggle('active', b === btn);
+        });
+        updateCircumferenceSpecs();
+      });
+    });
 
     const modelScaleSlider = document.getElementById('model-scale-slider');
     if (modelScaleSlider) {
@@ -5817,6 +6038,14 @@ const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffs
       // Update HUD static readouts
       const hudDim = document.getElementById('hud-dim-box');
       if (hudDim) hudDim.textContent = `W: ~${cfgLength}m | H: ~${cfgHeight}m | L: ~${cfgDepth}m`;
+
+      const lenSpecEl = document.getElementById('spec-length');
+      const widSpecEl = document.getElementById('spec-width');
+      const hgtSpecEl = document.getElementById('spec-height');
+      if (lenSpecEl) lenSpecEl.textContent = `~${cfgDepth} m`;
+      if (widSpecEl) widSpecEl.textContent = `~${cfgLength} m`;
+      if (hgtSpecEl) hgtSpecEl.textContent = `~${cfgHeight} m`;
+      updateCircumferenceSpecs(size.x, size.y, size.z);
 
       const hudOffsets = document.getElementById('hud-stage-offsets');
       if (hudOffsets) hudOffsets.textContent = `fwd: +${forwardOffset} | lat: ±${lateralOffset} | vert: ${verticalOffset}`;

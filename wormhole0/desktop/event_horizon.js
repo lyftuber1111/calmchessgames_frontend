@@ -137,17 +137,17 @@ export const stageConfig = {
   },
   weapons: {
     "initial": {
-        "id": "tachyon_lance",
-        "name": "Tachyon Lance",
-        "icon": "⚡",
-        "color": "#a855f7",
-        "damage": 3,
-        "bullet_speed": 850,
-        "energy_drain_pct": 2,
+        "id": "e2e_test_weapon",
+        "name": "E2E Parity Updated Lance",
+        "icon": "🔫",
+        "color": "#ff00ff",
+        "damage": 22,
+        "bullet_speed": 1450,
+        "energy_drain_pct": 12.5,
         "can_overheat": 1,
-        "cooldown_seconds": 7,
-        "acquire_event": "warp_horizon_jump",
-        "description": "Superluminal phase particle array unlocked after horizon traversal.",
+        "cooldown_seconds": 3.5,
+        "acquire_event": "Test Event",
+        "description": "",
         "scale": 1,
         "scale_x": 1,
         "scale_y": 1,
@@ -160,11 +160,40 @@ export const stageConfig = {
             "y": 1,
             "z": 1
         },
-        "special_fx": "cockpit_overlay_decals",
-        "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
+        "special_fx": "cockpit_cracks_red_edges",
+        "special_fx_file": "desktop/warp_origin_images/cockpit_cracks_overlay.png",
         "special_fx_type": "overlay"
     },
-    "acquirable": []
+    "acquirable": [
+        {
+            "id": "tachyon_lance",
+            "name": "Tachyon Lance",
+            "icon": "⚡",
+            "color": "#a855f7",
+            "damage": 3,
+            "bullet_speed": 850,
+            "energy_drain_pct": 2,
+            "can_overheat": 1,
+            "cooldown_seconds": 7,
+            "acquire_event": "warp_horizon_jump",
+            "description": "Superluminal phase particle array unlocked after horizon traversal.",
+            "scale": 1,
+            "scale_x": 1,
+            "scale_y": 1,
+            "scale_z": 1,
+            "size_x": 1,
+            "size_y": 1,
+            "size_z": 1,
+            "dimensions": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "special_fx": "cockpit_overlay_decals",
+            "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
+            "special_fx_type": "overlay"
+        }
+    ]
 },
   enemies: [
     {

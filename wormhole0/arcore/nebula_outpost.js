@@ -93,23 +93,23 @@ export const stageConfig = {
   visual: {
     themeName: "Ion Nebula Emerald",
     colors: {
-      primary: "#00f0ff",
+      primary: "#10b981",
       glow: "rgba(16, 185, 129, 0.45)",
       panelBg: "rgba(2, 24, 16, 0.88)",
       panelBorder: "rgba(16, 185, 129, 0.40)"
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color("#003366"),
-      uColorCore: new THREE.Color("#00f0ff"),
-      uColorHot: new THREE.Color("#d6ffff"),
-      uHaloColor: new THREE.Color("#00f0ff")
+      uColorEdge: new THREE.Color("#003322"),
+      uColorCore: new THREE.Color("#00ff88"),
+      uColorHot: new THREE.Color("#d6fff0"),
+      uHaloColor: new THREE.Color("#10b981")
     },
     lighting: {
-      ambient: new THREE.Color("#002233").getHex(),
-      center: new THREE.Color("#00f0ff").getHex()
+      ambient: new THREE.Color("#002211").getHex(),
+      center: new THREE.Color("#10b981").getHex()
     },
     particles: {
-    "count": 0,
+    "count": 5800,
     "starCount": 600,
     "dustCount": 200,
     "speed": 0.85
@@ -121,25 +121,25 @@ export const stageConfig = {
     "yawSpeed": 0.0022
 },
     environmentParams: {
-    "envCategory": "particle_vortex",
+    "envCategory": "nebula_cloud",
     "model3dType": "procedural_wormhole",
     "imageAssetType": "corona_sprite",
     "scale": 1.25,
-    "eventHorizonRadius": 9.5,
-    "accretionDiskRadius": 42,
-    "length": 300,
-    "height": 80,
-    "depth": 300,
-    "circumference": 59.69,
-    "rotationSpeed": 0,
-    "distortionIntensity": 0,
-    "imageAssetUrl": "",
+    "eventHorizonRadius": 8.5,
+    "accretionDiskRadius": 44,
+    "length": 340,
+    "height": 95,
+    "depth": 340,
+    "circumference": 53.41,
+    "rotationSpeed": 0.9,
+    "distortionIntensity": 1.4,
+    "imageAssetUrl": "desktop/nebula_outpost_images/singularity_corona.png",
     "model3dUrl": "",
-    "quickEffectPrimary": "none",
-    "quickEffectSecondary": "none",
-    "quickEffectColor": "#112233",
-    "quickEffectIntensity": 0,
-    "quickEffectSpeed": 0
+    "quickEffectPrimary": "plasma_aura",
+    "quickEffectSecondary": "arc_lightning",
+    "quickEffectColor": "#10b981",
+    "quickEffectIntensity": 1.25,
+    "quickEffectSpeed": 1.2
 }
   },
   weapons: {
@@ -365,42 +365,42 @@ export const stageConfig = {
 ],
   powerups: [],
   environment: {
-    "id": 20,
-    "env_id": "e2e_test_env_arcore_copy",
-    "env_name": "E2E Zero Vortex (Clone)",
-    "env_category": "particle_vortex",
+    "id": 10,
+    "env_id": "nebula_outpost_s6",
+    "env_name": "Ion Nebula Emerald Staging Perimeter",
+    "env_category": "nebula_cloud",
     "stage_level": 6,
-    "device_type": "arcore",
+    "device_type": "all",
     "model_3d_type": "procedural_wormhole",
     "model_3d_url": "",
-    "image_asset_url": "",
+    "image_asset_url": "desktop/nebula_outpost_images/singularity_corona.png",
     "image_asset_type": "corona_sprite",
     "scale": "1.25",
-    "event_horizon_radius": "9.50",
-    "accretion_disk_radius": "42.00",
-    "length": "300.00",
-    "height": "80.00",
-    "depth": "300.00",
-    "circumference": "59.69",
-    "color_primary": "#00f0ff",
-    "color_edge": "#003366",
-    "color_core": "#00f0ff",
-    "color_hot": "#d6ffff",
-    "color_halo": "#00f0ff",
-    "ambient_light": "#002233",
-    "center_light": "#00f0ff",
-    "rotation_speed": "0.000",
-    "distortion_intensity": "0.00",
-    "particle_count": 0,
-    "quick_effect_primary": "none",
-    "quick_effect_secondary": "none",
-    "quick_effect_color": "#112233",
-    "quick_effect_intensity": "0.00",
-    "quick_effect_speed": "0.00",
-    "description": "Zero test environment",
+    "event_horizon_radius": "8.50",
+    "accretion_disk_radius": "44.00",
+    "length": "340.00",
+    "height": "95.00",
+    "depth": "340.00",
+    "circumference": "53.41",
+    "color_primary": "#10b981",
+    "color_edge": "#003322",
+    "color_core": "#00ff88",
+    "color_hot": "#d6fff0",
+    "color_halo": "#10b981",
+    "ambient_light": "#002211",
+    "center_light": "#10b981",
+    "rotation_speed": "0.900",
+    "distortion_intensity": "1.40",
+    "particle_count": 5800,
+    "quick_effect_primary": "plasma_aura",
+    "quick_effect_secondary": "arc_lightning",
+    "quick_effect_color": "#10b981",
+    "quick_effect_intensity": "1.25",
+    "quick_effect_speed": "1.20",
+    "description": "Dense electromagnetic emerald ion nebula corridor harboring outpost command relays.",
     "is_enabled": 1,
-    "created_at": "2026-11-23 02:56:46",
-    "updated_at": "2026-11-23 02:56:46"
+    "created_at": "2026-11-23 02:51:36",
+    "updated_at": "2026-11-23 02:56:28"
 },
   objectives: [
     {
@@ -505,7 +505,7 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   const rawWType = (w && w.type) ? w.type.toLowerCase() : '';
   const isMissile = rawWType === 'missile' || rawWType === 'torpedo' || /missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test([rawWType, wName, (w && w.id) || '', (w && w.model_url) || ''].join(' '));
   const wType = isMissile ? 'missile' : (rawWType || 'beam');
-  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#00f0ff';
+  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#10b981';
   const boltColorHex = parseInt(String(rawColor).replace('#', '0x'), 16) || 0xff0055;
   const wDamage = (w && w.damage !== undefined) ? parseInt(w.damage) : (enemyObj.weaponDmg || cfg.weapon_damage || 6);
   const wSpeedRaw = (w && w.speed !== undefined) ? parseInt(w.speed) : (enemyObj.weaponSpeed || cfg.weapon_speed || 480);

@@ -14,6 +14,7 @@ let activeFlashTimer = null;
 let activeFadeRaf = null;
 let sharedCockpitOverlayTemplate = null;
 let sharedCockpitOverlayLoadPromise = null;
+let sharedCockpitOverlayLoadPromiseKey = null;
 
 function convertToLightweightOverlayMaterial(mat, defaultOpacity = 1.0) {
   if (!mat) {
@@ -968,7 +969,7 @@ export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) 
     setupCockpitCracksHierarchy(sharedCockpitOverlayTemplate);
     return sharedCockpitOverlayTemplate;
   }
-  if (sharedCockpitOverlayLoadPromise) {
+  if (sharedCockpitOverlayLoadPromise && sharedCockpitOverlayLoadPromiseKey === normalizedKey) {
     const existing = await sharedCockpitOverlayLoadPromise;
     if (existing) {
       setupCockpitCracksHierarchy(existing);
@@ -976,6 +977,7 @@ export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) 
     }
   }
 
+  sharedCockpitOverlayLoadPromiseKey = normalizedKey;
   sharedCockpitOverlayLoadPromise = new Promise((resolve) => {
     const cleanPath = assetUrl.replace(/[?#].*$/, '');
     const ext = (cleanPath.split('.').pop() || '').toLowerCase();
@@ -1167,6 +1169,7 @@ export async function loadCockpitCracksAsset(assetUrl = COCKPIT_CRACKS_GLB_URL) 
 
   const res = await sharedCockpitOverlayLoadPromise;
   sharedCockpitOverlayLoadPromise = null;
+  sharedCockpitOverlayLoadPromiseKey = null;
   return res;
 }
 

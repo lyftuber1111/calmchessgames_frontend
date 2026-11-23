@@ -2819,7 +2819,7 @@ async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = nu
   try {
     const ctrl = new AbortController();
     const tid = setTimeout(() => ctrl.abort(), 2800);
-    const baseW = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_weapons${stageLevel ? `&stage_level=${stageLevel}` : ''}&_t=${timestamp}`;
+    const baseW = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_weapons&_t=${timestamp}`;
     const baseS = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_stages&_t=${timestamp}`;
     const baseE = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_enemies${queryParam}`;
     const baseP = `https://api.calmchessgames.com/admin/wormhole_device_api.php?action=get_game_powerups${queryParam}`;
@@ -2834,15 +2834,26 @@ async function fetchGameManagerDatabaseValues(stageLevel = null, deviceType = nu
     ]);
     clearTimeout(tid);
 
-    if (rW && rW.weapons && rW.weapons.length > 0) {
-      console.log(`[GameManagerSync] Fetched ${rW.weapons.length} weapons, ${(rS && rS.stages) ? rS.stages.length : 0} stages, ${(rE && rE.enemies) ? rE.enemies.length : 0} threats, ${(rP && rP.powerups) ? rP.powerups.length : 0} powerups, ${(rEnv && rEnv.environments) ? rEnv.environments.length : 0} environments for [${dev.toUpperCase()}]`);
+    if (
+      (rW && Array.isArray(rW.weapons)) ||
+      (rS && Array.isArray(rS.stages)) ||
+      (rE && Array.isArray(rE.enemies)) ||
+      (rP && Array.isArray(rP.powerups)) ||
+      (rEnv && (Array.isArray(rEnv.environments) || Array.isArray(rEnv.data)))
+    ) {
+      const wList = (rW && Array.isArray(rW.weapons)) ? rW.weapons : [];
+      const sList = (rS && Array.isArray(rS.stages)) ? rS.stages : [];
+      const eList = (rE && Array.isArray(rE.enemies)) ? rE.enemies : [];
+      const pList = (rP && Array.isArray(rP.powerups)) ? rP.powerups : [];
+      const envList = (rEnv && Array.isArray(rEnv.environments)) ? rEnv.environments : ((rEnv && Array.isArray(rEnv.data)) ? rEnv.data : []);
+      console.log(`[GameManagerSync] Fetched ${wList.length} weapons, ${sList.length} stages, ${eList.length} threats, ${pList.length} powerups, ${envList.length} environments for [${dev.toUpperCase()}]`);
       return {
         success: true,
-        weapons: (rW && rW.weapons) || [],
-        stages: (rS && rS.stages) || [],
-        enemies: (rE && rE.enemies) || [],
-        powerups: (rP && rP.powerups) || [],
-        environments: (rEnv && rEnv.environments) || (rEnv && rEnv.data) || []
+        weapons: wList,
+        stages: sList,
+        enemies: eList,
+        powerups: pList,
+        environments: envList
       };
     }
   } catch (errIndiv) {
@@ -2897,15 +2908,30 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
       if (!wid) continue;
       seenWeaponIds.add(wid);
 
-      const wStage = parseInt(rawW.stage_level) || 1;
-      const isInit = (rawW.is_initial_weapon == 1 || rawW.is_initial_weapon === true || rawW.is_initial_weapon === '1') || (wid === modInitWpnId && wStage === currentStage);
+      const weaponEnabled = (rawW.is_enabled === undefined || rawW.is_enabled === null || parseInt(rawW.is_enabled) !== 0);
+      if (!weaponEnabled) {
+        if (weaponsSystem.weapons[wid]) {
+          weaponsSystem.weapons[wid].isEnabled = false;
+          weaponsSystem.weapons[wid].isAvailable = false;
+          weaponsSystem.weapons[wid].acquired = false;
+        }
+        continue;
+      }
+
+      const rawStageParsed = parseInt(rawW.stage_level);
+      const wStage = (!isNaN(rawStageParsed) && rawW.stage_level !== undefined && rawW.stage_level !== null && rawW.stage_level !== '') ? rawStageParsed : 1;
+      const isInit = (rawW.is_initial_weapon == 1 || rawW.is_initial_weapon === true || rawW.is_initial_weapon === '1') || (wid === modInitWpnId && (wStage === currentStage || wStage === 0));
       const isAcq = (rawW.is_acquirable == 1 || rawW.is_acquirable === true || rawW.is_acquirable === '1' || rawW.is_acquirable === undefined);
       const acqEvent = rawW.acquire_event || 'default_start';
-      const drainPct = parseFloat(rawW.energy_drain_pct) !== undefined && !isNaN(parseFloat(rawW.energy_drain_pct)) ? parseFloat(rawW.energy_drain_pct) : 10.0;
+      const drainPct = (rawW.energy_drain_pct !== undefined && rawW.energy_drain_pct !== null && rawW.energy_drain_pct !== '' && !isNaN(parseFloat(rawW.energy_drain_pct))) ? parseFloat(rawW.energy_drain_pct) : 10.0;
       const canHeat = (rawW.can_overheat == 1 || rawW.can_overheat === true || rawW.can_overheat === '1' || rawW.can_overheat === undefined);
-      const coolSec = parseFloat(rawW.cooldown_seconds) !== undefined && !isNaN(parseFloat(rawW.cooldown_seconds)) ? parseFloat(rawW.cooldown_seconds) : 5.0;
+      const coolSec = (rawW.cooldown_seconds !== undefined && rawW.cooldown_seconds !== null && rawW.cooldown_seconds !== '' && !isNaN(parseFloat(rawW.cooldown_seconds))) ? parseFloat(rawW.cooldown_seconds) : 5.0;
       const dmgHits = parseInt(rawW.damage_per_hit) || 1;
       const bSpeed = parseInt(rawW.bullet_speed) || 600;
+      const rawSfx = (rawW.special_fx !== undefined && rawW.special_fx !== null) ? String(rawW.special_fx).trim() : '';
+      const wSpecialFx = rawSfx || 'none';
+      const wSpecialFxFile = (wSpecialFx === 'none') ? '' : ((rawW.special_fx_file !== undefined && rawW.special_fx_file !== null) ? String(rawW.special_fx_file).trim() : '');
+      const wSpecialFxType = (wSpecialFx === 'none') ? 'none' : ((rawW.special_fx_type !== undefined && rawW.special_fx_type !== null && String(rawW.special_fx_type).trim() !== '') ? String(rawW.special_fx_type).trim() : 'overlay');
 
       // Color computation
       const rawHex = rawW.color_hex || '#00f0ff';
@@ -2916,13 +2942,13 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
       let isAcquired = false;
       let isAvailable = false;
 
-      if (isInit && wStage === currentStage) {
-        // Initial weapon for current stage is immediately acquired and available
+      if (isInit && (wStage === currentStage || wStage === 0)) {
+        // Initial weapon for current (or universal Stage 0) is immediately acquired and available
         isAcquired = true;
         isAvailable = true;
         initialWeaponForStage = wid;
-      } else if (wStage < currentStage) {
-        // Weapons from earlier stages that were acquired remain available
+      } else if (wStage === 0 || wStage < currentStage) {
+        // Universal (Stage 0) or earlier-stage weapons remain available
         isAcquired = true;
         isAvailable = true;
       } else if (wStage === currentStage && acqEvent === 'default_start' && isAcq) {
@@ -2963,6 +2989,10 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
         existing.isInitialWeapon = isInit;                // INITIAL WEAPON
         existing.isAcquirable = isAcq;                    // ACQUIRABLE
         existing.acquireEvent = acqEvent;                 // EVENT
+        existing.specialFx = wSpecialFx;
+        existing.specialFxFile = wSpecialFxFile;
+        existing.specialFxType = wSpecialFxType;
+        existing.isEnabled = true;
         existing.description = rawW.description || existing.description;
         existing.isAvailable = isAvailable;
         existing.acquired = isAcquired;
@@ -2985,6 +3015,10 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
           isInitialWeapon: isInit,                        // INITIAL WEAPON
           isAcquirable: isAcq,                            // ACQUIRABLE
           acquireEvent: acqEvent,                         // EVENT
+          specialFx: wSpecialFx,
+          specialFxFile: wSpecialFxFile,
+          specialFxType: wSpecialFxType,
+          isEnabled: true,
           description: rawW.description || '',
           acquired: isAcquired,
           isAvailable: isAvailable
@@ -3044,6 +3078,11 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
       STAGE_REGISTRY[lvl].endLevelEvent = s.end_level_event;
       STAGE_REGISTRY[lvl].description = s.description;
       STAGE_REGISTRY[lvl].parScore = parseInt(s.par_score) || 5000;
+      STAGE_REGISTRY[lvl].cockpit_overlay_asset = s.cockpit_overlay_asset || STAGE_REGISTRY[lvl].cockpit_overlay_asset || '';
+      const sKillsParsed = parseInt(s.required_enemy_kills);
+      if (!isNaN(sKillsParsed)) STAGE_REGISTRY[lvl].requiredEnemyKills = Math.max(0, sKillsParsed);
+      const sDistParsed = parseInt(s.warp_target_distance);
+      if (!isNaN(sDistParsed)) STAGE_REGISTRY[lvl].warpTargetDistance = Math.max(1000, sDistParsed);
     }
 
     const currentStageRecord = dbStages.find(s => parseInt(s.stage_level) === currentStage);
@@ -3051,11 +3090,24 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
       if (currentStageRecord.mission_objectives) {
         state.stageMissionBriefing = currentStageRecord.mission_objectives;
       }
-      if (currentStageRecord.required_enemy_kills !== undefined && currentStageRecord.required_enemy_kills !== null) {
-        state.stageRequiredKills = Math.max(1, parseInt(currentStageRecord.required_enemy_kills) || 10);
+      if (currentStageRecord.required_enemy_kills !== undefined && currentStageRecord.required_enemy_kills !== null && currentStageRecord.required_enemy_kills !== '') {
+        const parsedKills = parseInt(currentStageRecord.required_enemy_kills);
+        if (!isNaN(parsedKills)) {
+          state.stageRequiredKills = Math.max(0, parsedKills);
+        }
       }
-      if (currentStageRecord.warp_target_distance !== undefined && currentStageRecord.warp_target_distance !== null) {
-        state.stageTargetDistance = Math.max(1000, parseInt(currentStageRecord.warp_target_distance) || 50000);
+      if (currentStageRecord.warp_target_distance !== undefined && currentStageRecord.warp_target_distance !== null && currentStageRecord.warp_target_distance !== '') {
+        const parsedDist = parseInt(currentStageRecord.warp_target_distance);
+        if (!isNaN(parsedDist)) {
+          state.stageTargetDistance = Math.max(1000, parsedDist);
+        }
+      }
+      if (currentStageRecord.cockpit_overlay_asset !== undefined && currentStageRecord.cockpit_overlay_asset !== null) {
+        window.activeStageConfig = window.activeStageConfig || {};
+        window.activeStageConfig.cockpit_overlay_asset = currentStageRecord.cockpit_overlay_asset;
+        if (currentStageRecord.cockpit_overlay_asset && typeof ensureCockpitOverlayMounted === 'function') {
+          ensureCockpitOverlayMounted();
+        }
       }
 
       // Update HUD status & subtitle
@@ -3081,15 +3133,36 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
   // ---------------------------------------------------------------------------
   const dbEnemies = Array.isArray(data.enemies) ? data.enemies : [];
   if (dbEnemies.length > 0) {
+    const isEnemyEnabled = (e) => (e && (e.is_enabled === undefined || e.is_enabled === null || parseInt(e.is_enabled) !== 0));
     const stageEnemies = dbEnemies.filter(e => {
+      if (!isEnemyEnabled(e)) return false;
       const matchStage = parseInt(e.stage_level) === currentStage;
       const enemyDev = (e.device_type || 'all').toLowerCase();
       const matchDevice = (enemyDev === 'all' || enemyDev === currentDev || !e.device_type);
       return matchStage && matchDevice;
     });
 
-    const chosenEnemies = stageEnemies.length > 0 ? stageEnemies : dbEnemies.filter(e => parseInt(e.stage_level) === currentStage);
+    const chosenSource = stageEnemies.length > 0
+      ? stageEnemies
+      : dbEnemies.filter(e => isEnemyEnabled(e) && parseInt(e.stage_level) === currentStage);
+    const dedupEnemyMap = new Map();
+    for (const e of chosenSource) {
+      const eKey = e.enemy_id || String(e.id || '');
+      const eDev = (e.device_type || 'all').toLowerCase();
+      const prev = dedupEnemyMap.get(eKey);
+      if (!prev) {
+        dedupEnemyMap.set(eKey, e);
+      } else {
+        const prevDev = (prev.device_type || 'all').toLowerCase();
+        if (eDev === currentDev && prevDev !== currentDev) {
+          dedupEnemyMap.set(eKey, e);
+        }
+      }
+    }
+    const chosenEnemies = Array.from(dedupEnemyMap.values());
+
     if (chosenEnemies.length > 0) {
+      const parseNumOrDefault = (val, def) => (val !== undefined && val !== null && val !== '' && !isNaN(Number(val))) ? Number(val) : def;
       window.activeStageEnemies = chosenEnemies.map(e => {
       let wpns = [];
       if (e.weapons && Array.isArray(e.weapons) && e.weapons.length > 0) {
@@ -3100,11 +3173,28 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
           if (Array.isArray(dec) && dec.length > 0) wpns = dec;
         } catch (err) {}
       }
-      const frSec = parseFloat(e.fire_rate_seconds || 2.0);
+      const frSec = parseNumOrDefault(e.fire_rate_seconds, 2.0);
       const frMs = parseInt(e.fire_rate_ms) || (e.fire_interval_ms ? parseInt(e.fire_interval_ms) : Math.round(frSec * 1000));
       const frTimes = parseFloat(e.fire_rate_times_per_sec) || parseFloat((1000 / Math.max(20, frMs)).toFixed(3));
 
+      const resolveWeaponFx = (wObj) => {
+        const rawWfx = (wObj && wObj.special_fx !== undefined && wObj.special_fx !== null) ? String(wObj.special_fx).trim() : '';
+        const rawEfx = (e.weapon_special_fx !== undefined && e.weapon_special_fx !== null) ? String(e.weapon_special_fx).trim() : '';
+        if (rawWfx === 'none' || (!rawWfx && rawEfx === 'none')) {
+          return { special_fx: 'none', special_fx_file: '', special_fx_type: 'none' };
+        }
+        const finalFx = rawWfx || rawEfx || 'cockpit_overlay_decals';
+        const rawWFile = (wObj && wObj.special_fx_file !== undefined && wObj.special_fx_file !== null) ? String(wObj.special_fx_file).trim() : '';
+        const rawEFile = (e.weapon_special_fx_file !== undefined && e.weapon_special_fx_file !== null) ? String(e.weapon_special_fx_file).trim() : '';
+        const finalFile = rawWFile || rawEFile || 'scene_images/screen_decals_spider_web_overlay_4.glb';
+        const rawWType = (wObj && wObj.special_fx_type !== undefined && wObj.special_fx_type !== null) ? String(wObj.special_fx_type).trim() : '';
+        const rawEType = (e.weapon_special_fx_type !== undefined && e.weapon_special_fx_type !== null) ? String(e.weapon_special_fx_type).trim() : '';
+        const finalType = rawWType || rawEType || 'overlay';
+        return { special_fx: finalFx, special_fx_file: finalFile, special_fx_type: finalType };
+      };
+
       if (wpns.length === 0) {
+        const fx = resolveWeaponFx(null);
         wpns = [{
           name: e.weapon_name || 'Plasma Pulse',
           type: (e.weapon_name && (e.weapon_name.toLowerCase().includes('missile') || e.weapon_name.toLowerCase().includes('torpedo'))) ? 'missile' : 'beam',
@@ -3114,26 +3204,30 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
           fire_point_x: 0.0,
           fire_point_y: -0.15,
           fire_point_z: 1.5,
-          scale: 1.0,
-          size_x: 1.0,
-          size_y: 1.0,
-          size_z: 1.0,
+          scale: parseNumOrDefault(e.weapon_scale, 1.0),
+          scale_x: parseNumOrDefault(e.weapon_scale_x, 1.0),
+          scale_y: parseNumOrDefault(e.weapon_scale_y, 1.0),
+          scale_z: parseNumOrDefault(e.weapon_scale_z, 1.0),
+          size_x: parseNumOrDefault(e.weapon_size_x, 1.0),
+          size_y: parseNumOrDefault(e.weapon_size_y, 1.0),
+          size_z: parseNumOrDefault(e.weapon_size_z, 1.0),
           fire_rate_times_per_sec: frTimes,
           fire_interval_ms: frMs,
           fire_rate_seconds: frSec,
           damage: parseInt(e.weapon_damage || 5),
           speed: parseInt(e.weapon_speed || 450),
           color: e.weapon_color || '#ff0055',
-          special_fx: (e.weapon_special_fx && e.weapon_special_fx !== 'none') ? e.weapon_special_fx : 'cockpit_overlay_decals',
-          special_fx_file: e.weapon_special_fx_file || 'scene_images/screen_decals_spider_web_overlay_4.glb',
-          special_fx_type: e.weapon_special_fx_type || 'overlay',
+          special_fx: fx.special_fx,
+          special_fx_file: fx.special_fx_file,
+          special_fx_type: fx.special_fx_type,
           is_enabled: 1
         }];
       } else {
         wpns = wpns.map(w => {
-          const wSec = parseFloat(w.fire_rate_seconds || frSec || 2.0);
+          const wSec = parseNumOrDefault(w.fire_rate_seconds, frSec || 2.0);
           const wMs = parseInt(w.fire_interval_ms || w.fire_rate_ms) || Math.round(wSec * 1000);
           const wTimes = parseFloat(w.fire_rate_times_per_sec) || parseFloat((1000 / Math.max(20, wMs)).toFixed(3));
+          const fx = resolveWeaponFx(w);
           return {
             ...w,
             name: w.name || e.weapon_name || 'Plasma Pulse',
@@ -3141,22 +3235,25 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
             mount: w.mount || 'dual_wingtip',
             model_url: w.model_url || '',
             model_type: w.model_type || '',
-            fire_point_x: w.fire_point_x !== undefined ? parseFloat(w.fire_point_x) : 0.0,
-            fire_point_y: w.fire_point_y !== undefined ? parseFloat(w.fire_point_y) : -0.15,
-            fire_point_z: w.fire_point_z !== undefined ? parseFloat(w.fire_point_z) : 1.5,
-            scale: w.scale !== undefined && w.scale !== null ? parseFloat(w.scale) : 1.0,
-            size_x: w.size_x !== undefined && w.size_x !== null ? parseFloat(w.size_x) : 1.0,
-            size_y: w.size_y !== undefined && w.size_y !== null ? parseFloat(w.size_y) : 1.0,
-            size_z: w.size_z !== undefined && w.size_z !== null ? parseFloat(w.size_z) : 1.0,
+            fire_point_x: parseNumOrDefault(w.fire_point_x, 0.0),
+            fire_point_y: parseNumOrDefault(w.fire_point_y, -0.15),
+            fire_point_z: parseNumOrDefault(w.fire_point_z, 1.5),
+            scale: parseNumOrDefault(w.scale, parseNumOrDefault(e.weapon_scale, 1.0)),
+            scale_x: parseNumOrDefault(w.scale_x, parseNumOrDefault(e.weapon_scale_x, 1.0)),
+            scale_y: parseNumOrDefault(w.scale_y, parseNumOrDefault(e.weapon_scale_y, 1.0)),
+            scale_z: parseNumOrDefault(w.scale_z, parseNumOrDefault(e.weapon_scale_z, 1.0)),
+            size_x: parseNumOrDefault(w.size_x, parseNumOrDefault(e.weapon_size_x, 1.0)),
+            size_y: parseNumOrDefault(w.size_y, parseNumOrDefault(e.weapon_size_y, 1.0)),
+            size_z: parseNumOrDefault(w.size_z, parseNumOrDefault(e.weapon_size_z, 1.0)),
             fire_rate_times_per_sec: wTimes,
             fire_interval_ms: wMs,
             fire_rate_seconds: parseFloat((wMs / 1000).toFixed(3)),
-            damage: parseInt(w.damage || e.weapon_damage || 5),
-            speed: parseInt(w.speed || e.weapon_speed || 450),
+            damage: parseNumOrDefault(w.damage, parseNumOrDefault(e.weapon_damage, 5)),
+            speed: parseNumOrDefault(w.speed, parseNumOrDefault(e.weapon_speed, 450)),
             color: w.color || e.weapon_color || '#ff0055',
-            special_fx: (w.special_fx && w.special_fx !== 'none') ? w.special_fx : ((e.weapon_special_fx && e.weapon_special_fx !== 'none') ? e.weapon_special_fx : 'cockpit_overlay_decals'),
-            special_fx_file: w.special_fx_file || e.weapon_special_fx_file || 'scene_images/screen_decals_spider_web_overlay_4.glb',
-            special_fx_type: w.special_fx_type || e.weapon_special_fx_type || 'overlay',
+            special_fx: fx.special_fx,
+            special_fx_file: fx.special_fx_file,
+            special_fx_type: fx.special_fx_type,
             is_enabled: (w.is_enabled !== undefined) ? parseInt(w.is_enabled) : 1
           };
         });
@@ -3259,34 +3356,61 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
   const dbPowerups = Array.isArray(data.powerups) ? data.powerups : [];
   const rawList = dbPowerups.length > 0 ? dbPowerups : (typeof DEFAULT_STAGE_POWERUPS !== 'undefined' ? DEFAULT_STAGE_POWERUPS : []);
   if (rawList.length > 0) {
-    const stagePowerups = rawList.filter(p => {
+    const parsePNum = (val, def) => (val !== undefined && val !== null && val !== '' && !isNaN(Number(val))) ? Number(val) : def;
+    const filteredPowerups = rawList.filter(p => {
       const pStage = parseInt(p.stage_level) || 0;
       const matchStage = (pStage === 0 || pStage === currentStage);
       const pDev = (p.device_type || 'all').toLowerCase();
       const matchDevice = (pDev === 'all' || pDev === currentDev || !p.device_type);
-      const isEnabled = (p.is_enabled === undefined || p.is_enabled == 1 || p.is_enabled === true || p.is_enabled === '1')
-        && (p.is_active === undefined || p.is_active == 1 || p.is_active === true || p.is_active === '1');
+      const isEnabled = (p.is_enabled === undefined || p.is_enabled === null || parseInt(p.is_enabled) !== 0)
+        && (p.is_active === undefined || p.is_active === null || parseInt(p.is_active) !== 0);
       return matchStage && matchDevice && isEnabled;
-    }).map(p => ({
-      ...p,
-      powerup_id: p.powerup_id || p.id,
-      powerup_name: p.powerup_name || p.name || 'Power Up',
-      boost_percentage: p.boost_percentage !== undefined ? parseFloat(p.boost_percentage) : (p.boost_pct !== undefined ? parseFloat(p.boost_pct) : 25),
-      boost_pct: p.boost_pct !== undefined ? parseFloat(p.boost_pct) : (p.boost_percentage !== undefined ? parseFloat(p.boost_percentage) : 25),
-      enemy_id: p.enemy_id || p.drop_enemy_type || 'all',
-      drop_enemy_type: p.drop_enemy_type || p.enemy_id || 'all',
-      drop_on_enemy_kill: (p.drop_on_enemy_kill == 1 || p.drop_on_enemy_kill === true || p.drop_on_enemy_kill === '1') ? 1 : 0,
-      drop_chance_pct: p.drop_chance_pct !== undefined ? parseFloat(p.drop_chance_pct) : 65,
-      model_3d_type: p.model_3d_type || ((p.powerup_type || '').toLowerCase() === 'shield' ? 'octahedron' : 'capsule'),
-      model_3d_url: p.model_3d_url || '',
-      scale: parseFloat(p.scale || 1.0),
-      length: parseFloat(p.length || 2.5),
-      height: parseFloat(p.height || 2.5),
-      depth: parseFloat(p.depth || 2.5),
-      circumference: parseFloat(p.circumference || 6.0)
-    }));
+    });
+
+    const dedupPowerupMap = new Map();
+    for (const p of filteredPowerups) {
+      const key = p.powerup_id || String(p.id || '');
+      const pDev = (p.device_type || 'all').toLowerCase();
+      const prev = dedupPowerupMap.get(key);
+      if (!prev) {
+        dedupPowerupMap.set(key, p);
+      } else {
+        const prevDev = (prev.device_type || 'all').toLowerCase();
+        if (pDev === currentDev && prevDev !== currentDev) {
+          dedupPowerupMap.set(key, p);
+        }
+      }
+    }
+
+    const stagePowerups = Array.from(dedupPowerupMap.values()).map(p => {
+      const boostVal = (p.boost_percentage !== undefined && p.boost_percentage !== null && p.boost_percentage !== '')
+        ? parseFloat(p.boost_percentage)
+        : ((p.boost_pct !== undefined && p.boost_pct !== null && p.boost_pct !== '') ? parseFloat(p.boost_pct) : 25);
+      const isDualRestore = (p.restore_both == 1 || p.restore_both === true || p.restore_both === '1' || p.restoreBoth == 1) ? 1 : 0;
+      return {
+        ...p,
+        powerup_id: p.powerup_id || p.id,
+        powerup_name: p.powerup_name || p.name || 'Power Up',
+        restore_both: isDualRestore,
+        boost_percentage: !isNaN(boostVal) ? boostVal : 25,
+        boost_pct: !isNaN(boostVal) ? boostVal : 25,
+        enemy_id: p.enemy_id || p.drop_enemy_type || 'all',
+        drop_enemy_type: p.drop_enemy_type || p.enemy_id || 'all',
+        drop_on_enemy_kill: (p.drop_on_enemy_kill == 1 || p.drop_on_enemy_kill === true || p.drop_on_enemy_kill === '1') ? 1 : 0,
+        drop_chance_pct: parsePNum(p.drop_chance_pct, 65),
+        model_3d_type: p.model_3d_type || ((p.powerup_type || '').toLowerCase() === 'shield' ? 'octahedron' : 'capsule'),
+        model_3d_url: p.model_3d_url || '',
+        scale: parsePNum(p.scale, 1.0),
+        length: parsePNum(p.length, 2.5),
+        height: parsePNum(p.height, 2.5),
+        depth: parsePNum(p.depth, 2.5),
+        circumference: parsePNum(p.circumference, 6.0),
+        custom_from_db: true
+      };
+    });
 
     window.activeStagePowerups = stagePowerups;
+    window.activeStagePowerupsStageLevel = currentStage;
     state.stagePowerups = window.activeStagePowerups;
     console.log(`[GameManagerSync] 🔋 Integrated ${window.activeStagePowerups.length} active powerups for Stage ${currentStage} on [${currentDev.toUpperCase()}]`);
   }
@@ -3296,25 +3420,36 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
   // ---------------------------------------------------------------------------
   const dbEnvironments = Array.isArray(data.environments) ? data.environments : [];
   if (dbEnvironments.length > 0) {
-    let activeEnv = dbEnvironments.find(e => parseInt(e.stage_level) === currentStage && ((e.device_type || 'all').toLowerCase() === currentDev || (e.device_type || 'all').toLowerCase() === 'all') && (e.is_enabled === undefined || e.is_enabled == 1));
-    if (!activeEnv) {
-      activeEnv = dbEnvironments.find(e => parseInt(e.stage_level) === currentStage && (e.is_enabled === undefined || e.is_enabled == 1));
-    }
+    const enabledEnvs = dbEnvironments.filter(e => e && (e.is_enabled === undefined || e.is_enabled === null || parseInt(e.is_enabled) !== 0));
+    const envDev = (e) => (e.device_type || 'all').toLowerCase();
+    const envStage = (e) => {
+      const parsed = parseInt(e.stage_level);
+      return isNaN(parsed) ? 0 : parsed;
+    };
+    const activeEnv =
+      enabledEnvs.find(e => envStage(e) === currentStage && envDev(e) === currentDev) ||
+      enabledEnvs.find(e => envStage(e) === currentStage && envDev(e) === 'all') ||
+      enabledEnvs.find(e => envStage(e) === 0 && envDev(e) === currentDev) ||
+      enabledEnvs.find(e => envStage(e) === 0 && envDev(e) === 'all') ||
+      enabledEnvs.find(e => envStage(e) === currentStage);
 
     if (activeEnv) {
-      window.activeEnvironmentConfig = activeEnv;
+      window.activeEnvironmentConfig = { ...activeEnv, custom_from_db: true };
+      window.activeEnvironmentStageLevel = currentStage;
       console.log(`[GameManagerSync] 🪐 Integrating active environment config '${activeEnv.env_name || activeEnv.env_id}' for Stage ${currentStage}...`);
 
-      const envScale = Math.max(0.1, Math.min(10.0, parseFloat(activeEnv.scale || 1.0)));
-      const horizonRad = Math.max(1.0, Math.min(100.0, parseFloat(activeEnv.event_horizon_radius || 7.5)));
-      const diskRad = Math.max(5.0, Math.min(300.0, parseFloat(activeEnv.accretion_disk_radius || 38.0)));
-      const rotSpeed = Math.max(0.05, Math.min(5.0, parseFloat(activeEnv.rotation_speed || 0.65)));
+      const parseEnvFloat = (v, def) => (v !== undefined && v !== null && v !== '' && !isNaN(parseFloat(v))) ? parseFloat(v) : def;
+      const envScale = Math.max(0.1, Math.min(10.0, parseEnvFloat(activeEnv.scale, 1.0)));
+      const horizonRad = Math.max(1.0, Math.min(100.0, parseEnvFloat(activeEnv.event_horizon_radius, 7.5)));
+      const diskRad = Math.max(5.0, Math.min(300.0, parseEnvFloat(activeEnv.accretion_disk_radius, 38.0)));
+      const rotSpeed = Math.max(0.0, Math.min(5.0, parseEnvFloat(activeEnv.rotation_speed, 0.65)));
 
       CONFIG.eventHorizonRadius = horizonRad;
       CONFIG.accretionDiskRadius = diskRad;
       CONFIG.rotationSpeed = rotSpeed;
-      if (activeEnv.particle_count) {
-        CONFIG.particleCount = parseInt(activeEnv.particle_count);
+      if (activeEnv.particle_count !== undefined && activeEnv.particle_count !== null && activeEnv.particle_count !== '') {
+        const pc = parseInt(activeEnv.particle_count);
+        if (!isNaN(pc)) CONFIG.particleCount = Math.max(0, pc);
       }
 
       // Live 3D Mesh Scaling
@@ -3440,7 +3575,7 @@ function triggerAcquireEvent(eventName, eventData = null) {
   const api = (typeof getEngineApi === 'function') ? getEngineApi() : null;
   if (typeof activeStageEventHandler === 'function') {
     try {
-      activeStageEventHandler(eventName, api, eventData);
+      activeStageEventHandler(eventName, eventData, api);
     } catch (e) {
       console.warn('[StageEventHandler Error]', e);
     }
@@ -3453,7 +3588,7 @@ function triggerAcquireEvent(eventName, eventData = null) {
   } else if (activeStageModule) {
     if (typeof activeStageModule.handleStageEvent === 'function') {
       try {
-        activeStageModule.handleStageEvent(eventName, api, eventData);
+        activeStageModule.handleStageEvent(eventName, eventData, api);
       } catch (e) {
         console.warn('[StageModule handleStageEvent Error]', e);
       }
@@ -5276,6 +5411,46 @@ function getEngineApi() {
         updateTacticalEnemiesUI(window.activeStageEnemies);
       }
     },
+    setPowerups: (powerupsConfig) => {
+      if (
+        window.activeStagePowerupsStageLevel === currentActiveStage &&
+        Array.isArray(window.activeStagePowerups) &&
+        window.activeStagePowerups.length > 0 &&
+        window.activeStagePowerups.some(p => p && p.custom_from_db)
+      ) {
+        console.log('[Wormhole XR Engine] Preserving live database powerups for active stage.');
+        return;
+      }
+      window.activeStagePowerups = Array.isArray(powerupsConfig) ? powerupsConfig : [];
+      state.stagePowerups = window.activeStagePowerups;
+      window.activeStagePowerupsStageLevel = currentActiveStage;
+    },
+    setEnvironment: (envConfig) => {
+      if (
+        window.activeEnvironmentStageLevel === currentActiveStage &&
+        window.activeEnvironmentConfig &&
+        window.activeEnvironmentConfig.custom_from_db
+      ) {
+        console.log('[Wormhole XR Engine] Preserving live database environment for active stage.');
+        return;
+      }
+      window.activeEnvironmentConfig = envConfig || null;
+      window.activeEnvironmentStageLevel = currentActiveStage;
+      if (envConfig && typeof CONFIG !== 'undefined') {
+        if (envConfig.eventHorizonRadius !== undefined && !isNaN(parseFloat(envConfig.eventHorizonRadius))) {
+          CONFIG.eventHorizonRadius = parseFloat(envConfig.eventHorizonRadius);
+        }
+        if (envConfig.accretionDiskRadius !== undefined && !isNaN(parseFloat(envConfig.accretionDiskRadius))) {
+          CONFIG.accretionDiskRadius = parseFloat(envConfig.accretionDiskRadius);
+        }
+        if (envConfig.rotationSpeed !== undefined && !isNaN(parseFloat(envConfig.rotationSpeed))) {
+          CONFIG.rotationSpeed = parseFloat(envConfig.rotationSpeed);
+        }
+        if (envConfig.particleCount !== undefined && !isNaN(parseInt(envConfig.particleCount))) {
+          CONFIG.particleCount = Math.max(0, parseInt(envConfig.particleCount));
+        }
+      }
+    },
     setWaves: (waves, options = {}) => {
       if (Array.isArray(waves) && waves.length > 0) {
         state.stageWaves = waves;
@@ -5687,7 +5862,10 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop', tra
       ? currentStageObjectPool.waves
       : null;
     if (activeCfg) {
-      if (activeCfg.required_enemy_kills) state.stageRequiredKills = parseInt(activeCfg.required_enemy_kills) || 10;
+      if (activeCfg.required_enemy_kills !== undefined && activeCfg.required_enemy_kills !== null && activeCfg.required_enemy_kills !== '') {
+        const cfgKills = parseInt(activeCfg.required_enemy_kills);
+        if (!isNaN(cfgKills)) state.stageRequiredKills = Math.max(0, cfgKills);
+      }
       if (activeCfg.warp_target_distance) state.stageTargetDistance = parseInt(activeCfg.warp_target_distance) || 50000;
       if (activeCfg.mission_objectives) state.stageMissionBriefing = activeCfg.mission_objectives;
       if (activeCfg.objectives) state.activeStageObjectives = activeCfg.objectives;
@@ -9484,7 +9662,7 @@ function applyPowerupEffect(powerupInstance) {
     state.playerShield = 100;
   } else {
     const isHealth = powerupInstance.powerupType === 'health';
-    const boost = powerupInstance.boostPct || 25.0;
+    const boost = (powerupInstance.boostPct !== undefined && powerupInstance.boostPct !== null && !isNaN(parseFloat(powerupInstance.boostPct))) ? parseFloat(powerupInstance.boostPct) : 25.0;
 
     if (isHealth) {
       state.playerHealth = Math.min(state.maxHealth || 100, (state.playerHealth || 0) + boost);
@@ -10281,13 +10459,21 @@ function spawnEnemyWaveFromPool(forcedCount = null, waveConfig = null, enemyPool
       ? forcedCount
       : (waveConfig ? waveConfig.enemy_count : (waveNum === 1 ? 5 : 10));
 
-    let enemyPool = (Array.isArray(enemyPoolOverride) && enemyPoolOverride.length > 0)
-      ? enemyPoolOverride
-      : (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.length > 0)
-        ? window.activeStageEnemies
-        : (Array.isArray(state.stageEnemies) && state.stageEnemies.length > 0)
-          ? state.stageEnemies
-          : [];
+    const hasLiveDbEnemies = (
+      window.activeStageEnemiesStageLevel === currentActiveStage &&
+      Array.isArray(window.activeStageEnemies) &&
+      window.activeStageEnemies.length > 0 &&
+      window.activeStageEnemies.some(e => e && e.custom_from_db)
+    );
+    let enemyPool = hasLiveDbEnemies
+      ? window.activeStageEnemies
+      : ((Array.isArray(enemyPoolOverride) && enemyPoolOverride.length > 0)
+        ? enemyPoolOverride
+        : (Array.isArray(window.activeStageEnemies) && window.activeStageEnemies.length > 0)
+          ? window.activeStageEnemies
+          : (Array.isArray(state.stageEnemies) && state.stageEnemies.length > 0)
+            ? state.stageEnemies
+            : []);
 
     if (enemyPool.length === 0) {
       if (activeStageModule && activeStageModule.stageConfig && Array.isArray(activeStageModule.stageConfig.enemies)) {

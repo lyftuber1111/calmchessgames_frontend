@@ -21,9 +21,9 @@ import {
   hideCockpitCracks
 } from './object_pool.js';
 
-export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = '3d_model';
+export const STAGE_COCKPIT_CRACKS_GLB_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = "3d_model";
 
 export {
   COCKPIT_CRACKS_GLB_URL,
@@ -58,39 +58,46 @@ export class SingularityCoreObjectPool extends StageObjectPool {
   constructor(scene, stageConfig = {}, options = {}) {
     const configWithDefaults = {
       stage_level: 3,
-      stage_name: 'Singularity Core',
-      stage_slug: 'singularity_core',
-      environment_theme: 'Singularity Void Violet',
+      stage_name: "Singularity Core",
+      stage_slug: "singularity_core",
+      environment_theme: "Singularity Void Violet",
       cockpit_overlay_object: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
-      cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+      cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
       cockpit_overlay: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
-        {
-          wave_number: 1,
-          enemy_count: 5,
-          interval_seconds: 0,
-          delay_ms: 0,
-          description: 'Wave 1: Recon Vanguard (5 Enemies)'
-        },
-        {
-          wave_number: 2,
-          enemy_count: 10,
-          interval_seconds: 15,
-          delay_ms: 15000,
-          description: 'Wave 2: Full Assault Swarm (10 Enemies)'
-        }
-      ],
-      total_waves: 2,
+    {
+        "wave_number": 1,
+        "enemy_count": 6,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Sector Assault (6 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Sector Assault (10 Enemies)"
+    },
+    {
+        "wave_number": 3,
+        "enemy_count": 4,
+        "interval_seconds": 15,
+        "delay_ms": 30000,
+        "description": "Wave 3: Sector Assault (4 Enemies)"
+    }
+],
+      total_waves: 3,
       wave_interval_seconds: 15,
       weapons: {
     "initial": {
@@ -121,13 +128,43 @@ export class SingularityCoreObjectPool extends StageObjectPool {
         "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
         "special_fx_type": "overlay"
     },
-    "acquirable": []
+    "acquirable": [
+        {
+            "id": "plasma_torpedo",
+            "name": "Plasma Torpedo",
+            "icon": "💣",
+            "color": "#f59e0b",
+            "damage": 5,
+            "bullet_speed": 450,
+            "energy_drain_pct": 40,
+            "can_overheat": 0,
+            "cooldown_seconds": 0,
+            "acquire_event": "singularity_core_probe",
+            "description": "Heavy magnetic payload causing massive kinetic shockwave without overheating.",
+            "scale": 1,
+            "scale_x": 1,
+            "scale_y": 1,
+            "scale_z": 1,
+            "size_x": 1,
+            "size_y": 1,
+            "size_z": 1,
+            "dimensions": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "special_fx": "cockpit_overlay_decals",
+            "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
+            "special_fx_type": "overlay"
+        }
+    ]
 },
       enemies: [
     {
         "id": "void_guardian",
         "enemy_id": "void_guardian",
         "name": "Singularity Void Guardian (Universal)",
+        "device_type": "all",
         "enemy_class": "Guardian Frigate",
         "icon": "👾",
         "model_3d_type": "singularity_probe",
@@ -140,6 +177,7 @@ export class SingularityCoreObjectPool extends StageObjectPool {
         "color": "#a855f7",
         "hits": 15,
         "armor": 70,
+        "has_force_field": 1,
         "shield": 6,
         "speed": 150,
         "attack_damage": 35,
@@ -223,6 +261,7 @@ export class SingularityCoreObjectPool extends StageObjectPool {
         "powerup_id": "health_pack_s3",
         "powerup_name": "Graviton Integrity Restorer",
         "powerup_type": "health",
+        "restore_both": 0,
         "icon": "🧪",
         "model_3d_type": "icosahedron",
         "model_3d_url": "",
@@ -247,6 +286,7 @@ export class SingularityCoreObjectPool extends StageObjectPool {
         "powerup_id": "shield_cell_s3",
         "powerup_name": "Singularity Void Barrier",
         "powerup_type": "shield",
+        "restore_both": 0,
         "icon": "🔷",
         "model_3d_type": "sphere",
         "model_3d_url": "",
@@ -309,7 +349,7 @@ export class SingularityCoreObjectPool extends StageObjectPool {
     };
 
     super(scene, configWithDefaults, options);
-    console.log(`[SingularityCoreObjectPool] Pre-allocated graphics object pool for Stage 3: Singularity Core`);
+    console.log(`[SingularityCoreObjectPool] Pre-allocated graphics object pool for Stage 3:`, configWithDefaults.stage_name);
   }
 
   async initCockpitCracksPool() {

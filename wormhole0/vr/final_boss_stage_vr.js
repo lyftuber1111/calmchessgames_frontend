@@ -26,62 +26,87 @@ import {
 export const stageConfig = {
   meta: {
     level: 5,
-    name: 'Final Boss Stage',
-    slug: 'final_boss_stage',
-    theme: 'Warp Cyan Corridor',
+    name: "Final Boss Stage",
+    slug: "final_boss_stage",
+    theme: "Warp Cyan Corridor",
     device: 'vr',
     xrMode: 'desktop-vr',
-    description: '',
+    description: "",
     parScore: 5000,
     requiredKills: 25,
     warpTargetDistance: 5000,
-    missionObjectives: 'Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.',
-    eventsWithin: 'Final Boss Appears',
-    endLevelEvent: 'Boss Destroyed',
-    cockpitOverlayAsset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    cockpitOverlayObject: 'scene_images/screen_decals_spider_web_overlay_4.glb'
+    missionObjectives: "Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.",
+    eventsWithin: "Final Boss Appears",
+    endLevelEvent: "Boss Destroyed",
+    cockpitOverlayAsset: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    cockpitOverlayObject: "scene_images/screen_decals_spider_web_overlay_4.glb"
   },
   stage_level: 5,
-  stage_name: 'Final Boss Stage',
-  stage_slug: 'final_boss_stage',
-  environment_theme: 'Warp Cyan Corridor',
+  stage_name: "Final Boss Stage",
+  stage_slug: "final_boss_stage",
+  environment_theme: "Warp Cyan Corridor",
   device: 'vr',
   xr_mode: 'desktop-vr',
   cockpit_overlay_object: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+  cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
   cockpit_overlay: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  events_within_level: 'Final Boss Appears',
-  end_level_event: 'Boss Destroyed',
-  mission_objectives: 'Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.',
+  events_within_level: "Final Boss Appears",
+  end_level_event: "Boss Destroyed",
+  mission_objectives: "Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.",
   required_enemy_kills: 25,
   warp_target_distance: 5000,
-  description: '',
+  description: "",
   par_score: 5000,
+  waves: [
+    {
+        "wave_number": 1,
+        "enemy_count": 6,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Sector Assault (6 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Sector Assault (10 Enemies)"
+    },
+    {
+        "wave_number": 3,
+        "enemy_count": 9,
+        "interval_seconds": 15,
+        "delay_ms": 30000,
+        "description": "Wave 3: Sector Assault (9 Enemies)"
+    }
+],
+  total_waves: 3,
+  wave_interval_seconds: 15,
   visual: {
-    themeName: 'Warp Cyan Corridor',
+    themeName: "Warp Cyan Corridor",
     colors: {
-      primary: '#00f0ff',
-      glow: 'rgba(0, 240, 255, 0.45)',
-      panelBg: 'rgba(2, 14, 26, 0.88)',
-      panelBorder: 'rgba(0, 240, 255, 0.40)'
+      primary: "#00f0ff",
+      glow: "rgba(0, 240, 255, 0.45)",
+      panelBg: "rgba(2, 14, 26, 0.88)",
+      panelBorder: "rgba(0, 240, 255, 0.40)"
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color('#003366'),
-      uColorCore: new THREE.Color('#00f0ff'),
-      uColorHot: new THREE.Color('#d6ffff'),
-      uHaloColor: new THREE.Color('#00f0ff')
+      uColorEdge: new THREE.Color("#003366"),
+      uColorCore: new THREE.Color("#00f0ff"),
+      uColorHot: new THREE.Color("#d6ffff"),
+      uHaloColor: new THREE.Color("#00f0ff")
     },
     lighting: {
-      ambient: new THREE.Color('#002233').getHex(),
-      center: new THREE.Color('#00f0ff').getHex()
+      ambient: new THREE.Color("#002233").getHex(),
+      center: new THREE.Color("#00f0ff").getHex()
     },
     particles: {
     "count": 3800,
@@ -96,16 +121,26 @@ export const stageConfig = {
     "yawSpeed": 0.0024
 },
     environmentParams: {
-      rotationSpeed: 0.65,
-      distortionIntensity: 1,
-      imageAssetUrl: '',
-      model3dUrl: '',
-      quickEffectPrimary: 'none',
-      quickEffectSecondary: 'none',
-      quickEffectColor: '#00f0ff',
-      quickEffectIntensity: 1,
-      quickEffectSpeed: 1
-    }
+    "envCategory": "wormhole_singularity",
+    "model3dType": "procedural_wormhole",
+    "imageAssetType": "corona_sprite",
+    "scale": 1,
+    "eventHorizonRadius": 7.5,
+    "accretionDiskRadius": 38,
+    "length": 300,
+    "height": 80,
+    "depth": 300,
+    "circumference": 47.12,
+    "rotationSpeed": 0.65,
+    "distortionIntensity": 1,
+    "imageAssetUrl": "",
+    "model3dUrl": "",
+    "quickEffectPrimary": "none",
+    "quickEffectSecondary": "none",
+    "quickEffectColor": "#00f0ff",
+    "quickEffectIntensity": 1,
+    "quickEffectSpeed": 1
+}
   },
   weapons: {
     "initial": {
@@ -143,6 +178,7 @@ export const stageConfig = {
         "id": "boss_escort_fighter",
         "enemy_id": "boss_escort_fighter",
         "name": "Overlord Heavy Escort Fighter (Universal)",
+        "device_type": "all",
         "enemy_class": "Fast Interceptor",
         "icon": "🚀",
         "model_3d_type": "custom_glb",
@@ -155,6 +191,7 @@ export const stageConfig = {
         "color": "#f87171",
         "hits": 5,
         "armor": 25,
+        "has_force_field": 1,
         "shield": 5,
         "speed": 220,
         "attack_damage": 15,
@@ -235,6 +272,7 @@ export const stageConfig = {
         "id": "final_boss_titan",
         "enemy_id": "final_boss_titan",
         "name": "Singularity Overlord Titan (Stage 5 Boss) (Universal)",
+        "device_type": "all",
         "enemy_class": "Boss Dreadnought",
         "icon": "💀",
         "model_3d_type": "custom_glb",
@@ -247,6 +285,7 @@ export const stageConfig = {
         "color": "#ef4444",
         "hits": 45,
         "armor": 100,
+        "has_force_field": 1,
         "shield": 20,
         "speed": 85,
         "attack_damage": 75,
@@ -366,7 +405,7 @@ export const stageConfig = {
         "target": 25,
         "current": 0,
         "title": "Destroy 25 Overlord Hostiles",
-        "description": "Destroy 25 hostiles including heavy escort fighters and dreadnoughts",
+        "description": "Destroy 25 Overlord hostiles including the Singularity Overlord Titan and breach the singularity core < 5,000 KM.",
         "requiredForWarp": true,
         "actionText": "🎯 Target Threat",
         "actionId": "target_enemy"
@@ -897,7 +936,10 @@ export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
     interval_seconds: waveNumber === 1 ? 0 : 15
   };
 
-  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, stageConfig.enemies);
+  const livePool = (typeof window !== 'undefined' && Array.isArray(window.activeStageEnemies) && window.activeStageEnemiesStageLevel === stageConfig.stage_level && window.activeStageEnemies.length > 0)
+    ? window.activeStageEnemies
+    : stageConfig.enemies;
+  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, livePool);
 }
 
 export function updateStageWaves(engineApi, context = {}) {
@@ -915,16 +957,16 @@ export function updateStageWaves(engineApi, context = {}) {
 
   const now = context.now || performance.now();
   const activeEnemies = context.activeEnemies || (typeof api.getActiveEnemies === 'function' ? api.getActiveEnemies() : []);
-  const totalWaves = stageConfig.total_waves || 2;
+  const totalWaves = stageConfig.total_waves || (Array.isArray(stageConfig.waves) ? stageConfig.waves.length : 2);
   const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
 
   if (st.currentWave === 0) {
     pullEnemyWave(1, api, context);
-  } else if (st.currentWave === 1 && totalWaves >= 2) {
+  } else if (st.currentWave < totalWaves) {
     const waveElapsed = now - (st.waveStartTime || 0);
-    const wave1Remaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === 1).length;
-    if (waveElapsed >= waveIntervalMs || (wave1Remaining === 0 && waveElapsed >= 4500)) {
-      pullEnemyWave(2, api, context);
+    const curWaveRemaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === st.currentWave).length;
+    if (waveElapsed >= waveIntervalMs || (curWaveRemaining === 0 && waveElapsed >= 4500)) {
+      pullEnemyWave(st.currentWave + 1, api, context);
     }
   }
 }
@@ -1607,10 +1649,10 @@ export function getActiveCockpitCracksOverlay() {
 }
 
 export function handleStageEvent(eventName, payload, engineApi) {
-  console.log(`[Stage 5: Final Boss Stage] Event received: ${eventName}`, payload);
-  if (eventName === 'Boss Destroyed') {
+  console.log('[Stage 5: ' + "Final Boss Stage" + '] Event received: ' + eventName, payload);
+  if (eventName === "Boss Destroyed") {
     if (engineApi && typeof engineApi.showToast === 'function') {
-      engineApi.showToast('🏆 STAGE 5 OBJECTIVE COMPLETE: Boss Destroyed');
+      engineApi.showToast("🏆 STAGE 5 OBJECTIVE COMPLETE: Boss Destroyed");
     }
   }
 }
@@ -1730,7 +1772,7 @@ export function setupDesktopPointerCapture(engineApi) {
   }
 
   // On every desktop stage entry, synchronize and arm pointer capture cleanly
-  const stageTag = 'stage_' + (stageConfig && stageConfig.level ? stageConfig.level : 1) + '_applyStage';
+  const stageTag = 'stage_' + (stageConfig && (stageConfig.stage_level || (stageConfig.meta && stageConfig.meta.level)) ? (stageConfig.stage_level || stageConfig.meta.level) : 1) + '_applyStage';
   if (engineApi && typeof engineApi.armDesktopPointerCapture === 'function') {
     engineApi.armDesktopPointerCapture(stageTag);
   } else if (typeof window.armDesktopPointerCaptureForStage === 'function') {
@@ -1744,13 +1786,13 @@ export function setupDesktopPointerCapture(engineApi) {
 
 export function applyStage(engineApi) {
   if (!engineApi) return stageConfig;
-  console.log(`[Stage 5: Final Boss Stage] Applying VR Headset Profile configuration...`);
+  console.log('[Stage 5: ' + "Final Boss Stage" + '] Applying VR Headset Profile configuration...');
 
   if (typeof engineApi.setThemeColors === 'function') {
     engineApi.setThemeColors(stageConfig.visual);
   }
   if (typeof engineApi.setHudStatus === 'function') {
-    engineApi.setHudStatus('STAGE 5: FINAL BOSS STAGE [VR]');
+    engineApi.setHudStatus("STAGE 5: FINAL BOSS STAGE [VR]");
   }
   if (typeof engineApi.setFlightConfig === 'function') {
     engineApi.setFlightConfig(stageConfig.visual.flight);
@@ -1783,7 +1825,7 @@ export function applyStage(engineApi) {
     engineApi.setStageWaveHandler(updateStageWaves);
   }
   if (typeof engineApi.showToast === 'function') {
-    engineApi.showToast('🚀 STAGE 5: FINAL BOSS STAGE [VR] LOADED');
+    engineApi.showToast("🚀 STAGE 5: FINAL BOSS STAGE [VR] LOADED");
   }
 
   // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---

@@ -21,9 +21,9 @@ import {
   hideCockpitCracks
 } from './object_pool.js';
 
-export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = '3d_model';
+export const STAGE_COCKPIT_CRACKS_GLB_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = "3d_model";
 
 export {
   COCKPIT_CRACKS_GLB_URL,
@@ -58,39 +58,46 @@ export class QuantumRealmObjectPool extends StageObjectPool {
   constructor(scene, stageConfig = {}, options = {}) {
     const configWithDefaults = {
       stage_level: 4,
-      stage_name: 'Quantum Realm',
-      stage_slug: 'quantum_realm',
-      environment_theme: 'Quantum Phasor Magenta',
+      stage_name: "Quantum Realm",
+      stage_slug: "quantum_realm",
+      environment_theme: "Quantum Phasor Magenta",
       cockpit_overlay_object: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
-      cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+      cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
       cockpit_overlay: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
-        {
-          wave_number: 1,
-          enemy_count: 5,
-          interval_seconds: 0,
-          delay_ms: 0,
-          description: 'Wave 1: Recon Vanguard (5 Enemies)'
-        },
-        {
-          wave_number: 2,
-          enemy_count: 10,
-          interval_seconds: 15,
-          delay_ms: 15000,
-          description: 'Wave 2: Full Assault Swarm (10 Enemies)'
-        }
-      ],
-      total_waves: 2,
+    {
+        "wave_number": 1,
+        "enemy_count": 6,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Sector Assault (6 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Sector Assault (10 Enemies)"
+    },
+    {
+        "wave_number": 3,
+        "enemy_count": 9,
+        "interval_seconds": 15,
+        "delay_ms": 30000,
+        "description": "Wave 3: Sector Assault (9 Enemies)"
+    }
+],
+      total_waves: 3,
       wave_interval_seconds: 15,
       weapons: {
     "initial": {
@@ -128,6 +135,7 @@ export class QuantumRealmObjectPool extends StageObjectPool {
         "id": "quantum_dreadnought",
         "enemy_id": "quantum_dreadnought",
         "name": "Quantum Omega Dreadnought (Universal)",
+        "device_type": "all",
         "enemy_class": "Boss Dreadnought",
         "icon": "💀",
         "model_3d_type": "dreadnought",
@@ -140,6 +148,7 @@ export class QuantumRealmObjectPool extends StageObjectPool {
         "color": "#ef476f",
         "hits": 35,
         "armor": 90,
+        "has_force_field": 1,
         "shield": 15,
         "speed": 90,
         "attack_damage": 60,
@@ -223,6 +232,7 @@ export class QuantumRealmObjectPool extends StageObjectPool {
         "powerup_id": "health_pack_s4",
         "powerup_name": "Quantum Regenerative Core",
         "powerup_type": "health",
+        "restore_both": 0,
         "icon": "💖",
         "model_3d_type": "icosahedron",
         "model_3d_url": "",
@@ -247,6 +257,7 @@ export class QuantumRealmObjectPool extends StageObjectPool {
         "powerup_id": "shield_cell_s4",
         "powerup_name": "Omni-Phase Deflector Matrix",
         "powerup_type": "shield",
+        "restore_both": 0,
         "icon": "🛡️",
         "model_3d_type": "octahedron",
         "model_3d_url": "",
@@ -309,7 +320,7 @@ export class QuantumRealmObjectPool extends StageObjectPool {
     };
 
     super(scene, configWithDefaults, options);
-    console.log(`[QuantumRealmObjectPool] Pre-allocated graphics object pool for Stage 4: Quantum Realm`);
+    console.log(`[QuantumRealmObjectPool] Pre-allocated graphics object pool for Stage 4:`, configWithDefaults.stage_name);
   }
 
   async initCockpitCracksPool() {

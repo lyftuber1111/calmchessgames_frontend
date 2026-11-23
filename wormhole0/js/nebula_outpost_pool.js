@@ -21,9 +21,9 @@ import {
   hideCockpitCracks
 } from './object_pool.js';
 
-export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = '3d_model';
+export const STAGE_COCKPIT_CRACKS_GLB_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = "3d_model";
 
 export {
   COCKPIT_CRACKS_GLB_URL,
@@ -58,39 +58,46 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
   constructor(scene, stageConfig = {}, options = {}) {
     const configWithDefaults = {
       stage_level: 6,
-      stage_name: 'Nebula Outpost',
-      stage_slug: 'nebula_outpost',
-      environment_theme: 'Ion Nebula Emerald',
+      stage_name: "Nebula Outpost",
+      stage_slug: "nebula_outpost",
+      environment_theme: "Ion Nebula Emerald",
       cockpit_overlay_object: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
-      cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+      cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
       cockpit_overlay: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
-        {
-          wave_number: 1,
-          enemy_count: 5,
-          interval_seconds: 0,
-          delay_ms: 0,
-          description: 'Wave 1: Recon Vanguard (5 Enemies)'
-        },
-        {
-          wave_number: 2,
-          enemy_count: 10,
-          interval_seconds: 15,
-          delay_ms: 15000,
-          description: 'Wave 2: Full Assault Swarm (10 Enemies)'
-        }
-      ],
-      total_waves: 2,
+    {
+        "wave_number": 1,
+        "enemy_count": 6,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Sector Assault (6 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Sector Assault (10 Enemies)"
+    },
+    {
+        "wave_number": 3,
+        "enemy_count": 9,
+        "interval_seconds": 15,
+        "delay_ms": 30000,
+        "description": "Wave 3: Sector Assault (9 Enemies)"
+    }
+],
+      total_waves: 3,
       wave_interval_seconds: 15,
       weapons: {
     "initial": {
@@ -128,6 +135,7 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
         "id": "stage_6_recon_drone",
         "enemy_id": "stage_6_recon_drone",
         "name": "Sector 6 Recon Drone (Universal)",
+        "device_type": "all",
         "enemy_class": "Scout Drone",
         "icon": "🛸",
         "model_3d_type": "custom_glb",
@@ -140,6 +148,7 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
         "color": "#00f0ff",
         "hits": 2,
         "armor": 10,
+        "has_force_field": 0,
         "shield": 0,
         "speed": 220,
         "attack_damage": 5,
@@ -220,6 +229,7 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
         "id": "stage_6_interceptor",
         "enemy_id": "stage_6_interceptor",
         "name": "Sector 6 Interceptor (Universal)",
+        "device_type": "all",
         "enemy_class": "Fast Interceptor",
         "icon": "🚀",
         "model_3d_type": "custom_glb",
@@ -232,6 +242,7 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
         "color": "#38bdf8",
         "hits": 4,
         "armor": 20,
+        "has_force_field": 0,
         "shield": 0,
         "speed": 250,
         "attack_damage": 10,
@@ -315,7 +326,7 @@ export class NebulaOutpostObjectPool extends StageObjectPool {
     };
 
     super(scene, configWithDefaults, options);
-    console.log(`[NebulaOutpostObjectPool] Pre-allocated graphics object pool for Stage 6: Nebula Outpost`);
+    console.log(`[NebulaOutpostObjectPool] Pre-allocated graphics object pool for Stage 6:`, configWithDefaults.stage_name);
   }
 
   async initCockpitCracksPool() {

@@ -26,65 +26,90 @@ import {
 export const stageConfig = {
   meta: {
     level: 3,
-    name: 'Singularity Core',
-    slug: 'singularity_core',
-    theme: 'Singularity Void Violet',
+    name: "Singularity Core",
+    slug: "singularity_core",
+    theme: "Singularity Void Violet",
     device: 'arcore',
     xrMode: 'mobile-ar',
-    description: 'Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.',
+    description: "Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.",
     parScore: 25000,
     requiredKills: 20,
     warpTargetDistance: 20000,
-    missionObjectives: 'Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.',
-    eventsWithin: 'Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening',
-    endLevelEvent: 'Core Collapse Breakthrough',
-    cockpitOverlayAsset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    cockpitOverlayObject: 'scene_images/screen_decals_spider_web_overlay_4.glb'
+    missionObjectives: "Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.",
+    eventsWithin: "Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening",
+    endLevelEvent: "Core Collapse Breakthrough",
+    cockpitOverlayAsset: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    cockpitOverlayObject: "scene_images/screen_decals_spider_web_overlay_4.glb"
   },
   stage_level: 3,
-  stage_name: 'Singularity Core',
-  stage_slug: 'singularity_core',
-  environment_theme: 'Singularity Void Violet',
+  stage_name: "Singularity Core",
+  stage_slug: "singularity_core",
+  environment_theme: "Singularity Void Violet",
   device: 'arcore',
   xr_mode: 'mobile-ar',
   cockpit_overlay_object: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+  cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
   cockpit_overlay: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  events_within_level: 'Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening',
-  end_level_event: 'Core Collapse Breakthrough',
-  mission_objectives: 'Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.',
+  events_within_level: "Gravitational Tidal Waves, Singularity Probe Deployment, Heavy Antimatter Eruptions, Core Guardian Awakening",
+  end_level_event: "Core Collapse Breakthrough",
+  mission_objectives: "Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.",
   required_enemy_kills: 20,
   warp_target_distance: 20000,
-  description: 'Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.',
+  description: "Extreme gravitational distortion sector surrounding the black hole collapse boundary. Heavy kinetic resistance.",
   par_score: 25000,
+  waves: [
+    {
+        "wave_number": 1,
+        "enemy_count": 6,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Sector Assault (6 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Sector Assault (10 Enemies)"
+    },
+    {
+        "wave_number": 3,
+        "enemy_count": 4,
+        "interval_seconds": 15,
+        "delay_ms": 30000,
+        "description": "Wave 3: Sector Assault (4 Enemies)"
+    }
+],
+  total_waves: 3,
+  wave_interval_seconds: 15,
   visual: {
-    themeName: 'Singularity Void Violet',
+    themeName: "Singularity Void Violet",
     colors: {
-      primary: '#c084fc',
-      glow: 'rgba(192, 132, 252, 0.45)',
-      panelBg: 'rgba(18, 6, 28, 0.88)',
-      panelBorder: 'rgba(192, 132, 252, 0.40)'
+      primary: "#c084fc",
+      glow: "rgba(192, 132, 252, 0.45)",
+      panelBg: "rgba(18, 6, 28, 0.88)",
+      panelBorder: "rgba(192, 132, 252, 0.40)"
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color('#330066'),
-      uColorCore: new THREE.Color('#9933ff'),
-      uColorHot: new THREE.Color('#f5e6ff'),
-      uHaloColor: new THREE.Color('#a855f7')
+      uColorEdge: new THREE.Color("#330066"),
+      uColorCore: new THREE.Color("#9933ff"),
+      uColorHot: new THREE.Color("#f5e6ff"),
+      uHaloColor: new THREE.Color("#a855f7")
     },
     lighting: {
-      ambient: new THREE.Color('#1a0033').getHex(),
-      center: new THREE.Color('#a855f7').getHex()
+      ambient: new THREE.Color("#1a0033").getHex(),
+      center: new THREE.Color("#a855f7").getHex()
     },
     particles: {
-    "count": 2000,
+    "count": 6000,
     "starCount": 600,
     "dustCount": 200,
     "speed": 0.85
@@ -96,16 +121,26 @@ export const stageConfig = {
     "yawSpeed": 0.0022
 },
     environmentParams: {
-      rotationSpeed: 1.1,
-      distortionIntensity: 1.65,
-      imageAssetUrl: 'desktop/singularity_core_images/singularity_corona.png',
-      model3dUrl: '',
-      quickEffectPrimary: 'gravitational_vortex',
-      quickEffectSecondary: 'arc_lightning',
-      quickEffectColor: '#c084fc',
-      quickEffectIntensity: 1.4,
-      quickEffectSpeed: 1.3
-    }
+    "envCategory": "wormhole_singularity",
+    "model3dType": "procedural_wormhole",
+    "imageAssetType": "corona_sprite",
+    "scale": 1.3,
+    "eventHorizonRadius": 9,
+    "accretionDiskRadius": 46,
+    "length": 350,
+    "height": 90,
+    "depth": 350,
+    "circumference": 56.55,
+    "rotationSpeed": 1.1,
+    "distortionIntensity": 1.65,
+    "imageAssetUrl": "desktop/singularity_core_images/singularity_corona.png",
+    "model3dUrl": "",
+    "quickEffectPrimary": "gravitational_vortex",
+    "quickEffectSecondary": "arc_lightning",
+    "quickEffectColor": "#c084fc",
+    "quickEffectIntensity": 1.4,
+    "quickEffectSpeed": 1.3
+}
   },
   weapons: {
     "initial": {
@@ -136,13 +171,43 @@ export const stageConfig = {
         "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
         "special_fx_type": "overlay"
     },
-    "acquirable": []
+    "acquirable": [
+        {
+            "id": "plasma_torpedo",
+            "name": "Plasma Torpedo",
+            "icon": "💣",
+            "color": "#f59e0b",
+            "damage": 5,
+            "bullet_speed": 450,
+            "energy_drain_pct": 40,
+            "can_overheat": 0,
+            "cooldown_seconds": 0,
+            "acquire_event": "singularity_core_probe",
+            "description": "Heavy magnetic payload causing massive kinetic shockwave without overheating.",
+            "scale": 1,
+            "scale_x": 1,
+            "scale_y": 1,
+            "scale_z": 1,
+            "size_x": 1,
+            "size_y": 1,
+            "size_z": 1,
+            "dimensions": {
+                "x": 1,
+                "y": 1,
+                "z": 1
+            },
+            "special_fx": "cockpit_overlay_decals",
+            "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
+            "special_fx_type": "overlay"
+        }
+    ]
 },
   enemies: [
     {
         "id": "void_guardian",
         "enemy_id": "void_guardian",
         "name": "Singularity Void Guardian (Universal)",
+        "device_type": "all",
         "enemy_class": "Guardian Frigate",
         "icon": "👾",
         "model_3d_type": "singularity_probe",
@@ -155,6 +220,7 @@ export const stageConfig = {
         "color": "#a855f7",
         "hits": 15,
         "armor": 70,
+        "has_force_field": 1,
         "shield": 6,
         "speed": 150,
         "attack_damage": 35,
@@ -238,6 +304,7 @@ export const stageConfig = {
         "powerup_id": "health_pack_s3",
         "powerup_name": "Graviton Integrity Restorer",
         "powerup_type": "health",
+        "restore_both": 0,
         "icon": "🧪",
         "model_3d_type": "icosahedron",
         "model_3d_url": "",
@@ -262,6 +329,7 @@ export const stageConfig = {
         "powerup_id": "shield_cell_s3",
         "powerup_name": "Singularity Void Barrier",
         "powerup_type": "shield",
+        "restore_both": 0,
         "icon": "🔷",
         "model_3d_type": "sphere",
         "model_3d_url": "",
@@ -327,7 +395,7 @@ export const stageConfig = {
         "target": 20,
         "current": 0,
         "title": "Destroy 20 Gravitational Void Probes",
-        "description": "Destroy 20 automated kinetic probes guarding singularity perimeter",
+        "description": "Destroy 20 Gravitational Void Probes and penetrate collapse perimeter < 20,000 KM.",
         "requiredForWarp": true,
         "actionText": "🎯 Target Threat",
         "actionId": "target_enemy"
@@ -861,7 +929,10 @@ export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
     interval_seconds: waveNumber === 1 ? 0 : 15
   };
 
-  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, stageConfig.enemies);
+  const livePool = (typeof window !== 'undefined' && Array.isArray(window.activeStageEnemies) && window.activeStageEnemiesStageLevel === stageConfig.stage_level && window.activeStageEnemies.length > 0)
+    ? window.activeStageEnemies
+    : stageConfig.enemies;
+  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, livePool);
 }
 
 export function updateStageWaves(engineApi, context = {}) {
@@ -879,16 +950,16 @@ export function updateStageWaves(engineApi, context = {}) {
 
   const now = context.now || performance.now();
   const activeEnemies = context.activeEnemies || (typeof api.getActiveEnemies === 'function' ? api.getActiveEnemies() : []);
-  const totalWaves = stageConfig.total_waves || 2;
+  const totalWaves = stageConfig.total_waves || (Array.isArray(stageConfig.waves) ? stageConfig.waves.length : 2);
   const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
 
   if (st.currentWave === 0) {
     pullEnemyWave(1, api, context);
-  } else if (st.currentWave === 1 && totalWaves >= 2) {
+  } else if (st.currentWave < totalWaves) {
     const waveElapsed = now - (st.waveStartTime || 0);
-    const wave1Remaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === 1).length;
-    if (waveElapsed >= waveIntervalMs || (wave1Remaining === 0 && waveElapsed >= 4500)) {
-      pullEnemyWave(2, api, context);
+    const curWaveRemaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === st.currentWave).length;
+    if (waveElapsed >= waveIntervalMs || (curWaveRemaining === 0 && waveElapsed >= 4500)) {
+      pullEnemyWave(st.currentWave + 1, api, context);
     }
   }
 }
@@ -1571,10 +1642,10 @@ export function getActiveCockpitCracksOverlay() {
 }
 
 export function handleStageEvent(eventName, payload, engineApi) {
-  console.log(`[Stage 3: Singularity Core] Event received: ${eventName}`, payload);
-  if (eventName === 'Core Collapse Breakthrough') {
+  console.log('[Stage 3: ' + "Singularity Core" + '] Event received: ' + eventName, payload);
+  if (eventName === "Core Collapse Breakthrough") {
     if (engineApi && typeof engineApi.showToast === 'function') {
-      engineApi.showToast('🏆 STAGE 3 OBJECTIVE COMPLETE: Core Collapse Breakthrough');
+      engineApi.showToast("🏆 STAGE 3 OBJECTIVE COMPLETE: Core Collapse Breakthrough");
     }
   }
 }
@@ -1694,7 +1765,7 @@ export function setupDesktopPointerCapture(engineApi) {
   }
 
   // On every desktop stage entry, synchronize and arm pointer capture cleanly
-  const stageTag = 'stage_' + (stageConfig && stageConfig.level ? stageConfig.level : 1) + '_applyStage';
+  const stageTag = 'stage_' + (stageConfig && (stageConfig.stage_level || (stageConfig.meta && stageConfig.meta.level)) ? (stageConfig.stage_level || stageConfig.meta.level) : 1) + '_applyStage';
   if (engineApi && typeof engineApi.armDesktopPointerCapture === 'function') {
     engineApi.armDesktopPointerCapture(stageTag);
   } else if (typeof window.armDesktopPointerCaptureForStage === 'function') {
@@ -1708,13 +1779,13 @@ export function setupDesktopPointerCapture(engineApi) {
 
 export function applyStage(engineApi) {
   if (!engineApi) return stageConfig;
-  console.log(`[Stage 3: Singularity Core] Applying ARCore Profile configuration...`);
+  console.log('[Stage 3: ' + "Singularity Core" + '] Applying ARCore Profile configuration...');
 
   if (typeof engineApi.setThemeColors === 'function') {
     engineApi.setThemeColors(stageConfig.visual);
   }
   if (typeof engineApi.setHudStatus === 'function') {
-    engineApi.setHudStatus('STAGE 3: SINGULARITY CORE [ARCORE]');
+    engineApi.setHudStatus("STAGE 3: SINGULARITY CORE [ARCORE]");
   }
   if (typeof engineApi.setFlightConfig === 'function') {
     engineApi.setFlightConfig(stageConfig.visual.flight);
@@ -1747,7 +1818,7 @@ export function applyStage(engineApi) {
     engineApi.setStageWaveHandler(updateStageWaves);
   }
   if (typeof engineApi.showToast === 'function') {
-    engineApi.showToast('🚀 STAGE 3: SINGULARITY CORE [ARCORE] LOADED');
+    engineApi.showToast("🚀 STAGE 3: SINGULARITY CORE [ARCORE] LOADED");
   }
 
   // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---

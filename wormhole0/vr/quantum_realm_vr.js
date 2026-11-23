@@ -26,65 +26,90 @@ import {
 export const stageConfig = {
   meta: {
     level: 4,
-    name: 'Quantum Realm',
-    slug: 'quantum_realm',
-    theme: 'Quantum Phasor Magenta',
+    name: "Quantum Realm",
+    slug: "quantum_realm",
+    theme: "Quantum Phasor Magenta",
     device: 'vr',
     xrMode: 'desktop-vr',
-    description: 'Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.',
+    description: "Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.",
     parScore: 50000,
     requiredKills: 25,
     warpTargetDistance: 10000,
-    missionObjectives: 'Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.',
-    eventsWithin: 'Phase-Shift Anomalies, Multi-Dimensional Phasing, Antimatter Vortex, Quantum Dreadnought Confrontation',
-    endLevelEvent: 'Quantum Conduit Realignment & Safe Extraction',
-    cockpitOverlayAsset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    cockpitOverlayObject: 'scene_images/screen_decals_spider_web_overlay_4.glb'
+    missionObjectives: "Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.",
+    eventsWithin: "Phase-Shift Anomalies, Multi-Dimensional Phasing, Antimatter Vortex, Quantum Dreadnought Confrontation",
+    endLevelEvent: "Quantum Conduit Realignment & Safe Extraction",
+    cockpitOverlayAsset: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    cockpitOverlayObject: "scene_images/screen_decals_spider_web_overlay_4.glb"
   },
   stage_level: 4,
-  stage_name: 'Quantum Realm',
-  stage_slug: 'quantum_realm',
-  environment_theme: 'Quantum Phasor Magenta',
+  stage_name: "Quantum Realm",
+  stage_slug: "quantum_realm",
+  environment_theme: "Quantum Phasor Magenta",
   device: 'vr',
   xr_mode: 'desktop-vr',
   cockpit_overlay_object: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+  cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
   cockpit_overlay: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  events_within_level: 'Phase-Shift Anomalies, Multi-Dimensional Phasing, Antimatter Vortex, Quantum Dreadnought Confrontation',
-  end_level_event: 'Quantum Conduit Realignment & Safe Extraction',
-  mission_objectives: 'Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.',
+  events_within_level: "Phase-Shift Anomalies, Multi-Dimensional Phasing, Antimatter Vortex, Quantum Dreadnought Confrontation",
+  end_level_event: "Quantum Conduit Realignment & Safe Extraction",
+  mission_objectives: "Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.",
   required_enemy_kills: 25,
   warp_target_distance: 10000,
-  description: 'Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.',
+  description: "Deepest reaches beyond physical spacetime. Omnipresent temporal warping and reality fractures.",
   par_score: 50000,
+  waves: [
+    {
+        "wave_number": 1,
+        "enemy_count": 6,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Sector Assault (6 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Sector Assault (10 Enemies)"
+    },
+    {
+        "wave_number": 3,
+        "enemy_count": 9,
+        "interval_seconds": 15,
+        "delay_ms": 30000,
+        "description": "Wave 3: Sector Assault (9 Enemies)"
+    }
+],
+  total_waves: 3,
+  wave_interval_seconds: 15,
   visual: {
-    themeName: 'Quantum Phasor Magenta',
+    themeName: "Quantum Phasor Magenta",
     colors: {
-      primary: '#f43f5e',
-      glow: 'rgba(244, 63, 94, 0.45)',
-      panelBg: 'rgba(28, 4, 12, 0.88)',
-      panelBorder: 'rgba(244, 63, 94, 0.40)'
+      primary: "#f43f5e",
+      glow: "rgba(244, 63, 94, 0.45)",
+      panelBg: "rgba(28, 4, 12, 0.88)",
+      panelBorder: "rgba(244, 63, 94, 0.40)"
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color('#660022'),
-      uColorCore: new THREE.Color('#ff0055'),
-      uColorHot: new THREE.Color('#ffd6e6'),
-      uHaloColor: new THREE.Color('#ff0066')
+      uColorEdge: new THREE.Color("#660022"),
+      uColorCore: new THREE.Color("#ff0055"),
+      uColorHot: new THREE.Color("#ffd6e6"),
+      uHaloColor: new THREE.Color("#ff0066")
     },
     lighting: {
-      ambient: new THREE.Color('#330011').getHex(),
-      center: new THREE.Color('#ff1166').getHex()
+      ambient: new THREE.Color("#330011").getHex(),
+      center: new THREE.Color("#ff1166").getHex()
     },
     particles: {
-    "count": 4000,
+    "count": 6800,
     "starCount": 2200,
     "dustCount": 500,
     "speed": 0.85
@@ -96,16 +121,26 @@ export const stageConfig = {
     "yawSpeed": 0.0024
 },
     environmentParams: {
-      rotationSpeed: 1.35,
-      distortionIntensity: 2,
-      imageAssetUrl: 'desktop/quantum_realm_images/singularity_corona.png',
-      model3dUrl: '',
-      quickEffectPrimary: 'quantum_phase_glow',
-      quickEffectSecondary: 'energy_shield_pulse',
-      quickEffectColor: '#f43f5e',
-      quickEffectIntensity: 1.6,
-      quickEffectSpeed: 1.5
-    }
+    "envCategory": "wormhole_singularity",
+    "model3dType": "procedural_wormhole",
+    "imageAssetType": "corona_sprite",
+    "scale": 1.45,
+    "eventHorizonRadius": 10,
+    "accretionDiskRadius": 50,
+    "length": 380,
+    "height": 100,
+    "depth": 380,
+    "circumference": 62.83,
+    "rotationSpeed": 1.35,
+    "distortionIntensity": 2,
+    "imageAssetUrl": "desktop/quantum_realm_images/singularity_corona.png",
+    "model3dUrl": "",
+    "quickEffectPrimary": "quantum_phase_glow",
+    "quickEffectSecondary": "energy_shield_pulse",
+    "quickEffectColor": "#f43f5e",
+    "quickEffectIntensity": 1.6,
+    "quickEffectSpeed": 1.5
+}
   },
   weapons: {
     "initial": {
@@ -143,6 +178,7 @@ export const stageConfig = {
         "id": "quantum_dreadnought",
         "enemy_id": "quantum_dreadnought",
         "name": "Quantum Omega Dreadnought (Universal)",
+        "device_type": "all",
         "enemy_class": "Boss Dreadnought",
         "icon": "💀",
         "model_3d_type": "dreadnought",
@@ -155,6 +191,7 @@ export const stageConfig = {
         "color": "#ef476f",
         "hits": 35,
         "armor": 90,
+        "has_force_field": 1,
         "shield": 15,
         "speed": 90,
         "attack_damage": 60,
@@ -238,6 +275,7 @@ export const stageConfig = {
         "powerup_id": "health_pack_s4",
         "powerup_name": "Quantum Regenerative Core",
         "powerup_type": "health",
+        "restore_both": 0,
         "icon": "💖",
         "model_3d_type": "icosahedron",
         "model_3d_url": "",
@@ -262,6 +300,7 @@ export const stageConfig = {
         "powerup_id": "shield_cell_s4",
         "powerup_name": "Omni-Phase Deflector Matrix",
         "powerup_type": "shield",
+        "restore_both": 0,
         "icon": "🛡️",
         "model_3d_type": "octahedron",
         "model_3d_url": "",
@@ -327,7 +366,7 @@ export const stageConfig = {
         "target": 25,
         "current": 0,
         "title": "Annihilate 25 Quantum Dreadnoughts",
-        "description": "Destroy 25 phase-shifting capital dreadnoughts and combat escort wings",
+        "description": "Annihilate 25 Quantum Dreadnoughts and reach quantum extraction conduit < 10,000 KM.",
         "requiredForWarp": true,
         "actionText": "🎯 Target Threat",
         "actionId": "target_enemy"
@@ -861,7 +900,10 @@ export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
     interval_seconds: waveNumber === 1 ? 0 : 15
   };
 
-  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, stageConfig.enemies);
+  const livePool = (typeof window !== 'undefined' && Array.isArray(window.activeStageEnemies) && window.activeStageEnemiesStageLevel === stageConfig.stage_level && window.activeStageEnemies.length > 0)
+    ? window.activeStageEnemies
+    : stageConfig.enemies;
+  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, livePool);
 }
 
 export function updateStageWaves(engineApi, context = {}) {
@@ -879,16 +921,16 @@ export function updateStageWaves(engineApi, context = {}) {
 
   const now = context.now || performance.now();
   const activeEnemies = context.activeEnemies || (typeof api.getActiveEnemies === 'function' ? api.getActiveEnemies() : []);
-  const totalWaves = stageConfig.total_waves || 2;
+  const totalWaves = stageConfig.total_waves || (Array.isArray(stageConfig.waves) ? stageConfig.waves.length : 2);
   const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
 
   if (st.currentWave === 0) {
     pullEnemyWave(1, api, context);
-  } else if (st.currentWave === 1 && totalWaves >= 2) {
+  } else if (st.currentWave < totalWaves) {
     const waveElapsed = now - (st.waveStartTime || 0);
-    const wave1Remaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === 1).length;
-    if (waveElapsed >= waveIntervalMs || (wave1Remaining === 0 && waveElapsed >= 4500)) {
-      pullEnemyWave(2, api, context);
+    const curWaveRemaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === st.currentWave).length;
+    if (waveElapsed >= waveIntervalMs || (curWaveRemaining === 0 && waveElapsed >= 4500)) {
+      pullEnemyWave(st.currentWave + 1, api, context);
     }
   }
 }
@@ -1571,10 +1613,10 @@ export function getActiveCockpitCracksOverlay() {
 }
 
 export function handleStageEvent(eventName, payload, engineApi) {
-  console.log(`[Stage 4: Quantum Realm] Event received: ${eventName}`, payload);
-  if (eventName === 'Quantum Conduit Realignment & Safe Extraction') {
+  console.log('[Stage 4: ' + "Quantum Realm" + '] Event received: ' + eventName, payload);
+  if (eventName === "Quantum Conduit Realignment & Safe Extraction") {
     if (engineApi && typeof engineApi.showToast === 'function') {
-      engineApi.showToast('🏆 STAGE 4 OBJECTIVE COMPLETE: Quantum Conduit Realignment & Safe Extraction');
+      engineApi.showToast("🏆 STAGE 4 OBJECTIVE COMPLETE: Quantum Conduit Realignment & Safe Extraction");
     }
   }
 }
@@ -1694,7 +1736,7 @@ export function setupDesktopPointerCapture(engineApi) {
   }
 
   // On every desktop stage entry, synchronize and arm pointer capture cleanly
-  const stageTag = 'stage_' + (stageConfig && stageConfig.level ? stageConfig.level : 1) + '_applyStage';
+  const stageTag = 'stage_' + (stageConfig && (stageConfig.stage_level || (stageConfig.meta && stageConfig.meta.level)) ? (stageConfig.stage_level || stageConfig.meta.level) : 1) + '_applyStage';
   if (engineApi && typeof engineApi.armDesktopPointerCapture === 'function') {
     engineApi.armDesktopPointerCapture(stageTag);
   } else if (typeof window.armDesktopPointerCaptureForStage === 'function') {
@@ -1708,13 +1750,13 @@ export function setupDesktopPointerCapture(engineApi) {
 
 export function applyStage(engineApi) {
   if (!engineApi) return stageConfig;
-  console.log(`[Stage 4: Quantum Realm] Applying VR Headset Profile configuration...`);
+  console.log('[Stage 4: ' + "Quantum Realm" + '] Applying VR Headset Profile configuration...');
 
   if (typeof engineApi.setThemeColors === 'function') {
     engineApi.setThemeColors(stageConfig.visual);
   }
   if (typeof engineApi.setHudStatus === 'function') {
-    engineApi.setHudStatus('STAGE 4: QUANTUM REALM [VR]');
+    engineApi.setHudStatus("STAGE 4: QUANTUM REALM [VR]");
   }
   if (typeof engineApi.setFlightConfig === 'function') {
     engineApi.setFlightConfig(stageConfig.visual.flight);
@@ -1747,7 +1789,7 @@ export function applyStage(engineApi) {
     engineApi.setStageWaveHandler(updateStageWaves);
   }
   if (typeof engineApi.showToast === 'function') {
-    engineApi.showToast('🚀 STAGE 4: QUANTUM REALM [VR] LOADED');
+    engineApi.showToast("🚀 STAGE 4: QUANTUM REALM [VR] LOADED");
   }
 
   // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---

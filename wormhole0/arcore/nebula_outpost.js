@@ -26,62 +26,87 @@ import {
 export const stageConfig = {
   meta: {
     level: 6,
-    name: 'Nebula Outpost',
-    slug: 'nebula_outpost',
-    theme: 'Ion Nebula Emerald',
+    name: "Nebula Outpost",
+    slug: "nebula_outpost",
+    theme: "Ion Nebula Emerald",
     device: 'arcore',
     xrMode: 'mobile-ar',
-    description: 'Dense electromagnetic nebula staging perimeter harboring defensive sentry arrays.',
+    description: "Dense electromagnetic nebula staging perimeter harboring defensive sentry arrays.",
     parScore: 90000,
     requiredKills: 25,
     warpTargetDistance: 5000,
-    missionObjectives: 'Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.',
-    eventsWithin: 'Ion Cloud Density Spike, Nebula Sentry Patrols, Plasma Storm Discharge, Outpost Command Relay Activation',
-    endLevelEvent: 'Nebula Outpost Relink Established',
-    cockpitOverlayAsset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    cockpitOverlayObject: 'scene_images/screen_decals_spider_web_overlay_4.glb'
+    missionObjectives: "Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.",
+    eventsWithin: "Ion Cloud Density Spike, Nebula Sentry Patrols, Plasma Storm Discharge, Outpost Command Relay Activation",
+    endLevelEvent: "Nebula Outpost Relink Established",
+    cockpitOverlayAsset: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    cockpitOverlayObject: "scene_images/screen_decals_spider_web_overlay_4.glb"
   },
   stage_level: 6,
-  stage_name: 'Nebula Outpost',
-  stage_slug: 'nebula_outpost',
-  environment_theme: 'Ion Nebula Emerald',
+  stage_name: "Nebula Outpost",
+  stage_slug: "nebula_outpost",
+  environment_theme: "Ion Nebula Emerald",
   device: 'arcore',
   xr_mode: 'mobile-ar',
   cockpit_overlay_object: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+  cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
   cockpit_overlay: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  events_within_level: 'Ion Cloud Density Spike, Nebula Sentry Patrols, Plasma Storm Discharge, Outpost Command Relay Activation',
-  end_level_event: 'Nebula Outpost Relink Established',
-  mission_objectives: 'Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.',
+  events_within_level: "Ion Cloud Density Spike, Nebula Sentry Patrols, Plasma Storm Discharge, Outpost Command Relay Activation",
+  end_level_event: "Nebula Outpost Relink Established",
+  mission_objectives: "Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.",
   required_enemy_kills: 25,
   warp_target_distance: 5000,
-  description: 'Dense electromagnetic nebula staging perimeter harboring defensive sentry arrays.',
+  description: "Dense electromagnetic nebula staging perimeter harboring defensive sentry arrays.",
   par_score: 90000,
+  waves: [
+    {
+        "wave_number": 1,
+        "enemy_count": 6,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Sector Assault (6 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Sector Assault (10 Enemies)"
+    },
+    {
+        "wave_number": 3,
+        "enemy_count": 9,
+        "interval_seconds": 15,
+        "delay_ms": 30000,
+        "description": "Wave 3: Sector Assault (9 Enemies)"
+    }
+],
+  total_waves: 3,
+  wave_interval_seconds: 15,
   visual: {
-    themeName: 'Ion Nebula Emerald',
+    themeName: "Ion Nebula Emerald",
     colors: {
-      primary: '#10b981',
-      glow: 'rgba(16, 185, 129, 0.45)',
-      panelBg: 'rgba(2, 24, 16, 0.88)',
-      panelBorder: 'rgba(16, 185, 129, 0.40)'
+      primary: "#10b981",
+      glow: "rgba(16, 185, 129, 0.45)",
+      panelBg: "rgba(2, 24, 16, 0.88)",
+      panelBorder: "rgba(16, 185, 129, 0.40)"
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color('#003322'),
-      uColorCore: new THREE.Color('#00ff88'),
-      uColorHot: new THREE.Color('#d6fff0'),
-      uHaloColor: new THREE.Color('#10b981')
+      uColorEdge: new THREE.Color("#003322"),
+      uColorCore: new THREE.Color("#00ff88"),
+      uColorHot: new THREE.Color("#d6fff0"),
+      uHaloColor: new THREE.Color("#10b981")
     },
     lighting: {
-      ambient: new THREE.Color('#002211').getHex(),
-      center: new THREE.Color('#10b981').getHex()
+      ambient: new THREE.Color("#002211").getHex(),
+      center: new THREE.Color("#10b981").getHex()
     },
     particles: {
     "count": 1800,
@@ -96,16 +121,26 @@ export const stageConfig = {
     "yawSpeed": 0.0022
 },
     environmentParams: {
-      rotationSpeed: 0.65,
-      distortionIntensity: 1,
-      imageAssetUrl: '',
-      model3dUrl: '',
-      quickEffectPrimary: 'none',
-      quickEffectSecondary: 'none',
-      quickEffectColor: '#10b981',
-      quickEffectIntensity: 1,
-      quickEffectSpeed: 1
-    }
+    "envCategory": "wormhole_singularity",
+    "model3dType": "procedural_wormhole",
+    "imageAssetType": "corona_sprite",
+    "scale": 1,
+    "eventHorizonRadius": 7.5,
+    "accretionDiskRadius": 38,
+    "length": 300,
+    "height": 80,
+    "depth": 300,
+    "circumference": 47.12,
+    "rotationSpeed": 0.65,
+    "distortionIntensity": 1,
+    "imageAssetUrl": "",
+    "model3dUrl": "",
+    "quickEffectPrimary": "none",
+    "quickEffectSecondary": "none",
+    "quickEffectColor": "#10b981",
+    "quickEffectIntensity": 1,
+    "quickEffectSpeed": 1
+}
   },
   weapons: {
     "initial": {
@@ -143,6 +178,7 @@ export const stageConfig = {
         "id": "stage_6_recon_drone",
         "enemy_id": "stage_6_recon_drone",
         "name": "Sector 6 Recon Drone (Universal)",
+        "device_type": "all",
         "enemy_class": "Scout Drone",
         "icon": "🛸",
         "model_3d_type": "custom_glb",
@@ -155,6 +191,7 @@ export const stageConfig = {
         "color": "#00f0ff",
         "hits": 2,
         "armor": 10,
+        "has_force_field": 0,
         "shield": 0,
         "speed": 220,
         "attack_damage": 5,
@@ -235,6 +272,7 @@ export const stageConfig = {
         "id": "stage_6_interceptor",
         "enemy_id": "stage_6_interceptor",
         "name": "Sector 6 Interceptor (Universal)",
+        "device_type": "all",
         "enemy_class": "Fast Interceptor",
         "icon": "🚀",
         "model_3d_type": "custom_glb",
@@ -247,6 +285,7 @@ export const stageConfig = {
         "color": "#38bdf8",
         "hits": 4,
         "armor": 20,
+        "has_force_field": 0,
         "shield": 0,
         "speed": 250,
         "attack_damage": 10,
@@ -333,7 +372,7 @@ export const stageConfig = {
         "target": 25,
         "current": 0,
         "title": "Neutralize 25 Nebula Defense Sentries",
-        "description": "Clear 25 defensive sentries patrolling emerald nebula corridor",
+        "description": "Neutralize 25 Nebula hostiles and secure orbital relay outpost perimeter.",
         "requiredForWarp": true,
         "actionText": "🎯 Target Threat",
         "actionId": "target_enemy"
@@ -867,7 +906,10 @@ export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
     interval_seconds: waveNumber === 1 ? 0 : 15
   };
 
-  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, stageConfig.enemies);
+  const livePool = (typeof window !== 'undefined' && Array.isArray(window.activeStageEnemies) && window.activeStageEnemiesStageLevel === stageConfig.stage_level && window.activeStageEnemies.length > 0)
+    ? window.activeStageEnemies
+    : stageConfig.enemies;
+  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, livePool);
 }
 
 export function updateStageWaves(engineApi, context = {}) {
@@ -885,16 +927,16 @@ export function updateStageWaves(engineApi, context = {}) {
 
   const now = context.now || performance.now();
   const activeEnemies = context.activeEnemies || (typeof api.getActiveEnemies === 'function' ? api.getActiveEnemies() : []);
-  const totalWaves = stageConfig.total_waves || 2;
+  const totalWaves = stageConfig.total_waves || (Array.isArray(stageConfig.waves) ? stageConfig.waves.length : 2);
   const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
 
   if (st.currentWave === 0) {
     pullEnemyWave(1, api, context);
-  } else if (st.currentWave === 1 && totalWaves >= 2) {
+  } else if (st.currentWave < totalWaves) {
     const waveElapsed = now - (st.waveStartTime || 0);
-    const wave1Remaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === 1).length;
-    if (waveElapsed >= waveIntervalMs || (wave1Remaining === 0 && waveElapsed >= 4500)) {
-      pullEnemyWave(2, api, context);
+    const curWaveRemaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === st.currentWave).length;
+    if (waveElapsed >= waveIntervalMs || (curWaveRemaining === 0 && waveElapsed >= 4500)) {
+      pullEnemyWave(st.currentWave + 1, api, context);
     }
   }
 }
@@ -1577,10 +1619,10 @@ export function getActiveCockpitCracksOverlay() {
 }
 
 export function handleStageEvent(eventName, payload, engineApi) {
-  console.log(`[Stage 6: Nebula Outpost] Event received: ${eventName}`, payload);
-  if (eventName === 'Nebula Outpost Relink Established') {
+  console.log('[Stage 6: ' + "Nebula Outpost" + '] Event received: ' + eventName, payload);
+  if (eventName === "Nebula Outpost Relink Established") {
     if (engineApi && typeof engineApi.showToast === 'function') {
-      engineApi.showToast('🏆 STAGE 6 OBJECTIVE COMPLETE: Nebula Outpost Relink Established');
+      engineApi.showToast("🏆 STAGE 6 OBJECTIVE COMPLETE: Nebula Outpost Relink Established");
     }
   }
 }
@@ -1700,7 +1742,7 @@ export function setupDesktopPointerCapture(engineApi) {
   }
 
   // On every desktop stage entry, synchronize and arm pointer capture cleanly
-  const stageTag = 'stage_' + (stageConfig && stageConfig.level ? stageConfig.level : 1) + '_applyStage';
+  const stageTag = 'stage_' + (stageConfig && (stageConfig.stage_level || (stageConfig.meta && stageConfig.meta.level)) ? (stageConfig.stage_level || stageConfig.meta.level) : 1) + '_applyStage';
   if (engineApi && typeof engineApi.armDesktopPointerCapture === 'function') {
     engineApi.armDesktopPointerCapture(stageTag);
   } else if (typeof window.armDesktopPointerCaptureForStage === 'function') {
@@ -1714,13 +1756,13 @@ export function setupDesktopPointerCapture(engineApi) {
 
 export function applyStage(engineApi) {
   if (!engineApi) return stageConfig;
-  console.log(`[Stage 6: Nebula Outpost] Applying ARCore Profile configuration...`);
+  console.log('[Stage 6: ' + "Nebula Outpost" + '] Applying ARCore Profile configuration...');
 
   if (typeof engineApi.setThemeColors === 'function') {
     engineApi.setThemeColors(stageConfig.visual);
   }
   if (typeof engineApi.setHudStatus === 'function') {
-    engineApi.setHudStatus('STAGE 6: NEBULA OUTPOST [ARCORE]');
+    engineApi.setHudStatus("STAGE 6: NEBULA OUTPOST [ARCORE]");
   }
   if (typeof engineApi.setFlightConfig === 'function') {
     engineApi.setFlightConfig(stageConfig.visual.flight);
@@ -1753,7 +1795,7 @@ export function applyStage(engineApi) {
     engineApi.setStageWaveHandler(updateStageWaves);
   }
   if (typeof engineApi.showToast === 'function') {
-    engineApi.showToast('🚀 STAGE 6: NEBULA OUTPOST [ARCORE] LOADED');
+    engineApi.showToast("🚀 STAGE 6: NEBULA OUTPOST [ARCORE] LOADED");
   }
 
   // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---

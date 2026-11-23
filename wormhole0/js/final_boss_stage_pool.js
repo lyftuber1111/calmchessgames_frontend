@@ -21,9 +21,9 @@ import {
   hideCockpitCracks
 } from './object_pool.js';
 
-export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = '3d_model';
+export const STAGE_COCKPIT_CRACKS_GLB_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = "3d_model";
 
 export {
   COCKPIT_CRACKS_GLB_URL,
@@ -58,39 +58,46 @@ export class FinalBossStageObjectPool extends StageObjectPool {
   constructor(scene, stageConfig = {}, options = {}) {
     const configWithDefaults = {
       stage_level: 5,
-      stage_name: 'Final Boss Stage',
-      stage_slug: 'final_boss_stage',
-      environment_theme: 'Warp Cyan Corridor',
+      stage_name: "Final Boss Stage",
+      stage_slug: "final_boss_stage",
+      environment_theme: "Warp Cyan Corridor",
       cockpit_overlay_object: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
-      cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+      cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
       cockpit_overlay: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
-        {
-          wave_number: 1,
-          enemy_count: 5,
-          interval_seconds: 0,
-          delay_ms: 0,
-          description: 'Wave 1: Recon Vanguard (5 Enemies)'
-        },
-        {
-          wave_number: 2,
-          enemy_count: 10,
-          interval_seconds: 15,
-          delay_ms: 15000,
-          description: 'Wave 2: Full Assault Swarm (10 Enemies)'
-        }
-      ],
-      total_waves: 2,
+    {
+        "wave_number": 1,
+        "enemy_count": 6,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Sector Assault (6 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Sector Assault (10 Enemies)"
+    },
+    {
+        "wave_number": 3,
+        "enemy_count": 9,
+        "interval_seconds": 15,
+        "delay_ms": 30000,
+        "description": "Wave 3: Sector Assault (9 Enemies)"
+    }
+],
+      total_waves: 3,
       wave_interval_seconds: 15,
       weapons: {
     "initial": {
@@ -128,6 +135,7 @@ export class FinalBossStageObjectPool extends StageObjectPool {
         "id": "boss_escort_fighter",
         "enemy_id": "boss_escort_fighter",
         "name": "Overlord Heavy Escort Fighter (Universal)",
+        "device_type": "all",
         "enemy_class": "Fast Interceptor",
         "icon": "🚀",
         "model_3d_type": "custom_glb",
@@ -140,6 +148,7 @@ export class FinalBossStageObjectPool extends StageObjectPool {
         "color": "#f87171",
         "hits": 5,
         "armor": 25,
+        "has_force_field": 1,
         "shield": 5,
         "speed": 220,
         "attack_damage": 15,
@@ -220,6 +229,7 @@ export class FinalBossStageObjectPool extends StageObjectPool {
         "id": "final_boss_titan",
         "enemy_id": "final_boss_titan",
         "name": "Singularity Overlord Titan (Stage 5 Boss) (Universal)",
+        "device_type": "all",
         "enemy_class": "Boss Dreadnought",
         "icon": "💀",
         "model_3d_type": "custom_glb",
@@ -232,6 +242,7 @@ export class FinalBossStageObjectPool extends StageObjectPool {
         "color": "#ef4444",
         "hits": 45,
         "armor": 100,
+        "has_force_field": 1,
         "shield": 20,
         "speed": 85,
         "attack_damage": 75,
@@ -348,7 +359,7 @@ export class FinalBossStageObjectPool extends StageObjectPool {
     };
 
     super(scene, configWithDefaults, options);
-    console.log(`[FinalBossStageObjectPool] Pre-allocated graphics object pool for Stage 5: Final Boss Stage`);
+    console.log(`[FinalBossStageObjectPool] Pre-allocated graphics object pool for Stage 5:`, configWithDefaults.stage_name);
   }
 
   async initCockpitCracksPool() {

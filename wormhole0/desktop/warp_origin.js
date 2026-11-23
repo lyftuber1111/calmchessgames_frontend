@@ -26,62 +26,80 @@ import {
 export const stageConfig = {
   meta: {
     level: 1,
-    name: 'Warp Origin',
-    slug: 'warp_origin',
-    theme: 'Warp Cyan Corridor',
+    name: "Warp Origin",
+    slug: "warp_origin",
+    theme: "Warp Cyan Corridor",
     device: 'desktop',
     xrMode: 'desktop-xr',
-    description: 'Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.',
+    description: "Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.",
     parScore: 5000,
     requiredKills: 10,
     warpTargetDistance: 50000,
-    missionObjectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
-    eventsWithin: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
-    endLevelEvent: 'Warp Horizon Jump Gate Initialized',
-    cockpitOverlayAsset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    cockpitOverlayObject: 'scene_images/screen_decals_spider_web_overlay_4.glb'
+    missionObjectives: "Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.",
+    eventsWithin: "Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert",
+    endLevelEvent: "Warp Horizon Jump Gate Initialized",
+    cockpitOverlayAsset: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    cockpitOverlayObject: "scene_images/screen_decals_spider_web_overlay_4.glb"
   },
   stage_level: 1,
-  stage_name: 'Warp Origin',
-  stage_slug: 'warp_origin',
-  environment_theme: 'Warp Cyan Corridor',
+  stage_name: "Warp Origin",
+  stage_slug: "warp_origin",
+  environment_theme: "Warp Cyan Corridor",
   device: 'desktop',
   xr_mode: 'desktop-xr',
   cockpit_overlay_object: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+  cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
   cockpit_overlay: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  events_within_level: 'Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert',
-  end_level_event: 'Warp Horizon Jump Gate Initialized',
-  mission_objectives: 'Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.',
+  events_within_level: "Sub-space Entry, Nav-Beacon Calibration, Asteroid Debris Belt, Anomaly Alpha Spike, Plasma Surge Alert",
+  end_level_event: "Warp Horizon Jump Gate Initialized",
+  mission_objectives: "Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.",
   required_enemy_kills: 10,
   warp_target_distance: 50000,
-  description: 'Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.',
+  description: "Initial entry vector into unstable hyperspace corridor. Low grav-shearing and entry reconnaissance.",
   par_score: 5000,
+  waves: [
+    {
+        "wave_number": 1,
+        "enemy_count": 5,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Recon Vanguard (5 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Full Assault Swarm (10 Enemies)"
+    }
+],
+  total_waves: 2,
+  wave_interval_seconds: 15,
   visual: {
-    themeName: 'Warp Cyan Corridor',
+    themeName: "Warp Cyan Corridor",
     colors: {
-      primary: '#00f0ff',
-      glow: 'rgba(0, 240, 255, 0.45)',
-      panelBg: 'rgba(2, 14, 26, 0.88)',
-      panelBorder: 'rgba(0, 240, 255, 0.40)'
+      primary: "#00f0ff",
+      glow: "rgba(0, 240, 255, 0.45)",
+      panelBg: "rgba(2, 14, 26, 0.88)",
+      panelBorder: "rgba(0, 240, 255, 0.40)"
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color('#003366'),
-      uColorCore: new THREE.Color('#00f0ff'),
-      uColorHot: new THREE.Color('#d6ffff'),
-      uHaloColor: new THREE.Color('#00f0ff')
+      uColorEdge: new THREE.Color("#003366"),
+      uColorCore: new THREE.Color("#00f0ff"),
+      uColorHot: new THREE.Color("#d6ffff"),
+      uHaloColor: new THREE.Color("#00f0ff")
     },
     lighting: {
-      ambient: new THREE.Color('#002233').getHex(),
-      center: new THREE.Color('#00f0ff').getHex()
+      ambient: new THREE.Color("#002233").getHex(),
+      center: new THREE.Color("#00f0ff").getHex()
     },
     particles: {
     "count": 4500,
@@ -96,16 +114,26 @@ export const stageConfig = {
     "yawSpeed": 0.0022
 },
     environmentParams: {
-      rotationSpeed: 0.65,
-      distortionIntensity: 1,
-      imageAssetUrl: 'mobile/event_horizon_images/singularity_corona.png',
-      model3dUrl: '/meshy_test_0/models/recon_drone_2.8m.glb',
-      quickEffectPrimary: 'none',
-      quickEffectSecondary: 'none',
-      quickEffectColor: '#00f0ff',
-      quickEffectIntensity: 1,
-      quickEffectSpeed: 1
-    }
+    "envCategory": "wormhole_singularity",
+    "model3dType": "custom_glb",
+    "imageAssetType": "corona_sprite",
+    "scale": 1,
+    "eventHorizonRadius": 7.5,
+    "accretionDiskRadius": 38,
+    "length": 300,
+    "height": 80,
+    "depth": 300,
+    "circumference": 47.12,
+    "rotationSpeed": 0.65,
+    "distortionIntensity": 1,
+    "imageAssetUrl": "mobile/event_horizon_images/singularity_corona.png",
+    "model3dUrl": "/meshy_test_0/models/recon_drone_2.8m.glb",
+    "quickEffectPrimary": "none",
+    "quickEffectSecondary": "none",
+    "quickEffectColor": "#00f0ff",
+    "quickEffectIntensity": 1,
+    "quickEffectSpeed": 1
+}
   },
   weapons: {
     "initial": {
@@ -172,6 +200,7 @@ export const stageConfig = {
         "id": "phase_interceptor",
         "enemy_id": "phase_interceptor",
         "name": "Phase Interceptor (Universal)",
+        "device_type": "desktop",
         "enemy_class": "Fast Interceptor",
         "icon": "🚀",
         "model_3d_type": "custom_glb",
@@ -184,6 +213,7 @@ export const stageConfig = {
         "color": "#38bdf8",
         "hits": 1,
         "armor": 1,
+        "has_force_field": 0,
         "shield": 0,
         "speed": 220,
         "attack_damage": 1,
@@ -261,193 +291,10 @@ export const stageConfig = {
         "destruction_particle_scale": 1
     },
     {
-        "id": "void_recon_drone_mobile",
-        "enemy_id": "void_recon_drone_mobile",
-        "name": "Void Recon Drone (Mobile)",
-        "enemy_class": "Scout Drone",
-        "icon": "🛸",
-        "model_3d_type": "custom_glb",
-        "model_3d_url": "mobile/warp_origin_images/recon_drone_2.8m.glb",
-        "scale": 0.75,
-        "length": 2.8,
-        "height": 2.8,
-        "depth": 2.8,
-        "circumference": 8.8,
-        "color": "#00f0ff",
-        "hits": 1,
-        "armor": 1,
-        "shield": 0,
-        "speed": 220,
-        "attack_damage": 1,
-        "weapon_name": "Plasma Pulse",
-        "weapon_damage": 1,
-        "weapon_speed": 450,
-        "weapon_color": "#00f0ff",
-        "weapon_scale": 1,
-        "weapon_scale_x": 1,
-        "weapon_scale_y": 1,
-        "weapon_scale_z": 1,
-        "weapon_size_x": 1,
-        "weapon_size_y": 1,
-        "weapon_size_z": 1,
-        "weapon_dimensions": {
-            "x": 1,
-            "y": 1,
-            "z": 1
-        },
-        "weapon_special_fx": "cockpit_overlay_decals",
-        "weapon_special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
-        "weapon_special_fx_type": "overlay",
-        "fire_rate": 2,
-        "fire_rate_seconds": 2,
-        "fire_rate_ms": 2000,
-        "fire_rate_times_per_sec": 0.5,
-        "weapons": [
-            {
-                "id": "ew_0_fzo0",
-                "name": "Plasma Pulse",
-                "type": "beam",
-                "mount": "center",
-                "model_url": "mobile/warp_origin_images/cyan_laser_rod_5.glb",
-                "model_type": "custom_glb",
-                "fire_point_x": 0,
-                "fire_point_y": -0.15,
-                "fire_point_z": 1.5,
-                "scale": 1,
-                "scale_x": 1,
-                "scale_y": 1,
-                "scale_z": 1,
-                "size_x": 1,
-                "size_y": 1,
-                "size_z": 1,
-                "dimensions": {
-                    "x": 1,
-                    "y": 1,
-                    "z": 1
-                },
-                "fire_rate_times_per_sec": 0.5,
-                "fire_interval_ms": 2000,
-                "fire_rate_seconds": 2,
-                "damage": 1,
-                "speed": 450,
-                "color": "#00f0ff",
-                "special_fx": "cockpit_overlay_decals",
-                "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
-                "special_fx_type": "overlay",
-                "is_enabled": 1
-            }
-        ],
-        "score": 100,
-        "threat": "Low",
-        "piercing": "any",
-        "pool_size": 30,
-        "quick_effect_primary": "plasma_aura",
-        "quick_effect_secondary": "sparks_burst",
-        "quick_effect_color": "#00f0ff",
-        "quick_effect_intensity": 1,
-        "quick_effect_speed": 1,
-        "destruction_particle_type": "procedural_sparks_explosion",
-        "destruction_particle_url": "",
-        "destruction_particle_count": 30,
-        "destruction_particle_color": "#00f0ff",
-        "destruction_particle_scale": 1
-    },
-    {
-        "id": "phase_interceptor_all",
-        "enemy_id": "phase_interceptor_all",
-        "name": "Phase Interceptor (Universal)",
-        "enemy_class": "Fast Interceptor",
-        "icon": "🚀",
-        "model_3d_type": "custom_glb",
-        "model_3d_url": "mobile/warp_origin_images/drone_phase_interceptor_3.glb",
-        "scale": 0.75,
-        "length": 4.2,
-        "height": 1.3,
-        "depth": 3.4,
-        "circumference": 5,
-        "color": "#38bdf8",
-        "hits": 1,
-        "armor": 1,
-        "shield": 0,
-        "speed": 220,
-        "attack_damage": 1,
-        "weapon_name": "Dual Ion Cannon",
-        "weapon_damage": 1,
-        "weapon_speed": 550,
-        "weapon_color": "#38bdf8",
-        "weapon_scale": 1,
-        "weapon_scale_x": 1,
-        "weapon_scale_y": 1,
-        "weapon_scale_z": 1,
-        "weapon_size_x": 1,
-        "weapon_size_y": 1,
-        "weapon_size_z": 1,
-        "weapon_dimensions": {
-            "x": 1,
-            "y": 1,
-            "z": 1
-        },
-        "weapon_special_fx": "cockpit_overlay_decals",
-        "weapon_special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
-        "weapon_special_fx_type": "overlay",
-        "fire_rate": 3,
-        "fire_rate_seconds": 3,
-        "fire_rate_ms": 3003,
-        "fire_rate_times_per_sec": 0.333,
-        "weapons": [
-            {
-                "id": "ew_0_jerr",
-                "name": "Dual Ion Cannon",
-                "type": "missile",
-                "mount": "center",
-                "model_url": "",
-                "model_type": "custom_glb",
-                "fire_point_x": 0,
-                "fire_point_y": -0.15,
-                "fire_point_z": 1.5,
-                "scale": 1,
-                "scale_x": 1,
-                "scale_y": 1,
-                "scale_z": 1,
-                "size_x": 1,
-                "size_y": 1,
-                "size_z": 1,
-                "dimensions": {
-                    "x": 1,
-                    "y": 1,
-                    "z": 1
-                },
-                "fire_rate_times_per_sec": 0.333,
-                "fire_interval_ms": 3003,
-                "fire_rate_seconds": 3.003,
-                "damage": 1,
-                "speed": 550,
-                "color": "#38bdf8",
-                "special_fx": "cockpit_overlay_decals",
-                "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
-                "special_fx_type": "overlay",
-                "is_enabled": 1
-            }
-        ],
-        "score": 250,
-        "threat": "Medium",
-        "piercing": "red_laser",
-        "pool_size": 30,
-        "quick_effect_primary": "engine_ion_thrust",
-        "quick_effect_secondary": "plasma_aura",
-        "quick_effect_color": "#38bdf8",
-        "quick_effect_intensity": 1,
-        "quick_effect_speed": 1,
-        "destruction_particle_type": "procedural_plasma_shatter",
-        "destruction_particle_url": "",
-        "destruction_particle_count": 45,
-        "destruction_particle_color": "#38bdf8",
-        "destruction_particle_scale": 1
-    },
-    {
         "id": "void_recon_drone",
         "enemy_id": "void_recon_drone",
         "name": "Void Recon Drone (Desktop)",
+        "device_type": "desktop",
         "enemy_class": "Scout Drone",
         "icon": "🛸",
         "model_3d_type": "custom_glb",
@@ -460,6 +307,7 @@ export const stageConfig = {
         "color": "#ef476f",
         "hits": 2,
         "armor": 10,
+        "has_force_field": 0,
         "shield": 0,
         "speed": 250,
         "attack_damage": 5,
@@ -543,6 +391,7 @@ export const stageConfig = {
         "powerup_id": "health_pack_s1",
         "powerup_name": "Sub-Space Nanite Repair Kit",
         "powerup_type": "health",
+        "restore_both": 0,
         "icon": "💖",
         "model_3d_type": "capsule",
         "model_3d_url": "",
@@ -567,6 +416,7 @@ export const stageConfig = {
         "powerup_id": "shield_cell_s1",
         "powerup_name": "Deflector Shield Overcharger",
         "powerup_type": "shield",
+        "restore_both": 0,
         "icon": "🛡️",
         "model_3d_type": "octahedron",
         "model_3d_url": "",
@@ -632,7 +482,7 @@ export const stageConfig = {
         "target": 10,
         "current": 0,
         "title": "Destroy 10 Void Recon Drones",
-        "description": "Shoot down 10 hostile scout probes emerging from cyan entry vector",
+        "description": "Destroy 10 Void Recon Drones and pilot vessel to within < 50,000 KM of singularity core to unlock warp.",
         "requiredForWarp": true,
         "actionText": "🎯 Target Threat",
         "actionId": "target_enemy"
@@ -1167,7 +1017,10 @@ export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
     interval_seconds: waveNumber === 1 ? 0 : 15
   };
 
-  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, stageConfig.enemies);
+  const livePool = (typeof window !== 'undefined' && Array.isArray(window.activeStageEnemies) && window.activeStageEnemiesStageLevel === stageConfig.stage_level && window.activeStageEnemies.length > 0)
+    ? window.activeStageEnemies
+    : stageConfig.enemies;
+  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, livePool);
 }
 
 export function updateStageWaves(engineApi, context = {}) {
@@ -1185,16 +1038,16 @@ export function updateStageWaves(engineApi, context = {}) {
 
   const now = context.now || performance.now();
   const activeEnemies = context.activeEnemies || (typeof api.getActiveEnemies === 'function' ? api.getActiveEnemies() : []);
-  const totalWaves = stageConfig.total_waves || 2;
+  const totalWaves = stageConfig.total_waves || (Array.isArray(stageConfig.waves) ? stageConfig.waves.length : 2);
   const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
 
   if (st.currentWave === 0) {
     pullEnemyWave(1, api, context);
-  } else if (st.currentWave === 1 && totalWaves >= 2) {
+  } else if (st.currentWave < totalWaves) {
     const waveElapsed = now - (st.waveStartTime || 0);
-    const wave1Remaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === 1).length;
-    if (waveElapsed >= waveIntervalMs || (wave1Remaining === 0 && waveElapsed >= 4500)) {
-      pullEnemyWave(2, api, context);
+    const curWaveRemaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === st.currentWave).length;
+    if (waveElapsed >= waveIntervalMs || (curWaveRemaining === 0 && waveElapsed >= 4500)) {
+      pullEnemyWave(st.currentWave + 1, api, context);
     }
   }
 }
@@ -1877,10 +1730,10 @@ export function getActiveCockpitCracksOverlay() {
 }
 
 export function handleStageEvent(eventName, payload, engineApi) {
-  console.log(`[Stage 1: Warp Origin] Event received: ${eventName}`, payload);
-  if (eventName === 'Warp Horizon Jump Gate Initialized') {
+  console.log('[Stage 1: ' + "Warp Origin" + '] Event received: ' + eventName, payload);
+  if (eventName === "Warp Horizon Jump Gate Initialized") {
     if (engineApi && typeof engineApi.showToast === 'function') {
-      engineApi.showToast('🏆 STAGE 1 OBJECTIVE COMPLETE: Warp Horizon Jump Gate Initialized');
+      engineApi.showToast("🏆 STAGE 1 OBJECTIVE COMPLETE: Warp Horizon Jump Gate Initialized");
     }
   }
 }
@@ -2000,7 +1853,7 @@ export function setupDesktopPointerCapture(engineApi) {
   }
 
   // On every desktop stage entry, synchronize and arm pointer capture cleanly
-  const stageTag = 'stage_' + (stageConfig && stageConfig.level ? stageConfig.level : 1) + '_applyStage';
+  const stageTag = 'stage_' + (stageConfig && (stageConfig.stage_level || (stageConfig.meta && stageConfig.meta.level)) ? (stageConfig.stage_level || stageConfig.meta.level) : 1) + '_applyStage';
   if (engineApi && typeof engineApi.armDesktopPointerCapture === 'function') {
     engineApi.armDesktopPointerCapture(stageTag);
   } else if (typeof window.armDesktopPointerCaptureForStage === 'function') {
@@ -2014,13 +1867,13 @@ export function setupDesktopPointerCapture(engineApi) {
 
 export function applyStage(engineApi) {
   if (!engineApi) return stageConfig;
-  console.log(`[Stage 1: Warp Origin] Applying Desktop Profile configuration...`);
+  console.log('[Stage 1: ' + "Warp Origin" + '] Applying Desktop Profile configuration...');
 
   if (typeof engineApi.setThemeColors === 'function') {
     engineApi.setThemeColors(stageConfig.visual);
   }
   if (typeof engineApi.setHudStatus === 'function') {
-    engineApi.setHudStatus('STAGE 1: WARP ORIGIN [DESKTOP]');
+    engineApi.setHudStatus("STAGE 1: WARP ORIGIN [DESKTOP]");
   }
   if (typeof engineApi.setFlightConfig === 'function') {
     engineApi.setFlightConfig(stageConfig.visual.flight);
@@ -2053,7 +1906,7 @@ export function applyStage(engineApi) {
     engineApi.setStageWaveHandler(updateStageWaves);
   }
   if (typeof engineApi.showToast === 'function') {
-    engineApi.showToast('🚀 STAGE 1: WARP ORIGIN [DESKTOP] LOADED');
+    engineApi.showToast("🚀 STAGE 1: WARP ORIGIN [DESKTOP] LOADED");
   }
 
   // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---

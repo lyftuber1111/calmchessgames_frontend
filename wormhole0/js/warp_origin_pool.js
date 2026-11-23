@@ -21,9 +21,9 @@ import {
   hideCockpitCracks
 } from './object_pool.js';
 
-export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = '3d_model';
+export const STAGE_COCKPIT_CRACKS_GLB_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = "3d_model";
 
 export {
   COCKPIT_CRACKS_GLB_URL,
@@ -58,38 +58,38 @@ export class WarpOriginObjectPool extends StageObjectPool {
   constructor(scene, stageConfig = {}, options = {}) {
     const configWithDefaults = {
       stage_level: 1,
-      stage_name: 'Warp Origin',
-      stage_slug: 'warp_origin',
-      environment_theme: 'Warp Cyan Corridor',
+      stage_name: "Warp Origin",
+      stage_slug: "warp_origin",
+      environment_theme: "Warp Cyan Corridor",
       cockpit_overlay_object: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
-      cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+      cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
       cockpit_overlay: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
-        {
-          wave_number: 1,
-          enemy_count: 5,
-          interval_seconds: 0,
-          delay_ms: 0,
-          description: 'Wave 1: Recon Vanguard (5 Enemies)'
-        },
-        {
-          wave_number: 2,
-          enemy_count: 10,
-          interval_seconds: 15,
-          delay_ms: 15000,
-          description: 'Wave 2: Full Assault Swarm (10 Enemies)'
-        }
-      ],
+    {
+        "wave_number": 1,
+        "enemy_count": 5,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Recon Vanguard (5 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Full Assault Swarm (10 Enemies)"
+    }
+],
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
@@ -157,6 +157,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "id": "phase_interceptor",
         "enemy_id": "phase_interceptor",
         "name": "Phase Interceptor (Universal)",
+        "device_type": "desktop",
         "enemy_class": "Fast Interceptor",
         "icon": "🚀",
         "model_3d_type": "custom_glb",
@@ -169,6 +170,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "color": "#38bdf8",
         "hits": 1,
         "armor": 1,
+        "has_force_field": 0,
         "shield": 0,
         "speed": 220,
         "attack_damage": 1,
@@ -249,6 +251,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "id": "void_recon_drone_mobile",
         "enemy_id": "void_recon_drone_mobile",
         "name": "Void Recon Drone (Mobile)",
+        "device_type": "mobile",
         "enemy_class": "Scout Drone",
         "icon": "🛸",
         "model_3d_type": "custom_glb",
@@ -261,6 +264,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "color": "#00f0ff",
         "hits": 1,
         "armor": 1,
+        "has_force_field": 0,
         "shield": 0,
         "speed": 220,
         "attack_damage": 1,
@@ -341,6 +345,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "id": "phase_interceptor_all",
         "enemy_id": "phase_interceptor_all",
         "name": "Phase Interceptor (Universal)",
+        "device_type": "mobile",
         "enemy_class": "Fast Interceptor",
         "icon": "🚀",
         "model_3d_type": "custom_glb",
@@ -353,6 +358,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "color": "#38bdf8",
         "hits": 1,
         "armor": 1,
+        "has_force_field": 0,
         "shield": 0,
         "speed": 220,
         "attack_damage": 1,
@@ -433,6 +439,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "id": "void_recon_drone",
         "enemy_id": "void_recon_drone",
         "name": "Void Recon Drone (Desktop)",
+        "device_type": "desktop",
         "enemy_class": "Scout Drone",
         "icon": "🛸",
         "model_3d_type": "custom_glb",
@@ -445,6 +452,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "color": "#ef476f",
         "hits": 2,
         "armor": 10,
+        "has_force_field": 0,
         "shield": 0,
         "speed": 250,
         "attack_damage": 5,
@@ -528,6 +536,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "powerup_id": "health_pack_s1",
         "powerup_name": "Sub-Space Nanite Repair Kit",
         "powerup_type": "health",
+        "restore_both": 0,
         "icon": "💖",
         "model_3d_type": "capsule",
         "model_3d_url": "",
@@ -552,6 +561,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
         "powerup_id": "shield_cell_s1",
         "powerup_name": "Deflector Shield Overcharger",
         "powerup_type": "shield",
+        "restore_both": 0,
         "icon": "🛡️",
         "model_3d_type": "octahedron",
         "model_3d_url": "",
@@ -614,7 +624,7 @@ export class WarpOriginObjectPool extends StageObjectPool {
     };
 
     super(scene, configWithDefaults, options);
-    console.log(`[WarpOriginObjectPool] Pre-allocated graphics object pool for Stage 1: Warp Origin`);
+    console.log(`[WarpOriginObjectPool] Pre-allocated graphics object pool for Stage 1:`, configWithDefaults.stage_name);
   }
 
   async initCockpitCracksPool() {

@@ -26,65 +26,83 @@ import {
 export const stageConfig = {
   meta: {
     level: 2,
-    name: 'Event Horizon',
-    slug: 'event_horizon',
-    theme: 'Event Horizon Amber',
+    name: "Event Horizon",
+    slug: "event_horizon",
+    theme: "Event Horizon Amber",
     device: 'vr',
     xrMode: 'desktop-vr',
-    description: 'High-velocity relativistic light-horizon boundary with intense magnetic shear.',
+    description: "High-velocity relativistic light-horizon boundary with intense magnetic shear.",
     parScore: 12000,
     requiredKills: 15,
     warpTargetDistance: 35000,
-    missionObjectives: 'Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.',
-    eventsWithin: 'Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert',
-    endLevelEvent: 'Singularity Perimeter Breach',
-    cockpitOverlayAsset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    cockpitOverlayObject: 'scene_images/screen_decals_spider_web_overlay_4.glb'
+    missionObjectives: "Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.",
+    eventsWithin: "Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert",
+    endLevelEvent: "Singularity Perimeter Breach",
+    cockpitOverlayAsset: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    cockpitOverlayObject: "scene_images/screen_decals_spider_web_overlay_4.glb"
   },
   stage_level: 2,
-  stage_name: 'Event Horizon',
-  stage_slug: 'event_horizon',
-  environment_theme: 'Event Horizon Amber',
+  stage_name: "Event Horizon",
+  stage_slug: "event_horizon",
+  environment_theme: "Event Horizon Amber",
   device: 'vr',
   xr_mode: 'desktop-vr',
   cockpit_overlay_object: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+  cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
   cockpit_overlay: {
-    model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-    asset_type: '3d_model'
+    model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+    asset_type: "3d_model"
   },
-  events_within_level: 'Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert',
-  end_level_event: 'Singularity Perimeter Breach',
-  mission_objectives: 'Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.',
+  events_within_level: "Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert",
+  end_level_event: "Singularity Perimeter Breach",
+  mission_objectives: "Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.",
   required_enemy_kills: 15,
   warp_target_distance: 35000,
-  description: 'High-velocity relativistic light-horizon boundary with intense magnetic shear.',
+  description: "High-velocity relativistic light-horizon boundary with intense magnetic shear.",
   par_score: 12000,
+  waves: [
+    {
+        "wave_number": 1,
+        "enemy_count": 5,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Recon Vanguard (5 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Full Assault Swarm (10 Enemies)"
+    }
+],
+  total_waves: 2,
+  wave_interval_seconds: 15,
   visual: {
-    themeName: 'Event Horizon Amber',
+    themeName: "Event Horizon Amber",
     colors: {
-      primary: '#ffd166',
-      glow: 'rgba(255, 209, 102, 0.45)',
-      panelBg: 'rgba(24, 14, 2, 0.88)',
-      panelBorder: 'rgba(255, 209, 102, 0.40)'
+      primary: "#ffd166",
+      glow: "rgba(255, 209, 102, 0.45)",
+      panelBg: "rgba(24, 14, 2, 0.88)",
+      panelBorder: "rgba(255, 209, 102, 0.40)"
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color('#663300'),
-      uColorCore: new THREE.Color('#ff9900'),
-      uColorHot: new THREE.Color('#fff4d6'),
-      uHaloColor: new THREE.Color('#ffaa00')
+      uColorEdge: new THREE.Color("#663300"),
+      uColorCore: new THREE.Color("#ff9900"),
+      uColorHot: new THREE.Color("#fff4d6"),
+      uHaloColor: new THREE.Color("#ffaa00")
     },
     lighting: {
-      ambient: new THREE.Color('#331a00').getHex(),
-      center: new THREE.Color('#ffaa00').getHex()
+      ambient: new THREE.Color("#331a00").getHex(),
+      center: new THREE.Color("#ffaa00").getHex()
     },
     particles: {
-    "count": 4000,
+    "count": 5200,
     "starCount": 2200,
     "dustCount": 500,
     "speed": 0.85
@@ -96,16 +114,26 @@ export const stageConfig = {
     "yawSpeed": 0.0024
 },
     environmentParams: {
-      rotationSpeed: 0.85,
-      distortionIntensity: 1.35,
-      imageAssetUrl: 'desktop/event_horizon_images/singularity_corona.png',
-      model3dUrl: '',
-      quickEffectPrimary: 'tachyon_trail',
-      quickEffectSecondary: 'plasma_aura',
-      quickEffectColor: '#ffd166',
-      quickEffectIntensity: 1.2,
-      quickEffectSpeed: 1.15
-    }
+    "envCategory": "wormhole_singularity",
+    "model3dType": "procedural_wormhole",
+    "imageAssetType": "corona_sprite",
+    "scale": 1.15,
+    "eventHorizonRadius": 8.2,
+    "accretionDiskRadius": 42,
+    "length": 320,
+    "height": 85,
+    "depth": 320,
+    "circumference": 51.52,
+    "rotationSpeed": 0.85,
+    "distortionIntensity": 1.35,
+    "imageAssetUrl": "desktop/event_horizon_images/singularity_corona.png",
+    "model3dUrl": "",
+    "quickEffectPrimary": "tachyon_trail",
+    "quickEffectSecondary": "plasma_aura",
+    "quickEffectColor": "#ffd166",
+    "quickEffectIntensity": 1.2,
+    "quickEffectSpeed": 1.15
+}
   },
   weapons: {
     "initial": {
@@ -143,6 +171,7 @@ export const stageConfig = {
         "id": "tachyon_cruiser",
         "enemy_id": "tachyon_cruiser",
         "name": "Horizon Tachyon Cruiser (Universal)",
+        "device_type": "all",
         "enemy_class": "Heavy Cruiser",
         "icon": "🛰️",
         "model_3d_type": "custom_glb",
@@ -155,6 +184,7 @@ export const stageConfig = {
         "color": "#ffd166",
         "hits": 2,
         "armor": 2,
+        "has_force_field": 1,
         "shield": 1,
         "speed": 200,
         "attack_damage": 2,
@@ -238,6 +268,7 @@ export const stageConfig = {
         "powerup_id": "health_pack_s2",
         "powerup_name": "Tachyon Infused Hull Matrix",
         "powerup_type": "health",
+        "restore_both": 0,
         "icon": "💚",
         "model_3d_type": "dodecahedron",
         "model_3d_url": "",
@@ -262,6 +293,7 @@ export const stageConfig = {
         "powerup_id": "shield_cell_s2",
         "powerup_name": "Ion Shield Harmonizer",
         "powerup_type": "shield",
+        "restore_both": 0,
         "icon": "🔰",
         "model_3d_type": "torus",
         "model_3d_url": "",
@@ -327,7 +359,7 @@ export const stageConfig = {
         "target": 15,
         "current": 0,
         "title": "Destroy 15 Tachyon Cruisers & Interceptors",
-        "description": "Neutralize 15 high-speed relativistic combat interceptors",
+        "description": "Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.",
         "requiredForWarp": true,
         "actionText": "🎯 Target Threat",
         "actionId": "target_enemy"
@@ -861,7 +893,10 @@ export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
     interval_seconds: waveNumber === 1 ? 0 : 15
   };
 
-  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, stageConfig.enemies);
+  const livePool = (typeof window !== 'undefined' && Array.isArray(window.activeStageEnemies) && window.activeStageEnemiesStageLevel === stageConfig.stage_level && window.activeStageEnemies.length > 0)
+    ? window.activeStageEnemies
+    : stageConfig.enemies;
+  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, livePool);
 }
 
 export function updateStageWaves(engineApi, context = {}) {
@@ -879,16 +914,16 @@ export function updateStageWaves(engineApi, context = {}) {
 
   const now = context.now || performance.now();
   const activeEnemies = context.activeEnemies || (typeof api.getActiveEnemies === 'function' ? api.getActiveEnemies() : []);
-  const totalWaves = stageConfig.total_waves || 2;
+  const totalWaves = stageConfig.total_waves || (Array.isArray(stageConfig.waves) ? stageConfig.waves.length : 2);
   const waveIntervalMs = (stageConfig.wave_interval_seconds || 15) * 1000;
 
   if (st.currentWave === 0) {
     pullEnemyWave(1, api, context);
-  } else if (st.currentWave === 1 && totalWaves >= 2) {
+  } else if (st.currentWave < totalWaves) {
     const waveElapsed = now - (st.waveStartTime || 0);
-    const wave1Remaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === 1).length;
-    if (waveElapsed >= waveIntervalMs || (wave1Remaining === 0 && waveElapsed >= 4500)) {
-      pullEnemyWave(2, api, context);
+    const curWaveRemaining = activeEnemies.filter(e => e && e.isActive && e.waveNumber === st.currentWave).length;
+    if (waveElapsed >= waveIntervalMs || (curWaveRemaining === 0 && waveElapsed >= 4500)) {
+      pullEnemyWave(st.currentWave + 1, api, context);
     }
   }
 }
@@ -1571,10 +1606,10 @@ export function getActiveCockpitCracksOverlay() {
 }
 
 export function handleStageEvent(eventName, payload, engineApi) {
-  console.log(`[Stage 2: Event Horizon] Event received: ${eventName}`, payload);
-  if (eventName === 'Singularity Perimeter Breach') {
+  console.log('[Stage 2: ' + "Event Horizon" + '] Event received: ' + eventName, payload);
+  if (eventName === "Singularity Perimeter Breach") {
     if (engineApi && typeof engineApi.showToast === 'function') {
-      engineApi.showToast('🏆 STAGE 2 OBJECTIVE COMPLETE: Singularity Perimeter Breach');
+      engineApi.showToast("🏆 STAGE 2 OBJECTIVE COMPLETE: Singularity Perimeter Breach");
     }
   }
 }
@@ -1694,7 +1729,7 @@ export function setupDesktopPointerCapture(engineApi) {
   }
 
   // On every desktop stage entry, synchronize and arm pointer capture cleanly
-  const stageTag = 'stage_' + (stageConfig && stageConfig.level ? stageConfig.level : 1) + '_applyStage';
+  const stageTag = 'stage_' + (stageConfig && (stageConfig.stage_level || (stageConfig.meta && stageConfig.meta.level)) ? (stageConfig.stage_level || stageConfig.meta.level) : 1) + '_applyStage';
   if (engineApi && typeof engineApi.armDesktopPointerCapture === 'function') {
     engineApi.armDesktopPointerCapture(stageTag);
   } else if (typeof window.armDesktopPointerCaptureForStage === 'function') {
@@ -1708,13 +1743,13 @@ export function setupDesktopPointerCapture(engineApi) {
 
 export function applyStage(engineApi) {
   if (!engineApi) return stageConfig;
-  console.log(`[Stage 2: Event Horizon] Applying VR Headset Profile configuration...`);
+  console.log('[Stage 2: ' + "Event Horizon" + '] Applying VR Headset Profile configuration...');
 
   if (typeof engineApi.setThemeColors === 'function') {
     engineApi.setThemeColors(stageConfig.visual);
   }
   if (typeof engineApi.setHudStatus === 'function') {
-    engineApi.setHudStatus('STAGE 2: EVENT HORIZON [VR]');
+    engineApi.setHudStatus("STAGE 2: EVENT HORIZON [VR]");
   }
   if (typeof engineApi.setFlightConfig === 'function') {
     engineApi.setFlightConfig(stageConfig.visual.flight);
@@ -1747,7 +1782,7 @@ export function applyStage(engineApi) {
     engineApi.setStageWaveHandler(updateStageWaves);
   }
   if (typeof engineApi.showToast === 'function') {
-    engineApi.showToast('🚀 STAGE 2: EVENT HORIZON [VR] LOADED');
+    engineApi.showToast("🚀 STAGE 2: EVENT HORIZON [VR] LOADED");
   }
 
   // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---

@@ -21,9 +21,9 @@ import {
   hideCockpitCracks
 } from './object_pool.js';
 
-export const STAGE_COCKPIT_CRACKS_GLB_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_URL = 'scene_images/screen_decals_spider_web_overlay_4.glb';
-export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = '3d_model';
+export const STAGE_COCKPIT_CRACKS_GLB_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_URL = "scene_images/screen_decals_spider_web_overlay_4.glb";
+export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = "3d_model";
 
 export {
   COCKPIT_CRACKS_GLB_URL,
@@ -58,38 +58,38 @@ export class EventHorizonObjectPool extends StageObjectPool {
   constructor(scene, stageConfig = {}, options = {}) {
     const configWithDefaults = {
       stage_level: 2,
-      stage_name: 'Event Horizon',
-      stage_slug: 'event_horizon',
-      environment_theme: 'Event Horizon Amber',
+      stage_name: "Event Horizon",
+      stage_slug: "event_horizon",
+      environment_theme: "Event Horizon Amber",
       cockpit_overlay_object: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
-      cockpit_overlay_asset: 'scene_images/screen_decals_spider_web_overlay_4.glb',
+      cockpit_overlay_asset: "scene_images/screen_decals_spider_web_overlay_4.glb",
       cockpit_overlay: {
-        model_3d_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        model_url: 'scene_images/screen_decals_spider_web_overlay_4.glb',
-        asset_type: '3d_model'
+        model_3d_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        model_url: "scene_images/screen_decals_spider_web_overlay_4.glb",
+        asset_type: "3d_model"
       },
       initial_weapon_pool_size: 300,
       initial_enemy_pool_size: 100,
       waves: [
-        {
-          wave_number: 1,
-          enemy_count: 5,
-          interval_seconds: 0,
-          delay_ms: 0,
-          description: 'Wave 1: Recon Vanguard (5 Enemies)'
-        },
-        {
-          wave_number: 2,
-          enemy_count: 10,
-          interval_seconds: 15,
-          delay_ms: 15000,
-          description: 'Wave 2: Full Assault Swarm (10 Enemies)'
-        }
-      ],
+    {
+        "wave_number": 1,
+        "enemy_count": 5,
+        "interval_seconds": 0,
+        "delay_ms": 0,
+        "description": "Wave 1: Recon Vanguard (5 Enemies)"
+    },
+    {
+        "wave_number": 2,
+        "enemy_count": 10,
+        "interval_seconds": 15,
+        "delay_ms": 15000,
+        "description": "Wave 2: Full Assault Swarm (10 Enemies)"
+    }
+],
       total_waves: 2,
       wave_interval_seconds: 15,
       weapons: {
@@ -128,6 +128,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
         "id": "tachyon_cruiser",
         "enemy_id": "tachyon_cruiser",
         "name": "Horizon Tachyon Cruiser (Universal)",
+        "device_type": "all",
         "enemy_class": "Heavy Cruiser",
         "icon": "🛰️",
         "model_3d_type": "custom_glb",
@@ -140,6 +141,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
         "color": "#ffd166",
         "hits": 2,
         "armor": 2,
+        "has_force_field": 1,
         "shield": 1,
         "speed": 200,
         "attack_damage": 2,
@@ -223,6 +225,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
         "powerup_id": "health_pack_s2",
         "powerup_name": "Tachyon Infused Hull Matrix",
         "powerup_type": "health",
+        "restore_both": 0,
         "icon": "💚",
         "model_3d_type": "dodecahedron",
         "model_3d_url": "",
@@ -247,6 +250,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
         "powerup_id": "shield_cell_s2",
         "powerup_name": "Ion Shield Harmonizer",
         "powerup_type": "shield",
+        "restore_both": 0,
         "icon": "🔰",
         "model_3d_type": "torus",
         "model_3d_url": "",
@@ -309,7 +313,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
     };
 
     super(scene, configWithDefaults, options);
-    console.log(`[EventHorizonObjectPool] Pre-allocated graphics object pool for Stage 2: Event Horizon`);
+    console.log(`[EventHorizonObjectPool] Pre-allocated graphics object pool for Stage 2:`, configWithDefaults.stage_name);
   }
 
   async initCockpitCracksPool() {

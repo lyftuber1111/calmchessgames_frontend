@@ -400,7 +400,7 @@ export const stageConfig = {
     "description": "Dense electromagnetic emerald ion nebula corridor harboring outpost command relays.",
     "is_enabled": 1,
     "created_at": "2026-11-23 02:51:36",
-    "updated_at": "2026-11-23 02:56:28"
+    "updated_at": "2026-11-23 02:59:00"
 },
   objectives: [
     {

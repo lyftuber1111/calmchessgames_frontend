@@ -390,7 +390,7 @@ export class FinalBossStageObjectPool extends StageObjectPool {
     "description": "Crimson singularity epicenter commanded by the Overlord Titan dreadnought flagship.",
     "is_enabled": 1,
     "created_at": "2026-11-23 02:51:36",
-    "updated_at": "2026-11-23 02:56:28"
+    "updated_at": "2026-11-23 02:59:00"
 },
       ...stageConfig
     };

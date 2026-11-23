@@ -93,23 +93,23 @@ export const stageConfig = {
   visual: {
     themeName: "Warp Cyan Corridor",
     colors: {
-      primary: "#00f0ff",
+      primary: "#ef4444",
       glow: "rgba(0, 240, 255, 0.45)",
       panelBg: "rgba(2, 14, 26, 0.88)",
       panelBorder: "rgba(0, 240, 255, 0.40)"
     },
     shaderUniforms: {
-      uColorEdge: new THREE.Color("#003366"),
-      uColorCore: new THREE.Color("#00f0ff"),
-      uColorHot: new THREE.Color("#d6ffff"),
-      uHaloColor: new THREE.Color("#00f0ff")
+      uColorEdge: new THREE.Color("#660011"),
+      uColorCore: new THREE.Color("#ff0033"),
+      uColorHot: new THREE.Color("#ffe0e6"),
+      uHaloColor: new THREE.Color("#ef4444")
     },
     lighting: {
-      ambient: new THREE.Color("#002233").getHex(),
-      center: new THREE.Color("#00f0ff").getHex()
+      ambient: new THREE.Color("#2b0008").getHex(),
+      center: new THREE.Color("#ef4444").getHex()
     },
     particles: {
-    "count": 3800,
+    "count": 7500,
     "starCount": 2200,
     "dustCount": 500,
     "speed": 0.85
@@ -124,22 +124,22 @@ export const stageConfig = {
     "envCategory": "wormhole_singularity",
     "model3dType": "procedural_wormhole",
     "imageAssetType": "corona_sprite",
-    "scale": 1,
-    "eventHorizonRadius": 7.5,
-    "accretionDiskRadius": 38,
-    "length": 300,
-    "height": 80,
-    "depth": 300,
-    "circumference": 47.12,
-    "rotationSpeed": 0.65,
-    "distortionIntensity": 1,
-    "imageAssetUrl": "",
+    "scale": 1.6,
+    "eventHorizonRadius": 11.5,
+    "accretionDiskRadius": 55,
+    "length": 420,
+    "height": 110,
+    "depth": 420,
+    "circumference": 72.26,
+    "rotationSpeed": 1.5,
+    "distortionIntensity": 2.25,
+    "imageAssetUrl": "desktop/final_boss_stage_images/singularity_corona.png",
     "model3dUrl": "",
-    "quickEffectPrimary": "none",
-    "quickEffectSecondary": "none",
-    "quickEffectColor": "#00f0ff",
-    "quickEffectIntensity": 1,
-    "quickEffectSpeed": 1
+    "quickEffectPrimary": "gravitational_vortex",
+    "quickEffectSecondary": "quantum_phase_glow",
+    "quickEffectColor": "#ef4444",
+    "quickEffectIntensity": 1.8,
+    "quickEffectSpeed": 1.5
 }
   },
   weapons: {
@@ -397,7 +397,44 @@ export const stageConfig = {
     }
 ],
   powerups: [],
-  environment: [],
+  environment: {
+    "id": 9,
+    "env_id": "final_boss_singularity_s5",
+    "env_name": "Singularity Overlord Crimson Epicenter",
+    "env_category": "wormhole_singularity",
+    "stage_level": 5,
+    "device_type": "all",
+    "model_3d_type": "procedural_wormhole",
+    "model_3d_url": "",
+    "image_asset_url": "desktop/final_boss_stage_images/singularity_corona.png",
+    "image_asset_type": "corona_sprite",
+    "scale": "1.60",
+    "event_horizon_radius": "11.50",
+    "accretion_disk_radius": "55.00",
+    "length": "420.00",
+    "height": "110.00",
+    "depth": "420.00",
+    "circumference": "72.26",
+    "color_primary": "#ef4444",
+    "color_edge": "#660011",
+    "color_core": "#ff0033",
+    "color_hot": "#ffe0e6",
+    "color_halo": "#ef4444",
+    "ambient_light": "#2b0008",
+    "center_light": "#ef4444",
+    "rotation_speed": "1.500",
+    "distortion_intensity": "2.25",
+    "particle_count": 7500,
+    "quick_effect_primary": "gravitational_vortex",
+    "quick_effect_secondary": "quantum_phase_glow",
+    "quick_effect_color": "#ef4444",
+    "quick_effect_intensity": "1.80",
+    "quick_effect_speed": "1.50",
+    "description": "Crimson singularity epicenter commanded by the Overlord Titan dreadnought flagship.",
+    "is_enabled": 1,
+    "created_at": "2026-11-23 02:51:36",
+    "updated_at": "2026-11-23 02:51:36"
+},
   objectives: [
     {
         "id": "kills",
@@ -498,7 +535,7 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   const rawWType = (w && w.type) ? w.type.toLowerCase() : '';
   const isMissile = rawWType === 'missile' || rawWType === 'torpedo' || /missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test([rawWType, wName, (w && w.id) || '', (w && w.model_url) || ''].join(' '));
   const wType = isMissile ? 'missile' : (rawWType || 'beam');
-  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#00f0ff';
+  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#ef4444';
   const boltColorHex = parseInt(String(rawColor).replace('#', '0x'), 16) || 0xff0055;
   const wDamage = (w && w.damage !== undefined) ? parseInt(w.damage) : (enemyObj.weaponDmg || cfg.weapon_damage || 6);
   const wSpeedRaw = (w && w.speed !== undefined) ? parseInt(w.speed) : (enemyObj.weaponSpeed || cfg.weapon_speed || 480);

@@ -132,7 +132,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
         "icon": "🛰️",
         "model_3d_type": "custom_glb",
         "model_3d_url": "mobile/event_horizon_images/red_recon_drone.glb",
-        "scale": 2,
+        "scale": 5,
         "length": 2.19,
         "height": 2.63,
         "depth": 0.75,

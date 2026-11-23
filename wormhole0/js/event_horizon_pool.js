@@ -336,7 +336,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
     "description": "High-velocity light-horizon boundary enveloped in incandescent amber relativistic shear and tachyon streaming emission.",
     "is_enabled": 1,
     "created_at": "2026-11-10 04:03:56",
-    "updated_at": "2026-11-23 02:51:36"
+    "updated_at": "2026-11-23 02:56:28"
 },
       ...stageConfig
     };

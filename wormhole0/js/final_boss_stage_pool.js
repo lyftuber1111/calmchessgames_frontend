@@ -353,7 +353,33 @@ export class FinalBossStageObjectPool extends StageObjectPool {
         "destruction_particle_scale": 2
     }
 ],
-      powerups: [],
+      powerups: [
+    {
+        "id": 12,
+        "powerup_id": "e2e_ui_pwr",
+        "powerup_name": "E2E UI Core",
+        "powerup_type": "shield",
+        "restore_both": 1,
+        "icon": "💖",
+        "model_3d_type": "capsule",
+        "model_3d_url": "",
+        "color_hex": "#00ff88",
+        "scale": 1,
+        "length": 2.5,
+        "height": 2.5,
+        "depth": 2.5,
+        "circumference": 6,
+        "stage_level": 0,
+        "device_type": "all",
+        "trigger_events": "Asteroid Debris Belt, Anomaly Alpha Spike",
+        "drop_on_enemy_kill": 0,
+        "drop_chance_pct": 0,
+        "enemy_id": "all",
+        "boost_percentage": 0,
+        "description": "",
+        "is_enabled": 1
+    }
+],
       environment: {
     "id": 9,
     "env_id": "final_boss_singularity_s5",

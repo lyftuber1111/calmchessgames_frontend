@@ -379,7 +379,7 @@ export const stageConfig = {
         "color": "#ff3366",
         "hits": 12,
         "armor": 50,
-        "has_force_field": 1,
+        "has_force_field": 0,
         "shield": 80,
         "speed": 320,
         "attack_damage": 18,

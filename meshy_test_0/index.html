@@ -3204,6 +3204,10 @@
             <span class="subgroup-title">Quick Procedural Demos (Click to Play &amp; Inspect Code)</span>
           </div>
           <div class="proc-presets-grid">
+            <button type="button" class="proc-preset-btn" data-preset-url="models/stage3/singularity_guardian.js" style="grid-column: 1 / -1; border-color: rgba(168, 85, 247, 0.55); background: rgba(124, 58, 237, 0.16);">
+              <span class="preset-title">🛡️ Singularity Guardian (Stage 3 • 3.80m / 11.94m)</span>
+              <span class="preset-desc">Ancient anomaly automaton • dense armor matrix • central point singularity laser</span>
+            </button>
             <button type="button" class="proc-preset-btn" data-preset="wormhole_vortex">
               <span class="preset-title">🌌 Wormhole Vortex</span>
               <span class="preset-desc">3D procedural tunnel, energy rings &amp; stars</span>
@@ -8485,8 +8489,9 @@ export default function createProcedural({ THREE, root }) {
         if (child.isMesh || child.isPoints || child.isLine) {
           if (child.isMesh) {
             meshCount++;
-            child.castShadow = true;
-            child.receiveShadow = true;
+            const allowShadow = !(child.userData && child.userData.noShadow);
+            child.castShadow = allowShadow;
+            child.receiveShadow = allowShadow;
             if (child.material) {
               const mats = Array.isArray(child.material) ? child.material : [child.material];
               mats.forEach((m) => {
@@ -8575,6 +8580,7 @@ export default function createProcedural({ THREE, root }) {
         planeMesh: null,
         isPlaying: true,
         loop: proceduralLoopEnabled,
+        preserveScale: false,
         speed: proceduralSpeed,
         elapsed: 0,
         duration: 0,
@@ -8706,6 +8712,7 @@ export default function createProcedural({ THREE, root }) {
           if (res.mode) state.mode = String(res.mode).toLowerCase();
           if (typeof res.duration === 'number' && res.duration > 0) state.duration = res.duration;
           if (typeof res.loop === 'boolean') state.loop = res.loop;
+          if (typeof res.preserveScale === 'boolean') state.preserveScale = res.preserveScale;
 
           const obj3d = res.object3D || res.object || res.mesh || res.group || res.scene;
           if (obj3d && obj3d.isObject3D && obj3d !== procRoot && !obj3d.parent) {
@@ -8748,6 +8755,7 @@ export default function createProcedural({ THREE, root }) {
           if (mod.mode) state.mode = String(mod.mode).toLowerCase();
           if (typeof mod.duration === 'number' && mod.duration > 0) state.duration = mod.duration;
           if (typeof mod.loop === 'boolean') state.loop = mod.loop;
+          if (typeof mod.preserveScale === 'boolean') state.preserveScale = mod.preserveScale;
 
           // 1. Check default export
           if (mod.default !== undefined) {
@@ -8927,7 +8935,23 @@ export default function createProcedural({ THREE, root }) {
             window.carModel = carModel;
             carRoot.add(carModel);
 
-            if (autoScale) {
+            if (state.preserveScale) {
+              // Preserve exact 1:1 physical meter dimensions (e.g. 3.80m x 3.80m x 3.80m)
+              baseScaleFactor = 1.0;
+              dynamicScaleMultiplier = 1.0;
+              applyDynamicScale(1.0);
+              const fittedBox = new THREE.Box3().setFromObject(carModel);
+              if (!fittedBox.isEmpty()) {
+                const sz = fittedBox.getSize(new THREE.Vector3());
+                const ctr = fittedBox.getCenter(new THREE.Vector3());
+                const maxD = Math.max(sz.x, sz.y, sz.z);
+                if (maxD > 2.8 && !renderer.xr.isPresenting) {
+                  camera.position.set(maxD * 1.42, ctr.y + maxD * 0.34, maxD * 1.72);
+                  controls.target.set(0, ctr.y, 0);
+                  controls.update();
+                }
+              }
+            } else if (autoScale) {
               const rawBbox = new THREE.Box3().setFromObject(carModel);
               if (!rawBbox.isEmpty()) {
                 const rawSize = rawBbox.getSize(new THREE.Vector3());
@@ -9140,9 +9164,18 @@ export default function createProcedural({ THREE, root }) {
       const displayName = customName || url.split('?')[0].split('/').pop() || 'procedural.js';
       showLoader(`Loading ${displayName}...`);
       try {
-        const candidates = [url];
-        if (!url.startsWith('/') && !url.startsWith('./') && !url.startsWith('../') && !url.startsWith('http') && !url.startsWith('models/')) {
-          candidates.push('models/' + url);
+        const candidates = [];
+        const addCand = (c) => { if (c && !candidates.includes(c)) candidates.push(c); };
+        const strippedMeshyPrefix = url.replace(/^\/?meshy_test_0\//i, '');
+        if (/^\/?meshy_test_0\//i.test(url)) {
+          addCand(strippedMeshyPrefix);
+        }
+        addCand(url);
+        if (!url.startsWith('/') && !url.startsWith('./') && !url.startsWith('../') && !url.startsWith('http') && !url.startsWith('models/') && !/^meshy_test_0\//i.test(url)) {
+          addCand('models/' + url);
+        }
+        if (/^meshy_test_0\//i.test(url)) {
+          addCand('/' + url);
         }
         let fetchedCode = null;
         let resolvedUrl = url;
@@ -9249,6 +9282,13 @@ export default function createProcedural({ THREE, root }) {
 
     document.querySelectorAll('.proc-preset-btn').forEach(btn => {
       btn.addEventListener('click', () => {
+        const presetUrl = btn.getAttribute('data-preset-url');
+        if (presetUrl) {
+          const fname = presetUrl.split('/').pop();
+          if (procFileInput) procFileInput.value = `meshy_test_0/${presetUrl}`;
+          loadProceduralFromUrl(presetUrl, fname, `meshy_test_0/${presetUrl}`);
+          return;
+        }
         const key = btn.getAttribute('data-preset');
         const preset = PROCEDURAL_PRESETS[key];
         if (!preset) return;

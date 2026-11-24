@@ -14,8 +14,30 @@ import {
   resetCockpitOverlayDecals,
   COCKPIT_CRACKS_GLB_URL,
   STAGE_COCKPIT_CRACKS_ASSET_URL,
-  STAGE_COCKPIT_CRACKS_ASSET_TYPE
+  STAGE_COCKPIT_CRACKS_ASSET_TYPE,
+  SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME,
+  SINGULARITY_WEAPON_FIRE_DURATION_MS,
+  getSingularityWeaponDecal,
+  setSingularityWeaponDecalEnabled,
+  createSingularityGuardianMesh
 } from './singularity_core_pool.js';
+import {
+  createSingularityGuardian,
+  weaponDecalName as SINGULARITY_WEAPON_DECAL_NAME,
+  metadata as SINGULARITY_GUARDIAN_METADATA
+} from './singularity_core_images/singularity_guardian.js';
+
+export {
+  SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME,
+  SINGULARITY_WEAPON_FIRE_DURATION_MS,
+  getSingularityWeaponDecal,
+  setSingularityWeaponDecalEnabled,
+  createSingularityGuardianMesh
+};
+
+export function createEnemyMesh(config = {}) {
+  return createSingularityGuardianMesh(config, createSingularityGuardian);
+}
 
 /**
  * Wormhole XR - Stage 3: Singularity Core [VR Headset Profile]
@@ -202,16 +224,19 @@ export const stageConfig = {
         }
     ]
 },
+  createEnemyMeshFn: createEnemyMesh,
   enemies: [
     {
         "id": "void_guardian",
         "enemy_id": "void_guardian",
-        "name": "Singularity Void Guardian (Universal)",
+        "name": "Singularity Guardian",
+        "enemy_name": "Singularity Guardian",
         "device_type": "all",
-        "enemy_class": "Guardian Frigate",
+        "enemy_class": "Ancient Anomaly Automaton",
         "icon": "👾",
-        "model_3d_type": "singularity_probe",
+        "model_3d_type": "singularity_guardian",
         "model_3d_url": "",
+        "procedural_model_url": "vr/singularity_core_images/singularity_guardian.js",
         "scale": 1.2,
         "length": 3.8,
         "height": 3.8,
@@ -219,7 +244,9 @@ export const stageConfig = {
         "circumference": 11.94,
         "color": "#a855f7",
         "hits": 15,
+        "hits_to_destroy": 15,
         "armor": 70,
+        "armor_strength": 70,
         "has_force_field": 1,
         "shield": 6,
         "speed": 150,
@@ -228,6 +255,9 @@ export const stageConfig = {
         "weapon_damage": 35,
         "weapon_speed": 400,
         "weapon_color": "#a855f7",
+        "weapon_decal_name": SINGULARITY_WEAPON_DECAL_NAME || SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME,
+        "weapon_fire_duration_ms": SINGULARITY_WEAPON_FIRE_DURATION_MS,
+        "weapon_fire_duration_seconds": 1.0,
         "weapon_scale": 1,
         "weapon_scale_x": 1,
         "weapon_scale_y": 1,
@@ -254,10 +284,13 @@ export const stageConfig = {
                 "type": "beam",
                 "mount": "center",
                 "model_url": "",
-                "model_type": "",
+                "model_type": "decal_central_weapon",
+                "weapon_decal_name": SINGULARITY_WEAPON_DECAL_NAME || SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME,
+                "fire_duration_ms": SINGULARITY_WEAPON_FIRE_DURATION_MS,
+                "fire_duration_seconds": 1.0,
                 "fire_point_x": 0,
-                "fire_point_y": -0.15,
-                "fire_point_z": 1.5,
+                "fire_point_y": 0,
+                "fire_point_z": 0,
                 "scale": 1,
                 "scale_x": 1,
                 "scale_y": 1,
@@ -283,9 +316,12 @@ export const stageConfig = {
             }
         ],
         "score": 1000,
+        "score_value": 1000,
         "threat": "High",
+        "threat_level": "High",
         "piercing": "plasma_torpedo",
-        "pool_size": 30,
+        "piercing_weapon_id": "plasma_torpedo",
+        "pool_size": 12,
         "quick_effect_primary": "gravitational_vortex",
         "quick_effect_secondary": "arc_lightning",
         "quick_effect_color": "#a855f7",
@@ -455,6 +491,66 @@ export function canPlayerDestroyEnemy(enemyObj, playerPos) {
   return isEnemyWithinWeaponRange(enemyObj, playerPos);
 }
 
+function tickSingularityWeaponDecalTimer(e, delta, now) {
+  if (!e || !e.mesh) return;
+  if (e.mesh.userData && (e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.weaponsActive === false)) {
+    e._centralWeaponFiring = false;
+    e._centralWeaponFireRemaining = 0;
+    e._centralWeaponFireEndTime = 0;
+    if (e.mesh.userData) {
+      e.mesh.userData._centralWeaponFiring = false;
+      e.mesh.userData._centralWeaponFireRemaining = 0;
+      e.mesh.userData._centralWeaponFireEndTime = 0;
+    }
+    setSingularityWeaponDecalEnabled(e, false);
+    return;
+  }
+
+  if (e._centralWeaponFiring) {
+    const safeDt = Math.max(0, Number.isFinite(delta) ? delta : 0);
+    if (typeof e._centralWeaponFireRemaining === 'number') {
+      e._centralWeaponFireRemaining -= safeDt;
+    }
+    const remainingExpired = (typeof e._centralWeaponFireRemaining === 'number')
+      ? (e._centralWeaponFireRemaining <= 0)
+      : (now >= (e._centralWeaponFireEndTime || 0));
+
+    if (remainingExpired) {
+      e._centralWeaponFiring = false;
+      e._centralWeaponFireRemaining = 0;
+      e._centralWeaponFireEndTime = 0;
+      if (e.mesh.userData) {
+        e.mesh.userData._centralWeaponFiring = false;
+        e.mesh.userData._centralWeaponFireRemaining = 0;
+        e.mesh.userData._centralWeaponFireEndTime = 0;
+      }
+      setSingularityWeaponDecalEnabled(e, false);
+    } else {
+      if (e.mesh.userData) {
+        e.mesh.userData._centralWeaponFiring = true;
+        e.mesh.userData._centralWeaponFireRemaining = e._centralWeaponFireRemaining;
+      }
+      setSingularityWeaponDecalEnabled(e, true);
+    }
+  } else {
+    const decalMesh = getSingularityWeaponDecal(e);
+    if (decalMesh && decalMesh.visible) {
+      decalMesh.visible = false;
+    }
+  }
+}
+
+function advanceSingularityGuardianAnimation(e, delta) {
+  if (!e || !e.mesh || !e.mesh.userData) return;
+  const guardian = e.mesh.userData.singularityGuardian;
+  if (guardian && typeof guardian.update === 'function') {
+    const safeDt = Math.max(0, Number.isFinite(delta) ? delta : 0);
+    const nextElapsed = (e.mesh.userData.proceduralElapsed || 0) + safeDt;
+    e.mesh.userData.proceduralElapsed = nextElapsed;
+    guardian.update(safeDt, nextElapsed);
+  }
+}
+
 export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   if (!enemyObj || !enemyObj.mesh) return false;
   if (enemyObj.mesh.userData && (enemyObj.mesh.userData.inPool || enemyObj.mesh.userData.isActive === false || enemyObj.mesh.userData.weaponsActive === false)) return false;
@@ -466,9 +562,15 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   const cameraRig = isContextObj ? context.cameraRig : null;
   const audioMgr = isContextObj ? context.audioMgr : null;
   const enemyBolts = isContextObj ? context.enemyBolts : (typeof weaponOverride === 'function' ? weaponOverride() : null);
+  const now = (isContextObj && context.now) || performance.now();
 
   if (!scene || !camera || !enemyBolts) return false;
-  if (enemyBolts.length > 80) return false;
+
+  // If already firing within its active 1-second burn central weapon decal window, keep it ON and return true
+  if (enemyObj._centralWeaponFiring && ((enemyObj._centralWeaponFireRemaining || 0) > 0 || now < (enemyObj._centralWeaponFireEndTime || 0))) {
+    setSingularityWeaponDecalEnabled(enemyObj, true);
+    return true;
+  }
 
   const playerPos = (isContextObj && context.playerPos)
     ? context.playerPos
@@ -476,8 +578,25 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
       ? context
       : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : camera.position));
 
+  // Turn ON the Singularity Guardian burn central weapon decal (Decal_LaserBurn_Central_Weapon) for 1 second
+  const fireDurationMs = SINGULARITY_WEAPON_FIRE_DURATION_MS;
+  setSingularityWeaponDecalEnabled(enemyObj, true);
+  enemyObj._centralWeaponFiring = true;
+  enemyObj._centralWeaponFireStartTime = now;
+  enemyObj._centralWeaponFireEndTime = now + fireDurationMs;
+  enemyObj._centralWeaponFireRemaining = fireDurationMs / 1000;
+  if (enemyObj.mesh.userData) {
+    enemyObj.mesh.userData._centralWeaponFiring = true;
+    enemyObj.mesh.userData._centralWeaponFireEndTime = enemyObj._centralWeaponFireEndTime;
+    enemyObj.mesh.userData._centralWeaponFireRemaining = enemyObj._centralWeaponFireRemaining;
+    const guardian = enemyObj.mesh.userData.singularityGuardian;
+    if (guardian && typeof guardian.update === 'function') {
+      guardian.update(0, enemyObj.mesh.userData.proceduralElapsed || 0);
+    }
+  }
+
   // Enemy can fire its weapon at any distance, but weapon range is 10,000 KM:
-  // bolts fired while enemy is > 10,000 KM from player cannot hit/damage the player.
+  // beams fired while enemy is > 10,000 KM from player cannot hit/damage the player.
   const enemyDistAtFire = (playerPos && typeof enemyObj.mesh.position.distanceTo === 'function')
     ? enemyObj.mesh.position.distanceTo(playerPos)
     : Infinity;
@@ -487,16 +606,12 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     ? weaponOverride
     : (enemyObj.weapons && enemyObj.weapons[0]) || (enemyObj.config && enemyObj.config.weapons && enemyObj.config.weapons[0]) || null;
   const cfg = enemyObj.config || enemyObj || {};
-  const wName = (w && w.name) || cfg.weapon_name || 'Plasma Pulse';
-  const rawWType = (w && w.type) ? w.type.toLowerCase() : '';
-  const isMissile = rawWType === 'missile' || rawWType === 'torpedo' || /missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test([rawWType, wName, (w && w.id) || '', (w && w.model_url) || ''].join(' '));
-  const wType = isMissile ? 'missile' : (rawWType || 'beam');
-  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#c084fc';
-  const boltColorHex = parseInt(String(rawColor).replace('#', '0x'), 16) || 0xff0055;
+  const wName = (w && w.name) || cfg.weapon_name || 'Void Disruptor';
+  const wType = 'beam';
+  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#ff2255';
   const wDamage = (w && w.damage !== undefined) ? parseInt(w.damage) : (enemyObj.weaponDmg || cfg.weapon_damage || 6);
   const wSpeedRaw = (w && w.speed !== undefined) ? parseInt(w.speed) : (enemyObj.weaponSpeed || cfg.weapon_speed || 480);
-  const boltSpeed = Math.max(45, Math.min(180, wSpeedRaw * (isMissile ? 0.16 : 0.24)));
-  const wMount = (w && w.mount) || 'nose_cannon';
+  const boltSpeed = Math.max(45, Math.min(180, wSpeedRaw * 0.24));
 
   const wScale = Number((w && w.scale) ?? cfg.weapon_scale ?? 1.0);
   const wScaleX = Number((w && w.scale_x) ?? cfg.weapon_scale_x ?? 1.0);
@@ -510,92 +625,87 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   const wSpecialFxType = (w && w.special_fx_type) || cfg.weapon_special_fx_type || 'overlay';
   const wId = (w && w.id) || (wName ? 'ew_' + wName.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'ew_primary');
 
-  const spawnOrigin = enemyObj.mesh.position.clone();
-  if (wMount === 'dual_wingtip') {
-    enemyObj._wingSide = (enemyObj._wingSide === 1) ? -1 : 1;
-    spawnOrigin.x += enemyObj._wingSide * 1.3 * (enemyObj.baseScale || 1.0);
-  } else if (wMount === 'turret_top') {
-    spawnOrigin.y += 0.9 * (enemyObj.baseScale || 1.0);
-  } else if (wMount === 'under_belly') {
-    spawnOrigin.y -= 0.9 * (enemyObj.baseScale || 1.0);
+  if (enemyBolts.length <= 80 && playerPos) {
+    const spawnOrigin = enemyObj.mesh.position.clone();
+    const targetPoint = new THREE.Vector3(
+      playerPos.x + (Math.random() - 0.5) * 3.5,
+      playerPos.y + (Math.random() - 0.5) * 3.5,
+      playerPos.z
+    );
+    const direction = new THREE.Vector3().subVectors(targetPoint, spawnOrigin).normalize();
+    const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+
+    // Invisible collision-delivery pulse: the visible weapon beam is rendered exclusively
+    // by the Singularity Guardian's Decal_LaserBurn_Central_Weapon decal for 1 second.
+    const beamTracker = new THREE.Object3D();
+    beamTracker.name = 'singularity_central_weapon_pulse';
+    beamTracker.visible = false;
+    beamTracker.position.copy(spawnOrigin);
+    beamTracker.quaternion.copy(boltQuat);
+
+    enemyBolts.push({
+      mesh: beamTracker,
+      fromPool: false,
+      isCentralWeaponDecalBeam: true,
+      weaponDecalName: SINGULARITY_WEAPON_DECAL_NAME || SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME,
+      fireDurationMs,
+      spawnOrigin: spawnOrigin.clone(),
+      prevPosition: spawnOrigin.clone(),
+      distanceTraveled: 0,
+      maxRangeKm: WEAPON_MAX_RANGE_KM,
+      maxRangeUnits: WEAPON_MAX_RANGE_UNITS,
+      sourceEnemy: enemyObj,
+      enemyDistAtFireUnits: enemyDistAtFire,
+      enemyDistAtFireKm: enemyDistAtFire * KM_PER_WORLD_UNIT,
+      firedWithinRange,
+      canHitPlayer: firedWithinRange,
+      direction,
+      speed: boltSpeed,
+      damage: wDamage,
+      weaponId: wId,
+      weaponName: wName,
+      weaponColor: rawColor,
+      specialFx: wSpecialFx,
+      specialFxFile: wSpecialFxFile,
+      specialFxType: wSpecialFxType,
+      scale: wScale,
+      scale_x: wScaleX,
+      scale_y: wScaleY,
+      scale_z: wScaleZ,
+      size_x: wSizeX,
+      size_y: wSizeY,
+      size_z: wSizeZ,
+      dimensions: { x: wSizeX, y: wSizeY, z: wSizeZ },
+      type: wType,
+      spiralTime: 0,
+      spawnTime: now,
+      lifetime: fireDurationMs / 1000
+    });
   }
 
-  const targetPoint = new THREE.Vector3(
-    playerPos.x + (Math.random() - 0.5) * (isMissile ? 2.2 : 3.5),
-    playerPos.y + (Math.random() - 0.5) * (isMissile ? 2.2 : 3.5),
-    playerPos.z
-  );
-  const direction = new THREE.Vector3().subVectors(targetPoint, spawnOrigin).normalize();
-  const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
-
-  let mesh = null;
-  let fromPool = false;
-
-  if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.spawnEnemyWeapon === 'function') {
-    mesh = window.stageObjectPool.spawnEnemyWeapon(w || { id: wId, name: wName, type: wType, color: rawColor }, cfg, spawnOrigin, boltQuat, isMissile ? 'missile' : 'beam');
-    if (mesh) fromPool = true;
-  }
-
-  if (!mesh) {
-    const geom = new THREE.CylinderGeometry(0.14 * wSizeX, 0.22 * wSizeY, 5.5 * wSizeZ, 6);
-    geom.rotateX(Math.PI / 2);
-    const mat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.95 });
-    mesh = new THREE.Mesh(geom, mat);
-    mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
-    mesh.position.copy(spawnOrigin);
-    mesh.quaternion.copy(boltQuat);
-    scene.add(mesh);
-  } else {
-    mesh.position.copy(spawnOrigin);
-    mesh.quaternion.copy(boltQuat);
-  }
-
-  enemyBolts.push({
-    mesh,
-    fromPool,
-    spawnOrigin: spawnOrigin.clone(),
-    prevPosition: spawnOrigin.clone(),
-    distanceTraveled: 0,
-    maxRangeKm: WEAPON_MAX_RANGE_KM,
-    maxRangeUnits: WEAPON_MAX_RANGE_UNITS,
-    sourceEnemy: enemyObj,
-    enemyDistAtFireUnits: enemyDistAtFire,
-    enemyDistAtFireKm: enemyDistAtFire * KM_PER_WORLD_UNIT,
-    firedWithinRange,
-    canHitPlayer: firedWithinRange,
-    direction,
-    speed: boltSpeed,
-    damage: wDamage,
-    weaponId: wId,
-    weaponName: wName,
-    weaponColor: rawColor,
-    specialFx: wSpecialFx,
-    specialFxFile: wSpecialFxFile,
-    specialFxType: wSpecialFxType,
-    scale: wScale,
-    scale_x: wScaleX,
-    scale_y: wScaleY,
-    scale_z: wScaleZ,
-    size_x: wSizeX,
-    size_y: wSizeY,
-    size_z: wSizeZ,
-    dimensions: { x: wSizeX, y: wSizeY, z: wSizeZ },
-    type: isMissile ? 'missile' : 'beam',
-    spiralTime: Math.random() * Math.PI * 2,
-    spawnTime: performance.now(),
-    lifetime: isMissile ? 7.5 : 4.8
-  });
-
-  if (audioMgr && audioMgr.isInitialized && typeof audioMgr.playLaserBolt === 'function') {
-    try { audioMgr.playLaserBolt(); } catch (e) {}
+  if (audioMgr && audioMgr.isInitialized) {
+    if (typeof audioMgr.playEnemyLaser === 'function') {
+      try { audioMgr.playEnemyLaser(); } catch (e) {}
+    } else if (typeof audioMgr.playLaserBolt === 'function') {
+      try { audioMgr.playLaserBolt(); } catch (e) {}
+    }
   }
   return true;
 }
 
 export function updateEnemyMovement(e, delta, context) {
-  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) return false;
+  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) {
+    if (e && e.mesh) {
+      e._centralWeaponFiring = false;
+      e._centralWeaponFireRemaining = 0;
+      e._centralWeaponFireEndTime = 0;
+      setSingularityWeaponDecalEnabled(e, false);
+    }
+    return false;
+  }
   const isContextObj = context && typeof context === 'object' && !context.isVector3;
   const now = (isContextObj && context.now) || performance.now();
+  tickSingularityWeaponDecalTimer(e, delta, now);
   const playerPos = (isContextObj && context.playerPos)
     ? context.playerPos
     : (context && context.isVector3)
@@ -653,6 +763,7 @@ export function updateEnemyMovement(e, delta, context) {
       e.stoppedTime = now;
       e.nextLevelTime = now + 1500 + Math.random() * 3500;
     }
+    advanceSingularityGuardianAnimation(e, delta);
     return true;
   }
 
@@ -756,7 +867,7 @@ export function updateEnemyMovement(e, delta, context) {
         e.levelPitchProgress = 1.0;
         e.isLevel = true;
         e.maneuverState = 'LEVEL_FIRING';
-        e.levelFireEndTime = now + 600;
+        e.levelFireEndTime = now + SINGULARITY_WEAPON_FIRE_DURATION_MS;
         if (!e.hasFiredThisLevel) {
           e.hasFiredThisLevel = true;
           fireEnemyWeapon(e, context);
@@ -912,12 +1023,41 @@ export function updateEnemyMovement(e, delta, context) {
   e.distanceToPlayerKm = finalDistToPlayer * KM_PER_WORLD_UNIT;
   e.inWeaponRange = finalDistToPlayer <= dist10k;
 
+  advanceSingularityGuardianAnimation(e, delta);
   return true;
+}
+
+function ensureSingularityGuardianOnlyStageEnemy() {
+  if (typeof window === 'undefined') return;
+  const activeStageLvl = window.activeStageConfig && Number(window.activeStageConfig.stage_level);
+  if (activeStageLvl && activeStageLvl !== 3) return;
+  const onlyEnemy = stageConfig.enemies && stageConfig.enemies[0];
+  if (!onlyEnemy) return;
+
+  const cur = window.activeStageEnemies;
+  const needsOverride = !Array.isArray(cur)
+    || cur.length !== 1
+    || !cur[0]
+    || cur[0].model_3d_type !== 'singularity_guardian';
+
+  if (needsOverride) {
+    const guardianEntry = {
+      ...onlyEnemy,
+      custom_from_db: true
+    };
+    window.activeStageEnemies = [guardianEntry];
+    window.activeStageEnemiesStageLevel = 3;
+    if (window.state) {
+      window.state.stageEnemies = window.activeStageEnemies;
+    }
+  }
 }
 
 export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
   const api = engineApi || (context && context.engineApi);
   if (!api || typeof api.spawnEnemyWaveFromPool !== 'function') return [];
+
+  ensureSingularityGuardianOnlyStageEnemy();
 
   const waves = stageConfig.waves || [
     { wave_number: 1, enemy_count: 5, interval_seconds: 0 },
@@ -929,15 +1069,13 @@ export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
     interval_seconds: waveNumber === 1 ? 0 : 15
   };
 
-  const livePool = (typeof window !== 'undefined' && Array.isArray(window.activeStageEnemies) && window.activeStageEnemiesStageLevel === stageConfig.stage_level && window.activeStageEnemies.length > 0)
-    ? window.activeStageEnemies
-    : stageConfig.enemies;
-  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, livePool);
+  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, stageConfig.enemies);
 }
 
 export function updateStageWaves(engineApi, context = {}) {
   const api = engineApi || (context && context.engineApi);
   if (!api || !api.state) return;
+  ensureSingularityGuardianOnlyStageEnemy();
   const st = api.state;
   if (!st.isGameOver) {
     const maxS = (st.maxShield > 0) ? st.maxShield : 100;
@@ -1796,6 +1934,7 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  ensureSingularityGuardianOnlyStageEnemy();
   if (typeof engineApi.setPowerups === 'function' && stageConfig.powerups) {
     engineApi.setPowerups(stageConfig.powerups);
   }
@@ -1987,6 +2126,11 @@ export function applyStage(engineApi) {
 
 export default {
   stageConfig,
+  createEnemyMesh,
+  SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME,
+  SINGULARITY_WEAPON_FIRE_DURATION_MS,
+  getSingularityWeaponDecal,
+  setSingularityWeaponDecalEnabled,
   WEAPON_MAX_RANGE_KM,
   KM_PER_WORLD_UNIT,
   WEAPON_MAX_RANGE_UNITS,

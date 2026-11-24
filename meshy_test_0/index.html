@@ -180,6 +180,13 @@
       -webkit-backdrop-filter: blur(16px);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
       max-width: calc(100vw - 1.5rem);
+      overflow-x: auto;
+      scrollbar-width: none;
+      scroll-snap-type: inline proximity;
+    }
+
+    .bottom-dock::-webkit-scrollbar {
+      display: none;
     }
 
     .dock-tab {
@@ -196,6 +203,8 @@
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       white-space: nowrap;
+      flex: none;
+      scroll-snap-align: start;
       user-select: none;
       -webkit-user-select: none;
       touch-action: manipulation;
@@ -1876,6 +1885,294 @@
       background: #7bc5fe;
       box-shadow: 0 0 6px #7bc5fe;
     }
+
+    /* Procedural JS Graphic & Animation Runner Styles */
+    .dock-tab[data-tab="procedural"].active {
+      background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+      color: #fff;
+      border-color: rgba(167, 139, 250, 0.65);
+      box-shadow: 0 2px 14px rgba(124, 58, 237, 0.5);
+    }
+
+    #procedural-2d-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      pointer-events: none;
+      display: none;
+    }
+
+    #procedural-2d-canvas.active {
+      display: block;
+    }
+
+    #procedural-2d-canvas.interactive {
+      pointer-events: auto;
+    }
+
+    .procedural-player-bar {
+      position: fixed;
+      bottom: max(4.35rem, calc(env(safe-area-inset-bottom) + 3.6rem));
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      z-index: 75;
+      display: none;
+      align-items: center;
+      gap: 0.45rem;
+      background: rgba(13, 17, 28, 0.92);
+      border: 1px solid rgba(139, 92, 246, 0.45);
+      border-radius: 9999px;
+      padding: 0.35rem 0.65rem;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.65), 0 0 18px rgba(124, 58, 237, 0.25);
+      max-width: calc(100vw - 1.5rem);
+      overflow-x: auto;
+      scrollbar-width: none;
+      opacity: 0;
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .procedural-player-bar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .procedural-player-bar.visible {
+      display: flex;
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .proc-bar-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      max-width: 145px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .proc-bar-pill {
+      font-size: 0.64rem;
+      font-weight: 700;
+      padding: 0.12rem 0.42rem;
+      border-radius: 9999px;
+      background: rgba(124, 58, 237, 0.25);
+      border: 1px solid rgba(167, 139, 250, 0.5);
+      color: #c4b5fd;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      flex-shrink: 0;
+    }
+
+    .proc-bar-time {
+      font-size: 0.72rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #38bdf8;
+      font-variant-numeric: tabular-nums;
+      min-width: 44px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .proc-bar-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: #f8fafc;
+      border-radius: 9999px;
+      padding: 0.25rem 0.55rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+
+    .proc-bar-btn:hover {
+      background: rgba(139, 92, 246, 0.3);
+      border-color: rgba(167, 139, 250, 0.6);
+    }
+
+    .proc-bar-btn.primary {
+      background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .proc-bar-btn.danger:hover {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: #ef4444;
+    }
+
+    .proc-mode-group {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .proc-mode-btn {
+      flex: 1;
+      min-width: 120px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 0.45rem 0.65rem;
+      font-size: 0.76rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      transition: all 0.15s ease;
+    }
+
+    .proc-mode-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+    }
+
+    .proc-mode-btn.active {
+      background: rgba(124, 58, 237, 0.24);
+      border-color: #a78bfa;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(124, 58, 237, 0.3);
+    }
+
+    .proc-presets-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.45rem;
+    }
+
+    .proc-preset-btn {
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid rgba(139, 92, 246, 0.28);
+      border-radius: 8px;
+      padding: 0.5rem 0.65rem;
+      color: #e2e8f0;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      transition: all 0.15s ease;
+    }
+
+    .proc-preset-btn:hover {
+      background: rgba(124, 58, 237, 0.2);
+      border-color: #a78bfa;
+      transform: translateY(-1px);
+    }
+
+    .proc-preset-btn .preset-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .proc-preset-btn .preset-desc {
+      font-size: 0.67rem;
+      color: var(--text-muted);
+    }
+
+    .proc-code-editor {
+      width: 100%;
+      min-height: 170px;
+      max-height: 320px;
+      resize: vertical;
+      background: rgba(7, 10, 18, 0.94);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      border-radius: 8px;
+      color: #e2e8f0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+      padding: 0.65rem;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+      tab-size: 2;
+    }
+
+    .proc-code-editor:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    }
+
+    .proc-console {
+      background: rgba(5, 8, 15, 0.92);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.55rem 0.7rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.72rem;
+      line-height: 1.4;
+      color: #94a3b8;
+      max-height: 120px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .proc-console.error {
+      border-color: rgba(239, 68, 68, 0.55);
+      color: #fca5a5;
+      background: rgba(45, 10, 14, 0.88);
+    }
+
+    .proc-console.success {
+      border-color: rgba(16, 185, 129, 0.45);
+      color: #6ee7b7;
+    }
+
+    .proc-api-details {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.74rem;
+      color: var(--text-muted);
+    }
+
+    .proc-api-details summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: #c4b5fd;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .proc-api-details summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .proc-api-details pre {
+      margin-top: 0.5rem;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 6px;
+      padding: 0.5rem;
+      overflow-x: auto;
+      font-size: 0.69rem;
+      color: #cbd5e1;
+      user-select: text;
+      -webkit-user-select: text;
+    }
   </style>
 
   <!-- Import maps polyfill for ES module browser support -->
@@ -1909,6 +2206,20 @@
   <!-- 3D WebGL Canvas Container -->
   <div id="canvas-container"></div>
 
+  <!-- 2D Procedural Graphics & Animation Overlay Canvas -->
+  <canvas id="procedural-2d-canvas" aria-label="2D Procedural Graphics Canvas"></canvas>
+
+  <!-- Floating Quick Procedural JS Player Bar -->
+  <div id="procedural-player-bar" class="procedural-player-bar" role="region" aria-label="Procedural Script Playback Controls">
+    <span class="proc-bar-pill" id="proc-bar-mode">JS 3D</span>
+    <span class="proc-bar-title" id="proc-bar-name">procedural.js</span>
+    <span class="proc-bar-time" id="proc-bar-time">0:00.0</span>
+    <button type="button" class="proc-bar-btn primary" id="btn-bar-proc-play" title="Play / Pause Procedural Animation">⏸️ Pause</button>
+    <button type="button" class="proc-bar-btn" id="btn-bar-proc-reset" title="Restart Animation from t=0">⏹️</button>
+    <button type="button" class="proc-bar-btn" id="btn-bar-proc-open" title="Open Procedural JS Panel">⚙️</button>
+    <button type="button" class="proc-bar-btn danger" id="btn-bar-proc-unload" title="Stop & Unload Procedural Script">✕</button>
+  </div>
+
   <!-- Loading Overlay -->
   <div id="loader">
     <div class="spinner"></div>
@@ -1919,8 +2230,8 @@
   <!-- Drag & Drop Zone Overlay -->
   <div id="drop-overlay">
     <div class="drop-overlay-icon">📦</div>
-    <div class="drop-overlay-title">Drop 3D Model Here</div>
-    <div class="drop-overlay-sub">Model will load immediately into 3D viewer</div>
+    <div class="drop-overlay-title">Drop 3D Model or Procedural .JS Here</div>
+    <div class="drop-overlay-sub">3D models (.glb/.obj/.fbx/.stl) or procedural graphic/animation .js files will load &amp; play immediately</div>
   </div>
 
   <!-- UI Top Header Overlay -->
@@ -2014,6 +2325,10 @@
       <span class="dock-icon">💥</span>
       <span class="dock-label">Decals</span>
     </button>
+    <button class="dock-tab" id="dock-btn-procedural" data-tab="procedural" type="button" title="Load & Play Procedural Graphic or Animation .js Files">
+      <span class="dock-icon">✨</span>
+      <span class="dock-label">Procedural JS</span>
+    </button>
   </nav>
 
   <!-- Slide-out Panel Backdrop -->
@@ -2042,12 +2357,12 @@
 
         <!-- 1. Direct Model Loading Controls -->
         <div class="input-group">
-          <label for="model-file-input">Model File Name / Path (meshy_test_0/ or models/)</label>
+          <label for="model-file-input">Model or Procedural .JS File Path (meshy_test_0/ or models/)</label>
           <div class="input-with-action">
-            <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/screen_decals_overlay_3/screen_decals_overlay_3.glb or browse" value="" spellcheck="false" autocomplete="off" />
-            <label for="local-file-picker" class="btn-icon" title="Browse 3D file, materials & textures from meshy_test_0/models or device">
+            <input type="text" id="model-file-input" list="model-presets" placeholder="e.g. models/screen_decals_overlay_3/screen_decals_overlay_3.glb, my_effect.js, or browse" value="" spellcheck="false" autocomplete="off" />
+            <label for="local-file-picker" class="btn-icon" title="Browse 3D file, procedural .js/.mjs graphic/animation, materials & textures">
               <span>📁 Browse</span>
-              <input type="file" id="local-file-picker" accept=".glb,.gltf,.obj,.mtl,.bin,.fbx,.stl,.png,.jpg,.jpeg,.webp" multiple style="display:none;" />
+              <input type="file" id="local-file-picker" accept=".glb,.gltf,.obj,.mtl,.bin,.fbx,.stl,.js,.mjs,.png,.jpg,.jpeg,.webp" multiple style="display:none;" />
             </label>
           </div>
           <datalist id="model-presets">
@@ -2089,6 +2404,9 @@
           </button>
           <button id="btn-quick-overlay-3" class="btn btn-subtle" type="button" title="Load Screen Decals Overlay 3 (Non-Radiating Decals)">
             <span>💥</span> <span>Overlay 3 Decals</span>
+          </button>
+          <button id="btn-quick-open-procedural" class="btn btn-subtle" type="button" style="border-color: rgba(167, 139, 250, 0.5); color: #c4b5fd;" title="Open Procedural Graphic & Animation .js Loader">
+            <span>✨</span> <span>Procedural .JS</span>
           </button>
         </div>
 
@@ -2791,6 +3109,169 @@
           </div>
         </div>
       </div>
+
+      <!-- Tab 6: Procedural Graphic & Animation .JS Loader & Player -->
+      <div class="tab-content" id="tab-content-procedural">
+        <div class="panel-section-header">
+          <div>
+            <div style="font-weight: 700; color: #fff; font-size: 0.95rem;">Procedural Graphic &amp; Animation .JS Runner</div>
+            <div class="section-subtitle">Load and play Three.js 3D, GLSL Shader, or 2D Canvas procedural .js files</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:0.35rem;">
+            <span class="proc-bar-pill" id="proc-mode-badge">IDLE</span>
+            <span class="card-badge" id="proc-status-badge" style="background: rgba(255,255,255,0.08); color:#94a3b8; border-color:#475569;">Ready</span>
+          </div>
+        </div>
+
+        <!-- 1. File Loader Controls -->
+        <div class="input-group">
+          <label for="procedural-file-input">Procedural .JS / .MJS File Path or Browse Local File</label>
+          <div class="input-with-action">
+            <input type="text" id="procedural-file-input" placeholder="e.g. models/procedural/vortex.js, ./my_anim.js, or Browse" spellcheck="false" autocomplete="off" />
+            <label for="procedural-file-picker" class="btn-icon" style="border-color: rgba(167, 139, 250, 0.5); color: #c4b5fd;" title="Browse local .js or .mjs procedural graphic/animation file">
+              <span>✨ Browse .JS</span>
+              <input type="file" id="procedural-file-picker" accept=".js,.mjs,text/javascript,application/javascript" style="display:none;" />
+            </label>
+          </div>
+        </div>
+
+        <div class="loader-actions">
+          <button id="btn-load-procedural" class="btn btn-primary-accent" type="button" style="background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%); border-color: rgba(167, 139, 250, 0.65); box-shadow: 0 3px 14px rgba(124, 58, 237, 0.4);">
+            <span>⚡</span> <span>Load &amp; Play .JS</span>
+          </button>
+          <button id="btn-unload-procedural" class="btn btn-cancel" type="button" style="flex:1; padding: 0.65rem 0.9rem;">
+            <span>⏹️</span> <span>Unload</span>
+          </button>
+        </div>
+
+        <!-- 2. Scene Mount & Render Options -->
+        <div class="controls-subgroup">
+          <span class="subgroup-title">Scene Mount &amp; Render Mode</span>
+          <div class="proc-mode-group" role="group" aria-label="Procedural mount mode">
+            <button type="button" class="proc-mode-btn active" id="btn-proc-mount-replace" data-mount="replace" title="Replace current 3D model in the viewer with this procedural script">
+              <span>🧊</span> <span>Replace Scene Model</span>
+            </button>
+            <button type="button" class="proc-mode-btn" id="btn-proc-mount-overlay" data-mount="overlay" title="Play procedural FX on top of the currently loaded 3D model">
+              <span>✨</span> <span>Overlay on Model</span>
+            </button>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:0.35rem; font-size:0.76rem; color:#cbd5e1;">
+            <label style="display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;">
+              <input type="checkbox" id="chk-proc-autoscale" checked style="accent-color:#a78bfa;" />
+              <span>Auto-Scale &amp; Ground 3D Output</span>
+            </label>
+            <label style="display:inline-flex; align-items:center; gap:0.4rem; cursor:pointer;" title="Projects 2D Canvas procedural animations onto a 3D plane so they can be orbited or viewed in WebXR">
+              <input type="checkbox" id="chk-proc-2d-on-plane" style="accent-color:#38bdf8;" />
+              <span>Project 2D Canvas onto 3D Plane</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 3. Playback & Timeline Controls -->
+        <div class="controls-subgroup" id="proc-playback-group">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="subgroup-title">Procedural Playback</span>
+            <span id="proc-frame-counter" style="font-size:0.72rem; color:#94a3b8; font-family:monospace;">Idle</span>
+          </div>
+          <div class="btn-row" style="flex-wrap: wrap;">
+            <button id="btn-proc-play-pause" class="btn btn-primary-accent" type="button" disabled style="background: linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%); border-color: rgba(167, 139, 250, 0.5);">
+              <span id="proc-play-icon">▶️</span> <span id="proc-play-label">Play</span>
+            </button>
+            <button id="btn-proc-reset" class="btn" type="button" disabled>
+              <span>⏮️</span> <span>Restart</span>
+            </button>
+            <button id="btn-proc-loop" class="btn active" type="button" title="Toggle animation loop when duration is set" style="border-color: rgba(56, 189, 248, 0.45); color: #38bdf8;">
+              <span>🔁</span> <span id="proc-loop-label">Loop: ON</span>
+            </button>
+            <select id="proc-speed-select" class="btn" style="padding: 4px 8px; font-size: 0.82rem; cursor: pointer; flex: 0.7;" title="Procedural Playback Speed">
+              <option value="0.25">0.25x</option>
+              <option value="0.5">0.5x</option>
+              <option value="1.0" selected>1.0x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2.0">2.0x</option>
+            </select>
+          </div>
+          <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.28); padding: 5px 8px; border-radius: 6px;">
+            <span id="proc-time-current" style="font-size: 0.75rem; color: #38bdf8; font-variant-numeric: tabular-nums; min-width: 42px; font-family: monospace;">0:00.0</span>
+            <input type="range" id="proc-timeline-slider" min="0" max="10" value="0" step="0.02" disabled style="flex: 1; cursor: pointer; accent-color: #a78bfa;" />
+            <span id="proc-time-duration" style="font-size: 0.75rem; opacity: 0.8; font-variant-numeric: tabular-nums; min-width: 42px; text-align: right; font-family: monospace;">∞</span>
+          </div>
+        </div>
+
+        <!-- 4. Built-in Procedural Demo Presets -->
+        <div class="controls-subgroup">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="subgroup-title">Quick Procedural Demos (Click to Play &amp; Inspect Code)</span>
+          </div>
+          <div class="proc-presets-grid">
+            <button type="button" class="proc-preset-btn" data-preset="wormhole_vortex">
+              <span class="preset-title">🌌 Wormhole Vortex</span>
+              <span class="preset-desc">3D procedural tunnel, energy rings &amp; stars</span>
+            </button>
+            <button type="button" class="proc-preset-btn" data-preset="plasma_shield">
+              <span class="preset-title">⚡ Plasma Shield Shader</span>
+              <span class="preset-desc">Custom GLSL procedural energy barrier</span>
+            </button>
+            <button type="button" class="proc-preset-btn" data-preset="supernova_burst">
+              <span class="preset-title">💥 Supernova Burst (4.5s)</span>
+              <span class="preset-desc">Timed looping 3D explosion with scrubber</span>
+            </button>
+            <button type="button" class="proc-preset-btn" data-preset="tactical_radar_2d">
+              <span class="preset-title">🎯 Tactical Radar (2D)</span>
+              <span class="preset-desc">2D Canvas HUD sweep (or 3D plane)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. Live Code Editor & Hot-Reload -->
+        <div class="controls-subgroup">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.4rem;">
+            <span class="subgroup-title">Live Script Preview &amp; Hot-Reload</span>
+            <div style="display:flex; gap:0.35rem;">
+              <button type="button" class="btn-tiny" id="btn-proc-copy-template" title="Load & copy a starter procedural .js template">📋 Starter Template</button>
+              <button type="button" class="btn-tiny" id="btn-proc-download-js" title="Download current editor script as .js file">💾 Save .JS</button>
+              <button type="button" class="btn-tiny" id="btn-proc-run-editor" style="background: rgba(16, 185, 129, 0.22); border-color: #10b981; color: #6ee7b7; font-weight: 700;">▶ Run Code</button>
+            </div>
+          </div>
+          <textarea id="procedural-code-editor" class="proc-code-editor" spellcheck="false" placeholder="// Browse a .js file, drop one onto the canvas, click a demo above, or write procedural Three.js / 2D Canvas / Shader JS here and click 'Run Code'..."></textarea>
+        </div>
+
+        <!-- 6. Diagnostics / Runtime Console -->
+        <div class="input-group">
+          <label>Runtime Diagnostics &amp; Console</label>
+          <div id="procedural-console" class="proc-console">Ready. Supports ES Modules (import/export), Classic Three.js scripts, GLSL Shader objects, and 2D Canvas sketches.</div>
+        </div>
+
+        <!-- 7. Supported Script Formats Reference -->
+        <details class="proc-api-details">
+          <summary>
+            <span>📖 Supported Procedural .JS Formats &amp; API Reference</span>
+            <span style="font-size:0.68rem; opacity:0.8;">Click to expand</span>
+          </summary>
+          <div style="margin-top:0.5rem; line-height:1.45;">
+            Any of these patterns work automatically when you browse, drop, or load a <code>.js</code> / <code>.mjs</code> file:
+          </div>
+          <pre>// 1. ES Module 3D Procedural Graphic / Animation (Recommended)
+import * as THREE from 'three';
+export default function createProcedural({ THREE, root, scene, camera, renderer }) {
+  const mesh = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(0.8, 0.22, 128, 32),
+    new THREE.MeshStandardMaterial({ color: 0x00f0ff, metalness: 0.7, roughness: 0.2 })
+  );
+  return {
+    object: mesh,          // or mesh / group / scene (or call root.add(mesh))
+    duration: 0,           // optional loop seconds (&gt; 0 enables timeline scrubber)
+    update(dt, elapsed) { mesh.rotation.y = elapsed * 1.2; },
+    reset() { mesh.rotation.set(0, 0, 0); },
+    dispose() {}
+  };
+}
+
+// 2. Named Exports: export function init(ctx) / update(dt, t) / draw(ctx2d, w, h, t, dt)
+// 3. Classic Script (no imports): uses injected THREE, scene, root, canvas, ctx, onUpdate(fn)
+// 4. Shader Export: export default { fragmentShader, vertexShader?, uniforms?, geometry? }</pre>
+        </details>
+      </div>
     </div>
   </div>
 
@@ -3271,6 +3752,8 @@
         case 'obj': return '🎨';
         case 'fbx': return '🎬';
         case 'stl': return '📐';
+        case 'js':
+        case 'mjs': return '✨';
         default: return '📁';
       }
     }
@@ -3589,7 +4072,7 @@
         if (!curVal) {
           panelDestPathInput.value = `wormhole0/warp_origin_images/${fileName}`;
         } else {
-          const hasExt = /\.(glb|gltf|obj|fbx|stl|usdz|dae)$/i.test(curVal);
+          const hasExt = /\.(glb|gltf|obj|fbx|stl|usdz|dae|js|mjs)$/i.test(curVal);
           const dir = hasExt ? curVal.substring(0, curVal.lastIndexOf('/')) : curVal.replace(/\/+$/, '');
           panelDestPathInput.value = dir ? `${dir}/${fileName}` : fileName;
         }
@@ -4047,7 +4530,7 @@
       // 2. Gather typed path if present
       let typed = normalizeClientDestPath(panelDestPathInput.value).replace(/\/+$/, '');
       if (typed) {
-        const hasModelExt = /\.(glb|gltf|obj|fbx|stl|usdz|dae)$/i.test(typed);
+        const hasModelExt = /\.(glb|gltf|obj|fbx|stl|usdz|dae|js|mjs)$/i.test(typed);
         const dirPart = hasModelExt ? typed.substring(0, typed.lastIndexOf('/')) : typed;
         const typedTarget = dirPart ? `${dirPart}/${fileName}` : fileName;
         if (!destPaths.includes(typedTarget)) {
@@ -4422,7 +4905,8 @@
       specs: { title: 'Model & Scene Specs', icon: '📊' },
       controls: { title: 'Viewport & WebXR Controls', icon: '🎮' },
       gizmo: { title: 'Debug & Orientation Gizmos', icon: '📐' },
-      decals: { title: 'Screen Decals & Damage Settings', icon: '💥' }
+      decals: { title: 'Screen Decals & Damage Settings', icon: '💥' },
+      procedural: { title: 'Procedural Graphic & Animation .JS', icon: '✨' }
     };
 
     function openTab(tabName) {
@@ -4433,7 +4917,13 @@
 
       activeTab = tabName;
       dockTabs.forEach(t => {
-        t.classList.toggle('active', t.getAttribute('data-tab') === tabName);
+        const isActive = t.getAttribute('data-tab') === tabName;
+        t.classList.toggle('active', isActive);
+        if (isActive && typeof t.scrollIntoView === 'function') {
+          try {
+            t.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+          } catch (_) {}
+        }
       });
 
       tabContents.forEach(c => {
@@ -4571,6 +5061,17 @@
       const cleanExt = (customName || rawUrl).split('?')[0].split('#')[0];
       const ext = cleanExt.includes('.') ? cleanExt.split('.').pop().toLowerCase() : 'glb';
       const displayName = customName || rawUrl.split('/').pop();
+
+      // Route procedural .js / .mjs files directly to the Procedural JS Runner
+      if (ext === 'js' || ext === 'mjs') {
+        await loadProceduralFromUrl(modelInputVal, displayName, sourcePathDesc || rawUrl);
+        return;
+      }
+
+      // If a procedural script was replacing the scene model, unload it cleanly before loading a 3D model
+      if (typeof activeProcedural !== 'undefined' && activeProcedural && activeProcedural.mountMode === 'replace') {
+        unloadProceduralScript({ silent: true });
+      }
 
       setStatus('Loading...', 'loading');
       setMessage(`Loading ${displayName}...`);
@@ -4977,11 +5478,17 @@
     function stageSelectedLocalFiles(files) {
       if (!files || files.length === 0) return;
 
-      const modelExts = ['glb', 'gltf', 'obj', 'fbx', 'stl', 'usdz', 'dae'];
+      const modelExts = ['glb', 'gltf', 'obj', 'fbx', 'stl', 'usdz', 'dae', 'js', 'mjs'];
       let mainFile = files.find(f => modelExts.includes(getExt(f.name)));
       if (!mainFile) mainFile = files[0];
 
       const ext = getExt(mainFile.name);
+
+      // If a procedural .js / .mjs file was selected or dropped, load and play it directly
+      if (ext === 'js' || ext === 'mjs') {
+        loadProceduralLocalFile(mainFile);
+        return;
+      }
       // When selecting .glb, don't include textures assets or .mtl files
       const companionFiles = ext === 'glb' ? [] : files.filter(f => f !== mainFile);
       const blobUrl = URL.createObjectURL(mainFile);
@@ -5176,6 +5683,16 @@
           }
         });
       }
+      if (typeof proceduralOverlayRoot !== 'undefined' && proceduralOverlayRoot) {
+        proceduralOverlayRoot.traverse((child) => {
+          if (child.isMesh && child.material) {
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach(m => {
+              m.wireframe = isWireframe;
+            });
+          }
+        });
+      }
 
       // Update button in Controls Tab
       const btnWire = document.getElementById('btn-wireframe');
@@ -5308,6 +5825,9 @@
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
+      if (typeof resizeProcedural2DCanvas === 'function') {
+        resizeProcedural2DCanvas();
+      }
     });
 
     // =========================================================================
@@ -5399,26 +5919,32 @@
     const btnPlayPauseAnim = document.getElementById('btn-play-pause-anim');
     if (btnPlayPauseAnim) {
       btnPlayPauseAnim.addEventListener('click', () => {
-        if (!currentAnimAction) return;
-        isAnimPlaying = !isAnimPlaying;
-        currentAnimAction.paused = !isAnimPlaying;
-        const playLabel = document.getElementById('anim-play-label');
-        const playIcon = document.getElementById('anim-play-icon');
-        if (playLabel) playLabel.textContent = isAnimPlaying ? 'Pause' : 'Play';
-        if (playIcon) playIcon.textContent = isAnimPlaying ? '⏸️' : '▶️';
+        if (currentAnimAction) {
+          isAnimPlaying = !isAnimPlaying;
+          currentAnimAction.paused = !isAnimPlaying;
+          const playLabel = document.getElementById('anim-play-label');
+          const playIcon = document.getElementById('anim-play-icon');
+          if (playLabel) playLabel.textContent = isAnimPlaying ? 'Pause' : 'Play';
+          if (playIcon) playIcon.textContent = isAnimPlaying ? '⏸️' : '▶️';
+        } else if (typeof toggleProceduralPlayPause === 'function' && activeProcedural) {
+          toggleProceduralPlayPause();
+        }
       });
     }
 
     const btnStopAnim = document.getElementById('btn-stop-anim');
     if (btnStopAnim) {
       btnStopAnim.addEventListener('click', () => {
-        if (!currentAnimAction) return;
-        currentAnimAction.time = 0;
-        if (animationMixer) animationMixer.setTime(0);
-        const slider = document.getElementById('anim-timeline-slider');
-        if (slider) slider.value = '0';
-        const curElem = document.getElementById('anim-time-current');
-        if (curElem) curElem.textContent = '0:00';
+        if (currentAnimAction) {
+          currentAnimAction.time = 0;
+          if (animationMixer) animationMixer.setTime(0);
+          const slider = document.getElementById('anim-timeline-slider');
+          if (slider) slider.value = '0';
+          const curElem = document.getElementById('anim-time-current');
+          if (curElem) curElem.textContent = '0:00';
+        } else if (typeof resetProceduralAnimation === 'function' && activeProcedural) {
+          resetProceduralAnimation();
+        }
       });
     }
 
@@ -5428,6 +5954,9 @@
         const speed = parseFloat(e.target.value) || 1.0;
         if (currentAnimAction) {
           currentAnimAction.setEffectiveTimeScale(speed);
+        }
+        if (typeof setProceduralSpeed === 'function' && activeProcedural) {
+          setProceduralSpeed(speed);
         }
       });
     }
@@ -5440,6 +5969,8 @@
         if (currentAnimAction) {
           currentAnimAction.time = val;
           if (animationMixer) animationMixer.setTime(val);
+        } else if (typeof seekProceduralAnimation === 'function' && activeProcedural) {
+          seekProceduralAnimation(val);
         }
         const curElem = document.getElementById('anim-time-current');
         if (curElem) curElem.textContent = formatTime(val);
@@ -7189,12 +7720,1590 @@ const worldMountPos = mountOffset.clone().applyQuaternion(enemyObj.mesh.quaterni
       }
     };
 
+    // =========================================================================
+    // PROCEDURAL GRAPHIC & ANIMATION .JS LOADER & RUNTIME ENGINE
+    // =========================================================================
+    const THREE_CDN_URL = 'https://unpkg.com/three@0.160.0/build/three.module.js';
+    const THREE_ADDONS_CDN_BASE = 'https://unpkg.com/three@0.160.0/examples/jsm/';
+
+    const proceduralOverlayRoot = new THREE.Group();
+    proceduralOverlayRoot.name = 'ProceduralOverlayRoot';
+    carRoot.add(proceduralOverlayRoot);
+
+    const procedural2DCanvas = document.getElementById('procedural-2d-canvas');
+    const procedural2DCtx = procedural2DCanvas ? procedural2DCanvas.getContext('2d') : null;
+
+    const procPlayerBar = document.getElementById('procedural-player-bar');
+    const procBarMode = document.getElementById('proc-bar-mode');
+    const procBarName = document.getElementById('proc-bar-name');
+    const procBarTime = document.getElementById('proc-bar-time');
+    const btnBarProcPlay = document.getElementById('btn-bar-proc-play');
+    const btnBarProcReset = document.getElementById('btn-bar-proc-reset');
+    const btnBarProcOpen = document.getElementById('btn-bar-proc-open');
+    const btnBarProcUnload = document.getElementById('btn-bar-proc-unload');
+
+    const procStatusBadge = document.getElementById('proc-status-badge');
+    const procModeBadge = document.getElementById('proc-mode-badge');
+    const procFileInput = document.getElementById('procedural-file-input');
+    const procFilePicker = document.getElementById('procedural-file-picker');
+    const btnLoadProcedural = document.getElementById('btn-load-procedural');
+    const btnUnloadProcedural = document.getElementById('btn-unload-procedural');
+    const btnProcMountReplace = document.getElementById('btn-proc-mount-replace');
+    const btnProcMountOverlay = document.getElementById('btn-proc-mount-overlay');
+    const chkProcAutoscale = document.getElementById('chk-proc-autoscale');
+    const chkProc2DOnPlane = document.getElementById('chk-proc-2d-on-plane');
+    const btnProcPlayPause = document.getElementById('btn-proc-play-pause');
+    const procPlayIcon = document.getElementById('proc-play-icon');
+    const procPlayLabel = document.getElementById('proc-play-label');
+    const btnProcReset = document.getElementById('btn-proc-reset');
+    const btnProcLoop = document.getElementById('btn-proc-loop');
+    const procLoopLabel = document.getElementById('proc-loop-label');
+    const procSpeedSelect = document.getElementById('proc-speed-select');
+    const procTimeCurrent = document.getElementById('proc-time-current');
+    const procTimeDuration = document.getElementById('proc-time-duration');
+    const procTimelineSlider = document.getElementById('proc-timeline-slider');
+    const procFrameCounter = document.getElementById('proc-frame-counter');
+    const procCodeEditor = document.getElementById('procedural-code-editor');
+    const procConsole = document.getElementById('procedural-console');
+    const btnProcRunEditor = document.getElementById('btn-proc-run-editor');
+    const btnProcCopyTemplate = document.getElementById('btn-proc-copy-template');
+    const btnProcDownloadJs = document.getElementById('btn-proc-download-js');
+
+    let proceduralMountMode = 'replace'; // 'replace' | 'overlay'
+    let proceduralLoopEnabled = true;
+    let proceduralSpeed = 1.0;
+    let isProcScrubbing = false;
+    let activeProcedural = null;
+
+    const PROCEDURAL_PRESETS = {
+      wormhole_vortex: {
+        name: 'wormhole_vortex.js',
+        code: `// Procedural 3D Animation: Relativistic Wormhole Vortex
+import * as THREE from 'three';
+
+export default function createProcedural({ THREE }) {
+  const group = new THREE.Group();
+  group.name = 'WormholeVortex';
+
+  // Glowing accretion rings
+  const rings = [];
+  const ringColors = [0x00f0ff, 0x7c3aed, 0x38bdf8, 0xff2a85, 0x22d3ee];
+  for (let i = 0; i < 14; i++) {
+    const radius = 0.38 + i * 0.14;
+    const tube = 0.018 + (i % 3) * 0.008;
+    const geo = new THREE.TorusGeometry(radius, tube, 16, 72);
+    const mat = new THREE.MeshStandardMaterial({
+      color: ringColors[i % ringColors.length],
+      emissive: ringColors[i % ringColors.length],
+      emissiveIntensity: 0.9,
+      metalness: 0.65,
+      roughness: 0.2,
+      transparent: true,
+      opacity: Math.max(0.28, 1 - i * 0.05)
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.position.z = -i * 0.24 + 1.4;
+    mesh.userData = { baseZ: mesh.position.z, idx: i };
+    group.add(mesh);
+    rings.push(mesh);
+  }
+
+  // Singularity core
+  const core = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.32, 3),
+    new THREE.MeshStandardMaterial({
+      color: 0x0b0f1a,
+      emissive: 0x38bdf8,
+      emissiveIntensity: 1.4,
+      metalness: 0.9,
+      roughness: 0.1,
+      wireframe: false
+    })
+  );
+  core.position.z = 1.4;
+  group.add(core);
+
+  // Orbiting starlight particle stream
+  const count = 900;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const cTmp = new THREE.Color();
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const r = 0.45 + Math.random() * 1.9;
+    const z = (Math.random() - 0.5) * 3.8;
+    positions[i * 3] = Math.cos(angle) * r;
+    positions[i * 3 + 1] = Math.sin(angle) * r;
+    positions[i * 3 + 2] = z;
+    cTmp.setHSL(0.52 + Math.random() * 0.28, 0.95, 0.65);
+    colors[i * 3] = cTmp.r;
+    colors[i * 3 + 1] = cTmp.g;
+    colors[i * 3 + 2] = cTmp.b;
+  }
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  starGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  const starMat = new THREE.PointsMaterial({
+    size: 0.045,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.92,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const stars = new THREE.Points(starGeo, starMat);
+  group.add(stars);
+
+  return {
+    object: group,
+    update(dt, elapsed) {
+      rings.forEach((r, i) => {
+        const dir = i % 2 === 0 ? 1 : -1;
+        r.rotation.z = elapsed * (0.4 + i * 0.08) * dir;
+        r.rotation.x = Math.sin(elapsed * 1.1 + i * 0.45) * 0.22;
+        const pulse = 1 + Math.sin(elapsed * 2.8 - i * 0.55) * 0.06;
+        r.scale.set(pulse, pulse, 1);
+      });
+      core.rotation.y = elapsed * 1.4;
+      core.rotation.x = elapsed * 0.8;
+      stars.rotation.z = elapsed * 0.35;
+      const posAttr = starGeo.attributes.position;
+      for (let i = 0; i < count; i++) {
+        let z = posAttr.getZ(i) + dt * 1.6;
+        if (z > 1.9) z = -1.9;
+        posAttr.setZ(i, z);
+      }
+      posAttr.needsUpdate = true;
+    },
+    reset() {
+      group.rotation.set(0, 0, 0);
+    }
+  };
+}`
+      },
+      plasma_shield: {
+        name: 'plasma_shield_shader.js',
+        code: `// Procedural GLSL Shader Graphic: Animated Plasma Energy Shield
+export default {
+  geometry: 'sphere',
+  uniforms: {
+    uColorA: { value: [0.0, 0.94, 1.0] },
+    uColorB: { value: [0.55, 0.22, 1.0] }
+  },
+  vertexShader: \`
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vViewPos;
+    uniform float uTime;
+    void main() {
+      vUv = uv;
+      float ripple = sin(position.y * 8.0 - uTime * 3.5) * 0.025;
+      vec3 displaced = position + normal * ripple;
+      vec4 mvPos = modelViewMatrix * vec4(displaced, 1.0);
+      vNormal = normalize(normalMatrix * normal);
+      vViewPos = -mvPos.xyz;
+      gl_Position = projectionMatrix * mvPos;
+    }
+  \`,
+  fragmentShader: \`
+    precision highp float;
+    varying vec2 vUv;
+    varying vec3 vNormal;
+    varying vec3 vViewPos;
+    uniform float uTime;
+    uniform vec3 uColorA;
+    uniform vec3 uColorB;
+
+    float hexGrid(vec2 p) {
+      p *= vec2(18.0, 10.0);
+      vec2 r = vec2(1.0, 1.73205);
+      vec2 h = r * 0.5;
+      vec2 a = mod(p, r) - h;
+      vec2 b = mod(p - h, r) - h;
+      vec2 gv = dot(a, a) < dot(b, b) ? a : b;
+      float d = max(abs(gv.x), dot(abs(gv), normalize(r)));
+      return smoothstep(0.43, 0.49, d);
+    }
+
+    void main() {
+      vec3 N = normalize(vNormal);
+      vec3 V = normalize(vViewPos);
+      float fresnel = pow(1.0 - max(dot(N, V), 0.0), 2.4);
+      float grid = hexGrid(vUv + vec2(uTime * 0.04, -uTime * 0.02));
+      float scan = 0.5 + 0.5 * sin(vUv.y * 28.0 - uTime * 5.0);
+      vec3 col = mix(uColorB, uColorA, fresnel + scan * 0.35);
+      col += uColorA * grid * (0.65 + 0.35 * sin(uTime * 4.0 + vUv.x * 12.0));
+      float alpha = clamp(0.22 + fresnel * 0.72 + grid * 0.42, 0.15, 0.96);
+      gl_FragColor = vec4(col, alpha);
+    }
+  \`
+};`
+      },
+      supernova_burst: {
+        name: 'supernova_burst.js',
+        code: `// Procedural Timed 3D Animation (4.5s loop with Timeline Scrubber)
+import * as THREE from 'three';
+
+export const duration = 4.5;
+
+export function init({ THREE }) {
+  const group = new THREE.Group();
+  group.name = 'SupernovaBurst';
+
+  const coreMat = new THREE.MeshStandardMaterial({
+    color: 0xffffff,
+    emissive: 0xffaa22,
+    emissiveIntensity: 2.2,
+    roughness: 0.15,
+    metalness: 0.1,
+    transparent: true,
+    opacity: 1
+  });
+  const core = new THREE.Mesh(new THREE.SphereGeometry(0.42, 32, 32), coreMat);
+  group.add(core);
+
+  const shockMat = new THREE.MeshBasicMaterial({
+    color: 0x38bdf8,
+    transparent: true,
+    opacity: 0.85,
+    side: THREE.DoubleSide,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  const shockwave = new THREE.Mesh(new THREE.RingGeometry(0.45, 0.62, 64), shockMat);
+  shockwave.rotation.x = Math.PI / 2;
+  group.add(shockwave);
+
+  const shardCount = 48;
+  const shards = [];
+  const shardGeo = new THREE.OctahedronGeometry(0.09, 0);
+  for (let i = 0; i < shardCount; i++) {
+    const phi = Math.acos(1 - 2 * ((i + 0.5) / shardCount));
+    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+    const dir = new THREE.Vector3(
+      Math.sin(phi) * Math.cos(theta),
+      Math.cos(phi),
+      Math.sin(phi) * Math.sin(theta)
+    ).normalize();
+    const mat = new THREE.MeshStandardMaterial({
+      color: i % 2 === 0 ? 0xff4d2a : 0x38bdf8,
+      emissive: i % 2 === 0 ? 0xff2a3b : 0x00f0ff,
+      emissiveIntensity: 1.3,
+      roughness: 0.25,
+      metalness: 0.6,
+      transparent: true,
+      opacity: 1
+    });
+    const m = new THREE.Mesh(shardGeo, mat);
+    m.userData = { dir, speed: 0.9 + (i % 7) * 0.24, spin: 2 + (i % 5) };
+    group.add(m);
+    shards.push(m);
+  }
+
+  return {
+    object: group,
+    duration,
+    update(dt, elapsed) {
+      const p = Math.max(0, Math.min(1, elapsed / duration));
+      // Phase 1 (0..0.2): Implode charge; Phase 2 (0.2..1): Detonate & expand
+      if (p < 0.2) {
+        const k = p / 0.2;
+        const s = 1.0 - k * 0.55 + Math.sin(k * 24) * 0.06;
+        core.scale.setScalar(s);
+        coreMat.opacity = 1;
+        coreMat.emissive.setHex(0x38bdf8);
+        shockwave.scale.setScalar(0.15);
+        shockMat.opacity = 0;
+        shards.forEach(m => {
+          m.position.copy(m.userData.dir).multiplyScalar((1 - k) * 0.35);
+          m.scale.setScalar(0.5);
+          m.material.opacity = k;
+        });
+      } else {
+        const k = (p - 0.2) / 0.8;
+        const easeOut = 1 - Math.pow(1 - k, 3);
+        core.scale.setScalar(0.5 + easeOut * 1.4);
+        coreMat.opacity = Math.max(0, 1 - k * 1.25);
+        coreMat.emissive.setHex(0xff7722);
+        shockwave.scale.setScalar(0.4 + easeOut * 4.2);
+        shockMat.opacity = Math.max(0, (1 - k) * 0.9);
+        shards.forEach(m => {
+          const dist = 0.25 + easeOut * 2.1 * m.userData.speed;
+          m.position.copy(m.userData.dir).multiplyScalar(dist);
+          m.rotation.set(elapsed * m.userData.spin, elapsed * 1.7, 0);
+          m.scale.setScalar(Math.max(0.05, 1.15 - k * 0.95));
+          m.material.opacity = Math.max(0, 1 - k * 1.05);
+        });
+      }
+    }
+  };
+}`
+      },
+      tactical_radar_2d: {
+        name: 'tactical_radar_2d.js',
+        code: `// Procedural 2D Canvas Animation: Sci-Fi Tactical Radar HUD
+export const mode = '2d';
+
+const blips = Array.from({ length: 9 }, (_, i) => ({
+  angle: (i / 9) * Math.PI * 2 + 0.35,
+  dist: 0.25 + ((i * 37) % 65) / 100,
+  hostile: i % 3 === 0
+}));
+
+export function draw(ctx, width, height, elapsed) {
+  ctx.clearRect(0, 0, width, height);
+  const cx = width * 0.5;
+  const cy = height * 0.5;
+  const radius = Math.min(width, height) * 0.34;
+
+  ctx.save();
+  // Radar dark glass disk
+  const bg = ctx.createRadialGradient(cx, cy, radius * 0.05, cx, cy, radius);
+  bg.addColorStop(0, 'rgba(6, 30, 48, 0.55)');
+  bg.addColorStop(1, 'rgba(6, 12, 24, 0.18)');
+  ctx.fillStyle = bg;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Concentric range rings
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.38)';
+  ctx.lineWidth = 1.5;
+  for (let i = 1; i <= 4; i++) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, (radius * i) / 4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Crosshairs
+  ctx.strokeStyle = 'rgba(0, 240, 255, 0.22)';
+  ctx.beginPath();
+  ctx.moveTo(cx - radius, cy);
+  ctx.lineTo(cx + radius, cy);
+  ctx.moveTo(cx, cy - radius);
+  ctx.lineTo(cx, cy + radius);
+  ctx.stroke();
+
+  // Rotating sweep wedge
+  const sweepAngle = (elapsed * 1.6) % (Math.PI * 2);
+  for (let s = 0; s < 24; s++) {
+    const a0 = sweepAngle - s * 0.032;
+    const a1 = sweepAngle - (s + 1) * 0.032;
+    ctx.fillStyle = \`rgba(0, 240, 255, \${(1 - s / 24) * 0.28})\`;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, a1, a0);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Sweep line
+  ctx.strokeStyle = '#00f0ff';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(cx + Math.cos(sweepAngle) * radius, cy + Math.sin(sweepAngle) * radius);
+  ctx.stroke();
+
+  // Blips illuminated by sweep
+  blips.forEach((b) => {
+    const a = b.angle + Math.sin(elapsed * 0.5 + b.dist * 6) * 0.06;
+    const bx = cx + Math.cos(a) * radius * b.dist;
+    const by = cy + Math.sin(a) * radius * b.dist;
+    let diff = (sweepAngle - a) % (Math.PI * 2);
+    if (diff < 0) diff += Math.PI * 2;
+    const glow = Math.max(0.18, 1 - diff / (Math.PI * 1.4));
+    ctx.fillStyle = b.hostile
+      ? \`rgba(255, 42, 59, \${glow})\`
+      : \`rgba(16, 185, 129, \${glow})\`;
+    ctx.beginPath();
+    ctx.arc(bx, by, 4 + glow * 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Telemetry caption
+  ctx.fillStyle = 'rgba(0, 240, 255, 0.9)';
+  ctx.font = '600 13px ui-monospace, SFMono-Regular, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(\`PROCEDURAL 2D SCANNER • T=\${elapsed.toFixed(2)}s\`, cx, cy + radius + 24);
+  ctx.restore();
+}`
+      }
+    };
+
+    const PROCEDURAL_STARTER_TEMPLATE = `// Starter Procedural 3D Graphic & Animation (.js)
+import * as THREE from 'three';
+
+export default function createProcedural({ THREE, root }) {
+  const group = new THREE.Group();
+
+  const knot = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(0.75, 0.22, 128, 28),
+    new THREE.MeshStandardMaterial({
+      color: 0x00f0ff,
+      emissive: 0x1d4ed8,
+      emissiveIntensity: 0.45,
+      metalness: 0.75,
+      roughness: 0.2
+    })
+  );
+  knot.position.y = 1.1;
+  group.add(knot);
+
+  return {
+    object: group,
+    duration: 0, // Set > 0 (seconds) to enable timeline scrubbing
+    update(dt, elapsed) {
+      knot.rotation.y = elapsed * 1.1;
+      knot.rotation.x = Math.sin(elapsed * 0.8) * 0.4;
+    },
+    reset() {
+      knot.rotation.set(0, 0, 0);
+    },
+    dispose() {}
+  };
+}`;
+
+    function formatProcTime(seconds) {
+      if (!seconds || isNaN(seconds) || seconds < 0) return '0:00.0';
+      const mins = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      const tenths = Math.floor((seconds * 10) % 10);
+      return `${mins}:${secs < 10 ? '0' : ''}${secs}.${tenths}`;
+    }
+
+    function setProcConsole(message, level = '') {
+      if (!procConsole) return;
+      procConsole.textContent = message;
+      procConsole.className = 'proc-console' + (level ? ` ${level}` : '');
+    }
+
+    function resizeProcedural2DCanvas() {
+      if (!procedural2DCanvas || !procedural2DCtx) return;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = (activeProcedural && activeProcedural.project2DOnPlane) ? 1024 : window.innerWidth;
+      const h = (activeProcedural && activeProcedural.project2DOnPlane) ? 1024 : window.innerHeight;
+      procedural2DCanvas.width = Math.max(1, Math.floor(w * (activeProcedural && activeProcedural.project2DOnPlane ? 1 : dpr)));
+      procedural2DCanvas.height = Math.max(1, Math.floor(h * (activeProcedural && activeProcedural.project2DOnPlane ? 1 : dpr)));
+      if (activeProcedural && activeProcedural.project2DOnPlane) {
+        procedural2DCtx.setTransform(1, 0, 0, 1, 0, 0);
+      } else {
+        procedural2DCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      }
+    }
+
+    function syncProceduralUI() {
+      const hasActive = !!activeProcedural;
+      const playing = hasActive && activeProcedural.isPlaying && !activeProcedural.hasError;
+
+      if (btnProcPlayPause) btnProcPlayPause.disabled = !hasActive;
+      if (btnProcReset) btnProcReset.disabled = !hasActive;
+
+      if (procPlayIcon) procPlayIcon.textContent = playing ? '⏸️' : '▶️';
+      if (procPlayLabel) procPlayLabel.textContent = playing ? 'Pause' : 'Play';
+
+      if (btnBarProcPlay) {
+        btnBarProcPlay.textContent = playing ? '⏸️ Pause' : '▶️ Play';
+      }
+
+      if (procStatusBadge) {
+        if (!hasActive) {
+          procStatusBadge.textContent = 'Ready';
+          procStatusBadge.className = 'card-badge';
+          procStatusBadge.style.cssText = 'background: rgba(255,255,255,0.08); color:#94a3b8; border-color:#475569;';
+        } else if (activeProcedural.hasError) {
+          procStatusBadge.textContent = 'Error';
+          procStatusBadge.className = 'card-badge error';
+          procStatusBadge.style.cssText = '';
+        } else if (playing) {
+          procStatusBadge.textContent = 'Playing';
+          procStatusBadge.className = 'card-badge';
+          procStatusBadge.style.cssText = '';
+        } else {
+          procStatusBadge.textContent = 'Paused';
+          procStatusBadge.className = 'card-badge loading';
+          procStatusBadge.style.cssText = '';
+        }
+      }
+
+      if (procModeBadge) {
+        procModeBadge.textContent = hasActive ? activeProcedural.modeLabel : 'IDLE';
+      }
+
+      if (procPlayerBar) {
+        procPlayerBar.classList.toggle('visible', hasActive);
+        if (hasActive) {
+          if (procBarMode) procBarMode.textContent = activeProcedural.modeLabel;
+          if (procBarName) procBarName.textContent = activeProcedural.name;
+          if (procBarTime) procBarTime.textContent = formatProcTime(activeProcedural.elapsed);
+        }
+      }
+
+      if (procTimeCurrent) {
+        procTimeCurrent.textContent = hasActive ? formatProcTime(activeProcedural.elapsed) : '0:00.0';
+      }
+
+      if (procTimeDuration) {
+        if (!hasActive) {
+          procTimeDuration.textContent = '∞';
+        } else if (activeProcedural.duration > 0) {
+          procTimeDuration.textContent = formatProcTime(activeProcedural.duration);
+        } else {
+          procTimeDuration.textContent = '∞';
+        }
+      }
+
+      if (procTimelineSlider) {
+        if (hasActive && activeProcedural.duration > 0) {
+          procTimelineSlider.disabled = false;
+          procTimelineSlider.min = '0';
+          procTimelineSlider.max = activeProcedural.duration.toString();
+          if (!isProcScrubbing) {
+            procTimelineSlider.value = Math.min(activeProcedural.duration, activeProcedural.elapsed).toFixed(2);
+          }
+        } else {
+          procTimelineSlider.disabled = true;
+          procTimelineSlider.value = '0';
+        }
+      }
+
+      if (procFrameCounter) {
+        if (!hasActive) {
+          procFrameCounter.textContent = 'Idle';
+        } else {
+          const mountLbl = activeProcedural.mountMode === 'overlay' ? 'Overlay' : 'Scene';
+          procFrameCounter.textContent = `${mountLbl} • Frame ${activeProcedural.frameCount}`;
+        }
+      }
+
+      // Also sync the shared Animation Controls panel inside Tab 3 when no GLTF skeletal animation is active
+      if (!currentAnimAction) {
+        const animGroup = document.getElementById('animation-controls-group');
+        if (animGroup) {
+          animGroup.style.display = hasActive ? 'flex' : 'none';
+        }
+        if (hasActive) {
+          const playLabel = document.getElementById('anim-play-label');
+          const playIcon = document.getElementById('anim-play-icon');
+          if (playLabel) playLabel.textContent = playing ? 'Pause' : 'Play';
+          if (playIcon) playIcon.textContent = playing ? '⏸️' : '▶️';
+          const durElem = document.getElementById('anim-time-duration');
+          if (durElem) durElem.textContent = activeProcedural.duration > 0 ? formatTime(activeProcedural.duration) : '∞';
+          const curElem = document.getElementById('anim-time-current');
+          if (curElem && !isUserScrubbing) curElem.textContent = formatTime(activeProcedural.elapsed);
+          const slider = document.getElementById('anim-timeline-slider');
+          if (slider) {
+            slider.disabled = !(activeProcedural.duration > 0);
+            if (activeProcedural.duration > 0) {
+              slider.min = '0';
+              slider.max = activeProcedural.duration.toString();
+              if (!isUserScrubbing) slider.value = Math.min(activeProcedural.duration, activeProcedural.elapsed).toFixed(2);
+            }
+          }
+        }
+      }
+    }
+
+    function unloadProceduralScript(options = {}) {
+      if (!activeProcedural) return;
+      const proc = activeProcedural;
+      activeProcedural = null;
+
+      // Cancel tracked timers & animation frames
+      proc.rafHandles.forEach((id) => {
+        try { cancelAnimationFrame(id); } catch (_) {}
+      });
+      proc.intervalIds.forEach((id) => {
+        try { clearInterval(id); } catch (_) {}
+      });
+      proc.timeoutIds.forEach((id) => {
+        try { clearTimeout(id); } catch (_) {}
+      });
+
+      // Invoke script dispose hook safely
+      if (typeof proc.disposeFn === 'function') {
+        try { proc.disposeFn(proc.ctx); } catch (err) { console.warn('Procedural dispose error:', err); }
+      }
+
+      // Remove 3D root group
+      if (proc.rootGroup) {
+        if (proc.mountMode === 'replace' && carModel === proc.rootGroup) {
+          carRoot.remove(carModel);
+          disposeHierarchy(carModel);
+          carModel = null;
+          window.carModel = null;
+        } else {
+          if (proc.rootGroup.parent) proc.rootGroup.parent.remove(proc.rootGroup);
+          disposeHierarchy(proc.rootGroup);
+        }
+      }
+
+      // Clean up 2D canvas & texture
+      if (proc.canvasTexture) {
+        try { proc.canvasTexture.dispose(); } catch (_) {}
+      }
+      if (procedural2DCtx && procedural2DCanvas) {
+        procedural2DCtx.clearRect(0, 0, procedural2DCanvas.width, procedural2DCanvas.height);
+      }
+      if (procedural2DCanvas) {
+        procedural2DCanvas.classList.remove('active', 'interactive');
+      }
+
+      // Revoke temporary Blob URLs
+      proc.blobUrls.forEach((url) => {
+        try { URL.revokeObjectURL(url); } catch (_) {}
+      });
+
+      // Restore any window globals created by classic scripts
+      if (proc.prevWindowProps) {
+        Object.keys(proc.prevWindowProps).forEach((key) => {
+          const prev = proc.prevWindowProps[key];
+          if (prev.existed) {
+            window[key] = prev.value;
+          } else {
+            try { delete window[key]; } catch (_) { window[key] = undefined; }
+          }
+        });
+      }
+
+      syncProceduralUI();
+      if (!options.silent) {
+        setProcConsole('Unloaded procedural script cleanly.');
+        showToast('⏹️ Procedural script unloaded');
+      }
+    }
+
+    function detectESModuleSyntax(code) {
+      const stripped = code
+        .replace(/\/\*[\s\S]*?\*\//g, '')
+        .replace(/(^|[^:\\])\/\/.*$/gm, '$1');
+      return /(^|[\r\n;])\s*(export\s+(default\b|const\b|let\b|var\b|function\b|async\s+function\b|class\b|\{|\*)|import\s+[\s\S]*?from\s*['"]|import\s*['"])/m.test(stripped);
+    }
+
+    function rewriteModuleImports(code, baseUrl = '') {
+      let out = code
+        .replace(/(from\s*['"])three(['"])/g, `$1${THREE_CDN_URL}$2`)
+        .replace(/(from\s*['"])three\/addons\/([^'"]+)(['"])/g, `$1${THREE_ADDONS_CDN_BASE}$2$3`)
+        .replace(/(import\s*['"])three(['"])/g, `$1${THREE_CDN_URL}$2`)
+        .replace(/(import\s*\(\s*['"])three(['"]\s*\))/g, `$1${THREE_CDN_URL}$2`)
+        .replace(/(import\s*\(\s*['"])three\/addons\/([^'"]+)(['"]\s*\))/g, `$1${THREE_ADDONS_CDN_BASE}$2$3`);
+
+      if (baseUrl && !baseUrl.startsWith('blob:') && !baseUrl.startsWith('data:')) {
+        try {
+          const resolvedBase = new URL(baseUrl, window.location.href);
+          out = out.replace(/(from\s*['"])(\.\.?\/[^'"]+)(['"])/g, (_, p1, rel, p3) => {
+            try {
+              return `${p1}${new URL(rel, resolvedBase).href}${p3}`;
+            } catch (_) {
+              return `${p1}${rel}${p3}`;
+            }
+          });
+        } catch (_) {}
+      }
+      return out;
+    }
+
+    function invokeProceduralFactory(fn, apiCtx) {
+      const src = Function.prototype.toString.call(fn).replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '').trim();
+      if (/^class\s/.test(src)) {
+        return new fn(apiCtx);
+      }
+      const match = src.match(/^(?:async\s+)?(?:function\s*[^(\s]*\s*)?\(([^)]*)\)|^(?:async\s+)?([A-Za-z_$][\w$]*)\s*=>/);
+      const rawParams = match ? (match[1] || match[2] || '').trim() : '';
+      const firstParam = rawParams.split(',')[0].trim();
+      if (/^THREE\b/.test(firstParam)) {
+        return fn(THREE, apiCtx.scene, apiCtx.camera, apiCtx.renderer, apiCtx);
+      }
+      return fn(apiCtx, THREE);
+    }
+
+    function createShaderMeshFromConfig(cfg) {
+      const defaultVert = `
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        void main() {
+          vUv = uv;
+          vNormal = normalize(normalMatrix * normal);
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `;
+      const uniforms = {
+        uTime: { value: 0 },
+        iTime: { value: 0 },
+        uDelta: { value: 0 },
+        uResolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+        iResolution: { value: new THREE.Vector3(window.innerWidth, window.innerHeight, 1) }
+      };
+      if (cfg.uniforms && typeof cfg.uniforms === 'object') {
+        Object.entries(cfg.uniforms).forEach(([k, v]) => {
+          if (v && typeof v === 'object' && 'value' in v) {
+            const val = v.value;
+            if (Array.isArray(val) && val.length === 3) {
+              uniforms[k] = { value: new THREE.Vector3(val[0], val[1], val[2]) };
+            } else if (Array.isArray(val) && val.length === 2) {
+              uniforms[k] = { value: new THREE.Vector2(val[0], val[1]) };
+            } else {
+              uniforms[k] = { value: val };
+            }
+          } else {
+            uniforms[k] = { value: v };
+          }
+        });
+      }
+
+      const geomType = (cfg.geometry || 'plane').toLowerCase();
+      let geom;
+      if (geomType === 'sphere') {
+        geom = new THREE.SphereGeometry(1.15, 64, 48);
+      } else if (geomType === 'box' || geomType === 'cube') {
+        geom = new THREE.BoxGeometry(1.6, 1.6, 1.6, 16, 16, 16);
+      } else if (geomType === 'torus') {
+        geom = new THREE.TorusKnotGeometry(0.85, 0.26, 128, 32);
+      } else {
+        geom = new THREE.PlaneGeometry(2.8, 2.8, 32, 32);
+      }
+
+      const mat = new THREE.ShaderMaterial({
+        vertexShader: cfg.vertexShader || defaultVert,
+        fragmentShader: cfg.fragmentShader,
+        uniforms,
+        transparent: true,
+        side: THREE.DoubleSide
+      });
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.name = 'ProceduralShaderMesh';
+      mesh.position.y = geomType === 'plane' ? 1.45 : 1.25;
+      return { mesh, uniforms };
+    }
+
+    function updateProcedural3DMetrics(procRoot, displayName, sourcePathDesc, modeLabel) {
+      let totalTriangles = 0;
+      let totalVertices = 0;
+      let meshCount = 0;
+
+      procRoot.traverse((child) => {
+        if (child.isMesh || child.isPoints || child.isLine) {
+          if (child.isMesh) {
+            meshCount++;
+            child.castShadow = true;
+            child.receiveShadow = true;
+            if (child.material) {
+              const mats = Array.isArray(child.material) ? child.material : [child.material];
+              mats.forEach((m) => {
+                if (isWireframe && 'wireframe' in m) m.wireframe = true;
+                m.needsUpdate = true;
+              });
+            }
+          }
+          if (child.geometry) {
+            const geom = child.geometry;
+            if (geom.index) {
+              totalTriangles += geom.index.count / 3;
+            } else if (geom.attributes && geom.attributes.position) {
+              totalTriangles += child.isMesh ? geom.attributes.position.count / 3 : 0;
+            }
+            if (geom.attributes && geom.attributes.position) {
+              totalVertices += geom.attributes.position.count;
+            }
+          }
+        }
+      });
+
+      const finalBbox = new THREE.Box3().setFromObject(procRoot);
+      const hasBounds = !finalBbox.isEmpty();
+      const finalSize = hasBounds ? finalBbox.getSize(new THREE.Vector3()) : new THREE.Vector3(0, 0, 0);
+
+      document.getElementById('format-spec').textContent = modeLabel || 'JS';
+      document.getElementById('poly-count').textContent = Math.round(totalTriangles).toLocaleString();
+      document.getElementById('vert-count').textContent = Math.round(totalVertices).toLocaleString();
+      document.getElementById('spec-length').textContent = hasBounds ? `~${finalSize.z.toFixed(2)} m` : '-';
+      document.getElementById('spec-width').textContent = hasBounds ? `~${finalSize.x.toFixed(2)} m` : '-';
+      document.getElementById('spec-height').textContent = hasBounds ? `~${finalSize.y.toFixed(2)} m` : '-';
+      if (hasBounds) {
+        updateCircumferenceSpecs(finalSize.x, finalSize.y, finalSize.z);
+      }
+
+      if (meshCount > 0) {
+        analyzeModelMaterialsAndColors(procRoot, displayName, sourcePathDesc);
+        if (typeof scanLoadedModelForDecals === 'function') {
+          scanLoadedModelForDecals(procRoot, displayName);
+        }
+      }
+    }
+
+    async function loadProceduralFromCode(code, displayName = 'procedural.js', sourcePathDesc = '', options = {}) {
+      if (!code || !code.trim()) {
+        setProcConsole('Script is empty. Browse a .js file, pick a demo, or write procedural code first.', 'error');
+        return;
+      }
+
+      const mountMode = options.mountMode || proceduralMountMode || 'replace';
+      const autoScale = chkProcAutoscale ? chkProcAutoscale.checked : true;
+      const project2DOnPlane = chkProc2DOnPlane ? chkProc2DOnPlane.checked : false;
+
+      // Unload any previously active procedural script
+      unloadProceduralScript({ silent: true });
+
+      // If replacing the scene model, remove current 3D model & skeletal mixer
+      if (mountMode === 'replace' && carModel) {
+        clearAnimationMixer();
+        carRoot.remove(carModel);
+        disposeHierarchy(carModel);
+        carModel = null;
+        window.carModel = null;
+      }
+
+      setStatus('Running JS...', 'loading');
+      setProcConsole(`Loading "${displayName}"...`);
+      if (procCodeEditor && !options.fromEditor) {
+        procCodeEditor.value = code;
+      }
+
+      const procRoot = new THREE.Group();
+      procRoot.name = `Procedural_${displayName}`;
+
+      const state = {
+        name: displayName,
+        sourcePath: sourcePathDesc || displayName,
+        code,
+        mountMode,
+        project2DOnPlane,
+        mode: '3d',
+        modeLabel: 'JS 3D',
+        rootGroup: procRoot,
+        canvasTexture: null,
+        planeMesh: null,
+        isPlaying: true,
+        loop: proceduralLoopEnabled,
+        speed: proceduralSpeed,
+        elapsed: 0,
+        duration: 0,
+        frameCount: 0,
+        hasError: false,
+        updateFns: [],
+        draw2dFns: [],
+        resetFns: [],
+        disposeFn: null,
+        shaderUniforms: null,
+        rafQueue: [],
+        rafHandles: new Set(),
+        intervalIds: new Set(),
+        timeoutIds: new Set(),
+        blobUrls: [],
+        prevWindowProps: null,
+        ctx: null
+      };
+
+      // Proxy scene so script calls to scene.add(obj) mount cleanly inside procRoot
+      const proxyScene = new Proxy(scene, {
+        get(target, prop) {
+          if (prop === 'add') return (...objs) => procRoot.add(...objs);
+          if (prop === 'remove') return (...objs) => procRoot.remove(...objs);
+          const val = target[prop];
+          return typeof val === 'function' ? val.bind(target) : val;
+        }
+      });
+
+      let managedRafSeq = 1;
+      const managedRAF = (cb) => {
+        if (typeof cb !== 'function') return 0;
+        const id = managedRafSeq++;
+        state.rafQueue.push({ id, cb });
+        return id;
+      };
+      const managedCAF = (id) => {
+        state.rafQueue = state.rafQueue.filter(item => item.id !== id);
+      };
+      const managedSetInterval = (fn, ms, ...args) => {
+        const id = window.setInterval(() => {
+          if (!activeProcedural || activeProcedural !== state || !state.isPlaying || state.hasError || document.hidden) return;
+          try { fn(...args); } catch (err) { handleProceduralRuntimeError(state, err); }
+        }, ms);
+        state.intervalIds.add(id);
+        return id;
+      };
+      const managedClearInterval = (id) => {
+        state.intervalIds.delete(id);
+        window.clearInterval(id);
+      };
+      const managedSetTimeout = (fn, ms, ...args) => {
+        const id = window.setTimeout(() => {
+          state.timeoutIds.delete(id);
+          if (!activeProcedural || activeProcedural !== state || state.hasError) return;
+          try { fn(...args); } catch (err) { handleProceduralRuntimeError(state, err); }
+        }, ms);
+        state.timeoutIds.add(id);
+        return id;
+      };
+      const managedClearTimeout = (id) => {
+        state.timeoutIds.delete(id);
+        window.clearTimeout(id);
+      };
+
+      const logLines = [];
+      const procLogger = {
+        log: (...args) => {
+          console.log(`[Procedural:${displayName}]`, ...args);
+          logLines.push(args.map(a => (typeof a === 'object' ? JSON.stringify(a) : String(a))).join(' '));
+          if (logLines.length > 8) logLines.shift();
+          setProcConsole(logLines.join('\n'));
+        },
+        warn: (...args) => console.warn(`[Procedural:${displayName}]`, ...args),
+        error: (...args) => {
+          console.error(`[Procedural:${displayName}]`, ...args);
+          setProcConsole(args.map(String).join(' '), 'error');
+        }
+      };
+
+      const apiCtx = {
+        THREE,
+        scene: proxyScene,
+        rawScene: scene,
+        root: procRoot,
+        group: procRoot,
+        container,
+        camera,
+        renderer,
+        controls,
+        canvas: procedural2DCanvas,
+        ctx: procedural2DCtx,
+        ctx2d: procedural2DCtx,
+        get width() {
+          return project2DOnPlane ? 1024 : window.innerWidth;
+        },
+        get height() {
+          return project2DOnPlane ? 1024 : window.innerHeight;
+        },
+        clock: animClock,
+        addObject: (obj) => { if (obj && obj.isObject3D) procRoot.add(obj); return obj; },
+        onUpdate: (fn) => { if (typeof fn === 'function') state.updateFns.push(fn); },
+        onDraw: (fn) => { if (typeof fn === 'function') state.draw2dFns.push(fn); },
+        onReset: (fn) => { if (typeof fn === 'function') state.resetFns.push(fn); },
+        onDispose: (fn) => { if (typeof fn === 'function') state.disposeFn = fn; },
+        setDuration: (sec) => { const v = parseFloat(sec); if (v > 0) state.duration = v; },
+        requestAnimationFrame: managedRAF,
+        cancelAnimationFrame: managedCAF,
+        setInterval: managedSetInterval,
+        clearInterval: managedClearInterval,
+        setTimeout: managedSetTimeout,
+        clearTimeout: managedClearTimeout,
+        console: procLogger
+      };
+      state.ctx = apiCtx;
+
+      // Helper to ingest any returned result object or Object3D
+      const registerResult = (res) => {
+        if (!res) return;
+        if (res.isObject3D) {
+          if (res !== procRoot && !res.parent) procRoot.add(res);
+          return;
+        }
+        if (typeof res === 'function') {
+          state.updateFns.push(res);
+          return;
+        }
+        if (typeof res === 'object') {
+          if (res.mode) state.mode = String(res.mode).toLowerCase();
+          if (typeof res.duration === 'number' && res.duration > 0) state.duration = res.duration;
+          if (typeof res.loop === 'boolean') state.loop = res.loop;
+
+          const obj3d = res.object3D || res.object || res.mesh || res.group || res.scene;
+          if (obj3d && obj3d.isObject3D && obj3d !== procRoot && !obj3d.parent) {
+            procRoot.add(obj3d);
+          }
+          if (res.fragmentShader) {
+            const { mesh, uniforms } = createShaderMeshFromConfig(res);
+            procRoot.add(mesh);
+            state.shaderUniforms = uniforms;
+            state.mode = 'shader';
+          }
+          const upd = res.update || res.animate || res.tick || res.render || res.frame;
+          if (typeof upd === 'function') state.updateFns.push(upd.bind(res));
+          const drw = res.draw || res.render2D || res.draw2D;
+          if (typeof drw === 'function') state.draw2dFns.push(drw.bind(res));
+          const rst = res.reset || res.restart;
+          if (typeof rst === 'function') state.resetFns.push(rst.bind(res));
+          const dsp = res.dispose || res.destroy || res.cleanup;
+          if (typeof dsp === 'function') state.disposeFn = dsp.bind(res);
+        }
+      };
+
+      try {
+        activeProcedural = state;
+        resizeProcedural2DCanvas();
+        if (procedural2DCtx && procedural2DCanvas) {
+          procedural2DCtx.clearRect(0, 0, procedural2DCanvas.width, procedural2DCanvas.height);
+        }
+
+        const isModule = detectESModuleSyntax(code);
+
+        if (isModule) {
+          const rewritten = rewriteModuleImports(code, sourcePathDesc);
+          const blob = new Blob([rewritten], { type: 'application/javascript' });
+          const blobUrl = URL.createObjectURL(blob);
+          state.blobUrls.push(blobUrl);
+
+          const mod = await import(blobUrl);
+
+          if (mod.mode) state.mode = String(mod.mode).toLowerCase();
+          if (typeof mod.duration === 'number' && mod.duration > 0) state.duration = mod.duration;
+          if (typeof mod.loop === 'boolean') state.loop = mod.loop;
+
+          // 1. Check default export
+          if (mod.default !== undefined) {
+            if (typeof mod.default === 'function') {
+              const out = await invokeProceduralFactory(mod.default, apiCtx);
+              registerResult(out);
+            } else {
+              registerResult(mod.default);
+            }
+          }
+
+          // 2. Check named init/create/build/setup factories
+          const factoryNames = ['init', 'create', 'createProcedural', 'createGraphic', 'createAnimation', 'build', 'setup', 'main'];
+          let ranNamedFactory = false;
+          for (const fname of factoryNames) {
+            if (typeof mod[fname] === 'function') {
+              const out = await invokeProceduralFactory(mod[fname], apiCtx);
+              registerResult(out);
+              ranNamedFactory = true;
+              break;
+            }
+          }
+
+          // 3. Fallback: any exported create* or build* function
+          if (!ranNamedFactory && mod.default === undefined) {
+            const dynamicFactory = Object.keys(mod).find(k => /^(create|build|make|generate)[A-Z_]/.test(k) && typeof mod[k] === 'function');
+            if (dynamicFactory) {
+              const out = await invokeProceduralFactory(mod[dynamicFactory], apiCtx);
+              registerResult(out);
+            }
+          }
+
+          // 4. Named lifecycle / graphic exports
+          registerResult({
+            object3D: mod.object3D || mod.object || mod.mesh || mod.group || mod.scene,
+            fragmentShader: mod.fragmentShader,
+            vertexShader: mod.vertexShader,
+            uniforms: mod.uniforms,
+            geometry: mod.geometry,
+            update: mod.update || mod.animate || mod.tick || mod.render,
+            draw: mod.draw || mod.render2D || mod.draw2D,
+            reset: mod.reset || mod.restart,
+            dispose: mod.dispose || mod.destroy || mod.cleanup
+          });
+        } else {
+          // Classic (non-module) script execution with managed globals & window hook capture
+          const watchedGlobals = ['proceduralGraphic', 'proceduralAnimation', 'createProcedural', 'init', 'update', 'animate', 'draw', 'render', 'reset', 'dispose'];
+          const prevWindowProps = {};
+          watchedGlobals.forEach(k => {
+            prevWindowProps[k] = { existed: Object.prototype.hasOwnProperty.call(window, k), value: window[k] };
+          });
+          state.prevWindowProps = prevWindowProps;
+
+          const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+          const wrappedBody = `
+            ${code}
+            ;return {
+              __proceduralLocals: {
+                init: typeof init === 'function' ? init : undefined,
+                create: typeof create === 'function' ? create : undefined,
+                createProcedural: typeof createProcedural === 'function' ? createProcedural : undefined,
+                setup: typeof setup === 'function' ? setup : undefined,
+                update: typeof update === 'function' ? update : undefined,
+                animate: typeof animate === 'function' ? animate : undefined,
+                tick: typeof tick === 'function' ? tick : undefined,
+                draw: typeof draw === 'function' ? draw : undefined,
+                render2D: typeof render2D === 'function' ? render2D : undefined,
+                reset: typeof reset === 'function' ? reset : undefined,
+                dispose: typeof dispose === 'function' ? dispose : undefined,
+                duration: typeof duration === 'number' ? duration : undefined,
+                mode: typeof mode === 'string' ? mode : undefined,
+                object: typeof object !== 'undefined' ? object : (typeof mesh !== 'undefined' ? mesh : (typeof group !== 'undefined' ? group : undefined))
+              }
+            };
+          `;
+
+          const runner = new AsyncFunction(
+            'THREE', 'scene', 'root', 'group', 'camera', 'renderer', 'controls',
+            'canvas', 'ctx', 'ctx2d', 'width', 'height', 'clock',
+            'requestAnimationFrame', 'cancelAnimationFrame',
+            'setInterval', 'clearInterval', 'setTimeout', 'clearTimeout',
+            'addObject', 'onUpdate', 'onDraw', 'onReset', 'onDispose', 'setDuration', 'api',
+            wrappedBody
+          );
+
+          const ret = await runner(
+            THREE, proxyScene, procRoot, procRoot, camera, renderer, controls,
+            procedural2DCanvas, procedural2DCtx, procedural2DCtx,
+            apiCtx.width, apiCtx.height, animClock,
+            managedRAF, managedCAF,
+            managedSetInterval, managedClearInterval, managedSetTimeout, managedClearTimeout,
+            apiCtx.addObject, apiCtx.onUpdate, apiCtx.onDraw, apiCtx.onReset, apiCtx.onDispose, apiCtx.setDuration, apiCtx
+          );
+
+          if (ret && ret.__proceduralLocals) {
+            const loc = ret.__proceduralLocals;
+            if (loc.mode) state.mode = loc.mode.toLowerCase();
+            if (loc.duration > 0) state.duration = loc.duration;
+            const locFactory = loc.createProcedural || loc.init || loc.create || loc.setup;
+            if (typeof locFactory === 'function') {
+              const out = await invokeProceduralFactory(locFactory, apiCtx);
+              registerResult(out);
+            }
+            registerResult({
+              object: loc.object,
+              update: loc.update || loc.animate || loc.tick,
+              draw: loc.draw || loc.render2D,
+              reset: loc.reset,
+              dispose: loc.dispose
+            });
+          } else if (ret) {
+            registerResult(ret);
+          }
+
+          // Check newly attached window globals
+          watchedGlobals.forEach(k => {
+            if (window[k] !== prevWindowProps[k].value && window[k] !== undefined) {
+              const val = window[k];
+              if (k === 'proceduralGraphic' || k === 'proceduralAnimation' || k === 'createProcedural' || k === 'init') {
+                if (typeof val === 'function') {
+                  const out = invokeProceduralFactory(val, apiCtx);
+                  if (out && typeof out.then !== 'function') registerResult(out);
+                } else {
+                  registerResult(val);
+                }
+              } else if (k === 'update' || k === 'animate' || k === 'render') {
+                if (typeof val === 'function') state.updateFns.push(val);
+              } else if (k === 'draw') {
+                if (typeof val === 'function') state.draw2dFns.push(val);
+              } else if (k === 'reset' && typeof val === 'function') {
+                state.resetFns.push(val);
+              } else if (k === 'dispose' && typeof val === 'function') {
+                state.disposeFn = val;
+              }
+            }
+          });
+        }
+
+        // Deduplicate callbacks if both factory & locals registered the same reference
+        state.updateFns = Array.from(new Set(state.updateFns));
+        state.draw2dFns = Array.from(new Set(state.draw2dFns));
+        state.resetFns = Array.from(new Set(state.resetFns));
+
+        // Determine active rendering mode (3D, 2D, Shader, or Mixed)
+        const has3D = procRoot.children.length > 0;
+        const has2D = state.draw2dFns.length > 0 || state.mode === '2d';
+
+        if (has2D && procedural2DCanvas && procedural2DCtx) {
+          if (project2DOnPlane) {
+            procedural2DCanvas.classList.remove('active');
+            const canvasTex = new THREE.CanvasTexture(procedural2DCanvas);
+            canvasTex.colorSpace = THREE.SRGBColorSpace;
+            const plane = new THREE.Mesh(
+              new THREE.PlaneGeometry(2.8, 2.8),
+              new THREE.MeshBasicMaterial({ map: canvasTex, transparent: true, side: THREE.DoubleSide })
+            );
+            plane.name = 'Procedural2DPlane';
+            plane.position.y = 1.45;
+            procRoot.add(plane);
+            state.canvasTexture = canvasTex;
+            state.planeMesh = plane;
+            state.modeLabel = 'JS 2D→3D';
+          } else {
+            procedural2DCanvas.classList.add('active');
+            state.modeLabel = has3D ? 'JS 3D+2D' : 'JS 2D';
+          }
+        } else if (state.mode === 'shader') {
+          state.modeLabel = 'JS SHADER';
+        } else {
+          state.modeLabel = 'JS 3D';
+        }
+
+        // Mount 3D output into scene
+        if (procRoot.children.length > 0) {
+          if (mountMode === 'replace') {
+            carModel = procRoot;
+            window.carModel = carModel;
+            carRoot.add(carModel);
+
+            if (autoScale) {
+              const rawBbox = new THREE.Box3().setFromObject(carModel);
+              if (!rawBbox.isEmpty()) {
+                const rawSize = rawBbox.getSize(new THREE.Vector3());
+                const maxHoriz = Math.max(rawSize.x, rawSize.z);
+                const maxOverall = Math.max(maxHoriz, rawSize.y);
+                baseScaleFactor = maxOverall > 0.0001 ? (3.2 / (maxHoriz > 0.1 ? maxHoriz : maxOverall)) : 1.0;
+                const initialScaleElem = document.getElementById('initial-scale-select');
+                if (initialScaleElem && initialScaleElem.value) {
+                  dynamicScaleMultiplier = parseFloat(initialScaleElem.value) || 0.75;
+                }
+                applyDynamicScale(dynamicScaleMultiplier);
+              }
+            }
+            updateProcedural3DMetrics(procRoot, displayName, sourcePathDesc, state.modeLabel);
+          } else {
+            proceduralOverlayRoot.add(procRoot);
+          }
+        }
+
+        // Render initial frame at t=0 immediately
+        tickProceduralFrame(state, 0);
+
+        // Update viewer header & loaded asset metadata when replacing scene model
+        if (mountMode === 'replace') {
+          brandTitle.textContent = `✨ ${displayName}`;
+          currentLoadedAsset = {
+            file: options.file || null,
+            sourcePath: sourcePathDesc || displayName,
+            fileName: displayName,
+            ext: getExt(displayName) === 'mjs' ? 'mjs' : 'js',
+            sizeStr: options.file ? formatBytes(options.file.size) : `${code.length.toLocaleString()} B`
+          };
+          updateLoadedAssetUI();
+        }
+
+        setStatus('Ready', 'ready');
+        setMessage(`✨ Running procedural script: ${displayName} (${state.modeLabel})`, 'success');
+        const animInfo = (state.updateFns.length > 0 || state.draw2dFns.length > 0 || state.shaderUniforms || state.rafQueue.length > 0)
+          ? (state.duration > 0 ? `Animated (${state.duration.toFixed(1)}s loop)` : 'Continuous animation')
+          : 'Static procedural graphic';
+        setProcConsole(`✓ Loaded "${displayName}" [${isModule ? 'ES Module' : 'Classic JS'} • ${state.modeLabel} • ${animInfo}]`, 'success');
+        showToast(`✨ Playing ${displayName} (${state.modeLabel})`);
+        syncProceduralUI();
+      } catch (err) {
+        handleProceduralRuntimeError(state, err);
+      }
+    }
+
+    function handleProceduralRuntimeError(state, err) {
+      console.error('Procedural JS execution error:', err);
+      if (state) {
+        state.hasError = true;
+        state.isPlaying = false;
+      }
+      setStatus('JS Error', 'error');
+      const msg = (err && err.stack) ? `${err.message}\n${err.stack.split('\n').slice(0, 3).join('\n')}` : String(err);
+      setProcConsole(`✗ Runtime/Syntax Error:\n${msg}`, 'error');
+      setMessage(`Procedural JS error: ${err && err.message ? err.message : err}`, 'error');
+      showToast(`⚠️ JS Error: ${err && err.message ? err.message : 'Check Procedural Console'}`, 4500);
+      syncProceduralUI();
+    }
+
+    function tickProceduralFrame(state, rawDelta) {
+      if (!state || state.hasError) return;
+      const dt = Math.min(Math.max(rawDelta, 0), 0.1) * state.speed;
+      if (dt > 0) {
+        state.elapsed += dt;
+        if (state.duration > 0) {
+          if (state.loop) {
+            state.elapsed = state.elapsed % state.duration;
+          } else if (state.elapsed >= state.duration) {
+            state.elapsed = state.duration;
+            state.isPlaying = false;
+            syncProceduralUI();
+          }
+        }
+      }
+
+      try {
+        if (state.shaderUniforms) {
+          if (state.shaderUniforms.uTime) state.shaderUniforms.uTime.value = state.elapsed;
+          if (state.shaderUniforms.iTime) state.shaderUniforms.iTime.value = state.elapsed;
+          if (state.shaderUniforms.uDelta) state.shaderUniforms.uDelta.value = dt;
+          if (state.shaderUniforms.uResolution) state.shaderUniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
+          if (state.shaderUniforms.iResolution) state.shaderUniforms.iResolution.value.set(window.innerWidth, window.innerHeight, 1);
+        }
+
+        for (let i = 0; i < state.updateFns.length; i++) {
+          state.updateFns[i](dt, state.elapsed, state.ctx);
+        }
+
+        if (state.draw2dFns.length > 0 && procedural2DCtx) {
+          const w = state.project2DOnPlane ? 1024 : window.innerWidth;
+          const h = state.project2DOnPlane ? 1024 : window.innerHeight;
+          for (let i = 0; i < state.draw2dFns.length; i++) {
+            state.draw2dFns[i](procedural2DCtx, w, h, state.elapsed, dt, state.ctx);
+          }
+          if (state.canvasTexture) {
+            state.canvasTexture.needsUpdate = true;
+          }
+        }
+
+        // Flush any script-owned managed requestAnimationFrame callbacks
+        if (state.rafQueue.length > 0) {
+          const batch = state.rafQueue.splice(0, state.rafQueue.length);
+          const nowMs = state.elapsed * 1000;
+          for (let i = 0; i < batch.length; i++) {
+            batch[i].cb(nowMs);
+          }
+        }
+
+        state.frameCount++;
+
+        // Lightweight live UI readout update
+        const tStr = formatProcTime(state.elapsed);
+        if (procBarTime) procBarTime.textContent = tStr;
+        if (procTimeCurrent && !isProcScrubbing) procTimeCurrent.textContent = tStr;
+        if (procTimelineSlider && state.duration > 0 && !isProcScrubbing) {
+          procTimelineSlider.value = Math.min(state.duration, state.elapsed).toFixed(2);
+        }
+        if (procFrameCounter && state.frameCount % 6 === 0) {
+          const mountLbl = state.mountMode === 'overlay' ? 'Overlay' : 'Scene';
+          procFrameCounter.textContent = `${mountLbl} • Frame ${state.frameCount}`;
+        }
+        if (!currentAnimAction && !isUserScrubbing) {
+          const curElem = document.getElementById('anim-time-current');
+          if (curElem) curElem.textContent = formatTime(state.elapsed);
+          const slider = document.getElementById('anim-timeline-slider');
+          if (slider && state.duration > 0) {
+            slider.value = Math.min(state.duration, state.elapsed).toFixed(2);
+          }
+        }
+      } catch (err) {
+        handleProceduralRuntimeError(state, err);
+      }
+    }
+
+    function toggleProceduralPlayPause() {
+      if (!activeProcedural || activeProcedural.hasError) return;
+      if (!activeProcedural.isPlaying && activeProcedural.duration > 0 && activeProcedural.elapsed >= activeProcedural.duration) {
+        activeProcedural.elapsed = 0;
+      }
+      activeProcedural.isPlaying = !activeProcedural.isPlaying;
+      syncProceduralUI();
+    }
+
+    function resetProceduralAnimation() {
+      if (!activeProcedural) return;
+      activeProcedural.elapsed = 0;
+      activeProcedural.frameCount = 0;
+      activeProcedural.hasError = false;
+      activeProcedural.resetFns.forEach(fn => {
+        try { fn(activeProcedural.ctx); } catch (err) { console.warn('Procedural reset error:', err); }
+      });
+      tickProceduralFrame(activeProcedural, 0);
+      syncProceduralUI();
+    }
+
+    function setProceduralSpeed(speed) {
+      proceduralSpeed = parseFloat(speed) || 1.0;
+      if (activeProcedural) activeProcedural.speed = proceduralSpeed;
+      if (procSpeedSelect) procSpeedSelect.value = proceduralSpeed.toString();
+      const sharedSpeed = document.getElementById('anim-speed-select');
+      if (sharedSpeed && !currentAnimAction) sharedSpeed.value = proceduralSpeed.toString();
+    }
+
+    function seekProceduralAnimation(seconds) {
+      if (!activeProcedural) return;
+      const maxT = activeProcedural.duration > 0 ? activeProcedural.duration : Math.max(seconds, 0);
+      activeProcedural.elapsed = Math.max(0, Math.min(maxT, parseFloat(seconds) || 0));
+      tickProceduralFrame(activeProcedural, 0);
+      syncProceduralUI();
+    }
+
+    async function loadProceduralLocalFile(file) {
+      if (!file) return;
+      try {
+        const code = await file.text();
+        if (procFileInput) procFileInput.value = file.name;
+        if (modelFileInput) modelFileInput.value = file.name;
+        await loadProceduralFromCode(code, file.name, 'meshy_test_0/models/' + file.name, { file });
+      } catch (err) {
+        setProcConsole(`Failed to read file "${file.name}": ${err.message}`, 'error');
+      }
+    }
+
+    function resolveProceduralUrl(pathStr) {
+      if (!pathStr) return '';
+      const trimmed = pathStr.trim();
+      if (
+        trimmed.startsWith('http://') ||
+        trimmed.startsWith('https://') ||
+        trimmed.startsWith('blob:') ||
+        trimmed.startsWith('data:') ||
+        trimmed.startsWith('/') ||
+        trimmed.startsWith('./') ||
+        trimmed.startsWith('../')
+      ) {
+        return trimmed;
+      }
+      return trimmed;
+    }
+
+    async function loadProceduralFromUrl(rawPath, customName = '', sourcePathDesc = '') {
+      const url = resolveProceduralUrl(rawPath);
+      if (!url) {
+        setProcConsole('Please enter a .js file path or click Browse .JS.', 'error');
+        return;
+      }
+      const displayName = customName || url.split('?')[0].split('/').pop() || 'procedural.js';
+      showLoader(`Loading ${displayName}...`);
+      try {
+        const candidates = [url];
+        if (!url.startsWith('/') && !url.startsWith('./') && !url.startsWith('../') && !url.startsWith('http') && !url.startsWith('models/')) {
+          candidates.push('models/' + url);
+        }
+        let fetchedCode = null;
+        let resolvedUrl = url;
+        let lastErr = '';
+        for (const cand of candidates) {
+          try {
+            const res = await fetch(cand, { cache: 'no-store' });
+            if (res.ok) {
+              fetchedCode = await res.text();
+              resolvedUrl = cand;
+              break;
+            }
+            lastErr = `HTTP ${res.status} (${cand})`;
+          } catch (e) {
+            lastErr = e.message;
+          }
+        }
+        if (fetchedCode === null) {
+          throw new Error(`Could not fetch "${url}": ${lastErr}`);
+        }
+        if (procFileInput) procFileInput.value = resolvedUrl;
+        await loadProceduralFromCode(fetchedCode, displayName, sourcePathDesc || resolvedUrl);
+      } catch (err) {
+        setStatus('Error', 'error');
+        setProcConsole(`Load error: ${err.message}`, 'error');
+        setMessage(`Procedural load error: ${err.message}`, 'error');
+      } finally {
+        hideLoader();
+      }
+    }
+
+    // Wire Procedural JS UI Event Listeners
+    if (procFilePicker) {
+      procFilePicker.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+          loadProceduralLocalFile(file);
+        }
+        procFilePicker.value = '';
+      });
+    }
+
+    btnLoadProcedural?.addEventListener('click', () => {
+      const val = (procFileInput?.value || '').trim();
+      if (val) {
+        loadProceduralFromUrl(val);
+      } else if (procCodeEditor && procCodeEditor.value.trim()) {
+        loadProceduralFromCode(procCodeEditor.value, 'custom_procedural.js', 'editor', { fromEditor: true });
+      } else {
+        setProcConsole('Enter a .js file path, click Browse .JS, or choose a demo preset below.', 'error');
+      }
+    });
+
+    procFileInput?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') btnLoadProcedural?.click();
+    });
+
+    btnUnloadProcedural?.addEventListener('click', () => unloadProceduralScript());
+    btnBarProcUnload?.addEventListener('click', () => unloadProceduralScript());
+    btnBarProcPlay?.addEventListener('click', toggleProceduralPlayPause);
+    btnBarProcReset?.addEventListener('click', resetProceduralAnimation);
+    btnBarProcOpen?.addEventListener('click', () => openTab('procedural'));
+
+    document.getElementById('btn-quick-open-procedural')?.addEventListener('click', () => openTab('procedural'));
+
+    const setProceduralMountModeUI = (mode) => {
+      proceduralMountMode = mode === 'overlay' ? 'overlay' : 'replace';
+      btnProcMountReplace?.classList.toggle('active', proceduralMountMode === 'replace');
+      btnProcMountOverlay?.classList.toggle('active', proceduralMountMode === 'overlay');
+      if (chkProcAutoscale) {
+        chkProcAutoscale.checked = proceduralMountMode === 'replace';
+      }
+    };
+    btnProcMountReplace?.addEventListener('click', () => setProceduralMountModeUI('replace'));
+    btnProcMountOverlay?.addEventListener('click', () => setProceduralMountModeUI('overlay'));
+
+    chkProc2DOnPlane?.addEventListener('change', () => {
+      if (activeProcedural && (activeProcedural.draw2dFns.length > 0 || activeProcedural.mode === '2d')) {
+        loadProceduralFromCode(activeProcedural.code, activeProcedural.name, activeProcedural.sourcePath, { fromEditor: true });
+      }
+    });
+
+    btnProcPlayPause?.addEventListener('click', toggleProceduralPlayPause);
+    btnProcReset?.addEventListener('click', resetProceduralAnimation);
+
+    btnProcLoop?.addEventListener('click', () => {
+      proceduralLoopEnabled = !proceduralLoopEnabled;
+      if (activeProcedural) activeProcedural.loop = proceduralLoopEnabled;
+      btnProcLoop.classList.toggle('active', proceduralLoopEnabled);
+      if (procLoopLabel) procLoopLabel.textContent = `Loop: ${proceduralLoopEnabled ? 'ON' : 'OFF'}`;
+    });
+
+    procSpeedSelect?.addEventListener('change', (e) => setProceduralSpeed(e.target.value));
+
+    if (procTimelineSlider) {
+      procTimelineSlider.addEventListener('input', (e) => {
+        isProcScrubbing = true;
+        seekProceduralAnimation(e.target.value);
+      });
+      procTimelineSlider.addEventListener('change', () => {
+        isProcScrubbing = false;
+      });
+    }
+
+    document.querySelectorAll('.proc-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-preset');
+        const preset = PROCEDURAL_PRESETS[key];
+        if (!preset) return;
+        if (procFileInput) procFileInput.value = preset.name;
+        loadProceduralFromCode(preset.code, preset.name, `preset/${preset.name}`);
+      });
+    });
+
+    btnProcRunEditor?.addEventListener('click', () => {
+      const code = procCodeEditor ? procCodeEditor.value : '';
+      const name = (procFileInput && procFileInput.value.trim()) ? procFileInput.value.trim().split('/').pop() : 'custom_procedural.js';
+      loadProceduralFromCode(code, name.endsWith('.js') || name.endsWith('.mjs') ? name : `${name}.js`, 'editor', { fromEditor: true });
+    });
+
+    btnProcCopyTemplate?.addEventListener('click', () => {
+      if (procCodeEditor) procCodeEditor.value = PROCEDURAL_STARTER_TEMPLATE;
+      if (procFileInput && !procFileInput.value.trim()) procFileInput.value = 'my_procedural.js';
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(PROCEDURAL_STARTER_TEMPLATE).catch(() => {});
+      }
+      setProcConsole('Starter template loaded into editor (and copied to clipboard). Click "▶ Run Code" to play!');
+      showToast('📋 Procedural JS template ready');
+    });
+
+    btnProcDownloadJs?.addEventListener('click', () => {
+      const code = (procCodeEditor && procCodeEditor.value.trim()) ? procCodeEditor.value : PROCEDURAL_STARTER_TEMPLATE;
+      let fileName = (procFileInput && procFileInput.value.trim()) ? procFileInput.value.trim().split('/').pop() : 'procedural_animation.js';
+      if (!/\.(m?js)$/i.test(fileName)) fileName += '.js';
+      const blob = new Blob([code], { type: 'application/javascript' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`💾 Saved ${fileName}`);
+    });
+
+    // Expose Procedural API globally for scripting / debugging
+    window.loadProceduralFromCode = loadProceduralFromCode;
+    window.loadProceduralFromUrl = loadProceduralFromUrl;
+    window.unloadProceduralScript = unloadProceduralScript;
+
     // Render Loop
     renderer.setAnimationLoop((timestamp, frame) => {
       const delta = animClock.getDelta();
       if (animationMixer) {
         animationMixer.update(delta);
         updateAnimationTimeline();
+      }
+
+      if (activeProcedural && activeProcedural.isPlaying && !activeProcedural.hasError && !document.hidden) {
+        tickProceduralFrame(activeProcedural, delta);
       }
 
       if (autoRotate && carModel && !renderer.xr.isPresenting) {

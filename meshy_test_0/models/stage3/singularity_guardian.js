@@ -13,8 +13,9 @@
  */
 import * as THREE from 'three';
 
-export const duration = 6.0; // Seamless 6.0s combat & central laser firing cycle
+export const duration = 6.0; // Seamless 6.0s combat loop
 export const preserveScale = true; // Preserve true 1:1 physical meter specs (3.80m cube / 11.94m oval circumference)
+export const weaponDecalName = 'Decal_LaserBurn_Central_Weapon'; // Controlled as a decal by meshy_test_0/index.html
 
 export const metadata = {
   id: 'singularity_guardian',
@@ -22,6 +23,7 @@ export const metadata = {
   stage: 3,
   stageSlug: 'singularity_core',
   classification: 'Ancient Anomaly Automaton',
+  weaponDecalName,
   dimensions: {
     width: 3.80,
     height: 3.80,
@@ -1117,7 +1119,6 @@ export function createSingularityGuardian(api = {}) {
   pilotBeamMesh.name = 'InternalLaserPilotConduit';
   pilotBeamMesh.userData.noShadow = true;
   pilotBeamMesh.castShadow = false;
-  coreGroup.add(pilotBeamMesh);
 
   const coreLight = new T.PointLight(0xa855f7, 3.6, 9.0, 1.5);
   coreLight.position.set(0, 0, 0.30);
@@ -1198,14 +1199,42 @@ export function createSingularityGuardian(api = {}) {
   }
 
   // ===========================================================================
-  // 9. CENTRAL POINT SINGULARITY LASER WEAPON (Origin: 0,0,0 -> Fires +Z)
+  // 9. DECAL-CONTROLLED CENTRAL POINT SINGULARITY LASER WEAPON
+  //    Toggleable via meshy_test_0/index.html Decals UI & code APIs:
+  //      - window.toggleDecalMesh('Decal_LaserBurn_Central_Weapon', true/false)
+  //      - window.DECAL_CONFIG.burnsEnabled = true/false; window.applyDecalsVisibility()
+  //      - window.DECAL_CONFIG.allEnabled = true/false; window.applyDecalsVisibility()
+  //      - window.DECAL_CONFIG.opacity = 0..1; window.applyDecalsVisibility()
+  //      - weaponDecalMesh.visible = true/false
   // ===========================================================================
+  const weaponDecalControlMat = new T.MeshBasicMaterial({
+    name: 'Decal_LaserBurn_Central_Weapon_Mat',
+    color: 0xff66aa,
+    transparent: true,
+    opacity: 1.0,
+    blending: T.AdditiveBlending,
+    depthWrite: false
+  });
+  const weaponDecalMesh = new T.Mesh(new T.SphereGeometry(0.11, 16, 16), weaponDecalControlMat);
+  weaponDecalMesh.name = weaponDecalName;
+  weaponDecalMesh.position.set(0, 0, 0);
+  weaponDecalMesh.userData.noShadow = true;
+  weaponDecalMesh.userData.isDecal = true;
+  weaponDecalMesh.userData.decalType = 'laser';
+  weaponDecalMesh.castShadow = false;
+  weaponDecalMesh.receiveShadow = false;
+  bodyGroup.add(weaponDecalMesh);
+
+  // Attach internal pilot conduit to the weapon decal mesh so toggling off hides all weapon FX
+  weaponDecalMesh.add(pilotBeamMesh);
+
   const laserAssembly = new T.Group();
   laserAssembly.name = 'CentralSingularityLaser_Assembly';
   laserAssembly.position.set(0, 0, 0);
+  // Parked collapsed at scale 0.0001 prior to scanLoadedModelForDecals/update so load-time Box3 is strictly 3.80m cube
   laserAssembly.scale.setScalar(0.0001);
   laserAssembly.visible = false;
-  bodyGroup.add(laserAssembly);
+  weaponDecalMesh.add(laserAssembly);
 
   const LASER_LENGTH = 7.4;
 
@@ -1340,14 +1369,131 @@ export function createSingularityGuardian(api = {}) {
   laserAssembly.add(muzzleFlare.group);
 
   // ===========================================================================
-  // ANIMATION & COMBAT CYCLE CONTROLLER (Seamless 6.0s Loop)
+  // ANIMATION & DECAL-DRIVEN WEAPON CONTROLLER (Seamless 6.0s Loop)
   // ===========================================================================
-  let manualLaserOverride = null;
+  let _weaponDecalVisible = true;
+  let _weaponOpacity = 1.0;
+  let _lastElapsed = 0.0;
 
-  function smoothstep(edge0, edge1, x) {
-    const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
-    return t * t * (3 - 2 * t);
+  function applyWeaponOpacity(alpha) {
+    const a = _weaponDecalVisible ? Math.max(0, Math.min(1, alpha)) : 0.0;
+    laserUniforms.uIntensity.value = a;
+    laserCoreMat.opacity = Math.min(1.0, a * 0.96);
+    laserAuraMat.opacity = 0.30 * a;
+    helixA.material.opacity = 0.85 * a;
+    helixB.material.opacity = 0.85 * a;
+    pilotBeamMat.opacity = 0.72 * a;
+    centerFlare.mat.opacity = 0.92 * a;
+    muzzleFlare.mat.opacity = 0.95 * a;
+    shockRings.forEach((sr) => {
+      sr.mat.opacity = 0.80 * a;
+    });
   }
+
+  function applyMandiblePose(irisOpen) {
+    mandibles.forEach((m) => {
+      m.jaw.position.y = m.baseY + irisOpen * 0.12;
+      m.jaw.position.z = m.baseZ - irisOpen * 0.05;
+      m.jaw.rotation.x = m.baseRotX - irisOpen * 0.44;
+    });
+  }
+
+  function applyEmissiveAndCoreState(chargeLevel, fireLevel) {
+    coreUniforms.uCharge.value = chargeLevel;
+    coreUniforms.uFire.value = fireLevel;
+    heavyArmorMat.emissiveIntensity = 0.65 + chargeLevel * 0.80 + fireLevel * 0.90;
+    reactivePlateMat.emissiveIntensity = 0.42 + chargeLevel * 0.60 + fireLevel * 0.72;
+    violetConduitMat.emissiveIntensity = 1.55 + chargeLevel * 1.4 + fireLevel * 1.8;
+    crimsonApertureRailMat.emissiveIntensity = 1.2 + chargeLevel * 1.8 + fireLevel * 3.0;
+    prismCrystalMat.emissiveIntensity = 1.4 + chargeLevel * 1.8 + fireLevel * 2.6;
+    coreLight.intensity = 3.2 + chargeLevel * 4.5 + fireLevel * 6.8;
+    coreLight.color.setHex(fireLevel > 0.35 ? 0xff3b7d : 0xa855f7);
+  }
+
+  function layoutLaserBeamFX(elapsed, fireLevel) {
+    const flicker = 0.90 + 0.12 * Math.sin(elapsed * 58.0) + 0.07 * Math.cos(elapsed * 91.0);
+    const radialScale = (0.35 + 0.65 * fireLevel) * flicker;
+    laserAssembly.scale.set(radialScale, radialScale, 1.0);
+
+    laserCoreMat.opacity = Math.min(1.0, fireLevel * 0.98);
+    laserAuraMat.opacity = 0.30 * fireLevel;
+    helixA.material.opacity = 0.85 * fireLevel;
+    helixB.material.opacity = 0.85 * fireLevel;
+
+    helixA.rotation.z = elapsed * 14.0;
+    helixB.rotation.z = -elapsed * 16.0;
+
+    shockRings.forEach((sr) => {
+      const travel = (elapsed * 1.9 + sr.offset) % 1.0;
+      sr.mesh.position.z = 0.22 + travel * (LASER_LENGTH - 0.45);
+      const ringScale = 0.48 + travel * 1.15;
+      sr.mesh.scale.set(ringScale, ringScale, 1.0);
+      sr.mesh.rotation.z = elapsed * 6.0 + sr.offset * Math.PI * 2;
+      sr.mat.opacity = Math.sin(travel * Math.PI) * 0.85 * fireLevel;
+    });
+
+    centerFlare.group.rotation.z = elapsed * 3.5;
+    centerFlare.group.scale.setScalar((0.80 + 0.45 * fireLevel) * flicker);
+    centerFlare.mat.opacity = 0.92 * fireLevel;
+
+    muzzleFlare.group.rotation.z = -elapsed * 4.2;
+    muzzleFlare.group.scale.setScalar((0.72 + 0.58 * fireLevel) * flicker);
+    muzzleFlare.mat.opacity = 0.95 * fireLevel;
+  }
+
+  function syncWeaponDecalState(isVisible) {
+    const active = Boolean(isVisible) && _weaponOpacity > 0.005;
+    const level = active ? _weaponOpacity : 0.0;
+    applyMandiblePose(active ? 1.0 : 0.0);
+    applyEmissiveAndCoreState(level, level);
+    eventHorizonSphere.scale.setScalar(1.0 + level * 0.26);
+    accretionRingA.scale.setScalar(1.0 + level * 0.16);
+    accretionRingB.scale.setScalar(1.0 + level * 0.22);
+    bodyGroup.position.z = -level * 0.065;
+    const pilotScale = 0.85 + level * 0.75;
+    pilotBeamMesh.scale.set(pilotScale, pilotScale, 1.0);
+
+    if (active) {
+      laserAssembly.visible = true;
+      pilotBeamMesh.visible = true;
+      applyWeaponOpacity(level);
+      layoutLaserBeamFX(_lastElapsed, level);
+      rootGroup.userData.laserFiring = true;
+    } else {
+      laserAssembly.visible = false;
+      laserAssembly.scale.setScalar(0.0001);
+      pilotBeamMesh.visible = false;
+      applyWeaponOpacity(0.0);
+      rootGroup.userData.laserFiring = false;
+    }
+  }
+
+  // Intercept direct .visible assignments from meshy_test_0/index.html applyDecalsVisibility() / toggleDecalMesh()
+  // so turning the weapon decal ON or OFF works instantaneously even when playback is paused.
+  Object.defineProperty(weaponDecalMesh, 'visible', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return _weaponDecalVisible;
+    },
+    set(val) {
+      _weaponDecalVisible = Boolean(val);
+      syncWeaponDecalState(_weaponDecalVisible);
+    }
+  });
+
+  // Intercept material.opacity updates from meshy_test_0/index.html decal-opacity-slider / DECAL_CONFIG.opacity
+  Object.defineProperty(weaponDecalControlMat, 'opacity', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return _weaponOpacity;
+    },
+    set(val) {
+      _weaponOpacity = Math.max(0, Math.min(1, Number.isFinite(val) ? val : 1.0));
+      syncWeaponDecalState(_weaponDecalVisible);
+    }
+  });
 
   function updateArcLightning(elapsed, charge, fire) {
     const activeAmp = 0.08 + charge * 0.12 + fire * 0.18;
@@ -1376,6 +1522,8 @@ export function createSingularityGuardian(api = {}) {
   }
 
   function update(dt, elapsed = 0) {
+    _lastElapsed = elapsed;
+    weaponDecalMesh.castShadow = false;
     laserCoreMesh.castShadow = false;
     laserSheathMesh.castShadow = false;
     laserAuraMesh.castShadow = false;
@@ -1388,29 +1536,13 @@ export function createSingularityGuardian(api = {}) {
     const normT = cycleT / duration;
     const omega = (Math.PI * 2) / duration;
 
-    let chargeLevel = 0;
-    let fireLevel = 0;
-    let irisOpen = 0;
+    // Weapon state is driven directly by the Decal toggle (Decal_LaserBurn_Central_Weapon)
+    const weaponEnabled = _weaponDecalVisible && _weaponOpacity > 0.005;
+    const fireLevel = weaponEnabled ? _weaponOpacity : 0.0;
+    const chargeLevel = weaponEnabled ? _weaponOpacity : 0.0;
+    const irisOpen = weaponEnabled ? 1.0 : 0.0;
 
-    if (manualLaserOverride !== null) {
-      fireLevel = Math.max(0, Math.min(1, manualLaserOverride));
-      chargeLevel = Math.min(1, fireLevel * 1.25);
-      irisOpen = Math.min(1, fireLevel * 1.15);
-    } else {
-      const chargeIn = smoothstep(0.10, 1.35, cycleT);
-      const chargeOut = 1.0 - smoothstep(4.30, 5.45, cycleT);
-      chargeLevel = chargeIn * chargeOut;
-
-      const fireIn = smoothstep(1.38, 1.62, cycleT);
-      const fireOut = 1.0 - smoothstep(4.15, 4.65, cycleT);
-      fireLevel = fireIn * fireOut;
-
-      const irisIn = smoothstep(0.15, 1.30, cycleT);
-      const irisOut = 1.0 - smoothstep(4.55, 5.80, cycleT);
-      irisOpen = irisIn * irisOut;
-    }
-
-    // 1. Subtle Heavy Automaton Graviton Hover & Recoil (exact 0 displacement at t = 0)
+    // 1. Subtle Heavy Automaton Graviton Hover & Recoil (exact 0 displacement at t = 0 when idle)
     const hoverY = Math.sin(cycleT * omega) * 0.055;
     const recoilZ = -fireLevel * 0.065 + Math.sin(cycleT * omega * 18) * fireLevel * 0.009;
     bodyGroup.position.set(0, HALF_EXTENT + hoverY, recoilZ);
@@ -1435,12 +1567,8 @@ export function createSingularityGuardian(api = {}) {
       p.group.position.copy(p.dir).multiplyScalar(p.baseRadius + pulse + expand);
     });
 
-    // Articulated Forward Blast-Petal Mandibles hinge outward smoothly during charge/fire
-    mandibles.forEach((m) => {
-      m.jaw.position.y = m.baseY + irisOpen * 0.12;
-      m.jaw.position.z = m.baseZ - irisOpen * 0.05;
-      m.jaw.rotation.x = m.baseRotX - irisOpen * 0.44;
-    });
+    // Articulated Forward Blast-Petal Mandibles open when weapon decal is ON, lock shut when OFF
+    applyMandiblePose(irisOpen);
 
     // Focusing Prism Crystals brighten & converge toward the central firing axis
     focusPrisms.forEach((fp, i) => {
@@ -1453,8 +1581,7 @@ export function createSingularityGuardian(api = {}) {
 
     // 4. Singularity Core Shaders, Corona & Dynamic Illumination
     coreUniforms.uTime.value = elapsed;
-    coreUniforms.uCharge.value = chargeLevel;
-    coreUniforms.uFire.value = fireLevel;
+    applyEmissiveAndCoreState(chargeLevel, fireLevel);
 
     const coreScale = 1.0 + chargeLevel * 0.14 + fireLevel * 0.12 + Math.sin(elapsed * 22) * fireLevel * 0.035;
     eventHorizonSphere.scale.setScalar(coreScale);
@@ -1467,18 +1594,10 @@ export function createSingularityGuardian(api = {}) {
     accretionRingB.rotation.y = cycleT * omega * 3;
     accretionRingB.scale.setScalar(1.0 + fireLevel * 0.22);
 
-    heavyArmorMat.emissiveIntensity = 0.65 + chargeLevel * 0.80 + fireLevel * 0.90;
-    reactivePlateMat.emissiveIntensity = 0.42 + chargeLevel * 0.60 + fireLevel * 0.72;
-    violetConduitMat.emissiveIntensity = 1.55 + chargeLevel * 1.4 + fireLevel * 1.8;
-    crimsonApertureRailMat.emissiveIntensity = 1.2 + chargeLevel * 1.8 + fireLevel * 3.0;
-    prismCrystalMat.emissiveIntensity = 1.4 + chargeLevel * 1.8 + fireLevel * 2.6;
-
-    pilotBeamMat.opacity = 0.20 + chargeLevel * 0.55 + fireLevel * 0.25;
-    const pilotScale = 0.75 + chargeLevel * 0.65 + fireLevel * 0.5;
+    pilotBeamMesh.visible = weaponEnabled;
+    pilotBeamMat.opacity = weaponEnabled ? (0.72 * fireLevel) : 0.0;
+    const pilotScale = 0.85 + fireLevel * 0.75;
     pilotBeamMesh.scale.set(pilotScale, pilotScale, 1.0);
-
-    coreLight.intensity = 3.2 + chargeLevel * 4.5 + fireLevel * 6.8;
-    coreLight.color.setHex(fireLevel > 0.35 ? 0xff3b7d : 0xa855f7);
 
     // 5. Gravitational Vortex Particle Swarm
     const pAttr = vortexGeo.attributes.position;
@@ -1500,59 +1619,42 @@ export function createSingularityGuardian(api = {}) {
     // 6. Arc-Lightning Filaments
     updateArcLightning(elapsed, chargeLevel, fireLevel);
 
-    // 7. Central Point Singularity Laser Beam Firing
+    // 7. Central Point Singularity Laser Beam (Active strictly when Weapon Decal is ON)
     laserUniforms.uTime.value = elapsed;
     laserUniforms.uIntensity.value = fireLevel;
 
-    if (fireLevel > 0.005) {
+    if (weaponEnabled) {
       laserAssembly.visible = true;
-      const flicker = 0.90 + 0.14 * Math.sin(elapsed * 58.0) + 0.08 * Math.cos(elapsed * 91.0);
-      const radialScale = (0.28 + 0.72 * fireLevel) * flicker;
-      const lengthScale = Math.max(0.08, smoothstep(0.0, 0.28, fireLevel));
-      laserAssembly.scale.set(radialScale, radialScale, lengthScale);
-
-      laserCoreMat.opacity = Math.min(1.0, fireLevel * 1.15);
-      laserAuraMat.opacity = 0.32 * fireLevel;
-
-      helixA.rotation.z = elapsed * 14.0;
-      helixB.rotation.z = -elapsed * 16.0;
-
-      shockRings.forEach((sr) => {
-        const travel = (elapsed * 1.9 + sr.offset) % 1.0;
-        sr.mesh.position.z = 0.22 + travel * (LASER_LENGTH - 0.45);
-        const ringScale = 0.48 + travel * 1.15;
-        sr.mesh.scale.set(ringScale, ringScale, 1.0);
-        sr.mesh.rotation.z = elapsed * 6.0 + sr.offset * Math.PI * 2;
-        sr.mat.opacity = Math.sin(travel * Math.PI) * 0.85 * fireLevel;
-      });
-
-      centerFlare.group.rotation.z = elapsed * 3.5;
-      centerFlare.group.scale.setScalar((0.75 + 0.55 * fireLevel) * flicker);
-      centerFlare.mat.opacity = 0.92 * fireLevel;
-
-      muzzleFlare.group.rotation.z = -elapsed * 4.2;
-      muzzleFlare.group.scale.setScalar((0.65 + 0.70 * fireLevel) * flicker);
-      muzzleFlare.mat.opacity = 0.95 * fireLevel;
+      layoutLaserBeamFX(elapsed, fireLevel);
     } else {
       laserAssembly.visible = false;
       laserAssembly.scale.setScalar(0.0001);
     }
 
     rootGroup.userData.cycleProgress = normT;
-    rootGroup.userData.laserFiring = fireLevel > 0.1;
+    rootGroup.userData.laserFiring = weaponEnabled;
   }
 
   function reset() {
-    manualLaserOverride = null;
     bodyGroup.position.set(0, HALF_EXTENT, 0);
     bodyGroup.rotation.set(0, 0, 0);
-    laserAssembly.visible = false;
-    laserAssembly.scale.setScalar(0.0001);
+    syncWeaponDecalState(_weaponDecalVisible);
     update(0, 0);
   }
 
   function setLaserIntensity(val) {
-    manualLaserOverride = (val === null || val === undefined) ? null : Number(val);
+    if (val === false || val === 0) {
+      weaponDecalMesh.visible = false;
+      return;
+    }
+    if (val === true || val === null || val === undefined) {
+      _weaponOpacity = 1.0;
+      weaponDecalMesh.visible = true;
+      return;
+    }
+    const num = Math.max(0, Math.min(1, Number(val) || 0));
+    _weaponOpacity = num;
+    weaponDecalMesh.visible = num > 0.005;
   }
 
   function dispose() {
@@ -1572,8 +1674,15 @@ export function createSingularityGuardian(api = {}) {
     });
   }
 
+  rootGroup.userData.decals = {
+    laserBurns: [weaponDecalMesh],
+    weapon: weaponDecalMesh
+  };
+
   rootGroup.userData.singularityGuardian = {
     metadata,
+    weaponDecalName,
+    weaponDecalMesh,
     update,
     reset,
     dispose,

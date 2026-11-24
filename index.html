@@ -14,6 +14,15 @@
     <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
     <link rel="manifest" href="site.webmanifest">
     <meta name="theme-color" content="#0b0f19">
+    <!-- ES Module Import Map for Three.js & WebXR Addons -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
     <style>
         :root {
             --bg-color: #0b0f19;
@@ -731,9 +740,301 @@
                 padding: 16px 12px;
             }
         }
+
+        /* -----------------------------------------------------------------
+           WebXR Procedural Christmas Wonderland (Blank-Space Integration)
+           ----------------------------------------------------------------- */
+        html {
+            background-color: var(--bg-color);
+        }
+
+        #xrChristmasLayer {
+            position: fixed;
+            inset: 0;
+            inline-size: 100%;
+            block-size: 100%;
+            block-size: 100dvh;
+            z-index: 0;
+            pointer-events: none;
+            overflow: clip;
+        }
+
+        #xrChristmasCanvas {
+            display: block;
+            inline-size: 100%;
+            block-size: 100%;
+            touch-action: none;
+        }
+
+        body.xr-scene-active {
+            background-color: transparent;
+        }
+
+        body.xr-scene-active header,
+        body.xr-scene-active main,
+        body.xr-scene-active footer {
+            position: relative;
+            z-index: 2;
+            transition: opacity 0.4s ease;
+        }
+
+        body.xr-scene-active header {
+            background: linear-gradient(135deg, rgba(11, 18, 35, 0.72), rgba(20, 32, 56, 0.66));
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-bottom: 2px solid var(--divider-red);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(255, 215, 0, 0.22);
+        }
+
+        /* Keep strong radial contrast directly behind the circular ring while opening
+           the wide left & right blank wings of .ring-container-section as clear windows */
+        body.xr-scene-active .ring-container-section {
+            background: radial-gradient(
+                circle at center,
+                rgba(11, 17, 32, 0.70) 0%,
+                rgba(11, 17, 32, 0.46) 34%,
+                rgba(11, 17, 32, 0.10) 60%,
+                rgba(11, 17, 32, 0.04) 100%
+            );
+            border: 1px solid rgba(255, 215, 0, 0.26);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.42), inset 0 0 28px rgba(147, 197, 253, 0.06);
+        }
+
+        body.xr-scene-active .game-card {
+            background: rgba(15, 23, 42, 0.80);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35);
+        }
+
+        body.xr-scene-active #about {
+            background: rgba(15, 23, 42, 0.82) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        body.xr-scene-active .section-title {
+            text-shadow: 0 2px 10px rgba(4, 8, 20, 0.98), 0 0 22px rgba(4, 8, 20, 0.92), 0 0 18px rgba(255, 215, 0, 0.28);
+            background: rgba(8, 14, 28, 0.56);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+            border-radius: 12px;
+            padding: 10px 20px;
+            display: inline-block;
+        }
+
+        body.xr-scene-active #games,
+        body.xr-scene-active #about {
+            text-align: center;
+        }
+
+        body.xr-scene-active #games .game-card,
+        body.xr-scene-active #about > p,
+        body.xr-scene-active #about > div {
+            text-align: left;
+        }
+
+        body.xr-scene-active footer {
+            background: rgba(8, 12, 20, 0.82);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Interactive 360° Exploration Mode */
+        body.xr-explore-mode #xrChristmasLayer {
+            pointer-events: auto;
+            z-index: 15;
+            cursor: grab;
+        }
+
+        body.xr-explore-mode #xrChristmasLayer:active {
+            cursor: grabbing;
+        }
+
+        body.xr-explore-mode header,
+        body.xr-explore-mode main,
+        body.xr-explore-mode footer {
+            opacity: 0.04;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        /* Compact, Unobtrusive Floating WebXR Holiday Dock */
+        .xr-christmas-dock {
+            position: fixed;
+            inset-block-end: calc(12px + env(safe-area-inset-bottom, 0px));
+            inset-inline-end: calc(12px + env(safe-area-inset-right, 0px));
+            z-index: 30;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 8px;
+            border-radius: 999px;
+            background: rgba(11, 17, 34, 0.78);
+            border: 1px solid rgba(255, 215, 0, 0.35);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.55);
+            max-inline-size: calc(100% - 24px);
+        }
+
+        .xr-christmas-dock[hidden] {
+            display: none;
+        }
+
+        .xr-status-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            color: var(--gold-primary);
+            padding-inline: 6px 4px;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .xr-dock-btn {
+            appearance: none;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            background: rgba(30, 41, 59, 0.78);
+            color: #f8fafc;
+            border-radius: 999px;
+            padding: 6px 11px;
+            min-block-size: 36px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: background-color 0.2s, border-color 0.2s, transform 0.12s;
+            white-space: nowrap;
+        }
+
+        .xr-dock-btn[hidden] {
+            display: none;
+        }
+
+        .xr-dock-btn:hover,
+        .xr-dock-btn:focus-visible {
+            background: rgba(255, 215, 0, 0.2);
+            border-color: var(--gold-primary);
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+        }
+
+        .xr-dock-btn:focus-visible {
+            outline-color: var(--gold-primary);
+        }
+
+        .xr-dock-btn:active {
+            transform: scale(0.96);
+        }
+
+        .xr-dock-btn.is-active {
+            background: linear-gradient(135deg, #ffd700, #d4af37);
+            color: #0b0f19;
+            border-color: #ffd700;
+        }
+
+        .xr-dock-btn.xr-icon-btn {
+            min-inline-size: 36px;
+            padding: 6px 8px;
+        }
+
+        /* Top Exit Banner shown ONLY in 360° Interactive Explore Mode */
+        .xr-explore-exit-bar {
+            position: fixed;
+            inset-block-start: calc(14px + env(safe-area-inset-top, 0px));
+            inset-inline-start: 50%;
+            transform: translateX(-50%);
+            z-index: 35;
+            display: none;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            background: rgba(11, 17, 34, 0.86);
+            border: 1px solid rgba(255, 215, 0, 0.55);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
+            max-inline-size: calc(100% - 24px);
+        }
+
+        body.xr-explore-mode .xr-explore-exit-bar {
+            display: flex;
+        }
+
+        .xr-explore-hint {
+            font-size: 0.8rem;
+            color: #e2e8f0;
+            white-space: nowrap;
+        }
+
+        .xr-dock-toggle-btn {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            body.xr-scene-active .ring-container-section {
+                background: radial-gradient(
+                    circle at center,
+                    rgba(11, 17, 32, 0.66) 0%,
+                    rgba(11, 17, 32, 0.42) 55%,
+                    rgba(11, 17, 32, 0.16) 100%
+                );
+            }
+
+            /* On mobile, collapse the dock into a crisp 36px corner snowflake toggle so it
+               NEVER overlaps card buttons, and expands smoothly on tap */
+            .xr-christmas-dock {
+                inset-block-end: calc(10px + env(safe-area-inset-bottom, 0px));
+                inset-inline-end: calc(10px + env(safe-area-inset-right, 0px));
+                padding: 4px;
+                gap: 4px;
+            }
+
+            .xr-dock-toggle-btn {
+                display: inline-flex;
+            }
+
+            .xr-christmas-dock:not(.is-expanded) > *:not(.xr-dock-toggle-btn) {
+                display: none;
+            }
+
+            .xr-status-badge {
+                display: none;
+            }
+
+            .xr-dock-btn {
+                padding: 5px 9px;
+                font-size: 0.74rem;
+                min-block-size: 34px;
+            }
+
+            .xr-explore-hint {
+                font-size: 0.74rem;
+                white-space: normal;
+                text-align: center;
+            }
+
+            body.xr-scene-active footer {
+                padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+            }
+        }
     </style>
 </head>
 <body>
+
+    <!-- Procedural WebXR Intricate Christmas Scene Layer (Blank-Space Backdrop) -->
+    <div id="xrChristmasLayer" aria-hidden="true">
+        <canvas id="xrChristmasCanvas"></canvas>
+    </div>
 
     <header id="siteHeader">
         <a href="https://calmchessgames.com" class="header-banner-link" style="display: block; text-decoration: none; max-width: min(100%, 850px); width: 100%;" aria-label="Calm Chess Computers & Games Home">
@@ -788,8 +1089,26 @@
         </p>
     </footer>
 
+    <!-- Interactive 360° Explore Mode Exit Bar -->
+    <div class="xr-explore-exit-bar" role="region" aria-label="3D Christmas Scene Exploration Controls">
+        <span class="xr-explore-hint">&#10052; Drag to orbit &bull; Tap sky for holiday fireworks</span>
+        <button type="button" id="xrExitExploreBtn" class="xr-dock-btn is-active">Return to Page</button>
+    </div>
+
+    <!-- Compact Floating WebXR Holiday Scene Controls -->
+    <aside id="xrChristmasDock" class="xr-christmas-dock" aria-label="WebXR Christmas Scene Controls" hidden>
+        <button type="button" id="xrDockToggleBtn" class="xr-dock-btn xr-icon-btn xr-dock-toggle-btn" aria-expanded="false" aria-label="Toggle WebXR Christmas Controls" title="WebXR Christmas Controls">&#10052;</button>
+        <span id="xrStatusBadge" class="xr-status-badge">&#10052; 3D WebXR</span>
+        <button type="button" id="xrExploreBtn" class="xr-dock-btn" aria-pressed="false" title="Explore 360° Procedural Christmas Scene">&#127876; 360&deg;</button>
+        <button type="button" id="xrEnterVrBtn" class="xr-dock-btn" hidden title="Enter Immersive WebXR VR">&#129405; VR</button>
+        <button type="button" id="xrEnterArBtn" class="xr-dock-btn" hidden title="Enter Immersive WebXR AR">&#10024; AR</button>
+        <button type="button" id="xrAudioBtn" class="xr-dock-btn xr-icon-btn" aria-pressed="false" aria-label="Play Calm Holiday Music Box" title="Play Calm Holiday Music Box">&#128276;</button>
+        <button type="button" id="xrPauseBtn" class="xr-dock-btn xr-icon-btn" aria-pressed="false" aria-label="Pause Christmas Animations" title="Pause Christmas Animations">&#9208;</button>
+    </aside>
+
     <script src="js/crypto_transport.js"></script>
     <script>if (typeof CryptoTransport === 'undefined') { document.write('<script src="../js/crypto_transport.js"><\/script>'); }</script>
     <script src="js/index.js"></script>
+    <script type="module" src="js/christmas_xr.js"></script>
 </body>
 </html>

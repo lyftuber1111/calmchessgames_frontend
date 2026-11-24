@@ -1718,6 +1718,181 @@
       border-color: #00f0ff;
     }
 
+    /* =========================================================================
+       REAL-TIME CAMERA ROTATION HUD (DEGREES FROM 0,0,0 ON X, Y, Z)
+       ========================================================================= */
+    .camera-rotation-hud {
+      position: fixed;
+      top: 4.6rem;
+      left: 1rem;
+      z-index: 86;
+      width: 312px;
+      max-width: calc(100vw - 2rem);
+      background: rgba(10, 16, 26, 0.90);
+      border: 1px solid rgba(56, 189, 248, 0.45);
+      border-radius: 12px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65), 0 0 16px rgba(56, 189, 248, 0.16);
+      font-size: 0.78rem;
+      color: #e2e8f0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      user-select: none;
+    }
+    .camera-rotation-hud.hidden {
+      display: none !important;
+    }
+    .camera-rotation-hud.minimized .cam-hud-body {
+      display: none;
+    }
+    .camera-rotation-hud.minimized .cam-hud-mini {
+      display: flex;
+    }
+    .cam-hud-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.4rem;
+      padding: 0.48rem 0.72rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(56, 189, 248, 0.10);
+      border-radius: 12px 12px 0 0;
+    }
+    .camera-rotation-hud.minimized .cam-hud-header {
+      border-bottom: none;
+      border-radius: 12px 12px 0 0;
+    }
+    .cam-hud-title-group {
+      display: flex;
+      align-items: center;
+      gap: 0.38rem;
+      font-weight: 700;
+      color: #38bdf8;
+      letter-spacing: 0.2px;
+      min-width: 0;
+    }
+    .cam-hud-title {
+      white-space: nowrap;
+    }
+    .cam-hud-zero-tag {
+      font-size: 0.64rem;
+      font-weight: 600;
+      padding: 0.1rem 0.38rem;
+      border-radius: 9999px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.32);
+      color: #bae6fd;
+      white-space: nowrap;
+    }
+    .cam-hud-pill-btn {
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #7dd3fc;
+      padding: 0 0.42rem;
+      height: 22px;
+      border-radius: 4px;
+      font-size: 0.66rem;
+      font-weight: 700;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .cam-hud-pill-btn:hover,
+    .cam-hud-pill-btn.active {
+      background: #38bdf8;
+      color: #020e1a;
+      border-color: #38bdf8;
+    }
+    .cam-hud-mini {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 0.35rem 0.72rem 0.48rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #e0f2fe;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.2px;
+    }
+    .cam-hud-body {
+      padding: 0.62rem 0.72rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .cam-hud-axis-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.4rem;
+    }
+    .cam-axis-card {
+      background: rgba(0, 0, 0, 0.38);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      border-radius: 8px;
+      padding: 0.42rem 0.35rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.16rem;
+    }
+    .cam-axis-card.cam-axis-x {
+      border-color: rgba(248, 113, 113, 0.42);
+      background: rgba(248, 113, 113, 0.08);
+    }
+    .cam-axis-card.cam-axis-y {
+      border-color: rgba(74, 222, 128, 0.42);
+      background: rgba(74, 222, 128, 0.08);
+    }
+    .cam-axis-card.cam-axis-z {
+      border-color: rgba(96, 165, 250, 0.42);
+      background: rgba(96, 165, 250, 0.08);
+    }
+    .cam-axis-name {
+      font-size: 0.64rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .cam-axis-x .cam-axis-name { color: #f87171; }
+    .cam-axis-y .cam-axis-name { color: #4ade80; }
+    .cam-axis-z .cam-axis-name { color: #60a5fa; }
+    .cam-axis-deg {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.96rem;
+      font-weight: 800;
+      color: #f8fafc;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.2px;
+    }
+    .cam-hud-meta-rows {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    @media (max-width: 720px) {
+      .camera-rotation-hud {
+        top: 4.1rem;
+        left: 0.65rem;
+        right: 0.65rem;
+        width: auto;
+        max-width: none;
+      }
+      .orientation-hud {
+        left: 0.65rem;
+        right: 0.65rem;
+        width: auto;
+        max-width: none;
+      }
+      body:has(#camera-rotation-hud:not(.hidden):not(.minimized)) .orientation-hud {
+        top: 17.8rem;
+      }
+      body:has(#camera-rotation-hud.minimized:not(.hidden)) .orientation-hud {
+        top: 9.2rem;
+      }
+    }
+
     /* Ref Points Table in Tab */
     .ref-points-table-wrap {
       max-height: 190px;
@@ -2250,6 +2425,57 @@
     </div>
   </header>
 
+  <!-- Floating Real-time Camera Rotation HUD (Degrees from 0,0,0 on X, Y, Z) -->
+  <div id="camera-rotation-hud" class="camera-rotation-hud" role="region" aria-label="Real-time Camera Rotation HUD">
+    <div class="cam-hud-header" id="cam-hud-header">
+      <div class="cam-hud-title-group">
+        <span class="hud-icon">🎥</span>
+        <span class="cam-hud-title">Camera Rotation</span>
+        <span class="cam-hud-zero-tag">from 0,0,0</span>
+      </div>
+      <div class="hud-actions">
+        <button type="button" id="btn-cam-angle-mode" class="cam-hud-pill-btn" title="Toggle angle range between ±180° and 0°–360°">±180°</button>
+        <button type="button" id="btn-toggle-cam-hud-body" class="hud-btn-sm" title="Minimize/Maximize Camera HUD">_</button>
+        <button type="button" id="btn-close-cam-hud" class="hud-btn-sm" title="Hide Camera HUD">✕</button>
+      </div>
+    </div>
+    <div id="cam-hud-mini-readout" class="cam-hud-mini">X: 0.0° · Y: 0.0° · Z: 0.0°</div>
+    <div id="cam-hud-body" class="cam-hud-body">
+      <div class="cam-hud-axis-grid">
+        <div class="cam-axis-card cam-axis-x" title="Camera Pitch around X axis (degrees from 0°)">
+          <span class="cam-axis-name">X · Pitch</span>
+          <span id="cam-deg-x" class="cam-axis-deg">0.0°</span>
+        </div>
+        <div class="cam-axis-card cam-axis-y" title="Camera Yaw around Y axis (degrees from 0°)">
+          <span class="cam-axis-name">Y · Yaw</span>
+          <span id="cam-deg-y" class="cam-axis-deg">0.0°</span>
+        </div>
+        <div class="cam-axis-card cam-axis-z" title="Camera Roll around Z axis (degrees from 0°)">
+          <span class="cam-axis-name">Z · Roll</span>
+          <span id="cam-deg-z" class="cam-axis-deg">0.0°</span>
+        </div>
+      </div>
+      <div class="cam-hud-meta-rows">
+        <div class="hud-row">
+          <span class="hud-label">Total Δ from (0,0,0):</span>
+          <span id="cam-deg-total" class="hud-value-cyan">0.0°</span>
+        </div>
+        <div class="hud-row">
+          <span class="hud-label">Radians (YXZ):</span>
+          <span id="cam-rad-xyz" class="hud-value">0.000, 0.000, 0.000</span>
+        </div>
+        <div class="hud-row">
+          <span class="hud-label">Camera Pos (m):</span>
+          <span id="cam-pos-xyz" class="hud-value">0.00, 0.00, 0.00</span>
+        </div>
+      </div>
+      <div class="hud-actions-row">
+        <button type="button" id="btn-cam-snap-zero" class="btn-hud-action" title="Align camera to 0°, 0°, 0° facing origin">🎯 0°,0°,0°</button>
+        <button type="button" id="btn-cam-copy-rot" class="btn-hud-action" title="Copy real-time camera X, Y, Z rotation values">📋 Copy XYZ</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Floating Real-time Model Alignment & Coordinates HUD -->
   <div id="orientation-hud" class="orientation-hud" role="region" aria-label="Orientation & Coordinates HUD">
     <div class="hud-header" id="hud-header-toggle">
@@ -2263,6 +2489,11 @@
       </div>
     </div>
     <div id="hud-content-body" class="hud-body">
+      <div class="hud-row">
+        <span class="hud-label">Camera (XYZ):</span>
+        <span id="hud-cam-rot-deg" class="hud-value-cyan" style="white-space: nowrap;">X: 0.0° | Y: 0.0° | Z: 0.0°</span>
+      </div>
+      <div class="hud-divider"></div>
       <div class="hud-row">
         <span class="hud-label">Rotation (Euler):</span>
         <span id="hud-rot-deg" class="hud-value-accent">P: 0.0° | Y: 0.0° | R: 0.0°</span>
@@ -2681,6 +2912,9 @@
               <button id="btn-reset-cam" class="btn" type="button">
                 <span>🎯</span> <span>Reset View</span>
               </button>
+              <button id="btn-toggle-cam-hud" class="btn active" type="button" title="Show/Hide Real-time Camera Rotation HUD">
+                <span>🎥</span> <span id="label-cam-hud">Cam HUD: ON</span>
+              </button>
             </div>
           </div>
 
@@ -2790,6 +3024,9 @@
               </button>
               <button id="btn-toggle-hud-overlay" class="btn active" type="button">
                 <span>📊</span> <span id="label-hud-overlay">HUD: ON</span>
+              </button>
+              <button id="btn-toggle-cam-hud-gizmo" class="btn active" type="button">
+                <span>🎥</span> <span id="label-cam-hud-gizmo">Cam HUD: ON</span>
               </button>
             </div>
           </div>
@@ -4754,7 +4991,7 @@ export default function createProcedural({ THREE, root, scene, camera, renderer 
     controls.enableDamping = true;
     controls.dampingFactor = 0.05;
     controls.target.set(0, 0.5, 0);
-    controls.maxPolarAngle = Math.PI / 2 - 0.01;
+    controls.maxPolarAngle = Math.PI / 2;
     controls.minDistance = 0.25;
     controls.maxDistance = 20;
 
@@ -6795,6 +7032,190 @@ const localMuzzle = new THREE.Vector3(lateralOffset, verticalOffset, forwardOffs
     document.getElementById('btn-toggle-hud-body')?.addEventListener('click', () => {
       if (orientationHud) orientationHud.classList.toggle('minimized');
     });
+
+    // =========================================================================
+    // REAL-TIME CAMERA ROTATION HUD (DEGREES FROM 0,0,0 ON X, Y, Z)
+    // =========================================================================
+    const cameraRotationHud = document.getElementById('camera-rotation-hud');
+    const camDegXEl = document.getElementById('cam-deg-x');
+    const camDegYEl = document.getElementById('cam-deg-y');
+    const camDegZEl = document.getElementById('cam-deg-z');
+    const camDegTotalEl = document.getElementById('cam-deg-total');
+    const camRadXyzEl = document.getElementById('cam-rad-xyz');
+    const camPosXyzEl = document.getElementById('cam-pos-xyz');
+    const camMiniReadoutEl = document.getElementById('cam-hud-mini-readout');
+    const hudCamRotDegEl = document.getElementById('hud-cam-rot-deg');
+    const btnCamAngleMode = document.getElementById('btn-cam-angle-mode');
+
+    let showCameraRotationHud = true;
+    let camAngleMode360 = false; // false = signed (-180°..+180°), true = unsigned (0°..360°)
+    let lastCamHudSignature = '';
+
+    const _camWorldQuat = new THREE.Quaternion();
+    const _camWorldPos = new THREE.Vector3();
+    const _camEulerYXZ = new THREE.Euler(0, 0, 0, 'YXZ');
+
+    function normalizeSignedDeg(deg) {
+      let d = ((deg + 180) % 360 + 360) % 360 - 180;
+      if (Math.abs(d) < 0.05) d = 0;
+      if (Math.abs(d + 180) < 0.05) d = 180;
+      return d;
+    }
+
+    function normalizeUnsignedDeg(deg) {
+      let d = ((deg % 360) + 360) % 360;
+      if (d < 0.05 || d >= 359.95) d = 0;
+      return d;
+    }
+
+    function formatCamDeg(degVal, use360) {
+      const v = use360 ? normalizeUnsignedDeg(degVal) : normalizeSignedDeg(degVal);
+      if (v === 0) return '0.0°';
+      if (!use360 && v > 0) return `+${v.toFixed(1)}°`;
+      return `${v.toFixed(1)}°`;
+    }
+
+    function getCameraRotationDegrees() {
+      const activeCam = (renderer.xr && renderer.xr.isPresenting) ? renderer.xr.getCamera() : camera;
+      activeCam.updateMatrixWorld();
+      activeCam.getWorldQuaternion(_camWorldQuat);
+      _camWorldPos.setFromMatrixPosition(activeCam.matrixWorld);
+      _camEulerYXZ.setFromQuaternion(_camWorldQuat, 'YXZ');
+
+      const rawDegX = THREE.MathUtils.radToDeg(_camEulerYXZ.x);
+      const rawDegY = THREE.MathUtils.radToDeg(_camEulerYXZ.y);
+      const rawDegZ = THREE.MathUtils.radToDeg(_camEulerYXZ.z);
+
+      const signedX = normalizeSignedDeg(rawDegX);
+      const signedY = normalizeSignedDeg(rawDegY);
+      const signedZ = normalizeSignedDeg(rawDegZ);
+
+      const unsignedX = normalizeUnsignedDeg(rawDegX);
+      const unsignedY = normalizeUnsignedDeg(rawDegY);
+      const unsignedZ = normalizeUnsignedDeg(rawDegZ);
+
+      const clampedW = Math.min(1, Math.abs(_camWorldQuat.w));
+      let totalDeg = THREE.MathUtils.radToDeg(2 * Math.acos(clampedW));
+      if (totalDeg < 0.05) totalDeg = 0;
+
+      return {
+        x: camAngleMode360 ? unsignedX : signedX,
+        y: camAngleMode360 ? unsignedY : signedY,
+        z: camAngleMode360 ? unsignedZ : signedZ,
+        signed: { x: signedX, y: signedY, z: signedZ },
+        unsigned: { x: unsignedX, y: unsignedY, z: unsignedZ },
+        totalDeg,
+        radians: { x: _camEulerYXZ.x, y: _camEulerYXZ.y, z: _camEulerYXZ.z },
+        position: { x: _camWorldPos.x, y: _camWorldPos.y, z: _camWorldPos.z },
+        order: 'YXZ',
+        mode: camAngleMode360 ? '0-360' : 'signed-180'
+      };
+    }
+
+    function updateCameraRotationHud(force = false) {
+      const camHudVisible = showCameraRotationHud && cameraRotationHud && !cameraRotationHud.classList.contains('hidden');
+      const orientHudVisible = gizmoConfig.showHud && orientationHud && !orientationHud.classList.contains('hidden') && !orientationHud.classList.contains('minimized');
+      if (!camHudVisible && !orientHudVisible && !force) return;
+
+      const d = getCameraRotationDegrees();
+      const xStr = formatCamDeg(d.signed.x, camAngleMode360);
+      const yStr = formatCamDeg(d.signed.y, camAngleMode360);
+      const zStr = formatCamDeg(d.signed.z, camAngleMode360);
+      const totalStr = `${d.totalDeg.toFixed(1)}°`;
+      const cleanRad = (r) => (Math.abs(r) < 0.0005 ? 0 : r).toFixed(3);
+      const radStr = `${cleanRad(d.radians.x)}, ${cleanRad(d.radians.y)}, ${cleanRad(d.radians.z)}`;
+      const posStr = `${d.position.x.toFixed(2)}, ${d.position.y.toFixed(2)}, ${d.position.z.toFixed(2)}`;
+
+      const sig = `${xStr}|${yStr}|${zStr}|${totalStr}|${posStr}|${camAngleMode360}`;
+      if (!force && sig === lastCamHudSignature) return;
+      lastCamHudSignature = sig;
+
+      if (camDegXEl) camDegXEl.textContent = xStr;
+      if (camDegYEl) camDegYEl.textContent = yStr;
+      if (camDegZEl) camDegZEl.textContent = zStr;
+      if (camDegTotalEl) camDegTotalEl.textContent = totalStr;
+      if (camRadXyzEl) camRadXyzEl.textContent = radStr;
+      if (camPosXyzEl) camPosXyzEl.textContent = posStr;
+      if (camMiniReadoutEl) camMiniReadoutEl.textContent = `X: ${xStr} · Y: ${yStr} · Z: ${zStr}`;
+      if (hudCamRotDegEl) hudCamRotDegEl.textContent = `X: ${xStr} | Y: ${yStr} | Z: ${zStr}`;
+    }
+
+    function setCameraRotationHudVisible(visible) {
+      showCameraRotationHud = !!visible;
+      if (cameraRotationHud) cameraRotationHud.classList.toggle('hidden', !showCameraRotationHud);
+      const btnCtrl = document.getElementById('btn-toggle-cam-hud');
+      const lblCtrl = document.getElementById('label-cam-hud');
+      if (btnCtrl) btnCtrl.classList.toggle('active', showCameraRotationHud);
+      if (lblCtrl) lblCtrl.textContent = `Cam HUD: ${showCameraRotationHud ? 'ON' : 'OFF'}`;
+      const btnGizmo = document.getElementById('btn-toggle-cam-hud-gizmo');
+      const lblGizmo = document.getElementById('label-cam-hud-gizmo');
+      if (btnGizmo) btnGizmo.classList.toggle('active', showCameraRotationHud);
+      if (lblGizmo) lblGizmo.textContent = `Cam HUD: ${showCameraRotationHud ? 'ON' : 'OFF'}`;
+      if (showCameraRotationHud) updateCameraRotationHud(true);
+    }
+
+    document.getElementById('btn-toggle-cam-hud')?.addEventListener('click', () => {
+      setCameraRotationHudVisible(!showCameraRotationHud);
+    });
+    document.getElementById('btn-toggle-cam-hud-gizmo')?.addEventListener('click', () => {
+      setCameraRotationHudVisible(!showCameraRotationHud);
+    });
+    document.getElementById('btn-close-cam-hud')?.addEventListener('click', () => {
+      setCameraRotationHudVisible(false);
+    });
+    document.getElementById('btn-toggle-cam-hud-body')?.addEventListener('click', () => {
+      if (cameraRotationHud) cameraRotationHud.classList.toggle('minimized');
+    });
+
+    btnCamAngleMode?.addEventListener('click', () => {
+      camAngleMode360 = !camAngleMode360;
+      btnCamAngleMode.textContent = camAngleMode360 ? '0–360°' : '±180°';
+      btnCamAngleMode.classList.toggle('active', camAngleMode360);
+      updateCameraRotationHud(true);
+    });
+
+    document.getElementById('btn-cam-snap-zero')?.addEventListener('click', () => {
+      const prevDamp = controls.enableDamping;
+      controls.enableDamping = false;
+      controls.update();
+      const dist = Math.max(controls.minDistance, camera.position.distanceTo(controls.target) || 4.0);
+      camera.position.set(controls.target.x, controls.target.y, controls.target.z + dist);
+      controls.update();
+      controls.enableDamping = prevDamp;
+      updateCameraRotationHud(true);
+      showToast('🎯 Camera aligned to 0.0°, 0.0°, 0.0°');
+    });
+
+    document.getElementById('btn-cam-copy-rot')?.addEventListener('click', () => {
+      const d = getCameraRotationDegrees();
+      const xStr = formatCamDeg(d.signed.x, camAngleMode360);
+      const yStr = formatCamDeg(d.signed.y, camAngleMode360);
+      const zStr = formatCamDeg(d.signed.z, camAngleMode360);
+      const text = `// Camera Rotation from (0,0,0) [${d.order}, ${d.mode}]\n` +
+        `// Degrees: X: ${xStr}, Y: ${yStr}, Z: ${zStr} (Total Δ: ${d.totalDeg.toFixed(1)}°)\n` +
+        `camera.position.set(${d.position.x.toFixed(3)}, ${d.position.y.toFixed(3)}, ${d.position.z.toFixed(3)});\n` +
+        `camera.rotation.set(${d.radians.x.toFixed(4)}, ${d.radians.y.toFixed(4)}, ${d.radians.z.toFixed(4)}, 'YXZ');`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showToast(`📋 Copied Camera XYZ (${xStr}, ${yStr}, ${zStr})`);
+        }).catch(() => {
+          showToast(`Camera XYZ: ${xStr}, ${yStr}, ${zStr}`);
+        });
+      } else {
+        showToast(`Camera XYZ: ${xStr}, ${yStr}, ${zStr}`);
+      }
+    });
+
+    controls.addEventListener('change', () => {
+      updateCameraRotationHud();
+    });
+
+    window.getCameraRotationDegrees = getCameraRotationDegrees;
+    window.updateCameraRotationHud = updateCameraRotationHud;
+
+    // Populate initial real-time camera rotation immediately on load
+    controls.update();
+    updateCameraRotationHud(true);
 
     // =========================================================================
     // WIREFRAME TRIANGLE FACE INSPECTION, HIGHLIGHTING & STAGE .JS RECORDER
@@ -9353,6 +9774,9 @@ export default function createProcedural({ THREE, root }) {
       if (!renderer.xr.isPresenting) {
         controls.update();
       }
+
+      // Real-time Camera Rotation HUD Update (degrees from 0,0,0 on X, Y, Z)
+      updateCameraRotationHud();
 
       // Real-time Orientation HUD and Coordinates Update
       if (gizmoConfig.showHud && orientationHud && !orientationHud.classList.contains('hidden') && !orientationHud.classList.contains('minimized')) {

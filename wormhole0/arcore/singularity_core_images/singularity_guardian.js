@@ -5,7 +5,7 @@
  *  - Heavy dense interlocking ancient armor matrix with procedural PBR textures & etched runes
  *  - Multi-axis counter-rotating astrolabe containment rings & graviton anomaly vortex
  *  - Abyssal GLSL event-horizon singularity core suspended at the exact center (0, 1.90, 0)
- *  - High-energy central point singularity laser weapon firing from the core along +Z
+ *  - High-energy 28.0m central point singularity laser weapon firing from the core along +Z
  *  - Exact physical bounding dimensions: 3.80m (W) x 3.80m (H) x 3.80m (L)
  *  - Exact oval / circular cross-section circumference: 11.94m (pi * 3.80m = 11.938m)
  *
@@ -16,6 +16,10 @@ import * as THREE from 'three';
 export const duration = 6.0; // Seamless 6.0s combat loop
 export const preserveScale = true; // Preserve true 1:1 physical meter specs (3.80m cube / 11.94m oval circumference)
 export const weaponDecalName = 'Decal_LaserBurn_Central_Weapon'; // Controlled as a decal by meshy_test_0/index.html
+
+const TARGET_SIZE = 3.80;
+const HALF_EXTENT = TARGET_SIZE * 0.5; // 1.90m
+const LASER_LENGTH = 28.0; // Exact 28.0m central point singularity laser beam along +Z
 
 export const metadata = {
   id: 'singularity_guardian',
@@ -31,11 +35,9 @@ export const metadata = {
   },
   circumferenceOval: 11.94,
   laserOrigin: { x: 0, y: 1.90, z: 0 },
-  laserDirection: { x: 0, y: 0, z: 1 }
+  laserDirection: { x: 0, y: 0, z: 1 },
+  laserLength: LASER_LENGTH
 };
-
-const TARGET_SIZE = 3.80;
-const HALF_EXTENT = TARGET_SIZE * 0.5; // 1.90m
 
 /**
  * Deterministic PRNG so procedural geometry & textures are 100% reproducible.
@@ -625,7 +627,7 @@ export function createSingularityGuardian(api = {}) {
       uniform float uIntensity;
       void main() {
         vUv = uv;
-        float pulse = sin(uv.y * 34.0 - uTime * 36.0) * 0.022 * uIntensity;
+        float pulse = sin(uv.y * 72.0 - uTime * 36.0) * 0.022 * uIntensity;
         vec3 pos = position + normal * pulse;
         vec4 mvPos = modelViewMatrix * vec4(pos, 1.0);
         vNormal = normalize(normalMatrix * normal);
@@ -644,13 +646,13 @@ export function createSingularityGuardian(api = {}) {
         float coreMask = pow(ndotv, 1.4);
         float edgeGlow = pow(1.0 - ndotv, 1.8);
 
-        float helixA = sin(vUv.x * 18.84955 + vUv.y * 28.0 - uTime * 32.0) * 0.5 + 0.5;
-        float helixB = sin(-vUv.x * 12.56637 + vUv.y * 42.0 - uTime * 46.0) * 0.5 + 0.5;
-        float surge = 0.72 + 0.28 * sin(vUv.y * 16.0 - uTime * 24.0);
+        float helixA = sin(vUv.x * 18.84955 + vUv.y * 104.0 - uTime * 32.0) * 0.5 + 0.5;
+        float helixB = sin(-vUv.x * 12.56637 + vUv.y * 156.0 - uTime * 46.0) * 0.5 + 0.5;
+        float surge = 0.72 + 0.28 * sin(vUv.y * 60.0 - uTime * 24.0);
         float streaks = pow(helixA * 0.6 + helixB * 0.4, 2.0);
 
-        float tipFade = smoothstep(1.0, 0.86, vUv.y);
-        float baseBoost = smoothstep(0.0, 0.08, vUv.y) * 0.35 + 0.65;
+        float tipFade = smoothstep(1.0, 0.94, vUv.y);
+        float baseBoost = smoothstep(0.0, 0.03, vUv.y) * 0.35 + 0.65;
 
         vec3 violet = vec3(0.66, 0.30, 1.0);
         vec3 crimson = vec3(1.0, 0.14, 0.40);
@@ -1139,7 +1141,7 @@ export function createSingularityGuardian(api = {}) {
     const radius = 0.58 + rand() * 1.04;
     const speed = 0.6 + rand() * 1.2;
     const phase = rand() * Math.PI * 2;
-    particleBase.push({ theta, phi, radius, speed, phase });
+    particleBase.push({ theta, phi, radius, speedInt: Math.round(speed), phase });
 
     pPositions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
     pPositions[i * 3 + 1] = radius * Math.cos(phi);
@@ -1192,6 +1194,8 @@ export function createSingularityGuardian(api = {}) {
     arcBolts.push({
       line,
       geo: arcGeo,
+      posAttr: arcGeo.attributes.position,
+      posArr: arcPos,
       mat: arcMat,
       baseAngle: (b / 6) * Math.PI * 2,
       zBias: (b % 3 - 1) * 0.25
@@ -1236,9 +1240,7 @@ export function createSingularityGuardian(api = {}) {
   laserAssembly.visible = false;
   weaponDecalMesh.add(laserAssembly);
 
-  const LASER_LENGTH = 7.4;
-
-  const laserCoreGeo = new T.CylinderGeometry(0.075, 0.095, LASER_LENGTH, 18, 1, true);
+  const laserCoreGeo = new T.CylinderGeometry(0.075, 0.095, LASER_LENGTH, 16, 1, true);
   laserCoreGeo.rotateX(Math.PI * 0.5);
   laserCoreGeo.translate(0, 0, LASER_LENGTH * 0.5);
   const laserCoreMat = new T.MeshBasicMaterial({
@@ -1256,7 +1258,7 @@ export function createSingularityGuardian(api = {}) {
   laserCoreMesh.castShadow = false;
   laserAssembly.add(laserCoreMesh);
 
-  const laserSheathGeo = new T.CylinderGeometry(0.20, 0.24, LASER_LENGTH, 28, 32, true);
+  const laserSheathGeo = new T.CylinderGeometry(0.20, 0.24, LASER_LENGTH, 24, 64, true);
   laserSheathGeo.rotateX(Math.PI * 0.5);
   laserSheathGeo.translate(0, 0, LASER_LENGTH * 0.5);
   const laserSheathMesh = new T.Mesh(laserSheathGeo, laserSheathMat);
@@ -1265,7 +1267,7 @@ export function createSingularityGuardian(api = {}) {
   laserSheathMesh.castShadow = false;
   laserAssembly.add(laserSheathMesh);
 
-  const laserAuraGeo = new T.CylinderGeometry(0.34, 0.40, LASER_LENGTH, 20, 1, true);
+  const laserAuraGeo = new T.CylinderGeometry(0.34, 0.40, LASER_LENGTH, 18, 1, true);
   laserAuraGeo.rotateX(Math.PI * 0.5);
   laserAuraGeo.translate(0, 0, LASER_LENGTH * 0.5);
   const laserAuraMat = new T.MeshBasicMaterial({
@@ -1285,16 +1287,17 @@ export function createSingularityGuardian(api = {}) {
 
   const buildHelixTube = (phaseOffset, radius, turns, colorHex, name) => {
     const pts = [];
-    const steps = 72;
+    const steps = 160;
+    const spanZ = LASER_LENGTH - 0.15;
     for (let i = 0; i <= steps; i++) {
       const f = i / steps;
-      const z = f * (LASER_LENGTH - 0.15);
-      const r = radius * (0.45 + 0.55 * Math.sin(Math.min(1, f * 3.0) * Math.PI * 0.5));
+      const z = f * spanZ;
+      const r = radius * (0.45 + 0.55 * Math.sin(Math.min(1, z / 2.4) * Math.PI * 0.5));
       const ang = f * Math.PI * 2 * turns + phaseOffset;
       pts.push(new T.Vector3(Math.cos(ang) * r, Math.sin(ang) * r, z));
     }
     const curve = new T.CatmullRomCurve3(pts);
-    const geo = new T.TubeGeometry(curve, 64, 0.024, 8, false);
+    const geo = new T.TubeGeometry(curve, 160, 0.024, 6, false);
     const mat = new T.MeshBasicMaterial({
       name,
       color: colorHex,
@@ -1310,13 +1313,14 @@ export function createSingularityGuardian(api = {}) {
     return m;
   };
 
-  const helixA = buildHelixTube(0, 0.27, 4.5, 0xff2255, 'LaserHelixArc_Crimson');
-  const helixB = buildHelixTube(Math.PI, 0.27, 4.5, 0x38bdf8, 'LaserHelixArc_Cyan');
+  const helixA = buildHelixTube(0, 0.27, 15.0, 0xff2255, 'LaserHelixArc_Crimson');
+  const helixB = buildHelixTube(Math.PI, 0.27, 15.0, 0x38bdf8, 'LaserHelixArc_Cyan');
   laserAssembly.add(helixA, helixB);
 
+  const SHOCK_RING_COUNT = 10;
   const shockRings = [];
-  const shockGeo = new T.TorusGeometry(0.32, 0.024, 10, 32);
-  for (let s = 0; s < 6; s++) {
+  const shockGeo = new T.TorusGeometry(0.32, 0.024, 8, 24);
+  for (let s = 0; s < SHOCK_RING_COUNT; s++) {
     const sMat = new T.MeshBasicMaterial({
       name: `LaserShockwaveRing_${s}`,
       color: s % 2 === 0 ? 0xff4488 : 0xc084fc,
@@ -1330,7 +1334,7 @@ export function createSingularityGuardian(api = {}) {
     ring.userData.noShadow = true;
     ring.castShadow = false;
     laserAssembly.add(ring);
-    shockRings.push({ mesh: ring, mat: sMat, offset: s / 6 });
+    shockRings.push({ mesh: ring, mat: sMat, offset: s / SHOCK_RING_COUNT });
   }
 
   const createFlareCross = (scale, name) => {
@@ -1375,6 +1379,12 @@ export function createSingularityGuardian(api = {}) {
   let _weaponOpacity = 1.0;
   let _lastElapsed = 0.0;
 
+  const SHOCK_TRAVEL_SPAN = LASER_LENGTH - 0.45;
+  const PI2 = Math.PI * 2;
+  const OMEGA = PI2 / duration;
+  const pAttr = vortexGeo.attributes.position;
+  const pArr = pAttr.array;
+
   function applyWeaponOpacity(alpha) {
     const a = _weaponDecalVisible ? Math.max(0, Math.min(1, alpha)) : 0.0;
     laserUniforms.uIntensity.value = a;
@@ -1385,17 +1395,22 @@ export function createSingularityGuardian(api = {}) {
     pilotBeamMat.opacity = 0.72 * a;
     centerFlare.mat.opacity = 0.92 * a;
     muzzleFlare.mat.opacity = 0.95 * a;
-    shockRings.forEach((sr) => {
-      sr.mat.opacity = 0.80 * a;
-    });
+    const shockOp = 0.80 * a;
+    for (let i = 0; i < shockRings.length; i++) {
+      shockRings[i].mat.opacity = shockOp;
+    }
   }
 
   function applyMandiblePose(irisOpen) {
-    mandibles.forEach((m) => {
-      m.jaw.position.y = m.baseY + irisOpen * 0.12;
-      m.jaw.position.z = m.baseZ - irisOpen * 0.05;
-      m.jaw.rotation.x = m.baseRotX - irisOpen * 0.44;
-    });
+    const dy = irisOpen * 0.12;
+    const dz = irisOpen * 0.05;
+    const drx = irisOpen * 0.44;
+    for (let i = 0; i < mandibles.length; i++) {
+      const m = mandibles[i];
+      m.jaw.position.y = m.baseY + dy;
+      m.jaw.position.z = m.baseZ - dz;
+      m.jaw.rotation.x = m.baseRotX - drx;
+    }
   }
 
   function applyEmissiveAndCoreState(chargeLevel, fireLevel) {
@@ -1423,14 +1438,17 @@ export function createSingularityGuardian(api = {}) {
     helixA.rotation.z = elapsed * 14.0;
     helixB.rotation.z = -elapsed * 16.0;
 
-    shockRings.forEach((sr) => {
-      const travel = (elapsed * 1.9 + sr.offset) % 1.0;
-      sr.mesh.position.z = 0.22 + travel * (LASER_LENGTH - 0.45);
+    const travelBase = elapsed * 1.45;
+    const rotBase = elapsed * 6.0;
+    for (let i = 0; i < shockRings.length; i++) {
+      const sr = shockRings[i];
+      const travel = (travelBase + sr.offset) % 1.0;
+      sr.mesh.position.z = 0.22 + travel * SHOCK_TRAVEL_SPAN;
       const ringScale = 0.48 + travel * 1.15;
       sr.mesh.scale.set(ringScale, ringScale, 1.0);
-      sr.mesh.rotation.z = elapsed * 6.0 + sr.offset * Math.PI * 2;
+      sr.mesh.rotation.z = rotBase + sr.offset * PI2;
       sr.mat.opacity = Math.sin(travel * Math.PI) * 0.85 * fireLevel;
-    });
+    }
 
     centerFlare.group.rotation.z = elapsed * 3.5;
     centerFlare.group.scale.setScalar((0.80 + 0.45 * fireLevel) * flicker);
@@ -1498,43 +1516,44 @@ export function createSingularityGuardian(api = {}) {
   function updateArcLightning(elapsed, charge, fire) {
     const activeAmp = 0.08 + charge * 0.12 + fire * 0.18;
     const timeTick = Math.floor(elapsed * 22);
-    arcBolts.forEach((bolt, bIdx) => {
-      const pos = bolt.geo.attributes.position;
+    const boltOpacity = 0.25 + charge * 0.5 + fire * 0.65;
+    const invSegments = 1.0 / arcSegments;
+    const elapsed8 = elapsed * 8.0;
+
+    for (let bIdx = 0; bIdx < arcBolts.length; bIdx++) {
+      const bolt = arcBolts[bIdx];
+      const arr = bolt.posArr;
       const a0 = bolt.baseAngle + elapsed * (bIdx % 2 === 0 ? 1.4 : -1.1);
-      const a1 = a0 + 1.05;
       const rStart = 0.36;
-      const rEnd = 1.04;
+      const rSpan = 0.68; // 1.04 - 0.36
+      const bTerm1 = bIdx * 17.3 + timeTick * 13.1;
+      const bTerm2 = bIdx * 11.7 - timeTick * 19.3;
+
       for (let i = 0; i <= arcSegments; i++) {
-        const f = i / arcSegments;
-        const ang = a0 + (a1 - a0) * f;
-        const r = rStart + (rEnd - rStart) * f;
-        const jitterSeed = Math.sin((i + 1) * 31.7 + bIdx * 17.3 + timeTick * 13.1);
-        const jitterSeed2 = Math.cos((i + 2) * 23.9 + bIdx * 11.7 - timeTick * 19.3);
+        const f = i * invSegments;
+        const ang = a0 + 1.05 * f;
+        const r = rStart + rSpan * f;
         const env = Math.sin(f * Math.PI);
-        const x = Math.cos(ang) * r + jitterSeed * activeAmp * env;
-        const y = Math.sin(ang) * r + jitterSeed2 * activeAmp * env;
-        const z = bolt.zBias * (1.0 - f) + Math.sin(f * Math.PI * 2 + elapsed * 8) * 0.16 * env;
-        pos.setXYZ(i, x, y, z);
+        const jitterAmp = activeAmp * env;
+        const jitterSeed = Math.sin((i + 1) * 31.7 + bTerm1);
+        const jitterSeed2 = Math.cos((i + 2) * 23.9 + bTerm2);
+        const base = i * 3;
+        arr[base] = Math.cos(ang) * r + jitterSeed * jitterAmp;
+        arr[base + 1] = Math.sin(ang) * r + jitterSeed2 * jitterAmp;
+        arr[base + 2] = bolt.zBias * (1.0 - f) + Math.sin(f * PI2 + elapsed8) * 0.16 * env;
       }
-      pos.needsUpdate = true;
-      bolt.mat.opacity = 0.25 + charge * 0.5 + fire * 0.65;
-    });
+      bolt.posAttr.needsUpdate = true;
+      bolt.mat.opacity = boltOpacity;
+    }
   }
 
   function update(dt, elapsed = 0) {
     _lastElapsed = elapsed;
-    weaponDecalMesh.castShadow = false;
-    laserCoreMesh.castShadow = false;
-    laserSheathMesh.castShadow = false;
-    laserAuraMesh.castShadow = false;
-    helixA.castShadow = false;
-    helixB.castShadow = false;
-    pilotBeamMesh.castShadow = false;
-    eventHorizonSphere.castShadow = false;
 
     const cycleT = ((elapsed % duration) + duration) % duration;
     const normT = cycleT / duration;
-    const omega = (Math.PI * 2) / duration;
+    const cyclePhase = cycleT * OMEGA;
+    const cyclePhase2 = cyclePhase * 2.0;
 
     // Weapon state is driven directly by the Decal toggle (Decal_LaserBurn_Central_Weapon)
     const weaponEnabled = _weaponDecalVisible && _weaponOpacity > 0.005;
@@ -1543,55 +1562,60 @@ export function createSingularityGuardian(api = {}) {
     const irisOpen = weaponEnabled ? 1.0 : 0.0;
 
     // 1. Subtle Heavy Automaton Graviton Hover & Recoil (exact 0 displacement at t = 0 when idle)
-    const hoverY = Math.sin(cycleT * omega) * 0.055;
-    const recoilZ = -fireLevel * 0.065 + Math.sin(cycleT * omega * 18) * fireLevel * 0.009;
+    const sinPhase = Math.sin(cyclePhase);
+    const hoverY = sinPhase * 0.055;
+    const recoilZ = -fireLevel * 0.065 + Math.sin(cyclePhase * 18.0) * fireLevel * 0.009;
     bodyGroup.position.set(0, HALF_EXTENT + hoverY, recoilZ);
-    bodyGroup.rotation.z = Math.sin(cycleT * omega) * 0.025;
+    bodyGroup.rotation.z = sinPhase * 0.025;
 
     // 2. Counter-Rotating Ancient Astrolabe Rings (exact integer harmonics -> seamless loop)
-    innerAstrolabe.rotation.z = cycleT * omega * 3;
-    innerAstrolabe.rotation.x = Math.sin(cycleT * omega * 2) * 0.45 + 0.35;
-    innerAstrolabe.rotation.y = cycleT * omega * 2;
+    innerAstrolabe.rotation.z = cyclePhase * 3.0;
+    innerAstrolabe.rotation.x = Math.sin(cyclePhase2) * 0.45 + 0.35;
+    innerAstrolabe.rotation.y = cyclePhase2;
 
-    midAstrolabe.rotation.z = -cycleT * omega * 2;
-    midAstrolabe.rotation.y = -cycleT * omega * 1;
-    midAstrolabe.rotation.x = Math.cos(cycleT * omega * 1) * 0.32;
+    midAstrolabe.rotation.z = -cyclePhase2;
+    midAstrolabe.rotation.y = -cyclePhase;
+    midAstrolabe.rotation.x = Math.cos(cyclePhase) * 0.32;
 
-    outerAstrolabe.rotation.z = cycleT * omega * 1;
-    outerAstrolabe.rotation.x = Math.sin(cycleT * omega * 1) * 0.22;
+    outerAstrolabe.rotation.z = cyclePhase;
+    outerAstrolabe.rotation.x = sinPhase * 0.22;
 
     // 3. Heavy Armor Matrix Subtle Mechanical Breathing
-    breathingPlates.forEach((p) => {
-      const pulse = Math.sin(cycleT * omega * 2 + p.phase) * p.amplitude * (0.45 + chargeLevel * 0.75);
-      const expand = chargeLevel * 0.020;
-      p.group.position.copy(p.dir).multiplyScalar(p.baseRadius + pulse + expand);
-    });
+    const plateAmpScale = 0.45 + chargeLevel * 0.75;
+    const plateExpand = chargeLevel * 0.020;
+    for (let i = 0; i < breathingPlates.length; i++) {
+      const p = breathingPlates[i];
+      const rad = p.baseRadius + Math.sin(cyclePhase2 + p.phase) * p.amplitude * plateAmpScale + plateExpand;
+      p.group.position.set(p.dir.x * rad, p.dir.y * rad, p.dir.z * rad);
+    }
 
     // Articulated Forward Blast-Petal Mandibles open when weapon decal is ON, lock shut when OFF
     applyMandiblePose(irisOpen);
 
     // Focusing Prism Crystals brighten & converge toward the central firing axis
-    focusPrisms.forEach((fp, i) => {
-      const r = 0.50 - chargeLevel * 0.06;
-      const rot = fp.angle + cycleT * omega * 2;
-      fp.group.position.set(Math.cos(rot) * r, Math.sin(rot) * r, 0.78 + fireLevel * 0.06);
+    const prismR = 0.50 - chargeLevel * 0.06;
+    const prismZ = 0.78 + fireLevel * 0.06;
+    for (let i = 0; i < focusPrisms.length; i++) {
+      const fp = focusPrisms[i];
+      const rot = fp.angle + cyclePhase2;
+      fp.group.position.set(Math.cos(rot) * prismR, Math.sin(rot) * prismR, prismZ);
       fp.group.lookAt(0, 0, 1.45);
       fp.group.rotation.z = rot + i;
-    });
+    }
 
     // 4. Singularity Core Shaders, Corona & Dynamic Illumination
     coreUniforms.uTime.value = elapsed;
     applyEmissiveAndCoreState(chargeLevel, fireLevel);
 
-    const coreScale = 1.0 + chargeLevel * 0.14 + fireLevel * 0.12 + Math.sin(elapsed * 22) * fireLevel * 0.035;
+    const coreScale = 1.0 + chargeLevel * 0.14 + fireLevel * 0.12 + Math.sin(elapsed * 22.0) * fireLevel * 0.035;
     eventHorizonSphere.scale.setScalar(coreScale);
 
-    accretionRingA.rotation.z = cycleT * omega * 4;
-    accretionRingA.rotation.x = Math.PI * 0.22 + Math.sin(cycleT * omega * 2) * 0.28;
+    accretionRingA.rotation.z = cyclePhase * 4.0;
+    accretionRingA.rotation.x = Math.PI * 0.22 + Math.sin(cyclePhase2) * 0.28;
     accretionRingA.scale.setScalar(1.0 + chargeLevel * 0.16);
 
-    accretionRingB.rotation.z = -cycleT * omega * 5;
-    accretionRingB.rotation.y = cycleT * omega * 3;
+    accretionRingB.rotation.z = -cyclePhase * 5.0;
+    accretionRingB.rotation.y = cyclePhase * 3.0;
     accretionRingB.scale.setScalar(1.0 + fireLevel * 0.22);
 
     pilotBeamMesh.visible = weaponEnabled;
@@ -1600,19 +1624,18 @@ export function createSingularityGuardian(api = {}) {
     pilotBeamMesh.scale.set(pilotScale, pilotScale, 1.0);
 
     // 5. Gravitational Vortex Particle Swarm
-    const pAttr = vortexGeo.attributes.position;
     const pullFactor = 1.0 - chargeLevel * 0.28 + fireLevel * 0.12;
     for (let i = 0; i < particleCount; i++) {
       const pb = particleBase[i];
-      const theta = pb.theta + cycleT * omega * Math.round(pb.speed);
-      const r = Math.min(1.66, pb.radius * pullFactor + Math.sin(cycleT * omega * 2 + pb.phase) * 0.06);
-      const phi = pb.phi + Math.sin(cycleT * omega + pb.phase) * 0.08;
-      pAttr.setXYZ(
-        i,
-        r * Math.sin(phi) * Math.cos(theta),
-        r * Math.cos(phi),
-        r * Math.sin(phi) * Math.sin(theta)
-      );
+      const theta = pb.theta + cyclePhase * pb.speedInt;
+      const rRaw = pb.radius * pullFactor + Math.sin(cyclePhase2 + pb.phase) * 0.06;
+      const r = rRaw < 1.66 ? rRaw : 1.66;
+      const phi = pb.phi + Math.sin(cyclePhase + pb.phase) * 0.08;
+      const rSinPhi = r * Math.sin(phi);
+      const idx = i * 3;
+      pArr[idx] = rSinPhi * Math.cos(theta);
+      pArr[idx + 1] = r * Math.cos(phi);
+      pArr[idx + 2] = rSinPhi * Math.sin(theta);
     }
     pAttr.needsUpdate = true;
 
@@ -1688,6 +1711,7 @@ export function createSingularityGuardian(api = {}) {
     dispose,
     setLaserIntensity,
     laserOrigin: new T.Vector3(0, HALF_EXTENT, 0),
+    laserLength: LASER_LENGTH,
     dimensions: { width: TARGET_SIZE, height: TARGET_SIZE, depth: TARGET_SIZE },
     circumferenceOval: 11.94
   };

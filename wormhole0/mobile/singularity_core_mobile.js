@@ -466,6 +466,20 @@ export const stageEvents = [
 export const WEAPON_MAX_RANGE_KM = 10000;
 export const KM_PER_WORLD_UNIT = 420;
 export const WEAPON_MAX_RANGE_UNITS = WEAPON_MAX_RANGE_KM / KM_PER_WORLD_UNIT;
+export const FIRE_PITCH_TARGET_DEG = -5.7;
+export const FIRE_PITCH_TARGET_RAD = FIRE_PITCH_TARGET_DEG * (Math.PI / 180);
+
+const DIST_10K_UNITS = WEAPON_MAX_RANGE_UNITS; // 10,000 KM (~23.8095 units)
+const SHELL_RADIUS_10K = DIST_10K_UNITS * 0.94;
+const DIST_5K_UNITS = 5000 / KM_PER_WORLD_UNIT; // 5,000 KM (~11.9048 units)
+const BASE_PITCH_DOWN_RAD = 0.22; // +12.6° cruise nose-down posture
+const LEVEL_PITCH_RATE = 3.2;     // Smooth level-off from cruise posture to exact 0.0° (~0.31s)
+const FIRE_TILT_RATE = 4.2;       // Smooth tilt from exact 0.0° level point to -5.7° X pitch (~0.24s)
+const RETURN_PITCH_RATE = 2.8;    // Smooth recovery from firing stance back to cruise posture (~0.36s)
+const HOLD_5K_DURATION_MS = 2400;
+const LASER_DODGE_RADIUS_SQ = 7.2 * 7.2;
+const _BOLT_FWD_NEG_Z = new THREE.Vector3(0, 0, -1);
+const _TMP_FIRE_QUAT = new THREE.Quaternion();
 
 export function isEnemyWithinWeaponRange(enemyOrPos, playerPos) {
   if (!enemyOrPos || !playerPos) return false;
@@ -491,25 +505,33 @@ export function canPlayerDestroyEnemy(enemyObj, playerPos) {
   return isEnemyWithinWeaponRange(enemyObj, playerPos);
 }
 
-function tickSingularityWeaponDecalTimer(e, delta, now) {
+function resetSingularityWeaponState(e) {
   if (!e || !e.mesh) return;
-  if (e.mesh.userData && (e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.weaponsActive === false)) {
-    e._centralWeaponFiring = false;
-    e._centralWeaponFireRemaining = 0;
-    e._centralWeaponFireEndTime = 0;
-    if (e.mesh.userData) {
-      e.mesh.userData._centralWeaponFiring = false;
-      e.mesh.userData._centralWeaponFireRemaining = 0;
-      e.mesh.userData._centralWeaponFireEndTime = 0;
-    }
-    setSingularityWeaponDecalEnabled(e, false);
+  e._centralWeaponFiring = false;
+  e._centralWeaponFireRemaining = 0;
+  e._centralWeaponFireEndTime = 0;
+  e._pendingWeaponOverride = null;
+  e.isFirePitchReady = false;
+  const ud = e.mesh.userData;
+  if (ud) {
+    ud._centralWeaponFiring = false;
+    ud._centralWeaponFireRemaining = 0;
+    ud._centralWeaponFireEndTime = 0;
+  }
+  setSingularityWeaponDecalEnabled(e, false);
+}
+
+function tickSingularityWeaponDecalTimer(e, dt, now) {
+  if (!e || !e.mesh) return;
+  const ud = e.mesh.userData;
+  if ((ud && (ud.inPool || ud.isActive === false || ud.weaponsActive === false)) || e.isActive === false) {
+    resetSingularityWeaponState(e);
     return;
   }
 
   if (e._centralWeaponFiring) {
-    const safeDt = Math.max(0, Number.isFinite(delta) ? delta : 0);
     if (typeof e._centralWeaponFireRemaining === 'number') {
-      e._centralWeaponFireRemaining -= safeDt;
+      e._centralWeaponFireRemaining -= dt;
     }
     const remainingExpired = (typeof e._centralWeaponFireRemaining === 'number')
       ? (e._centralWeaponFireRemaining <= 0)
@@ -519,18 +541,21 @@ function tickSingularityWeaponDecalTimer(e, delta, now) {
       e._centralWeaponFiring = false;
       e._centralWeaponFireRemaining = 0;
       e._centralWeaponFireEndTime = 0;
-      if (e.mesh.userData) {
-        e.mesh.userData._centralWeaponFiring = false;
-        e.mesh.userData._centralWeaponFireRemaining = 0;
-        e.mesh.userData._centralWeaponFireEndTime = 0;
+      if (ud) {
+        ud._centralWeaponFiring = false;
+        ud._centralWeaponFireRemaining = 0;
+        ud._centralWeaponFireEndTime = 0;
       }
       setSingularityWeaponDecalEnabled(e, false);
     } else {
-      if (e.mesh.userData) {
-        e.mesh.userData._centralWeaponFiring = true;
-        e.mesh.userData._centralWeaponFireRemaining = e._centralWeaponFireRemaining;
+      if (ud) {
+        ud._centralWeaponFiring = true;
+        ud._centralWeaponFireRemaining = e._centralWeaponFireRemaining;
       }
-      setSingularityWeaponDecalEnabled(e, true);
+      const decalMesh = getSingularityWeaponDecal(e);
+      if (decalMesh && !decalMesh.visible) {
+        decalMesh.visible = true;
+      }
     }
   } else {
     const decalMesh = getSingularityWeaponDecal(e);
@@ -540,20 +565,20 @@ function tickSingularityWeaponDecalTimer(e, delta, now) {
   }
 }
 
-function advanceSingularityGuardianAnimation(e, delta) {
+function advanceSingularityGuardianAnimation(e, dt) {
   if (!e || !e.mesh || !e.mesh.userData) return;
   const guardian = e.mesh.userData.singularityGuardian;
   if (guardian && typeof guardian.update === 'function') {
-    const safeDt = Math.max(0, Number.isFinite(delta) ? delta : 0);
-    const nextElapsed = (e.mesh.userData.proceduralElapsed || 0) + safeDt;
+    const nextElapsed = (e.mesh.userData.proceduralElapsed || 0) + dt;
     e.mesh.userData.proceduralElapsed = nextElapsed;
-    guardian.update(safeDt, nextElapsed);
+    guardian.update(dt, nextElapsed);
   }
 }
 
 export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   if (!enemyObj || !enemyObj.mesh) return false;
-  if (enemyObj.mesh.userData && (enemyObj.mesh.userData.inPool || enemyObj.mesh.userData.isActive === false || enemyObj.mesh.userData.weaponsActive === false)) return false;
+  const ud = enemyObj.mesh.userData;
+  if (ud && (ud.inPool || ud.isActive === false || ud.weaponsActive === false)) return false;
 
   const isContextObj = context && typeof context === 'object' && !context.isVector3;
   const scene = isContextObj ? context.scene : (typeof window !== 'undefined' ? window.scene : null);
@@ -568,8 +593,33 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
 
   // If already firing within its active 1-second burn central weapon decal window, keep it ON and return true
   if (enemyObj._centralWeaponFiring && ((enemyObj._centralWeaponFireRemaining || 0) > 0 || now < (enemyObj._centralWeaponFireEndTime || 0))) {
-    setSingularityWeaponDecalEnabled(enemyObj, true);
+    const dm = getSingularityWeaponDecal(enemyObj);
+    if (dm && !dm.visible) dm.visible = true;
     return true;
+  }
+
+  // Enforce pre-fire pitch choreography:
+  // Just before firing, the model must FIRST level off to 0.0° and THEN tilt to X pitch -5.7°.
+  if (enemyObj.maneuverState !== undefined) {
+    if (!enemyObj.isFirePitchReady) {
+      if (enemyObj.maneuverState === 'CRUISE_10K') {
+        enemyObj.maneuverState = 'LEVELING_OFF';
+        enemyObj.hasFiredThisLevel = false;
+        enemyObj.fireTiltProgress = 0.0;
+        enemyObj._pendingWeaponOverride = weaponOverride || enemyObj._pendingWeaponOverride || null;
+      } else if (enemyObj.maneuverState === 'LEVELING_OFF' || enemyObj.maneuverState === 'TILTING_TO_FIRE') {
+        enemyObj._pendingWeaponOverride = weaponOverride || enemyObj._pendingWeaponOverride || null;
+      }
+      // Return true so engine cadence loop does not fire an un-aligned fallback bolt
+      return true;
+    }
+    // Only fire once per level-off -> -5.7° tilt cycle so the weapon never fires mid-recovery
+    if (enemyObj.hasFiredThisLevel && !enemyObj._allowFireExecution) {
+      return true;
+    }
+  } else {
+    // Direct standalone invocation outside movement loop: align to exact -5.7° X pitch
+    enemyObj.mesh.rotation.x = FIRE_PITCH_TARGET_RAD;
   }
 
   const playerPos = (isContextObj && context.playerPos)
@@ -578,27 +628,24 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
       ? context
       : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : camera.position));
 
-  // Turn ON the Singularity Guardian burn central weapon decal (Decal_LaserBurn_Central_Weapon) for 1 second
+  // Turn ON the Singularity Guardian 28m burn central weapon decal (Decal_LaserBurn_Central_Weapon) for 1 second
   const fireDurationMs = SINGULARITY_WEAPON_FIRE_DURATION_MS;
   setSingularityWeaponDecalEnabled(enemyObj, true);
   enemyObj._centralWeaponFiring = true;
   enemyObj._centralWeaponFireStartTime = now;
   enemyObj._centralWeaponFireEndTime = now + fireDurationMs;
   enemyObj._centralWeaponFireRemaining = fireDurationMs / 1000;
-  if (enemyObj.mesh.userData) {
-    enemyObj.mesh.userData._centralWeaponFiring = true;
-    enemyObj.mesh.userData._centralWeaponFireEndTime = enemyObj._centralWeaponFireEndTime;
-    enemyObj.mesh.userData._centralWeaponFireRemaining = enemyObj._centralWeaponFireRemaining;
-    const guardian = enemyObj.mesh.userData.singularityGuardian;
-    if (guardian && typeof guardian.update === 'function') {
-      guardian.update(0, enemyObj.mesh.userData.proceduralElapsed || 0);
-    }
+  if (ud) {
+    ud._centralWeaponFiring = true;
+    ud._centralWeaponFireEndTime = enemyObj._centralWeaponFireEndTime;
+    ud._centralWeaponFireRemaining = enemyObj._centralWeaponFireRemaining;
   }
 
   // Enemy can fire its weapon at any distance, but weapon range is 10,000 KM:
   // beams fired while enemy is > 10,000 KM from player cannot hit/damage the player.
-  const enemyDistAtFire = (playerPos && typeof enemyObj.mesh.position.distanceTo === 'function')
-    ? enemyObj.mesh.position.distanceTo(playerPos)
+  const ePos = enemyObj.mesh.position;
+  const enemyDistAtFire = playerPos
+    ? Math.hypot(ePos.x - playerPos.x, ePos.y - playerPos.y, ePos.z - playerPos.z)
     : Infinity;
   const firedWithinRange = enemyDistAtFire <= WEAPON_MAX_RANGE_UNITS;
 
@@ -626,22 +673,20 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   const wId = (w && w.id) || (wName ? 'ew_' + wName.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'ew_primary');
 
   if (enemyBolts.length <= 80 && playerPos) {
-    const spawnOrigin = enemyObj.mesh.position.clone();
-    const targetPoint = new THREE.Vector3(
-      playerPos.x + (Math.random() - 0.5) * 3.5,
-      playerPos.y + (Math.random() - 0.5) * 3.5,
-      playerPos.z
-    );
-    const direction = new THREE.Vector3().subVectors(targetPoint, spawnOrigin).normalize();
-    const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+    const spawnOrigin = ePos.clone();
+    const tx = playerPos.x + (Math.random() - 0.5) * 3.5 - ePos.x;
+    const ty = playerPos.y + (Math.random() - 0.5) * 3.5 - ePos.y;
+    const tz = playerPos.z - ePos.z;
+    const direction = new THREE.Vector3(tx, ty, tz).normalize();
+    _TMP_FIRE_QUAT.setFromUnitVectors(_BOLT_FWD_NEG_Z, direction);
 
-    // Invisible collision-delivery pulse: the visible weapon beam is rendered exclusively
+    // Invisible collision-delivery pulse: the visible 28m weapon beam is rendered exclusively
     // by the Singularity Guardian's Decal_LaserBurn_Central_Weapon decal for 1 second.
     const beamTracker = new THREE.Object3D();
     beamTracker.name = 'singularity_central_weapon_pulse';
     beamTracker.visible = false;
     beamTracker.position.copy(spawnOrigin);
-    beamTracker.quaternion.copy(boltQuat);
+    beamTracker.quaternion.copy(_TMP_FIRE_QUAT);
 
     enemyBolts.push({
       mesh: beamTracker,
@@ -649,7 +694,7 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
       isCentralWeaponDecalBeam: true,
       weaponDecalName: SINGULARITY_WEAPON_DECAL_NAME || SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME,
       fireDurationMs,
-      spawnOrigin: spawnOrigin.clone(),
+      spawnOrigin,
       prevPosition: spawnOrigin.clone(),
       distanceTraveled: 0,
       maxRangeKm: WEAPON_MAX_RANGE_KM,
@@ -694,79 +739,82 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
 }
 
 export function updateEnemyMovement(e, delta, context) {
-  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) {
-    if (e && e.mesh) {
-      e._centralWeaponFiring = false;
-      e._centralWeaponFireRemaining = 0;
-      e._centralWeaponFireEndTime = 0;
-      setSingularityWeaponDecalEnabled(e, false);
-    }
+  if (!e || !e.mesh) return false;
+  const ud = e.mesh.userData;
+  if ((ud && (ud.inPool || ud.isActive === false || ud.movementActive === false)) || e.isActive === false) {
+    resetSingularityWeaponState(e);
     return false;
   }
+
+  const dt = (Number.isFinite(delta) && delta > 0) ? Math.min(delta, 0.1) : 0;
   const isContextObj = context && typeof context === 'object' && !context.isVector3;
   const now = (isContextObj && context.now) || performance.now();
-  tickSingularityWeaponDecalTimer(e, delta, now);
+  tickSingularityWeaponDecalTimer(e, dt, now);
+
   const playerPos = (isContextObj && context.playerPos)
     ? context.playerPos
     : (context && context.isVector3)
       ? context
       : { x: 0, y: 0, z: 220 };
-  const laserBolts = (isContextObj && context.laserBolts) || [];
-  const activeEnemies = (isContextObj && context.activeEnemies) || [];
-  const enemyIndex = (isContextObj && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
-  const distToPlayer = e.mesh.position.distanceTo(playerPos);
-
-  // Exact distance definitions: at 420 KM per Three.js unit
-  const dist10k = WEAPON_MAX_RANGE_UNITS; // 10,000 KM (~23.8095 units)
-  const dist5k = 5000 / KM_PER_WORLD_UNIT; // 5,000 KM (~11.9048 units)
-  const targetZ10k = playerPos.z - dist10k;
-  const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
+  const px = playerPos.x;
+  const py = playerPos.y;
+  const pz = playerPos.z;
+  const pos = e.mesh.position;
   const baseScale = e.baseScale || 1.3;
-  const basePitchDown = 0.22;
 
   if (!e.maneuverState) {
     e.maneuverState = (e.phase === 'RUSH_OUT') ? 'RUSH_OUT' : 'CRUISE_10K';
     e.levelPitchProgress = 0.0;
+    e.fireTiltProgress = 0.0;
     e.isLevel = false;
+    e.isFirePitchReady = false;
     e.hasFiredThisLevel = false;
+    e._at5kTier = false;
+    e._pendingWeaponOverride = null;
     e.nextLevelTime = now + 1500 + Math.random() * 3500;
   }
 
+  // Phase 0: Approach from wormhole mouth to 10,000 KM combat shell
   if (e.phase === 'RUSH_OUT' || e.maneuverState === 'RUSH_OUT') {
-    e.mesh.position.z += (e.speed || 45) * delta;
-    e.mesh.position.x += (playerPos.x + (e.targetScatterX || 0) * 0.25 - e.mesh.position.x) * delta * 0.55;
-    e.mesh.position.y += (playerPos.y + (e.targetScatterY || 0) * 0.25 - e.mesh.position.y) * delta * 0.55;
+    const targetZ10k = pz - DIST_10K_UNITS;
+    const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
+    const rushLerp = Math.min(1.0, dt * 0.55);
+
+    pos.z += (e.speed || 45) * dt;
+    pos.x += (px + (e.targetScatterX || 0) * 0.25 - pos.x) * rushLerp;
+    pos.y += (py + (e.targetScatterY || 0) * 0.25 - pos.y) * rushLerp;
 
     const totalDist = Math.max(10, targetZ10k - spawnZ);
-    const distTraveled = e.mesh.position.z - spawnZ;
-    const rushProgress = THREE.MathUtils.clamp(distTraveled / totalDist, 0.0, 1.0);
-    const curScale = THREE.MathUtils.lerp(0.12, baseScale, rushProgress);
-    e.mesh.scale.set(curScale, curScale, curScale);
+    const rushProgress = THREE.MathUtils.clamp((pos.z - spawnZ) / totalDist, 0.0, 1.0);
+    const curScale = 0.12 + (baseScale - 0.12) * rushProgress;
+    e.mesh.scale.setScalar(curScale);
 
-    const rushDx = playerPos.x - e.mesh.position.x;
-    const rushDy = playerPos.y - e.mesh.position.y;
-    const rushDz = Math.max(5.0, playerPos.z - e.mesh.position.z);
-    const rushLookYaw = THREE.MathUtils.clamp(Math.atan2(rushDx, rushDz), -0.35, 0.35);
-    const rushLookPitch = THREE.MathUtils.clamp(-Math.atan2(rushDy, rushDz), -0.20, 0.20);
+    const rushDz = Math.max(5.0, pz - pos.z);
+    const rushLookYaw = THREE.MathUtils.clamp(Math.atan2(px - pos.x, rushDz), -0.35, 0.35);
+    const rushLookPitch = THREE.MathUtils.clamp(-Math.atan2(py - pos.y, rushDz), -0.20, 0.20);
     e.levelPitchProgress = 0.0;
+    e.fireTiltProgress = 0.0;
     e.isLevel = false;
-    e.mesh.rotation.set(basePitchDown + rushLookPitch, rushLookYaw, 0, 'YXZ');
+    e.isFirePitchReady = false;
+    e.mesh.rotation.set(BASE_PITCH_DOWN_RAD + rushLookPitch, rushLookYaw, 0, 'YXZ');
 
-    const postRushDist = e.mesh.position.distanceTo(playerPos);
+    const postRushDist = Math.hypot(pos.x - px, pos.y - py, pos.z - pz);
     e.distanceToPlayerUnits = postRushDist;
     e.distanceToPlayerKm = postRushDist * KM_PER_WORLD_UNIT;
-    e.inWeaponRange = postRushDist <= dist10k;
+    e.inWeaponRange = postRushDist <= DIST_10K_UNITS;
 
-    if (postRushDist <= dist10k || e.mesh.position.z >= playerPos.z - 2.0) {
+    if (postRushDist <= DIST_10K_UNITS || pos.z >= pz - 2.0) {
       e.phase = 'SCATTER_AND_EVADE';
       e.maneuverState = 'CRUISE_10K';
+      e._at5kTier = false;
       e.stoppedTime = now;
       e.nextLevelTime = now + 1500 + Math.random() * 3500;
     }
-    advanceSingularityGuardianAnimation(e, delta);
+    advanceSingularityGuardianAnimation(e, dt);
     return true;
   }
 
+  // Snap-grid scatter targeting on spherical combat shell (10K / 5K)
   const grid = (isContextObj && context.snapGrid) || (typeof window !== 'undefined' && window.snapGrid);
   const cols = (grid && grid.cols) ? grid.cols : 15;
   const rows = (grid && grid.rows) ? grid.rows : 7;
@@ -784,36 +832,39 @@ export function updateEnemyMovement(e, delta, context) {
     e.targetScatterY = rowSlot * cellH;
   }
 
-  // Project lateral scatter onto spherical shell <= 10,000 KM so enemies maintain
-  // full on-screen spread while staying genuinely within 10,000 KM 3D weapon range
   const rawScatterX = e.targetScatterX || 0;
   const rawScatterY = e.targetScatterY || 0;
-  const scatterDirLen = Math.hypot(rawScatterX, rawScatterY, dist10k) || dist10k;
-  const shellRadius10k = dist10k * 0.94;
-  const isAt5kPhase = (
-    e.maneuverState === 'ADVANCE_5K' ||
-    e.maneuverState === 'LEVELING_OFF_5K' ||
-    e.maneuverState === 'LEVEL_FIRING_5K' ||
-    e.maneuverState === 'HOLD_5K' ||
-    e.maneuverState === 'TILTING_FORWARD_5K'
-  );
-  const activeShellRadius = isAt5kPhase ? dist5k : shellRadius10k;
-  const screenTargetX = playerPos.x + (rawScatterX / scatterDirLen) * activeShellRadius;
-  const screenTargetY = playerPos.y + (rawScatterY / scatterDirLen) * activeShellRadius;
-  const shellTargetZ10k = playerPos.z - (dist10k / scatterDirLen) * shellRadius10k;
-  const shellTargetZ5k = playerPos.z - (dist10k / scatterDirLen) * dist5k;
-  e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
-  e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
+  const invScatterLen = 1.0 / (Math.hypot(rawScatterX, rawScatterY, DIST_10K_UNITS) || DIST_10K_UNITS);
+  const zDirRatio = DIST_10K_UNITS * invScatterLen;
+  const shellTargetZ10k = pz - zDirRatio * SHELL_RADIUS_10K;
+  const shellTargetZ5k = pz - zDirRatio * DIST_5K_UNITS;
+
+  const isAt5kShell = Boolean(e._at5kTier) || e.maneuverState === 'ADVANCE_5K';
+  const activeShellRadius = isAt5kShell ? DIST_5K_UNITS : SHELL_RADIUS_10K;
+  const screenTargetX = px + rawScatterX * invScatterLen * activeShellRadius;
+  const screenTargetY = py + rawScatterY * invScatterLen * activeShellRadius;
+
+  // Damp lateral/evasive jitter smoothly as the model levels off -> tilts to -5.7° -> fires
+  const preLevelP = e.levelPitchProgress || 0.0;
+  const evadeDamp = 1.0 - preLevelP * 0.75;
+  const xyLerp = Math.min(1.0, dt * (2.2 * (1.0 - preLevelP * 0.45)));
+  pos.x += (screenTargetX - pos.x) * xyLerp;
+  pos.y += (screenTargetY - pos.y) * xyLerp;
 
   const t = (now - (e.stoppedTime || now)) * 0.001;
-  const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0);
-  const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.4);
-  const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.6);
-  e.mesh.position.x += evaVx * delta;
-  e.mesh.position.y += evaVy * delta;
-  e.mesh.position.z += evaVz * delta;
+  const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0) * evadeDamp;
+  const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.4) * evadeDamp;
+  const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.6) * evadeDamp;
+  pos.x += evaVx * dt;
+  pos.y += evaVy * dt;
+  pos.z += evaVz * dt;
 
-  if (now >= (e.nextJukeTime || 0)) {
+  const isAimOrFireState = (
+    e.maneuverState === 'LEVELING_OFF' ||
+    e.maneuverState === 'TILTING_TO_FIRE' ||
+    e.maneuverState === 'LEVEL_FIRING'
+  );
+  if (!isAimOrFireState && now >= (e.nextJukeTime || 0)) {
     e.nextJukeTime = now + 1400 + Math.random() * 2000;
     e.jukeEndTime = now + 350 + Math.random() * 350;
     if (e.jukeVelocity && typeof e.jukeVelocity.set === 'function') {
@@ -825,146 +876,159 @@ export function updateEnemyMovement(e, delta, context) {
     }
   }
   if (e.jukeVelocity) {
-    if (now < e.jukeEndTime) {
-      e.mesh.position.addScaledVector(e.jukeVelocity, delta);
+    if (!isAimOrFireState && now < e.jukeEndTime) {
+      pos.x += e.jukeVelocity.x * dt;
+      pos.y += e.jukeVelocity.y * dt;
+      pos.z += e.jukeVelocity.z * dt;
     } else {
-      e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
+      const decay = Math.max(0, 1.0 - dt * (isAimOrFireState ? 8.5 : 4.5));
+      e.jukeVelocity.multiplyScalar(decay);
     }
   }
 
-  for (let li = 0; li < laserBolts.length; li++) {
+  // Zero-allocation reactive dodge against incoming player laser bolts (squared-distance fast reject)
+  const laserBolts = (isContextObj && context.laserBolts) || [];
+  for (let li = 0, len = laserBolts.length; li < len; li++) {
     const lbolt = laserBolts[li];
     if (!lbolt || !lbolt.mesh) continue;
-    const ldist = lbolt.mesh.position.distanceTo(e.mesh.position);
-    if (ldist < 7.2) {
-      const dodgeDir = new THREE.Vector3().subVectors(e.mesh.position, lbolt.mesh.position);
-      dodgeDir.z = 0;
-      if (dodgeDir.lengthSq() > 0.001) {
-        dodgeDir.normalize();
-        e.mesh.position.addScaledVector(dodgeDir, 20.0 * delta);
+    const bp = lbolt.mesh.position;
+    const bdx = pos.x - bp.x;
+    const bdy = pos.y - bp.y;
+    const bdz = pos.z - bp.z;
+    if (bdx * bdx + bdy * bdy + bdz * bdz < LASER_DODGE_RADIUS_SQ) {
+      const xySq = bdx * bdx + bdy * bdy;
+      if (xySq > 0.001) {
+        const dodgeStep = (20.0 * dt) / Math.sqrt(xySq);
+        pos.x += bdx * dodgeStep;
+        pos.y += bdy * dodgeStep;
       }
       break;
     }
   }
 
+  // Unified Tactical State Machine (shared across 10K & 5K shells):
+  //   CRUISE_10K -> LEVELING_OFF (to 0.0°) -> TILTING_TO_FIRE (0.0° -> -5.7°)
+  //   -> LEVEL_FIRING (fires 28m weapon at -5.7°) -> TILTING_FORWARD -> ADVANCE_5K
+  //   -> LEVELING_OFF -> TILTING_TO_FIRE -> LEVEL_FIRING (5K hold) -> TILTING_FORWARD -> RETREAT_10K -> CRUISE_10K
+  const tierTargetZ = e._at5kTier ? shellTargetZ5k : shellTargetZ10k;
+  const tierZLerp = Math.min(1.0, dt * (e._at5kTier ? 3.5 : 3.2));
+  let targetScale = e._at5kTier ? (baseScale * 1.02) : baseScale;
+  let triggerFireThisFrame = false;
+
   switch (e.maneuverState) {
     case 'CRUISE_10K': {
-      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
-      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 0) - delta * 3.0);
+      pos.z += (shellTargetZ10k - pos.z) * Math.min(1.0, dt * 3.2);
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 0.0) - dt * RETURN_PITCH_RATE);
+      e.fireTiltProgress = Math.max(0.0, (e.fireTiltProgress || 0.0) - dt * FIRE_TILT_RATE);
       e.isLevel = false;
-      e.mesh.scale.set(baseScale, baseScale, baseScale);
+      e.isFirePitchReady = false;
+      e._at5kTier = false;
+      targetScale = baseScale;
       if (now >= (e.nextLevelTime || 0)) {
         e.maneuverState = 'LEVELING_OFF';
         e.hasFiredThisLevel = false;
+        e.fireTiltProgress = 0.0;
       }
       break;
     }
     case 'LEVELING_OFF': {
-      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
-      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 2.8);
-      e.mesh.scale.set(baseScale, baseScale, baseScale);
-      if (e.levelPitchProgress >= 0.96) {
+      // Step 1 pre-fire: level the model cleanly off to exact 0.0° X pitch
+      pos.z += (tierTargetZ - pos.z) * tierZLerp;
+      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0.0) + dt * LEVEL_PITCH_RATE);
+      e.fireTiltProgress = 0.0;
+      e.isFirePitchReady = false;
+      if (e.levelPitchProgress >= 0.995) {
         e.levelPitchProgress = 1.0;
         e.isLevel = true;
+        e.maneuverState = 'TILTING_TO_FIRE';
+      } else {
+        e.isLevel = false;
+      }
+      break;
+    }
+    case 'TILTING_TO_FIRE': {
+      // Step 2 pre-fire: starting from exact 0.0° level, tilt smoothly to X pitch -5.7°
+      pos.z += (tierTargetZ - pos.z) * tierZLerp;
+      e.levelPitchProgress = 1.0;
+      e.isLevel = true;
+      e.fireTiltProgress = Math.min(1.0, (e.fireTiltProgress || 0.0) + dt * FIRE_TILT_RATE);
+      if (e.fireTiltProgress >= 0.995) {
+        e.fireTiltProgress = 1.0;
+        e.isFirePitchReady = true;
         e.maneuverState = 'LEVEL_FIRING';
-        e.levelFireEndTime = now + SINGULARITY_WEAPON_FIRE_DURATION_MS;
+        e.levelFireEndTime = now + (e._at5kTier ? HOLD_5K_DURATION_MS : SINGULARITY_WEAPON_FIRE_DURATION_MS);
         if (!e.hasFiredThisLevel) {
-          e.hasFiredThisLevel = true;
-          fireEnemyWeapon(e, context);
+          triggerFireThisFrame = true;
         }
+      } else {
+        e.isFirePitchReady = false;
       }
       break;
     }
     case 'LEVEL_FIRING': {
-      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
+      // Step 3: hold X pitch -5.7° throughout the 1s central weapon beam, then ease cleanly if holding at 5K
+      pos.z += (tierTargetZ - pos.z) * tierZLerp;
       e.levelPitchProgress = 1.0;
       e.isLevel = true;
-      e.mesh.scale.set(baseScale, baseScale, baseScale);
-      if (now >= (e.levelFireEndTime || 0)) {
+      if (e._centralWeaponFiring) {
+        e.fireTiltProgress = 1.0;
+        e.isFirePitchReady = true;
+      } else if (e.fireTiltProgress > 0.0) {
+        e.fireTiltProgress = Math.max(0.0, e.fireTiltProgress - dt * FIRE_TILT_RATE);
+        e.isFirePitchReady = false;
+      }
+      if (!e._centralWeaponFiring && now >= (e.levelFireEndTime || 0)) {
         e.isLevel = false;
+        e.isFirePitchReady = false;
         e.maneuverState = 'TILTING_FORWARD';
       }
       break;
     }
     case 'TILTING_FORWARD': {
-      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 3.2;
-      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 2.8);
+      // Step 4: smoothly return from firing/level stance back to +12.6° cruise pitch
+      pos.z += (tierTargetZ - pos.z) * tierZLerp;
+      e.fireTiltProgress = Math.max(0.0, (e.fireTiltProgress || 0.0) - dt * FIRE_TILT_RATE);
+      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - dt * RETURN_PITCH_RATE);
       e.isLevel = false;
-      e.mesh.scale.set(baseScale, baseScale, baseScale);
-      if (e.levelPitchProgress <= 0.04) {
+      e.isFirePitchReady = false;
+      if (e.levelPitchProgress <= 0.005 && e.fireTiltProgress <= 0.005) {
         e.levelPitchProgress = 0.0;
-        e.maneuverState = 'ADVANCE_5K';
+        e.fireTiltProgress = 0.0;
+        e.maneuverState = e._at5kTier ? 'RETREAT_10K' : 'ADVANCE_5K';
       }
       break;
     }
     case 'ADVANCE_5K': {
       e.levelPitchProgress = 0.0;
+      e.fireTiltProgress = 0.0;
       e.isLevel = false;
-      e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
+      e.isFirePitchReady = false;
+      pos.z += (shellTargetZ5k - pos.z) * Math.min(1.0, dt * 3.5);
       const zSpan5k = Math.max(0.5, shellTargetZ5k - shellTargetZ10k);
-      const advanceProgress = THREE.MathUtils.clamp((e.mesh.position.z - shellTargetZ10k) / zSpan5k, 0.0, 1.0);
-      const curScale = baseScale * (1.0 + 0.02 * advanceProgress);
-      e.mesh.scale.set(curScale, curScale, curScale);
-      if (advanceProgress >= 0.98 || Math.abs(shellTargetZ5k - e.mesh.position.z) < 0.2) {
-        e.mesh.position.z = shellTargetZ5k;
-        e.maneuverState = 'LEVELING_OFF_5K';
+      const advanceProgress = THREE.MathUtils.clamp((pos.z - shellTargetZ10k) / zSpan5k, 0.0, 1.0);
+      targetScale = baseScale * (1.0 + 0.02 * advanceProgress);
+      if (advanceProgress >= 0.98 || Math.abs(shellTargetZ5k - pos.z) < 0.2) {
+        pos.z = shellTargetZ5k;
+        targetScale = baseScale * 1.02;
+        e._at5kTier = true;
+        e.maneuverState = 'LEVELING_OFF';
         e.hasFiredThisLevel = false;
-      }
-      break;
-    }
-    case 'LEVELING_OFF_5K': {
-      e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
-      e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0) + delta * 3.0);
-      const curScale = baseScale * 1.02;
-      e.mesh.scale.set(curScale, curScale, curScale);
-      if (e.levelPitchProgress >= 0.96) {
-        e.levelPitchProgress = 1.0;
-        e.isLevel = true;
-        e.maneuverState = 'LEVEL_FIRING_5K';
-        e.hold5kEndTime = now + 2400;
-        if (!e.hasFiredThisLevel) {
-          e.hasFiredThisLevel = true;
-          fireEnemyWeapon(e, context);
-        }
-      }
-      break;
-    }
-    case 'LEVEL_FIRING_5K':
-    case 'HOLD_5K': {
-      e.levelPitchProgress = 1.0;
-      e.isLevel = true;
-      e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
-      const curScale = baseScale * 1.02;
-      e.mesh.scale.set(curScale, curScale, curScale);
-      if (now >= (e.hold5kEndTime || 0)) {
-        e.isLevel = false;
-        e.maneuverState = 'TILTING_FORWARD_5K';
-      }
-      break;
-    }
-    case 'TILTING_FORWARD_5K': {
-      e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
-      e.levelPitchProgress = Math.max(0.0, (e.levelPitchProgress || 1.0) - delta * 3.0);
-      e.isLevel = false;
-      const curScale = baseScale * 1.02;
-      e.mesh.scale.set(curScale, curScale, curScale);
-      if (e.levelPitchProgress <= 0.04) {
-        e.levelPitchProgress = 0.0;
-        e.maneuverState = 'RETREAT_10K';
       }
       break;
     }
     case 'RETREAT_10K': {
       e.levelPitchProgress = 0.0;
+      e.fireTiltProgress = 0.0;
       e.isLevel = false;
-      e.mesh.position.z += (shellTargetZ10k - e.mesh.position.z) * delta * 2.8;
+      e.isFirePitchReady = false;
+      pos.z += (shellTargetZ10k - pos.z) * Math.min(1.0, dt * 2.8);
       const zSpanRetreat = Math.max(0.5, shellTargetZ5k - shellTargetZ10k);
-      const retreatProgress = THREE.MathUtils.clamp((shellTargetZ5k - e.mesh.position.z) / zSpanRetreat, 0.0, 1.0);
-      const curScale = baseScale * (1.02 - 0.02 * retreatProgress);
-      e.mesh.scale.set(curScale, curScale, curScale);
-      if (retreatProgress >= 0.98 || Math.abs(shellTargetZ10k - e.mesh.position.z) < 0.2) {
-        e.mesh.position.z = shellTargetZ10k;
-        e.mesh.scale.set(baseScale, baseScale, baseScale);
+      const retreatProgress = THREE.MathUtils.clamp((shellTargetZ5k - pos.z) / zSpanRetreat, 0.0, 1.0);
+      targetScale = baseScale * (1.02 - 0.02 * retreatProgress);
+      if (retreatProgress >= 0.98 || Math.abs(shellTargetZ10k - pos.z) < 0.2) {
+        pos.z = shellTargetZ10k;
+        targetScale = baseScale;
+        e._at5kTier = false;
         e.maneuverState = 'CRUISE_10K';
         e.nextLevelTime = now + 2500 + Math.random() * 4500;
       }
@@ -972,58 +1036,100 @@ export function updateEnemyMovement(e, delta, context) {
     }
     default: {
       e.maneuverState = 'CRUISE_10K';
+      e._at5kTier = false;
+      e.levelPitchProgress = 0.0;
+      e.fireTiltProgress = 0.0;
+      e.isLevel = false;
+      e.isFirePitchReady = false;
+      targetScale = baseScale;
       break;
     }
   }
 
-  const dx = playerPos.x - e.mesh.position.x;
-  const dy = playerPos.y - e.mesh.position.y;
-  const dz = Math.max(5.0, playerPos.z - e.mesh.position.z);
-  const rawLookYaw = Math.atan2(dx, dz);
-  const rawLookPitch = -Math.atan2(dy, dz);
-  const gridYawStep = cellW / dist10k;
-  const gridPitchStep = cellH / dist10k;
-  const snappedYaw = Math.round(rawLookYaw / gridYawStep) * gridYawStep;
-  const snappedPitch = Math.round(rawLookPitch / gridPitchStep) * gridPitchStep;
-  const lookYaw = THREE.MathUtils.clamp(THREE.MathUtils.lerp(rawLookYaw, snappedYaw, 0.45), -0.45, 0.45);
-  const lookPitch = THREE.MathUtils.clamp(THREE.MathUtils.lerp(rawLookPitch, snappedPitch, 0.45), -0.28, 0.28);
-
-  const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
-  const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
-  const netVx = (screenTargetX - e.mesh.position.x) * 1.1 + jukeVx + evaVx;
-  const netVy = (screenTargetY - e.mesh.position.y) * 1.1 + jukeVy + evaVy;
-  const roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65);
-  const yaw = lookYaw + THREE.MathUtils.clamp(-netVx * 0.02, -0.22, 0.22);
-  const effectiveBasePitch = basePitchDown * (1.0 - (e.levelPitchProgress || 0));
-  const pitch = effectiveBasePitch + lookPitch + THREE.MathUtils.clamp(netVy * 0.035, -0.18, 0.18);
-  e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
-
-  if (e.mesh.userData && e.mesh.userData.spinRing) {
-    e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
+  if (Math.abs(e.mesh.scale.x - targetScale) > 1e-4) {
+    e.mesh.scale.setScalar(targetScale);
   }
 
-  for (let j = 0; j < activeEnemies.length; j++) {
-    if (j === enemyIndex) continue;
-    const other = activeEnemies[j];
-    if (!other || !other.mesh) continue;
-    const sepVec = new THREE.Vector3().subVectors(e.mesh.position, other.mesh.position);
-    const sepDist = sepVec.length();
-    const otherScale = (other.mesh.scale && typeof other.mesh.scale.x === 'number') ? other.mesh.scale.x : 1.0;
-    const curScaleX = (e.mesh.scale && typeof e.mesh.scale.x === 'number') ? e.mesh.scale.x : 1.0;
-    const minSafeSep = Math.max(5.5, (curScaleX + otherScale) * 2.8);
-    if (sepDist < minSafeSep && sepDist > 0.001) {
-      const overlapFactor = (minSafeSep - sepDist) / minSafeSep;
-      const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 20.0 * delta);
-      e.mesh.position.add(repulse);
+  // Orientation & Pitch:
+  //   Cruise (level=0, fireTilt=0)      -> pitch = BASE_PITCH_DOWN_RAD + lookPitch + dynPitch
+  //   Leveled off (level=1, fireTilt=0) -> pitch = 0.0° (exact level), roll = 0.0°
+  //   Fire stance (level=1, fireTilt=1) -> pitch = -5.7° (-0.09948 rad), roll = 0.0°
+  const levelP = e.levelPitchProgress || 0.0;
+  const fireTiltP = e.fireTiltProgress || 0.0;
+  const cruiseWeight = 1.0 - levelP;
+
+  const dz = Math.max(5.0, pz - pos.z);
+  const rawLookYaw = Math.atan2(px - pos.x, dz);
+  const gridYawStep = cellW / DIST_10K_UNITS;
+  const snappedYaw = Math.round(rawLookYaw / gridYawStep) * gridYawStep;
+  const lookYaw = THREE.MathUtils.clamp(rawLookYaw + (snappedYaw - rawLookYaw) * 0.45, -0.45, 0.45);
+
+  let pitch = FIRE_PITCH_TARGET_RAD * fireTiltP;
+  let yaw = lookYaw;
+  let roll = 0.0;
+
+  if (cruiseWeight > 1e-4) {
+    const rawLookPitch = -Math.atan2(py - pos.y, dz);
+    const gridPitchStep = cellH / DIST_10K_UNITS;
+    const snappedPitch = Math.round(rawLookPitch / gridPitchStep) * gridPitchStep;
+    const lookPitch = THREE.MathUtils.clamp(rawLookPitch + (snappedPitch - rawLookPitch) * 0.45, -0.28, 0.28);
+
+    const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
+    const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
+    const netVx = (screenTargetX - pos.x) * 1.1 + jukeVx + evaVx;
+    const netVy = (screenTargetY - pos.y) * 1.1 + jukeVy + evaVy;
+
+    const cruisePitch = BASE_PITCH_DOWN_RAD + lookPitch + THREE.MathUtils.clamp(netVy * 0.035, -0.18, 0.18);
+    pitch += cruisePitch * cruiseWeight;
+    yaw += THREE.MathUtils.clamp(-netVx * 0.02, -0.22, 0.22) * cruiseWeight;
+    roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65) * cruiseWeight;
+  }
+
+  e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
+
+  // Fire only AFTER rotation has been updated to exact X pitch -5.7°
+  if (triggerFireThisFrame) {
+    e.hasFiredThisLevel = true;
+    const pendingOverride = e._pendingWeaponOverride || null;
+    e._pendingWeaponOverride = null;
+    e._allowFireExecution = true;
+    try {
+      fireEnemyWeapon(e, context, pendingOverride);
+    } finally {
+      e._allowFireExecution = false;
     }
   }
 
-  const finalDistToPlayer = e.mesh.position.distanceTo(playerPos);
+  // Zero-allocation inter-enemy separation (squared-distance fast reject)
+  const activeEnemies = (isContextObj && context.activeEnemies) || [];
+  const enemyIndex = (isContextObj && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
+  const curScaleX = (e.mesh.scale && typeof e.mesh.scale.x === 'number') ? e.mesh.scale.x : 1.0;
+  for (let j = 0, len = activeEnemies.length; j < len; j++) {
+    if (j === enemyIndex) continue;
+    const other = activeEnemies[j];
+    if (!other || !other.mesh) continue;
+    const op = other.mesh.position;
+    const sdx = pos.x - op.x;
+    const sdy = pos.y - op.y;
+    const sdz = pos.z - op.z;
+    const otherScale = (other.mesh.scale && typeof other.mesh.scale.x === 'number') ? other.mesh.scale.x : 1.0;
+    const minSafeSep = Math.max(5.5, (curScaleX + otherScale) * 2.8);
+    const sepDistSq = sdx * sdx + sdy * sdy + sdz * sdz;
+    if (sepDistSq < minSafeSep * minSafeSep && sepDistSq > 1e-6) {
+      const sepDist = Math.sqrt(sepDistSq);
+      const push = ((minSafeSep - sepDist) / minSafeSep) * (20.0 * dt) / sepDist;
+      pos.x += sdx * push;
+      pos.y += sdy * push;
+      pos.z += sdz * push;
+    }
+  }
+
+  const finalDistToPlayer = Math.hypot(pos.x - px, pos.y - py, pos.z - pz);
   e.distanceToPlayerUnits = finalDistToPlayer;
   e.distanceToPlayerKm = finalDistToPlayer * KM_PER_WORLD_UNIT;
-  e.inWeaponRange = finalDistToPlayer <= dist10k;
+  e.inWeaponRange = finalDistToPlayer <= DIST_10K_UNITS;
 
-  advanceSingularityGuardianAnimation(e, delta);
+  advanceSingularityGuardianAnimation(e, dt);
   return true;
 }
 

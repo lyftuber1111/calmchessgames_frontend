@@ -237,7 +237,7 @@ export const stageConfig = {
         "model_3d_type": "singularity_guardian",
         "model_3d_url": "",
         "procedural_model_url": "desktop/singularity_core_images/singularity_guardian.js",
-        "scale": 1.2,
+        "scale": 0.75,
         "length": 3.8,
         "height": 3.8,
         "depth": 3.8,
@@ -468,6 +468,7 @@ export const KM_PER_WORLD_UNIT = 420;
 export const WEAPON_MAX_RANGE_UNITS = WEAPON_MAX_RANGE_KM / KM_PER_WORLD_UNIT;
 export const FIRE_PITCH_TARGET_DEG = -5.7;
 export const FIRE_PITCH_TARGET_RAD = FIRE_PITCH_TARGET_DEG * (Math.PI / 180);
+export const SINGULARITY_ENEMY_SCALE = 0.75;
 
 const DIST_10K_UNITS = WEAPON_MAX_RANGE_UNITS; // 10,000 KM (~23.8095 units)
 const SHELL_RADIUS_10K = DIST_10K_UNITS * 0.94;
@@ -760,7 +761,8 @@ export function updateEnemyMovement(e, delta, context) {
   const py = playerPos.y;
   const pz = playerPos.z;
   const pos = e.mesh.position;
-  const baseScale = e.baseScale || 1.3;
+  const baseScale = SINGULARITY_ENEMY_SCALE;
+  e.baseScale = baseScale;
 
   if (!e.maneuverState) {
     e.maneuverState = (e.phase === 'RUSH_OUT') ? 'RUSH_OUT' : 'CRUISE_10K';

@@ -139,7 +139,7 @@ export function createSingularityGuardianMesh(config = {}, factoryFn = createSin
   group.name = 'SingularityGuardian_Enemy';
   group.add(rootObj);
 
-  const userScale = Math.max(0.05, Math.min(20.0, parseFloat(config && config.scale !== undefined && config.scale !== null ? config.scale : 1.2) || 1.2));
+  const userScale = Math.max(0.05, Math.min(20.0, parseFloat(config && config.scale !== undefined && config.scale !== null ? config.scale : 0.75) || 0.75));
   const length = Number(dimsMeta.width) || 3.80;
   const height = Number(dimsMeta.height) || 3.80;
   const depth = Number(dimsMeta.depth) || 3.80;
@@ -178,7 +178,7 @@ export const SINGULARITY_GUARDIAN_ENEMY_TEMPLATE = {
   "model_3d_type": "singularity_guardian",
   "model_3d_url": "",
   "procedural_model_url": "desktop/singularity_core_images/singularity_guardian.js",
-  "scale": 1.2,
+  "scale": 0.75,
   "length": 3.8,
   "height": 3.8,
   "depth": 3.8,

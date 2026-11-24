@@ -466,8 +466,10 @@ export const stageEvents = [
 export const WEAPON_MAX_RANGE_KM = 10000;
 export const KM_PER_WORLD_UNIT = 420;
 export const WEAPON_MAX_RANGE_UNITS = WEAPON_MAX_RANGE_KM / KM_PER_WORLD_UNIT;
-export const FIRE_PITCH_TARGET_DEG = -5.7;
+export const FIRE_PITCH_TARGET_DEG = -2.4;
 export const FIRE_PITCH_TARGET_RAD = FIRE_PITCH_TARGET_DEG * (Math.PI / 180);
+export const FIRE_YAW_TARGET_DEG = -1.2;
+export const FIRE_YAW_TARGET_RAD = FIRE_YAW_TARGET_DEG * (Math.PI / 180);
 export const SINGULARITY_ENEMY_SCALE = 0.75;
 
 const DIST_10K_UNITS = WEAPON_MAX_RANGE_UNITS; // 10,000 KM (~23.8095 units)
@@ -475,7 +477,7 @@ const SHELL_RADIUS_10K = DIST_10K_UNITS * 0.94;
 const DIST_5K_UNITS = 5000 / KM_PER_WORLD_UNIT; // 5,000 KM (~11.9048 units)
 const BASE_PITCH_DOWN_RAD = 0.22; // +12.6° cruise nose-down posture
 const LEVEL_PITCH_RATE = 3.2;     // Smooth level-off from cruise posture to exact 0.0° (~0.31s)
-const FIRE_TILT_RATE = 4.2;       // Smooth tilt from exact 0.0° level point to -5.7° X pitch (~0.24s)
+const FIRE_TILT_RATE = 4.2;       // Smooth tilt from leveled stance to -2.4° X pitch & -1.2° Y yaw offset (~0.24s)
 const RETURN_PITCH_RATE = 2.8;    // Smooth recovery from firing stance back to cruise posture (~0.36s)
 const HOLD_5K_DURATION_MS = 2400;
 const LASER_DODGE_RADIUS_SQ = 7.2 * 7.2;
@@ -512,7 +514,11 @@ function resetSingularityWeaponState(e) {
   e._centralWeaponFireRemaining = 0;
   e._centralWeaponFireEndTime = 0;
   e._pendingWeaponOverride = null;
+  e.levelPitchProgress = 0.0;
+  e.fireTiltProgress = 0.0;
+  e.isLevel = false;
   e.isFirePitchReady = false;
+  e.hasFiredThisLevel = false;
   const ud = e.mesh.userData;
   if (ud) {
     ud._centralWeaponFiring = false;
@@ -599,8 +605,15 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     return true;
   }
 
-  // Enforce pre-fire pitch choreography:
-  // Just before firing, the model must FIRST level off to 0.0° and THEN tilt to X pitch -5.7°.
+  const playerPos = (isContextObj && context.playerPos)
+    ? context.playerPos
+    : (context && context.isVector3)
+      ? context
+      : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : camera.position));
+
+  // Enforce pre-fire tilt choreography:
+  // Just before firing, the model must FIRST level off (X pitch 0.0°, Z roll 0.0°) while tracking
+  // horizontal player bearing (lookYaw), and THEN tilt to X pitch -2.4° and Y yaw offset -1.2°.
   if (enemyObj.maneuverState !== undefined) {
     if (!enemyObj.isFirePitchReady) {
       if (enemyObj.maneuverState === 'CRUISE_10K') {
@@ -614,20 +627,20 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
       // Return true so engine cadence loop does not fire an un-aligned fallback bolt
       return true;
     }
-    // Only fire once per level-off -> -5.7° tilt cycle so the weapon never fires mid-recovery
+    // Only fire once per level-off -> (-2.4° X pitch, -1.2° Y yaw) tilt cycle so the weapon never fires mid-recovery
     if (enemyObj.hasFiredThisLevel && !enemyObj._allowFireExecution) {
       return true;
     }
   } else {
-    // Direct standalone invocation outside movement loop: align to exact -5.7° X pitch
-    enemyObj.mesh.rotation.x = FIRE_PITCH_TARGET_RAD;
+    // Direct standalone invocation outside movement loop: align to exact -2.4° X pitch and lookYaw - 1.2° Y yaw
+    const ep = enemyObj.mesh.position;
+    let standaloneLookYaw = 0.0;
+    if (playerPos) {
+      const sDz = Math.max(5.0, playerPos.z - ep.z);
+      standaloneLookYaw = THREE.MathUtils.clamp(Math.atan2(playerPos.x - ep.x, sDz), -0.45, 0.45);
+    }
+    enemyObj.mesh.rotation.set(FIRE_PITCH_TARGET_RAD, standaloneLookYaw + FIRE_YAW_TARGET_RAD, 0.0, 'YXZ');
   }
-
-  const playerPos = (isContextObj && context.playerPos)
-    ? context.playerPos
-    : (context && context.isVector3)
-      ? context
-      : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : camera.position));
 
   // Turn ON the Singularity Guardian 28m burn central weapon decal (Decal_LaserBurn_Central_Weapon) for 1 second
   const fireDurationMs = SINGULARITY_WEAPON_FIRE_DURATION_MS;
@@ -846,7 +859,7 @@ export function updateEnemyMovement(e, delta, context) {
   const screenTargetX = px + rawScatterX * invScatterLen * activeShellRadius;
   const screenTargetY = py + rawScatterY * invScatterLen * activeShellRadius;
 
-  // Damp lateral/evasive jitter smoothly as the model levels off -> tilts to -5.7° -> fires
+  // Damp lateral/evasive jitter smoothly as the model levels off -> tilts to (-2.4° X pitch, -1.2° Y yaw) -> fires
   const preLevelP = e.levelPitchProgress || 0.0;
   const evadeDamp = 1.0 - preLevelP * 0.75;
   const xyLerp = Math.min(1.0, dt * (2.2 * (1.0 - preLevelP * 0.45)));
@@ -909,8 +922,9 @@ export function updateEnemyMovement(e, delta, context) {
   }
 
   // Unified Tactical State Machine (shared across 10K & 5K shells):
-  //   CRUISE_10K -> LEVELING_OFF (to 0.0°) -> TILTING_TO_FIRE (0.0° -> -5.7°)
-  //   -> LEVEL_FIRING (fires 28m weapon at -5.7°) -> TILTING_FORWARD -> ADVANCE_5K
+  //   CRUISE_10K -> LEVELING_OFF (X pitch 0.0°, Z roll 0.0°, continuous lookYaw)
+  //   -> TILTING_TO_FIRE (X pitch 0.0° -> -2.4°, Y yaw lookYaw -> lookYaw - 1.2°)
+  //   -> LEVEL_FIRING (fires 28m weapon at -2.4° X pitch & lookYaw - 1.2° Y yaw) -> TILTING_FORWARD -> ADVANCE_5K
   //   -> LEVELING_OFF -> TILTING_TO_FIRE -> LEVEL_FIRING (5K hold) -> TILTING_FORWARD -> RETREAT_10K -> CRUISE_10K
   const tierTargetZ = e._at5kTier ? shellTargetZ5k : shellTargetZ10k;
   const tierZLerp = Math.min(1.0, dt * (e._at5kTier ? 3.5 : 3.2));
@@ -934,7 +948,7 @@ export function updateEnemyMovement(e, delta, context) {
       break;
     }
     case 'LEVELING_OFF': {
-      // Step 1 pre-fire: level the model cleanly off to exact 0.0° X pitch
+      // Step 1 pre-fire: level X pitch & Z roll cleanly off to 0.0° while settling yaw onto continuous player bearing
       pos.z += (tierTargetZ - pos.z) * tierZLerp;
       e.levelPitchProgress = Math.min(1.0, (e.levelPitchProgress || 0.0) + dt * LEVEL_PITCH_RATE);
       e.fireTiltProgress = 0.0;
@@ -949,7 +963,7 @@ export function updateEnemyMovement(e, delta, context) {
       break;
     }
     case 'TILTING_TO_FIRE': {
-      // Step 2 pre-fire: starting from exact 0.0° level, tilt smoothly to X pitch -5.7°
+      // Step 2 pre-fire: from leveled stance, smoothly tilt to X pitch -2.4° and Y yaw offset -1.2°
       pos.z += (tierTargetZ - pos.z) * tierZLerp;
       e.levelPitchProgress = 1.0;
       e.isLevel = true;
@@ -968,7 +982,7 @@ export function updateEnemyMovement(e, delta, context) {
       break;
     }
     case 'LEVEL_FIRING': {
-      // Step 3: hold X pitch -5.7° throughout the 1s central weapon beam, then ease cleanly if holding at 5K
+      // Step 3: hold X pitch -2.4° & Y yaw lookYaw - 1.2° throughout the 1s central weapon beam, then ease cleanly if holding at 5K
       pos.z += (tierTargetZ - pos.z) * tierZLerp;
       e.levelPitchProgress = 1.0;
       e.isLevel = true;
@@ -1052,22 +1066,30 @@ export function updateEnemyMovement(e, delta, context) {
     e.mesh.scale.setScalar(targetScale);
   }
 
-  // Orientation & Pitch:
-  //   Cruise (level=0, fireTilt=0)      -> pitch = BASE_PITCH_DOWN_RAD + lookPitch + dynPitch
-  //   Leveled off (level=1, fireTilt=0) -> pitch = 0.0° (exact level), roll = 0.0°
-  //   Fire stance (level=1, fireTilt=1) -> pitch = -5.7° (-0.09948 rad), roll = 0.0°
+  // Orientation & Firing Tilt:
+  //   Cruise (level=0, fireTilt=0)      -> pitch = BASE_PITCH_DOWN_RAD + lookPitch + dynPitch, yaw = lookYaw + dynYaw, roll = dynRoll
+  //   Leveled off (level=1, fireTilt=0) -> pitch = 0.0° (exact level), yaw = continuous lookYaw, roll = 0.0°
+  //   Fire stance (level=1, fireTilt=1) -> pitch = -2.4° (-0.04189 rad), yaw = lookYaw + -1.2° (-0.02094 rad), roll = 0.0°
   const levelP = e.levelPitchProgress || 0.0;
   const fireTiltP = e.fireTiltProgress || 0.0;
-  const cruiseWeight = 1.0 - levelP;
+  const levelEase = levelP * levelP * (3.0 - 2.0 * levelP);
+  const fireTiltEase = fireTiltP * fireTiltP * (3.0 - 2.0 * fireTiltP);
+  const cruiseWeight = 1.0 - levelEase;
 
   const dz = Math.max(5.0, pz - pos.z);
   const rawLookYaw = Math.atan2(px - pos.x, dz);
-  const gridYawStep = cellW / DIST_10K_UNITS;
-  const snappedYaw = Math.round(rawLookYaw / gridYawStep) * gridYawStep;
-  const lookYaw = THREE.MathUtils.clamp(rawLookYaw + (snappedYaw - rawLookYaw) * 0.45, -0.45, 0.45);
+  let lookYaw;
+  if (cruiseWeight > 1e-4) {
+    const gridYawStep = cellW / DIST_10K_UNITS;
+    const snappedYaw = Math.round(rawLookYaw / gridYawStep) * gridYawStep;
+    // Fade snap-grid quantization smoothly out during LEVELING_OFF so firing yaw never jumps mid-beam
+    lookYaw = THREE.MathUtils.clamp(rawLookYaw + (snappedYaw - rawLookYaw) * (0.45 * cruiseWeight), -0.45, 0.45);
+  } else {
+    lookYaw = THREE.MathUtils.clamp(rawLookYaw, -0.45, 0.45);
+  }
 
-  let pitch = FIRE_PITCH_TARGET_RAD * fireTiltP;
-  let yaw = lookYaw;
+  let pitch = FIRE_PITCH_TARGET_RAD * fireTiltEase;
+  let yaw = lookYaw + FIRE_YAW_TARGET_RAD * fireTiltEase;
   let roll = 0.0;
 
   if (cruiseWeight > 1e-4) {
@@ -1089,7 +1111,7 @@ export function updateEnemyMovement(e, delta, context) {
 
   e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
 
-  // Fire only AFTER rotation has been updated to exact X pitch -5.7°
+  // Fire only AFTER rotation has been updated to exact X pitch -2.4° and Y yaw lookYaw - 1.2°
   if (triggerFireThisFrame) {
     e.hasFiredThisLevel = true;
     const pendingOverride = e._pendingWeaponOverride || null;
@@ -2244,6 +2266,9 @@ export default {
   WEAPON_MAX_RANGE_UNITS,
   FIRE_PITCH_TARGET_DEG,
   FIRE_PITCH_TARGET_RAD,
+  FIRE_YAW_TARGET_DEG,
+  FIRE_YAW_TARGET_RAD,
+  SINGULARITY_ENEMY_SCALE,
   isEnemyWithinWeaponRange,
   canEnemyHitPlayer,
   canPlayerDestroyEnemy,

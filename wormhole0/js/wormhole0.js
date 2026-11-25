@@ -3518,7 +3518,7 @@ function applyGameManagerValues(data, stageLevel = 1, deviceType = null) {
 
       // Custom Image Asset URL
       if (activeEnv.image_asset_url && activeEnv.image_asset_url.trim()) {
-        applyCustomEnvironmentImageAsset(activeEnv.image_asset_url.trim(), activeEnv.image_asset_type || 'corona_sprite');
+        applyCustomEnvironmentImageAsset(activeEnv.image_asset_url.trim(), activeEnv.image_asset_type || 'corona_sprite', activeEnv);
       }
 
       // Custom 3D Model Asset URL for Environment Singularity
@@ -8132,7 +8132,12 @@ function fireLaserBeam() {
 function updateLaserBolts(delta) {
   const now = performance.now();
   for (let i = laserBolts.length - 1; i >= 0; i--) {
+    if (i >= laserBolts.length) continue;
     const bolt = laserBolts[i];
+    if (!bolt || !bolt.mesh) {
+      if (i < laserBolts.length && laserBolts[i] === bolt) laserBolts.splice(i, 1);
+      continue;
+    }
     bolt.prevPosition = bolt.mesh.position.clone();
     const maxRangeUnits = (typeof bolt.maxRangeUnits === 'number' && bolt.maxRangeUnits > 0)
       ? bolt.maxRangeUnits
@@ -8176,7 +8181,8 @@ function updateLaserBolts(delta) {
         if (bolt.coreMat) bolt.coreMat.dispose();
         if (bolt.light) bolt.mesh.remove(bolt.light);
       }
-      laserBolts.splice(i, 1);
+      const curBoltIdx = (laserBolts[i] === bolt) ? i : laserBolts.indexOf(bolt);
+      if (curBoltIdx !== -1) laserBolts.splice(curBoltIdx, 1);
       continue;
     }
 
@@ -8194,7 +8200,8 @@ function updateLaserBolts(delta) {
         if (bolt.coreMat) bolt.coreMat.dispose();
         if (bolt.light) bolt.mesh.remove(bolt.light);
       }
-      laserBolts.splice(i, 1);
+      const curBoltIdx = (laserBolts[i] === bolt) ? i : laserBolts.indexOf(bolt);
+      if (curBoltIdx !== -1) laserBolts.splice(curBoltIdx, 1);
     }
   }
 }
@@ -9611,8 +9618,9 @@ function update3DPowerups(delta) {
   const playerPos = (state.isXR && cameraRig) ? cameraRig.position : (state.position || new THREE.Vector3(0, 0, CONFIG.wormholeDistance || 220));
 
   for (let i = active3DPowerups.length - 1; i >= 0; i--) {
+    if (i >= active3DPowerups.length) continue;
     const p = active3DPowerups[i];
-    if (p.collected) continue;
+    if (!p || p.collected || !p.mesh) continue;
 
     // Rotation and pulsing animation
     if (p.meshBody) {
@@ -9669,7 +9677,8 @@ function update3DPowerups(delta) {
     if (distToPlayer > 260 || (now - p.spawnTime) > 90000) {
       scene.remove(p.mesh);
       disposeMeshHierarchy(p.mesh);
-      active3DPowerups.splice(i, 1);
+      const curPIdx = (active3DPowerups[i] === p) ? i : active3DPowerups.indexOf(p);
+      if (curPIdx !== -1) active3DPowerups.splice(curPIdx, 1);
     }
   }
 }
@@ -11139,6 +11148,8 @@ function updateEnemiesCombat(delta) {
 
   // 2. Update active 3D enemies
   for (let i = active3DEnemies.length - 1; i >= 0; i--) {
+    if (!state.hasStarted || state.isPaused || state.isGameOver) return;
+    if (i >= active3DEnemies.length) continue;
     const e = active3DEnemies[i];
     // Inactive pooled enemies: movement, physics, and weapon actions remain inactive
     if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false) {
@@ -11285,13 +11296,24 @@ function updateEnemiesCombat(delta) {
         scene.remove(e.mesh);
         disposeMeshHierarchy(e.mesh);
       }
-      active3DEnemies.splice(i, 1);
+      const curEnemyIdx = (active3DEnemies[i] === e) ? i : active3DEnemies.indexOf(e);
+      if (curEnemyIdx !== -1) active3DEnemies.splice(curEnemyIdx, 1);
     }
   }
 
+  if (!state.hasStarted || state.isPaused || state.isGameOver) return;
+
   // 3. Update Enemy Weapon Beams and Missiles & Test Player Collision (10,000 KM Weapon Range)
   for (let i = enemyBolts.length - 1; i >= 0; i--) {
+    if (!state.hasStarted || state.isPaused || state.isGameOver) return;
+    if (i >= enemyBolts.length) continue;
     const b = enemyBolts[i];
+    if (!b || !b.mesh) {
+      if (i < enemyBolts.length && enemyBolts[i] === b) {
+        enemyBolts.splice(i, 1);
+      }
+      continue;
+    }
 
     // Record previous position for swept ray / segment testing against tunneling
     const prevPos = (b.prevPosition || b.mesh.position).clone();
@@ -11381,6 +11403,13 @@ function updateEnemiesCombat(delta) {
         applyDamageToPlayer(b.damage, b);
       }
 
+      // If this hit triggered Game Over or stopped combat, triggerGameOver() already cleared
+      // enemyBolts, despawned/disposed all combat objects, and displayed Game Over decals/red edges.
+      // Exit immediately so we never double-dispose or read undefined elements from cleared enemyBolts.
+      if (state.isGameOver || !state.hasStarted || state.isPaused) {
+        return;
+      }
+
       // Trigger weapon-specific special FX on the cockpit screen (red edges / procedural FX)
       triggerCockpitWeaponImpactFx(b, normX, normY);
       if (b.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemyWeapon === 'function') {
@@ -11393,7 +11422,8 @@ function updateEnemiesCombat(delta) {
         if (b.material && b.material.dispose) b.material.dispose();
         disposeMeshHierarchy(b.mesh);
       }
-      enemyBolts.splice(i, 1);
+      const curBoltIdx = (enemyBolts[i] === b) ? i : enemyBolts.indexOf(b);
+      if (curBoltIdx !== -1) enemyBolts.splice(curBoltIdx, 1);
       continue;
     }
 
@@ -11410,18 +11440,30 @@ function updateEnemiesCombat(delta) {
         if (b.material && b.material.dispose) b.material.dispose();
         disposeMeshHierarchy(b.mesh);
       }
-      enemyBolts.splice(i, 1);
+      const curBoltIdx = (enemyBolts[i] === b) ? i : enemyBolts.indexOf(b);
+      if (curBoltIdx !== -1) enemyBolts.splice(curBoltIdx, 1);
     }
   }
 
+  if (!state.hasStarted || state.isPaused || state.isGameOver) return;
+
   // 4. Test Player Lasers against 3D Enemy Meshes (10,000 KM Weapon Range: Cannot destroy enemy until <= 10,000 KM)
   for (let bi = laserBolts.length - 1; bi >= 0; bi--) {
+    if (!state.hasStarted || state.isPaused || state.isGameOver) return;
+    if (bi >= laserBolts.length) continue;
     const bolt = laserBolts[bi];
+    if (!bolt || !bolt.mesh) {
+      if (bi < laserBolts.length && laserBolts[bi] === bolt) {
+        laserBolts.splice(bi, 1);
+      }
+      continue;
+    }
     let boltConsumed = false;
     const boltPrevPos = bolt.prevPosition || bolt.mesh.position;
     const boltCurrPos = bolt.mesh.position;
 
     for (let ei = active3DEnemies.length - 1; ei >= 0; ei--) {
+      if (ei >= active3DEnemies.length) continue;
       const e = active3DEnemies[ei];
       if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false) continue;
 
@@ -11471,7 +11513,8 @@ function updateEnemiesCombat(delta) {
         if (bolt.coreMat) bolt.coreMat.dispose();
         if (bolt.light) bolt.mesh.remove(bolt.light);
       }
-      laserBolts.splice(bi, 1);
+      const curLaserIdx = (laserBolts[bi] === bolt) ? bi : laserBolts.indexOf(bolt);
+      if (curLaserIdx !== -1) laserBolts.splice(curLaserIdx, 1);
     }
   }
 }
@@ -11703,7 +11746,7 @@ function triggerCockpitWeaponImpactFx(bolt, normX = 0, normY = 0) {
     if (redEdges) {
       redEdges.style.opacity = '1.0';
       setTimeout(() => {
-        if (redEdges) redEdges.style.opacity = '0';
+        if (redEdges && !state.isGameOver) redEdges.style.opacity = '0';
       }, 280);
     }
 
@@ -11712,7 +11755,7 @@ function triggerCockpitWeaponImpactFx(bolt, normX = 0, normY = 0) {
       cracksOverlay.style.backgroundImage = `url("${overlayPath}")`;
       cracksOverlay.style.opacity = '0.96';
       setTimeout(() => {
-        if (cracksOverlay) cracksOverlay.style.opacity = '0';
+        if (cracksOverlay && !state.isGameOver) cracksOverlay.style.opacity = '0';
       }, 280);
     }
     return;
@@ -13668,10 +13711,16 @@ function createQuickEffectObject(effectName, colorHex, intensity, speed, dims) {
 
 function updateActiveSpecialEffects(delta, time) {
   for (let i = activeSpecialEffects.length - 1; i >= 0; i--) {
+    if (i >= activeSpecialEffects.length) continue;
     const fx = activeSpecialEffects[i];
+    if (!fx) {
+      activeSpecialEffects.splice(i, 1);
+      continue;
+    }
     if (!fx.isAlive()) {
       fx.dispose();
-      activeSpecialEffects.splice(i, 1);
+      const curFxIdx = (activeSpecialEffects[i] === fx) ? i : activeSpecialEffects.indexOf(fx);
+      if (curFxIdx !== -1) activeSpecialEffects.splice(curFxIdx, 1);
     } else {
       fx.update(delta, time);
     }
@@ -13737,46 +13786,102 @@ function attachWormholeEnvironmentQuickEffects(activeEnv) {
   }
 }
 
-function applyCustomEnvironmentImageAsset(rawImageUrl, role = 'corona_sprite') {
+const cachedEnvironmentImageTextures = new Map();
+const failedEnvironmentImageUrls = new Set();
+
+function createProceduralEnvironmentCoronaTexture(envCfg = null) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+  const hot = (envCfg && envCfg.color_hot) || '#d6ffff';
+  const core = (envCfg && envCfg.color_core) || (envCfg && envCfg.color_primary) || '#00f0ff';
+  const edge = (envCfg && envCfg.color_edge) || '#003366';
+  const grad = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+  grad.addColorStop(0.0, hot);
+  grad.addColorStop(0.22, core);
+  grad.addColorStop(0.62, edge);
+  grad.addColorStop(1.0, 'rgba(0, 0, 0, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function applyEnvironmentTextureToScene(texture, role = 'corona_sprite') {
+  if (!texture || !scene) return;
+  texture.colorSpace = THREE.SRGBColorSpace;
+  if (role === 'disk_diffuse' && typeof accretionDiskMaterial !== 'undefined' && accretionDiskMaterial) {
+    accretionDiskMaterial.map = texture;
+    accretionDiskMaterial.needsUpdate = true;
+  } else {
+    if (!customEnvironmentCoronaSprite) {
+      const mat = new THREE.SpriteMaterial({
+        map: texture,
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      customEnvironmentCoronaSprite = new THREE.Sprite(mat);
+      customEnvironmentCoronaSprite.name = 'wormhole_custom_corona_sprite';
+      customEnvironmentCoronaSprite.userData.isPermanentEnvironment = true;
+      const r = (CONFIG.accretionDiskRadius || 38.0) * 2.2;
+      customEnvironmentCoronaSprite.scale.set(r, r, 1);
+      customEnvironmentCoronaSprite.position.set(0, 0, 0);
+      scene.add(customEnvironmentCoronaSprite);
+    } else {
+      customEnvironmentCoronaSprite.material.map = texture;
+      customEnvironmentCoronaSprite.material.needsUpdate = true;
+      const r = (CONFIG.accretionDiskRadius || 38.0) * 2.2;
+      customEnvironmentCoronaSprite.scale.set(r, r, 1);
+      customEnvironmentCoronaSprite.visible = true;
+    }
+  }
+}
+
+function applyCustomEnvironmentImageAsset(rawImageUrl, role = 'corona_sprite', activeEnv = null) {
   if (!rawImageUrl || !scene) return;
   const imageUrl = normalizeAssetUrl(rawImageUrl);
-  const fetchUrl = imageUrl.includes('?') ? `${imageUrl}&_v=${Date.now()}` : `${imageUrl}?_v=${Date.now()}`;
+  const envCfg = activeEnv || (typeof window !== 'undefined' ? window.activeEnvironmentConfig : null);
+
+  if (cachedEnvironmentImageTextures.has(imageUrl)) {
+    applyEnvironmentTextureToScene(cachedEnvironmentImageTextures.get(imageUrl), role);
+    return;
+  }
+
+  if (failedEnvironmentImageUrls.has(imageUrl)) {
+    if (role !== 'disk_diffuse') {
+      const fallbackTex = createProceduralEnvironmentCoronaTexture(envCfg);
+      cachedEnvironmentImageTextures.set(imageUrl, fallbackTex);
+      applyEnvironmentTextureToScene(fallbackTex, role);
+    }
+    return;
+  }
+
+  const ver = (typeof sessionAssetVersion !== 'undefined' && sessionAssetVersion) ? sessionAssetVersion : '20261125_combat_corona_fix';
+  const fetchUrl = imageUrl.includes('?') ? `${imageUrl}&v=${encodeURIComponent(ver)}` : `${imageUrl}?v=${encodeURIComponent(ver)}`;
   const loader = new THREE.TextureLoader();
   loader.load(
     fetchUrl,
     (texture) => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      if (role === 'disk_diffuse' && typeof accretionDiskMaterial !== 'undefined' && accretionDiskMaterial) {
-        accretionDiskMaterial.map = texture;
-        accretionDiskMaterial.needsUpdate = true;
-      } else {
-        if (!customEnvironmentCoronaSprite) {
-          const mat = new THREE.SpriteMaterial({
-            map: texture,
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.85,
-            blending: THREE.AdditiveBlending,
-            depthWrite: false
-          });
-          customEnvironmentCoronaSprite = new THREE.Sprite(mat);
-          const r = (CONFIG.accretionDiskRadius || 38.0) * 2.2;
-          customEnvironmentCoronaSprite.scale.set(r, r, 1);
-          customEnvironmentCoronaSprite.position.set(0, 0, 0);
-          scene.add(customEnvironmentCoronaSprite);
-        } else {
-          customEnvironmentCoronaSprite.material.map = texture;
-          customEnvironmentCoronaSprite.material.needsUpdate = true;
-          const r = (CONFIG.accretionDiskRadius || 38.0) * 2.2;
-          customEnvironmentCoronaSprite.scale.set(r, r, 1);
-          customEnvironmentCoronaSprite.visible = true;
-        }
-      }
+      cachedEnvironmentImageTextures.set(imageUrl, texture);
+      applyEnvironmentTextureToScene(texture, role);
       console.log(`[Environment] Applied custom image asset texture '${imageUrl}' (${role})`);
     },
     undefined,
     (err) => {
-      console.warn(`[Environment] Failed to load image asset '${imageUrl}':`, err);
+      failedEnvironmentImageUrls.add(imageUrl);
+      if (role !== 'disk_diffuse') {
+        const fallbackTex = createProceduralEnvironmentCoronaTexture(envCfg);
+        cachedEnvironmentImageTextures.set(imageUrl, fallbackTex);
+        applyEnvironmentTextureToScene(fallbackTex, role);
+        console.warn(`[Environment] Image asset '${imageUrl}' unavailable; using procedural corona fallback.`, err);
+      } else {
+        console.warn(`[Environment] Failed to load image asset '${imageUrl}':`, err);
+      }
     }
   );
 }

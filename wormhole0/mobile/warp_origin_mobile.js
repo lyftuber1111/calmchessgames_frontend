@@ -14,8 +14,65 @@ import {
   resetCockpitOverlayDecals,
   COCKPIT_CRACKS_GLB_URL,
   STAGE_COCKPIT_CRACKS_ASSET_URL,
-  STAGE_COCKPIT_CRACKS_ASSET_TYPE
+  STAGE_COCKPIT_CRACKS_ASSET_TYPE,
+  INTERCEPTOR_WEAPON_DECAL_NAME,
+  INTERCEPTOR_WEAPON_FIRE_DURATION_MS,
+  RECON_DRONE_PORT_WEAPON_DECAL_NAME,
+  RECON_DRONE_STARBOARD_WEAPON_DECAL_NAME,
+  RECON_DRONE_WEAPON_DECAL_NAMES,
+  RECON_DRONE_WEAPON_FIRE_DURATION_MS,
+  RECON_DRONE_MISSILE_DAMAGE,
+  RECON_DRONE_MISSILE_SALVO_INTERVAL_SEC,
+  resolveWarpOriginEnemyKind,
+  getInterceptorWeaponDecal,
+  setInterceptorWeaponDecalEnabled,
+  getReconDroneWeaponDecals,
+  setReconDroneWeaponDecalEnabled,
+  resetWarpOriginEnemyWeaponDecals,
+  createDronePhaseInterceptor3Mesh,
+  createReconDroneMesh,
+  createWarpOriginEnemyMesh
 } from './warp_origin_pool.js';
+import {
+  createDronePhaseInterceptor3,
+  weaponDecalName as INTERCEPTOR_LOCAL_WEAPON_DECAL_NAME,
+  metadata as INTERCEPTOR_METADATA
+} from './warp_origin_images/drone_phase_interceptor_3.js';
+import {
+  createReconDrone,
+  weaponDecalNames as RECON_LOCAL_WEAPON_DECAL_NAMES,
+  metadata as RECON_DRONE_METADATA
+} from './warp_origin_images/recon_drone_2.8m.js';
+
+export {
+  INTERCEPTOR_WEAPON_DECAL_NAME,
+  INTERCEPTOR_WEAPON_FIRE_DURATION_MS,
+  RECON_DRONE_PORT_WEAPON_DECAL_NAME,
+  RECON_DRONE_STARBOARD_WEAPON_DECAL_NAME,
+  RECON_DRONE_WEAPON_DECAL_NAMES,
+  RECON_DRONE_WEAPON_FIRE_DURATION_MS,
+  RECON_DRONE_MISSILE_DAMAGE,
+  resolveWarpOriginEnemyKind,
+  getInterceptorWeaponDecal,
+  setInterceptorWeaponDecalEnabled,
+  getReconDroneWeaponDecals,
+  setReconDroneWeaponDecalEnabled,
+  resetWarpOriginEnemyWeaponDecals,
+  createDronePhaseInterceptor3Mesh,
+  createReconDroneMesh,
+  createWarpOriginEnemyMesh
+};
+
+export function createEnemyMesh(config = {}, sharedTexMap = null) {
+  return createWarpOriginEnemyMesh(
+    config,
+    {
+      createDronePhaseInterceptor3,
+      createReconDrone
+    },
+    sharedTexMap
+  );
+}
 
 /**
  * Wormhole XR - Stage 1: Warp Origin [Mobile Profile]
@@ -223,126 +280,42 @@ export const stageConfig = {
         }
     ]
 },
+  createEnemyMeshFn: createEnemyMesh,
+  createEnemyMeshFn: createEnemyMesh,
+  createEnemyMeshFn: createEnemyMesh,
   enemies: [
     {
-        "id": "void_recon_drone_mobile",
-        "enemy_id": "void_recon_drone_mobile",
-        "name": "Void Recon Drone (Mobile)",
-        "device_type": "mobile",
-        "enemy_class": "Scout Drone",
-        "icon": "🛸",
-        "model_3d_type": "custom_glb",
-        "model_3d_url": "mobile/warp_origin_images/recon_drone_2.8m.glb",
-        "scale": 0.75,
-        "length": 2.8,
-        "height": 2.8,
-        "depth": 2.8,
-        "circumference": 8.8,
-        "color": "#00f0ff",
-        "hits": 1,
-        "armor": 1,
-        "has_force_field": 0,
-        "shield": 0,
-        "speed": 220,
-        "attack_damage": 1,
-        "weapon_name": "Plasma Pulse",
-        "weapon_damage": 1,
-        "weapon_speed": 450,
-        "weapon_color": "#00f0ff",
-        "weapon_scale": 1,
-        "weapon_scale_x": 1,
-        "weapon_scale_y": 1,
-        "weapon_scale_z": 1,
-        "weapon_size_x": 1,
-        "weapon_size_y": 1,
-        "weapon_size_z": 1,
-        "weapon_dimensions": {
-            "x": 1,
-            "y": 1,
-            "z": 1
-        },
-        "weapon_special_fx": "cockpit_overlay_decals",
-        "weapon_special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
-        "weapon_special_fx_type": "overlay",
-        "fire_rate": 2,
-        "fire_rate_seconds": 2,
-        "fire_rate_ms": 2000,
-        "fire_rate_times_per_sec": 0.5,
-        "weapons": [
-            {
-                "id": "ew_0_fzo0",
-                "name": "Plasma Pulse",
-                "type": "beam",
-                "mount": "center",
-                "model_url": "mobile/warp_origin_images/cyan_laser_rod_5.glb",
-                "model_type": "custom_glb",
-                "fire_point_x": 0,
-                "fire_point_y": -0.15,
-                "fire_point_z": 1.5,
-                "scale": 1,
-                "scale_x": 1,
-                "scale_y": 1,
-                "scale_z": 1,
-                "size_x": 1,
-                "size_y": 1,
-                "size_z": 1,
-                "dimensions": {
-                    "x": 1,
-                    "y": 1,
-                    "z": 1
-                },
-                "fire_rate_times_per_sec": 0.5,
-                "fire_interval_ms": 2000,
-                "fire_rate_seconds": 2,
-                "damage": 1,
-                "speed": 450,
-                "color": "#00f0ff",
-                "special_fx": "cockpit_overlay_decals",
-                "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
-                "special_fx_type": "overlay",
-                "is_enabled": 1
-            }
-        ],
-        "score": 100,
-        "threat": "Low",
-        "piercing": "any",
-        "pool_size": 30,
-        "quick_effect_primary": "plasma_aura",
-        "quick_effect_secondary": "sparks_burst",
-        "quick_effect_color": "#00f0ff",
-        "quick_effect_intensity": 1,
-        "quick_effect_speed": 1,
-        "destruction_particle_type": "procedural_sparks_explosion",
-        "destruction_particle_url": "",
-        "destruction_particle_count": 30,
-        "destruction_particle_color": "#00f0ff",
-        "destruction_particle_scale": 1
-    },
-    {
-        "id": "phase_interceptor_all",
-        "enemy_id": "phase_interceptor_all",
-        "name": "Phase Interceptor (Universal)",
+        "id": "phase_interceptor",
+        "enemy_id": "phase_interceptor",
+        "name": "Phase Interceptor (Mk.III)",
+        "enemy_name": "Phase Interceptor (Mk.III)",
         "device_type": "mobile",
         "enemy_class": "Fast Interceptor",
         "icon": "🚀",
-        "model_3d_type": "custom_glb",
-        "model_3d_url": "mobile/warp_origin_images/drone_phase_interceptor_3.glb",
-        "scale": 0.75,
-        "length": 4.2,
-        "height": 1.3,
-        "depth": 3.4,
-        "circumference": 5,
+        "model_3d_type": "drone_phase_interceptor_3",
+        "model_3d_url": "",
+        "procedural_model_url": "mobile/warp_origin_images/drone_phase_interceptor_3.js",
+        "scale": 1,
+        "length": 2.11,
+        "height": 0.98,
+        "depth": 2.63,
+        "circumference": 6.63,
         "color": "#38bdf8",
         "hits": 1,
+        "hits_to_destroy": 1,
         "armor": 1,
+        "armor_strength": 1,
         "has_force_field": 0,
         "shield": 0,
         "speed": 220,
         "attack_damage": 1,
-        "weapon_name": "Dual Ion Cannon",
+        "weapon_name": "Tip Laser Disruptor",
         "weapon_damage": 1,
         "weapon_speed": 550,
-        "weapon_color": "#38bdf8",
+        "weapon_color": "#ff1a2b",
+        "weapon_decal_name": INTERCEPTOR_LOCAL_WEAPON_DECAL_NAME || INTERCEPTOR_WEAPON_DECAL_NAME,
+        "weapon_fire_duration_ms": INTERCEPTOR_WEAPON_FIRE_DURATION_MS,
+        "weapon_fire_duration_seconds": 1.0,
         "weapon_scale": 1,
         "weapon_scale_x": 1,
         "weapon_scale_y": 1,
@@ -360,19 +333,22 @@ export const stageConfig = {
         "weapon_special_fx_type": "overlay",
         "fire_rate": 3,
         "fire_rate_seconds": 3,
-        "fire_rate_ms": 3003,
+        "fire_rate_ms": 3000,
         "fire_rate_times_per_sec": 0.333,
         "weapons": [
             {
-                "id": "ew_0_jerr",
-                "name": "Dual Ion Cannon",
-                "type": "missile",
+                "id": "ew_phase_interceptor_0",
+                "name": "Tip Laser Disruptor",
+                "type": "beam",
                 "mount": "center",
                 "model_url": "",
-                "model_type": "custom_glb",
+                "model_type": "decal_tip_laser_weapon",
+                "weapon_decal_name": INTERCEPTOR_LOCAL_WEAPON_DECAL_NAME || INTERCEPTOR_WEAPON_DECAL_NAME,
+                "fire_duration_ms": INTERCEPTOR_WEAPON_FIRE_DURATION_MS,
+                "fire_duration_seconds": 1.0,
                 "fire_point_x": 0,
-                "fire_point_y": -0.15,
-                "fire_point_z": 1.5,
+                "fire_point_y": 0,
+                "fire_point_z": 1.315,
                 "scale": 1,
                 "scale_x": 1,
                 "scale_y": 1,
@@ -386,11 +362,11 @@ export const stageConfig = {
                     "z": 1
                 },
                 "fire_rate_times_per_sec": 0.333,
-                "fire_interval_ms": 3003,
-                "fire_rate_seconds": 3.003,
+                "fire_interval_ms": 3000,
+                "fire_rate_seconds": 3,
                 "damage": 1,
                 "speed": 550,
-                "color": "#38bdf8",
+                "color": "#ff1a2b",
                 "special_fx": "cockpit_overlay_decals",
                 "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
                 "special_fx_type": "overlay",
@@ -398,9 +374,12 @@ export const stageConfig = {
             }
         ],
         "score": 250,
+        "score_value": 250,
         "threat": "Medium",
+        "threat_level": "Medium",
         "piercing": "red_laser",
-        "pool_size": 30,
+        "piercing_weapon_id": "red_laser",
+        "pool_size": 12,
         "quick_effect_primary": "engine_ion_thrust",
         "quick_effect_secondary": "plasma_aura",
         "quick_effect_color": "#38bdf8",
@@ -410,6 +389,113 @@ export const stageConfig = {
         "destruction_particle_url": "",
         "destruction_particle_count": 45,
         "destruction_particle_color": "#38bdf8",
+        "destruction_particle_scale": 1
+    },
+    {
+        "id": "void_recon_drone",
+        "enemy_id": "void_recon_drone",
+        "name": "Void Recon Drone (2.8m)",
+        "enemy_name": "Void Recon Drone (2.8m)",
+        "device_type": "mobile",
+        "enemy_class": "Scout Drone",
+        "icon": "🛸",
+        "model_3d_type": "recon_drone_2.8m",
+        "model_3d_url": "",
+        "procedural_model_url": "mobile/warp_origin_images/recon_drone_2.8m.js",
+        "scale": 1,
+        "length": 2.8,
+        "height": 2.8,
+        "depth": 2.8,
+        "circumference": 8.8,
+        "color": "#ef476f",
+        "hits": 1,
+        "hits_to_destroy": 1,
+        "armor": 1,
+        "armor_strength": 1,
+        "has_force_field": 0,
+        "shield": 0,
+        "speed": 220,
+        "attack_damage": RECON_DRONE_MISSILE_DAMAGE,
+        "weapon_name": "Twin Strike Missiles",
+        "weapon_damage": RECON_DRONE_MISSILE_DAMAGE,
+        "weapon_speed": 450,
+        "weapon_color": "#ff1e2d",
+        "weapon_decal_names": [...(Array.isArray(RECON_LOCAL_WEAPON_DECAL_NAMES) && RECON_LOCAL_WEAPON_DECAL_NAMES.length >= 2 ? RECON_LOCAL_WEAPON_DECAL_NAMES : RECON_DRONE_WEAPON_DECAL_NAMES)],
+        "weapon_fire_duration_ms": RECON_DRONE_WEAPON_FIRE_DURATION_MS,
+        "weapon_fire_duration_seconds": 2.0,
+        "weapon_scale": 1,
+        "weapon_scale_x": 1,
+        "weapon_scale_y": 1,
+        "weapon_scale_z": 1,
+        "weapon_size_x": 1,
+        "weapon_size_y": 1,
+        "weapon_size_z": 1,
+        "weapon_dimensions": {
+            "x": 1,
+            "y": 1,
+            "z": 1
+        },
+        "weapon_special_fx": "cockpit_overlay_decals",
+        "weapon_special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
+        "weapon_special_fx_type": "overlay",
+        "fire_rate": 3,
+        "fire_rate_seconds": 3,
+        "fire_rate_ms": 3000,
+        "fire_rate_times_per_sec": 0.333,
+        "weapons": [
+            {
+                "id": "ew_void_recon_drone_0",
+                "name": "Twin Strike Missiles",
+                "type": "missile",
+                "mount": "dual_forward",
+                "model_url": "",
+                "model_type": "decal_twin_missile_weapon",
+                "weapon_decal_names": [...(Array.isArray(RECON_LOCAL_WEAPON_DECAL_NAMES) && RECON_LOCAL_WEAPON_DECAL_NAMES.length >= 2 ? RECON_LOCAL_WEAPON_DECAL_NAMES : RECON_DRONE_WEAPON_DECAL_NAMES)],
+                "fire_duration_ms": RECON_DRONE_WEAPON_FIRE_DURATION_MS,
+                "fire_duration_seconds": 2.0,
+                "fire_point_x": 0,
+                "fire_point_y": -0.08,
+                "fire_point_z": 1.4,
+                "scale": 1,
+                "scale_x": 1,
+                "scale_y": 1,
+                "scale_z": 1,
+                "size_x": 1,
+                "size_y": 1,
+                "size_z": 1,
+                "dimensions": {
+                    "x": 1,
+                    "y": 1,
+                    "z": 1
+                },
+                "fire_rate_times_per_sec": 0.333,
+                "fire_interval_ms": 3000,
+                "fire_rate_seconds": 3,
+                "damage": RECON_DRONE_MISSILE_DAMAGE,
+                "speed": 450,
+                "color": "#ff1e2d",
+                "special_fx": "cockpit_overlay_decals",
+                "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
+                "special_fx_type": "overlay",
+                "is_enabled": 1
+            }
+        ],
+        "score": 100,
+        "score_value": 100,
+        "threat": "Low",
+        "threat_level": "Low",
+        "piercing": "any",
+        "piercing_weapon_id": "any",
+        "pool_size": 12,
+        "quick_effect_primary": "none",
+        "quick_effect_secondary": "none",
+        "quick_effect_color": "#00f0ff",
+        "quick_effect_intensity": 1,
+        "quick_effect_speed": 1,
+        "destruction_particle_type": "procedural_sparks_explosion",
+        "destruction_particle_url": "",
+        "destruction_particle_count": 40,
+        "destruction_particle_color": "#ef476f",
         "destruction_particle_scale": 1
     }
 ],
@@ -571,30 +657,65 @@ export function canPlayerDestroyEnemy(enemyObj, playerPos) {
   return isEnemyWithinWeaponRange(enemyObj, playerPos);
 }
 
-export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
-  if (!enemyObj || !enemyObj.mesh) return false;
-  if (enemyObj.mesh.userData && (enemyObj.mesh.userData.inPool || enemyObj.mesh.userData.isActive === false || enemyObj.mesh.userData.weaponsActive === false)) return false;
+function resetEnemyProceduralWeaponState(e) {
+  if (!e || !e.mesh) return;
+  e._tipLaserFiring = false;
+  e._tipLaserFireRemaining = 0;
+  e._tipLaserFireEndTime = 0;
+  e._portMissileFiring = false;
+  e._portMissileFireRemaining = 0;
+  e._portMissileFireEndTime = 0;
+  e._portSecondSalvoPending = false;
+  e._starboardMissileFiring = false;
+  e._starboardMissileFireRemaining = 0;
+  e._starboardMissileFireEndTime = 0;
+  e._starboardSecondSalvoPending = false;
+  e._lastReconWeaponOverride = null;
+  resetWarpOriginEnemyWeaponDecals(e);
+}
 
+function computeWorldWeaponOrigin(enemyObj, localOffset) {
+  if (!enemyObj || !enemyObj.mesh) return new THREE.Vector3();
+  const origin = enemyObj.mesh.position.clone();
+  if (!localOffset) return origin;
+  try {
+    enemyObj.mesh.updateMatrixWorld(false);
+    const worldPt = localOffset.clone().applyMatrix4(enemyObj.mesh.matrixWorld);
+    if (Number.isFinite(worldPt.x) && Number.isFinite(worldPt.y) && Number.isFinite(worldPt.z)) {
+      return worldPt;
+    }
+  } catch (_) {}
+  return origin;
+}
+
+function emitReconMissileCollisionPulse(enemyObj, mountSide, context, weaponOverride, now) {
+  if (!enemyObj || !enemyObj.mesh) return false;
   const isContextObj = context && typeof context === 'object' && !context.isVector3;
-  const scene = isContextObj ? context.scene : (typeof window !== 'undefined' ? window.scene : null);
   const camera = isContextObj ? context.camera : (typeof window !== 'undefined' ? window.camera : null);
   const state = isContextObj ? context.state : (typeof window !== 'undefined' ? window.state : null);
   const cameraRig = isContextObj ? context.cameraRig : null;
-  const audioMgr = isContextObj ? context.audioMgr : null;
   const enemyBolts = isContextObj ? context.enemyBolts : (typeof weaponOverride === 'function' ? weaponOverride() : null);
-
-  if (!scene || !camera || !enemyBolts) return false;
-  if (enemyBolts.length > 80) return false;
+  if (!enemyBolts || enemyBolts.length > 80) return false;
 
   const playerPos = (isContextObj && context.playerPos)
     ? context.playerPos
     : (context && context.isVector3)
       ? context
-      : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : camera.position));
+      : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : (camera ? camera.position : null)));
+  if (!playerPos) return false;
 
-  // Enemy can fire its weapon at any distance, but weapon range is 10,000 KM:
-  // bolts fired while enemy is > 10,000 KM from player cannot hit/damage the player.
-  const enemyDistAtFire = (playerPos && typeof enemyObj.mesh.position.distanceTo === 'function')
+  const ud = enemyObj.mesh.userData || {};
+  const centerOffsetY = (typeof ud.proceduralCenterOffsetY === 'number') ? ud.proceduralCenterOffsetY : -1.40;
+  const rdTips = ud.reconDrone && ud.reconDrone.object && ud.reconDrone.object.userData && ud.reconDrone.object.userData.reconDrone
+    ? ud.reconDrone.object.userData.reconDrone.weaponMountTips
+    : null;
+  const rawTip = rdTips && rdTips[mountSide];
+  const localTip = rawTip
+    ? new THREE.Vector3(rawTip.x, rawTip.y + centerOffsetY, rawTip.z)
+    : new THREE.Vector3(mountSide === 'port' ? -0.45 : 0.45, -0.08, 1.40);
+  const spawnOrigin = computeWorldWeaponOrigin(enemyObj, localTip);
+
+  const enemyDistAtFire = (typeof enemyObj.mesh.position.distanceTo === 'function')
     ? enemyObj.mesh.position.distanceTo(playerPos)
     : Infinity;
   const firedWithinRange = enemyDistAtFire <= WEAPON_MAX_RANGE_UNITS;
@@ -603,16 +724,10 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     ? weaponOverride
     : (enemyObj.weapons && enemyObj.weapons[0]) || (enemyObj.config && enemyObj.config.weapons && enemyObj.config.weapons[0]) || null;
   const cfg = enemyObj.config || enemyObj || {};
-  const wName = (w && w.name) || cfg.weapon_name || 'Plasma Pulse';
-  const rawWType = (w && w.type) ? w.type.toLowerCase() : '';
-  const isMissile = rawWType === 'missile' || rawWType === 'torpedo' || /missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test([rawWType, wName, (w && w.id) || '', (w && w.model_url) || ''].join(' '));
-  const wType = isMissile ? 'missile' : (rawWType || 'beam');
-  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#00f0ff';
-  const boltColorHex = parseInt(String(rawColor).replace('#', '0x'), 16) || 0xff0055;
-  const wDamage = (w && w.damage !== undefined) ? parseInt(w.damage) : (enemyObj.weaponDmg || cfg.weapon_damage || 6);
-  const wSpeedRaw = (w && w.speed !== undefined) ? parseInt(w.speed) : (enemyObj.weaponSpeed || cfg.weapon_speed || 480);
-  const boltSpeed = Math.max(45, Math.min(180, wSpeedRaw * (isMissile ? 0.16 : 0.24)));
-  const wMount = (w && w.mount) || 'nose_cannon';
+  const wName = (w && w.name) || cfg.weapon_name || 'Twin Strike Missiles';
+  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#ff1e2d';
+  const wSpeedRaw = (w && w.speed !== undefined) ? parseFloat(w.speed) : (enemyObj.weaponSpeed || cfg.weapon_speed || 450);
+  const boltSpeed = Math.max(45, Math.min(180, (Number.isFinite(wSpeedRaw) ? wSpeedRaw : 450) * 0.16));
 
   const wScale = Number((w && w.scale) ?? cfg.weapon_scale ?? 1.0);
   const wScaleX = Number((w && w.scale_x) ?? cfg.weapon_scale_x ?? 1.0);
@@ -624,51 +739,33 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   const wSpecialFx = (w && w.special_fx) || cfg.weapon_special_fx || 'cockpit_overlay_decals';
   const wSpecialFxFile = (w && w.special_fx_file) || cfg.weapon_special_fx_file || 'scene_images/screen_decals_spider_web_overlay_4.glb';
   const wSpecialFxType = (w && w.special_fx_type) || cfg.weapon_special_fx_type || 'overlay';
-  const wId = (w && w.id) || (wName ? 'ew_' + wName.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'ew_primary');
-
-  const spawnOrigin = enemyObj.mesh.position.clone();
-  if (wMount === 'dual_wingtip') {
-    enemyObj._wingSide = (enemyObj._wingSide === 1) ? -1 : 1;
-    spawnOrigin.x += enemyObj._wingSide * 1.3 * (enemyObj.baseScale || 1.0);
-  } else if (wMount === 'turret_top') {
-    spawnOrigin.y += 0.9 * (enemyObj.baseScale || 1.0);
-  } else if (wMount === 'under_belly') {
-    spawnOrigin.y -= 0.9 * (enemyObj.baseScale || 1.0);
-  }
+  const wId = (w && w.id) || `ew_recon_missile_${mountSide}`;
+  const decalName = mountSide === 'port' ? RECON_DRONE_PORT_WEAPON_DECAL_NAME : RECON_DRONE_STARBOARD_WEAPON_DECAL_NAME;
 
   const targetPoint = new THREE.Vector3(
-    playerPos.x + (Math.random() - 0.5) * (isMissile ? 2.2 : 3.5),
-    playerPos.y + (Math.random() - 0.5) * (isMissile ? 2.2 : 3.5),
+    playerPos.x + (Math.random() - 0.5) * 2.2,
+    playerPos.y + (Math.random() - 0.5) * 2.2,
     playerPos.z
   );
   const direction = new THREE.Vector3().subVectors(targetPoint, spawnOrigin).normalize();
   const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
 
-  let mesh = null;
-  let fromPool = false;
-
-  if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.spawnEnemyWeapon === 'function') {
-    mesh = window.stageObjectPool.spawnEnemyWeapon(w || { id: wId, name: wName, type: wType, color: rawColor }, cfg, spawnOrigin, boltQuat, isMissile ? 'missile' : 'beam');
-    if (mesh) fromPool = true;
-  }
-
-  if (!mesh) {
-    const geom = new THREE.CylinderGeometry(0.14 * wSizeX, 0.22 * wSizeY, 5.5 * wSizeZ, 6);
-    geom.rotateX(Math.PI / 2);
-    const mat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.95 });
-    mesh = new THREE.Mesh(geom, mat);
-    mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
-    mesh.position.copy(spawnOrigin);
-    mesh.quaternion.copy(boltQuat);
-    scene.add(mesh);
-  } else {
-    mesh.position.copy(spawnOrigin);
-    mesh.quaternion.copy(boltQuat);
-  }
+  // Invisible collision-delivery pulse: the visible 28m 3D missiles are rendered exclusively
+  // by recon_drone_2.8m.js's Decal_MissileStrike_Port_Weapon / Decal_MissileStrike_Starboard_Weapon decals.
+  // Each missile hit causes 0.25 hits (0.25% shield or health damage).
+  const missileTracker = new THREE.Object3D();
+  missileTracker.name = `recon_missile_strike_pulse_${mountSide}`;
+  missileTracker.visible = false;
+  missileTracker.position.copy(spawnOrigin);
+  missileTracker.quaternion.copy(boltQuat);
 
   enemyBolts.push({
-    mesh,
-    fromPool,
+    mesh: missileTracker,
+    fromPool: false,
+    isReconMissileWeaponDecalPulse: true,
+    weaponDecalName: decalName,
+    weaponMount: mountSide,
+    fireDurationMs: RECON_DRONE_WEAPON_FIRE_DURATION_MS,
     spawnOrigin: spawnOrigin.clone(),
     prevPosition: spawnOrigin.clone(),
     distanceTraveled: 0,
@@ -681,7 +778,7 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     canHitPlayer: firedWithinRange,
     direction,
     speed: boltSpeed,
-    damage: wDamage,
+    damage: RECON_DRONE_MISSILE_DAMAGE,
     weaponId: wId,
     weaponName: wName,
     weaponColor: rawColor,
@@ -696,11 +793,385 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     size_y: wSizeY,
     size_z: wSizeZ,
     dimensions: { x: wSizeX, y: wSizeY, z: wSizeZ },
-    type: isMissile ? 'missile' : 'beam',
+    type: 'missile',
     spiralTime: Math.random() * Math.PI * 2,
-    spawnTime: performance.now(),
-    lifetime: isMissile ? 7.5 : 4.8
+    spawnTime: now,
+    lifetime: 2.5
   });
+
+  return true;
+}
+
+function tickWarpOriginWeaponDecalTimers(e, dt, now, context) {
+  if (!e || !e.mesh) return;
+  const ud = e.mesh.userData;
+  if ((ud && (ud.inPool || ud.isActive === false || ud.weaponsActive === false)) || e.isActive === false) {
+    resetEnemyProceduralWeaponState(e);
+    return;
+  }
+
+  const kind = resolveWarpOriginEnemyKind(e);
+  if (kind === 'drone_phase_interceptor_3') {
+    if (e._tipLaserFiring) {
+      if (typeof e._tipLaserFireRemaining === 'number') {
+        e._tipLaserFireRemaining -= dt;
+      }
+      const remainingExpired = (typeof e._tipLaserFireRemaining === 'number')
+        ? (e._tipLaserFireRemaining <= 0)
+        : (now >= (e._tipLaserFireEndTime || 0));
+
+      if (remainingExpired) {
+        e._tipLaserFiring = false;
+        e._tipLaserFireRemaining = 0;
+        e._tipLaserFireEndTime = 0;
+        if (ud) {
+          ud._tipLaserFiring = false;
+          ud._tipLaserFireRemaining = 0;
+          ud._tipLaserFireEndTime = 0;
+        }
+        setInterceptorWeaponDecalEnabled(e, false);
+      } else {
+        if (ud) {
+          ud._tipLaserFiring = true;
+          ud._tipLaserFireRemaining = e._tipLaserFireRemaining;
+        }
+        const dm = getInterceptorWeaponDecal(e);
+        if (dm && !dm.visible) dm.visible = true;
+      }
+    } else {
+      const dm = getInterceptorWeaponDecal(e);
+      if (dm && dm.visible) dm.visible = false;
+    }
+    return;
+  }
+
+  // recon_drone_2.8m: independent 2-second timers for strike port and strike starboard weapon decals
+  const decals = getReconDroneWeaponDecals(e);
+
+  if (e._portMissileFiring) {
+    if (typeof e._portMissileFireRemaining === 'number') {
+      e._portMissileFireRemaining -= dt;
+    }
+    if (
+      e._portSecondSalvoPending &&
+      typeof e._portMissileFireRemaining === 'number' &&
+      e._portMissileFireRemaining <= RECON_DRONE_MISSILE_SALVO_INTERVAL_SEC &&
+      e._portMissileFireRemaining > 0
+    ) {
+      e._portSecondSalvoPending = false;
+      if (ud) ud._portSecondSalvoPending = false;
+      emitReconMissileCollisionPulse(e, 'port', context, e._lastReconWeaponOverride || null, now);
+    }
+    const portExpired = (typeof e._portMissileFireRemaining === 'number')
+      ? (e._portMissileFireRemaining <= 0)
+      : (now >= (e._portMissileFireEndTime || 0));
+    if (portExpired) {
+      e._portMissileFiring = false;
+      e._portMissileFireRemaining = 0;
+      e._portMissileFireEndTime = 0;
+      e._portSecondSalvoPending = false;
+      if (ud) {
+        ud._portMissileFiring = false;
+        ud._portMissileFireRemaining = 0;
+        ud._portMissileFireEndTime = 0;
+        ud._portSecondSalvoPending = false;
+      }
+      setReconDroneWeaponDecalEnabled(e, 'port', false);
+    } else {
+      if (ud) {
+        ud._portMissileFiring = true;
+        ud._portMissileFireRemaining = e._portMissileFireRemaining;
+      }
+      if (decals.port && !decals.port.visible) decals.port.visible = true;
+    }
+  } else if (decals.port && decals.port.visible) {
+    decals.port.visible = false;
+  }
+
+  if (e._starboardMissileFiring) {
+    if (typeof e._starboardMissileFireRemaining === 'number') {
+      e._starboardMissileFireRemaining -= dt;
+    }
+    if (
+      e._starboardSecondSalvoPending &&
+      typeof e._starboardMissileFireRemaining === 'number' &&
+      e._starboardMissileFireRemaining <= RECON_DRONE_MISSILE_SALVO_INTERVAL_SEC &&
+      e._starboardMissileFireRemaining > 0
+    ) {
+      e._starboardSecondSalvoPending = false;
+      if (ud) ud._starboardSecondSalvoPending = false;
+      emitReconMissileCollisionPulse(e, 'starboard', context, e._lastReconWeaponOverride || null, now);
+    }
+    const starboardExpired = (typeof e._starboardMissileFireRemaining === 'number')
+      ? (e._starboardMissileFireRemaining <= 0)
+      : (now >= (e._starboardMissileFireEndTime || 0));
+    if (starboardExpired) {
+      e._starboardMissileFiring = false;
+      e._starboardMissileFireRemaining = 0;
+      e._starboardMissileFireEndTime = 0;
+      e._starboardSecondSalvoPending = false;
+      if (ud) {
+        ud._starboardMissileFiring = false;
+        ud._starboardMissileFireRemaining = 0;
+        ud._starboardMissileFireEndTime = 0;
+        ud._starboardSecondSalvoPending = false;
+      }
+      setReconDroneWeaponDecalEnabled(e, 'starboard', false);
+    } else {
+      if (ud) {
+        ud._starboardMissileFiring = true;
+        ud._starboardMissileFireRemaining = e._starboardMissileFireRemaining;
+      }
+      if (decals.starboard && !decals.starboard.visible) decals.starboard.visible = true;
+    }
+  } else if (decals.starboard && decals.starboard.visible) {
+    decals.starboard.visible = false;
+  }
+}
+
+function advanceWarpOriginProceduralAnimation(e, dt) {
+  if (!e || !e.mesh || !e.mesh.userData) return;
+  const ud = e.mesh.userData;
+  const ctrl = ud.proceduralController || ud.dronePhaseInterceptor3 || ud.reconDrone;
+  if (ctrl && typeof ctrl.update === 'function') {
+    const nextElapsed = (ud.proceduralElapsed || 0) + dt;
+    ud.proceduralElapsed = nextElapsed;
+    ctrl.update(dt, nextElapsed);
+  }
+}
+
+export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
+  if (!enemyObj || !enemyObj.mesh) return false;
+  const ud = enemyObj.mesh.userData;
+  if (ud && (ud.inPool || ud.isActive === false || ud.weaponsActive === false)) return false;
+
+  const isContextObj = context && typeof context === 'object' && !context.isVector3;
+  const scene = isContextObj ? context.scene : (typeof window !== 'undefined' ? window.scene : null);
+  const camera = isContextObj ? context.camera : (typeof window !== 'undefined' ? window.camera : null);
+  const state = isContextObj ? context.state : (typeof window !== 'undefined' ? window.state : null);
+  const cameraRig = isContextObj ? context.cameraRig : null;
+  const audioMgr = isContextObj ? context.audioMgr : null;
+  const enemyBolts = isContextObj ? context.enemyBolts : (typeof weaponOverride === 'function' ? weaponOverride() : null);
+  const now = (isContextObj && context.now) || performance.now();
+
+  if (!scene || !camera || !enemyBolts) return false;
+
+  const playerPos = (isContextObj && context.playerPos)
+    ? context.playerPos
+    : (context && context.isVector3)
+      ? context
+      : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : camera.position));
+
+  const w = (weaponOverride && typeof weaponOverride === 'object')
+    ? weaponOverride
+    : (enemyObj.weapons && enemyObj.weapons[0]) || (enemyObj.config && enemyObj.config.weapons && enemyObj.config.weapons[0]) || null;
+  const cfg = enemyObj.config || enemyObj || {};
+  const enemyKind = resolveWarpOriginEnemyKind(enemyObj);
+
+  // =========================================================================
+  // 1. DRONE PHASE INTERCEPTOR 3:
+  //    Toggle Decal_LaserBurn_Tip_Laser_Weapon ON for 1 second, then OFF.
+  // =========================================================================
+  if (enemyKind === 'drone_phase_interceptor_3') {
+    if (enemyObj._tipLaserFiring && ((enemyObj._tipLaserFireRemaining || 0) > 0 || now < (enemyObj._tipLaserFireEndTime || 0))) {
+      setInterceptorWeaponDecalEnabled(enemyObj, true);
+      return true;
+    }
+
+    const fireDurationMs = INTERCEPTOR_WEAPON_FIRE_DURATION_MS;
+    setInterceptorWeaponDecalEnabled(enemyObj, true);
+    enemyObj._tipLaserFiring = true;
+    enemyObj._tipLaserFireStartTime = now;
+    enemyObj._tipLaserFireEndTime = now + fireDurationMs;
+    enemyObj._tipLaserFireRemaining = fireDurationMs / 1000;
+    if (ud) {
+      ud._tipLaserFiring = true;
+      ud._tipLaserFireEndTime = enemyObj._tipLaserFireEndTime;
+      ud._tipLaserFireRemaining = enemyObj._tipLaserFireRemaining;
+      const ctrl = ud.proceduralController || ud.dronePhaseInterceptor3;
+      if (ctrl && typeof ctrl.update === 'function') {
+        ctrl.update(0, ud.proceduralElapsed || 0);
+      }
+    }
+
+    const enemyDistAtFire = (playerPos && typeof enemyObj.mesh.position.distanceTo === 'function')
+      ? enemyObj.mesh.position.distanceTo(playerPos)
+      : Infinity;
+    const firedWithinRange = enemyDistAtFire <= WEAPON_MAX_RANGE_UNITS;
+
+    const wName = (w && w.name) || cfg.weapon_name || 'Tip Laser Disruptor';
+    const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#ff1a2b';
+    const rawDmg = (w && w.damage !== undefined && w.damage !== null)
+      ? Number(w.damage)
+      : Number(cfg.weapon_damage ?? enemyObj.weaponDmg ?? 1);
+    const wDamage = (Number.isFinite(rawDmg) && rawDmg > 0) ? rawDmg : 1;
+    const wSpeedRaw = (w && w.speed !== undefined) ? parseFloat(w.speed) : (enemyObj.weaponSpeed || cfg.weapon_speed || 550);
+    const boltSpeed = Math.max(45, Math.min(180, (Number.isFinite(wSpeedRaw) ? wSpeedRaw : 550) * 0.24));
+
+    const wScale = Number((w && w.scale) ?? cfg.weapon_scale ?? 1.0);
+    const wScaleX = Number((w && w.scale_x) ?? cfg.weapon_scale_x ?? 1.0);
+    const wScaleY = Number((w && w.scale_y) ?? cfg.weapon_scale_y ?? 1.0);
+    const wScaleZ = Number((w && w.scale_z) ?? cfg.weapon_scale_z ?? 1.0);
+    const wSizeX = Number((w && (w.size_x ?? (w.dimensions && w.dimensions.x))) ?? cfg.weapon_size_x ?? 1.0);
+    const wSizeY = Number((w && (w.size_y ?? (w.dimensions && w.dimensions.y))) ?? cfg.weapon_size_y ?? 1.0);
+    const wSizeZ = Number((w && (w.size_z ?? (w.dimensions && w.dimensions.z))) ?? cfg.weapon_size_z ?? 1.0);
+    const wSpecialFx = (w && w.special_fx) || cfg.weapon_special_fx || 'cockpit_overlay_decals';
+    const wSpecialFxFile = (w && w.special_fx_file) || cfg.weapon_special_fx_file || 'scene_images/screen_decals_spider_web_overlay_4.glb';
+    const wSpecialFxType = (w && w.special_fx_type) || cfg.weapon_special_fx_type || 'overlay';
+    const wId = (w && w.id) || 'ew_phase_interceptor_0';
+
+    if (enemyBolts.length <= 80 && playerPos) {
+      const centerOffsetY = (ud && typeof ud.proceduralCenterOffsetY === 'number') ? ud.proceduralCenterOffsetY : -0.49;
+      const dpiOrigin = ud && ud.dronePhaseInterceptor3 && ud.dronePhaseInterceptor3.object &&
+        ud.dronePhaseInterceptor3.object.userData && ud.dronePhaseInterceptor3.object.userData.dronePhaseInterceptor3
+        ? ud.dronePhaseInterceptor3.object.userData.dronePhaseInterceptor3.laserOrigin
+        : null;
+      const localTip = dpiOrigin
+        ? new THREE.Vector3(dpiOrigin.x, dpiOrigin.y + centerOffsetY, dpiOrigin.z)
+        : new THREE.Vector3(0, 0, 1.315);
+      const spawnOrigin = computeWorldWeaponOrigin(enemyObj, localTip);
+
+      const targetPoint = new THREE.Vector3(
+        playerPos.x + (Math.random() - 0.5) * 3.5,
+        playerPos.y + (Math.random() - 0.5) * 3.5,
+        playerPos.z
+      );
+      const direction = new THREE.Vector3().subVectors(targetPoint, spawnOrigin).normalize();
+      const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
+
+      // Invisible collision-delivery pulse: the visible 24m red tip laser beam is rendered
+      // exclusively by Decal_LaserBurn_Tip_Laser_Weapon for 1 second.
+      const beamTracker = new THREE.Object3D();
+      beamTracker.name = 'interceptor_tip_laser_weapon_pulse';
+      beamTracker.visible = false;
+      beamTracker.position.copy(spawnOrigin);
+      beamTracker.quaternion.copy(boltQuat);
+
+      enemyBolts.push({
+        mesh: beamTracker,
+        fromPool: false,
+        isTipLaserWeaponDecalBeam: true,
+        weaponDecalName: INTERCEPTOR_LOCAL_WEAPON_DECAL_NAME || INTERCEPTOR_WEAPON_DECAL_NAME,
+        fireDurationMs,
+        spawnOrigin: spawnOrigin.clone(),
+        prevPosition: spawnOrigin.clone(),
+        distanceTraveled: 0,
+        maxRangeKm: WEAPON_MAX_RANGE_KM,
+        maxRangeUnits: WEAPON_MAX_RANGE_UNITS,
+        sourceEnemy: enemyObj,
+        enemyDistAtFireUnits: enemyDistAtFire,
+        enemyDistAtFireKm: enemyDistAtFire * KM_PER_WORLD_UNIT,
+        firedWithinRange,
+        canHitPlayer: firedWithinRange,
+        direction,
+        speed: boltSpeed,
+        damage: wDamage,
+        weaponId: wId,
+        weaponName: wName,
+        weaponColor: rawColor,
+        specialFx: wSpecialFx,
+        specialFxFile: wSpecialFxFile,
+        specialFxType: wSpecialFxType,
+        scale: wScale,
+        scale_x: wScaleX,
+        scale_y: wScaleY,
+        scale_z: wScaleZ,
+        size_x: wSizeX,
+        size_y: wSizeY,
+        size_z: wSizeZ,
+        dimensions: { x: wSizeX, y: wSizeY, z: wSizeZ },
+        type: 'beam',
+        spiralTime: 0,
+        spawnTime: now,
+        lifetime: fireDurationMs / 1000
+      });
+    }
+
+    if (audioMgr && audioMgr.isInitialized) {
+      if (typeof audioMgr.playEnemyLaser === 'function') {
+        try { audioMgr.playEnemyLaser(); } catch (e) {}
+      } else if (typeof audioMgr.playLaserBolt === 'function') {
+        try { audioMgr.playLaserBolt(); } catch (e) {}
+      }
+    }
+    return true;
+  }
+
+  // =========================================================================
+  // 2. RECON DRONE 2.8M:
+  //    Randomly turns on strike port decal (Decal_MissileStrike_Port_Weapon)
+  //    and/or strike starboard weapon decal (Decal_MissileStrike_Starboard_Weapon)
+  //    for 2 seconds. Each missile hit deals 0.25 damage (0.25% shield/health).
+  // =========================================================================
+  const portActive = Boolean(
+    enemyObj._portMissileFiring &&
+    ((enemyObj._portMissileFireRemaining || 0) > 0 || now < (enemyObj._portMissileFireEndTime || 0))
+  );
+  const starboardActive = Boolean(
+    enemyObj._starboardMissileFiring &&
+    ((enemyObj._starboardMissileFireRemaining || 0) > 0 || now < (enemyObj._starboardMissileFireEndTime || 0))
+  );
+
+  if (portActive || starboardActive) {
+    if (portActive) setReconDroneWeaponDecalEnabled(enemyObj, 'port', true);
+    if (starboardActive) setReconDroneWeaponDecalEnabled(enemyObj, 'starboard', true);
+    return true;
+  }
+
+  let activatePort = false;
+  let activateStarboard = false;
+  const pick = Math.random();
+  if (pick < (1 / 3)) {
+    activatePort = true;
+  } else if (pick < (2 / 3)) {
+    activateStarboard = true;
+  } else {
+    activatePort = true;
+    activateStarboard = true;
+  }
+
+  enemyObj._lastReconWeaponOverride = w || null;
+  const reconFireDurationMs = RECON_DRONE_WEAPON_FIRE_DURATION_MS;
+  const reconFireDurationSec = reconFireDurationMs / 1000;
+
+  if (activatePort) {
+    setReconDroneWeaponDecalEnabled(enemyObj, 'port', true);
+    enemyObj._portMissileFiring = true;
+    enemyObj._portMissileFireStartTime = now;
+    enemyObj._portMissileFireEndTime = now + reconFireDurationMs;
+    enemyObj._portMissileFireRemaining = reconFireDurationSec;
+    enemyObj._portSecondSalvoPending = true;
+    if (ud) {
+      ud._portMissileFiring = true;
+      ud._portMissileFireEndTime = enemyObj._portMissileFireEndTime;
+      ud._portMissileFireRemaining = reconFireDurationSec;
+      ud._portSecondSalvoPending = true;
+    }
+    emitReconMissileCollisionPulse(enemyObj, 'port', context, w, now);
+  }
+
+  if (activateStarboard) {
+    setReconDroneWeaponDecalEnabled(enemyObj, 'starboard', true);
+    enemyObj._starboardMissileFiring = true;
+    enemyObj._starboardMissileFireStartTime = now;
+    enemyObj._starboardMissileFireEndTime = now + reconFireDurationMs;
+    enemyObj._starboardMissileFireRemaining = reconFireDurationSec;
+    enemyObj._starboardSecondSalvoPending = true;
+    if (ud) {
+      ud._starboardMissileFiring = true;
+      ud._starboardMissileFireEndTime = enemyObj._starboardMissileFireEndTime;
+      ud._starboardMissileFireRemaining = reconFireDurationSec;
+      ud._starboardSecondSalvoPending = true;
+    }
+    emitReconMissileCollisionPulse(enemyObj, 'starboard', context, w, now);
+  }
+
+  if (ud) {
+    const ctrl = ud.proceduralController || ud.reconDrone;
+    if (ctrl && typeof ctrl.update === 'function') {
+      ctrl.update(0, ud.proceduralElapsed || 0);
+    }
+  }
 
   if (audioMgr && audioMgr.isInitialized && typeof audioMgr.playLaserBolt === 'function') {
     try { audioMgr.playLaserBolt(); } catch (e) {}
@@ -709,9 +1180,16 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
 }
 
 export function updateEnemyMovement(e, delta, context) {
-  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) return false;
+  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) {
+    if (e && e.mesh) {
+      resetEnemyProceduralWeaponState(e);
+    }
+    return false;
+  }
+  const safeDt = (Number.isFinite(delta) && delta > 0) ? Math.min(delta, 0.1) : 0;
   const isContextObj = context && typeof context === 'object' && !context.isVector3;
   const now = (isContextObj && context.now) || performance.now();
+  tickWarpOriginWeaponDecalTimers(e, safeDt, now, context);
   const playerPos = (isContextObj && context.playerPos)
     ? context.playerPos
     : (context && context.isVector3)
@@ -769,6 +1247,7 @@ export function updateEnemyMovement(e, delta, context) {
       e.stoppedTime = now;
       e.nextLevelTime = now + 1500 + Math.random() * 3500;
     }
+    advanceWarpOriginProceduralAnimation(e, safeDt);
     return true;
   }
 
@@ -872,7 +1351,10 @@ export function updateEnemyMovement(e, delta, context) {
         e.levelPitchProgress = 1.0;
         e.isLevel = true;
         e.maneuverState = 'LEVEL_FIRING';
-        e.levelFireEndTime = now + 600;
+        const levelFireDurationMs = (resolveWarpOriginEnemyKind(e) === 'recon_drone_2.8m')
+          ? RECON_DRONE_WEAPON_FIRE_DURATION_MS
+          : INTERCEPTOR_WEAPON_FIRE_DURATION_MS;
+        e.levelFireEndTime = now + levelFireDurationMs;
         if (!e.hasFiredThisLevel) {
           e.hasFiredThisLevel = true;
           fireEnemyWeapon(e, context);
@@ -1028,12 +1510,93 @@ export function updateEnemyMovement(e, delta, context) {
   e.distanceToPlayerKm = finalDistToPlayer * KM_PER_WORLD_UNIT;
   e.inWeaponRange = finalDistToPlayer <= dist10k;
 
+  advanceWarpOriginProceduralAnimation(e, safeDt);
   return true;
+}
+
+function buildProceduralStageEnemiesList(sourceEnemies = stageConfig.enemies) {
+  const list = Array.isArray(sourceEnemies) ? sourceEnemies : [];
+  return list.map((entry) => ({
+    ...entry,
+    custom_from_db: true
+  }));
+}
+
+function isStage1WarpOriginActive() {
+  if (typeof window === 'undefined') return false;
+  const cfg = window.activeStageConfig;
+  if (!cfg) return false;
+  const lvl = Number(cfg.stage_level ?? (cfg.meta && cfg.meta.level));
+  const slug = String(cfg.stage_slug ?? (cfg.meta && cfg.meta.slug) ?? '').toLowerCase();
+  return lvl === 1 || slug === 'warp_origin';
+}
+
+function installWarpOriginActiveEnemiesGuard() {
+  if (typeof window === 'undefined') return;
+  window.__warpOriginProceduralStageEnemies = buildProceduralStageEnemiesList(stageConfig.enemies);
+
+  if (window.__warpOriginActiveEnemiesGuardInstalled) return;
+
+  let _backingEnemies = Array.isArray(window.activeStageEnemies) ? window.activeStageEnemies : [];
+  const desc = Object.getOwnPropertyDescriptor(window, 'activeStageEnemies');
+  if (desc && desc.configurable === false) return;
+
+  Object.defineProperty(window, 'activeStageEnemies', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return _backingEnemies;
+    },
+    set(val) {
+      if (
+        isStage1WarpOriginActive() &&
+        Array.isArray(val) &&
+        val.length > 0 &&
+        Array.isArray(window.__warpOriginProceduralStageEnemies) &&
+        window.__warpOriginProceduralStageEnemies.length > 0
+      ) {
+        const expected = window.__warpOriginProceduralStageEnemies;
+        const alreadyProcedural = val.length === expected.length &&
+          val.every((item, idx) => item && item.model_3d_type === expected[idx].model_3d_type && !item.model_3d_url);
+        _backingEnemies = alreadyProcedural
+          ? val
+          : buildProceduralStageEnemiesList(expected);
+        return;
+      }
+      _backingEnemies = val;
+    }
+  });
+  window.__warpOriginActiveEnemiesGuardInstalled = true;
+}
+
+function ensureWarpOriginProceduralEnemies() {
+  if (typeof window === 'undefined') return;
+  const activeStageLvl = window.activeStageConfig && Number(window.activeStageConfig.stage_level);
+  if (activeStageLvl && activeStageLvl !== 1) return;
+  const stageEnemies = Array.isArray(stageConfig.enemies) ? stageConfig.enemies : [];
+  if (stageEnemies.length === 0) return;
+
+  installWarpOriginActiveEnemiesGuard();
+
+  const cur = window.activeStageEnemies;
+  const needsOverride = !Array.isArray(cur)
+    || cur.length !== stageEnemies.length
+    || cur.some((item, idx) => !item || item.model_3d_type !== stageEnemies[idx].model_3d_type || Boolean(item.model_3d_url));
+
+  if (needsOverride) {
+    window.activeStageEnemies = buildProceduralStageEnemiesList(stageEnemies);
+    window.activeStageEnemiesStageLevel = 1;
+    if (window.state) {
+      window.state.stageEnemies = window.activeStageEnemies;
+    }
+  }
 }
 
 export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
   const api = engineApi || (context && context.engineApi);
   if (!api || typeof api.spawnEnemyWaveFromPool !== 'function') return [];
+
+  ensureWarpOriginProceduralEnemies();
 
   const waves = stageConfig.waves || [
     { wave_number: 1, enemy_count: 5, interval_seconds: 0 },
@@ -1045,15 +1608,13 @@ export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
     interval_seconds: waveNumber === 1 ? 0 : 15
   };
 
-  const livePool = (typeof window !== 'undefined' && Array.isArray(window.activeStageEnemies) && window.activeStageEnemiesStageLevel === stageConfig.stage_level && window.activeStageEnemies.length > 0)
-    ? window.activeStageEnemies
-    : stageConfig.enemies;
-  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, livePool);
+  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, stageConfig.enemies);
 }
 
 export function updateStageWaves(engineApi, context = {}) {
   const api = engineApi || (context && context.engineApi);
   if (!api || !api.state) return;
+  ensureWarpOriginProceduralEnemies();
   const st = api.state;
   if (!st.isGameOver) {
     const maxS = (st.maxShield > 0) ? st.maxShield : 100;
@@ -1912,6 +2473,7 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  ensureWarpOriginProceduralEnemies();
   if (typeof engineApi.setPowerups === 'function' && stageConfig.powerups) {
     engineApi.setPowerups(stageConfig.powerups);
   }
@@ -2103,6 +2665,20 @@ export function applyStage(engineApi) {
 
 export default {
   stageConfig,
+  createEnemyMesh,
+  INTERCEPTOR_WEAPON_DECAL_NAME,
+  INTERCEPTOR_WEAPON_FIRE_DURATION_MS,
+  RECON_DRONE_PORT_WEAPON_DECAL_NAME,
+  RECON_DRONE_STARBOARD_WEAPON_DECAL_NAME,
+  RECON_DRONE_WEAPON_DECAL_NAMES,
+  RECON_DRONE_WEAPON_FIRE_DURATION_MS,
+  RECON_DRONE_MISSILE_DAMAGE,
+  resolveWarpOriginEnemyKind,
+  getInterceptorWeaponDecal,
+  setInterceptorWeaponDecalEnabled,
+  getReconDroneWeaponDecals,
+  setReconDroneWeaponDecalEnabled,
+  resetWarpOriginEnemyWeaponDecals,
   WEAPON_MAX_RANGE_KM,
   KM_PER_WORLD_UNIT,
   WEAPON_MAX_RANGE_UNITS,

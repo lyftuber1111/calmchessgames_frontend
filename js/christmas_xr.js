@@ -1344,63 +1344,138 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   let trainSystem = null;
   function createHolidayTrain(trackRadius = 1.95) {
     const system = new THREE.Group();
+    const halfGauge = 0.14;
+    const railTopY = 0.070;
 
     // Steel Twin Rails
     const railMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85, roughness: 0.25 });
-    const outerRail = new THREE.Mesh(new THREE.TorusGeometry(trackRadius + 0.12, 0.022, 6, 64), railMat);
+    const outerRail = new THREE.Mesh(new THREE.TorusGeometry(trackRadius + halfGauge, 0.020, 8, 72), railMat);
     outerRail.rotation.x = Math.PI / 2;
-    outerRail.position.y = 0.05;
-    const innerRail = new THREE.Mesh(new THREE.TorusGeometry(trackRadius - 0.12, 0.022, 6, 64), railMat);
+    outerRail.position.y = 0.050;
+    const innerRail = new THREE.Mesh(new THREE.TorusGeometry(trackRadius - halfGauge, 0.020, 8, 72), railMat);
     innerRail.rotation.x = Math.PI / 2;
-    innerRail.position.y = 0.05;
+    innerRail.position.y = 0.050;
     system.add(outerRail, innerRail);
 
     // Wooden Railroad Ties
     const tieMat = new THREE.MeshStandardMaterial({ color: 0x452512, roughness: 0.9 });
-    const tieGeo = new THREE.BoxGeometry(0.36, 0.035, 0.08);
-    const tieCount = 42;
+    const tieGeo = new THREE.BoxGeometry(0.40, 0.034, 0.08);
+    const tieCount = 44;
     for (let i = 0; i < tieCount; i++) {
       const a = (i / tieCount) * Math.PI * 2;
       const tie = new THREE.Mesh(tieGeo, tieMat);
-      tie.position.set(Math.cos(a) * trackRadius, 0.02, Math.sin(a) * trackRadius);
+      tie.position.set(Math.cos(a) * trackRadius, 0.017, Math.sin(a) * trackRadius);
       tie.rotation.y = -a;
       system.add(tie);
     }
 
-    // Build Locomotive
-    const loco = new THREE.Group();
+    // Shared Train Materials
     const locoRed = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.45, roughness: 0.32 });
     const locoBlack = new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.65, roughness: 0.35 });
+    const wheelHubCrimson = new THREE.MeshStandardMaterial({ color: 0x991b1b, metalness: 0.45, roughness: 0.35 });
     const glowWin = new THREE.MeshBasicMaterial({ color: 0xffe484 });
 
-    const chassis = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.11, 0.92), locoBlack);
-    chassis.position.y = 0.16;
+    // Procedural Wheelset Builder (Axle + Left/Right Rims, Inner Flanges, Contrasting Hubs & Spokes)
+    const wheels = [];
+    const wheelGeoCache = new Map();
+    function getWheelGeos(radius) {
+      const key = radius.toFixed(4);
+      if (wheelGeoCache.has(key)) return wheelGeoCache.get(key);
+      const rim = new THREE.CylinderGeometry(radius, radius, 0.032, 16);
+      rim.rotateZ(Math.PI / 2);
+      const flange = new THREE.CylinderGeometry(radius + 0.013, radius + 0.013, 0.009, 16);
+      flange.rotateZ(Math.PI / 2);
+      const disc = new THREE.CylinderGeometry(radius * 0.72, radius * 0.72, 0.035, 14);
+      disc.rotateZ(Math.PI / 2);
+      const hub = new THREE.CylinderGeometry(radius * 0.24, radius * 0.24, 0.044, 10);
+      hub.rotateZ(Math.PI / 2);
+      const spokeA = new THREE.BoxGeometry(0.039, radius * 1.56, 0.015);
+      const spokeB = new THREE.BoxGeometry(0.039, 0.015, radius * 1.56);
+      const axle = new THREE.CylinderGeometry(0.015, 0.015, halfGauge * 2 + 0.06, 8);
+      axle.rotateZ(Math.PI / 2);
+      const geos = { rim, flange, disc, hub, spokeA, spokeB, axle };
+      wheelGeoCache.set(key, geos);
+      return geos;
+    }
+
+    function addWheelSet(parentCar, zPos, radius, hubMaterial) {
+      const geos = getWheelGeos(radius);
+      const wheelSet = new THREE.Group();
+      // Rest wheel tread directly on top of steel rails
+      wheelSet.position.set(0, railTopY + radius - 0.002, zPos);
+
+      const axleMesh = new THREE.Mesh(geos.axle, railMat);
+      wheelSet.add(axleMesh);
+
+      [-1, 1].forEach((side) => {
+        const wx = side * (halfGauge + 0.006);
+        const rim = new THREE.Mesh(geos.rim, matGoldMetallic);
+        rim.position.x = wx;
+        const flange = new THREE.Mesh(geos.flange, railMat);
+        flange.position.x = side * (halfGauge - 0.014);
+        const disc = new THREE.Mesh(geos.disc, hubMaterial);
+        disc.position.x = wx;
+        const spokeA = new THREE.Mesh(geos.spokeA, matGoldMetallic);
+        spokeA.position.x = wx;
+        const spokeB = new THREE.Mesh(geos.spokeB, matGoldMetallic);
+        spokeB.position.x = wx;
+        const hub = new THREE.Mesh(geos.hub, matGoldMetallic);
+        hub.position.x = wx;
+        wheelSet.add(rim, flange, disc, spokeA, spokeB, hub);
+      });
+
+      parentCar.add(wheelSet);
+      wheels.push({ group: wheelSet, radius });
+      return wheelSet;
+    }
+
+    // Coupler Drawbar Builder so towed cars visibly link to the locomotive
+    const couplerBarGeo = new THREE.BoxGeometry(0.045, 0.032, 0.14);
+    const couplerKnuckleGeo = new THREE.CylinderGeometry(0.026, 0.026, 0.042, 8);
+    function addCoupler(parentCar, zPos, dirSign) {
+      const bar = new THREE.Mesh(couplerBarGeo, locoBlack);
+      bar.position.set(0, 0.20, zPos + dirSign * 0.05);
+      const knuckle = new THREE.Mesh(couplerKnuckleGeo, matGoldMetallic);
+      knuckle.position.set(0, 0.20, zPos + dirSign * 0.11);
+      parentCar.add(bar, knuckle);
+    }
+
+    // Build Locomotive
+    const loco = new THREE.Group();
+    const locoWheelRadius = 0.090;
+    const locoAxleY = railTopY + locoWheelRadius - 0.002;
+
+    // Narrow inner chassis tucked between wheels + upper running board cleanly above wheel tops
+    const innerChassis = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.09, 0.88), locoBlack);
+    innerChassis.position.y = 0.185;
+    const runningBoard = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.038, 0.92), locoBlack);
+    runningBoard.position.y = 0.266;
     const boiler = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.56, 14), locoRed);
     boiler.rotation.x = Math.PI / 2;
-    boiler.position.set(0, 0.34, 0.14);
+    boiler.position.set(0, 0.41, 0.14);
     const boilerBand = new THREE.Mesh(new THREE.CylinderGeometry(0.158, 0.158, 0.04, 14), matGoldMetallic);
     boilerBand.rotation.x = Math.PI / 2;
-    boilerBand.position.set(0, 0.34, 0.25);
+    boilerBand.position.set(0, 0.41, 0.25);
 
-    const cab = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.42, 0.34), locoRed);
-    cab.position.set(0, 0.40, -0.26);
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.40, 0.34), locoRed);
+    cab.position.set(0, 0.47, -0.26);
     const cabRoof = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.06, 0.40), matSnowCap);
-    cabRoof.position.set(0, 0.63, -0.26);
+    cabRoof.position.set(0, 0.69, -0.26);
     const cabWindow = new THREE.Mesh(new THREE.BoxGeometry(0.37, 0.16, 0.18), glowWin);
-    cabWindow.position.set(0, 0.44, -0.26);
+    cabWindow.position.set(0, 0.51, -0.26);
 
     const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.048, 0.26, 10), locoBlack);
-    stack.position.set(0, 0.56, 0.30);
+    stack.position.set(0, 0.63, 0.30);
     const dome = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), matGoldMetallic);
-    dome.position.set(0, 0.48, 0.06);
+    dome.position.set(0, 0.55, 0.06);
     const cowcatcher = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.20, 4), matGoldMetallic);
     cowcatcher.rotation.x = Math.PI / 2;
     cowcatcher.rotation.z = Math.PI / 4;
-    cowcatcher.position.set(0, 0.14, 0.52);
+    cowcatcher.position.set(0, 0.18, 0.53);
 
     // Headlamp + Volumetric Cone Beam
     const headlamp = new THREE.Mesh(new THREE.SphereGeometry(0.055, 8, 8), glowWin);
-    headlamp.position.set(0, 0.36, 0.44);
+    headlamp.position.set(0, 0.43, 0.44);
     const beam = new THREE.Mesh(
       new THREE.ConeGeometry(0.45, 1.55, 14, 1, true),
       new THREE.MeshBasicMaterial({
@@ -1413,47 +1488,88 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       })
     );
     beam.rotation.x = -Math.PI / 2;
-    beam.position.set(0, 0.33, 1.22);
+    beam.position.set(0, 0.40, 1.22);
 
-    const wheels = [];
-    const wheelGeo = new THREE.CylinderGeometry(0.095, 0.095, 0.04, 12);
-    wheelGeo.rotateZ(Math.PI / 2);
-    [-0.26, 0.04, 0.30].forEach((wz) => {
-      [-0.18, 0.18].forEach((wx) => {
-        const w = new THREE.Mesh(wheelGeo, matGoldMetallic);
-        w.position.set(wx, 0.12, wz);
-        loco.add(w);
-        wheels.push(w);
-      });
+    // 3 Locomotive Driving Wheelsets + Animated Side Coupling Rods
+    [-0.27, 0.02, 0.29].forEach((wz) => {
+      addWheelSet(loco, wz, locoWheelRadius, wheelHubCrimson);
     });
+    const couplingRods = [];
+    const rodGeo = new THREE.BoxGeometry(0.014, 0.020, 0.60);
+    [-1, 1].forEach((side) => {
+      const rod = new THREE.Mesh(rodGeo, railMat);
+      rod.position.set(side * (halfGauge + 0.028), locoAxleY, 0.01);
+      loco.add(rod);
+      couplingRods.push({ mesh: rod, baseY: locoAxleY, baseZ: 0.01, crankRadius: 0.038 });
+    });
+    addCoupler(loco, -0.44, -1);
 
-    loco.add(chassis, boiler, boilerBand, cab, cabRoof, cabWindow, stack, dome, cowcatcher, headlamp, beam);
+    loco.add(
+      innerChassis,
+      runningBoard,
+      boiler,
+      boilerBand,
+      cab,
+      cabRoof,
+      cabWindow,
+      stack,
+      dome,
+      cowcatcher,
+      headlamp,
+      beam
+    );
     system.add(loco);
 
-    // Festive Passenger Car + Gift Flatbed Car
+    // Towed Car 1: Festive Passenger Coach (with Undercarriage, Axles, 4 Spoked Wheels & Couplers)
     const car1 = new THREE.Group();
+    const carWheelRadius = 0.078;
+    const c1Underframe = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.07, 0.66), locoBlack);
+    c1Underframe.position.y = 0.185;
+    const c1Trim = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.04, 0.74), matGoldMetallic);
+    c1Trim.position.y = 0.244;
     const c1Body = new THREE.Mesh(
-      new THREE.BoxGeometry(0.34, 0.34, 0.72),
+      new THREE.BoxGeometry(0.34, 0.32, 0.72),
       new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.35, metalness: 0.25 })
     );
-    c1Body.position.y = 0.30;
+    c1Body.position.y = 0.415;
     const c1Roof = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.07, 0.78), matSnowCap);
-    c1Roof.position.y = 0.50;
+    c1Roof.position.y = 0.60;
     const c1Win = new THREE.Mesh(new THREE.BoxGeometry(0.355, 0.14, 0.52), glowWin);
-    c1Win.position.y = 0.33;
-    const c1Trim = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.04, 0.74), matGoldMetallic);
-    c1Trim.position.y = 0.17;
-    car1.add(c1Body, c1Roof, c1Win, c1Trim);
+    c1Win.position.y = 0.43;
+    // Vertical coach window dividers for authentic passenger-car detail
+    const mullionGeo = new THREE.BoxGeometry(0.364, 0.15, 0.035);
+    [-0.09, 0.09].forEach((mz) => {
+      const mullion = new THREE.Mesh(mullionGeo, locoBlack);
+      mullion.position.set(0, 0.43, mz);
+      car1.add(mullion);
+    });
+    // 2 Wheelsets (4 wheels) riding directly on the rails
+    [-0.22, 0.22].forEach((wz) => {
+      addWheelSet(car1, wz, carWheelRadius, locoBlack);
+    });
+    addCoupler(car1, 0.35, 1);
+    addCoupler(car1, -0.35, -1);
+    car1.add(c1Underframe, c1Body, c1Roof, c1Win, c1Trim);
     system.add(car1);
 
+    // Towed Car 2: Gift Flatbed Car (with Undercarriage, Axles, 4 Spoked Wheels & Couplers)
     const car2 = new THREE.Group();
-    const c2Deck = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.10, 0.68), locoRed);
-    c2Deck.position.y = 0.17;
+    const c2Underframe = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.07, 0.62), locoBlack);
+    c2Underframe.position.y = 0.185;
+    const c2Deck = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.075, 0.68), locoRed);
+    c2Deck.position.y = 0.262;
+    const c2Trim = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.028, 0.70), matGoldMetallic);
+    c2Trim.position.y = 0.242;
     const miniGift1 = createGiftBox(0.20, 0.20, 0.20, 0, 0xffd700);
-    miniGift1.position.set(0, 0.22, 0.14);
+    miniGift1.position.set(0, 0.30, 0.14);
     const miniGift2 = createGiftBox(0.18, 0.24, 0.22, 1, 0xef4444);
-    miniGift2.position.set(0, 0.22, -0.15);
-    car2.add(c2Deck, miniGift1, miniGift2);
+    miniGift2.position.set(0, 0.30, -0.15);
+    // 2 Wheelsets (4 wheels) riding directly on the rails
+    [-0.20, 0.20].forEach((wz) => {
+      addWheelSet(car2, wz, carWheelRadius, locoBlack);
+    });
+    addCoupler(car2, 0.33, 1);
+    car2.add(c2Underframe, c2Deck, c2Trim, miniGift1, miniGift2);
     system.add(car2);
 
     // Steam Puffs emitted from the moving smokestack
@@ -1476,10 +1592,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       trackRadius,
       cars: [
         { mesh: loco, offset: 0 },
-        { mesh: car1, offset: -0.49 },
-        { mesh: car2, offset: -0.94 }
+        { mesh: car1, offset: -0.50 },
+        { mesh: car2, offset: -0.95 }
       ],
       wheels,
+      locoWheelRadius,
+      couplingRods,
       steamPuffs,
       angle: 0.4
     };
@@ -2084,7 +2202,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   // ---------------------------------------------------------------------------
   // Jingle Bells Background WAV Music Engine (Autoplay + Gesture Unlock + XR)
   // ---------------------------------------------------------------------------
-  const BG_MUSIC_SRC = 'jingle_bells.wav';
+  const BG_MUSIC_SRC = 'jingle_bells.wav?v=2';
   const BG_MUSIC_DEFAULT_VOLUME = 0.38;
   const BG_MUSIC_MUTE_KEY = 'calmchess_xr_jingle_muted';
 
@@ -2532,24 +2650,32 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
         const a = trainSystem.angle + car.offset;
         const cx = Math.cos(a) * r;
         const cz = Math.sin(a) * r;
-        car.mesh.position.set(cx, Math.abs(Math.sin(simTime * 9.0 + car.offset)) * 0.015, cz);
-        // Face forward tangent along circular track
-        const nextA = a + 0.05;
-        car.mesh.lookAt(
-          trainSystem.group.localToWorld(new THREE.Vector3(Math.cos(nextA) * r, 0, Math.sin(nextA) * r))
-        );
+        // Keep wheel treads level and planted directly on the rails along exact tangent heading
+        car.mesh.position.set(cx, 0, cz);
+        car.mesh.rotation.set(0, -a, 0);
       });
-      trainSystem.wheels.forEach((w) => {
-        w.rotation.x = simTime * 6.0;
+      trainSystem.wheels.forEach((ws) => {
+        ws.group.rotation.x = trainSystem.angle * (r / ws.radius);
       });
+      if (trainSystem.couplingRods) {
+        const locoWheelAngle = trainSystem.angle * (r / trainSystem.locoWheelRadius);
+        trainSystem.couplingRods.forEach((cr) => {
+          cr.mesh.position.y = cr.baseY + Math.cos(locoWheelAngle) * cr.crankRadius;
+          cr.mesh.position.z = cr.baseZ + Math.sin(locoWheelAngle) * cr.crankRadius;
+        });
+      }
 
+      const locoAngle = trainSystem.angle;
       const locoPos = trainSystem.cars[0].mesh.position;
+      const stackLocalZ = 0.30;
+      const stackX = locoPos.x - Math.sin(locoAngle) * stackLocalZ;
+      const stackZ = locoPos.z + Math.cos(locoAngle) * stackLocalZ;
       trainSystem.steamPuffs.forEach((sp, idx) => {
         if (!isPaused || isInXR) {
           sp.life += dt * 0.72;
           if (sp.life >= 1.0) {
             sp.life -= 1.0;
-            sp.origin.set(locoPos.x, locoPos.y + 0.68, locoPos.z);
+            sp.origin.set(stackX, 0.77, stackZ);
           }
         }
         const t = sp.life;

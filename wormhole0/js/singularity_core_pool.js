@@ -32,6 +32,7 @@ export const STAGE_COCKPIT_CRACKS_ASSET_TYPE = "3d_model";
 
 export const SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME = SINGULARITY_WEAPON_DECAL_NAME || 'Decal_LaserBurn_Central_Weapon';
 export const SINGULARITY_WEAPON_FIRE_DURATION_MS = 1000;
+export const PROCEDURAL_ENEMY_POOL_NAME = 'singularity_core_procedural_enemies';
 
 export {
   COCKPIT_CRACKS_GLB_URL,
@@ -52,6 +53,61 @@ export {
   triggerGameOverCockpitCracks,
   hideCockpitCracks
 };
+
+/**
+ * Deduplicates deterministic static CanvasTextures across pooled procedural
+ * Singularity Guardian instances so pre-allocating the dedicated procedural enemy
+ * pool keeps GPU texture memory lightweight.
+ */
+function deduplicateStaticProceduralTextures(rootObj, enemyKind, sharedTexMap) {
+  if (!rootObj || !sharedTexMap || typeof rootObj.traverse !== 'function') return;
+  const slots = ['map', 'bumpMap', 'roughnessMap', 'emissiveMap'];
+  const redundant = new Set();
+
+  rootObj.traverse((child) => {
+    if (!child || !child.material) return;
+    const mats = Array.isArray(child.material) ? child.material : [child.material];
+    for (let i = 0; i < mats.length; i++) {
+      const m = mats[i];
+      if (!m) continue;
+      for (let s = 0; s < slots.length; s++) {
+        const slot = slots[s];
+        const tex = m[slot];
+        if (!tex || !tex.isTexture || !tex.name) continue;
+        const key = `${enemyKind}::${tex.name}`;
+        if (sharedTexMap.has(key)) {
+          const canonical = sharedTexMap.get(key);
+          if (canonical && canonical !== tex) {
+            m[slot] = canonical;
+            redundant.add(tex);
+          }
+        } else {
+          tex.userData = tex.userData || {};
+          tex.userData._isSharedAsset = true;
+          sharedTexMap.set(key, tex);
+        }
+      }
+    }
+  });
+
+  for (const dupTex of redundant) {
+    try { dupTex.dispose(); } catch (_) {}
+  }
+}
+
+/**
+ * Resets a Singularity Guardian procedural mesh's weapon decal and firing state.
+ */
+export function resetSingularityGuardianMeshState(enemyOrMesh) {
+  const mesh = (enemyOrMesh && enemyOrMesh.mesh) ? enemyOrMesh.mesh : enemyOrMesh;
+  if (!mesh) return;
+  setSingularityWeaponDecalEnabled(mesh, false);
+  if (mesh.userData) {
+    mesh.userData._centralWeaponFiring = false;
+    mesh.userData._centralWeaponFireRemaining = 0;
+    mesh.userData._centralWeaponFireEndTime = 0;
+  }
+}
 
 /**
  * Resolves the burn central weapon decal mesh (Decal_LaserBurn_Central_Weapon)
@@ -95,7 +151,7 @@ export function setSingularityWeaponDecalEnabled(enemyOrMesh, enabled) {
  * Builds a centered procedural Singularity Guardian enemy mesh instance from
  * singularity_guardian.js with Decal_LaserBurn_Central_Weapon initialized OFF.
  */
-export function createSingularityGuardianMesh(config = {}, factoryFn = createSingularityGuardian) {
+export function createSingularityGuardianMesh(config = {}, factoryFn = createSingularityGuardian, sharedTexMap = null) {
   const buildFn = (typeof factoryFn === 'function') ? factoryFn : createSingularityGuardian;
   const guardian = buildFn({ THREE });
   const rootObj = guardian && guardian.object ? guardian.object : new THREE.Group();
@@ -118,6 +174,10 @@ export function createSingularityGuardianMesh(config = {}, factoryFn = createSin
       child.receiveShadow = false;
     }
   });
+
+  if (sharedTexMap) {
+    deduplicateStaticProceduralTextures(rootObj, 'singularity_guardian', sharedTexMap);
+  }
 
   const weaponDecalMesh = (
     rootObj.userData &&
@@ -147,7 +207,10 @@ export function createSingularityGuardianMesh(config = {}, factoryFn = createSin
 
   group.userData = group.userData || {};
   group.userData.isSingularityGuardian = true;
+  group.userData.isProceduralEnemyGraphic = true;
+  group.userData.proceduralEnemyKind = 'singularity_guardian';
   group.userData.singularityGuardian = guardian;
+  group.userData.proceduralController = guardian;
   group.userData.weaponDecalName = SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME;
   group.userData.weaponDecalMesh = weaponDecalMesh;
   group.userData.proceduralElapsed = initialElapsed;
@@ -276,11 +339,144 @@ export const SINGULARITY_GUARDIAN_ENEMY_TEMPLATE = {
 };
 
 /**
+ * Dedicated Separate Procedural Enemy Graphics Pool for Stage 3: Singularity Core.
+ * Strictly isolated from other graphics asset pools (player weapons, enemy weapons,
+ * cockpit cracks overlay GLB, and standard StageObjectPool.enemyPools).
+ */
+export class SingularityProceduralEnemyPool extends MeshPool {
+  constructor(scene, enemyConfig = {}, options = {}) {
+    const normalizedEnemyConfig = {
+      ...SINGULARITY_GUARDIAN_ENEMY_TEMPLATE,
+      ...(enemyConfig || {})
+    };
+    normalizedEnemyConfig.model_3d_type = 'singularity_guardian';
+    normalizedEnemyConfig.model_3d_url = '';
+    normalizedEnemyConfig.weapon_decal_name = SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME;
+    normalizedEnemyConfig.weapon_fire_duration_ms = SINGULARITY_WEAPON_FIRE_DURATION_MS;
+
+    const initialSize = Math.max(
+      12,
+      Math.min(Number(options.initialSize || normalizedEnemyConfig.pool_size) || 12, 16)
+    );
+    const poolName = options.poolName || PROCEDURAL_ENEMY_POOL_NAME;
+    const ownsSharedTextures = !options.sharedTextures;
+    const sharedTextures = options.sharedTextures || new Map();
+
+    const customBuilder = (typeof options.createProceduralEnemyMeshFn === 'function')
+      ? options.createProceduralEnemyMeshFn
+      : (typeof options.createEnemyMeshFn === 'function')
+        ? options.createEnemyMeshFn
+        : null;
+
+    super(
+      scene,
+      null,
+      null,
+      initialSize,
+      () => {
+        const mesh = customBuilder
+          ? customBuilder({ ...normalizedEnemyConfig }, sharedTextures)
+          : createSingularityGuardianMesh({ ...normalizedEnemyConfig }, createSingularityGuardian, sharedTextures);
+
+        if (mesh) {
+          mesh.userData = mesh.userData || {};
+          mesh.userData.pooledEnemyKey = 'singularity_guardian';
+          mesh.userData.poolKey = 'singularity_guardian';
+          mesh.userData.isEnemyGraphic = true;
+          mesh.userData.isProceduralEnemyGraphic = true;
+          mesh.userData.poolCategory = 'procedural_enemy';
+          mesh.userData.proceduralPoolName = poolName;
+          mesh.userData.fromProceduralEnemyPool = true;
+          resetSingularityGuardianMeshState(mesh);
+        }
+        return mesh;
+      }
+    );
+
+    this._disposed = false;
+    this.poolName = poolName;
+    this.poolCategory = 'procedural_enemy';
+    this.isProceduralEnemyPool = true;
+    this.isSeparateFromAssetPools = true;
+    this.enemyConfig = normalizedEnemyConfig;
+    this._sharedProceduralTextures = sharedTextures;
+    this._ownsSharedTextures = ownsSharedTextures;
+
+    console.log(
+      `[SingularityProceduralEnemyPool] Pre-allocated separate procedural enemy pool (${this.pool.length} instances): ${this.poolName}`
+    );
+  }
+
+  spawn(position = null, quaternion = null, scale = null) {
+    const mesh = super.spawn(position, quaternion, scale);
+    if (mesh) {
+      resetSingularityGuardianMeshState(mesh);
+      mesh.userData = mesh.userData || {};
+      mesh.userData.fromPool = true;
+      mesh.userData.fromProceduralEnemyPool = true;
+      mesh.userData.isProceduralEnemyGraphic = true;
+      mesh.userData.poolCategory = 'procedural_enemy';
+      mesh.userData.proceduralPoolName = this.poolName;
+      mesh.userData.pooledEnemyKey = mesh.userData.pooledEnemyKey || 'singularity_guardian';
+      mesh.userData.poolKey = mesh.userData.pooledEnemyKey;
+      const sg = mesh.userData.singularityGuardian || mesh.userData.proceduralController;
+      if (sg && typeof sg.update === 'function') {
+        sg.update(0, mesh.userData.proceduralElapsed || 0);
+      }
+    }
+    return mesh;
+  }
+
+  despawn(mesh) {
+    if (!mesh) return;
+    resetSingularityGuardianMeshState(mesh);
+    super.despawn(mesh);
+  }
+
+  despawnAll() {
+    if (this.active) {
+      for (const mesh of this.active) {
+        resetSingularityGuardianMeshState(mesh);
+      }
+    }
+    super.despawnAll();
+  }
+
+  dispose() {
+    this._disposed = true;
+    const allMeshes = [...(this.pool || []), ...(this.active ? Array.from(this.active) : [])];
+    for (const mesh of allMeshes) {
+      if (!mesh) continue;
+      resetSingularityGuardianMeshState(mesh);
+      const sg = mesh.userData && (mesh.userData.singularityGuardian || mesh.userData.proceduralController);
+      if (sg && typeof sg.dispose === 'function') {
+        try { sg.dispose(); } catch (_) {}
+      }
+    }
+    if (this._ownsSharedTextures && this._sharedProceduralTextures) {
+      for (const tex of this._sharedProceduralTextures.values()) {
+        try { tex.dispose(); } catch (_) {}
+      }
+      this._sharedProceduralTextures.clear();
+    }
+    super.dispose();
+  }
+}
+
+export const ProceduralEnemyPool = SingularityProceduralEnemyPool;
+
+export function createProceduralEnemyPool(scene, enemyConfig = {}, options = {}) {
+  return new SingularityProceduralEnemyPool(scene, enemyConfig, options);
+}
+
+/**
  * Wormhole XR - Stage 3: Singularity Core Object Pool
  * Calm Chess Games / Wormhole XR (c) 2026. All Rights Reserved.
  *
- * Pre-allocates Singularity Guardian procedural 3D enemies and weapons graphic objects
- * for Stage 3: Singularity Core.
+ * Manages graphics asset pools for Stage 3: Singularity Core, keeping the
+ * procedural Singularity Guardian enemy pool strictly separate from all other
+ * graphics asset pools (player weapons, enemy weapons, cockpit overlay, and
+ * standard StageObjectPool.enemyPools).
  */
 
 export class SingularityCoreObjectPool extends StageObjectPool {
@@ -497,96 +693,223 @@ export class SingularityCoreObjectPool extends StageObjectPool {
       enemies: [primaryStageEnemy]
     };
 
-    const guardianMeshBuilder = (stageConfig && typeof stageConfig.createEnemyMeshFn === 'function')
-      ? stageConfig.createEnemyMeshFn
-      : (cfg) => createSingularityGuardianMesh(cfg, createSingularityGuardian);
-
-    const poolOptions = {
-      ...options,
-      createEnemyMeshFn: (cfg) => guardianMeshBuilder({ ...primaryStageEnemy, ...(cfg || {}) })
+    // Other graphics asset pools (player weapons, enemy weapons, cockpit cracks overlay)
+    // are initialized by StageObjectPool via super(); procedural enemy graphics are NOT
+    // mixed into StageObjectPool.enemyPools.
+    const otherAssetPoolOptions = {
+      ...options
     };
+    delete otherAssetPoolOptions.createEnemyMeshFn;
 
-    super(scene, configWithDefaults, poolOptions);
+    super(scene, configWithDefaults, otherAssetPoolOptions);
 
-    // Ensure alias lookup keys ('singularity_guardian', 'void_guardian') always point to the single guardian pool
-    const guardianPool = this.enemyPools.values().next().value || null;
-    if (guardianPool) {
-      this.enemyPools.set('singularity_guardian', guardianPool);
-      this.enemyPools.set('void_guardian', guardianPool);
-      this.enemyPools.set('singularity_probe', guardianPool);
-    }
+    // Strictly separate pool dedicated ONLY to Stage 3 procedural enemy graphics
+    this.hasSeparateProceduralEnemyPool = true;
+    this.proceduralEnemyPools = new Map();
+    this._sharedProceduralTextures = new Map();
 
-    console.log(`[SingularityCoreObjectPool] Pre-allocated Singularity Guardian graphics object pool for Stage 3:`, configWithDefaults.stage_name);
+    const guardianMeshBuilder = (stageConfig && typeof stageConfig.createProceduralEnemyMeshFn === 'function')
+      ? stageConfig.createProceduralEnemyMeshFn
+      : (stageConfig && typeof stageConfig.createEnemyMeshFn === 'function')
+        ? stageConfig.createEnemyMeshFn
+        : (cfg, sharedTexMap) => createSingularityGuardianMesh(cfg, createSingularityGuardian, sharedTexMap);
+
+    const proceduralPoolCfg = (stageConfig && stageConfig.proceduralEnemyPoolConfig && typeof stageConfig.proceduralEnemyPoolConfig === 'object')
+      ? stageConfig.proceduralEnemyPoolConfig
+      : {};
+
+    this.proceduralEnemyPool = this.initProceduralEnemyPool(primaryStageEnemy, {
+      poolName: proceduralPoolCfg.poolName || PROCEDURAL_ENEMY_POOL_NAME,
+      initialSize: proceduralPoolCfg.initialSize || primaryStageEnemy.pool_size || 12,
+      createProceduralEnemyMeshFn: (cfg, sharedTexMap) => guardianMeshBuilder({ ...primaryStageEnemy, ...(cfg || {}) }, sharedTexMap),
+      sharedTextures: this._sharedProceduralTextures
+    });
+
+    // Expose explicit separation between other graphics assets and procedural enemy graphics
+    this.assetPools = {
+      playerWeapons: this.playerWeaponPools,
+      enemyWeapons: this.enemyWeaponPools,
+      standardEnemies: this.enemyPools,
+      get cockpitOverlay() {
+        return null;
+      }
+    };
+    Object.defineProperty(this.assetPools, 'cockpitOverlay', {
+      enumerable: true,
+      configurable: true,
+      get: () => this.cockpitCracksOverlayPool
+    });
+
+    console.log(
+      `[SingularityCoreObjectPool] Initialized Stage 3 pools (separate procedural enemy pool: ${this.proceduralEnemyPool.poolName}, size=${this.proceduralEnemyPool.pool.length}; standard enemyPools=${this.enemyPools.size}) for:`,
+      configWithDefaults.stage_name
+    );
   }
 
-  getEnemyPool(enemyConfig) {
-    // Stage 3: Singularity Core strictly uses Singularity Guardian as its sole enemy
-    return this.enemyPools.get('singularity_guardian')
-      || this.enemyPools.get('void_guardian')
-      || this.enemyPools.values().next().value
+  /**
+   * Overrides StageObjectPool.initEnemyPools() so procedural Stage 3 enemies are NEVER
+   * mixed into the generic StageObjectPool.enemyPools asset map.
+   */
+  initEnemyPools() {
+    this.enemyPools = new Map();
+  }
+
+  /**
+   * Pre-allocates the separate procedural enemy graphics pool for Stage 3.
+   */
+  initProceduralEnemyPool(enemyConfig = SINGULARITY_GUARDIAN_ENEMY_TEMPLATE, poolOptions = {}) {
+    const procPool = new SingularityProceduralEnemyPool(this.scene, enemyConfig, poolOptions);
+    this.proceduralEnemyPools.set('singularity_guardian', procPool);
+    this.proceduralEnemyPools.set('void_guardian', procPool);
+    this.proceduralEnemyPools.set('singularity_probe', procPool);
+    if (enemyConfig && enemyConfig.enemy_id !== undefined && enemyConfig.enemy_id !== null) {
+      this.proceduralEnemyPools.set(enemyConfig.enemy_id, procPool);
+      this.proceduralEnemyPools.set(String(enemyConfig.enemy_id), procPool);
+    }
+    if (enemyConfig && enemyConfig.id !== undefined && enemyConfig.id !== null) {
+      this.proceduralEnemyPools.set(enemyConfig.id, procPool);
+      this.proceduralEnemyPools.set(String(enemyConfig.id), procPool);
+    }
+    return procPool;
+  }
+
+  /**
+   * Returns the dedicated separate procedural enemy graphics pool.
+   */
+  getProceduralEnemyPool(enemyConfig = null) {
+    if (this.proceduralEnemyPools && enemyConfig) {
+      if (enemyConfig.model_3d_type && this.proceduralEnemyPools.has(enemyConfig.model_3d_type)) {
+        return this.proceduralEnemyPools.get(enemyConfig.model_3d_type);
+      }
+      if (enemyConfig.enemy_id && this.proceduralEnemyPools.has(enemyConfig.enemy_id)) {
+        return this.proceduralEnemyPools.get(enemyConfig.enemy_id);
+      }
+      if (enemyConfig.id && this.proceduralEnemyPools.has(enemyConfig.id)) {
+        return this.proceduralEnemyPools.get(enemyConfig.id);
+      }
+    }
+    return this.proceduralEnemyPool
+      || (this.proceduralEnemyPools && (
+        this.proceduralEnemyPools.get('singularity_guardian')
+        || this.proceduralEnemyPools.get('void_guardian')
+        || this.proceduralEnemyPools.values().next().value
+      ))
       || null;
   }
 
-  spawnEnemy(enemyConfig, position, quaternion = null, scale = null) {
-    const mesh = super.spawnEnemy(enemyConfig, position, quaternion, scale);
+  getEnemyPool(enemyConfig = null) {
+    // Stage 3: Singularity Core strictly routes enemy pool lookups to its separate procedural enemy pool
+    return this.getProceduralEnemyPool(enemyConfig);
+  }
+
+  /**
+   * Spawns a pre-allocated procedural Singularity Guardian enemy graphic from
+   * Stage 3's separate procedural enemy pool.
+   */
+  spawnProceduralEnemy(enemyConfig = null, position = null, quaternion = null, scale = null) {
+    const procPool = this.getProceduralEnemyPool(enemyConfig);
+    if (!procPool) return null;
+
+    const mesh = procPool.spawn(position, quaternion, scale);
     if (mesh) {
-      setSingularityWeaponDecalEnabled(mesh, false);
-      if (mesh.userData) {
-        mesh.userData._centralWeaponFiring = false;
-        mesh.userData._centralWeaponFireRemaining = 0;
-        mesh.userData._centralWeaponFireEndTime = 0;
-        const sg = mesh.userData.singularityGuardian;
-        if (sg && typeof sg.update === 'function') {
-          sg.update(0, mesh.userData.proceduralElapsed || 0);
-        }
-      }
+      mesh.userData = mesh.userData || {};
+      mesh.userData.fromPool = true;
+      mesh.userData.fromProceduralEnemyPool = true;
+      mesh.userData.poolCategory = 'procedural_enemy';
+      mesh.userData.proceduralPoolName = procPool.poolName || PROCEDURAL_ENEMY_POOL_NAME;
+      mesh.userData.poolKey = mesh.userData.pooledEnemyKey || 'singularity_guardian';
     }
     return mesh;
   }
 
-  despawnEnemy(mesh, enemyConfig = null) {
-    if (mesh) {
-      setSingularityWeaponDecalEnabled(mesh, false);
-      if (mesh.userData) {
-        mesh.userData._centralWeaponFiring = false;
-        mesh.userData._centralWeaponFireRemaining = 0;
-        mesh.userData._centralWeaponFireEndTime = 0;
+  spawnEnemy(enemyConfig, position, quaternion = null, scale = null) {
+    return this.spawnProceduralEnemy(enemyConfig, position, quaternion, scale);
+  }
+
+  /**
+   * Returns a procedural Singularity Guardian enemy graphic back to Stage 3's
+   * separate procedural enemy pool.
+   */
+  despawnProceduralEnemy(mesh, enemyConfig = null) {
+    if (!mesh) return false;
+    resetSingularityGuardianMeshState(mesh);
+
+    const targetPool = this.getProceduralEnemyPool(enemyConfig);
+    if (targetPool && targetPool.active && targetPool.active.has(mesh)) {
+      targetPool.despawn(mesh);
+      return true;
+    }
+
+    const uniqueProcPools = new Set([
+      this.proceduralEnemyPool,
+      ...(this.proceduralEnemyPools ? this.proceduralEnemyPools.values() : [])
+    ].filter(Boolean));
+    for (const pool of uniqueProcPools) {
+      if (pool.active && pool.active.has(mesh)) {
+        pool.despawn(mesh);
+        return true;
       }
+    }
+
+    if (targetPool && mesh.userData && (mesh.userData.fromProceduralEnemyPool || mesh.userData.isSingularityGuardian)) {
+      targetPool.despawn(mesh);
+      return true;
+    }
+    return false;
+  }
+
+  despawnEnemy(mesh, enemyConfig = null) {
+    if (!mesh) return;
+    if (this.despawnProceduralEnemy(mesh, enemyConfig)) {
+      return;
     }
     super.despawnEnemy(mesh, enemyConfig);
   }
 
-  despawnAllEnemies() {
-    const uniquePools = new Set(this.enemyPools.values());
-    for (const pool of uniquePools) {
-      if (pool && pool.active) {
-        for (const mesh of pool.active) {
-          setSingularityWeaponDecalEnabled(mesh, false);
-          if (mesh && mesh.userData) {
-            mesh.userData._centralWeaponFiring = false;
-            mesh.userData._centralWeaponFireRemaining = 0;
-            mesh.userData._centralWeaponFireEndTime = 0;
-          }
-        }
+  despawnAllProceduralEnemies() {
+    const uniqueProcPools = new Set([
+      this.proceduralEnemyPool,
+      ...(this.proceduralEnemyPools ? this.proceduralEnemyPools.values() : [])
+    ].filter(Boolean));
+    for (const pool of uniqueProcPools) {
+      if (typeof pool.despawnAll === 'function') {
+        pool.despawnAll();
       }
     }
+  }
+
+  despawnAllEnemies() {
+    this.despawnAllProceduralEnemies();
     super.despawnAllEnemies();
   }
 
   dispose() {
-    const uniquePools = new Set(this.enemyPools.values());
-    for (const pool of uniquePools) {
-      if (!pool) continue;
-      const allMeshes = [...(pool.pool || []), ...(pool.active ? Array.from(pool.active) : [])];
-      for (const mesh of allMeshes) {
-        if (mesh && mesh.userData && mesh.userData.singularityGuardian && typeof mesh.userData.singularityGuardian.dispose === 'function') {
-          try {
-            setSingularityWeaponDecalEnabled(mesh, false);
-            mesh.userData.singularityGuardian.dispose();
-          } catch (_) {}
-        }
+    const uniqueProcPools = new Set([
+      this.proceduralEnemyPool,
+      ...(this.proceduralEnemyPools ? this.proceduralEnemyPools.values() : [])
+    ].filter(Boolean));
+
+    if (typeof window !== 'undefined' && window.stageProceduralEnemyPool && uniqueProcPools.has(window.stageProceduralEnemyPool)) {
+      window.stageProceduralEnemyPool = null;
+    }
+
+    for (const pool of uniqueProcPools) {
+      if (pool && typeof pool.dispose === 'function') {
+        pool.dispose();
       }
     }
+    if (this.proceduralEnemyPools) {
+      this.proceduralEnemyPools.clear();
+    }
+    this.proceduralEnemyPool = null;
+
+    if (this._sharedProceduralTextures) {
+      for (const tex of this._sharedProceduralTextures.values()) {
+        try { tex.dispose(); } catch (_) {}
+      }
+      this._sharedProceduralTextures.clear();
+    }
+
     super.dispose();
   }
 

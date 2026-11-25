@@ -1,6 +1,11 @@
 import * as THREE from 'three';
 import {
   createStagePool,
+  SingularityCoreObjectPool,
+  SingularityProceduralEnemyPool,
+  ProceduralEnemyPool,
+  createProceduralEnemyPool,
+  PROCEDURAL_ENEMY_POOL_NAME,
   MeshPool,
   StageObjectPool,
   loadCockpitCracksGlbAsset,
@@ -19,6 +24,7 @@ import {
   SINGULARITY_WEAPON_FIRE_DURATION_MS,
   getSingularityWeaponDecal,
   setSingularityWeaponDecalEnabled,
+  resetSingularityGuardianMeshState,
   createSingularityGuardianMesh
 } from './singularity_core_pool.js';
 import {
@@ -28,15 +34,22 @@ import {
 } from './singularity_core_images/singularity_guardian.js';
 
 export {
+  createStagePool,
+  SingularityCoreObjectPool,
+  SingularityProceduralEnemyPool,
+  ProceduralEnemyPool,
+  createProceduralEnemyPool,
+  PROCEDURAL_ENEMY_POOL_NAME,
   SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME,
   SINGULARITY_WEAPON_FIRE_DURATION_MS,
   getSingularityWeaponDecal,
   setSingularityWeaponDecalEnabled,
+  resetSingularityGuardianMeshState,
   createSingularityGuardianMesh
 };
 
-export function createEnemyMesh(config = {}) {
-  return createSingularityGuardianMesh(config, createSingularityGuardian);
+export function createEnemyMesh(config = {}, sharedTexMap = null) {
+  return createSingularityGuardianMesh(config, createSingularityGuardian, sharedTexMap);
 }
 
 /**
@@ -225,6 +238,14 @@ export const stageConfig = {
     ]
 },
   createEnemyMeshFn: createEnemyMesh,
+  createProceduralEnemyMeshFn: createEnemyMesh,
+  proceduralEnemyPoolConfig: {
+    separatePool: true,
+    poolName: PROCEDURAL_ENEMY_POOL_NAME,
+    enemyKey: 'singularity_guardian',
+    initialSize: 12,
+    maxSize: 16
+  },
   enemies: [
     {
         "id": "void_guardian",
@@ -1812,6 +1833,74 @@ export function updateEnemyMovement(e, delta, context) {
   return true;
 }
 
+let activeStageObjectPool = null;
+let activeProceduralEnemyPool = null;
+
+function buildProceduralStageEnemiesList(sourceEnemies = stageConfig.enemies) {
+  const list = Array.isArray(sourceEnemies) ? sourceEnemies : [];
+  return list.map((entry) => ({
+    ...entry,
+    model_3d_type: 'singularity_guardian',
+    model_3d_url: '',
+    custom_from_db: true
+  }));
+}
+
+function isStage3SingularityCoreActive() {
+  if (typeof window === 'undefined') return false;
+  const cfg = window.activeStageConfig;
+  if (!cfg) return false;
+  const lvl = Number(cfg.stage_level ?? (cfg.meta && cfg.meta.level));
+  const slug = String(cfg.stage_slug ?? (cfg.meta && cfg.meta.slug) ?? '').toLowerCase();
+  return lvl === 3 || slug === 'singularity_core';
+}
+
+function installSingularityCoreActiveEnemiesGuard() {
+  if (typeof window === 'undefined') return;
+  window.__singularityCoreProceduralStageEnemies = buildProceduralStageEnemiesList(stageConfig.enemies);
+
+  if (window.__singularityCoreActiveEnemiesGuardInstalled) return;
+
+  const prevDesc = Object.getOwnPropertyDescriptor(window, 'activeStageEnemies');
+  if (prevDesc && prevDesc.configurable === false) return;
+
+  const hasPrevAccessor = !!(prevDesc && (typeof prevDesc.get === 'function' || typeof prevDesc.set === 'function'));
+  let _backingEnemies = Array.isArray(window.activeStageEnemies) ? window.activeStageEnemies : [];
+
+  Object.defineProperty(window, 'activeStageEnemies', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return hasPrevAccessor && typeof prevDesc.get === 'function'
+        ? prevDesc.get.call(window)
+        : _backingEnemies;
+    },
+    set(val) {
+      let nextVal = val;
+      if (
+        isStage3SingularityCoreActive() &&
+        Array.isArray(val) &&
+        val.length > 0 &&
+        Array.isArray(window.__singularityCoreProceduralStageEnemies) &&
+        window.__singularityCoreProceduralStageEnemies.length > 0
+      ) {
+        const expected = window.__singularityCoreProceduralStageEnemies;
+        const alreadyProcedural = val.length === expected.length &&
+          val.every((item) => item && item.model_3d_type === 'singularity_guardian' && !item.model_3d_url);
+        nextVal = alreadyProcedural
+          ? val
+          : buildProceduralStageEnemiesList(expected);
+      }
+      if (hasPrevAccessor && typeof prevDesc.set === 'function') {
+        prevDesc.set.call(window, nextVal);
+      } else {
+        _backingEnemies = nextVal;
+      }
+    }
+  });
+  window.__singularityCoreActiveEnemiesGuardInstalled = true;
+}
+
 function ensureSingularityGuardianOnlyStageEnemy() {
   if (typeof window === 'undefined') return;
   const activeStageLvl = window.activeStageConfig && Number(window.activeStageConfig.stage_level);
@@ -1819,18 +1908,17 @@ function ensureSingularityGuardianOnlyStageEnemy() {
   const onlyEnemy = stageConfig.enemies && stageConfig.enemies[0];
   if (!onlyEnemy) return;
 
+  installSingularityCoreActiveEnemiesGuard();
+
   const cur = window.activeStageEnemies;
   const needsOverride = !Array.isArray(cur)
     || cur.length !== 1
     || !cur[0]
-    || cur[0].model_3d_type !== 'singularity_guardian';
+    || cur[0].model_3d_type !== 'singularity_guardian'
+    || Boolean(cur[0].model_3d_url);
 
   if (needsOverride) {
-    const guardianEntry = {
-      ...onlyEnemy,
-      custom_from_db: true
-    };
-    window.activeStageEnemies = [guardianEntry];
+    window.activeStageEnemies = buildProceduralStageEnemiesList([onlyEnemy]);
     window.activeStageEnemiesStageLevel = 3;
     if (window.state) {
       window.state.stageEnemies = window.activeStageEnemies;
@@ -1838,11 +1926,158 @@ function ensureSingularityGuardianOnlyStageEnemy() {
   }
 }
 
+/**
+ * Ensures Stage 3: Singularity Core has a dedicated separate procedural enemy pool
+ * bound on the stage object pool (strictly isolated from other graphics asset pools
+ * such as player weapons, enemy weapons, cockpit overlay, and standard enemyPools).
+ */
+export function ensureStageProceduralEnemyPool(engineApi = null, scene = null) {
+  const targetScene = scene
+    || (engineApi && engineApi.scene)
+    || (typeof window !== 'undefined' && window.scene)
+    || null;
+
+  let stagePool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || (typeof window !== 'undefined' && window.stageObjectPool)
+    || (activeStageObjectPool && !activeStageObjectPool._disposed ? activeStageObjectPool : null)
+    || null;
+
+  if ((!stagePool || stagePool._disposed) && targetScene) {
+    stagePool = createStagePool(targetScene, stageConfig);
+    if (typeof window !== 'undefined' && (!window.stageObjectPool || window.stageObjectPool._disposed)) {
+      window.stageObjectPool = stagePool;
+    }
+  }
+
+  if (stagePool && !stagePool._disposed) {
+    let procPool = (typeof stagePool.getProceduralEnemyPool === 'function')
+      ? stagePool.getProceduralEnemyPool()
+      : stagePool.proceduralEnemyPool;
+
+    if (!procPool || !procPool.isProceduralEnemyPool || procPool._disposed) {
+      const poolScene = stagePool.scene || targetScene;
+      if (poolScene) {
+        const primaryEnemy = (stageConfig.enemies && stageConfig.enemies[0]) || {};
+        procPool = createProceduralEnemyPool(poolScene, primaryEnemy, {
+          poolName: PROCEDURAL_ENEMY_POOL_NAME,
+          initialSize: (stageConfig.proceduralEnemyPoolConfig && stageConfig.proceduralEnemyPoolConfig.initialSize) || primaryEnemy.pool_size || 12,
+          createProceduralEnemyMeshFn: createEnemyMesh
+        });
+
+        // Attach as a separate pool from stagePool.enemyPools / weapon pools / cockpit overlay pool
+        stagePool.hasSeparateProceduralEnemyPool = true;
+        stagePool.proceduralEnemyPool = procPool;
+        stagePool.proceduralEnemyPools = new Map([
+          ['singularity_guardian', procPool],
+          ['void_guardian', procPool],
+          ['singularity_probe', procPool]
+        ]);
+        stagePool.getProceduralEnemyPool = () => stagePool.proceduralEnemyPool;
+        stagePool.getEnemyPool = () => stagePool.proceduralEnemyPool;
+        stagePool.spawnProceduralEnemy = (enemyCfg, position, quaternion = null, scale = null) => {
+          return stagePool.proceduralEnemyPool ? stagePool.proceduralEnemyPool.spawn(position, quaternion, scale) : null;
+        };
+        stagePool.spawnEnemy = (enemyCfg, position, quaternion = null, scale = null) => {
+          return stagePool.spawnProceduralEnemy(enemyCfg, position, quaternion, scale);
+        };
+        const origDespawnEnemy = typeof stagePool.despawnEnemy === 'function' ? stagePool.despawnEnemy.bind(stagePool) : null;
+        stagePool.despawnProceduralEnemy = (mesh) => {
+          if (!mesh || !stagePool.proceduralEnemyPool) return false;
+          if (stagePool.proceduralEnemyPool.active.has(mesh) || (mesh.userData && (mesh.userData.fromProceduralEnemyPool || mesh.userData.isSingularityGuardian))) {
+            stagePool.proceduralEnemyPool.despawn(mesh);
+            return true;
+          }
+          return false;
+        };
+        stagePool.despawnEnemy = (mesh, enemyCfg = null) => {
+          if (stagePool.despawnProceduralEnemy(mesh)) return;
+          if (origDespawnEnemy) origDespawnEnemy(mesh, enemyCfg);
+        };
+        const origDespawnAllEnemies = typeof stagePool.despawnAllEnemies === 'function' ? stagePool.despawnAllEnemies.bind(stagePool) : null;
+        stagePool.despawnAllProceduralEnemies = () => {
+          if (stagePool.proceduralEnemyPool) stagePool.proceduralEnemyPool.despawnAll();
+        };
+        stagePool.despawnAllEnemies = () => {
+          stagePool.despawnAllProceduralEnemies();
+          if (origDespawnAllEnemies) origDespawnAllEnemies();
+        };
+        const origDispose = typeof stagePool.dispose === 'function' ? stagePool.dispose.bind(stagePool) : null;
+        stagePool.dispose = () => {
+          if (stagePool.proceduralEnemyPool && typeof stagePool.proceduralEnemyPool.dispose === 'function') {
+            stagePool.proceduralEnemyPool.dispose();
+          }
+          if (stagePool.proceduralEnemyPools) stagePool.proceduralEnemyPools.clear();
+          if (typeof window !== 'undefined' && window.stageProceduralEnemyPool === stagePool.proceduralEnemyPool) {
+            window.stageProceduralEnemyPool = null;
+          }
+          stagePool.proceduralEnemyPool = null;
+          if (origDispose) origDispose();
+        };
+      }
+    }
+
+    if (procPool && !procPool._disposed) {
+      activeStageObjectPool = stagePool;
+      activeProceduralEnemyPool = procPool;
+      if (typeof window !== 'undefined') {
+        window.stageProceduralEnemyPool = procPool;
+      }
+      return procPool;
+    }
+  }
+
+  return (activeProceduralEnemyPool && !activeProceduralEnemyPool._disposed) ? activeProceduralEnemyPool : null;
+}
+
+export function getStageProceduralEnemyPool(engineApi = null, scene = null) {
+  return ensureStageProceduralEnemyPool(engineApi, scene);
+}
+
+/**
+ * Spawns a procedural Singularity Guardian enemy graphic directly from Stage 3's
+ * separate procedural enemy pool.
+ */
+export function spawnProceduralEnemyFromPool(enemyConfig = null, position = null, quaternion = null, scale = null, engineApi = null, scene = null) {
+  const procPool = ensureStageProceduralEnemyPool(engineApi, scene);
+  const cfg = enemyConfig || (stageConfig.enemies && stageConfig.enemies[0]) || null;
+  if (activeStageObjectPool && !activeStageObjectPool._disposed && typeof activeStageObjectPool.spawnProceduralEnemy === 'function') {
+    return activeStageObjectPool.spawnProceduralEnemy(cfg, position, quaternion, scale);
+  }
+  if (procPool && typeof procPool.spawn === 'function') {
+    return procPool.spawn(position, quaternion, scale);
+  }
+  return null;
+}
+
+/**
+ * Returns a procedural Singularity Guardian enemy graphic back to Stage 3's
+ * separate procedural enemy pool.
+ */
+export function despawnProceduralEnemyToPool(mesh, enemyConfig = null, engineApi = null) {
+  if (!mesh) return false;
+  resetSingularityGuardianMeshState(mesh);
+  const stagePool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || (typeof window !== 'undefined' && window.stageObjectPool)
+    || activeStageObjectPool
+    || null;
+  if (stagePool && !stagePool._disposed && typeof stagePool.despawnProceduralEnemy === 'function') {
+    return stagePool.despawnProceduralEnemy(mesh, enemyConfig);
+  }
+  const procPool = (stagePool && stagePool.proceduralEnemyPool) || activeProceduralEnemyPool;
+  if (procPool && !procPool._disposed && typeof procPool.despawn === 'function') {
+    procPool.despawn(mesh);
+    return true;
+  }
+  return false;
+}
+
 export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
   const api = engineApi || (context && context.engineApi);
   if (!api || typeof api.spawnEnemyWaveFromPool !== 'function') return [];
 
   ensureSingularityGuardianOnlyStageEnemy();
+  const targetScene = (context && context.scene) || (api && api.scene) || (typeof window !== 'undefined' && window.scene) || null;
+  ensureStageProceduralEnemyPool(api, targetScene);
 
   const waves = stageConfig.waves || [
     { wave_number: 1, enemy_count: 5, interval_seconds: 0 },
@@ -2746,10 +2981,12 @@ export function applyStage(engineApi) {
     engineApi.showToast("🚀 STAGE 3: SINGULARITY CORE [MOBILE] LOADED");
   }
 
-  // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
+  // --- Bind Stage 3's Separate Procedural Enemy Pool & Mount Cockpit Overlay via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
+  const proceduralEnemyPool = ensureStageProceduralEnemyPool(engineApi, scene);
   const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || activeStageObjectPool
     || (typeof window !== 'undefined' && window.stageObjectPool)
     || null;
 
@@ -2901,6 +3138,10 @@ export function applyStage(engineApi) {
     window.isEnemyWithinWeaponRange = isEnemyWithinWeaponRange;
     window.canEnemyHitPlayer = canEnemyHitPlayer;
     window.canPlayerDestroyEnemy = canPlayerDestroyEnemy;
+    window.stageProceduralEnemyPool = proceduralEnemyPool || (pool && pool.proceduralEnemyPool) || null;
+    window.getStageProceduralEnemyPool = getStageProceduralEnemyPool;
+    window.spawnProceduralEnemyFromPool = spawnProceduralEnemyFromPool;
+    window.despawnProceduralEnemyToPool = despawnProceduralEnemyToPool;
 
     window.setupDesktopPointerCapture = setupDesktopPointerCapture;
     clearCockpitDecalsIfFullDefense();
@@ -2912,11 +3153,22 @@ export function applyStage(engineApi) {
 
 export default {
   stageConfig,
+  createStagePool,
+  SingularityCoreObjectPool,
+  SingularityProceduralEnemyPool,
+  ProceduralEnemyPool,
+  createProceduralEnemyPool,
+  PROCEDURAL_ENEMY_POOL_NAME,
+  ensureStageProceduralEnemyPool,
+  getStageProceduralEnemyPool,
+  spawnProceduralEnemyFromPool,
+  despawnProceduralEnemyToPool,
   createEnemyMesh,
   SINGULARITY_GUARDIAN_WEAPON_DECAL_NAME,
   SINGULARITY_WEAPON_FIRE_DURATION_MS,
   getSingularityWeaponDecal,
   setSingularityWeaponDecalEnabled,
+  resetSingularityGuardianMeshState,
   WEAPON_MAX_RANGE_KM,
   KM_PER_WORLD_UNIT,
   WEAPON_MAX_RANGE_UNITS,

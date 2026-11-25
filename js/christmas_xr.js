@@ -2082,76 +2082,211 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   });
 
   // ---------------------------------------------------------------------------
-  // Optional Muted-by-Default Procedural Holiday Music Box Synthesizer
+  // Jingle Bells Background WAV Music Engine (Autoplay + Gesture Unlock + XR)
   // ---------------------------------------------------------------------------
-  let audioCtx = null;
-  let chimeTimer = null;
+  const BG_MUSIC_SRC = 'jingle_bells.wav';
+  const BG_MUSIC_DEFAULT_VOLUME = 0.38;
+  const BG_MUSIC_MUTE_KEY = 'calmchess_xr_jingle_muted';
+
+  const bgAudio = document.getElementById('xrJingleBellsAudio') || (() => {
+    const el = new Audio(BG_MUSIC_SRC);
+    el.loop = true;
+    el.preload = 'auto';
+    return el;
+  })();
+  bgAudio.loop = true;
+  bgAudio.preload = 'auto';
+  bgAudio.volume = BG_MUSIC_DEFAULT_VOLUME;
+
   let isAudioOn = false;
-  const melodyHz = [
-    523.25, 659.25, 783.99, 659.25, // C5 E5 G5 E5
-    587.33, 698.46, 880.0, 698.46,  // D5 F5 A5 F5
-    523.25, 659.25, 783.99, 1046.5, // C5 E5 G5 C6
-    987.77, 783.99, 659.25, 587.33  // B5 G5 E5 D5
-  ];
-  let melodyStep = 0;
+  let userMutedAudio = false;
+  let pendingGestureUnlock = false;
+  let pausedByVisibility = false;
+  let audioStartPromise = null;
+  let audioFadeRaf = null;
+  let targetAudioVolume = BG_MUSIC_DEFAULT_VOLUME;
 
-  function playMusicBoxNote(freq) {
-    if (!audioCtx || audioCtx.state !== 'running') return;
-    const now = audioCtx.currentTime;
-    const osc = audioCtx.createOscillator();
-    const harm = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    osc.type = 'sine';
-    harm.type = 'triangle';
-    osc.frequency.setValueAtTime(freq, now);
-    harm.frequency.setValueAtTime(freq * 2.0, now);
+  try {
+    userMutedAudio = sessionStorage.getItem(BG_MUSIC_MUTE_KEY) === '1';
+  } catch (e) {
+    userMutedAudio = false;
+  }
 
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(0.055, now + 0.025);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.35);
+  function cancelAudioFade() {
+    if (audioFadeRaf !== null) {
+      cancelAnimationFrame(audioFadeRaf);
+      audioFadeRaf = null;
+    }
+  }
 
-    const harmGain = audioCtx.createGain();
-    harmGain.gain.setValueAtTime(0.014, now);
-    harmGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+  function fadeAudioVolume(toVolume, durationMs = 650) {
+    cancelAudioFade();
+    const clampedTarget = THREE.MathUtils.clamp(toVolume, 0, 1);
+    const startVol = bgAudio.volume;
+    if (durationMs <= 0 || Math.abs(clampedTarget - startVol) < 0.005) {
+      bgAudio.volume = clampedTarget;
+      return;
+    }
+    const startTime = performance.now();
+    const step = (now) => {
+      const t = Math.min((now - startTime) / durationMs, 1);
+      bgAudio.volume = startVol + (clampedTarget - startVol) * t;
+      if (t < 1 && !bgAudio.paused) {
+        audioFadeRaf = requestAnimationFrame(step);
+      } else {
+        audioFadeRaf = null;
+      }
+    };
+    audioFadeRaf = requestAnimationFrame(step);
+  }
 
-    osc.connect(gain);
-    harm.connect(harmGain);
-    harmGain.connect(gain);
-    gain.connect(audioCtx.destination);
+  function setAudioVolume(vol) {
+    targetAudioVolume = THREE.MathUtils.clamp(Number(vol), 0, 1);
+    if (!Number.isFinite(targetAudioVolume)) targetAudioVolume = BG_MUSIC_DEFAULT_VOLUME;
+    cancelAudioFade();
+    bgAudio.volume = targetAudioVolume;
+  }
 
-    osc.start(now);
-    harm.start(now);
-    osc.stop(now + 1.4);
-    harm.stop(now + 0.5);
+  function syncAudioUi() {
+    if (!btnAudio) return;
+    btnAudio.setAttribute('aria-pressed', String(isAudioOn));
+    btnAudio.classList.toggle('is-active', isAudioOn);
+    if (isAudioOn) {
+      btnAudio.textContent = '\u{1F50A}';
+      btnAudio.title = 'Mute Jingle Bells Background Music';
+    } else if (userMutedAudio) {
+      btnAudio.textContent = '\u{1F507}';
+      btnAudio.title = 'Unmute Jingle Bells Background Music';
+    } else {
+      btnAudio.textContent = '\u{1F514}';
+      btnAudio.title = 'Play Jingle Bells Background Music';
+    }
+  }
+
+  function handleFirstGestureUnlock(e) {
+    if (userMutedAudio || !pendingGestureUnlock) {
+      disarmFirstGestureUnlock();
+      return;
+    }
+    if (btnAudio && e && e.target && btnAudio.contains(e.target)) {
+      return;
+    }
+    startBackgroundMusic({ fromUserGesture: true });
+  }
+
+  function armFirstGestureUnlock() {
+    if (pendingGestureUnlock || userMutedAudio) return;
+    pendingGestureUnlock = true;
+    window.addEventListener('pointerdown', handleFirstGestureUnlock, { capture: true, passive: true });
+    window.addEventListener('keydown', handleFirstGestureUnlock, { capture: true, passive: true });
+    window.addEventListener('touchstart', handleFirstGestureUnlock, { capture: true, passive: true });
+    window.addEventListener('click', handleFirstGestureUnlock, { capture: true, passive: true });
+  }
+
+  function disarmFirstGestureUnlock() {
+    if (!pendingGestureUnlock) return;
+    pendingGestureUnlock = false;
+    window.removeEventListener('pointerdown', handleFirstGestureUnlock, { capture: true });
+    window.removeEventListener('keydown', handleFirstGestureUnlock, { capture: true });
+    window.removeEventListener('touchstart', handleFirstGestureUnlock, { capture: true });
+    window.removeEventListener('click', handleFirstGestureUnlock, { capture: true });
+  }
+
+  async function startBackgroundMusic({ fromUserGesture = false } = {}) {
+    if (!bgAudio) return false;
+    if (userMutedAudio && !fromUserGesture) return false;
+    if (!bgAudio.paused && isAudioOn) return true;
+    if (audioStartPromise) return audioStartPromise;
+
+    bgAudio.loop = true;
+    bgAudio.muted = false;
+    const wasPaused = bgAudio.paused;
+    if (wasPaused) {
+      cancelAudioFade();
+      bgAudio.volume = Math.min(0.02, targetAudioVolume);
+    }
+
+    audioStartPromise = (async () => {
+      try {
+        await bgAudio.play();
+        isAudioOn = true;
+        pausedByVisibility = false;
+        disarmFirstGestureUnlock();
+        fadeAudioVolume(targetAudioVolume, wasPaused ? 650 : 120);
+        syncAudioUi();
+        return true;
+      } catch (err) {
+        isAudioOn = false;
+        if (!userMutedAudio) {
+          armFirstGestureUnlock();
+        }
+        syncAudioUi();
+        return false;
+      } finally {
+        audioStartPromise = null;
+      }
+    })();
+
+    return audioStartPromise;
+  }
+
+  function stopBackgroundMusic(isExplicitMute = true) {
+    cancelAudioFade();
+    bgAudio.pause();
+    isAudioOn = false;
+    pausedByVisibility = false;
+    if (isExplicitMute) {
+      userMutedAudio = true;
+      disarmFirstGestureUnlock();
+      try {
+        sessionStorage.setItem(BG_MUSIC_MUTE_KEY, '1');
+      } catch (e) {}
+    }
+    syncAudioUi();
   }
 
   function toggleHolidayAudio() {
-    isAudioOn = !isAudioOn;
-    if (isAudioOn) {
+    if (isAudioOn || !bgAudio.paused) {
+      stopBackgroundMusic(true);
+    } else {
+      userMutedAudio = false;
       try {
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        if (!Ctx) return;
-        if (!audioCtx) audioCtx = new Ctx();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        playMusicBoxNote(melodyHz[melodyStep++ % melodyHz.length]);
-        chimeTimer = setInterval(() => {
-          if (!document.hidden && isAudioOn) {
-            playMusicBoxNote(melodyHz[melodyStep++ % melodyHz.length]);
-          }
-        }, 720);
-      } catch (e) {
-        isAudioOn = false;
-      }
-    } else if (chimeTimer) {
-      clearInterval(chimeTimer);
-      chimeTimer = null;
-    }
-    if (btnAudio) {
-      btnAudio.setAttribute('aria-pressed', String(isAudioOn));
-      btnAudio.classList.toggle('is-active', isAudioOn);
-      btnAudio.title = isAudioOn ? 'Mute Holiday Music Box' : 'Play Calm Holiday Music Box';
+        sessionStorage.removeItem(BG_MUSIC_MUTE_KEY);
+      } catch (e) {}
+      startBackgroundMusic({ fromUserGesture: true });
     }
   }
+
+  bgAudio.addEventListener('play', () => {
+    isAudioOn = true;
+    syncAudioUi();
+  });
+  bgAudio.addEventListener('pause', () => {
+    if (!pausedByVisibility) {
+      isAudioOn = false;
+      syncAudioUi();
+    }
+  });
+  bgAudio.addEventListener('error', () => {
+    console.warn(`[ChristmasXR] Unable to load background music track: ${BG_MUSIC_SRC}`);
+    isAudioOn = false;
+    syncAudioUi();
+  });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && !isInXR) {
+      if (isAudioOn && !bgAudio.paused) {
+        pausedByVisibility = true;
+        cancelAudioFade();
+        bgAudio.pause();
+      }
+    } else if (!document.hidden && pausedByVisibility) {
+      pausedByVisibility = false;
+      if (!userMutedAudio) {
+        startBackgroundMusic({ fromUserGesture: false });
+      }
+    }
+  });
 
   // ---------------------------------------------------------------------------
   // Interactive 360° Exploration Mode & Native WebXR Session Management
@@ -2163,6 +2298,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     if (enabled) {
       isPaused = false;
       syncPauseUi();
+      if (!userMutedAudio && !isAudioOn) {
+        startBackgroundMusic({ fromUserGesture: true });
+      }
       camera.position.set(0, 2.2, 11.4);
       controls.target.set(0, 0.35, -0.8);
       controls.update();
@@ -2193,6 +2331,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
       return;
     }
     try {
+      if (!userMutedAudio && !isAudioOn) {
+        startBackgroundMusic({ fromUserGesture: true });
+      }
       const sessionInit = {
         optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking']
       };
@@ -2293,6 +2434,10 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
   });
 
   syncPauseUi();
+  syncAudioUi();
+  if (!userMutedAudio) {
+    startBackgroundMusic({ fromUserGesture: false });
+  }
   detectWebXRSupport();
   updateScrollProgress();
   updateResponsiveFraming();
@@ -2548,6 +2693,24 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
     setExploreMode,
     launchFirework: () => launchHolidayFirework(new THREE.Vector3((Math.random() - 0.5) * 6, 4.2, -4)),
     updateResponsiveFraming,
-    getState: () => ({ isExploreMode, isInXR, xrModeType, isPaused, isAudioOn })
+    toggleAudio: toggleHolidayAudio,
+    startAudio: () => startBackgroundMusic({ fromUserGesture: true }),
+    stopAudio: () => stopBackgroundMusic(true),
+    setAudioVolume,
+    getState: () => ({
+      isExploreMode,
+      isInXR,
+      xrModeType,
+      isPaused,
+      isAudioOn,
+      userMutedAudio,
+      pendingGestureUnlock,
+      audioSrc: BG_MUSIC_SRC,
+      audioCurrentSrc: bgAudio ? bgAudio.currentSrc : '',
+      audioReadyState: bgAudio ? bgAudio.readyState : 0,
+      audioPaused: bgAudio ? bgAudio.paused : true,
+      audioVolume: bgAudio ? bgAudio.volume : 0,
+      audioDuration: bgAudio && Number.isFinite(bgAudio.duration) ? bgAudio.duration : 0
+    })
   };
 })();

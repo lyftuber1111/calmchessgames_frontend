@@ -1003,7 +1003,7 @@
                 display: inline-flex;
             }
 
-            .xr-christmas-dock:not(.is-expanded) > *:not(.xr-dock-toggle-btn) {
+            .xr-christmas-dock:not(.is-expanded) > *:not(.xr-dock-toggle-btn):not(#xrAudioBtn) {
                 display: none;
             }
 
@@ -1095,6 +1095,11 @@
         <button type="button" id="xrExitExploreBtn" class="xr-dock-btn is-active">Return to Page</button>
     </div>
 
+    <!-- WebXR Holiday Background Music (Jingle Bells WAV) -->
+    <audio id="xrJingleBellsAudio" loop preload="auto" playsinline>
+        <source src="jingle_bells.wav" type="audio/wav">
+    </audio>
+
     <!-- Compact Floating WebXR Holiday Scene Controls -->
     <aside id="xrChristmasDock" class="xr-christmas-dock" aria-label="WebXR Christmas Scene Controls" hidden>
         <button type="button" id="xrDockToggleBtn" class="xr-dock-btn xr-icon-btn xr-dock-toggle-btn" aria-expanded="false" aria-label="Toggle WebXR Christmas Controls" title="WebXR Christmas Controls">&#10052;</button>
@@ -1102,7 +1107,7 @@
         <button type="button" id="xrExploreBtn" class="xr-dock-btn" aria-pressed="false" title="Explore 360° Procedural Christmas Scene">&#127876; 360&deg;</button>
         <button type="button" id="xrEnterVrBtn" class="xr-dock-btn" hidden title="Enter Immersive WebXR VR">&#129405; VR</button>
         <button type="button" id="xrEnterArBtn" class="xr-dock-btn" hidden title="Enter Immersive WebXR AR">&#10024; AR</button>
-        <button type="button" id="xrAudioBtn" class="xr-dock-btn xr-icon-btn" aria-pressed="false" aria-label="Play Calm Holiday Music Box" title="Play Calm Holiday Music Box">&#128276;</button>
+        <button type="button" id="xrAudioBtn" class="xr-dock-btn xr-icon-btn" aria-pressed="false" aria-label="Jingle Bells Background Music" title="Play Jingle Bells Background Music">&#128276;</button>
         <button type="button" id="xrPauseBtn" class="xr-dock-btn xr-icon-btn" aria-pressed="false" aria-label="Pause Christmas Animations" title="Pause Christmas Animations">&#9208;</button>
     </aside>
 

@@ -5532,6 +5532,26 @@ function getEngineApi() {
     StageObjectPool,
     getObjectPool: () => currentStageObjectPool,
     stageObjectPool: () => currentStageObjectPool,
+    getProceduralEnemyPool: (enemyConfig = null) => {
+      if (!currentStageObjectPool) return null;
+      if (typeof currentStageObjectPool.getProceduralEnemyPool === 'function') {
+        return currentStageObjectPool.getProceduralEnemyPool(enemyConfig);
+      }
+      return currentStageObjectPool.proceduralEnemyPool || null;
+    },
+    getProceduralEnemyPools: () => {
+      if (!currentStageObjectPool) return null;
+      if (typeof currentStageObjectPool.getProceduralEnemyPools === 'function') {
+        return currentStageObjectPool.getProceduralEnemyPools();
+      }
+      if (currentStageObjectPool.proceduralEnemyPoolsByType) {
+        return currentStageObjectPool.proceduralEnemyPoolsByType;
+      }
+      if (currentStageObjectPool.proceduralEnemyPools) {
+        return currentStageObjectPool.proceduralEnemyPools;
+      }
+      return currentStageObjectPool.proceduralEnemyPool || null;
+    },
     setEnemyMovementHandler: (fn) => { activeEnemyMovementHandler = fn; },
     setEnemyWeaponHandler: (fn) => { activeEnemyWeaponHandler = fn; },
     setStageWaveHandler: (fn) => { activeStageWaveHandler = fn; },
@@ -5659,7 +5679,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop', tra
           }
         }
       }
-      if (stage.level === 1) {
+      if (stage.level === 1 && !enemiesToPreload.some(ec => ec && ec.procedural_model_url)) {
         preloadUrls.push(
           `${deviceType}/warp_origin_images/drone_phase_interceptor_3.glb`,
           `${deviceType}/warp_origin_images/recon_drone_2.8m.glb`
@@ -5698,6 +5718,10 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop', tra
         }
         currentStageObjectPool = null;
         window.stageObjectPool = null;
+        window.stageProceduralEnemyPool = null;
+        window.stageProceduralEnemyPools = null;
+        window.stagePhaseInterceptorEnemyPool = null;
+        window.stageReconDroneEnemyPool = null;
       }
       const candidatePoolPaths = [
         `./${stage.slug}_pool.js?t=${timestamp}`,
@@ -5740,6 +5764,20 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop', tra
 
       currentStageObjectPool = newPool;
       window.stageObjectPool = newPool;
+      window.stageProceduralEnemyPools = (newPool && typeof newPool.getProceduralEnemyPools === 'function')
+        ? newPool.getProceduralEnemyPools()
+        : (newPool && (newPool.proceduralEnemyPoolsByType || newPool.proceduralEnemyPools)) || null;
+      window.stagePhaseInterceptorEnemyPool = (newPool && typeof newPool.getPhaseInterceptorProceduralEnemyPool === 'function')
+        ? newPool.getPhaseInterceptorProceduralEnemyPool()
+        : (newPool && newPool.phaseInterceptorProceduralEnemyPool) || null;
+      window.stageReconDroneEnemyPool = (newPool && typeof newPool.getReconDroneProceduralEnemyPool === 'function')
+        ? newPool.getReconDroneProceduralEnemyPool()
+        : (newPool && newPool.reconDroneProceduralEnemyPool) || null;
+      window.stageProceduralEnemyPool = (newPool && newPool.hasSeparateProceduralEnemyPools && window.stageProceduralEnemyPools)
+        ? window.stageProceduralEnemyPools
+        : ((newPool && typeof newPool.getProceduralEnemyPool === 'function')
+          ? newPool.getProceduralEnemyPool()
+          : (newPool && newPool.proceduralEnemyPool) || null);
       if (newPool && newPool.cockpitOverlayReadyPromise) {
         await Promise.race([
           newPool.cockpitOverlayReadyPromise,
@@ -5754,6 +5792,10 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop', tra
         if (currentStageObjectPool === newPool) {
           currentStageObjectPool = null;
           window.stageObjectPool = null;
+          window.stageProceduralEnemyPool = null;
+          window.stageProceduralEnemyPools = null;
+          window.stagePhaseInterceptorEnemyPool = null;
+          window.stageReconDroneEnemyPool = null;
         }
         return null;
       }
@@ -7783,8 +7825,12 @@ function destroyEnemyInstance(e, enemyIndex = -1, forceIgnoreRange = false) {
     e.mesh.userData.weaponsActive = false;
   }
 
-  if (e.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemy === 'function') {
-    currentStageObjectPool.despawnEnemy(e.mesh, deathCfg);
+  if (e.fromPool && currentStageObjectPool) {
+    if (e.mesh && e.mesh.userData && e.mesh.userData.fromProceduralEnemyPool && typeof currentStageObjectPool.despawnProceduralEnemy === 'function') {
+      currentStageObjectPool.despawnProceduralEnemy(e.mesh, deathCfg);
+    } else if (typeof currentStageObjectPool.despawnEnemy === 'function') {
+      currentStageObjectPool.despawnEnemy(e.mesh, deathCfg);
+    }
   } else {
     if (scene) scene.remove(e.mesh);
     disposeMeshHierarchy(e.mesh);
@@ -10048,8 +10094,12 @@ function destroyAllRemainingEnemies(triggerExplosionFx = false) {
           triggerEnemyExplosion(e.mesh.position.clone(), e.config || {});
         } catch (fxErr) {}
       }
-      if (e.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemy === 'function') {
-        currentStageObjectPool.despawnEnemy(e.mesh, e.config);
+      if (e.fromPool && currentStageObjectPool) {
+        if (e.mesh && e.mesh.userData && e.mesh.userData.fromProceduralEnemyPool && typeof currentStageObjectPool.despawnProceduralEnemy === 'function') {
+          currentStageObjectPool.despawnProceduralEnemy(e.mesh, e.config);
+        } else if (typeof currentStageObjectPool.despawnEnemy === 'function') {
+          currentStageObjectPool.despawnEnemy(e.mesh, e.config);
+        }
       } else if (scene) {
         scene.remove(e.mesh);
         disposeMeshHierarchy(e.mesh);
@@ -10521,8 +10571,13 @@ function spawnEnemyWaveFromPool(forcedCount = null, waveConfig = null, enemyPool
     let mesh = null;
     let fromPool = false;
 
-    // Grab enemy graphic object from stage object pool (pulled from pool)
-    if (currentStageObjectPool && typeof currentStageObjectPool.spawnEnemy === 'function') {
+    // Grab enemy graphic object from stage object pool (preferring dedicated separate procedural enemy pool)
+    if (currentStageObjectPool && typeof currentStageObjectPool.spawnProceduralEnemy === 'function') {
+      mesh = currentStageObjectPool.spawnProceduralEnemy(cfg, spawnPos);
+      if (mesh) {
+        fromPool = true;
+      }
+    } else if (currentStageObjectPool && typeof currentStageObjectPool.spawnEnemy === 'function') {
       mesh = currentStageObjectPool.spawnEnemy(cfg, spawnPos);
       if (mesh) {
         fromPool = true;
@@ -11220,8 +11275,12 @@ function updateEnemiesCombat(delta) {
         e.mesh.userData.physicsActive = false;
         e.mesh.userData.weaponsActive = false;
       }
-      if (e.fromPool && currentStageObjectPool && typeof currentStageObjectPool.despawnEnemy === 'function') {
-        currentStageObjectPool.despawnEnemy(e.mesh, e.config);
+      if (e.fromPool && currentStageObjectPool) {
+        if (e.mesh && e.mesh.userData && e.mesh.userData.fromProceduralEnemyPool && typeof currentStageObjectPool.despawnProceduralEnemy === 'function') {
+          currentStageObjectPool.despawnProceduralEnemy(e.mesh, e.config);
+        } else if (typeof currentStageObjectPool.despawnEnemy === 'function') {
+          currentStageObjectPool.despawnEnemy(e.mesh, e.config);
+        }
       } else {
         scene.remove(e.mesh);
         disposeMeshHierarchy(e.mesh);

@@ -1,6 +1,23 @@
 import * as THREE from 'three';
 import {
   createStagePool,
+  WarpOriginObjectPool,
+  WarpOriginProceduralEnemyPool,
+  DronePhaseInterceptorProceduralEnemyPool,
+  PhaseInterceptorProceduralEnemyPool,
+  ReconDroneProceduralEnemyPool,
+  createProceduralEnemyPool,
+  createDronePhaseInterceptorProceduralEnemyPool,
+  createPhaseInterceptorProceduralEnemyPool,
+  createReconDroneProceduralEnemyPool,
+  createProceduralEnemyPools,
+  INTERCEPTOR_PROCEDURAL_ENEMY_POOL_NAME,
+  RECON_DRONE_PROCEDURAL_ENEMY_POOL_NAME,
+  PROCEDURAL_ENEMY_POOL_NAMES,
+  WARP_ORIGIN_ENEMY_SCALE_INCREMENT,
+  PHASE_INTERCEPTOR_ENEMY_SCALE,
+  RECON_DRONE_ENEMY_SCALE,
+  WARP_ORIGIN_ENEMY_SCALE,
   MeshPool,
   StageObjectPool,
   loadCockpitCracksGlbAsset,
@@ -45,6 +62,24 @@ import {
 } from './warp_origin_images/recon_drone_2.8m.js';
 
 export {
+  createStagePool,
+  WarpOriginObjectPool,
+  WarpOriginProceduralEnemyPool,
+  DronePhaseInterceptorProceduralEnemyPool,
+  PhaseInterceptorProceduralEnemyPool,
+  ReconDroneProceduralEnemyPool,
+  createProceduralEnemyPool,
+  createDronePhaseInterceptorProceduralEnemyPool,
+  createPhaseInterceptorProceduralEnemyPool,
+  createReconDroneProceduralEnemyPool,
+  createProceduralEnemyPools,
+  INTERCEPTOR_PROCEDURAL_ENEMY_POOL_NAME,
+  RECON_DRONE_PROCEDURAL_ENEMY_POOL_NAME,
+  PROCEDURAL_ENEMY_POOL_NAMES,
+  WARP_ORIGIN_ENEMY_SCALE_INCREMENT,
+  PHASE_INTERCEPTOR_ENEMY_SCALE,
+  RECON_DRONE_ENEMY_SCALE,
+  WARP_ORIGIN_ENEMY_SCALE,
   INTERCEPTOR_WEAPON_DECAL_NAME,
   INTERCEPTOR_WEAPON_FIRE_DURATION_MS,
   RECON_DRONE_PORT_WEAPON_DECAL_NAME,
@@ -62,6 +97,16 @@ export {
   createReconDroneMesh,
   createWarpOriginEnemyMesh
 };
+
+export function createPhaseInterceptorEnemyMesh(config = {}, sharedTexMap = null) {
+  return createDronePhaseInterceptor3Mesh(config, createDronePhaseInterceptor3, sharedTexMap);
+}
+
+export const createPhaseInterceptorMesh = createPhaseInterceptorEnemyMesh;
+
+export function createReconDroneEnemyMesh(config = {}, sharedTexMap = null) {
+  return createReconDroneMesh(config, createReconDrone, sharedTexMap);
+}
 
 export function createEnemyMesh(config = {}, sharedTexMap = null) {
   return createWarpOriginEnemyMesh(
@@ -281,8 +326,29 @@ export const stageConfig = {
     ]
 },
   createEnemyMeshFn: createEnemyMesh,
-  createEnemyMeshFn: createEnemyMesh,
-  createEnemyMeshFn: createEnemyMesh,
+  createProceduralEnemyMeshFn: createEnemyMesh,
+  createInterceptorEnemyMeshFn: createPhaseInterceptorEnemyMesh,
+  createReconDroneEnemyMeshFn: createReconDroneEnemyMesh,
+  proceduralEnemyPoolConfig: {
+    separatePool: true,
+    separatePerEnemyType: true,
+    pools: {
+      drone_phase_interceptor_3: {
+        poolName: INTERCEPTOR_PROCEDURAL_ENEMY_POOL_NAME,
+        enemyKey: 'drone_phase_interceptor_3',
+        enemyId: 'phase_interceptor',
+        initialSize: 12,
+        maxSize: 16
+      },
+      'recon_drone_2.8m': {
+        poolName: RECON_DRONE_PROCEDURAL_ENEMY_POOL_NAME,
+        enemyKey: 'recon_drone_2.8m',
+        enemyId: 'void_recon_drone',
+        initialSize: 12,
+        maxSize: 16
+      }
+    }
+  },
   enemies: [
     {
         "id": "phase_interceptor",
@@ -295,7 +361,7 @@ export const stageConfig = {
         "model_3d_type": "drone_phase_interceptor_3",
         "model_3d_url": "",
         "procedural_model_url": "mobile/warp_origin_images/drone_phase_interceptor_3.js",
-        "scale": 1,
+        "scale": 1.25,
         "length": 2.11,
         "height": 0.98,
         "depth": 2.63,
@@ -402,7 +468,7 @@ export const stageConfig = {
         "model_3d_type": "recon_drone_2.8m",
         "model_3d_url": "",
         "procedural_model_url": "mobile/warp_origin_images/recon_drone_2.8m.js",
-        "scale": 1,
+        "scale": 1.25,
         "length": 2.8,
         "height": 2.8,
         "depth": 2.8,
@@ -1205,7 +1271,10 @@ export function updateEnemyMovement(e, delta, context) {
   const dist5k = 5000 / KM_PER_WORLD_UNIT; // 5,000 KM (~11.9048 units)
   const targetZ10k = playerPos.z - dist10k;
   const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
-  const baseScale = e.baseScale || 1.3;
+  const baseScale = (resolveWarpOriginEnemyKind(e) === 'drone_phase_interceptor_3')
+    ? PHASE_INTERCEPTOR_ENEMY_SCALE
+    : RECON_DRONE_ENEMY_SCALE;
+  e.baseScale = baseScale;
   const basePitchDown = 0.22;
 
   if (!e.maneuverState) {
@@ -1514,10 +1583,18 @@ export function updateEnemyMovement(e, delta, context) {
   return true;
 }
 
+let activeStageObjectPool = null;
+let activeInterceptorProceduralEnemyPool = null;
+let activeReconDroneProceduralEnemyPool = null;
+
 function buildProceduralStageEnemiesList(sourceEnemies = stageConfig.enemies) {
   const list = Array.isArray(sourceEnemies) ? sourceEnemies : [];
   return list.map((entry) => ({
     ...entry,
+    model_3d_url: '',
+    scale: (resolveWarpOriginEnemyKind(entry) === 'drone_phase_interceptor_3')
+      ? PHASE_INTERCEPTOR_ENEMY_SCALE
+      : RECON_DRONE_ENEMY_SCALE,
     custom_from_db: true
   }));
 }
@@ -1537,17 +1614,22 @@ function installWarpOriginActiveEnemiesGuard() {
 
   if (window.__warpOriginActiveEnemiesGuardInstalled) return;
 
+  const prevDesc = Object.getOwnPropertyDescriptor(window, 'activeStageEnemies');
+  if (prevDesc && prevDesc.configurable === false) return;
+
+  const hasPrevAccessor = !!(prevDesc && (typeof prevDesc.get === 'function' || typeof prevDesc.set === 'function'));
   let _backingEnemies = Array.isArray(window.activeStageEnemies) ? window.activeStageEnemies : [];
-  const desc = Object.getOwnPropertyDescriptor(window, 'activeStageEnemies');
-  if (desc && desc.configurable === false) return;
 
   Object.defineProperty(window, 'activeStageEnemies', {
     configurable: true,
     enumerable: true,
     get() {
-      return _backingEnemies;
+      return hasPrevAccessor && typeof prevDesc.get === 'function'
+        ? prevDesc.get.call(window)
+        : _backingEnemies;
     },
     set(val) {
+      let nextVal = val;
       if (
         isStage1WarpOriginActive() &&
         Array.isArray(val) &&
@@ -1557,13 +1639,21 @@ function installWarpOriginActiveEnemiesGuard() {
       ) {
         const expected = window.__warpOriginProceduralStageEnemies;
         const alreadyProcedural = val.length === expected.length &&
-          val.every((item, idx) => item && item.model_3d_type === expected[idx].model_3d_type && !item.model_3d_url);
-        _backingEnemies = alreadyProcedural
+          val.every((item, idx) =>
+            item &&
+            item.model_3d_type === expected[idx].model_3d_type &&
+            !item.model_3d_url &&
+            Number(item.scale) === Number(expected[idx].scale)
+          );
+        nextVal = alreadyProcedural
           ? val
           : buildProceduralStageEnemiesList(expected);
-        return;
       }
-      _backingEnemies = val;
+      if (hasPrevAccessor && typeof prevDesc.set === 'function') {
+        prevDesc.set.call(window, nextVal);
+      } else {
+        _backingEnemies = nextVal;
+      }
     }
   });
   window.__warpOriginActiveEnemiesGuardInstalled = true;
@@ -1581,7 +1671,12 @@ function ensureWarpOriginProceduralEnemies() {
   const cur = window.activeStageEnemies;
   const needsOverride = !Array.isArray(cur)
     || cur.length !== stageEnemies.length
-    || cur.some((item, idx) => !item || item.model_3d_type !== stageEnemies[idx].model_3d_type || Boolean(item.model_3d_url));
+    || cur.some((item, idx) =>
+      !item ||
+      item.model_3d_type !== stageEnemies[idx].model_3d_type ||
+      Boolean(item.model_3d_url) ||
+      Number(item.scale) !== Number(stageEnemies[idx].scale)
+    );
 
   if (needsOverride) {
     window.activeStageEnemies = buildProceduralStageEnemiesList(stageEnemies);
@@ -1592,11 +1687,294 @@ function ensureWarpOriginProceduralEnemies() {
   }
 }
 
+function buildProceduralPoolsSummary(interceptorPool, reconDronePool) {
+  return {
+    'drone_phase_interceptor_3': interceptorPool,
+    'recon_drone_2.8m': reconDronePool,
+    phase_interceptor: interceptorPool,
+    void_recon_drone: reconDronePool
+  };
+}
+
+/**
+ * Ensures Stage 1: Warp Origin has TWO dedicated separate procedural enemy pools
+ * (one exclusively for Drone Phase Interceptor Mk.III and one exclusively for Void Recon Drone 2.8m),
+ * strictly isolated from all other graphics asset pools (player weapons, enemy weapons,
+ * cockpit overlay, and standard StageObjectPool.enemyPools).
+ */
+export function ensureStageProceduralEnemyPools(engineApi = null, scene = null) {
+  const targetScene = scene
+    || (engineApi && engineApi.scene)
+    || (typeof window !== 'undefined' && window.scene)
+    || null;
+
+  let stagePool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || (typeof window !== 'undefined' && window.stageObjectPool)
+    || (activeStageObjectPool && !activeStageObjectPool._disposed ? activeStageObjectPool : null)
+    || null;
+
+  if ((!stagePool || stagePool._disposed) && targetScene) {
+    stagePool = createStagePool(targetScene, stageConfig);
+    if (typeof window !== 'undefined' && (!window.stageObjectPool || window.stageObjectPool._disposed)) {
+      window.stageObjectPool = stagePool;
+    }
+  }
+
+  if (stagePool && !stagePool._disposed) {
+    let interceptorPool = (typeof stagePool.getInterceptorProceduralEnemyPool === 'function')
+      ? stagePool.getInterceptorProceduralEnemyPool()
+      : (typeof stagePool.getPhaseInterceptorProceduralEnemyPool === 'function')
+        ? stagePool.getPhaseInterceptorProceduralEnemyPool()
+        : (stagePool.interceptorProceduralEnemyPool || stagePool.phaseInterceptorProceduralEnemyPool || null);
+
+    let reconDronePool = (typeof stagePool.getReconDroneProceduralEnemyPool === 'function')
+      ? stagePool.getReconDroneProceduralEnemyPool()
+      : (stagePool.reconDroneProceduralEnemyPool || null);
+
+    const needsSeparatePools = (
+      !interceptorPool ||
+      !interceptorPool.isProceduralEnemyPool ||
+      interceptorPool._disposed ||
+      !reconDronePool ||
+      !reconDronePool.isProceduralEnemyPool ||
+      reconDronePool._disposed ||
+      interceptorPool === reconDronePool
+    );
+
+    if (needsSeparatePools) {
+      const poolScene = stagePool.scene || targetScene;
+      if (poolScene) {
+        const interceptorCfg = (stageConfig.enemies || []).find(e => resolveWarpOriginEnemyKind(e) === 'drone_phase_interceptor_3') || {};
+        const reconCfg = (stageConfig.enemies || []).find(e => resolveWarpOriginEnemyKind(e) === 'recon_drone_2.8m') || {};
+
+        if (!interceptorPool || !interceptorPool.isProceduralEnemyPool || interceptorPool._disposed) {
+          interceptorPool = createDronePhaseInterceptorProceduralEnemyPool(poolScene, interceptorCfg, {
+            poolName: INTERCEPTOR_PROCEDURAL_ENEMY_POOL_NAME,
+            initialSize: interceptorCfg.pool_size || 12,
+            createProceduralEnemyMeshFn: createPhaseInterceptorEnemyMesh
+          });
+        }
+        if (!reconDronePool || !reconDronePool.isProceduralEnemyPool || reconDronePool._disposed || reconDronePool === interceptorPool) {
+          reconDronePool = createReconDroneProceduralEnemyPool(poolScene, reconCfg, {
+            poolName: RECON_DRONE_PROCEDURAL_ENEMY_POOL_NAME,
+            initialSize: reconCfg.pool_size || 12,
+            createProceduralEnemyMeshFn: createReconDroneEnemyMesh
+          });
+        }
+
+        const poolsSummary = buildProceduralPoolsSummary(interceptorPool, reconDronePool);
+
+        // Attach strictly separate from stagePool.enemyPools / weapon pools / cockpit overlay pool
+        stagePool.hasSeparateProceduralEnemyPool = true;
+        stagePool.hasSeparateProceduralEnemyPools = true;
+        stagePool.hasSeparateEnemyTypeProceduralPools = true;
+        stagePool.interceptorProceduralEnemyPool = interceptorPool;
+        stagePool.phaseInterceptorProceduralEnemyPool = interceptorPool;
+        stagePool.reconDroneProceduralEnemyPool = reconDronePool;
+        stagePool.proceduralEnemyPoolMap = poolsSummary;
+        stagePool.proceduralEnemyPoolsByType = poolsSummary;
+        stagePool.proceduralEnemyPools = new Map([
+          ['drone_phase_interceptor_3', interceptorPool],
+          ['phase_interceptor', interceptorPool],
+          ['phase_interceptor_all', interceptorPool],
+          ['interceptor', interceptorPool],
+          ['recon_drone_2.8m', reconDronePool],
+          ['void_recon_drone', reconDronePool],
+          ['void_recon_drone_mobile', reconDronePool],
+          ['recon_drone', reconDronePool],
+          ['scout_drone', reconDronePool]
+        ]);
+        stagePool.getInterceptorProceduralEnemyPool = () => stagePool.interceptorProceduralEnemyPool;
+        stagePool.getPhaseInterceptorProceduralEnemyPool = () => stagePool.interceptorProceduralEnemyPool;
+        stagePool.getReconDroneProceduralEnemyPool = () => stagePool.reconDroneProceduralEnemyPool;
+        stagePool.getProceduralEnemyPools = () => buildProceduralPoolsSummary(
+          stagePool.interceptorProceduralEnemyPool,
+          stagePool.reconDroneProceduralEnemyPool
+        );
+        stagePool.getProceduralEnemyPool = (enemyCfg = null) => {
+          if (enemyCfg === null || enemyCfg === undefined) {
+            return stagePool.interceptorProceduralEnemyPool || stagePool.reconDroneProceduralEnemyPool || null;
+          }
+          return (resolveWarpOriginEnemyKind(enemyCfg) === 'drone_phase_interceptor_3')
+            ? stagePool.interceptorProceduralEnemyPool
+            : stagePool.reconDroneProceduralEnemyPool;
+        };
+        stagePool.getEnemyPool = (enemyCfg = null) => stagePool.getProceduralEnemyPool(enemyCfg);
+        stagePool.spawnProceduralEnemy = (enemyCfg = null, position = null, quaternion = null, scale = null) => {
+          const targetPool = stagePool.getProceduralEnemyPool(enemyCfg);
+          return targetPool ? targetPool.spawn(position, quaternion, scale) : null;
+        };
+        stagePool.spawnInterceptorProceduralEnemy = (position = null, quaternion = null, scale = null) => {
+          return stagePool.interceptorProceduralEnemyPool
+            ? stagePool.interceptorProceduralEnemyPool.spawn(position, quaternion, scale)
+            : null;
+        };
+        stagePool.spawnReconDroneProceduralEnemy = (position = null, quaternion = null, scale = null) => {
+          return stagePool.reconDroneProceduralEnemyPool
+            ? stagePool.reconDroneProceduralEnemyPool.spawn(position, quaternion, scale)
+            : null;
+        };
+        stagePool.spawnEnemy = (enemyCfg, position, quaternion = null, scale = null) => {
+          return stagePool.spawnProceduralEnemy(enemyCfg, position, quaternion, scale);
+        };
+        const origDespawnEnemy = typeof stagePool.despawnEnemy === 'function' ? stagePool.despawnEnemy.bind(stagePool) : null;
+        stagePool.despawnProceduralEnemy = (mesh, enemyCfg = null) => {
+          if (!mesh) return false;
+          resetWarpOriginEnemyWeaponDecals(mesh);
+          if (stagePool.interceptorProceduralEnemyPool && stagePool.interceptorProceduralEnemyPool.active.has(mesh)) {
+            stagePool.interceptorProceduralEnemyPool.despawn(mesh);
+            return true;
+          }
+          if (stagePool.reconDroneProceduralEnemyPool && stagePool.reconDroneProceduralEnemyPool.active.has(mesh)) {
+            stagePool.reconDroneProceduralEnemyPool.despawn(mesh);
+            return true;
+          }
+          if (mesh.userData && (mesh.userData.fromProceduralEnemyPool || mesh.userData.isProceduralWarpOriginEnemy)) {
+            const ownerPool = stagePool.getProceduralEnemyPool(mesh || enemyCfg);
+            if (ownerPool) {
+              ownerPool.despawn(mesh);
+              return true;
+            }
+          }
+          return false;
+        };
+        stagePool.despawnEnemy = (mesh, enemyCfg = null) => {
+          if (stagePool.despawnProceduralEnemy(mesh, enemyCfg)) return;
+          if (origDespawnEnemy) origDespawnEnemy(mesh, enemyCfg);
+        };
+        const origDespawnAllEnemies = typeof stagePool.despawnAllEnemies === 'function' ? stagePool.despawnAllEnemies.bind(stagePool) : null;
+        stagePool.despawnAllProceduralEnemies = () => {
+          if (stagePool.interceptorProceduralEnemyPool) stagePool.interceptorProceduralEnemyPool.despawnAll();
+          if (stagePool.reconDroneProceduralEnemyPool) stagePool.reconDroneProceduralEnemyPool.despawnAll();
+        };
+        stagePool.despawnAllEnemies = () => {
+          stagePool.despawnAllProceduralEnemies();
+          if (origDespawnAllEnemies) origDespawnAllEnemies();
+        };
+        const origDispose = typeof stagePool.dispose === 'function' ? stagePool.dispose.bind(stagePool) : null;
+        stagePool.dispose = () => {
+          if (stagePool.interceptorProceduralEnemyPool && typeof stagePool.interceptorProceduralEnemyPool.dispose === 'function') {
+            stagePool.interceptorProceduralEnemyPool.dispose();
+          }
+          if (stagePool.reconDroneProceduralEnemyPool && typeof stagePool.reconDroneProceduralEnemyPool.dispose === 'function') {
+            stagePool.reconDroneProceduralEnemyPool.dispose();
+          }
+          if (stagePool.proceduralEnemyPools) stagePool.proceduralEnemyPools.clear();
+          if (typeof window !== 'undefined') {
+            if (window.stagePhaseInterceptorEnemyPool === stagePool.interceptorProceduralEnemyPool) window.stagePhaseInterceptorEnemyPool = null;
+            if (window.stageInterceptorProceduralEnemyPool === stagePool.interceptorProceduralEnemyPool) window.stageInterceptorProceduralEnemyPool = null;
+            if (window.stageReconDroneEnemyPool === stagePool.reconDroneProceduralEnemyPool) window.stageReconDroneEnemyPool = null;
+            if (window.stageReconDroneProceduralEnemyPool === stagePool.reconDroneProceduralEnemyPool) window.stageReconDroneProceduralEnemyPool = null;
+            if (window.stageProceduralEnemyPools === stagePool.proceduralEnemyPoolMap) window.stageProceduralEnemyPools = null;
+            if (window.stageProceduralEnemyPool === stagePool.proceduralEnemyPoolMap) window.stageProceduralEnemyPool = null;
+          }
+          stagePool.interceptorProceduralEnemyPool = null;
+          stagePool.phaseInterceptorProceduralEnemyPool = null;
+          stagePool.reconDroneProceduralEnemyPool = null;
+          stagePool.proceduralEnemyPoolMap = null;
+          stagePool.proceduralEnemyPoolsByType = null;
+          if (origDispose) origDispose();
+        };
+      }
+    }
+
+    if (interceptorPool && !interceptorPool._disposed && reconDronePool && !reconDronePool._disposed) {
+      activeStageObjectPool = stagePool;
+      activeInterceptorProceduralEnemyPool = interceptorPool;
+      activeReconDroneProceduralEnemyPool = reconDronePool;
+      const summary = buildProceduralPoolsSummary(interceptorPool, reconDronePool);
+      if (typeof window !== 'undefined') {
+        window.stageProceduralEnemyPools = summary;
+        window.stageProceduralEnemyPool = summary;
+        window.stagePhaseInterceptorEnemyPool = interceptorPool;
+        window.stageInterceptorProceduralEnemyPool = interceptorPool;
+        window.stageReconDroneEnemyPool = reconDronePool;
+        window.stageReconDroneProceduralEnemyPool = reconDronePool;
+      }
+      return summary;
+    }
+  }
+
+  if (
+    activeInterceptorProceduralEnemyPool && !activeInterceptorProceduralEnemyPool._disposed &&
+    activeReconDroneProceduralEnemyPool && !activeReconDroneProceduralEnemyPool._disposed
+  ) {
+    return buildProceduralPoolsSummary(activeInterceptorProceduralEnemyPool, activeReconDroneProceduralEnemyPool);
+  }
+  return null;
+}
+
+export const ensureStageProceduralEnemyPool = ensureStageProceduralEnemyPools;
+
+export function getStageProceduralEnemyPools(engineApi = null, scene = null) {
+  return ensureStageProceduralEnemyPools(engineApi, scene);
+}
+
+export function getStageProceduralEnemyPool(enemyConfig = null, engineApi = null, scene = null) {
+  const pools = ensureStageProceduralEnemyPools(engineApi, scene);
+  if (!pools) return null;
+  if (enemyConfig === null || enemyConfig === undefined) {
+    return pools;
+  }
+  const kind = resolveWarpOriginEnemyKind(enemyConfig);
+  return (kind === 'drone_phase_interceptor_3')
+    ? pools.drone_phase_interceptor_3
+    : pools['recon_drone_2.8m'];
+}
+
+/**
+ * Spawns a procedural Stage 1 enemy graphic directly from its dedicated separate enemy-type pool
+ * (Drone Phase Interceptor Mk.III pool OR Void Recon Drone 2.8m pool).
+ */
+export function spawnProceduralEnemyFromPool(enemyConfig = null, position = null, quaternion = null, scale = null, engineApi = null, scene = null) {
+  const pools = ensureStageProceduralEnemyPools(engineApi, scene);
+  const cfg = enemyConfig || (stageConfig.enemies && stageConfig.enemies[0]) || null;
+  if (activeStageObjectPool && !activeStageObjectPool._disposed && typeof activeStageObjectPool.spawnProceduralEnemy === 'function') {
+    return activeStageObjectPool.spawnProceduralEnemy(cfg, position, quaternion, scale);
+  }
+  if (pools) {
+    const kind = resolveWarpOriginEnemyKind(cfg);
+    const targetPool = (kind === 'drone_phase_interceptor_3')
+      ? pools.drone_phase_interceptor_3
+      : pools['recon_drone_2.8m'];
+    if (targetPool && typeof targetPool.spawn === 'function') {
+      return targetPool.spawn(position, quaternion, scale);
+    }
+  }
+  return null;
+}
+
+/**
+ * Returns a procedural Stage 1 enemy graphic back to its own dedicated separate enemy-type pool.
+ */
+export function despawnProceduralEnemyToPool(mesh, enemyConfig = null, engineApi = null) {
+  if (!mesh) return false;
+  resetWarpOriginEnemyWeaponDecals(mesh);
+  const stagePool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || (typeof window !== 'undefined' && window.stageObjectPool)
+    || activeStageObjectPool
+    || null;
+  if (stagePool && !stagePool._disposed && typeof stagePool.despawnProceduralEnemy === 'function') {
+    return stagePool.despawnProceduralEnemy(mesh, enemyConfig);
+  }
+  const kind = resolveWarpOriginEnemyKind(mesh || enemyConfig);
+  const targetPool = (kind === 'drone_phase_interceptor_3')
+    ? activeInterceptorProceduralEnemyPool
+    : activeReconDroneProceduralEnemyPool;
+  if (targetPool && !targetPool._disposed && typeof targetPool.despawn === 'function') {
+    targetPool.despawn(mesh);
+    return true;
+  }
+  return false;
+}
+
 export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
   const api = engineApi || (context && context.engineApi);
   if (!api || typeof api.spawnEnemyWaveFromPool !== 'function') return [];
 
   ensureWarpOriginProceduralEnemies();
+  const targetScene = (context && context.scene) || (api && api.scene) || (typeof window !== 'undefined' && window.scene) || null;
+  ensureStageProceduralEnemyPools(api, targetScene);
 
   const waves = stageConfig.waves || [
     { wave_number: 1, enemy_count: 5, interval_seconds: 0 },
@@ -2499,10 +2877,12 @@ export function applyStage(engineApi) {
     engineApi.showToast("🚀 STAGE 1: WARP ORIGIN [MOBILE] LOADED");
   }
 
-  // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
+  // --- Bind Stage 1's Two Separate Procedural Enemy Pools & Mount Cockpit Overlay via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
+  const proceduralEnemyPools = ensureStageProceduralEnemyPools(engineApi, scene);
   const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || activeStageObjectPool
     || (typeof window !== 'undefined' && window.stageObjectPool)
     || null;
 
@@ -2654,6 +3034,16 @@ export function applyStage(engineApi) {
     window.isEnemyWithinWeaponRange = isEnemyWithinWeaponRange;
     window.canEnemyHitPlayer = canEnemyHitPlayer;
     window.canPlayerDestroyEnemy = canPlayerDestroyEnemy;
+    window.stageProceduralEnemyPools = proceduralEnemyPools || (pool && typeof pool.getProceduralEnemyPools === 'function' ? pool.getProceduralEnemyPools() : null);
+    window.stageProceduralEnemyPool = window.stageProceduralEnemyPools;
+    window.stagePhaseInterceptorEnemyPool = (proceduralEnemyPools && proceduralEnemyPools.drone_phase_interceptor_3) || (pool && pool.interceptorProceduralEnemyPool) || null;
+    window.stageInterceptorProceduralEnemyPool = window.stagePhaseInterceptorEnemyPool;
+    window.stageReconDroneEnemyPool = (proceduralEnemyPools && proceduralEnemyPools['recon_drone_2.8m']) || (pool && pool.reconDroneProceduralEnemyPool) || null;
+    window.stageReconDroneProceduralEnemyPool = window.stageReconDroneEnemyPool;
+    window.getStageProceduralEnemyPools = getStageProceduralEnemyPools;
+    window.getStageProceduralEnemyPool = getStageProceduralEnemyPool;
+    window.spawnProceduralEnemyFromPool = spawnProceduralEnemyFromPool;
+    window.despawnProceduralEnemyToPool = despawnProceduralEnemyToPool;
 
     window.setupDesktopPointerCapture = setupDesktopPointerCapture;
     clearCockpitDecalsIfFullDefense();
@@ -2665,6 +3055,33 @@ export function applyStage(engineApi) {
 
 export default {
   stageConfig,
+  createStagePool,
+  WarpOriginObjectPool,
+  WarpOriginProceduralEnemyPool,
+  DronePhaseInterceptorProceduralEnemyPool,
+  PhaseInterceptorProceduralEnemyPool,
+  ReconDroneProceduralEnemyPool,
+  createProceduralEnemyPool,
+  createDronePhaseInterceptorProceduralEnemyPool,
+  createPhaseInterceptorProceduralEnemyPool,
+  createReconDroneProceduralEnemyPool,
+  createProceduralEnemyPools,
+  INTERCEPTOR_PROCEDURAL_ENEMY_POOL_NAME,
+  RECON_DRONE_PROCEDURAL_ENEMY_POOL_NAME,
+  PROCEDURAL_ENEMY_POOL_NAMES,
+  WARP_ORIGIN_ENEMY_SCALE_INCREMENT,
+  PHASE_INTERCEPTOR_ENEMY_SCALE,
+  RECON_DRONE_ENEMY_SCALE,
+  WARP_ORIGIN_ENEMY_SCALE,
+  ensureStageProceduralEnemyPools,
+  ensureStageProceduralEnemyPool,
+  getStageProceduralEnemyPools,
+  getStageProceduralEnemyPool,
+  spawnProceduralEnemyFromPool,
+  despawnProceduralEnemyToPool,
+  createPhaseInterceptorEnemyMesh,
+  createPhaseInterceptorMesh,
+  createReconDroneEnemyMesh,
   createEnemyMesh,
   INTERCEPTOR_WEAPON_DECAL_NAME,
   INTERCEPTOR_WEAPON_FIRE_DURATION_MS,

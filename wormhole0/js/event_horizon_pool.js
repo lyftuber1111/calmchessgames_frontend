@@ -469,15 +469,32 @@ export const RELATIVISTIC_ENEMY_SHIP_TEMPLATE = {
   "destruction_particle_scale": 1
 };
 
-function normalizeStage2EnemyConfig(incomingConfig = {}) {
+function resolveStage2DeviceDir(deviceLike = '') {
+  const raw = String(deviceLike || '').trim().toLowerCase();
+  return (raw === 'mobile' || raw === 'desktop' || raw === 'vr' || raw === 'arcore') ? raw : 'desktop';
+}
+
+function normalizeStage2EnemyConfig(incomingConfig = {}, fallbackDevice = 'desktop') {
   const normalized = {
     ...RELATIVISTIC_ENEMY_SHIP_TEMPLATE,
     ...(incomingConfig || {})
   };
+  const resolvedDevice = resolveStage2DeviceDir(
+    (incomingConfig && incomingConfig.device_type && incomingConfig.device_type !== 'all')
+      ? incomingConfig.device_type
+      : fallbackDevice
+  );
   normalized.id = 'relativistic_enemy_ship';
   normalized.enemy_id = 'relativistic_enemy_ship';
   normalized.model_3d_type = 'relativistic_enemy_ship';
   normalized.model_3d_url = '';
+  normalized.procedural_model_url = (
+    incomingConfig &&
+    typeof incomingConfig.procedural_model_url === 'string' &&
+    incomingConfig.procedural_model_url.trim().endsWith('event_horizon_images/relativistic_enemy_ship.js')
+  )
+    ? incomingConfig.procedural_model_url.trim()
+    : `${resolvedDevice}/event_horizon_images/relativistic_enemy_ship.js`;
   normalized.scale = RELATIVISTIC_ENEMY_SHIP_SCALE;
   normalized.length = 4.64;
   normalized.height = 2.52;
@@ -657,6 +674,9 @@ export function createProceduralEnemyPool(scene, enemyConfig = {}, options = {})
 
 export class EventHorizonObjectPool extends StageObjectPool {
   constructor(scene, stageConfig = {}, options = {}) {
+    const stageDevice = resolveStage2DeviceDir(
+      (stageConfig && (stageConfig.device || (stageConfig.meta && stageConfig.meta.device))) || 'desktop'
+    );
     const incomingPrimary = (
       stageConfig &&
       Array.isArray(stageConfig.enemies) &&
@@ -664,7 +684,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
     )
       ? stageConfig.enemies[0]
       : {};
-    const primaryStageEnemy = normalizeStage2EnemyConfig(incomingPrimary);
+    const primaryStageEnemy = normalizeStage2EnemyConfig(incomingPrimary, stageDevice);
 
     const configWithDefaults = {
       stage_level: 2,
@@ -823,7 +843,7 @@ export class EventHorizonObjectPool extends StageObjectPool {
         "device_type": "all",
         "model_3d_type": "procedural_wormhole",
         "model_3d_url": "",
-        "image_asset_url": "desktop/event_horizon_images/singularity_corona.png",
+        "image_asset_url": `${stageDevice}/event_horizon_images/singularity_corona.png`,
         "image_asset_type": "corona_sprite",
         "scale": "1.15",
         "event_horizon_radius": "8.20",

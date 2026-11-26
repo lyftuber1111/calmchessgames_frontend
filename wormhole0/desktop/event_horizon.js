@@ -1219,6 +1219,8 @@ export function updateEnemyMovement(e, delta, context) {
 let activeStageObjectPool = null;
 let activeProceduralEnemyPool = null;
 
+const RELATIVISTIC_SHIP_PROCEDURAL_MODEL_URL = 'desktop/event_horizon_images/relativistic_enemy_ship.js';
+
 function buildProceduralStageEnemiesList(sourceEnemies = stageConfig.enemies) {
   const list = Array.isArray(sourceEnemies) ? sourceEnemies : [];
   return list.map((entry) => ({
@@ -1227,6 +1229,7 @@ function buildProceduralStageEnemiesList(sourceEnemies = stageConfig.enemies) {
     enemy_id: 'relativistic_enemy_ship',
     model_3d_type: 'relativistic_enemy_ship',
     model_3d_url: '',
+    procedural_model_url: RELATIVISTIC_SHIP_PROCEDURAL_MODEL_URL,
     scale: RELATIVISTIC_ENEMY_SHIP_SCALE,
     custom_from_db: true
   }));
@@ -1276,6 +1279,7 @@ function installEventHorizonActiveEnemiesGuard() {
             item &&
             item.model_3d_type === 'relativistic_enemy_ship' &&
             !item.model_3d_url &&
+            item.procedural_model_url === RELATIVISTIC_SHIP_PROCEDURAL_MODEL_URL &&
             Number(item.scale) === Number(RELATIVISTIC_ENEMY_SHIP_SCALE)
           );
         nextVal = alreadyProcedural
@@ -1307,6 +1311,7 @@ function ensureEventHorizonRelativisticOnlyStageEnemy() {
     || !cur[0]
     || cur[0].model_3d_type !== 'relativistic_enemy_ship'
     || Boolean(cur[0].model_3d_url)
+    || cur[0].procedural_model_url !== RELATIVISTIC_SHIP_PROCEDURAL_MODEL_URL
     || Number(cur[0].scale) !== Number(RELATIVISTIC_ENEMY_SHIP_SCALE);
 
   if (needsOverride) {

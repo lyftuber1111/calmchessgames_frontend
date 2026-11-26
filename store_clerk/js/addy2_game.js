@@ -1312,6 +1312,7 @@ async function yieldToMain() {
   canvas.addEventListener('pointercancel', (e) => endCanvasPointer(e, true));
 
   // Mobile Virtual Touch Joysticks
+  const LOOK_STICK_HOLD_DELAY_MS = 2000;
   let moveStickPointerId = null;
   let moveStickCenter = { x: 0, y: 0 };
   let moveStickMaxRadius = 36;
@@ -1320,13 +1321,25 @@ async function yieldToMain() {
   let lookStickMaxRadius = 36;
   let lookStickStartX = 0;
   let lookStickStartY = 0;
+  let lookStickLastX = 0;
+  let lookStickLastY = 0;
   let lookStickStartTime = 0;
-  let lookStickMoved = false;
+  let lookStickUnlocked = false;
+  let lookStickUnlockTimer = null;
   let lookTapFlashTimer = null;
+
+  function clearLookStickUnlockTimer() {
+    if (lookStickUnlockTimer !== null) {
+      clearTimeout(lookStickUnlockTimer);
+      lookStickUnlockTimer = null;
+    }
+  }
 
   function resetTouchControls() {
     moveStickPointerId = null;
     lookStickPointerId = null;
+    lookStickUnlocked = false;
+    clearLookStickUnlockTimer();
     state.touchMove.x = 0;
     state.touchMove.y = 0;
     state.touchLook.x = 0;
@@ -1359,6 +1372,21 @@ async function yieldToMain() {
   }
 
   function updateLookStick(clientX, clientY) {
+    lookStickLastX = clientX;
+    lookStickLastY = clientY;
+
+    // Hold-delay gate: do NOT move up/down/left/right for the first 2 seconds so the button can be tapped cleanly!
+    if (!lookStickUnlocked) {
+      if ((performance.now() - lookStickStartTime) < LOOK_STICK_HOLD_DELAY_MS) {
+        state.touchLook.x = 0;
+        state.touchLook.y = 0;
+        if (touchLookKnob) touchLookKnob.style.transform = 'translate3d(0px, 0px, 0)';
+        return;
+      }
+      lookStickUnlocked = true;
+      if (touchLookZone) touchLookZone.classList.add('is-active');
+    }
+
     const dx = clientX - lookStickCenter.x;
     const dy = clientY - lookStickCenter.y;
     const dist = Math.hypot(dx, dy);
@@ -1366,9 +1394,6 @@ async function yieldToMain() {
     const clamped = Math.min(dist, lookStickMaxRadius);
     if (touchLookKnob) {
       touchLookKnob.style.transform = `translate3d(${Math.cos(angle) * clamped}px, ${Math.sin(angle) * clamped}px, 0)`;
-    }
-    if (Math.hypot(clientX - lookStickStartX, clientY - lookStickStartY) > 14) {
-      lookStickMoved = true;
     }
     const dz = lookStickMaxRadius * 0.16;
     if (clamped < dz) {
@@ -1429,11 +1454,24 @@ async function yieldToMain() {
       lookStickPointerId = e.pointerId;
       lookStickStartX = e.clientX;
       lookStickStartY = e.clientY;
+      lookStickLastX = e.clientX;
+      lookStickLastY = e.clientY;
       lookStickStartTime = performance.now();
-      lookStickMoved = false;
-      touchLookZone.classList.add('is-active');
+      lookStickUnlocked = false;
+      state.touchLook.x = 0;
+      state.touchLook.y = 0;
+      if (touchLookKnob) touchLookKnob.style.transform = 'translate3d(0px, 0px, 0)';
       try { touchLookZone.setPointerCapture(e.pointerId); } catch (_) {}
-      updateLookStick(e.clientX, e.clientY);
+
+      clearLookStickUnlockTimer();
+      const capturedPointerId = e.pointerId;
+      lookStickUnlockTimer = setTimeout(() => {
+        lookStickUnlockTimer = null;
+        if (lookStickPointerId !== capturedPointerId) return;
+        lookStickUnlocked = true;
+        touchLookZone.classList.add('is-active');
+        updateLookStick(lookStickLastX, lookStickLastY);
+      }, LOOK_STICK_HOLD_DELAY_MS);
     });
     touchLookZone.addEventListener('pointermove', (e) => {
       if (e.pointerId !== lookStickPointerId) return;
@@ -1444,9 +1482,10 @@ async function yieldToMain() {
     const relLook = (e, isCancel) => {
       if (e.pointerId !== lookStickPointerId) return;
       const dur = performance.now() - lookStickStartTime;
-      const delta = Math.hypot(e.clientX - lookStickStartX, e.clientY - lookStickStartY);
-      const wasTap = !isCancel && !lookStickMoved && dur < 360 && delta < 24;
+      const wasTap = !isCancel && !lookStickUnlocked && dur < LOOK_STICK_HOLD_DELAY_MS;
       lookStickPointerId = null;
+      lookStickUnlocked = false;
+      clearLookStickUnlockTimer();
       state.touchLook.x = 0;
       state.touchLook.y = 0;
       touchLookZone.classList.remove('is-active');

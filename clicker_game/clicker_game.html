@@ -17,6 +17,12 @@
   <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
   <link rel="manifest" href="../site.webmanifest">
 
+  <!-- Resource Hints & ES Module Preloads -->
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="modulepreload" href="js/clicker_game.js">
+  <link rel="modulepreload" href="js/clicker_audio.js">
+
   <!-- Three.js & WebXR Addons Import Map -->
   <script type="importmap">
     {
@@ -223,7 +229,7 @@
   </header>
 
   <main class="xr-stage">
-    <canvas id="xr-canvas" aria-label="Interactive 3D XR 7 rows of cartoonish mechanical keyboard clickers in a pink silicone case"></canvas>
+    <canvas id="xr-canvas" data-asset-pool="procedural" data-pool-ready="false" aria-label="Interactive 3D XR 7 rows of cartoonish mechanical keyboard clickers in a pink silicone case"></canvas>
   </main>
 
   <script type="module" src="js/clicker_game.js"></script>

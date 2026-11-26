@@ -1,0 +1,32 @@
+{
+  "model_name": "addy_lost_kid_3",
+  "model_path": "./meshy_test_0/models/addy_lost_kid_3/addy_lost_kid_3.glb",
+  "walk_animation_path": "./meshy_test_0/models/addy_lost_kid_3/addy_lost_kid_3_walk.glb",
+  "textures_dir": "./meshy_test_0/models/addy_lost_kid_3/addy_lost_kid_3_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_lost_kid_3/addy_lost_kid_3_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_lost_kid_3/addy_lost_kid_3_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_lost_kid_3/addy_lost_kid_3_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_lost_kid_3/addy_lost_kid_3_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_lost_kid_3/addy_lost_kid_3_textures/texture_0_roughness.png"
+  },
+  "rigged": true,
+  "pose_mode": "a-pose",
+  "animations": {
+    "idle": {
+      "action_id": 0,
+      "key": "Idle",
+      "file": "./meshy_test_0/models/addy_lost_kid_3/addy_lost_kid_3.glb"
+    },
+    "walk": {
+      "action_id": 613,
+      "key": "Casual_Walk_inplace",
+      "file": "./meshy_test_0/models/addy_lost_kid_3/addy_lost_kid_3_walk.glb"
+    }
+  },
+  "preview_task_id": "01a21a15-2931-76c4-9cc7-c734047884c2",
+  "refine_task_id": "01a21a15-e53b-7111-9838-51220c6a0605",
+  "rig_task_id": "01a21a16-76af-7135-9335-8b4a2b41afa9",
+  "idle_anim_task_id": "01a21a16-b938-7172-a270-ccb28d40f92f",
+  "walk_anim_task_id": "01a21a16-ba5b-7626-bf03-e9801234a835"
+}

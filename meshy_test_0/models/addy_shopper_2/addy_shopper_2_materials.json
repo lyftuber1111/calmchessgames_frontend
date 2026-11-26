@@ -1,0 +1,32 @@
+{
+  "model_name": "addy_shopper_2",
+  "model_path": "./meshy_test_0/models/addy_shopper_2/addy_shopper_2.glb",
+  "walk_animation_path": "./meshy_test_0/models/addy_shopper_2/addy_shopper_2_walk.glb",
+  "textures_dir": "./meshy_test_0/models/addy_shopper_2/addy_shopper_2_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_shopper_2/addy_shopper_2_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_shopper_2/addy_shopper_2_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_shopper_2/addy_shopper_2_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_shopper_2/addy_shopper_2_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_shopper_2/addy_shopper_2_textures/texture_0_roughness.png"
+  },
+  "rigged": true,
+  "pose_mode": "a-pose",
+  "animations": {
+    "idle": {
+      "action_id": 0,
+      "key": "Idle",
+      "file": "./meshy_test_0/models/addy_shopper_2/addy_shopper_2.glb"
+    },
+    "walk": {
+      "action_id": 613,
+      "key": "Casual_Walk_inplace",
+      "file": "./meshy_test_0/models/addy_shopper_2/addy_shopper_2_walk.glb"
+    }
+  },
+  "preview_task_id": "01a21a15-2933-756e-88fa-9b947f5b44da",
+  "refine_task_id": "01a21a15-d4c3-70fe-b373-73a6b02ce158",
+  "rig_task_id": "01a21a16-54fd-7191-a331-44252dc7d92b",
+  "idle_anim_task_id": "01a21a16-9657-75bc-82c4-838d097bd676",
+  "walk_anim_task_id": "01a21a16-9796-7467-be8a-71652a776598"
+}

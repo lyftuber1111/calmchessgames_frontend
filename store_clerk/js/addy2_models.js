@@ -181,10 +181,24 @@ function getContactShadowMesh(radiusX = 0.55, radiusZ = 0.55) {
 // Meshy 3D Asset Manifest & Rigged Character Animation Preloader
 // ---------------------------------------------------------------------------
 
-export const RIGGED_CHARACTER_KEYS = new Set([
+export const LOST_KID_KEYS = [
   'addy_lost_kid',
+  'addy_lost_kid_2',
+  'addy_lost_kid_3',
+  'addy_lost_kid_4'
+];
+
+export const SHOPPER_KEYS = [
+  'addy_shopper',
+  'addy_shopper_2',
+  'addy_shopper_3',
+  'addy_shopper_4'
+];
+
+export const RIGGED_CHARACTER_KEYS = new Set([
+  ...LOST_KID_KEYS,
   'addy_parent',
-  'addy_shopper'
+  ...SHOPPER_KEYS
 ]);
 
 export const MESHY_ASSET_SPECS = {
@@ -195,10 +209,16 @@ export const MESHY_ASSET_SPECS = {
   addy_cup:              { targetHeight: 0.40, maxHorizontal: 0.28, isSmallProp: true },
   addy_sweatshirt_kids:  { targetHeight: 0.24, maxHorizontal: 0.36, alignLongAxis: 'x', isSmallProp: true },
   addy_sweatshirt_adult: { targetHeight: 0.28, maxHorizontal: 0.44, alignLongAxis: 'x', isSmallProp: true },
-  // 3 Auto-Rigged & Animated Meshy Characters (Idle + Casual_Walk_inplace!)
+  // 9 Auto-Rigged & Animated Meshy Characters (4 Lost Kids + 1 Parent + 4 Checkout Shoppers)
   addy_lost_kid:         { targetHeight: 1.12, maxHorizontal: 0.85, isRiggedCharacter: true },
+  addy_lost_kid_2:       { targetHeight: 1.10, maxHorizontal: 0.85, isRiggedCharacter: true },
+  addy_lost_kid_3:       { targetHeight: 1.14, maxHorizontal: 0.85, isRiggedCharacter: true },
+  addy_lost_kid_4:       { targetHeight: 1.08, maxHorizontal: 0.85, isRiggedCharacter: true },
   addy_parent:           { targetHeight: 1.70, maxHorizontal: 1.05, isRiggedCharacter: true },
   addy_shopper:          { targetHeight: 1.66, maxHorizontal: 1.05, isRiggedCharacter: true },
+  addy_shopper_2:        { targetHeight: 1.72, maxHorizontal: 1.05, isRiggedCharacter: true },
+  addy_shopper_3:        { targetHeight: 1.62, maxHorizontal: 1.05, isRiggedCharacter: true },
+  addy_shopper_4:        { targetHeight: 1.74, maxHorizontal: 1.05, isRiggedCharacter: true },
   // 4 Core Props & Rewards
   addy_free_food_tray:   { targetHeight: 0.24, maxHorizontal: 0.68, alignLongAxis: 'x', isSmallProp: true },
   addy_tip_100k:         { targetHeight: 0.24, maxHorizontal: 0.34, alignLongAxis: 'x', isSmallProp: true },
@@ -221,9 +241,9 @@ export const MESHY_ASSET_SPECS = {
 };
 
 const SHADOW_CASTER_KEYS = new Set([
-  'addy_lost_kid',
+  ...LOST_KID_KEYS,
   'addy_parent',
-  'addy_shopper',
+  ...SHOPPER_KEYS,
   'addy_parked_car',
   'addy_shopping_cart',
   'addy_stock_cart',
@@ -2006,14 +2026,15 @@ export function createHundredKTipModel() {
 const CHARACTER_TINTS = [null, 0xfef08a, 0xbae6fd, 0xfbcfe8, 0xc7d2fe, 0xbbf7d0];
 const sharedCharHitGeo = new THREE.BoxGeometry(0.85, 1.6, 0.85);
 
-export function createPersonCharacter({ isKid = false, name = '', seed = 0, isParent = false } = {}) {
+export function createPersonCharacter({ isKid = false, name = '', seed = 0, isParent = false, modelKey = null } = {}) {
   const group = new THREE.Group();
-  const meshyKey = isKid ? 'addy_lost_kid' : (isParent ? 'addy_parent' : 'addy_shopper');
-  const tintHex = CHARACTER_TINTS[seed % CHARACTER_TINTS.length];
-  const modelRoot = cloneMeshyTemplate(meshyKey, {
-    tintHex,
-    tintStrength: tintHex ? 0.14 : 0
-  });
+  const meshyKey = modelKey || (
+    isKid
+      ? LOST_KID_KEYS[seed % LOST_KID_KEYS.length]
+      : (isParent ? 'addy_parent' : SHOPPER_KEYS[seed % SHOPPER_KEYS.length])
+  );
+  // Keep full-fidelity Meshy PBR skin/hair/clothing colors without tint washout on our 4 unique kids & 4 unique shoppers
+  const modelRoot = cloneMeshyTemplate(meshyKey);
   group.add(modelRoot);
 
   if (!PERF_PROFILE.useShadows) {

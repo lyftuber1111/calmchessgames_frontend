@@ -7,6 +7,8 @@ import * as THREE from 'three';
 import {
   PERF_PROFILE,
   ITEM_LIST,
+  LOST_KID_KEYS,
+  SHOPPER_KEYS,
   createRestockItem,
   createPersonCharacter,
   createFreeFoodTray,
@@ -130,6 +132,45 @@ export class ProceduralMeshPool {
     return obj;
   }
 
+  spawnRandom(position = null, excludeKey = null, targetParent = null) {
+    let obj = null;
+    if (this.available.length > 0) {
+      let candidates = this.available;
+      if (excludeKey && this.available.length > 1) {
+        const filtered = this.available.filter((c) => {
+          const root = c && c.group ? c.group : c;
+          return !root || !root.userData || root.userData.meshyAsset !== excludeKey;
+        });
+        if (filtered.length > 0) candidates = filtered;
+      }
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      const idx = this.available.indexOf(pick);
+      if (idx !== -1) this.available.splice(idx, 1);
+      obj = pick;
+    } else {
+      obj = this._createInstance(this.createdCount);
+    }
+    const root = obj && obj.group ? obj.group : obj;
+    if (root) {
+      const host = targetParent || this.scene;
+      if (host && root.parent !== host) {
+        host.add(root);
+      }
+      root.visible = true;
+      root.rotation.set(0, 0, 0);
+      root.scale.set(1, 1, 1);
+      if (position) {
+        root.position.copy(position);
+      } else {
+        root.position.set(0, 0, 0);
+      }
+      root.userData.inPool = false;
+      root.userData.isActive = true;
+    }
+    this.active.add(obj);
+    return obj;
+  }
+
   despawn(obj) {
     if (!obj) return;
     if (this.active.has(obj)) {
@@ -167,12 +208,18 @@ export class WalmartObjectPool {
       this.itemPools.set(itemType, pool);
     }
 
-    // 2. Pre-allocate Meshy Rigged & Animated Lost Kid Pool
+    // 2. Pre-allocate 4 Unique Meshy Rigged & Animated Lost Kid Variants!
+    this.lastLostKidKey = null;
     this.lostKidPool = new ProceduralMeshPool(
       scene,
       'walmart_meshy_lost_kid',
-      PERF_PROFILE.isMobile ? 2 : 3,
-      (idx) => createPersonCharacter({ isKid: true, name: 'Kid', seed: idx + 1 }),
+      LOST_KID_KEYS.length,
+      (idx) => createPersonCharacter({
+        isKid: true,
+        name: 'Kid',
+        seed: idx,
+        modelKey: LOST_KID_KEYS[idx % LOST_KID_KEYS.length]
+      }),
       this.sharedTextures
     );
 
@@ -180,17 +227,23 @@ export class WalmartObjectPool {
     this.parentPool = new ProceduralMeshPool(
       scene,
       'walmart_meshy_parent',
-      PERF_PROFILE.isMobile ? 2 : 3,
+      2,
       (idx) => createPersonCharacter({ isKid: false, isParent: true, name: 'Parent', seed: idx + 5 }),
       this.sharedTextures
     );
 
-    // 4. Pre-allocate Meshy Rigged & Animated Checkout Shopper Pool
+    // 4. Pre-allocate 4 Unique Meshy Rigged & Animated Checkout Shopper Variants!
+    this.lastShopperKey = null;
     this.shopperPool = new ProceduralMeshPool(
       scene,
       'walmart_meshy_shopper',
-      PERF_PROFILE.isMobile ? 3 : 5,
-      (idx) => createPersonCharacter({ isKid: false, name: '', seed: idx + 11 }),
+      SHOPPER_KEYS.length,
+      (idx) => createPersonCharacter({
+        isKid: false,
+        name: '',
+        seed: idx,
+        modelKey: SHOPPER_KEYS[idx % SHOPPER_KEYS.length]
+      }),
       this.sharedTextures
     );
 
@@ -277,7 +330,10 @@ export class WalmartObjectPool {
   }
 
   spawnLostKid(name, position) {
-    const kidChar = this.lostKidPool.spawn(position);
+    const kidChar = this.lostKidPool.spawnRandom(position, this.lastLostKidKey);
+    if (kidChar && kidChar.group && kidChar.group.userData) {
+      this.lastLostKidKey = kidChar.group.userData.meshyAsset;
+    }
     if (kidChar.nameSprite) {
       updateNameTagSprite(kidChar.nameSprite, name, '#ffc220', '#0f172a');
     }
@@ -307,7 +363,10 @@ export class WalmartObjectPool {
   }
 
   spawnShopper(position) {
-    const shopperChar = this.shopperPool.spawn(position);
+    const shopperChar = this.shopperPool.spawnRandom(position, this.lastShopperKey);
+    if (shopperChar && shopperChar.group && shopperChar.group.userData) {
+      this.lastShopperKey = shopperChar.group.userData.meshyAsset;
+    }
     this._resetCharacterPose(shopperChar);
     return shopperChar;
   }

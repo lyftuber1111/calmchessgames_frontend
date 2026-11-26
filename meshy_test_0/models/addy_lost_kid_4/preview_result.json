@@ -1,0 +1,50 @@
+{
+  "id": "01a21a15-292d-74ea-ab1d-c19b68447277",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 1828170759,
+  "prompt": "Full-body stylized friendly young girl cartoon child character with a complete smiling head, big happy eyes, and wavy auburn hair with a colorful headband, wearing a sunny yellow sweater, blue jeans, and purple sneakers, standing upright in a clean symmetrical A-pose with arms slightly away from body, Pixar-inspired low-poly game character",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795733926379,
+  "progress": 100,
+  "started_at": 1795733926388,
+  "finished_at": 1795733970116,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/model.glb?Expires=4949251200&Signature=ILGlX~cqX9i7VCO6aqp30GhhX3L4lGd0fh26O4LrJGgZIjBw7IvofKCRj0wQ4ED3NjuaBGkB~hO602XcyM8vQVmD0ZcXFKxVbY4QKIV1UAm62nhAc6Z5k8B2Dk6s5FkkIh0~HK7qqfyHIPcgbrSc-vERt3dVWdDxGuI50uv--HD7qpCtP2JWn218ZiguFgn59T6p~Crqg4E8ckoZeliTbQ-v15vCBwoKbXOc-C98LRD-4f4KsmAOd3Zfw-NnxSVKbb3YOx-ALY90JAaJWYvDqmxfF--~~bW6Pa4qgcMwd9TYQQ9hsqHPfVnHkRubOXc8PaqPV~tlgXlA5HGOmWL3qw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/model.fbx?Expires=4949251200&Signature=K8vhupYWZHVeqFlQTi-q~xpn5E4HNC-1Z~xT7YRGGHJLGnSkfmqqTfxYzHj1LU~3Xzj7Y3ntx4CbcY2CD3Oxpp~bZTEPyIuT3lZUzCXHGuFwUCxzBa94~Auqnnu466-zI~8dFG~yDBuYOopNjzfqRgA8B2fPinqUYBgMOZhelcfv01VQWZShxALC-UISwp9Hgm8Tp4~3QAxerwIujdGESfUc4pe9bJRbB8oGbIwKwLQTWMdNVCZwKazGe~LAcfjsJiZmXfXH9pQkqrNfYYeXVXU~1k9aw6fQfXAyH3s7LEZHDjgJF9wPBrQtRn8wY2qdwucXQEjnq-UUibfT594WCw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/model.usdz?Expires=4949251200&Signature=DKxQVIcFX~BN5oAN3y5dHAHJZ4x-m3yLfL62s-3yfwPVgEgZaH98ztepha4cKOuYXSgpLXXKg-SF170IHARSPeEXBmZE7DyoveQT8Dvf8Owwm3Odo7K-ZCj9SzRz7y~m1d3T486DNJPxC7BW7jlUedQvAgINhb7XGqC-hkuj5P~nyb7Xgk~2uFPavKDeTU93R~XcfhuVCT7RTUqGId4Y0GCoVppWYlkD0Hb25nhXyIJkCuOFFpaPcXc7FGD4KIfVZm1w71qwiLffvdU5gD8TkbYZmP5wypcIanv7cnvbLf5irAQnUJw~tkyl5lwRlgsEpLTGJGFCdA941wzhs1V~gg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/model.obj?Expires=4949251200&Signature=OHpcF3aeFdvFNWeknnpwVBJXOeS7YzCs-D4fAKilDW4eAaZrSGpmESgs-~~Br~gm1r63y5UjIy90X-fnzb3apbgRsV1W65Vs1nzB7JmoFkr3KGYh2~Lx93PpTshUdCxUZaFcBm1wizhyGiJDRdn0qIn3IBOv91xSHZsVrAOmeQr~MOYAVB4yu1LQi94SDl2wXv0leInA~x1LkIVH0ZtPy39ecrVvAg8wY2QFSyx00Uw6VfjIjmUeirth-C4EjWcjNoFdtz~QDyXgKa0g~KXaXFmAHEu6uPOhVny03OGvJ5fz19CnpTdLVUNWPcXoyTYRlPVzai3Ui0m6wXm2jdXVGA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/model.stl?Expires=4949251200&Signature=jZ6TDzR-7EURXDSofa2yh53rrsDhAE7NENCPYj75YM-qHO6cH~BDeSuE~Oljwn1a0iTUDSMAF4yYESXl8EqLcRm~FFpwY3QEd8hRlRNwcDpjGDxar23CmHF-XwQ~YLdjmjEd119S6dQkPcXcM5gs1piuLQrA0eBmsHaoX6fajcziSRyio4SryB7gpqO8vAKIiXcY1CeI8iHtBKxhNuTy9LUIPelhgM-1VL50yXNlVVt6Pya-KJxo0-eO5~94Pt6HQ4UwYNkAleTGrZ~e5wGwi~J-zXDk98J~Kw7UHwMqgYQ6jqVzAxLAPGCPFYudVt6gpWzxthRPKeb9Ic7BGS0rCA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/preview.png?Expires=4949251200&Signature=c6awe3LBGRKnDLSnKDh0VJZrz9Bd28vDoh392pxbansI6Y16VIZgsDHwQgQIh4nsLFmKcmnHd2eFLIJ0gueun6u7Ldn~l8vTtBksV7oYnfvxWlmhEe-YcrHuwa-Fq1zvZNQbYPyEUi69v60LElchxNxnmajsr~vn4TBLUrtuMLCULyQEsHD1PKs2c4TMHjMJsLJXkV6-04gxcwWYJvEJfZKmR5Zzk-JfD-Ift6nVETn3aZCsZVQ1wON1JiFYBmRNQpeIMsDC8WcVUX5r1Bf7-pSpAHDe4mZ46xtk8roWH6ZZN7Ug9bbzcw0ATcGYRqntkWaq8D5gN37piizBVj~hRg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "pose_mode": "a-pose",
+    "prompt": "Full-body stylized friendly young girl cartoon child character with a complete smiling head, big happy eyes, and wavy auburn hair with a colorful headband, wearing a sunny yellow sweater, blue jeans, and purple sneakers, standing upright in a clean symmetrical A-pose with arms slightly away from body, Pixar-inspired low-poly game character",
+    "should_remesh": true,
+    "target_polycount": 3800,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 1828170759,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/model.fbx?Expires=4949251200&Signature=K8vhupYWZHVeqFlQTi-q~xpn5E4HNC-1Z~xT7YRGGHJLGnSkfmqqTfxYzHj1LU~3Xzj7Y3ntx4CbcY2CD3Oxpp~bZTEPyIuT3lZUzCXHGuFwUCxzBa94~Auqnnu466-zI~8dFG~yDBuYOopNjzfqRgA8B2fPinqUYBgMOZhelcfv01VQWZShxALC-UISwp9Hgm8Tp4~3QAxerwIujdGESfUc4pe9bJRbB8oGbIwKwLQTWMdNVCZwKazGe~LAcfjsJiZmXfXH9pQkqrNfYYeXVXU~1k9aw6fQfXAyH3s7LEZHDjgJF9wPBrQtRn8wY2qdwucXQEjnq-UUibfT594WCw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/model.glb?Expires=4949251200&Signature=ILGlX~cqX9i7VCO6aqp30GhhX3L4lGd0fh26O4LrJGgZIjBw7IvofKCRj0wQ4ED3NjuaBGkB~hO602XcyM8vQVmD0ZcXFKxVbY4QKIV1UAm62nhAc6Z5k8B2Dk6s5FkkIh0~HK7qqfyHIPcgbrSc-vERt3dVWdDxGuI50uv--HD7qpCtP2JWn218ZiguFgn59T6p~Crqg4E8ckoZeliTbQ-v15vCBwoKbXOc-C98LRD-4f4KsmAOd3Zfw-NnxSVKbb3YOx-ALY90JAaJWYvDqmxfF--~~bW6Pa4qgcMwd9TYQQ9hsqHPfVnHkRubOXc8PaqPV~tlgXlA5HGOmWL3qw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/model.obj?Expires=4949251200&Signature=OHpcF3aeFdvFNWeknnpwVBJXOeS7YzCs-D4fAKilDW4eAaZrSGpmESgs-~~Br~gm1r63y5UjIy90X-fnzb3apbgRsV1W65Vs1nzB7JmoFkr3KGYh2~Lx93PpTshUdCxUZaFcBm1wizhyGiJDRdn0qIn3IBOv91xSHZsVrAOmeQr~MOYAVB4yu1LQi94SDl2wXv0leInA~x1LkIVH0ZtPy39ecrVvAg8wY2QFSyx00Uw6VfjIjmUeirth-C4EjWcjNoFdtz~QDyXgKa0g~KXaXFmAHEu6uPOhVny03OGvJ5fz19CnpTdLVUNWPcXoyTYRlPVzai3Ui0m6wXm2jdXVGA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/model.stl?Expires=4949251200&Signature=jZ6TDzR-7EURXDSofa2yh53rrsDhAE7NENCPYj75YM-qHO6cH~BDeSuE~Oljwn1a0iTUDSMAF4yYESXl8EqLcRm~FFpwY3QEd8hRlRNwcDpjGDxar23CmHF-XwQ~YLdjmjEd119S6dQkPcXcM5gs1piuLQrA0eBmsHaoX6fajcziSRyio4SryB7gpqO8vAKIiXcY1CeI8iHtBKxhNuTy9LUIPelhgM-1VL50yXNlVVt6Pya-KJxo0-eO5~94Pt6HQ4UwYNkAleTGrZ~e5wGwi~J-zXDk98J~Kw7UHwMqgYQ6jqVzAxLAPGCPFYudVt6gpWzxthRPKeb9Ic7BGS0rCA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/model.usdz?Expires=4949251200&Signature=DKxQVIcFX~BN5oAN3y5dHAHJZ4x-m3yLfL62s-3yfwPVgEgZaH98ztepha4cKOuYXSgpLXXKg-SF170IHARSPeEXBmZE7DyoveQT8Dvf8Owwm3Odo7K-ZCj9SzRz7y~m1d3T486DNJPxC7BW7jlUedQvAgINhb7XGqC-hkuj5P~nyb7Xgk~2uFPavKDeTU93R~XcfhuVCT7RTUqGId4Y0GCoVppWYlkD0Hb25nhXyIJkCuOFFpaPcXc7FGD4KIfVZm1w71qwiLffvdU5gD8TkbYZmP5wypcIanv7cnvbLf5irAQnUJw~tkyl5lwRlgsEpLTGJGFCdA941wzhs1V~gg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a15-292d-74ea-ab1d-c19b68447277/output/preview.png?Expires=4949251200&Signature=c6awe3LBGRKnDLSnKDh0VJZrz9Bd28vDoh392pxbansI6Y16VIZgsDHwQgQIh4nsLFmKcmnHd2eFLIJ0gueun6u7Ldn~l8vTtBksV7oYnfvxWlmhEe-YcrHuwa-Fq1zvZNQbYPyEUi69v60LElchxNxnmajsr~vn4TBLUrtuMLCULyQEsHD1PKs2c4TMHjMJsLJXkV6-04gxcwWYJvEJfZKmR5Zzk-JfD-Ift6nVETn3aZCsZVQ1wON1JiFYBmRNQpeIMsDC8WcVUX5r1Bf7-pSpAHDe4mZ46xtk8roWH6ZZN7Ug9bbzcw0ATcGYRqntkWaq8D5gN37piizBVj~hRg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

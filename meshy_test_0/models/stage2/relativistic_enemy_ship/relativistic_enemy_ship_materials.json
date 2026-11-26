@@ -1,0 +1,29 @@
+{
+  "model": "relativistic_enemy_ship",
+  "coordinate_system": {
+    "forward": "+X",
+    "up": "+Y",
+    "right": "+Z",
+    "handedness": "right-handed (glTF 2.0)"
+  },
+  "dimensions_meters_gltf_xyz": [
+    6.0002,
+    2.5209,
+    4.6399
+  ],
+  "tachyon_lance_tip_gltf_xyz": [
+    3.0002,
+    0.0532,
+    -0.0387
+  ],
+  "triangles": 9328,
+  "textures_dir": "./relativistic_enemy_ship_textures",
+  "textures": {
+    "base_color": "./relativistic_enemy_ship_textures/texture_0_base_color.png",
+    "metallic": "./relativistic_enemy_ship_textures/texture_0_metallic.png",
+    "roughness": "./relativistic_enemy_ship_textures/texture_0_roughness.png",
+    "normal": "./relativistic_enemy_ship_textures/texture_0_normal.png",
+    "emissive": "./relativistic_enemy_ship_textures/texture_0_emissive.png",
+    "thumbnail": "./relativistic_enemy_ship_textures/thumbnail.png"
+  }
+}

@@ -1,0 +1,13 @@
+# Relativistic Enemy Ship Material
+newmtl RelativisticEnemyShipMat
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ns 250.000000
+d 1.000000
+illum 2
+map_Kd ./relativistic_enemy_ship_textures/texture_0_base_color.png
+map_Pm ./relativistic_enemy_ship_textures/texture_0_metallic.png
+map_Pr ./relativistic_enemy_ship_textures/texture_0_roughness.png
+map_Bump ./relativistic_enemy_ship_textures/texture_0_normal.png
+map_Ke ./relativistic_enemy_ship_textures/texture_0_emissive.png

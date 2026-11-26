@@ -5722,6 +5722,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop', tra
         window.stageProceduralEnemyPools = null;
         window.stagePhaseInterceptorEnemyPool = null;
         window.stageReconDroneEnemyPool = null;
+        window.stageRelativisticEnemyShipPool = null;
       }
       const candidatePoolPaths = [
         `./${stage.slug}_pool.js?t=${timestamp}`,
@@ -5773,6 +5774,9 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop', tra
       window.stageReconDroneEnemyPool = (newPool && typeof newPool.getReconDroneProceduralEnemyPool === 'function')
         ? newPool.getReconDroneProceduralEnemyPool()
         : (newPool && newPool.reconDroneProceduralEnemyPool) || null;
+      window.stageRelativisticEnemyShipPool = (newPool && typeof newPool.getRelativisticEnemyShipProceduralEnemyPool === 'function')
+        ? newPool.getRelativisticEnemyShipProceduralEnemyPool()
+        : (newPool && newPool.relativisticEnemyShipPool) || null;
       window.stageProceduralEnemyPool = (newPool && newPool.hasSeparateProceduralEnemyPools && window.stageProceduralEnemyPools)
         ? window.stageProceduralEnemyPools
         : ((newPool && typeof newPool.getProceduralEnemyPool === 'function')
@@ -5796,6 +5800,7 @@ async function loadStageDeviceModule(stageLevel = 1, deviceType = 'desktop', tra
           window.stageProceduralEnemyPools = null;
           window.stagePhaseInterceptorEnemyPool = null;
           window.stageReconDroneEnemyPool = null;
+          window.stageRelativisticEnemyShipPool = null;
         }
         return null;
       }

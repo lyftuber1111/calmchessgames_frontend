@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 import {
   createStagePool,
+  EventHorizonObjectPool,
+  RelativisticEnemyShipProceduralEnemyPool,
+  EventHorizonProceduralEnemyPool,
+  ProceduralEnemyPool,
+  createRelativisticEnemyShipProceduralEnemyPool,
+  createProceduralEnemyPool,
+  PROCEDURAL_ENEMY_POOL_NAME,
   MeshPool,
   StageObjectPool,
   loadCockpitCracksGlbAsset,
@@ -14,8 +21,64 @@ import {
   resetCockpitOverlayDecals,
   COCKPIT_CRACKS_GLB_URL,
   STAGE_COCKPIT_CRACKS_ASSET_URL,
-  STAGE_COCKPIT_CRACKS_ASSET_TYPE
+  STAGE_COCKPIT_CRACKS_ASSET_TYPE,
+  RELATIVISTIC_SHIP_WEAPON_DECAL_NAMES,
+  RELATIVISTIC_SHIP_EMITTER_KEYS,
+  RELATIVISTIC_SHIP_STAGGER_ORDER,
+  RELATIVISTIC_SHIP_STAGGER_STEP_SEC,
+  RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_MS,
+  RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_SEC,
+  RELATIVISTIC_SHIP_MISSILE_DAMAGE_PCT,
+  RELATIVISTIC_SHIP_MISSILE_DAMAGE,
+  RELATIVISTIC_SHIP_MISSILE_SALVO_INTERVAL_SEC,
+  RELATIVISTIC_SHIP_SALVOS_PER_EMITTER,
+  RELATIVISTIC_ENEMY_SHIP_SCALE,
+  getRelativisticShipWeaponDecals,
+  setRelativisticShipWeaponDecalEnabled,
+  resetRelativisticShipWeaponDecals,
+  createRelativisticEnemyShipMesh
 } from './event_horizon_pool.js';
+import {
+  createRelativisticEnemyShip,
+  weaponDecalNames as RELATIVISTIC_LOCAL_WEAPON_DECAL_NAMES,
+  metadata as RELATIVISTIC_SHIP_METADATA
+} from './event_horizon_images/relativistic_enemy_ship.js';
+
+export {
+  createStagePool,
+  EventHorizonObjectPool,
+  RelativisticEnemyShipProceduralEnemyPool,
+  EventHorizonProceduralEnemyPool,
+  ProceduralEnemyPool,
+  createRelativisticEnemyShipProceduralEnemyPool,
+  createProceduralEnemyPool,
+  PROCEDURAL_ENEMY_POOL_NAME,
+  RELATIVISTIC_SHIP_WEAPON_DECAL_NAMES,
+  RELATIVISTIC_SHIP_EMITTER_KEYS,
+  RELATIVISTIC_SHIP_STAGGER_ORDER,
+  RELATIVISTIC_SHIP_STAGGER_STEP_SEC,
+  RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_MS,
+  RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_SEC,
+  RELATIVISTIC_SHIP_MISSILE_DAMAGE_PCT,
+  RELATIVISTIC_SHIP_MISSILE_DAMAGE,
+  RELATIVISTIC_SHIP_MISSILE_SALVO_INTERVAL_SEC,
+  RELATIVISTIC_SHIP_SALVOS_PER_EMITTER,
+  RELATIVISTIC_ENEMY_SHIP_SCALE,
+  getRelativisticShipWeaponDecals,
+  setRelativisticShipWeaponDecalEnabled,
+  resetRelativisticShipWeaponDecals,
+  createRelativisticEnemyShipMesh
+};
+
+const ACTIVE_WEAPON_DECAL_NAMES = (
+  Array.isArray(RELATIVISTIC_LOCAL_WEAPON_DECAL_NAMES) && RELATIVISTIC_LOCAL_WEAPON_DECAL_NAMES.length >= 4
+)
+  ? [...RELATIVISTIC_LOCAL_WEAPON_DECAL_NAMES]
+  : [...RELATIVISTIC_SHIP_WEAPON_DECAL_NAMES];
+
+export function createEnemyMesh(config = {}, sharedTexMap = null) {
+  return createRelativisticEnemyShipMesh(config, createRelativisticEnemyShip, sharedTexMap);
+}
 
 /**
  * Wormhole XR - Stage 2: Event Horizon [ARCore Profile]
@@ -35,7 +98,7 @@ export const stageConfig = {
     parScore: 12000,
     requiredKills: 15,
     warpTargetDistance: 35000,
-    missionObjectives: "Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.",
+    missionObjectives: "Destroy 15 Relativistic Enemy Ships and reach distance < 35,000 KM of light horizon.",
     eventsWithin: "Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert",
     endLevelEvent: "Singularity Perimeter Breach",
     cockpitOverlayAsset: "scene_images/screen_decals_spider_web_overlay_4.glb",
@@ -60,7 +123,7 @@ export const stageConfig = {
   },
   events_within_level: "Tachyon Flux Distortions, Ion Cloud Interference, Interceptor Ambush Wave, Wormhole Coil Resonance Alert",
   end_level_event: "Singularity Perimeter Breach",
-  mission_objectives: "Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.",
+  mission_objectives: "Destroy 15 Relativistic Enemy Ships and reach distance < 35,000 KM of light horizon.",
   required_enemy_kills: 15,
   warp_target_distance: 35000,
   description: "High-velocity relativistic light-horizon boundary with intense magnetic shear.",
@@ -195,32 +258,49 @@ export const stageConfig = {
         }
     ]
 },
+  createEnemyMeshFn: createEnemyMesh,
+  createProceduralEnemyMeshFn: createEnemyMesh,
+  proceduralEnemyPoolConfig: {
+    separatePool: true,
+    poolName: PROCEDURAL_ENEMY_POOL_NAME,
+    enemyKey: 'relativistic_enemy_ship',
+    initialSize: 16,
+    maxSize: 20
+  },
   enemies: [
     {
-        "id": "tachyon_cruiser",
-        "enemy_id": "tachyon_cruiser",
-        "name": "Horizon Tachyon Cruiser (Universal)",
-        "device_type": "all",
-        "enemy_class": "Heavy Cruiser",
+        "id": "relativistic_enemy_ship",
+        "enemy_id": "relativistic_enemy_ship",
+        "name": "Relativistic Enemy Ship",
+        "enemy_name": "Relativistic Enemy Ship",
+        "device_type": "arcore",
+        "enemy_class": "Quad-Tachyon Stealth Gunship",
         "icon": "🛰️",
-        "model_3d_type": "custom_glb",
-        "model_3d_url": "mobile/event_horizon_images/horizon_tachyon_cruiser.glb",
-        "scale": 3,
-        "length": 2.63,
-        "height": 1.8,
-        "depth": 0.98,
-        "circumference": 8.8,
+        "model_3d_type": "relativistic_enemy_ship",
+        "model_3d_url": "",
+        "procedural_model_url": "arcore/event_horizon_images/relativistic_enemy_ship.js",
+        "scale": RELATIVISTIC_ENEMY_SHIP_SCALE,
+        "length": (RELATIVISTIC_SHIP_METADATA && RELATIVISTIC_SHIP_METADATA.dimensions && RELATIVISTIC_SHIP_METADATA.dimensions.width) || 4.64,
+        "height": (RELATIVISTIC_SHIP_METADATA && RELATIVISTIC_SHIP_METADATA.dimensions && RELATIVISTIC_SHIP_METADATA.dimensions.height) || 2.52,
+        "depth": (RELATIVISTIC_SHIP_METADATA && RELATIVISTIC_SHIP_METADATA.dimensions && RELATIVISTIC_SHIP_METADATA.dimensions.depth) || 6.0,
+        "circumference": (RELATIVISTIC_SHIP_METADATA && RELATIVISTIC_SHIP_METADATA.circumference) || 16.71,
         "color": "#ffd166",
         "hits": 2,
+        "hits_to_destroy": 2,
         "armor": 2,
+        "armor_strength": 2,
         "has_force_field": 1,
         "shield": 1,
         "speed": 200,
-        "attack_damage": 2,
-        "weapon_name": "Tachyon Beam",
-        "weapon_damage": 2,
-        "weapon_speed": 600,
-        "weapon_color": "#ffd166",
+        "attack_damage": RELATIVISTIC_SHIP_MISSILE_DAMAGE,
+        "weapon_name": "Quad Tachyon Lance Missiles",
+        "weapon_damage": RELATIVISTIC_SHIP_MISSILE_DAMAGE,
+        "weapon_damage_pct": RELATIVISTIC_SHIP_MISSILE_DAMAGE_PCT,
+        "weapon_speed": 480,
+        "weapon_color": "#ff1ea8",
+        "weapon_decal_names": [...ACTIVE_WEAPON_DECAL_NAMES],
+        "weapon_fire_duration_ms": RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_MS,
+        "weapon_fire_duration_seconds": RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_SEC,
         "weapon_scale": 1,
         "weapon_scale_x": 1,
         "weapon_scale_y": 1,
@@ -236,21 +316,24 @@ export const stageConfig = {
         "weapon_special_fx": "cockpit_overlay_decals",
         "weapon_special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
         "weapon_special_fx_type": "overlay",
-        "fire_rate": 3,
-        "fire_rate_seconds": 3,
-        "fire_rate_ms": 3000,
-        "fire_rate_times_per_sec": 0.333,
+        "fire_rate": 7.5,
+        "fire_rate_seconds": 7.5,
+        "fire_rate_ms": 7500,
+        "fire_rate_times_per_sec": 0.133,
         "weapons": [
             {
-                "id": "ew_tachyon_cruiser_0",
-                "name": "Tachyon Beam",
-                "type": "beam",
-                "mount": "center",
+                "id": "ew_relativistic_enemy_ship_0",
+                "name": "Quad Tachyon Lance Missiles",
+                "type": "missile",
+                "mount": "quad_ventral_pods",
                 "model_url": "",
-                "model_type": "",
+                "model_type": "decal_quad_tachyon_missile_weapon",
+                "weapon_decal_names": [...ACTIVE_WEAPON_DECAL_NAMES],
+                "fire_duration_ms": RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_MS,
+                "fire_duration_seconds": RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_SEC,
                 "fire_point_x": 0,
-                "fire_point_y": -0.15,
-                "fire_point_z": 1.5,
+                "fire_point_y": -0.74,
+                "fire_point_z": 1.42,
                 "scale": 1,
                 "scale_x": 1,
                 "scale_y": 1,
@@ -263,12 +346,13 @@ export const stageConfig = {
                     "y": 1,
                     "z": 1
                 },
-                "fire_rate_times_per_sec": 0.333,
-                "fire_interval_ms": 3000,
-                "fire_rate_seconds": 3,
-                "damage": 2,
-                "speed": 600,
-                "color": "#ffd166",
+                "fire_rate_times_per_sec": 0.133,
+                "fire_interval_ms": 7500,
+                "fire_rate_seconds": 7.5,
+                "damage": RELATIVISTIC_SHIP_MISSILE_DAMAGE,
+                "damage_pct": RELATIVISTIC_SHIP_MISSILE_DAMAGE_PCT,
+                "speed": 480,
+                "color": "#ff1ea8",
                 "special_fx": "cockpit_overlay_decals",
                 "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
                 "special_fx_type": "overlay",
@@ -276,103 +360,12 @@ export const stageConfig = {
             }
         ],
         "score": 500,
+        "score_value": 500,
         "threat": "High",
+        "threat_level": "High",
         "piercing": "tachyon_lance",
-        "pool_size": 30,
-        "quick_effect_primary": "tachyon_trail",
-        "quick_effect_secondary": "sparks_burst",
-        "quick_effect_color": "#ffd166",
-        "quick_effect_intensity": 1,
-        "quick_effect_speed": 1,
-        "destruction_particle_type": "procedural_debris_cloud",
-        "destruction_particle_url": "",
-        "destruction_particle_count": 60,
-        "destruction_particle_color": "#ffd166",
-        "destruction_particle_scale": 1
-    },
-    {
-        "id": "tachyon_cruiser_lego",
-        "enemy_id": "tachyon_cruiser_lego",
-        "name": "Horizon Tachyon Cruiser (Lego) (Universal)",
-        "device_type": "all",
-        "enemy_class": "Heavy Cruiser",
-        "icon": "🛰️",
-        "model_3d_type": "custom_glb",
-        "model_3d_url": "mobile/event_horizon_images/horizon_tachyon_cruiser.glb",
-        "scale": 3,
-        "length": 2.6,
-        "height": 1.8,
-        "depth": 0.98,
-        "circumference": 8.8,
-        "color": "#ffd166",
-        "hits": 2,
-        "armor": 2,
-        "has_force_field": 1,
-        "shield": 1,
-        "speed": 200,
-        "attack_damage": 2,
-        "weapon_name": "Tachyon Beam",
-        "weapon_damage": 2,
-        "weapon_speed": 600,
-        "weapon_color": "#ffd166",
-        "weapon_scale": 1,
-        "weapon_scale_x": 1,
-        "weapon_scale_y": 1,
-        "weapon_scale_z": 1,
-        "weapon_size_x": 1,
-        "weapon_size_y": 1,
-        "weapon_size_z": 1,
-        "weapon_dimensions": {
-            "x": 1,
-            "y": 1,
-            "z": 1
-        },
-        "weapon_special_fx": "cockpit_overlay_decals",
-        "weapon_special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
-        "weapon_special_fx_type": "overlay",
-        "fire_rate": 3,
-        "fire_rate_seconds": 3,
-        "fire_rate_ms": 3000,
-        "fire_rate_times_per_sec": 0.333,
-        "weapons": [
-            {
-                "id": "ew_tachyon_cruiser_0",
-                "name": "Tachyon Beam",
-                "type": "beam",
-                "mount": "center",
-                "model_url": "",
-                "model_type": "",
-                "fire_point_x": 0,
-                "fire_point_y": -0.15,
-                "fire_point_z": 1.5,
-                "scale": 1,
-                "scale_x": 1,
-                "scale_y": 1,
-                "scale_z": 1,
-                "size_x": 1,
-                "size_y": 1,
-                "size_z": 1,
-                "dimensions": {
-                    "x": 1,
-                    "y": 1,
-                    "z": 1
-                },
-                "fire_rate_times_per_sec": 0.333,
-                "fire_interval_ms": 3000,
-                "fire_rate_seconds": 3,
-                "damage": 2,
-                "speed": 600,
-                "color": "#ffd166",
-                "special_fx": "cockpit_overlay_decals",
-                "special_fx_file": "scene_images/screen_decals_spider_web_overlay_4.glb",
-                "special_fx_type": "overlay",
-                "is_enabled": 1
-            }
-        ],
-        "score": 500,
-        "threat": "High",
-        "piercing": "tachyon_lance",
-        "pool_size": 30,
+        "piercing_weapon_id": "tachyon_lance",
+        "pool_size": 16,
         "quick_effect_primary": "tachyon_trail",
         "quick_effect_secondary": "sparks_burst",
         "quick_effect_color": "#ffd166",
@@ -406,7 +399,7 @@ export const stageConfig = {
         "trigger_events": "Tachyon Flux Distortions, Interceptor Ambush Wave",
         "drop_on_enemy_kill": 1,
         "drop_chance_pct": 50,
-        "enemy_id": "phase_interceptor",
+        "enemy_id": "all",
         "boost_percentage": 35,
         "description": "Tachyon-stabilized cellular lattice repairing kinetic hull fissures. Restores 35% hull integrity.",
         "is_enabled": 1
@@ -481,8 +474,8 @@ export const stageConfig = {
         "type": "kills",
         "target": 15,
         "current": 0,
-        "title": "Destroy 15 Tachyon Cruisers & Interceptors",
-        "description": "Destroy 15 Tachyon Cruisers & Interceptors and reach distance < 35,000 KM of light horizon.",
+        "title": "Destroy 15 Relativistic Enemy Ships",
+        "description": "Destroy 15 Relativistic Enemy Ships and reach distance < 35,000 KM of light horizon.",
         "requiredForWarp": true,
         "actionText": "🎯 Target Threat",
         "actionId": "target_enemy"
@@ -518,6 +511,13 @@ export const WEAPON_MAX_RANGE_KM = 10000;
 export const KM_PER_WORLD_UNIT = 420;
 export const WEAPON_MAX_RANGE_UNITS = WEAPON_MAX_RANGE_KM / KM_PER_WORLD_UNIT;
 
+const DEFAULT_EMITTER_TIPS = [
+  new THREE.Vector3(-1.80, -0.58, 1.42),
+  new THREE.Vector3(-1.50, -0.92, 1.38),
+  new THREE.Vector3(1.80, -0.58, 1.42),
+  new THREE.Vector3(1.50, -0.92, 1.38)
+];
+
 export function isEnemyWithinWeaponRange(enemyOrPos, playerPos) {
   if (!enemyOrPos || !playerPos) return false;
   const pos = enemyOrPos.mesh ? enemyOrPos.mesh.position : (enemyOrPos.position || enemyOrPos);
@@ -542,30 +542,104 @@ export function canPlayerDestroyEnemy(enemyObj, playerPos) {
   return isEnemyWithinWeaponRange(enemyObj, playerPos);
 }
 
-export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
-  if (!enemyObj || !enemyObj.mesh) return false;
-  if (enemyObj.mesh.userData && (enemyObj.mesh.userData.inPool || enemyObj.mesh.userData.isActive === false || enemyObj.mesh.userData.weaponsActive === false)) return false;
+/**
+ * Builds the 5-second staggered ON/OFF schedule across all 4 Tachyon Lance weapon decals:
+ * Each decal turns ON at a slightly different time (0.00s .. ~0.75s) and turns OFF at a
+ * slightly different time (~4.25s .. 5.00s) so the quad-barrel missile weapon stays active
+ * for exactly 5.0 seconds total without mid-air popping.
+ */
+function buildStaggeredEmitterSchedules(totalDurationSec = RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_SEC) {
+  const step = RELATIVISTIC_SHIP_STAGGER_STEP_SEC;
+  const maxStagger = step * (RELATIVISTIC_SHIP_STAGGER_ORDER.length - 1); // 0.75s
+  const baseActiveWindow = Math.max(1.0, totalDurationSec - maxStagger); // 4.25s
+  const schedules = new Array(4);
 
+  // Rotate starting rank subtly so consecutive salvos vary which pod leads while maintaining alternating diagonal cadence
+  const rotOffset = Math.floor(Math.random() * 4);
+
+  for (let rank = 0; rank < 4; rank++) {
+    const emitterIdx = RELATIVISTIC_SHIP_STAGGER_ORDER[(rank + rotOffset) % 4];
+    const jitter = (rank === 0 || rank === 3) ? 0.0 : (Math.random() - 0.5) * 0.06;
+    const onSec = rank === 0
+      ? 0.0
+      : Math.max(0.05, Math.min(maxStagger, rank * step + jitter));
+    const offSec = rank === 3
+      ? totalDurationSec
+      : Math.max(onSec + 1.0, Math.min(totalDurationSec - 0.05, onSec + baseActiveWindow));
+
+    schedules[emitterIdx] = {
+      emitterIndex: emitterIdx,
+      emitterKey: RELATIVISTIC_SHIP_EMITTER_KEYS[emitterIdx],
+      decalName: ACTIVE_WEAPON_DECAL_NAMES[emitterIdx],
+      rank,
+      onSec: Number(onSec.toFixed(4)),
+      offSec: Number(offSec.toFixed(4)),
+      isOn: false,
+      salvosEmitted: 0,
+      nextSalvoSec: onSec
+    };
+  }
+  return schedules;
+}
+
+function resetEnemyProceduralWeaponState(e) {
+  if (!e || !e.mesh) return;
+  e._missileWeaponFiring = false;
+  e._missileWeaponFireElapsed = 0;
+  e._missileWeaponFireRemaining = 0;
+  e._missileWeaponFireEndTime = 0;
+  e._emitterSchedules = null;
+  e._lastMissileWeaponOverride = null;
+  resetRelativisticShipWeaponDecals(e);
+}
+
+function computeWorldWeaponOrigin(enemyObj, localOffset) {
+  if (!enemyObj || !enemyObj.mesh) return new THREE.Vector3();
+  const origin = enemyObj.mesh.position.clone();
+  if (!localOffset) return origin;
+  try {
+    enemyObj.mesh.updateMatrixWorld(false);
+    const worldPt = localOffset.clone().applyMatrix4(enemyObj.mesh.matrixWorld);
+    if (Number.isFinite(worldPt.x) && Number.isFinite(worldPt.y) && Number.isFinite(worldPt.z)) {
+      return worldPt;
+    }
+  } catch (_) {}
+  return origin;
+}
+
+function emitRelativisticMissileCollisionPulse(enemyObj, emitterIndex, context, weaponOverride, now) {
+  if (!enemyObj || !enemyObj.mesh) return false;
   const isContextObj = context && typeof context === 'object' && !context.isVector3;
-  const scene = isContextObj ? context.scene : (typeof window !== 'undefined' ? window.scene : null);
   const camera = isContextObj ? context.camera : (typeof window !== 'undefined' ? window.camera : null);
   const state = isContextObj ? context.state : (typeof window !== 'undefined' ? window.state : null);
   const cameraRig = isContextObj ? context.cameraRig : null;
-  const audioMgr = isContextObj ? context.audioMgr : null;
   const enemyBolts = isContextObj ? context.enemyBolts : (typeof weaponOverride === 'function' ? weaponOverride() : null);
-
-  if (!scene || !camera || !enemyBolts) return false;
-  if (enemyBolts.length > 80) return false;
+  if (!enemyBolts || enemyBolts.length > 80) return false;
 
   const playerPos = (isContextObj && context.playerPos)
     ? context.playerPos
     : (context && context.isVector3)
       ? context
-      : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : camera.position));
+      : ((state && state.isXR && cameraRig) ? cameraRig.position : (state ? state.position : (camera ? camera.position : null)));
+  if (!playerPos) return false;
 
-  // Enemy can fire its weapon at any distance, but weapon range is 10,000 KM:
-  // bolts fired while enemy is > 10,000 KM from player cannot hit/damage the player.
-  const enemyDistAtFire = (playerPos && typeof enemyObj.mesh.position.distanceTo === 'function')
+  const safeIdx = Math.max(0, Math.min(3, emitterIndex | 0));
+  const emitterKey = RELATIVISTIC_SHIP_EMITTER_KEYS[safeIdx];
+  const decalName = ACTIVE_WEAPON_DECAL_NAMES[safeIdx];
+
+  const ud = enemyObj.mesh.userData || {};
+  const centerOffsetY = (typeof ud.proceduralCenterOffsetY === 'number') ? ud.proceduralCenterOffsetY : -1.26;
+  const shipTips = ud.relativisticEnemyShip && ud.relativisticEnemyShip.object &&
+    ud.relativisticEnemyShip.object.userData && ud.relativisticEnemyShip.object.userData.relativisticShip
+    ? ud.relativisticEnemyShip.object.userData.relativisticShip.emitterTips
+    : null;
+  const rawTip = shipTips && shipTips[emitterKey];
+  const localTip = rawTip
+    ? new THREE.Vector3(rawTip.x, rawTip.y + centerOffsetY, rawTip.z)
+    : DEFAULT_EMITTER_TIPS[safeIdx].clone();
+  const spawnOrigin = computeWorldWeaponOrigin(enemyObj, localTip);
+
+  const enemyDistAtFire = (typeof enemyObj.mesh.position.distanceTo === 'function')
     ? enemyObj.mesh.position.distanceTo(playerPos)
     : Infinity;
   const firedWithinRange = enemyDistAtFire <= WEAPON_MAX_RANGE_UNITS;
@@ -574,16 +648,10 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     ? weaponOverride
     : (enemyObj.weapons && enemyObj.weapons[0]) || (enemyObj.config && enemyObj.config.weapons && enemyObj.config.weapons[0]) || null;
   const cfg = enemyObj.config || enemyObj || {};
-  const wName = (w && w.name) || cfg.weapon_name || 'Plasma Pulse';
-  const rawWType = (w && w.type) ? w.type.toLowerCase() : '';
-  const isMissile = rawWType === 'missile' || rawWType === 'torpedo' || /missile|strike|torpedo|rocket|warhead|ordnance|bomb/i.test([rawWType, wName, (w && w.id) || '', (w && w.model_url) || ''].join(' '));
-  const wType = isMissile ? 'missile' : (rawWType || 'beam');
-  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#ffd166';
-  const boltColorHex = parseInt(String(rawColor).replace('#', '0x'), 16) || 0xff0055;
-  const wDamage = (w && w.damage !== undefined) ? parseInt(w.damage) : (enemyObj.weaponDmg || cfg.weapon_damage || 6);
-  const wSpeedRaw = (w && w.speed !== undefined) ? parseInt(w.speed) : (enemyObj.weaponSpeed || cfg.weapon_speed || 480);
-  const boltSpeed = Math.max(45, Math.min(180, wSpeedRaw * (isMissile ? 0.16 : 0.24)));
-  const wMount = (w && w.mount) || 'nose_cannon';
+  const wName = (w && w.name) || cfg.weapon_name || 'Quad Tachyon Lance Missiles';
+  const rawColor = (w && w.color) || enemyObj.weaponColor || cfg.weapon_color || '#ff1ea8';
+  const wSpeedRaw = (w && w.speed !== undefined) ? parseFloat(w.speed) : (enemyObj.weaponSpeed || cfg.weapon_speed || 480);
+  const boltSpeed = Math.max(45, Math.min(180, (Number.isFinite(wSpeedRaw) ? wSpeedRaw : 480) * 0.16));
 
   const wScale = Number((w && w.scale) ?? cfg.weapon_scale ?? 1.0);
   const wScaleX = Number((w && w.scale_x) ?? cfg.weapon_scale_x ?? 1.0);
@@ -595,51 +663,33 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
   const wSpecialFx = (w && w.special_fx) || cfg.weapon_special_fx || 'cockpit_overlay_decals';
   const wSpecialFxFile = (w && w.special_fx_file) || cfg.weapon_special_fx_file || 'scene_images/screen_decals_spider_web_overlay_4.glb';
   const wSpecialFxType = (w && w.special_fx_type) || cfg.weapon_special_fx_type || 'overlay';
-  const wId = (w && w.id) || (wName ? 'ew_' + wName.toLowerCase().replace(/[^a-z0-9]/g, '_') : 'ew_primary');
-
-  const spawnOrigin = enemyObj.mesh.position.clone();
-  if (wMount === 'dual_wingtip') {
-    enemyObj._wingSide = (enemyObj._wingSide === 1) ? -1 : 1;
-    spawnOrigin.x += enemyObj._wingSide * 1.3 * (enemyObj.baseScale || 1.0);
-  } else if (wMount === 'turret_top') {
-    spawnOrigin.y += 0.9 * (enemyObj.baseScale || 1.0);
-  } else if (wMount === 'under_belly') {
-    spawnOrigin.y -= 0.9 * (enemyObj.baseScale || 1.0);
-  }
+  const wId = (w && w.id) || `ew_relativistic_missile_${emitterKey}`;
 
   const targetPoint = new THREE.Vector3(
-    playerPos.x + (Math.random() - 0.5) * (isMissile ? 2.2 : 3.5),
-    playerPos.y + (Math.random() - 0.5) * (isMissile ? 2.2 : 3.5),
+    playerPos.x + (Math.random() - 0.5) * 2.2,
+    playerPos.y + (Math.random() - 0.5) * 2.2,
     playerPos.z
   );
   const direction = new THREE.Vector3().subVectors(targetPoint, spawnOrigin).normalize();
   const boltQuat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, -1), direction);
 
-  let mesh = null;
-  let fromPool = false;
-
-  if (typeof window !== 'undefined' && window.stageObjectPool && typeof window.stageObjectPool.spawnEnemyWeapon === 'function') {
-    mesh = window.stageObjectPool.spawnEnemyWeapon(w || { id: wId, name: wName, type: wType, color: rawColor }, cfg, spawnOrigin, boltQuat, isMissile ? 'missile' : 'beam');
-    if (mesh) fromPool = true;
-  }
-
-  if (!mesh) {
-    const geom = new THREE.CylinderGeometry(0.14 * wSizeX, 0.22 * wSizeY, 5.5 * wSizeZ, 6);
-    geom.rotateX(Math.PI / 2);
-    const mat = new THREE.MeshBasicMaterial({ color: boltColorHex, transparent: true, opacity: 0.95 });
-    mesh = new THREE.Mesh(geom, mat);
-    mesh.scale.set(wScale * wScaleX, wScale * wScaleY, wScale * wScaleZ);
-    mesh.position.copy(spawnOrigin);
-    mesh.quaternion.copy(boltQuat);
-    scene.add(mesh);
-  } else {
-    mesh.position.copy(spawnOrigin);
-    mesh.quaternion.copy(boltQuat);
-  }
+  // Invisible collision-delivery pulse: the visible 28m 3D Tachyon Lance missiles are rendered
+  // exclusively by relativistic_enemy_ship.js's 4 Decal_MissileStrike_*_TachyonLance decals.
+  // Each missile strike reduces the active defense bar (shield or health) by exactly 2%.
+  const missileTracker = new THREE.Object3D();
+  missileTracker.name = `relativistic_tachyon_missile_pulse_${emitterKey}`;
+  missileTracker.visible = false;
+  missileTracker.position.copy(spawnOrigin);
+  missileTracker.quaternion.copy(boltQuat);
 
   enemyBolts.push({
-    mesh,
-    fromPool,
+    mesh: missileTracker,
+    fromPool: false,
+    isRelativisticMissileWeaponDecalPulse: true,
+    weaponDecalName: decalName,
+    weaponEmitterIndex: safeIdx,
+    weaponEmitterKey: emitterKey,
+    fireDurationMs: RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_MS,
     spawnOrigin: spawnOrigin.clone(),
     prevPosition: spawnOrigin.clone(),
     distanceTraveled: 0,
@@ -652,7 +702,8 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     canHitPlayer: firedWithinRange,
     direction,
     speed: boltSpeed,
-    damage: wDamage,
+    damage: RELATIVISTIC_SHIP_MISSILE_DAMAGE,
+    damagePct: RELATIVISTIC_SHIP_MISSILE_DAMAGE_PCT,
     weaponId: wId,
     weaponName: wName,
     weaponColor: rawColor,
@@ -667,11 +718,164 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
     size_y: wSizeY,
     size_z: wSizeZ,
     dimensions: { x: wSizeX, y: wSizeY, z: wSizeZ },
-    type: isMissile ? 'missile' : 'beam',
+    type: 'missile',
     spiralTime: Math.random() * Math.PI * 2,
-    spawnTime: performance.now(),
-    lifetime: isMissile ? 7.5 : 4.8
+    spawnTime: now,
+    lifetime: 2.8
   });
+
+  return true;
+}
+
+function syncStaggeredDecalsForElapsed(e, elapsedSec, now, context) {
+  const decals = getRelativisticShipWeaponDecals(e);
+  const schedules = e._emitterSchedules;
+  if (!Array.isArray(schedules) || schedules.length < 4) return;
+
+  const totalSec = RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_SEC;
+  const EPS = 1e-6;
+
+  for (let i = 0; i < 4; i++) {
+    const sch = schedules[i];
+    if (!sch) continue;
+    const dm = decals.list[i];
+    const shouldBeOn = (elapsedSec >= sch.onSec - EPS && elapsedSec < sch.offSec - EPS && elapsedSec < totalSec - EPS);
+
+    if (shouldBeOn) {
+      if (!sch.isOn) {
+        sch.isOn = true;
+        setRelativisticShipWeaponDecalEnabled(e, i, true);
+        if (sch.salvosEmitted < RELATIVISTIC_SHIP_SALVOS_PER_EMITTER) {
+          emitRelativisticMissileCollisionPulse(e, i, context, e._lastMissileWeaponOverride || null, now);
+          sch.salvosEmitted += 1;
+          sch.nextSalvoSec = sch.onSec + sch.salvosEmitted * RELATIVISTIC_SHIP_MISSILE_SALVO_INTERVAL_SEC;
+        }
+      } else {
+        if (dm && !dm.visible) dm.visible = true;
+        if (
+          sch.salvosEmitted < RELATIVISTIC_SHIP_SALVOS_PER_EMITTER &&
+          elapsedSec >= sch.nextSalvoSec - EPS &&
+          elapsedSec < sch.offSec - 0.15
+        ) {
+          emitRelativisticMissileCollisionPulse(e, i, context, e._lastMissileWeaponOverride || null, now);
+          sch.salvosEmitted += 1;
+          sch.nextSalvoSec = sch.onSec + sch.salvosEmitted * RELATIVISTIC_SHIP_MISSILE_SALVO_INTERVAL_SEC;
+        }
+      }
+    } else {
+      if (sch.isOn || (dm && dm.visible)) {
+        sch.isOn = false;
+        setRelativisticShipWeaponDecalEnabled(e, i, false);
+      }
+    }
+  }
+}
+
+function tickRelativisticWeaponDecalTimers(e, dt, now, context) {
+  if (!e || !e.mesh) return;
+  const ud = e.mesh.userData;
+  if ((ud && (ud.inPool || ud.isActive === false || ud.weaponsActive === false)) || e.isActive === false) {
+    resetEnemyProceduralWeaponState(e);
+    return;
+  }
+
+  if (e._missileWeaponFiring) {
+    const totalSec = RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_SEC;
+    e._missileWeaponFireElapsed = (typeof e._missileWeaponFireElapsed === 'number' ? e._missileWeaponFireElapsed : 0) + dt;
+    e._missileWeaponFireRemaining = Math.max(0, totalSec - e._missileWeaponFireElapsed);
+
+    const expired = e._missileWeaponFireElapsed >= totalSec - 1e-6;
+    if (expired) {
+      resetEnemyProceduralWeaponState(e);
+    } else {
+      syncStaggeredDecalsForElapsed(e, e._missileWeaponFireElapsed, now, context);
+      if (ud) {
+        ud._missileWeaponFiring = true;
+        ud._missileWeaponFireElapsed = e._missileWeaponFireElapsed;
+        ud._missileWeaponFireRemaining = e._missileWeaponFireRemaining;
+        ud._emitterSchedules = e._emitterSchedules;
+      }
+    }
+  } else {
+    const decals = getRelativisticShipWeaponDecals(e);
+    for (let i = 0; i < decals.list.length; i++) {
+      if (decals.list[i] && decals.list[i].visible) {
+        decals.list[i].visible = false;
+      }
+    }
+  }
+}
+
+function advanceRelativisticEnemyShipAnimation(e, dt) {
+  if (!e || !e.mesh || !e.mesh.userData) return;
+  const ud = e.mesh.userData;
+  const ctrl = ud.proceduralController || ud.relativisticEnemyShip;
+  if (ctrl && typeof ctrl.update === 'function') {
+    const nextElapsed = (ud.proceduralElapsed || 0) + dt;
+    ud.proceduralElapsed = nextElapsed;
+    ctrl.update(dt, nextElapsed);
+  }
+}
+
+export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
+  if (!enemyObj || !enemyObj.mesh) return false;
+  const ud = enemyObj.mesh.userData;
+  if (ud && (ud.inPool || ud.isActive === false || ud.weaponsActive === false)) return false;
+
+  const isContextObj = context && typeof context === 'object' && !context.isVector3;
+  const scene = isContextObj ? context.scene : (typeof window !== 'undefined' ? window.scene : null);
+  const camera = isContextObj ? context.camera : (typeof window !== 'undefined' ? window.camera : null);
+  const audioMgr = isContextObj ? context.audioMgr : null;
+  const enemyBolts = isContextObj ? context.enemyBolts : (typeof weaponOverride === 'function' ? weaponOverride() : null);
+  const now = (isContextObj && context.now) || performance.now();
+
+  if (!scene || !camera || !enemyBolts) return false;
+
+  // If already inside an active 5-second quad-decal missile firing window, keep staggered emitters active
+  if (
+    enemyObj._missileWeaponFiring &&
+    ((typeof enemyObj._missileWeaponFireRemaining === 'number' && enemyObj._missileWeaponFireRemaining > 0) ||
+      now < (enemyObj._missileWeaponFireEndTime || 0))
+  ) {
+    syncStaggeredDecalsForElapsed(enemyObj, enemyObj._missileWeaponFireElapsed || 0, now, context);
+    return true;
+  }
+
+  const w = (weaponOverride && typeof weaponOverride === 'object')
+    ? weaponOverride
+    : (enemyObj.weapons && enemyObj.weapons[0]) || (enemyObj.config && enemyObj.config.weapons && enemyObj.config.weapons[0]) || null;
+
+  // Activate the 4 Tachyon Lance missile weapon decals on a staggered schedule for exactly 5.0 seconds
+  const fireDurationMs = RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_MS;
+  const fireDurationSec = RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_SEC;
+  const schedules = buildStaggeredEmitterSchedules(fireDurationSec);
+
+  setRelativisticShipWeaponDecalEnabled(enemyObj, 'all', false);
+  enemyObj._missileWeaponFiring = true;
+  enemyObj._missileWeaponFireStartTime = now;
+  enemyObj._missileWeaponFireEndTime = now + fireDurationMs;
+  enemyObj._missileWeaponFireElapsed = 0;
+  enemyObj._missileWeaponFireRemaining = fireDurationSec;
+  enemyObj._emitterSchedules = schedules;
+  enemyObj._lastMissileWeaponOverride = w || null;
+
+  if (ud) {
+    ud._missileWeaponFiring = true;
+    ud._missileWeaponFireEndTime = enemyObj._missileWeaponFireEndTime;
+    ud._missileWeaponFireElapsed = 0;
+    ud._missileWeaponFireRemaining = fireDurationSec;
+    ud._emitterSchedules = schedules;
+  }
+
+  // Immediately activate the lead emitter (onSec === 0.0) while the remaining 3 emitters stagger ON shortly after
+  syncStaggeredDecalsForElapsed(enemyObj, 0, now, context);
+
+  if (ud) {
+    const ctrl = ud.proceduralController || ud.relativisticEnemyShip;
+    if (ctrl && typeof ctrl.update === 'function') {
+      ctrl.update(0, ud.proceduralElapsed || 0);
+    }
+  }
 
   if (audioMgr && audioMgr.isInitialized && typeof audioMgr.playLaserBolt === 'function') {
     try { audioMgr.playLaserBolt(); } catch (e) {}
@@ -680,9 +884,17 @@ export function fireEnemyWeapon(enemyObj, context, weaponOverride = null) {
 }
 
 export function updateEnemyMovement(e, delta, context) {
-  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) return false;
+  if (!e || !e.mesh || e.mesh.userData.inPool || e.mesh.userData.isActive === false || e.isActive === false || e.mesh.userData.movementActive === false) {
+    if (e && e.mesh) {
+      resetEnemyProceduralWeaponState(e);
+    }
+    return false;
+  }
+  const safeDt = (Number.isFinite(delta) && delta > 0) ? Math.min(delta, 0.1) : 0;
   const isContextObj = context && typeof context === 'object' && !context.isVector3;
   const now = (isContextObj && context.now) || performance.now();
+  tickRelativisticWeaponDecalTimers(e, safeDt, now, context);
+
   const playerPos = (isContextObj && context.playerPos)
     ? context.playerPos
     : (context && context.isVector3)
@@ -691,14 +903,14 @@ export function updateEnemyMovement(e, delta, context) {
   const laserBolts = (isContextObj && context.laserBolts) || [];
   const activeEnemies = (isContextObj && context.activeEnemies) || [];
   const enemyIndex = (isContextObj && context.enemyIndex !== undefined) ? context.enemyIndex : -1;
-  const distToPlayer = e.mesh.position.distanceTo(playerPos);
 
   // Exact distance definitions: at 420 KM per Three.js unit
   const dist10k = WEAPON_MAX_RANGE_UNITS; // 10,000 KM (~23.8095 units)
   const dist5k = 5000 / KM_PER_WORLD_UNIT; // 5,000 KM (~11.9048 units)
   const targetZ10k = playerPos.z - dist10k;
   const spawnZ = (e.spawnPos && typeof e.spawnPos.z === 'number') ? e.spawnPos.z : -6.5;
-  const baseScale = e.baseScale || 1.3;
+  const baseScale = RELATIVISTIC_ENEMY_SHIP_SCALE;
+  e.baseScale = baseScale;
   const basePitchDown = 0.22;
 
   if (!e.maneuverState) {
@@ -740,6 +952,7 @@ export function updateEnemyMovement(e, delta, context) {
       e.stoppedTime = now;
       e.nextLevelTime = now + 1500 + Math.random() * 3500;
     }
+    advanceRelativisticEnemyShipAnimation(e, safeDt);
     return true;
   }
 
@@ -778,18 +991,20 @@ export function updateEnemyMovement(e, delta, context) {
   const screenTargetY = playerPos.y + (rawScatterY / scatterDirLen) * activeShellRadius;
   const shellTargetZ10k = playerPos.z - (dist10k / scatterDirLen) * shellRadius10k;
   const shellTargetZ5k = playerPos.z - (dist10k / scatterDirLen) * dist5k;
-  e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * 2.2;
-  e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * 2.2;
+
+  const firingDamp = e._missileWeaponFiring ? 0.35 : 1.0;
+  e.mesh.position.x += (screenTargetX - e.mesh.position.x) * delta * (2.2 * firingDamp);
+  e.mesh.position.y += (screenTargetY - e.mesh.position.y) * delta * (2.2 * firingDamp);
 
   const t = (now - (e.stoppedTime || now)) * 0.001;
-  const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0);
-  const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.4);
-  const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.6);
+  const evaVx = Math.sin(t * (e.evaFreqX || 1.8) + (e.evaPhaseX || 0)) * (e.evaAmpX || 3.0) * firingDamp;
+  const evaVy = Math.cos(t * (e.evaFreqY || 1.6) + (e.evaPhaseY || 0)) * (e.evaAmpY || 2.4) * firingDamp;
+  const evaVz = Math.sin(t * (e.evaFreqZ || 1.2) + (e.evaPhaseZ || 0)) * (e.evaAmpZ || 1.6) * firingDamp;
   e.mesh.position.x += evaVx * delta;
   e.mesh.position.y += evaVy * delta;
   e.mesh.position.z += evaVz * delta;
 
-  if (now >= (e.nextJukeTime || 0)) {
+  if (!e._missileWeaponFiring && now >= (e.nextJukeTime || 0)) {
     e.nextJukeTime = now + 1400 + Math.random() * 2000;
     e.jukeEndTime = now + 350 + Math.random() * 350;
     if (e.jukeVelocity && typeof e.jukeVelocity.set === 'function') {
@@ -801,10 +1016,10 @@ export function updateEnemyMovement(e, delta, context) {
     }
   }
   if (e.jukeVelocity) {
-    if (now < e.jukeEndTime) {
+    if (!e._missileWeaponFiring && now < e.jukeEndTime) {
       e.mesh.position.addScaledVector(e.jukeVelocity, delta);
     } else {
-      e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * 4.5));
+      e.jukeVelocity.multiplyScalar(Math.max(0, 1.0 - delta * (e._missileWeaponFiring ? 8.5 : 4.5)));
     }
   }
 
@@ -843,7 +1058,7 @@ export function updateEnemyMovement(e, delta, context) {
         e.levelPitchProgress = 1.0;
         e.isLevel = true;
         e.maneuverState = 'LEVEL_FIRING';
-        e.levelFireEndTime = now + 600;
+        e.levelFireEndTime = now + RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_MS;
         if (!e.hasFiredThisLevel) {
           e.hasFiredThisLevel = true;
           fireEnemyWeapon(e, context);
@@ -856,7 +1071,7 @@ export function updateEnemyMovement(e, delta, context) {
       e.levelPitchProgress = 1.0;
       e.isLevel = true;
       e.mesh.scale.set(baseScale, baseScale, baseScale);
-      if (now >= (e.levelFireEndTime || 0)) {
+      if (!e._missileWeaponFiring && now >= (e.levelFireEndTime || 0)) {
         e.isLevel = false;
         e.maneuverState = 'TILTING_FORWARD';
       }
@@ -897,7 +1112,7 @@ export function updateEnemyMovement(e, delta, context) {
         e.levelPitchProgress = 1.0;
         e.isLevel = true;
         e.maneuverState = 'LEVEL_FIRING_5K';
-        e.hold5kEndTime = now + 2400;
+        e.hold5kEndTime = now + RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_MS;
         if (!e.hasFiredThisLevel) {
           e.hasFiredThisLevel = true;
           fireEnemyWeapon(e, context);
@@ -912,7 +1127,7 @@ export function updateEnemyMovement(e, delta, context) {
       e.mesh.position.z += (shellTargetZ5k - e.mesh.position.z) * delta * 3.5;
       const curScale = baseScale * 1.02;
       e.mesh.scale.set(curScale, curScale, curScale);
-      if (now >= (e.hold5kEndTime || 0)) {
+      if (!e._missileWeaponFiring && now >= (e.hold5kEndTime || 0)) {
         e.isLevel = false;
         e.maneuverState = 'TILTING_FORWARD_5K';
       }
@@ -961,22 +1176,20 @@ export function updateEnemyMovement(e, delta, context) {
   const gridPitchStep = cellH / dist10k;
   const snappedYaw = Math.round(rawLookYaw / gridYawStep) * gridYawStep;
   const snappedPitch = Math.round(rawLookPitch / gridPitchStep) * gridPitchStep;
-  const lookYaw = THREE.MathUtils.clamp(THREE.MathUtils.lerp(rawLookYaw, snappedYaw, 0.45), -0.45, 0.45);
-  const lookPitch = THREE.MathUtils.clamp(THREE.MathUtils.lerp(rawLookPitch, snappedPitch, 0.45), -0.28, 0.28);
+  const snapWeight = e._missileWeaponFiring ? 0.0 : 0.45;
+  const lookYaw = THREE.MathUtils.clamp(THREE.MathUtils.lerp(rawLookYaw, snappedYaw, snapWeight), -0.45, 0.45);
+  const lookPitch = THREE.MathUtils.clamp(THREE.MathUtils.lerp(rawLookPitch, snappedPitch, snapWeight), -0.28, 0.28);
 
   const jukeVx = e.jukeVelocity ? e.jukeVelocity.x : 0;
   const jukeVy = e.jukeVelocity ? e.jukeVelocity.y : 0;
   const netVx = (screenTargetX - e.mesh.position.x) * 1.1 + jukeVx + evaVx;
   const netVy = (screenTargetY - e.mesh.position.y) * 1.1 + jukeVy + evaVy;
-  const roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65);
-  const yaw = lookYaw + THREE.MathUtils.clamp(-netVx * 0.02, -0.22, 0.22);
+  const dynWeight = e._missileWeaponFiring ? 0.20 : 1.0;
+  const roll = -THREE.MathUtils.clamp(netVx * 0.045, -0.65, 0.65) * dynWeight;
+  const yaw = lookYaw + THREE.MathUtils.clamp(-netVx * 0.02, -0.22, 0.22) * dynWeight;
   const effectiveBasePitch = basePitchDown * (1.0 - (e.levelPitchProgress || 0));
-  const pitch = effectiveBasePitch + lookPitch + THREE.MathUtils.clamp(netVy * 0.035, -0.18, 0.18);
+  const pitch = effectiveBasePitch + lookPitch + THREE.MathUtils.clamp(netVy * 0.035, -0.18, 0.18) * dynWeight;
   e.mesh.rotation.set(pitch, yaw, roll, 'YXZ');
-
-  if (e.mesh.userData && e.mesh.userData.spinRing) {
-    e.mesh.userData.spinRing.rotation.z += 6.0 * delta;
-  }
 
   for (let j = 0; j < activeEnemies.length; j++) {
     if (j === enemyIndex) continue;
@@ -984,9 +1197,9 @@ export function updateEnemyMovement(e, delta, context) {
     if (!other || !other.mesh) continue;
     const sepVec = new THREE.Vector3().subVectors(e.mesh.position, other.mesh.position);
     const sepDist = sepVec.length();
-    const otherScale = (other.mesh.scale && typeof other.mesh.scale.x === 'number') ? other.mesh.scale.x : 1.0;
-    const curScaleX = (e.mesh.scale && typeof e.mesh.scale.x === 'number') ? e.mesh.scale.x : 1.0;
-    const minSafeSep = Math.max(5.5, (curScaleX + otherScale) * 2.8);
+    const otherScale = (other.mesh.scale && typeof other.mesh.scale.x === 'number') ? other.mesh.scale.x : RELATIVISTIC_ENEMY_SHIP_SCALE;
+    const curScaleX = (e.mesh.scale && typeof e.mesh.scale.x === 'number') ? e.mesh.scale.x : RELATIVISTIC_ENEMY_SHIP_SCALE;
+    const minSafeSep = Math.max(6.4, (curScaleX + otherScale) * 3.4);
     if (sepDist < minSafeSep && sepDist > 0.001) {
       const overlapFactor = (minSafeSep - sepDist) / minSafeSep;
       const repulse = sepVec.normalize().multiplyScalar(overlapFactor * 20.0 * delta);
@@ -999,12 +1212,280 @@ export function updateEnemyMovement(e, delta, context) {
   e.distanceToPlayerKm = finalDistToPlayer * KM_PER_WORLD_UNIT;
   e.inWeaponRange = finalDistToPlayer <= dist10k;
 
+  advanceRelativisticEnemyShipAnimation(e, safeDt);
   return true;
+}
+
+let activeStageObjectPool = null;
+let activeProceduralEnemyPool = null;
+
+function buildProceduralStageEnemiesList(sourceEnemies = stageConfig.enemies) {
+  const list = Array.isArray(sourceEnemies) ? sourceEnemies : [];
+  return list.map((entry) => ({
+    ...entry,
+    id: 'relativistic_enemy_ship',
+    enemy_id: 'relativistic_enemy_ship',
+    model_3d_type: 'relativistic_enemy_ship',
+    model_3d_url: '',
+    scale: RELATIVISTIC_ENEMY_SHIP_SCALE,
+    custom_from_db: true
+  }));
+}
+
+function isStage2EventHorizonActive() {
+  if (typeof window === 'undefined') return false;
+  const cfg = window.activeStageConfig;
+  if (!cfg) return false;
+  const lvl = Number(cfg.stage_level ?? (cfg.meta && cfg.meta.level));
+  const slug = String(cfg.stage_slug ?? (cfg.meta && cfg.meta.slug) ?? '').toLowerCase();
+  return lvl === 2 || slug === 'event_horizon';
+}
+
+function installEventHorizonActiveEnemiesGuard() {
+  if (typeof window === 'undefined') return;
+  window.__eventHorizonProceduralStageEnemies = buildProceduralStageEnemiesList(stageConfig.enemies);
+
+  if (window.__eventHorizonActiveEnemiesGuardInstalled) return;
+
+  const prevDesc = Object.getOwnPropertyDescriptor(window, 'activeStageEnemies');
+  if (prevDesc && prevDesc.configurable === false) return;
+
+  const hasPrevAccessor = !!(prevDesc && (typeof prevDesc.get === 'function' || typeof prevDesc.set === 'function'));
+  let _backingEnemies = Array.isArray(window.activeStageEnemies) ? window.activeStageEnemies : [];
+
+  Object.defineProperty(window, 'activeStageEnemies', {
+    configurable: true,
+    enumerable: true,
+    get() {
+      return hasPrevAccessor && typeof prevDesc.get === 'function'
+        ? prevDesc.get.call(window)
+        : _backingEnemies;
+    },
+    set(val) {
+      let nextVal = val;
+      if (
+        isStage2EventHorizonActive() &&
+        Array.isArray(val) &&
+        val.length > 0 &&
+        Array.isArray(window.__eventHorizonProceduralStageEnemies) &&
+        window.__eventHorizonProceduralStageEnemies.length > 0
+      ) {
+        const expected = window.__eventHorizonProceduralStageEnemies;
+        const alreadyProcedural = val.length === expected.length &&
+          val.every((item) =>
+            item &&
+            item.model_3d_type === 'relativistic_enemy_ship' &&
+            !item.model_3d_url &&
+            Number(item.scale) === Number(RELATIVISTIC_ENEMY_SHIP_SCALE)
+          );
+        nextVal = alreadyProcedural
+          ? val
+          : buildProceduralStageEnemiesList(expected);
+      }
+      if (hasPrevAccessor && typeof prevDesc.set === 'function') {
+        prevDesc.set.call(window, nextVal);
+      } else {
+        _backingEnemies = nextVal;
+      }
+    }
+  });
+  window.__eventHorizonActiveEnemiesGuardInstalled = true;
+}
+
+function ensureEventHorizonRelativisticOnlyStageEnemy() {
+  if (typeof window === 'undefined') return;
+  const activeStageLvl = window.activeStageConfig && Number(window.activeStageConfig.stage_level);
+  if (activeStageLvl && activeStageLvl !== 2) return;
+  const onlyEnemy = stageConfig.enemies && stageConfig.enemies[0];
+  if (!onlyEnemy) return;
+
+  installEventHorizonActiveEnemiesGuard();
+
+  const cur = window.activeStageEnemies;
+  const needsOverride = !Array.isArray(cur)
+    || cur.length !== 1
+    || !cur[0]
+    || cur[0].model_3d_type !== 'relativistic_enemy_ship'
+    || Boolean(cur[0].model_3d_url)
+    || Number(cur[0].scale) !== Number(RELATIVISTIC_ENEMY_SHIP_SCALE);
+
+  if (needsOverride) {
+    window.activeStageEnemies = buildProceduralStageEnemiesList([onlyEnemy]);
+    window.activeStageEnemiesStageLevel = 2;
+    if (window.state) {
+      window.state.stageEnemies = window.activeStageEnemies;
+    }
+  }
+}
+
+/**
+ * Ensures Stage 2: Event Horizon has a dedicated separate procedural enemy pool
+ * bound on the stage object pool (strictly isolated from all other graphics asset pools
+ * such as player weapons, enemy weapons, cockpit overlay, and standard enemyPools).
+ */
+export function ensureStageProceduralEnemyPool(engineApi = null, scene = null) {
+  const targetScene = scene
+    || (engineApi && engineApi.scene)
+    || (typeof window !== 'undefined' && window.scene)
+    || null;
+
+  let stagePool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || (typeof window !== 'undefined' && window.stageObjectPool)
+    || (activeStageObjectPool && !activeStageObjectPool._disposed ? activeStageObjectPool : null)
+    || null;
+
+  if ((!stagePool || stagePool._disposed) && targetScene) {
+    stagePool = createStagePool(targetScene, stageConfig);
+    if (typeof window !== 'undefined' && (!window.stageObjectPool || window.stageObjectPool._disposed)) {
+      window.stageObjectPool = stagePool;
+    }
+  }
+
+  if (stagePool && !stagePool._disposed) {
+    let procPool = (typeof stagePool.getRelativisticEnemyShipProceduralEnemyPool === 'function')
+      ? stagePool.getRelativisticEnemyShipProceduralEnemyPool()
+      : (typeof stagePool.getProceduralEnemyPool === 'function')
+        ? stagePool.getProceduralEnemyPool()
+        : (stagePool.relativisticEnemyShipPool || stagePool.proceduralEnemyPool || null);
+
+    if (!procPool || !procPool.isProceduralEnemyPool || procPool._disposed) {
+      const poolScene = stagePool.scene || targetScene;
+      if (poolScene) {
+        const primaryEnemy = (stageConfig.enemies && stageConfig.enemies[0]) || {};
+        procPool = createRelativisticEnemyShipProceduralEnemyPool(poolScene, primaryEnemy, {
+          poolName: PROCEDURAL_ENEMY_POOL_NAME,
+          initialSize: (stageConfig.proceduralEnemyPoolConfig && stageConfig.proceduralEnemyPoolConfig.initialSize) || primaryEnemy.pool_size || 16,
+          createProceduralEnemyMeshFn: createEnemyMesh
+        });
+
+        // Attach strictly separate from stagePool.enemyPools / weapon pools / cockpit overlay pool
+        stagePool.hasSeparateProceduralEnemyPool = true;
+        stagePool.proceduralEnemyPool = procPool;
+        stagePool.relativisticEnemyShipPool = procPool;
+        stagePool.proceduralEnemyPools = new Map([
+          ['relativistic_enemy_ship', procPool],
+          ['tachyon_cruiser', procPool],
+          ['tachyon_cruiser_lego', procPool]
+        ]);
+        stagePool.getRelativisticEnemyShipProceduralEnemyPool = () => stagePool.relativisticEnemyShipPool || stagePool.proceduralEnemyPool;
+        stagePool.getProceduralEnemyPool = () => stagePool.proceduralEnemyPool;
+        stagePool.getEnemyPool = () => stagePool.proceduralEnemyPool;
+        stagePool.spawnProceduralEnemy = (enemyCfg, position, quaternion = null, scale = null) => {
+          return stagePool.proceduralEnemyPool ? stagePool.proceduralEnemyPool.spawn(position, quaternion, scale) : null;
+        };
+        stagePool.spawnEnemy = (enemyCfg, position, quaternion = null, scale = null) => {
+          return stagePool.spawnProceduralEnemy(enemyCfg, position, quaternion, scale);
+        };
+        const origDespawnEnemy = typeof stagePool.despawnEnemy === 'function' ? stagePool.despawnEnemy.bind(stagePool) : null;
+        stagePool.despawnProceduralEnemy = (mesh) => {
+          if (!mesh || !stagePool.proceduralEnemyPool) return false;
+          const isOwned = Boolean(
+            stagePool.proceduralEnemyPool.active.has(mesh) ||
+            (mesh.userData && (
+              mesh.userData.isRelativisticEnemyShip ||
+              mesh.userData.proceduralEnemyKind === 'relativistic_enemy_ship' ||
+              mesh.userData.proceduralPoolName === stagePool.proceduralEnemyPool.poolName
+            ))
+          );
+          if (isOwned) {
+            resetRelativisticShipWeaponDecals(mesh);
+            stagePool.proceduralEnemyPool.despawn(mesh);
+            return true;
+          }
+          return false;
+        };
+        stagePool.despawnEnemy = (mesh, enemyCfg = null) => {
+          if (stagePool.despawnProceduralEnemy(mesh)) return;
+          if (origDespawnEnemy) origDespawnEnemy(mesh, enemyCfg);
+        };
+        const origDespawnAllEnemies = typeof stagePool.despawnAllEnemies === 'function' ? stagePool.despawnAllEnemies.bind(stagePool) : null;
+        stagePool.despawnAllProceduralEnemies = () => {
+          if (stagePool.proceduralEnemyPool) stagePool.proceduralEnemyPool.despawnAll();
+        };
+        stagePool.despawnAllEnemies = () => {
+          stagePool.despawnAllProceduralEnemies();
+          if (origDespawnAllEnemies) origDespawnAllEnemies();
+        };
+        const origDispose = typeof stagePool.dispose === 'function' ? stagePool.dispose.bind(stagePool) : null;
+        stagePool.dispose = () => {
+          if (stagePool.proceduralEnemyPool && typeof stagePool.proceduralEnemyPool.dispose === 'function') {
+            stagePool.proceduralEnemyPool.dispose();
+          }
+          if (stagePool.proceduralEnemyPools) stagePool.proceduralEnemyPools.clear();
+          if (typeof window !== 'undefined') {
+            if (window.stageProceduralEnemyPool === stagePool.proceduralEnemyPool) window.stageProceduralEnemyPool = null;
+            if (window.stageRelativisticEnemyShipPool === stagePool.relativisticEnemyShipPool) window.stageRelativisticEnemyShipPool = null;
+          }
+          stagePool.proceduralEnemyPool = null;
+          stagePool.relativisticEnemyShipPool = null;
+          if (origDispose) origDispose();
+        };
+      }
+    }
+
+    if (procPool && !procPool._disposed) {
+      activeStageObjectPool = stagePool;
+      activeProceduralEnemyPool = procPool;
+      if (typeof window !== 'undefined') {
+        window.stageProceduralEnemyPool = procPool;
+        window.stageRelativisticEnemyShipPool = procPool;
+      }
+      return procPool;
+    }
+  }
+
+  return (activeProceduralEnemyPool && !activeProceduralEnemyPool._disposed) ? activeProceduralEnemyPool : null;
+}
+
+export function getStageProceduralEnemyPool(engineApi = null, scene = null) {
+  return ensureStageProceduralEnemyPool(engineApi, scene);
+}
+
+/**
+ * Spawns a procedural Relativistic Enemy Ship graphic directly from Stage 2's
+ * separate procedural enemy pool.
+ */
+export function spawnProceduralEnemyFromPool(enemyConfig = null, position = null, quaternion = null, scale = null, engineApi = null, scene = null) {
+  const procPool = ensureStageProceduralEnemyPool(engineApi, scene);
+  const cfg = enemyConfig || (stageConfig.enemies && stageConfig.enemies[0]) || null;
+  if (activeStageObjectPool && !activeStageObjectPool._disposed && typeof activeStageObjectPool.spawnProceduralEnemy === 'function') {
+    return activeStageObjectPool.spawnProceduralEnemy(cfg, position, quaternion, scale);
+  }
+  if (procPool && typeof procPool.spawn === 'function') {
+    return procPool.spawn(position, quaternion, scale);
+  }
+  return null;
+}
+
+/**
+ * Returns a procedural Relativistic Enemy Ship graphic back to Stage 2's
+ * separate procedural enemy pool.
+ */
+export function despawnProceduralEnemyToPool(mesh, enemyConfig = null, engineApi = null) {
+  if (!mesh) return false;
+  resetRelativisticShipWeaponDecals(mesh);
+  const stagePool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || (typeof window !== 'undefined' && window.stageObjectPool)
+    || activeStageObjectPool
+    || null;
+  if (stagePool && !stagePool._disposed && typeof stagePool.despawnProceduralEnemy === 'function') {
+    return stagePool.despawnProceduralEnemy(mesh, enemyConfig);
+  }
+  const procPool = (stagePool && (stagePool.relativisticEnemyShipPool || stagePool.proceduralEnemyPool)) || activeProceduralEnemyPool;
+  if (procPool && !procPool._disposed && typeof procPool.despawn === 'function') {
+    procPool.despawn(mesh);
+    return true;
+  }
+  return false;
 }
 
 export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
   const api = engineApi || (context && context.engineApi);
   if (!api || typeof api.spawnEnemyWaveFromPool !== 'function') return [];
+
+  ensureEventHorizonRelativisticOnlyStageEnemy();
+  const targetScene = (context && context.scene) || (api && api.scene) || (typeof window !== 'undefined' && window.scene) || null;
+  ensureStageProceduralEnemyPool(api, targetScene);
 
   const waves = stageConfig.waves || [
     { wave_number: 1, enemy_count: 5, interval_seconds: 0 },
@@ -1016,15 +1497,13 @@ export function pullEnemyWave(waveNumber = 1, engineApi = null, context = {}) {
     interval_seconds: waveNumber === 1 ? 0 : 15
   };
 
-  const livePool = (typeof window !== 'undefined' && Array.isArray(window.activeStageEnemies) && window.activeStageEnemiesStageLevel === stageConfig.stage_level && window.activeStageEnemies.length > 0)
-    ? window.activeStageEnemies
-    : stageConfig.enemies;
-  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, livePool);
+  return api.spawnEnemyWaveFromPool(waveCfg.enemy_count, waveCfg, stageConfig.enemies);
 }
 
 export function updateStageWaves(engineApi, context = {}) {
   const api = engineApi || (context && context.engineApi);
   if (!api || !api.state) return;
+  ensureEventHorizonRelativisticOnlyStageEnemy();
   const st = api.state;
   if (!st.isGameOver) {
     const maxS = (st.maxShield > 0) ? st.maxShield : 100;
@@ -1852,7 +2331,7 @@ export function setupDesktopPointerCapture(engineApi) {
   }
 
   // On every desktop stage entry, synchronize and arm pointer capture cleanly
-  const stageTag = 'stage_' + (stageConfig && (stageConfig.stage_level || (stageConfig.meta && stageConfig.meta.level)) ? (stageConfig.stage_level || stageConfig.meta.level) : 1) + '_applyStage';
+  const stageTag = 'stage_' + (stageConfig && (stageConfig.stage_level || (stageConfig.meta && stageConfig.meta.level)) ? (stageConfig.stage_level || stageConfig.meta.level) : 2) + '_applyStage';
   if (engineApi && typeof engineApi.armDesktopPointerCapture === 'function') {
     engineApi.armDesktopPointerCapture(stageTag);
   } else if (typeof window.armDesktopPointerCaptureForStage === 'function') {
@@ -1883,6 +2362,7 @@ export function applyStage(engineApi) {
   if (typeof engineApi.setEnemies === 'function') {
     engineApi.setEnemies(stageConfig.enemies);
   }
+  ensureEventHorizonRelativisticOnlyStageEnemy();
   if (typeof engineApi.setPowerups === 'function' && stageConfig.powerups) {
     engineApi.setPowerups(stageConfig.powerups);
   }
@@ -1908,10 +2388,12 @@ export function applyStage(engineApi) {
     engineApi.showToast("🚀 STAGE 2: EVENT HORIZON [ARCORE] LOADED");
   }
 
-  // --- Mount Cockpit Overlay Across Cockpit Window via Pool ---
+  // --- Bind Stage 2's Separate Procedural Enemy Pool & Mount Cockpit Overlay via Pool ---
   const camera = (engineApi && engineApi.camera) || (typeof window !== 'undefined' && window.camera);
   const scene = (engineApi && engineApi.scene) || (typeof window !== 'undefined' && window.scene);
+  const proceduralEnemyPool = ensureStageProceduralEnemyPool(engineApi, scene);
   const pool = (engineApi && typeof engineApi.getObjectPool === 'function' ? engineApi.getObjectPool() : null)
+    || activeStageObjectPool
     || (typeof window !== 'undefined' && window.stageObjectPool)
     || null;
 
@@ -1956,10 +2438,25 @@ export function applyStage(engineApi) {
         const shieldBefore = st && typeof st.playerShield === 'number' ? st.playerShield : maxShield;
         const healthBefore = st && typeof st.playerHealth === 'number' ? st.playerHealth : maxHealth;
 
+        // Each Relativistic Enemy Ship missile strike reduces the active defense bar
+        // (shield while shield > 0, otherwise health) by exactly 2%.
+        let effectiveDmg = dmg;
+        if (
+          weapon &&
+          typeof weapon === 'object' &&
+          (weapon.isRelativisticMissileWeaponDecalPulse || (typeof weapon.damagePct === 'number' && weapon.damagePct > 0))
+        ) {
+          const pct = (typeof weapon.damagePct === 'number' && weapon.damagePct > 0)
+            ? weapon.damagePct
+            : RELATIVISTIC_SHIP_MISSILE_DAMAGE_PCT;
+          const activeBarMax = (shieldBefore > 0) ? maxShield : maxHealth;
+          effectiveDmg = (pct / 100) * activeBarMax;
+        }
+
         wrappedApplyDamage._inStageWrapper = true;
         let ret;
         try {
-          ret = baseDamage.apply(this, [dmg, ...args]);
+          ret = baseDamage.apply(this, [effectiveDmg, ...args]);
         } finally {
           wrappedApplyDamage._inStageWrapper = false;
         }
@@ -2063,6 +2560,11 @@ export function applyStage(engineApi) {
     window.isEnemyWithinWeaponRange = isEnemyWithinWeaponRange;
     window.canEnemyHitPlayer = canEnemyHitPlayer;
     window.canPlayerDestroyEnemy = canPlayerDestroyEnemy;
+    window.stageProceduralEnemyPool = proceduralEnemyPool || (pool && pool.proceduralEnemyPool) || null;
+    window.stageRelativisticEnemyShipPool = window.stageProceduralEnemyPool;
+    window.getStageProceduralEnemyPool = getStageProceduralEnemyPool;
+    window.spawnProceduralEnemyFromPool = spawnProceduralEnemyFromPool;
+    window.despawnProceduralEnemyToPool = despawnProceduralEnemyToPool;
 
     window.setupDesktopPointerCapture = setupDesktopPointerCapture;
     clearCockpitDecalsIfFullDefense();
@@ -2074,6 +2576,33 @@ export function applyStage(engineApi) {
 
 export default {
   stageConfig,
+  createStagePool,
+  EventHorizonObjectPool,
+  RelativisticEnemyShipProceduralEnemyPool,
+  EventHorizonProceduralEnemyPool,
+  ProceduralEnemyPool,
+  createRelativisticEnemyShipProceduralEnemyPool,
+  createProceduralEnemyPool,
+  PROCEDURAL_ENEMY_POOL_NAME,
+  ensureStageProceduralEnemyPool,
+  getStageProceduralEnemyPool,
+  spawnProceduralEnemyFromPool,
+  despawnProceduralEnemyToPool,
+  createEnemyMesh,
+  RELATIVISTIC_SHIP_WEAPON_DECAL_NAMES,
+  RELATIVISTIC_SHIP_EMITTER_KEYS,
+  RELATIVISTIC_SHIP_STAGGER_ORDER,
+  RELATIVISTIC_SHIP_STAGGER_STEP_SEC,
+  RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_MS,
+  RELATIVISTIC_SHIP_WEAPON_FIRE_DURATION_SEC,
+  RELATIVISTIC_SHIP_MISSILE_DAMAGE_PCT,
+  RELATIVISTIC_SHIP_MISSILE_DAMAGE,
+  RELATIVISTIC_SHIP_MISSILE_SALVO_INTERVAL_SEC,
+  RELATIVISTIC_SHIP_SALVOS_PER_EMITTER,
+  RELATIVISTIC_ENEMY_SHIP_SCALE,
+  getRelativisticShipWeaponDecals,
+  setRelativisticShipWeaponDecalEnabled,
+  resetRelativisticShipWeaponDecals,
   WEAPON_MAX_RANGE_KM,
   KM_PER_WORLD_UNIT,
   WEAPON_MAX_RANGE_UNITS,

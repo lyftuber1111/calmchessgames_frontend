@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  <meta name="theme-color" content="#070b18">
+  <meta name="description" content="Tall Mystery Box XR Clicker — Procedural 3D & WebXR game with towering mystery boxes and tall clickers. Hear a MOO and win $1,000!">
+  <title>Tall Mystery Box XR Clicker | Calm Chess Games</title>
+
+  <!-- Favicon & Web Icons -->
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="shortcut icon" href="../favicon.ico">
+  <link rel="icon" type="image/png" sizes="48x48" href="../favicon-48x48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+  <link rel="manifest" href="../site.webmanifest">
+
+  <!-- Three.js & WebXR Addons Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg-void: #070b18;
+      --glass-bg: rgba(11, 18, 36, 0.78);
+      --glass-border: rgba(255, 215, 0, 0.34);
+      --gold: #ffd700;
+      --gold-warm: #ffae00;
+      --emerald: #10b981;
+      --emerald-bright: #34d399;
+      --cyan: #38bdf8;
+      --rose: #fb7185;
+      --violet: #c084fc;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --shadow-glow: 0 10px 32px rgba(0, 0, 0, 0.55);
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 100dvh;
+      background: radial-gradient(circle at 50% 20%, #121c3a 0%, var(--bg-void) 75%);
+      color: var(--text-main);
+      font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      overflow: hidden;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* Full-bleed WebXR / Procedural 3D Stage */
+    main.xr-stage {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #xr-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    #xr-canvas.is-hovering-target {
+      cursor: pointer;
+    }
+
+    #xr-canvas:active {
+      cursor: grabbing;
+    }
+
+    /* HUD Overlay Layer */
+    .hud-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding:
+        calc(clamp(8px, 1.8vw, 16px) + env(safe-area-inset-top, 0px))
+        calc(clamp(8px, 2vw, 18px) + env(safe-area-inset-right, 0px))
+        calc(clamp(8px, 1.8vw, 16px) + env(safe-area-inset-bottom, 0px))
+        calc(clamp(8px, 2vw, 18px) + env(safe-area-inset-left, 0px));
+      gap: 10px;
+    }
+
+    /* Top Header & Scoreboard */
+    header.hud-header {
+      pointer-events: auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 10px 14px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .home-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 215, 0, 0.35);
+      background: rgba(255, 215, 0, 0.1);
+      color: var(--gold);
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      transition: background-color 0.2s, transform 0.15s;
+    }
+
+    .home-link:hover,
+    .home-link:focus-visible {
+      background: rgba(255, 215, 0, 0.22);
+      transform: translateY(-1px);
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .title-wrap {
+      min-width: 0;
+    }
+
+    .title-wrap h1 {
+      margin: 0;
+      font-size: clamp(1rem, 2.2vw, 1.32rem);
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      background: linear-gradient(90deg, #fff6b7 0%, var(--gold) 50%, var(--emerald-bright) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      line-height: 1.15;
+    }
+
+    .title-sub {
+      margin: 2px 0 0;
+      font-size: clamp(0.72rem, 1.4vw, 0.84rem);
+      color: var(--text-muted);
+      line-height: 1.25;
+    }
+
+    .title-sub strong {
+      color: var(--emerald-bright);
+    }
+
+    /* Stats Strip */
+    .stats-strip {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .stat-card {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 6px 12px;
+      border-radius: 11px;
+      background: rgba(15, 23, 42, 0.82);
+      border: 1px solid rgba(148, 163, 184, 0.24);
+      min-width: 82px;
+    }
+
+    .stat-card--cash {
+      border-color: rgba(52, 211, 153, 0.55);
+      background: linear-gradient(135deg, rgba(6, 78, 59, 0.72), rgba(15, 23, 42, 0.88));
+      min-width: 116px;
+    }
+
+    .stat-label {
+      font-size: 0.66rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .stat-value {
+      font-size: clamp(0.95rem, 2vw, 1.2rem);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-main);
+    }
+
+    .stat-card--cash .stat-value {
+      color: var(--emerald-bright);
+      text-shadow: 0 0 12px rgba(52, 211, 153, 0.45);
+    }
+
+    .stat-card--cash.is-jackpot-flash {
+      animation: cashPulse 0.85s ease-out;
+    }
+
+    @keyframes cashPulse {
+      0% { transform: scale(1); box-shadow: 0 0 0 rgba(52, 211, 153, 0); }
+      35% { transform: scale(1.1); box-shadow: 0 0 28px rgba(52, 211, 153, 0.85); }
+      100% { transform: scale(1); box-shadow: 0 0 0 rgba(52, 211, 153, 0); }
+    }
+
+    /* Center Floating Sound / Event Banner */
+    .mid-banner-stack {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      margin-top: auto;
+      margin-bottom: 2px;
+      pointer-events: none;
+    }
+
+    .sound-callout {
+      max-width: min(94vw, 640px);
+      padding: 6px 16px;
+      border-radius: 999px;
+      background: rgba(10, 16, 34, 0.82);
+      border: 1px solid rgba(255, 215, 0, 0.42);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      font-size: clamp(0.78rem, 1.5vw, 0.9rem);
+      font-weight: 700;
+      text-align: center;
+      color: #fef3c7;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+      transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+    }
+
+    .sound-callout.is-moo-win {
+      background: linear-gradient(135deg, rgba(6, 95, 70, 0.95), rgba(180, 83, 9, 0.92));
+      border-color: var(--gold);
+      color: #ffffff;
+      transform: scale(1.06);
+      box-shadow: 0 0 32px rgba(255, 215, 0, 0.55);
+    }
+
+    .target-hint {
+      min-height: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #cbd5e1;
+      text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+      letter-spacing: 0.03em;
+    }
+
+    /* Bottom Interactive Control Bar */
+    nav.hud-bottom {
+      pointer-events: auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: var(--glass-bg);
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: var(--radius-lg);
+      padding: 8px 12px;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: var(--shadow-glow);
+    }
+
+    .pillar-quick-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .pillar-btn {
+      --pillar-accent: #ffd700;
+      min-height: 44px;
+      padding: 6px 12px;
+      border-radius: 10px;
+      border: 1px solid color-mix(in srgb, var(--pillar-accent) 65%, transparent);
+      background: color-mix(in srgb, var(--pillar-accent) 16%, rgba(15, 23, 42, 0.85));
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: transform 0.12s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+
+    .pillar-btn:hover,
+    .pillar-btn:focus-visible {
+      background: color-mix(in srgb, var(--pillar-accent) 30%, rgba(15, 23, 42, 0.92));
+      box-shadow: 0 0 14px color-mix(in srgb, var(--pillar-accent) 45%, transparent);
+      outline: 2px solid var(--pillar-accent);
+      outline-offset: 2px;
+    }
+
+    .pillar-btn:active {
+      transform: translateY(2px) scale(0.97);
+    }
+
+    .pillar-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--pillar-accent);
+      box-shadow: 0 0 8px var(--pillar-accent);
+      flex-shrink: 0;
+    }
+
+    .utility-bar {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .hud-btn {
+      min-height: 44px;
+      padding: 6px 13px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.36);
+      background: rgba(30, 41, 59, 0.86);
+      color: var(--text-main);
+      font-weight: 700;
+      font-size: 0.82rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background-color 0.2s, border-color 0.2s, transform 0.12s;
+    }
+
+    .hud-btn:hover:not(:disabled),
+    .hud-btn:focus-visible:not(:disabled) {
+      background: rgba(51, 65, 85, 0.95);
+      border-color: var(--gold);
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .hud-btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .hud-btn[hidden] {
+      display: none !important;
+    }
+
+    .hud-btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .hud-btn--xr {
+      border-color: rgba(56, 189, 248, 0.55);
+      background: rgba(14, 116, 144, 0.32);
+      color: #e0f2fe;
+    }
+
+    .hud-btn--gold {
+      border-color: rgba(255, 215, 0, 0.65);
+      background: linear-gradient(135deg, rgba(202, 138, 4, 0.4), rgba(161, 98, 7, 0.5));
+      color: #fef9c3;
+    }
+
+    .volume-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 8px;
+      min-height: 44px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.72);
+      border: 1px solid rgba(148, 163, 184, 0.24);
+    }
+
+    .volume-control label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .volume-control input[type="range"] {
+      width: 72px;
+      accent-color: var(--gold);
+      cursor: pointer;
+    }
+
+    .xr-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.14);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #bae6fd;
+      white-space: nowrap;
+    }
+
+    /* Native Modal Dialogs (Modern Web Guidance compliant) */
+    dialog {
+      margin: auto;
+      padding: 0;
+      border: 2px solid var(--gold);
+      border-radius: 20px;
+      background: linear-gradient(160deg, #0f172a 0%, #090e1f 100%);
+      color: var(--text-main);
+      max-width: min(92vw, 470px);
+      width: 100%;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.78), 0 0 42px rgba(255, 215, 0, 0.28);
+      overflow: hidden;
+    }
+
+    dialog:modal {
+      overscroll-behavior: contain;
+    }
+
+    dialog::backdrop {
+      background: rgba(3, 7, 18, 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      overflow: hidden;
+      overscroll-behavior: contain;
+    }
+
+    .dialog-shell {
+      padding: 22px 22px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+    }
+
+    .dialog-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .dialog-header h1 {
+      margin: 0;
+      font-size: clamp(1.35rem, 3.2vw, 1.75rem);
+      line-height: 1.15;
+      color: var(--gold);
+    }
+
+    .dialog-close-btn {
+      min-width: 44px;
+      min-height: 44px;
+      border-radius: 10px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      background: rgba(30, 41, 59, 0.8);
+      color: var(--text-main);
+      font-size: 1.2rem;
+      font-weight: 700;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .dialog-close-btn:hover,
+    .dialog-close-btn:focus-visible {
+      border-color: var(--gold);
+      background: rgba(51, 65, 85, 0.95);
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .jackpot-hero {
+      text-align: center;
+      padding: 16px 14px;
+      border-radius: 14px;
+      background: radial-gradient(circle at 50% 30%, rgba(16, 185, 129, 0.28), rgba(255, 215, 0, 0.12) 65%, rgba(15, 23, 42, 0.6));
+      border: 1px solid rgba(52, 211, 153, 0.55);
+    }
+
+    .jackpot-cow-icon {
+      font-size: 3rem;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .jackpot-amount {
+      font-size: clamp(2rem, 6vw, 2.75rem);
+      font-weight: 900;
+      color: var(--emerald-bright);
+      text-shadow: 0 0 22px rgba(52, 211, 153, 0.6);
+      letter-spacing: 0.02em;
+    }
+
+    .jackpot-subtitle {
+      margin: 6px 0 0;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+    }
+
+    .dialog-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .dialog-stat {
+      background: rgba(15, 23, 42, 0.86);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+
+    .dialog-stat-label {
+      display: block;
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .dialog-stat-value {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #fef08a;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .dialog-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 4px;
+    }
+
+    .dialog-btn-primary {
+      flex: 1 1 160px;
+      min-height: 46px;
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: 2px solid var(--emerald-bright);
+      background: linear-gradient(135deg, #059669, #047857);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.96rem;
+      cursor: pointer;
+      box-shadow: 0 0 18px rgba(16, 185, 129, 0.4);
+    }
+
+    .dialog-btn-primary:hover,
+    .dialog-btn-primary:focus-visible {
+      filter: brightness(1.12);
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .dialog-btn-secondary {
+      flex: 1 1 130px;
+      min-height: 46px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 215, 0, 0.55);
+      background: rgba(255, 215, 0, 0.14);
+      color: #fef08a;
+      font-weight: 700;
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    .dialog-btn-secondary:hover,
+    .dialog-btn-secondary:focus-visible {
+      background: rgba(255, 215, 0, 0.24);
+      outline: 2px solid var(--gold);
+      outline-offset: 2px;
+    }
+
+    .rules-list {
+      margin: 0;
+      padding-left: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      color: #e2e8f0;
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .rules-list kbd {
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 5px;
+      padding: 1px 6px;
+      font-size: 0.82rem;
+      color: var(--gold);
+    }
+
+    .rules-note {
+      margin: 0;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .webgl-fallback {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: rgba(7, 11, 24, 0.96);
+      text-align: center;
+    }
+
+    .webgl-fallback[hidden] {
+      display: none;
+    }
+
+    .webgl-fallback-card {
+      max-width: 440px;
+      padding: 24px;
+      border-radius: 16px;
+      border: 1px solid var(--glass-border);
+      background: #0f172a;
+    }
+
+    @media (max-width: 780px) {
+      header.hud-header {
+        padding: 8px 10px;
+      }
+      .title-sub {
+        display: none;
+      }
+      .stat-card {
+        padding: 5px 9px;
+        min-width: 72px;
+      }
+      .pillar-btn span.pillar-name {
+        display: none;
+      }
+      .volume-control label {
+        display: none;
+      }
+      .volume-control input[type="range"] {
+        width: 58px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="xr-stage" aria-label="Tall Mystery Box XR Clicker 3D Arena">
+    <canvas id="xr-canvas" aria-label="Interactive 3D XR scene with five tall mystery boxes and five tall clickers"></canvas>
+  </main>
+
+  <div class="hud-overlay">
+    <header class="hud-header">
+      <div class="brand-group">
+        <a class="home-link" href="../index.html" aria-label="Return to Calm Chess Games home">&larr; Home</a>
+        <div class="title-wrap">
+          <h1>Tall Mystery Box XR Clicker</h1>
+          <p class="title-sub">Press the towering clickers &amp; mystery vaults — <strong>hear a MOO and win $1,000!</strong></p>
+        </div>
+      </div>
+
+      <div class="stats-strip" aria-label="Scoreboard">
+        <div class="stat-card stat-card--cash" id="cash-card">
+          <span class="stat-label">Winnings</span>
+          <span class="stat-value" id="stat-bankroll">$0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Moo Wins</span>
+          <span class="stat-value" id="stat-wins">0</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Clicks</span>
+          <span class="stat-value" id="stat-clicks">0</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="mid-banner-stack">
+      <div id="sound-callout" class="sound-callout" role="status" aria-live="polite">
+        Click any Tall Clicker or Mystery Box &mdash; listen carefully for a MOO to win $1,000!
+      </div>
+      <div id="target-hint" class="target-hint" aria-hidden="true"></div>
+    </div>
+
+    <nav class="hud-bottom" aria-label="Tall Clicker quick controls and XR tools">
+      <div class="pillar-quick-bar" role="group" aria-label="Quick press tall clickers 1 to 5">
+        <button type="button" class="pillar-btn" data-pillar="0" style="--pillar-accent: #fb7185;" aria-label="Click Tall Clicker 1 Crimson Spire">
+          <span class="pillar-dot" aria-hidden="true"></span>1<span class="pillar-name"> Crimson</span>
+        </button>
+        <button type="button" class="pillar-btn" data-pillar="1" style="--pillar-accent: #38bdf8;" aria-label="Click Tall Clicker 2 Sapphire Obelisk">
+          <span class="pillar-dot" aria-hidden="true"></span>2<span class="pillar-name"> Sapphire</span>
+        </button>
+        <button type="button" class="pillar-btn" data-pillar="2" style="--pillar-accent: #ffd700;" aria-label="Click Tall Clicker 3 Solar Sovereign">
+          <span class="pillar-dot" aria-hidden="true"></span>3<span class="pillar-name"> Solar</span>
+        </button>
+        <button type="button" class="pillar-btn" data-pillar="3" style="--pillar-accent: #34d399;" aria-label="Click Tall Clicker 4 Emerald Monolith">
+          <span class="pillar-dot" aria-hidden="true"></span>4<span class="pillar-name"> Emerald</span>
+        </button>
+        <button type="button" class="pillar-btn" data-pillar="4" style="--pillar-accent: #c084fc;" aria-label="Click Tall Clicker 5 Amethyst Citadel">
+          <span class="pillar-dot" aria-hidden="true"></span>5<span class="pillar-name"> Amethyst</span>
+        </button>
+      </div>
+
+      <div class="utility-bar">
+        <span class="xr-badge" id="xr-status-badge">WebXR 3D</span>
+        <button type="button" class="hud-btn hud-btn--xr" id="btn-enter-vr" hidden>Enter VR</button>
+        <button type="button" class="hud-btn hud-btn--xr" id="btn-enter-ar" hidden>Enter AR</button>
+        <button type="button" class="hud-btn hud-btn--gold" id="btn-new-round">Shuffle Boxes</button>
+        <button type="button" class="hud-btn" id="btn-sound-toggle" aria-pressed="false">Sound On</button>
+        <div class="volume-control">
+          <label for="volume-slider">Vol</label>
+          <input id="volume-slider" type="range" min="0" max="100" value="82" aria-label="Audio volume">
+        </div>
+        <button type="button" class="hud-btn" id="btn-how-to-play">Rules</button>
+      </div>
+    </nav>
+  </div>
+
+  <!-- $1,000 Moo Jackpot Modal Dialog -->
+  <dialog id="win-dialog" closedby="any" aria-labelledby="win-dialog-title">
+    <div class="dialog-shell">
+      <div class="dialog-header">
+        <h1 id="win-dialog-title">MOO HEARD! JACKPOT!</h1>
+        <form method="dialog">
+          <button type="submit" value="close" class="dialog-close-btn" aria-label="Close jackpot celebration">&times;</button>
+        </form>
+      </div>
+
+      <div class="jackpot-hero">
+        <div class="jackpot-cow-icon" aria-hidden="true">🐄💰</div>
+        <div class="jackpot-amount">+$1,000</div>
+        <p class="jackpot-subtitle" id="win-box-summary">You heard the golden moo from Solar Sovereign!</p>
+      </div>
+
+      <div class="dialog-stats-grid">
+        <div class="dialog-stat">
+          <span class="dialog-stat-label">Total Won</span>
+          <span class="dialog-stat-value" id="win-total-cash">$1,000</span>
+        </div>
+        <div class="dialog-stat">
+          <span class="dialog-stat-label">Round Clicks</span>
+          <span class="dialog-stat-value" id="win-round-clicks">1</span>
+        </div>
+        <div class="dialog-stat">
+          <span class="dialog-stat-label">Moo Jackpots</span>
+          <span class="dialog-stat-value" id="win-total-moos">1</span>
+        </div>
+      </div>
+
+      <form method="dialog" class="dialog-actions">
+        <button type="button" id="btn-replay-moo" class="dialog-btn-secondary">Replay Moo</button>
+        <button type="submit" value="next" class="dialog-btn-primary" autofocus>Play Next Round</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Rules & Controls Modal Dialog -->
+  <dialog id="rules-dialog" closedby="any" aria-labelledby="rules-dialog-title">
+    <div class="dialog-shell">
+      <div class="dialog-header">
+        <h1 id="rules-dialog-title">How to Play</h1>
+        <form method="dialog">
+          <button type="submit" value="close" class="dialog-close-btn" aria-label="Close rules">&times;</button>
+        </form>
+      </div>
+
+      <ul class="rules-list">
+        <li>Five <strong>Tall Mystery Boxes</strong> stand on pedestals, each paired with its own <strong>Tall Spring-Loaded Clicker</strong>.</li>
+        <li>Click or tap any tall clicker plunger (or press <kbd>1</kbd>&ndash;<kbd>5</kbd> or <kbd>Space</kbd>) to pump mystery energy up the tall tower and crack open its vault lid.</li>
+        <li>Listen closely! Most clicks emit sneaky decoy sounds (boings, quacks, chimes, meows). One secret Tall Mystery Box hides the <strong>Golden Cow</strong>.</li>
+        <li>The moment you <strong>hear a MOO</strong>, the tall mystery box erupts with the Golden Cow and flying $1,000 notes &mdash; and you win <strong>$1,000</strong>!</li>
+        <li>In <strong>VR / AR (WebXR)</strong>, point your controller ray or pinch at any tall clicker or box to press it, and press the floating 3D <em>Next Round</em> button after a jackpot.</li>
+        <li>Drag to orbit the 3D camera, scroll/pinch to zoom, press <kbd>R</kbd> to shuffle a new round, or <kbd>M</kbd> to mute/unmute.</li>
+      </ul>
+
+      <p class="rules-note">Game winnings are virtual in-game prize dollars saved locally in your browser.</p>
+
+      <form method="dialog" class="dialog-actions">
+        <button type="button" id="btn-reset-stats" class="dialog-btn-secondary">Reset Winnings</button>
+        <button type="submit" value="ok" class="dialog-btn-primary" autofocus>Got It!</button>
+      </form>
+    </div>
+  </dialog>
+
+  <!-- Graceful WebGL Unavailable Fallback -->
+  <div id="webgl-fallback" class="webgl-fallback" hidden>
+    <div class="webgl-fallback-card">
+      <h2>3D WebGL Renderer Unavailable</h2>
+      <p>Your browser could not initialize a WebGL context for the XR scene. You can still use the numbered Tall Clicker buttons below or enable hardware acceleration in your browser settings.</p>
+      <button type="button" class="hud-btn hud-btn--gold" id="btn-dismiss-fallback">Continue in Audio Mode</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/clicker_game.js"></script>
+  <script src="../js/analytics.js" defer></script>
+</body>
+</html>

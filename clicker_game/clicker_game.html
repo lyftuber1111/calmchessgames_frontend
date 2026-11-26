@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
-  <meta name="theme-color" content="#1a1033">
-  <meta name="description" content="Mystery Box XR Clicker — Tall mystery boxes with silver rip packages and cartoonish keyboard clicker keys.">
-  <title>Mystery Box XR Clicker | Calm Chess Games</title>
+  <meta name="theme-color" content="#ff85c4">
+  <meta name="description" content="Kawaii 7-Row Mechanical Clicker XR — 7 pastel rows of adorable cartoonish mechanical keyboard clickers in a soft pink silicone case with satisfying tactile clicks.">
+  <title>Kawaii Pink Clicker XR | Calm Chess Games</title>
 
   <!-- Favicon & Web Icons -->
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
@@ -29,13 +29,15 @@
 
   <style>
     :root {
-      --bg-sky: #1b1138;
-      --pill-bg: rgba(30, 18, 62, 0.72);
-      --pill-border: rgba(255, 214, 240, 0.45);
-      --gold: #ffe066;
-      --mint: #52f2b8;
-      --pink: #ff7cc3;
-      --text-main: #fff8fc;
+      --bg-top: #dceeff;
+      --bg-mid: #f3e4ff;
+      --bg-bot: #ffe3f3;
+      --pill-bg: rgba(255, 255, 255, 0.78);
+      --pill-border: rgba(255, 112, 184, 0.58);
+      --pink-deep: #d62d84;
+      --pink-hot: #ff5ca8;
+      --violet: #6b2d8c;
+      --text-main: #4a1959;
     }
 
     *, *::before, *::after {
@@ -48,7 +50,7 @@
       width: 100%;
       height: 100%;
       min-height: 100dvh;
-      background: radial-gradient(circle at 50% 25%, #321c66 0%, var(--bg-sky) 75%);
+      background: linear-gradient(180deg, var(--bg-top) 0%, var(--bg-mid) 50%, var(--bg-bot) 100%);
       color: var(--text-main);
       font-family: "Comic Sans MS", "Chalkboard SE", "Segoe UI Rounded", "Segoe UI", system-ui, -apple-system, sans-serif;
       overflow: hidden;
@@ -64,6 +66,8 @@
       width: 100%;
       height: 100%;
       z-index: 1;
+      content-visibility: auto;
+      contain-intrinsic-size: auto 100vw auto 100vh;
     }
 
     #xr-canvas {
@@ -71,14 +75,17 @@
       width: 100%;
       height: 100%;
       touch-action: none;
-      cursor: default;
+      cursor: grab;
+    }
+
+    #xr-canvas:active {
+      cursor: grabbing;
     }
 
     #xr-canvas.is-hovering-target {
       cursor: pointer;
     }
 
-    /* Ultra-clean top bar only — zero footer controls, zero instructional badges */
     header.top-bar {
       position: fixed;
       top: 0;
@@ -108,54 +115,64 @@
     .top-pill {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      min-height: 44px;
+      justify-content: center;
+      gap: 7px;
+      min-width: 46px;
+      min-height: 46px;
       padding: 6px 14px;
       border-radius: 999px;
       background: var(--pill-bg);
-      border: 2px solid var(--pill-border);
+      border: 2.5px solid var(--pill-border);
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 8px 24px rgba(10, 4, 28, 0.42);
+      box-shadow: 0 8px 20px rgba(214, 45, 132, 0.18);
       color: var(--text-main);
+      font-family: inherit;
       font-weight: 800;
-      font-size: clamp(0.95rem, 2.2vw, 1.18rem);
+      font-size: clamp(1rem, 2.2vw, 1.18rem);
       font-variant-numeric: tabular-nums;
       text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.14s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    .top-pill--home {
-      padding: 6px 13px;
-      font-size: 1rem;
-      color: var(--gold);
-      transition: transform 0.15s ease, background-color 0.2s ease;
-    }
-
-    .top-pill--home:hover,
-    .top-pill--home:focus-visible {
-      transform: scale(1.06);
-      background: rgba(58, 30, 108, 0.85);
-      outline: 2px solid var(--gold);
+    .top-pill:hover,
+    .top-pill:focus-visible {
+      transform: translateY(-1px) scale(1.05);
+      background: rgba(255, 255, 255, 0.94);
+      box-shadow: 0 10px 24px rgba(255, 92, 168, 0.28);
+      outline: 2.5px solid var(--pink-hot);
       outline-offset: 2px;
     }
 
-    .top-pill--cash {
-      border-color: rgba(82, 242, 184, 0.72);
-      color: var(--mint);
-      text-shadow: 0 0 12px rgba(82, 242, 184, 0.45);
+    .top-pill:active {
+      transform: scale(0.95);
     }
 
-    .top-pill--keys {
-      border-color: rgba(255, 124, 195, 0.75);
-      color: #ffe4f3;
+    .top-pill--home {
+      color: var(--pink-deep);
+    }
+
+    .top-pill--clicks {
+      cursor: default;
+      border-color: rgba(255, 92, 168, 0.72);
+      color: var(--pink-deep);
+    }
+
+    .top-pill--clicks:hover {
+      transform: none;
+    }
+
+    .top-pill--icon {
+      padding: 6px 12px;
+      font-size: 1.25rem;
     }
 
     .top-pill--xr {
-      cursor: pointer;
-      border-color: rgba(125, 211, 252, 0.8);
-      background: rgba(14, 116, 144, 0.55);
-      color: #e0f2fe;
-      font-size: 0.9rem;
+      border-color: rgba(14, 165, 233, 0.65);
+      background: rgba(224, 242, 254, 0.86);
+      color: #0369a1;
+      font-size: 0.95rem;
     }
 
     .top-pill--xr[hidden] {
@@ -163,12 +180,12 @@
     }
 
     .top-pill.is-pop {
-      animation: pillPop 0.65s cubic-bezier(0.22, 1.5, 0.36, 1);
+      animation: pillPop 0.36s cubic-bezier(0.22, 1.6, 0.36, 1);
     }
 
     @keyframes pillPop {
       0% { transform: scale(1); }
-      40% { transform: scale(1.22); box-shadow: 0 0 28px rgba(255, 224, 102, 0.85); }
+      45% { transform: scale(1.18); box-shadow: 0 0 24px rgba(255, 92, 168, 0.55); }
       100% { transform: scale(1); }
     }
 
@@ -186,7 +203,7 @@
   </style>
 </head>
 <body>
-  <h1 class="sr-only">Mystery Box XR Clicker</h1>
+  <h1 class="sr-only">Kawaii 7-Row Mechanical Clicker XR</h1>
 
   <header class="top-bar">
     <div class="top-left">
@@ -195,19 +212,18 @@
       <button type="button" class="top-pill top-pill--xr" id="btn-enter-ar" hidden>AR</button>
     </div>
 
-    <div class="top-right" aria-label="Score">
-      <div class="top-pill top-pill--keys" id="keys-pill" aria-label="Won clicker keys">
-        <span aria-hidden="true">⌨️</span>
-        <span id="stat-keys">0</span>
-      </div>
-      <div class="top-pill top-pill--cash" id="cash-pill" aria-label="Won dollars">
-        <span id="stat-bankroll">$0</span>
+    <div class="top-right">
+      <button type="button" class="top-pill top-pill--icon" id="btn-wave" aria-label="Rainbow wave animation" title="Rainbow Wave">🌈</button>
+      <button type="button" class="top-pill top-pill--icon" id="btn-sound-mode" aria-label="Toggle sparkle chime with mechanical click" aria-pressed="true" title="Sparkle Thock Mode">🎵</button>
+      <div class="top-pill top-pill--clicks" id="clicks-pill" aria-label="Total clicks">
+        <span aria-hidden="true">💖</span>
+        <span id="stat-clicks">0</span>
       </div>
     </div>
   </header>
 
   <main class="xr-stage">
-    <canvas id="xr-canvas" aria-label="Interactive 3D XR mystery boxes and cartoon clicker keys"></canvas>
+    <canvas id="xr-canvas" aria-label="Interactive 3D XR 7 rows of cartoonish mechanical keyboard clickers in a pink silicone case"></canvas>
   </main>
 
   <script type="module" src="js/clicker_game.js"></script>

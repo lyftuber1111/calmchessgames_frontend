@@ -1,16 +1,15 @@
 /**
- * Calm Chess Computers & Games — Tall Mystery Box XR Clicker
- * 100% Procedural 3D & WebXR (immersive-vr + immersive-ar) Game
- *
- * Features:
- *  - 5 Towering Procedural Tall Mystery Box Vaults (3.7m - 5.1m tall) with hinged lids,
- *    glowing procedural '?' rune PBR textures, rotating beacon crystals & hidden Golden Cow
- *  - 5 Tall Spring-Loaded Mechanical Clicker Columns (2.15m - 2.75m tall) with dynamic
- *    3D helical coil springs, 10-segment LED charge ladders, glossy plungers & pneumatic tubes
- *  - Hear a MOO -> Win $1,000! Triggers procedural 3D Golden Crowned Cow pop-out,
- *    fluttering 3D "$1,000" bills, golden fireworks, Web Audio cow moo + cash fanfare
- *  - Full WebXR controller raycasting, AR passthrough transparency, 3D holographic HUD,
- *    Desktop OrbitControls + keyboard shortcuts, and Mobile responsive portrait framing
+ * Calm Chess Computers & Games — Cartoonish Mystery Box XR Clicker
+ * Designed for pure playful discovery (no instructional badges, no footer controls):
+ *  - 5 Tall Cartoonish Candy-Pastel Mystery Boxes
+ *  - Click a Tall Mystery Box -> lid flips open and a crinkly metallic SILVER FOIL PACKAGE pops out!
+ *  - Click (or swipe!) the Silver Package to RIP it open (half-rip crinkle -> full rip burst!)
+ *  - If the ripped silver package says "MOOOOOOO!":
+ *      * You win $1,000 (fluttering 3D $1,000 bills + pastel stars & hearts!)
+ *      * You win a SUPER CUTE CARTOONISH 3D KEYBOARD CLICKER KEY (mounted on a working mechanical switch!)
+ *      * Click the cartoonish keyboard clicker key (while celebrating OR anytime on your foreground shelf!)
+ *        to press the keycap down with tactile mechanical CLICK-CLACK + cute character sounds!
+ *  - Full WebXR (immersive-vr + passthrough immersive-ar), Desktop & Mobile touch support.
  */
 
 import * as THREE from 'three';
@@ -18,69 +17,63 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
 import { createClickerAudioEngine } from './clicker_audio.js';
 
-(function initTallMysteryClickerXR() {
+(function initCartoonMysteryBoxXR() {
   'use strict';
 
-  const STORAGE_STATS_KEY = 'calmchess_clicker_stats_v1';
+  const STORAGE_STATS_KEY = 'calmchess_cartoon_clicker_v2';
   const JACKPOT_PRIZE = 1000;
 
-  // 5 Towering Tall Mystery Boxes paired with 5 Tall Spring-Loaded Clickers
-  const PILLAR_CONFIGS = [
-    { name: 'Crimson Spire',    accent: '#fb7185', accentHex: 0xfb7185, darkHex: 0x3b0b19, angleDeg: -42, boxHeight: 3.70, clickerHeight: 2.15, pan: -0.75 },
-    { name: 'Sapphire Obelisk', accent: '#38bdf8', accentHex: 0x38bdf8, darkHex: 0x08233c, angleDeg: -21, boxHeight: 4.35, clickerHeight: 2.45, pan: -0.38 },
-    { name: 'Solar Sovereign',  accent: '#ffd700', accentHex: 0xffd700, darkHex: 0x332404, angleDeg:   0, boxHeight: 5.10, clickerHeight: 2.75, pan:  0.00 },
-    { name: 'Emerald Monolith', accent: '#34d399', accentHex: 0x34d399, darkHex: 0x062d22, angleDeg:  21, boxHeight: 4.35, clickerHeight: 2.45, pan:  0.38 },
-    { name: 'Amethyst Citadel', accent: '#c084fc', accentHex: 0xc084fc, darkHex: 0x260d3d, angleDeg:  42, boxHeight: 3.70, clickerHeight: 2.15, pan:  0.75 }
+  // 5 Tall Candy-Pastel Mystery Boxes arranged in a semi-circular arc
+  const BOX_CONFIGS = [
+    { name: 'Pink',     color: '#ff6fb5', hex: 0xff6fb5, stripe: '#fff0f7', ribbon: '#ffe066', angleDeg: -42, height: 3.55, pan: -0.72 },
+    { name: 'Aqua',     color: '#4cc9f0', hex: 0x4cc9f0, stripe: '#e8f9ff', ribbon: '#ff7cc3', angleDeg: -21, height: 4.15, pan: -0.36 },
+    { name: 'Sunny',    color: '#ffd166', hex: 0xffd166, stripe: '#fffbeb', ribbon: '#ff6fb5', angleDeg:   0, height: 4.75, pan:  0.00 },
+    { name: 'Mint',     color: '#52e5a8', hex: 0x52e5a8, stripe: '#ecfdf5', ribbon: '#c084fc', angleDeg:  21, height: 4.15, pan:  0.36 },
+    { name: 'Lavender', color: '#c084fc', hex: 0xc084fc, stripe: '#f5f3ff', ribbon: '#52e5a8', angleDeg:  42, height: 3.55, pan:  0.72 }
   ];
 
-  // DOM References
+  // 8 Adorable Cartoonish Keyboard Clicker Keycap Prizes! (First Moo win ALWAYS awards Moo Cow!)
+  const CARTOON_KEY_CATALOG = [
+    { id: 'cow',     base: '#fffaf0', hex: 0xfffaf0, accent: '#ff8ec7', stem: 0xff8ec7, cheek: '#ff9ec9', topper: 'cow' },
+    { id: 'kitty',   base: '#ffb3de', hex: 0xffb3de, accent: '#ff5ca8', stem: 0xff5ca8, cheek: '#ff6ba8', topper: 'kitty' },
+    { id: 'unicorn', base: '#e4c7ff', hex: 0xe4c7ff, accent: '#ffd700', stem: 0xc084fc, cheek: '#ff99cc', topper: 'unicorn' },
+    { id: 'bunny',   base: '#ffd8be', hex: 0xffd8be, accent: '#ff8fa3', stem: 0xff9f68, cheek: '#ff88a8', topper: 'bunny' },
+    { id: 'froggy',  base: '#9ef0b8', hex: 0x9ef0b8, accent: '#34d399', stem: 0x34d399, cheek: '#ff94b8', topper: 'froggy' },
+    { id: 'teddy',   base: '#ffd98e', hex: 0xffd98e, accent: '#c08242', stem: 0xf59e0b, cheek: '#ff8da1', topper: 'teddy' },
+    { id: 'crown',   base: '#fff08a', hex: 0xfff08a, accent: '#ff6fb5', stem: 0xffd700, cheek: '#ff8ac0', topper: 'crown' },
+    { id: 'rainbow', base: '#a5e8ff', hex: 0xa5e8ff, accent: '#ff6fb5', stem: 0x38bdf8, cheek: '#ff8ec7', topper: 'rainbow' }
+  ];
+
+  // Minimal HUD references (only cash + won keys count + hidden WebXR buttons)
   const canvas = document.getElementById('xr-canvas');
-  const cashCard = document.getElementById('cash-card');
+  const cashPill = document.getElementById('cash-pill');
+  const keysPill = document.getElementById('keys-pill');
   const statBankrollEl = document.getElementById('stat-bankroll');
-  const statWinsEl = document.getElementById('stat-wins');
-  const statClicksEl = document.getElementById('stat-clicks');
-  const soundCalloutEl = document.getElementById('sound-callout');
-  const targetHintEl = document.getElementById('target-hint');
-  const xrBadgeEl = document.getElementById('xr-status-badge');
+  const statKeysEl = document.getElementById('stat-keys');
   const btnEnterVr = document.getElementById('btn-enter-vr');
   const btnEnterAr = document.getElementById('btn-enter-ar');
-  const btnNewRound = document.getElementById('btn-new-round');
-  const btnSoundToggle = document.getElementById('btn-sound-toggle');
-  const volumeSlider = document.getElementById('volume-slider');
-  const btnHowToPlay = document.getElementById('btn-how-to-play');
-  const winDialog = document.getElementById('win-dialog');
-  const winBoxSummaryEl = document.getElementById('win-box-summary');
-  const winTotalCashEl = document.getElementById('win-total-cash');
-  const winRoundClicksEl = document.getElementById('win-round-clicks');
-  const winTotalMoosEl = document.getElementById('win-total-moos');
-  const btnReplayMoo = document.getElementById('btn-replay-moo');
-  const rulesDialog = document.getElementById('rules-dialog');
-  const btnResetStats = document.getElementById('btn-reset-stats');
-  const webglFallback = document.getElementById('webgl-fallback');
-  const btnDismissFallback = document.getElementById('btn-dismiss-fallback');
-  const quickButtons = Array.from(document.querySelectorAll('.pillar-btn[data-pillar]'));
 
   const audio = createClickerAudioEngine();
 
-  // Persistent Player State
+  // Game State
   const state = {
     bankroll: 0,
     displayedBankroll: 0,
-    mooWins: 0,
-    totalClicks: 0,
-    roundClicks: 0,
+    wonKeys: [], // array of catalog ids
     roundNumber: 1,
-    winningIndex: Math.floor(Math.random() * PILLAR_CONFIGS.length),
-    roundWon: false,
-    lastWonIndex: -1,
-    lastSoundLabel: 'Listening...',
-    lastHeardMoo: false,
+    boxesOpenedThisRound: 0,
+    winningBoxIndex: Math.floor(Math.random() * BOX_CONFIGS.length),
+    activePackage: null, // { boxIndex, ripStage: 0|1|2, isMoo, group, topStrip, bodyGroup, ... }
+    celebrationKey: null, // active big cartoonish keycap floating right after winning!
     decoyCursor: Math.floor(Math.random() * audio.DECOY_SOUNDS.length),
     isInXR: false,
     xrMode: null,
     vrSupported: false,
     arSupported: false,
-    webglReady: false
+    webglReady: false,
+    lastHeardMoo: false,
+    totalRips: 0,
+    totalKeyClicks: 0
   };
 
   function loadStats() {
@@ -92,11 +85,8 @@ import { createClickerAudioEngine } from './clicker_audio.js';
         state.bankroll = parsed.bankroll;
         state.displayedBankroll = parsed.bankroll;
       }
-      if (Number.isFinite(parsed.mooWins) && parsed.mooWins >= 0) {
-        state.mooWins = parsed.mooWins;
-      }
-      if (Number.isFinite(parsed.totalClicks) && parsed.totalClicks >= 0) {
-        state.totalClicks = parsed.totalClicks;
+      if (Array.isArray(parsed.wonKeys)) {
+        state.wonKeys = parsed.wonKeys.filter((id) => CARTOON_KEY_CATALOG.some((c) => c.id === id)).slice(0, 24);
       }
     } catch (_) {}
   }
@@ -107,63 +97,36 @@ import { createClickerAudioEngine } from './clicker_audio.js';
         STORAGE_STATS_KEY,
         JSON.stringify({
           bankroll: state.bankroll,
-          mooWins: state.mooWins,
-          totalClicks: state.totalClicks
+          wonKeys: state.wonKeys
         })
       );
     } catch (_) {}
   }
 
-  function formatDollars(amount) {
-    return '$' + Math.round(amount).toLocaleString('en-US');
+  function formatDollars(n) {
+    return '$' + Math.round(n).toLocaleString('en-US');
   }
 
-  function syncHudStats() {
+  function syncTopHud(popCash = false, popKeys = false) {
     if (statBankrollEl) statBankrollEl.textContent = formatDollars(state.displayedBankroll);
-    if (statWinsEl) statWinsEl.textContent = String(state.mooWins);
-    if (statClicksEl) statClicksEl.textContent = String(state.totalClicks);
-  }
-
-  function setCallout(message, isWin = false) {
-    if (!soundCalloutEl) return;
-    soundCalloutEl.textContent = message;
-    soundCalloutEl.classList.toggle('is-moo-win', isWin);
-  }
-
-  function syncAudioUi() {
-    const muted = audio.isMuted();
-    if (btnSoundToggle) {
-      btnSoundToggle.setAttribute('aria-pressed', String(muted));
-      btnSoundToggle.textContent = muted ? 'Muted' : 'Sound On';
+    if (statKeysEl) statKeysEl.textContent = String(state.wonKeys.length);
+    if (popCash && cashPill) {
+      cashPill.classList.remove('is-pop');
+      void cashPill.offsetWidth;
+      cashPill.classList.add('is-pop');
     }
-    if (volumeSlider) {
-      volumeSlider.value = String(Math.round(audio.getVolume() * 100));
-    }
-  }
-
-  // Modern Web Guidance: closedby="any" light-dismiss fallback for browsers without native closedBy
-  if (!('closedBy' in HTMLDialogElement.prototype)) {
-    const outside = (e, dialog) => {
-      const r = dialog.getBoundingClientRect();
-      return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
-    };
-    for (const dialog of document.querySelectorAll('dialog[closedby="any"]')) {
-      let pressedOutside = false;
-      dialog.addEventListener('pointerdown', (e) => {
-        pressedOutside = outside(e, dialog);
-      });
-      dialog.addEventListener('pointerup', (e) => {
-        if (pressedOutside && outside(e, dialog)) dialog.close();
-      });
+    if (popKeys && keysPill) {
+      keysPill.classList.remove('is-pop');
+      void keysPill.offsetWidth;
+      keysPill.classList.add('is-pop');
     }
   }
 
   loadStats();
-  syncHudStats();
-  syncAudioUi();
+  syncTopHud(false, false);
 
   // ---------------------------------------------------------------------------
-  // WebGL / Three.js WebXR Initialization
+  // WebGL / Three.js WebXR Setup
   // ---------------------------------------------------------------------------
   let renderer = null;
   try {
@@ -175,271 +138,10 @@ import { createClickerAudioEngine } from './clicker_audio.js';
     });
     state.webglReady = true;
   } catch (err) {
-    console.warn('[ClickerXR] WebGL unavailable, running audio/HUD fallback mode:', err);
-    if (webglFallback) webglFallback.hidden = false;
-  }
-
-  if (btnDismissFallback && webglFallback) {
-    btnDismissFallback.addEventListener('click', () => {
-      audio.unlock();
-      webglFallback.hidden = true;
-    });
-  }
-
-  // Forward declarations for 3D update hooks (no-ops if WebGL unavailable)
-  let updateHoloBoard = () => {};
-  let animatePillarClick3D = () => {};
-  let animatePillarWin3D = () => {};
-  let resetPillars3D = () => {};
-  let startXRSession = async () => {};
-
-  // ---------------------------------------------------------------------------
-  // Core Game Logic (works in 3D, WebXR, and Audio Fallback)
-  // ---------------------------------------------------------------------------
-  const pillarClickCounts = PILLAR_CONFIGS.map(() => 0);
-
-  function pickNextWinningIndex(previousIndex) {
-    const candidates = PILLAR_CONFIGS.map((_, i) => i).filter((i) => i !== previousIndex);
-    return candidates[Math.floor(Math.random() * candidates.length)];
-  }
-
-  function startNewRound(silent = false) {
-    audio.unlock();
-    const prevWin = state.winningIndex;
-    state.winningIndex = pickNextWinningIndex(prevWin);
-    state.roundWon = false;
-    state.roundClicks = 0;
-    state.roundNumber += 1;
-    state.lastHeardMoo = false;
-    state.lastSoundLabel = 'Boxes Shuffled — Listen for the Moo!';
-    for (let i = 0; i < pillarClickCounts.length; i++) {
-      pillarClickCounts[i] = 0;
-    }
-
-    if (!silent) {
-      audio.playRoundReset();
-    }
-    resetPillars3D();
-    updateHoloBoard('NEW MYSTERY ROUND', 'Click a Tall Clicker — Hear a MOO to win $1,000!', false);
-    setCallout('Round ' + state.roundNumber + ': 5 Tall Mystery Boxes armed! Click & listen for a MOO!', false);
-  }
-
-  function triggerMooJackpot(pillarIndex) {
-    const cfg = PILLAR_CONFIGS[pillarIndex];
-    state.roundWon = true;
-    state.lastWonIndex = pillarIndex;
-    state.lastHeardMoo = true;
-    state.mooWins += 1;
-    state.bankroll += JACKPOT_PRIZE;
-    state.lastSoundLabel = 'MOOOOOOO! (+$1,000)';
-    saveStats();
-
-    // Unmistakable Cow MOO + Wide Lid Creak + $1,000 Cash Fanfare!
-    audio.playLidCreak(true, cfg.pan);
-    audio.playMoo(cfg.pan);
-    audio.playJackpotFanfare();
-
-    // Flash cash badge
-    if (cashCard) {
-      cashCard.classList.remove('is-jackpot-flash');
-      void cashCard.offsetWidth;
-      cashCard.classList.add('is-jackpot-flash');
-    }
-
-    setCallout('MOOOOOOO! ' + cfg.name + ' mooed — YOU WON $1,000!', true);
-    updateHoloBoard('MOOOOOOO! +$1,000 WON!', cfg.name + ' revealed the Golden Cow!', true);
-    animatePillarWin3D(pillarIndex);
-
-    // Show accessible native modal dialog when not inside immersive XR headset
-    if (!state.isInXR && winDialog && !winDialog.open) {
-      if (winBoxSummaryEl) {
-        winBoxSummaryEl.textContent = 'You heard the golden MOO from ' + cfg.name + '!';
-      }
-      if (winTotalCashEl) winTotalCashEl.textContent = formatDollars(state.bankroll);
-      if (winRoundClicksEl) winRoundClicksEl.textContent = String(state.roundClicks);
-      if (winTotalMoosEl) winTotalMoosEl.textContent = String(state.mooWins);
-
-      setTimeout(() => {
-        if (state.roundWon && !state.isInXR && winDialog && !winDialog.open) {
-          winDialog.showModal();
-        }
-      }, 1900);
-    }
-  }
-
-  function handlePillarPress(pillarIndex) {
-    if (pillarIndex < 0 || pillarIndex >= PILLAR_CONFIGS.length) return;
-    audio.unlock();
-
-    // If round was already won, clicking another pillar starts a fresh round automatically
-    if (state.roundWon) {
-      startNewRound(true);
-    }
-
-    const cfg = PILLAR_CONFIGS[pillarIndex];
-    pillarClickCounts[pillarIndex] += 1;
-    state.totalClicks += 1;
-    state.roundClicks += 1;
-    saveStats();
-
-    const localClicks = pillarClickCounts[pillarIndex];
-    const chargeRatio = Math.min(1, localClicks / 4);
-    audio.playClickerPress(pillarIndex, chargeRatio, cfg.pan);
-
-    // Determine whether THIS click unleashes the MOO!
-    // - Clicking the secret Moo Box has a thrilling 60% instant chance on click 1,
-    //   and 100% guaranteed on its 2nd click (or if 3+ clicks have already happened this round).
-    // - Clicking 8 times in a round without finding it magnetically lures the Golden Cow into
-    //   your current tall mystery box so you're always rewarded with a hilarious MOO!
-    let shouldMoo = false;
-    if (pillarIndex === state.winningIndex) {
-      if (localClicks >= 2 || state.roundClicks >= 3 || Math.random() < 0.6) {
-        shouldMoo = true;
-      }
-    } else if (state.roundClicks >= 8) {
-      state.winningIndex = pillarIndex;
-      shouldMoo = true;
-    }
-
-    animatePillarClick3D(pillarIndex, localClicks, shouldMoo);
-
-    if (shouldMoo) {
-      triggerMooJackpot(pillarIndex);
-    } else {
-      audio.playLidCreak(false, cfg.pan);
-      const decoyMeta = audio.playDecoySound(state.decoyCursor++, cfg.pan);
-      const isHotHint = pillarIndex === state.winningIndex;
-      state.lastSoundLabel = decoyMeta.label;
-      const hintTail = isHotHint
-        ? ' Wait... something golden stirred inside ' + cfg.name + '! Click again!'
-        : '';
-      setCallout(decoyMeta.emoji + ' ' + cfg.name + ': ' + decoyMeta.caption + hintTail, false);
-      updateHoloBoard(
-        decoyMeta.label.toUpperCase() + ' — NO MOO YET',
-        isHotHint ? cfg.name + ' is rumbling with gold!' : 'Try another Tall Clicker!',
-        false
-      );
-    }
-
-    syncHudStats();
-  }
-
-  // Bind HUD buttons & dialogs
-  quickButtons.forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const idx = Number(btn.dataset.pillar);
-      handlePillarPress(idx);
-    });
-  });
-
-  if (btnNewRound) {
-    btnNewRound.addEventListener('click', () => startNewRound(false));
-  }
-
-  if (btnSoundToggle) {
-    btnSoundToggle.addEventListener('click', () => {
-      audio.unlock();
-      audio.setMuted(!audio.isMuted());
-      syncAudioUi();
-    });
-  }
-
-  if (volumeSlider) {
-    volumeSlider.addEventListener('input', () => {
-      audio.unlock();
-      audio.setVolume(Number(volumeSlider.value) / 100);
-      syncAudioUi();
-    });
-  }
-
-  if (btnHowToPlay && rulesDialog) {
-    btnHowToPlay.addEventListener('click', () => {
-      audio.unlock();
-      if (!rulesDialog.open) rulesDialog.showModal();
-    });
-  }
-
-  if (btnReplayMoo) {
-    btnReplayMoo.addEventListener('click', () => {
-      audio.unlock();
-      const pan = state.lastWonIndex >= 0 ? PILLAR_CONFIGS[state.lastWonIndex].pan : 0;
-      audio.playMoo(pan);
-    });
-  }
-
-  if (btnResetStats) {
-    btnResetStats.addEventListener('click', () => {
-      state.bankroll = 0;
-      state.displayedBankroll = 0;
-      state.mooWins = 0;
-      state.totalClicks = 0;
-      saveStats();
-      syncHudStats();
-      updateHoloBoard('STATS RESET', 'Click a Tall Clicker — Hear a MOO to win $1,000!', false);
-      if (rulesDialog && rulesDialog.open) rulesDialog.close();
-    });
-  }
-
-  if (winDialog) {
-    winDialog.addEventListener('close', () => {
-      const choice = winDialog.returnValue;
-      winDialog.returnValue = '';
-      if (choice === 'next') {
-        startNewRound(false);
-      }
-    });
-  }
-
-  if (rulesDialog) {
-    rulesDialog.addEventListener('close', () => {
-      rulesDialog.returnValue = '';
-    });
-  }
-
-  // Keyboard shortcuts
-  window.addEventListener('keydown', (e) => {
-    if (winDialog && winDialog.open) return;
-    if (rulesDialog && rulesDialog.open) return;
-    if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-
-    if (e.key >= '1' && e.key <= '5') {
-      handlePillarPress(Number(e.key) - 1);
-    } else if (e.code === 'Space') {
-      e.preventDefault();
-      handlePillarPress(Math.floor(Math.random() * PILLAR_CONFIGS.length));
-    } else if (e.key === 'r' || e.key === 'R') {
-      startNewRound(false);
-    } else if (e.key === 'm' || e.key === 'M') {
-      audio.unlock();
-      audio.setMuted(!audio.isMuted());
-      syncAudioUi();
-    }
-  });
-
-  // Expose public diagnostic / control API even if WebGL failed
-  window.CalmChessClickerXR = {
-    clickPillar: (idx) => handlePillarPress(idx),
-    startNewRound: () => startNewRound(false),
-    replayMoo: () => {
-      audio.unlock();
-      return audio.playMoo(0);
-    },
-    startXR: (mode) => startXRSession(mode),
-    getState: () => ({
-      ...state,
-      pillarClickCounts: [...pillarClickCounts],
-      audioState: audio.getContextState(),
-      muted: audio.isMuted()
-    })
-  };
-
-  if (!renderer) {
+    console.warn('[CartoonClickerXR] WebGL unavailable:', err);
     return;
   }
 
-  // ---------------------------------------------------------------------------
-  // Three.js Procedural 3D & WebXR Scene Construction
-  // ---------------------------------------------------------------------------
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -451,11 +153,11 @@ import { createClickerAudioEngine } from './clicker_audio.js';
   renderer.xr.setReferenceSpaceType('local-floor');
 
   const scene = new THREE.Scene();
-  const baseFog = new THREE.FogExp2(0x070c1c, 0.022);
+  const baseFog = new THREE.FogExp2(0x1e1342, 0.016);
   scene.fog = baseFog;
 
   const camera = new THREE.PerspectiveCamera(48, window.innerWidth / Math.max(window.innerHeight, 1), 0.1, 140);
-  camera.position.set(0, 3.2, 8.8);
+  camera.position.set(0, 3.0, 9.8);
 
   const cameraRig = new THREE.Group();
   cameraRig.name = 'XRCameraRig';
@@ -464,208 +166,575 @@ import { createClickerAudioEngine } from './clicker_audio.js';
 
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
-  controls.dampingFactor = 0.06;
+  controls.dampingFactor = 0.065;
   controls.enablePan = false;
-  controls.minDistance = 4.2;
-  controls.maxDistance = 20.0;
-  controls.minPolarAngle = Math.PI * 0.14;
-  controls.maxPolarAngle = Math.PI * 0.495;
-  controls.target.set(0, 2.35, -3.4);
+  controls.minDistance = 5.0;
+  controls.maxDistance = 18.0;
+  controls.minPolarAngle = Math.PI * 0.18;
+  controls.maxPolarAngle = Math.PI * 0.485;
+  controls.target.set(0, 2.15, -3.2);
 
-  // Lighting Rig
-  const hemiLight = new THREE.HemisphereLight(0x9cc9ff, 0x161229, 0.78);
+  // Bright, dreamy candy-studio lighting (makes silver foil glint & pastel cartoon keys shine!)
+  const hemiLight = new THREE.HemisphereLight(0xffe9fb, 0x3b2670, 1.05);
   scene.add(hemiLight);
 
-  const keySpot = new THREE.DirectionalLight(0xfff4d6, 1.35);
-  keySpot.position.set(6, 13, 8);
-  keySpot.castShadow = true;
-  keySpot.shadow.mapSize.set(1024, 1024);
-  keySpot.shadow.camera.near = 1;
-  keySpot.shadow.camera.far = 32;
-  keySpot.shadow.camera.left = -9;
-  keySpot.shadow.camera.right = 9;
-  keySpot.shadow.camera.top = 9;
-  keySpot.shadow.camera.bottom = -9;
-  keySpot.shadow.bias = -0.0005;
-  scene.add(keySpot);
+  const keyLight = new THREE.DirectionalLight(0xfffaf0, 1.55);
+  keyLight.position.set(5, 12, 9);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(1024, 1024);
+  keyLight.shadow.camera.near = 1;
+  keyLight.shadow.camera.far = 30;
+  keyLight.shadow.camera.left = -9;
+  keyLight.shadow.camera.right = 9;
+  keyLight.shadow.camera.top = 9;
+  keyLight.shadow.camera.bottom = -9;
+  keyLight.shadow.bias = -0.0005;
+  scene.add(keyLight);
 
-  const rimCyan = new THREE.DirectionalLight(0x38bdf8, 0.65);
-  rimCyan.position.set(-9, 8, -8);
-  scene.add(rimCyan);
+  const pinkRim = new THREE.DirectionalLight(0xff8ed4, 0.78);
+  pinkRim.position.set(-8, 7, 5);
+  scene.add(pinkRim);
 
-  const rimGold = new THREE.PointLight(0xffcf56, 2.2, 24, 1.35);
-  rimGold.position.set(0, 6.2, -1.8);
-  scene.add(rimGold);
+  const aquaRim = new THREE.DirectionalLight(0x7dd3fc, 0.72);
+  aquaRim.position.set(8, 6, -6);
+  scene.add(aquaRim);
 
-  const frontFill = new THREE.DirectionalLight(0xdbeafe, 0.72);
-  frontFill.position.set(-4, 5, 10);
-  scene.add(frontFill);
+  // Crisp studio reflections for the shiny SILVER FOIL package!
+  const foilSpecLight = new THREE.PointLight(0xffffff, 2.8, 20, 1.1);
+  foilSpecLight.position.set(1.8, 4.4, 4.2);
+  scene.add(foilSpecLight);
 
-  const jackpotLight = new THREE.PointLight(0xffe066, 0, 14, 1.3);
-  jackpotLight.position.set(0, 4.5, -4.5);
-  scene.add(jackpotLight);
+  // Procedural Bright Studio Environment Map so metallic silver foil & gold chrome gleam brightly!
+  {
+    const envCanvas = document.createElement('canvas');
+    envCanvas.width = 512;
+    envCanvas.height = 256;
+    const ectx = envCanvas.getContext('2d');
+    const eg = ectx.createLinearGradient(0, 0, 0, 256);
+    eg.addColorStop(0.0, '#ffffff');
+    eg.addColorStop(0.32, '#e8f4ff');
+    eg.addColorStop(0.55, '#ffe8f7');
+    eg.addColorStop(0.82, '#c8d6f5');
+    eg.addColorStop(1.0, '#7c65b8');
+    ectx.fillStyle = eg;
+    ectx.fillRect(0, 0, 512, 256);
+    // Bright specular studio softbox panels for crisp foil highlights
+    ectx.fillStyle = '#ffffff';
+    ectx.fillRect(60, 28, 120, 68);
+    ectx.fillRect(310, 36, 140, 74);
+    ectx.fillStyle = '#fff5d6';
+    ectx.fillRect(190, 118, 130, 44);
+
+    const envTex = new THREE.CanvasTexture(envCanvas);
+    envTex.mapping = THREE.EquirectangularReflectionMapping;
+    envTex.colorSpace = THREE.SRGBColorSpace;
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromEquirectangular(envTex).texture;
+    envTex.dispose();
+    pmrem.dispose();
+  }
 
   // ---------------------------------------------------------------------------
-  // Procedural Texture Generators
+  // Procedural Texture Generators (Cartoon Toy Aesthetic + Crinkly Silver Foil)
   // ---------------------------------------------------------------------------
-  function createGlowTexture(inner, mid, outer = 'rgba(0,0,0,0)') {
+  function createSparkleTexture(inner = 'rgba(255,255,255,1)', mid = 'rgba(255,220,245,0.55)') {
     const c = document.createElement('canvas');
     c.width = 128;
     c.height = 128;
     const ctx = c.getContext('2d');
-    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+    const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 62);
     g.addColorStop(0.0, inner);
-    g.addColorStop(0.32, mid);
-    g.addColorStop(0.75, outer);
+    g.addColorStop(0.35, mid);
     g.addColorStop(1.0, 'rgba(0,0,0,0)');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 128, 128);
+    // Cute 4-point star glimmer
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(64, 14);
+    ctx.quadraticCurveTo(68, 60, 114, 64);
+    ctx.quadraticCurveTo(68, 68, 64, 114);
+    ctx.quadraticCurveTo(60, 68, 14, 64);
+    ctx.quadraticCurveTo(60, 60, 64, 14);
+    ctx.fill();
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
   }
 
-  function createFloorTexture() {
+  function createPastelFloorTexture() {
     const c = document.createElement('canvas');
     c.width = 512;
     c.height = 512;
     const ctx = c.getContext('2d');
 
-    ctx.fillStyle = '#0c1326';
-    ctx.fillRect(0, 0, 512, 512);
-
-    // Subtle luxury checkerboard tiles
     const tile = 64;
     for (let y = 0; y < 512; y += tile) {
       for (let x = 0; x < 512; x += tile) {
         const alt = ((x / tile) + (y / tile)) % 2 === 0;
-        ctx.fillStyle = alt ? '#111b34' : '#0b1224';
+        ctx.fillStyle = alt ? '#2a1b54' : '#211445';
         ctx.fillRect(x, y, tile, tile);
-        ctx.strokeStyle = 'rgba(255, 215, 0, 0.12)';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(255, 182, 232, 0.16)';
+        ctx.lineWidth = 2;
         ctx.strokeRect(x + 1, y + 1, tile - 2, tile - 2);
       }
     }
-
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.wrapS = THREE.RepeatWrapping;
     tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(8, 8);
+    tex.repeat.set(7, 7);
     return tex;
   }
 
-  function createMysteryBoxTextures(accentColor, darkColorHex) {
+  /**
+   * Tall Cartoonish Mystery Gift Box texture: polka dots, vertical pastel ribbon, bubbly '?'
+   */
+  function createCartoonBoxTexture(baseColor, stripeColor, ribbonColor) {
     const w = 512;
     const h = 1024;
-    const diffCanvas = document.createElement('canvas');
-    diffCanvas.width = w;
-    diffCanvas.height = h;
-    const ctx = diffCanvas.getContext('2d');
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext('2d');
 
-    const emisCanvas = document.createElement('canvas');
-    emisCanvas.width = w;
-    emisCanvas.height = h;
-    const ectx = emisCanvas.getContext('2d');
-    ectx.fillStyle = '#000000';
-    ectx.fillRect(0, 0, w, h);
-
-    // Deep lacquered vault background gradient
-    const baseHexStr = '#' + darkColorHex.toString(16).padStart(6, '0');
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-    bgGrad.addColorStop(0, '#1e293b');
-    bgGrad.addColorStop(0.5, baseHexStr);
-    bgGrad.addColorStop(1, '#090d1a');
-    ctx.fillStyle = bgGrad;
+    // Candy pastel gradient fill
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, baseColor);
+    g.addColorStop(1, '#ffffff');
+    ctx.fillStyle = baseColor;
     ctx.fillRect(0, 0, w, h);
 
-    // Subtle diagonal diamond lattice pattern
-    ctx.strokeStyle = 'rgba(255, 215, 0, 0.08)';
-    ctx.lineWidth = 2;
-    for (let i = -h; i < w + h; i += 44) {
-      ctx.beginPath();
-      ctx.moveTo(i, 0);
-      ctx.lineTo(i + h, h);
-      ctx.moveTo(i + h, 0);
-      ctx.lineTo(i, h);
-      ctx.stroke();
+    // Subtle glossy vertical stripes
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    for (let x = 0; x < w; x += 64) {
+      ctx.fillRect(x, 0, 26, h);
     }
 
-    // Ornate gilded outer & inner frames
-    ctx.strokeStyle = '#ffd700';
-    ctx.lineWidth = 16;
-    ctx.strokeRect(18, 18, w - 36, h - 36);
-    ctx.strokeStyle = accentColor;
+    // Playful scattered polka dots & mini stars
+    ctx.fillStyle = stripeColor;
+    for (let row = 0; row < 12; row++) {
+      for (let col = 0; col < 5; col++) {
+        const cx = 48 + col * 104 + (row % 2 === 0 ? 0 : 48);
+        const cy = 44 + row * 84;
+        ctx.globalAlpha = 0.35;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 13, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // Vertical glossy satin gift ribbon stripe down the middle
+    ctx.fillStyle = ribbonColor;
+    ctx.fillRect(w / 2 - 42, 0, 84, h);
+    ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 6;
-    ctx.strokeRect(38, 38, w - 76, h - 76);
+    ctx.strokeRect(w / 2 - 42, -6, 84, h + 12);
 
-    ectx.strokeStyle = accentColor;
-    ectx.lineWidth = 7;
-    ectx.strokeRect(38, 38, w - 76, h - 76);
+    // Cute cartoon border outline
+    ctx.strokeStyle = '#3b1d5e';
+    ctx.lineWidth = 18;
+    ctx.strokeRect(9, 9, w - 18, h - 18);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(22, 22, w - 44, h - 44);
 
-    // Horizontal architectural ribs dividing the tall mystery vault into 3 stacked tiers
-    [340, 684].forEach((y) => {
-      ctx.fillStyle = '#d4af37';
-      ctx.fillRect(24, y - 10, w - 48, 20);
-      ctx.fillStyle = accentColor;
-      ctx.fillRect(40, y - 3, w - 80, 6);
-      ectx.fillStyle = accentColor;
-      ectx.fillRect(40, y - 3, w - 80, 6);
-    });
-
-    // Large glowing Mystery '?' Emblems stacked vertically along the tall face
-    const centers = [190, 512, 834];
-    centers.forEach((cy, idx) => {
-      const r = idx === 1 ? 116 : 92;
-      // Medallion disc
-      const mg = ctx.createRadialGradient(w / 2, cy, 8, w / 2, cy, r);
-      mg.addColorStop(0, 'rgba(255, 215, 0, 0.25)');
-      mg.addColorStop(0.75, 'rgba(15, 23, 42, 0.85)');
-      mg.addColorStop(1, '#ffd700');
-      ctx.fillStyle = mg;
+    // Two bubbly cartoon '?' sticker medallions stacked on the tall box (aspect-compensated to stay perfectly round!)
+    [310, 715].forEach((cy) => {
+      ctx.save();
+      ctx.translate(w / 2, cy);
+      ctx.scale(1.36, 0.72);
+      ctx.fillStyle = '#fffdf5';
       ctx.beginPath();
-      ctx.arc(w / 2, cy, r, 0, Math.PI * 2);
+      ctx.arc(0, 0, 108, 0, Math.PI * 2);
       ctx.fill();
-      ctx.lineWidth = 6;
-      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 12;
+      ctx.strokeStyle = '#3b1d5e';
       ctx.stroke();
 
-      // '?' Glyph on both diffuse & emissive
-      const fontSize = idx === 1 ? 168 : 132;
-      ctx.font = `900 ${fontSize}px "Segoe UI", system-ui, sans-serif`;
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = ribbonColor;
+      ctx.beginPath();
+      ctx.arc(0, 0, 94, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.font = '900 156px "Comic Sans MS", "Chalkboard SE", "Segoe UI", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = '#fffbeb';
-      ctx.fillText('?', w / 2, cy + 8);
-
-      ectx.font = `900 ${fontSize}px "Segoe UI", system-ui, sans-serif`;
-      ectx.textAlign = 'center';
-      ectx.textBaseline = 'middle';
-      ectx.fillStyle = idx === 1 ? '#ffd700' : accentColor;
-      ectx.fillText('?', w / 2, cy + 8);
+      ctx.lineWidth = 12;
+      ctx.strokeStyle = '#3b1d5e';
+      ctx.strokeText('?', 0, 10);
+      ctx.fillStyle = baseColor;
+      ctx.fillText('?', 0, 10);
+      ctx.restore();
     });
 
-    // Brass rivets on corners
-    const rivetXs = [58, w - 58];
-    const rivetYs = [58, 320, 360, 664, 704, h - 58];
-    ctx.fillStyle = '#fde68a';
-    rivetYs.forEach((ry) => {
-      rivetXs.forEach((rx) => {
-        ctx.beginPath();
-        ctx.arc(rx, ry, 7, 0, Math.PI * 2);
-        ctx.fill();
-      });
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    return tex;
+  }
+
+  /**
+   * Shiny Metallic Silver Blind-Bag Foil Pouch Textures (Diffuse + Crinkle Bump)
+   */
+  function createSilverFoilTextures() {
+    const w = 512;
+    const h = 640;
+    const diff = document.createElement('canvas');
+    diff.width = w;
+    diff.height = h;
+    const ctx = diff.getContext('2d');
+
+    const bump = document.createElement('canvas');
+    bump.width = w;
+    bump.height = h;
+    const bctx = bump.getContext('2d');
+
+    // Mirror-like silver foil metallic gradient with gentle holographic shimmer
+    const g = ctx.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0.0, '#e2e8f0');
+    g.addColorStop(0.22, '#ffffff');
+    g.addColorStop(0.45, '#cbd5e1');
+    g.addColorStop(0.66, '#f8fafc');
+    g.addColorStop(0.84, '#b8c4d4');
+    g.addColorStop(1.0, '#f1f5f9');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+
+    // Subtle pastel holographic foil sheen strips
+    const holo = ctx.createLinearGradient(0, h * 0.2, w, h * 0.8);
+    holo.addColorStop(0.0, 'rgba(255, 160, 220, 0.14)');
+    holo.addColorStop(0.35, 'rgba(160, 235, 255, 0.16)');
+    holo.addColorStop(0.7, 'rgba(255, 240, 150, 0.14)');
+    holo.addColorStop(1.0, 'rgba(205, 170, 255, 0.16)');
+    ctx.fillStyle = holo;
+    ctx.fillRect(0, 0, w, h);
+
+    // Organic crinkle reflections on both diffuse and bump
+    bctx.fillStyle = '#808080';
+    bctx.fillRect(0, 0, w, h);
+    for (let i = 0; i < 48; i++) {
+      const x1 = Math.random() * w;
+      const y1 = Math.random() * h;
+      const x2 = x1 + (Math.random() - 0.5) * 220;
+      const y2 = y1 + (Math.random() - 0.5) * 220;
+      ctx.strokeStyle = i % 2 === 0 ? 'rgba(255,255,255,0.28)' : 'rgba(100,116,139,0.16)';
+      ctx.lineWidth = 3 + Math.random() * 8;
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      bctx.strokeStyle = i % 2 === 0 ? '#c8c8c8' : '#404040';
+      bctx.lineWidth = 5 + Math.random() * 10;
+      bctx.beginPath();
+      bctx.moveTo(x1, y1);
+      bctx.lineTo(x2, y2);
+      bctx.stroke();
+    }
+
+    // Crimped vertical metallic ridges along top & bottom foil heat-seals
+    [0, h - 68].forEach((sy) => {
+      for (let x = 0; x < w; x += 14) {
+        ctx.fillStyle = (x / 14) % 2 === 0 ? 'rgba(255,255,255,0.55)' : 'rgba(100,116,139,0.4)';
+        ctx.fillRect(x, sy, 7, 68);
+        bctx.fillStyle = (x / 14) % 2 === 0 ? '#ffffff' : '#181818';
+        bctx.fillRect(x, sy, 7, 68);
+      }
     });
 
-    const map = new THREE.CanvasTexture(diffCanvas);
+    // Subtle tear-seam dashed line near top (visual affordance only — zero text!)
+    ctx.strokeStyle = 'rgba(71, 85, 105, 0.55)';
+    ctx.lineWidth = 5;
+    ctx.setLineDash([16, 12]);
+    ctx.beginPath();
+    ctx.moveTo(16, 84);
+    ctx.lineTo(w - 16, 84);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Cute embossed metallic sparkle '?' emblem in center of silver bag
+    ctx.save();
+    ctx.translate(w / 2, h * 0.52);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
+    ctx.strokeStyle = '#94a3b8';
+    ctx.lineWidth = 10;
+    ctx.beginPath();
+    ctx.arc(0, 0, 114, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Cute star sparkles around circle
+    [[-125, -85], [128, -70], [-115, 95], [122, 85]].forEach(([sx, sy]) => {
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 12, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    ctx.font = '900 165px "Comic Sans MS", "Chalkboard SE", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.lineWidth = 10;
+    ctx.strokeStyle = '#64748b';
+    ctx.strokeText('?', 0, 10);
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillText('?', 0, 10);
+    ctx.restore();
+
+    const map = new THREE.CanvasTexture(diff);
     map.colorSpace = THREE.SRGBColorSpace;
     map.anisotropy = 4;
 
-    const emissiveMap = new THREE.CanvasTexture(emisCanvas);
-    emissiveMap.colorSpace = THREE.SRGBColorSpace;
-    emissiveMap.anisotropy = 4;
+    const bumpMap = new THREE.CanvasTexture(bump);
+    bumpMap.anisotropy = 4;
+    return { map, bumpMap };
+  }
 
-    return { map, emissiveMap };
+  /**
+   * Cute Cartoon Kawaii Face Texture for the top of each Cartoonish Keyboard Clicker Keycap!
+   */
+  function createCartoonKeyFaceTexture(def) {
+    const size = 512;
+    const c = document.createElement('canvas');
+    c.width = size;
+    c.height = size;
+    const ctx = c.getContext('2d');
+
+    // Glossy candy fill
+    ctx.fillStyle = def.base;
+    ctx.fillRect(0, 0, size, size);
+
+    // Extra cute dairy cow spots for the Cow keycap!
+    if (def.id === 'cow') {
+      ctx.fillStyle = '#5c4033';
+      [
+        { x: 96, y: 92, rx: 72, ry: 54, rot: -0.35 },
+        { x: 422, y: 108, rx: 64, ry: 48, rot: 0.4 },
+        { x: 82, y: 416, rx: 58, ry: 42, rot: 0.3 },
+        { x: 434, y: 406, rx: 68, ry: 48, rot: -0.25 }
+      ].forEach((sp) => {
+        ctx.save();
+        ctx.translate(sp.x, sp.y);
+        ctx.rotate(sp.rot);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, sp.rx, sp.ry, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    } else if (def.id === 'rainbow') {
+      // Cute pastel rainbow stripes along top
+      const bands = ['#ff6fb5', '#ffd166', '#52e5a8', '#4cc9f0', '#c084fc'];
+      bands.forEach((col, i) => {
+        ctx.strokeStyle = col;
+        ctx.lineWidth = 24;
+        ctx.beginPath();
+        ctx.arc(256, 200, 175 - i * 24, Math.PI * 1.08, Math.PI * 1.92);
+        ctx.stroke();
+      });
+    } else if (def.id === 'unicorn') {
+      // Tiny sparkly pastel stars in corners
+      ctx.fillStyle = '#ffd700';
+      [[90, 96], [422, 96], [96, 420], [418, 420]].forEach(([sx, sy]) => {
+        ctx.beginPath();
+        ctx.arc(sx, sy, 18, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    // Soft glossy comic highlight frame
+    ctx.strokeStyle = '#3b1d5e';
+    ctx.lineWidth = 20;
+    ctx.strokeRect(18, 18, size - 36, size - 36);
+
+    // Big shiny cartoon eyes with dual sparkle dots!
+    const drawEye = (ex, ey, wink = false) => {
+      if (wink) {
+        ctx.strokeStyle = '#2d1447';
+        ctx.lineWidth = 18;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.arc(ex, ey + 10, 34, Math.PI * 1.15, Math.PI * 1.85);
+        ctx.stroke();
+        return;
+      }
+      ctx.fillStyle = '#2d1447';
+      ctx.beginPath();
+      ctx.ellipse(ex, ey, 36, 44, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // Main sparkle dot
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(ex - 12, ey - 14, 15, 0, Math.PI * 2);
+      ctx.fill();
+      // Mini bottom sparkle
+      ctx.beginPath();
+      ctx.arc(ex + 12, ey + 14, 7, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    const eyeY = def.id === 'cow' ? 215 : 235;
+    drawEye(172, eyeY, false);
+    drawEye(340, eyeY, def.id === 'kitty' || def.id === 'crown');
+
+    // Rosy pastel cheeks
+    ctx.fillStyle = def.cheek;
+    ctx.globalAlpha = 0.72;
+    ctx.beginPath();
+    ctx.ellipse(112, eyeY + 62, 38, 22, 0, 0, Math.PI * 2);
+    ctx.ellipse(400, eyeY + 62, 38, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Adorable character snout / mouth!
+    if (def.id === 'cow') {
+      // Big pink smiling cow snout!
+      ctx.fillStyle = '#ffb5d8';
+      ctx.strokeStyle = '#3b1d5e';
+      ctx.lineWidth = 11;
+      ctx.beginPath();
+      ctx.ellipse(256, 336, 118, 72, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Nostrils
+      ctx.fillStyle = '#8b3a62';
+      ctx.beginPath();
+      ctx.ellipse(212, 322, 16, 12, -0.2, 0, Math.PI * 2);
+      ctx.ellipse(300, 322, 16, 12, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Happy smile
+      ctx.strokeStyle = '#3b1d5e';
+      ctx.lineWidth = 10;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(256, 344, 34, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+    } else if (def.id === 'kitty' || def.id === 'bunny') {
+      // Whiskers for kitty
+      if (def.id === 'kitty') {
+        ctx.strokeStyle = '#3b1d5e';
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        [[64, 274, 122, 286], [60, 316, 120, 312], [448, 274, 390, 286], [452, 316, 392, 312]].forEach(([x1, y1, x2, y2]) => {
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+        });
+      }
+      // Cute pink triangle nose + ":3" cat/bunny smile
+      ctx.fillStyle = '#ff5ca8';
+      ctx.beginPath();
+      ctx.moveTo(240, 286);
+      ctx.lineTo(272, 286);
+      ctx.lineTo(256, 306);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = '#3b1d5e';
+      ctx.lineWidth = 11;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(232, 318, 24, 0.1, Math.PI - 0.15);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(280, 318, 24, 0.15, Math.PI - 0.1);
+      ctx.stroke();
+    } else if (def.id === 'teddy') {
+      ctx.fillStyle = '#fff3d6';
+      ctx.strokeStyle = '#3b1d5e';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.ellipse(256, 326, 76, 56, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#5c3a21';
+      ctx.beginPath();
+      ctx.ellipse(256, 304, 24, 16, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = '#3b1d5e';
+      ctx.lineWidth = 10;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(256, 326, 26, 0.15, Math.PI - 0.15);
+      ctx.stroke();
+    } else {
+      // Big cheerful cartoon grin!
+      ctx.fillStyle = '#ff6b9d';
+      ctx.strokeStyle = '#3b1d5e';
+      ctx.lineWidth = 11;
+      ctx.beginPath();
+      ctx.arc(256, 294, 48, 0.12, Math.PI - 0.12);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    return tex;
+  }
+
+  /**
+   * Playful Cartoon Comic Pop Bubble ("MOO!" + "$1,000!")
+   */
+  function createMooBurstTexture() {
+    const c = document.createElement('canvas');
+    c.width = 768;
+    c.height = 384;
+    const ctx = c.getContext('2d');
+
+    // Spiky cartoon comic burst star behind text
+    ctx.save();
+    ctx.translate(384, 192);
+    ctx.fillStyle = '#fff59d';
+    ctx.strokeStyle = '#ff4da6';
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    const spikes = 16;
+    for (let i = 0; i < spikes * 2; i++) {
+      const ang = (i * Math.PI) / spikes;
+      const rx = i % 2 === 0 ? 350 : 275;
+      const ry = i % 2 === 0 ? 170 : 124;
+      const x = Math.cos(ang) * rx;
+      const y = Math.sin(ang) * ry;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    // Big bubbly "MOO!"
+    ctx.font = '900 132px "Comic Sans MS", "Chalkboard SE", sans-serif';
+    ctx.lineWidth = 18;
+    ctx.strokeStyle = '#3b1d5e';
+    ctx.strokeText('MOO!', 384, 142);
+    ctx.fillStyle = '#ff5ca8';
+    ctx.fillText('MOO!', 384, 142);
+
+    // Sparkling "+$1,000!"
+    ctx.font = '900 84px "Comic Sans MS", "Chalkboard SE", sans-serif';
+    ctx.lineWidth = 14;
+    ctx.strokeStyle = '#064e3b';
+    ctx.strokeText('+$1,000!', 384, 266);
+    ctx.fillStyle = '#34d399';
+    ctx.fillText('+$1,000!', 384, 266);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
   }
 
   function createDollarBillTexture() {
@@ -674,56 +743,39 @@ import { createClickerAudioEngine } from './clicker_audio.js';
     c.height = 224;
     const ctx = c.getContext('2d');
 
-    // Crisp emerald-cream banknote paper
     const g = ctx.createLinearGradient(0, 0, 512, 224);
-    g.addColorStop(0, '#d1fae5');
-    g.addColorStop(0.5, '#ecfdf5');
-    g.addColorStop(1, '#a7f3d0');
+    g.addColorStop(0, '#bbf7d0');
+    g.addColorStop(0.5, '#f0fdf4');
+    g.addColorStop(1, '#86efac');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 512, 224);
 
-    // Ornate emerald border
-    ctx.strokeStyle = '#065f46';
-    ctx.lineWidth = 14;
-    ctx.strokeRect(10, 10, 492, 204);
     ctx.strokeStyle = '#047857';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(24, 24, 464, 176);
+    ctx.lineWidth = 16;
+    ctx.strokeRect(10, 10, 492, 204);
 
-    // Center golden cow seal medallion
-    ctx.fillStyle = '#065f46';
+    ctx.fillStyle = '#10b981';
     ctx.beginPath();
-    ctx.arc(256, 112, 62, 0, Math.PI * 2);
+    ctx.arc(256, 112, 64, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = '#fbbf24';
-    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#ffe066';
+    ctx.lineWidth = 7;
     ctx.stroke();
 
-    ctx.fillStyle = '#fef08a';
-    ctx.font = '900 42px "Segoe UI", system-ui, sans-serif';
+    ctx.fillStyle = '#fffbeb';
+    ctx.font = '900 48px "Comic Sans MS", sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('$1000', 256, 100);
+    ctx.fillText('$1000', 256, 114);
 
-    ctx.fillStyle = '#6ee7b7';
-    ctx.font = '800 18px "Segoe UI", system-ui, sans-serif';
-    ctx.fillText('MOO NOTE', 256, 136);
-
-    // Corner denominations
-    ctx.fillStyle = '#064e3b';
-    ctx.font = '900 28px Georgia, serif';
+    ctx.fillStyle = '#065f46';
+    ctx.font = '900 32px "Comic Sans MS", sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('$1,000', 34, 52);
-    ctx.fillText('$1,000', 34, 176);
+    ctx.fillText('$1000', 30, 52);
+    ctx.fillText('$1000', 30, 174);
     ctx.textAlign = 'right';
-    ctx.fillText('$1,000', 478, 52);
-    ctx.fillText('$1,000', 478, 176);
-
-    // Top/Bottom motto
-    ctx.textAlign = 'center';
-    ctx.font = '800 14px "Segoe UI", system-ui, sans-serif';
-    ctx.fillText('CALM CHESS MYSTERY VAULT RESERVE', 256, 40);
-    ctx.fillText('ONE THOUSAND MOO DOLLARS', 256, 186);
+    ctx.fillText('$1000', 482, 52);
+    ctx.fillText('$1000', 482, 174);
 
     const tex = new THREE.CanvasTexture(c);
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -731,13 +783,11 @@ import { createClickerAudioEngine } from './clicker_audio.js';
   }
 
   // ---------------------------------------------------------------------------
-  // Environment: Procedural Twilight Dome, Stage Floor & Floating Bokeh Dust
+  // Dreamy Starry Pastel Environment (hidden in AR passthrough!)
   // ---------------------------------------------------------------------------
   const environmentGroup = new THREE.Group();
-  environmentGroup.name = 'EnvironmentGroup';
   scene.add(environmentGroup);
 
-  // Sky Dome Shader
   const skyUniforms = { uTime: { value: 0 } };
   const skyDome = new THREE.Mesh(
     new THREE.SphereGeometry(65, 32, 24),
@@ -746,31 +796,29 @@ import { createClickerAudioEngine } from './clicker_audio.js';
       depthWrite: false,
       uniforms: skyUniforms,
       vertexShader: `
-        varying vec3 vWorldPos;
+        varying vec3 vPos;
         void main() {
           vec4 wp = modelMatrix * vec4(position, 1.0);
-          vWorldPos = wp.xyz;
+          vPos = wp.xyz;
           gl_Position = projectionMatrix * viewMatrix * wp;
         }
       `,
       fragmentShader: `
         uniform float uTime;
-        varying vec3 vWorldPos;
+        varying vec3 vPos;
         void main() {
-          vec3 dir = normalize(vWorldPos);
-          float h = clamp(dir.y * 0.5 + 0.5, 0.0, 1.0);
-          vec3 bottom = vec3(0.03, 0.05, 0.12);
-          vec3 mid = vec3(0.06, 0.10, 0.24);
-          vec3 top = vec3(0.02, 0.03, 0.09);
-          vec3 col = mix(bottom, mid, smoothstep(0.35, 0.62, h));
-          col = mix(col, top, smoothstep(0.62, 0.96, h));
+          vec3 d = normalize(vPos);
+          float h = clamp(d.y * 0.5 + 0.5, 0.0, 1.0);
+          vec3 low = vec3(0.14, 0.08, 0.28);
+          vec3 mid = vec3(0.24, 0.13, 0.44);
+          vec3 hi  = vec3(0.10, 0.07, 0.24);
+          vec3 col = mix(low, mid, smoothstep(0.35, 0.62, h));
+          col = mix(col, hi, smoothstep(0.62, 0.96, h));
 
-          // Subtle shimmering emerald-gold aurora curtain overhead
-          float wave = sin(dir.x * 5.0 + uTime * 0.35) * cos(dir.z * 4.0 - uTime * 0.25);
-          float band = smoothstep(0.15, 0.55, dir.y) * smoothstep(0.88, 0.42, dir.y);
-          vec3 aurora = mix(vec3(0.06, 0.72, 0.55), vec3(0.95, 0.78, 0.20), wave * 0.5 + 0.5);
-          col += aurora * band * (0.14 + 0.07 * wave);
-
+          float wave = sin(d.x * 4.5 + uTime * 0.35) * cos(d.z * 3.5 - uTime * 0.28);
+          float band = smoothstep(0.12, 0.52, d.y) * smoothstep(0.88, 0.40, d.y);
+          vec3 rainbow = mix(vec3(1.0, 0.48, 0.78), vec3(0.45, 0.88, 1.0), wave * 0.5 + 0.5);
+          col += rainbow * band * (0.20 + 0.08 * wave);
           gl_FragColor = vec4(col, 1.0);
         }
       `
@@ -778,883 +826,921 @@ import { createClickerAudioEngine } from './clicker_audio.js';
   );
   environmentGroup.add(skyDome);
 
-  // Reflective Vault Stage Floor
-  const floorTex = createFloorTexture();
   const floorMesh = new THREE.Mesh(
     new THREE.CircleGeometry(26, 64),
     new THREE.MeshStandardMaterial({
-      map: floorTex,
-      roughness: 0.36,
-      metalness: 0.42
+      map: createPastelFloorTexture(),
+      roughness: 0.42,
+      metalness: 0.18
     })
   );
   floorMesh.rotation.x = -Math.PI / 2;
   floorMesh.receiveShadow = true;
   environmentGroup.add(floorMesh);
 
-  // Concentric glowing golden floor inlay rings framing the arena
-  [2.6, 5.2, 7.6].forEach((radius, idx) => {
+  // Glowing pastel floor rings
+  [
+    { r: 2.8, col: 0xff8ed4, op: 0.42 },
+    { r: 5.4, col: 0xffe066, op: 0.48 },
+    { r: 7.4, col: 0x7dd3fc, op: 0.28 }
+  ].forEach((rg) => {
     const ring = new THREE.Mesh(
-      new THREE.RingGeometry(radius - 0.04, radius + 0.04, 72),
-      new THREE.MeshBasicMaterial({
-        color: idx === 1 ? 0xffd700 : 0x38bdf8,
-        transparent: true,
-        opacity: idx === 1 ? 0.45 : 0.22,
-        side: THREE.DoubleSide
-      })
+      new THREE.RingGeometry(rg.r - 0.045, rg.r + 0.045, 72),
+      new THREE.MeshBasicMaterial({ color: rg.col, transparent: true, opacity: rg.op, side: THREE.DoubleSide })
     );
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.012;
     environmentGroup.add(ring);
   });
 
-  // Floating Ambient Golden Dust Motes
-  const dustCount = 160;
-  const dustPos = new Float32Array(dustCount * 3);
-  const dustSeed = new Float32Array(dustCount);
-  for (let i = 0; i < dustCount; i++) {
-    const ang = Math.random() * Math.PI * 2;
-    const rad = 1.5 + Math.random() * 12;
-    dustPos[i * 3] = Math.cos(ang) * rad;
-    dustPos[i * 3 + 1] = 0.6 + Math.random() * 7.8;
-    dustPos[i * 3 + 2] = Math.sin(ang) * rad - 2.5;
-    dustSeed[i] = Math.random() * Math.PI * 2;
+  // Floating Pastel Star Sparkles
+  const sparkleTex = createSparkleTexture();
+  const starCount = 150;
+  const starPos = new Float32Array(starCount * 3);
+  const starSeed = new Float32Array(starCount);
+  for (let i = 0; i < starCount; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const rad = 2.0 + Math.random() * 12;
+    starPos[i * 3] = Math.cos(a) * rad;
+    starPos[i * 3 + 1] = 0.5 + Math.random() * 8.0;
+    starPos[i * 3 + 2] = Math.sin(a) * rad - 2.4;
+    starSeed[i] = Math.random() * Math.PI * 2;
   }
-  const dustGeo = new THREE.BufferGeometry();
-  dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
-  const glowSpriteTex = createGlowTexture('rgba(255,250,210,1)', 'rgba(255,210,80,0.45)');
-  const dustPoints = new THREE.Points(
-    dustGeo,
+  const starGeo = new THREE.BufferGeometry();
+  starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+  const starPoints = new THREE.Points(
+    starGeo,
     new THREE.PointsMaterial({
-      map: glowSpriteTex,
-      size: 0.16,
+      map: sparkleTex,
+      size: 0.22,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.78,
       blending: THREE.AdditiveBlending,
       depthWrite: false
     })
   );
-  scene.add(dustPoints);
+  scene.add(starPoints);
 
   // ---------------------------------------------------------------------------
-  // Procedural 3D Golden Prize Cow Factory (pops out of the winning Tall Box!)
+  // Cartoonish 3D Keyboard Clicker Key Factory!
+  // Builds a real mechanical switch base + translucent crystal housing + stem +
+  // chunky rounded pastel keycap + cute kawaii face + 3D character ears/horn/crown!
   // ---------------------------------------------------------------------------
-  function buildGoldenCow() {
-    const cow = new THREE.Group();
-    cow.name = 'GoldenPrizeCow';
+  const keyFaceCache = new Map();
+  function getKeyFaceTexture(def) {
+    if (!keyFaceCache.has(def.id)) {
+      keyFaceCache.set(def.id, createCartoonKeyFaceTexture(def));
+    }
+    return keyFaceCache.get(def.id);
+  }
 
-    const creamMat = new THREE.MeshStandardMaterial({
-      color: 0xfff8e7,
-      roughness: 0.35,
-      metalness: 0.15,
-      emissive: 0x332200,
-      emissiveIntensity: 0.25
-    });
-    const goldSpotMat = new THREE.MeshStandardMaterial({
-      color: 0xffc824,
-      roughness: 0.22,
-      metalness: 0.78,
-      emissive: 0xffaa00,
-      emissiveIntensity: 0.35
-    });
-    const snoutMat = new THREE.MeshStandardMaterial({
-      color: 0xf9a8d4,
-      roughness: 0.45,
-      metalness: 0.05
-    });
-    const darkMat = new THREE.MeshStandardMaterial({
-      color: 0x1e1b24,
-      roughness: 0.3,
-      metalness: 0.3
-    });
-    const collarMat = new THREE.MeshStandardMaterial({
-      color: 0xdc2626,
-      roughness: 0.4,
-      metalness: 0.2
-    });
+  function createRoundedRectShape(w, h, r) {
+    const s = new THREE.Shape();
+    const x = -w / 2;
+    const y = -h / 2;
+    s.moveTo(x + r, y);
+    s.lineTo(x + w - r, y);
+    s.quadraticCurveTo(x + w, y, x + w, y + r);
+    s.lineTo(x + w, y + h - r);
+    s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    s.lineTo(x + r, y + h);
+    s.quadraticCurveTo(x, y + h, x, y + h - r);
+    s.lineTo(x, y + r);
+    s.quadraticCurveTo(x, y, x + r, y);
+    return s;
+  }
 
-    // Plump adorable torso
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.24, 0.36, 10, 18), creamMat);
-    body.rotation.z = Math.PI / 2;
-    body.position.set(0, 0.44, 0);
-    cow.add(body);
+  const keycapCapGeo = new THREE.ExtrudeGeometry(createRoundedRectShape(0.86, 0.86, 0.20), {
+    depth: 0.36,
+    bevelEnabled: true,
+    bevelThickness: 0.09,
+    bevelSize: 0.08,
+    bevelSegments: 5
+  });
+  keycapCapGeo.rotateX(-Math.PI / 2);
+  keycapCapGeo.center();
 
-    // Golden dairy spots hugging torso
-    const spotOffsets = [
-      { x: -0.1, y: 0.54, z: 0.17, r: 0.10 },
-      { x: 0.12, y: 0.48, z: -0.17, r: 0.11 },
-      { x: 0.02, y: 0.62, z: 0.04, r: 0.09 }
-    ];
-    spotOffsets.forEach((s) => {
-      const sp = new THREE.Mesh(new THREE.SphereGeometry(s.r, 12, 10), goldSpotMat);
-      sp.position.set(s.x, s.y, s.z);
-      sp.scale.set(1.2, 0.85, 0.7);
-      cow.add(sp);
-    });
+  const switchBaseGeo = new THREE.ExtrudeGeometry(createRoundedRectShape(0.92, 0.92, 0.16), {
+    depth: 0.32,
+    bevelEnabled: true,
+    bevelThickness: 0.05,
+    bevelSize: 0.05,
+    bevelSegments: 3
+  });
+  switchBaseGeo.rotateX(-Math.PI / 2);
+  switchBaseGeo.center();
 
-    // 4 cute legs with dark hooves
-    [
-      [-0.18, 0.11], [-0.18, -0.11],
-      [0.18, 0.11],  [0.18, -0.11]
-    ].forEach(([lx, lz]) => {
-      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.048, 0.34, 10), creamMat);
-      leg.position.set(lx, 0.21, lz);
-      cow.add(leg);
-      const hoof = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.058, 0.07, 10), darkMat);
-      hoof.position.set(lx, 0.035, lz);
-      cow.add(hoof);
-    });
+  const cartoonOutlineMat = new THREE.MeshStandardMaterial({ color: 0x3b1d5e, roughness: 0.45, metalness: 0.1 });
+  const goldToyMat = new THREE.MeshStandardMaterial({ color: 0xffd700, roughness: 0.22, metalness: 0.75 });
+  const clearSwitchMat = new THREE.MeshPhysicalMaterial({
+    color: 0xffffff,
+    roughness: 0.12,
+    metalness: 0.05,
+    transmission: 0.55,
+    transparent: true,
+    opacity: 0.72
+  });
 
-    // Articulated Head Group facing +Z (toward player)
-    const headGroup = new THREE.Group();
-    headGroup.position.set(0, 0.66, 0.26);
-    cow.add(headGroup);
+  function buildCartoonKeyboardKey(def, interactiveMeta) {
+    const root = new THREE.Group();
+    root.name = 'CartoonKey_' + def.id;
 
-    const cranium = new THREE.Mesh(new THREE.SphereGeometry(0.20, 16, 14), creamMat);
-    cranium.scale.set(0.95, 1.0, 1.08);
-    headGroup.add(cranium);
+    // 1. Translucent Mechanical Switch Housing Base (stays stationary when keycap presses down!)
+    const housing = new THREE.Mesh(switchBaseGeo, clearSwitchMat);
+    housing.position.y = 0.20;
+    housing.castShadow = true;
+    housing.receiveShadow = true;
+    root.add(housing);
 
-    const snout = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.15, 0.16), snoutMat);
-    snout.position.set(0, -0.05, 0.17);
-    headGroup.add(snout);
-
-    // Nostrils & Eyes
-    [-0.06, 0.06].forEach((nx) => {
-      const nostril = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 8), darkMat);
-      nostril.position.set(nx, -0.03, 0.25);
-      headGroup.add(nostril);
-
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.034, 10, 10), darkMat);
-      eye.position.set(nx * 1.45, 0.06, 0.17);
-      headGroup.add(eye);
-    });
-
-    // Ears
-    const leftEar = new THREE.Mesh(new THREE.SphereGeometry(0.085, 10, 8), goldSpotMat);
-    leftEar.scale.set(1.5, 0.55, 0.65);
-    leftEar.position.set(-0.22, 0.08, 0.0);
-    leftEar.rotation.z = 0.25;
-    headGroup.add(leftEar);
-
-    const rightEar = leftEar.clone();
-    rightEar.position.x = 0.22;
-    rightEar.rotation.z = -0.25;
-    headGroup.add(rightEar);
-
-    // Curved Golden Horns
-    [-1, 1].forEach((side) => {
-      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.038, 0.17, 10), goldSpotMat);
-      horn.position.set(side * 0.12, 0.20, 0.02);
-      horn.rotation.z = -side * 0.42;
-      horn.rotation.x = 0.15;
-      headGroup.add(horn);
-    });
-
-    // Tiny Royal Golden Crown atop head!
-    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.085, 0.11, 6, 1, false), goldSpotMat);
-    crown.position.set(0, 0.24, 0.02);
-    headGroup.add(crown);
-
-    // Red Collar + Hanging Golden Cowbell
-    const collar = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.028, 8, 18), collarMat);
-    collar.position.set(0, 0.50, 0.20);
-    collar.rotation.x = Math.PI * 0.35;
-    cow.add(collar);
-
-    const cowbell = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.12, 10), goldSpotMat);
-    cowbell.position.set(0, 0.36, 0.31);
-    cow.add(cowbell);
-
-    // Rotating Golden Halo behind cow
-    const halo = new THREE.Mesh(
-      new THREE.TorusGeometry(0.56, 0.028, 10, 32),
-      new THREE.MeshBasicMaterial({ color: 0xffe066, transparent: true, opacity: 0.9 })
+    // Cute colorful bottom trim plate
+    const bottomPlate = new THREE.Mesh(
+      new THREE.BoxGeometry(0.96, 0.09, 0.96),
+      new THREE.MeshStandardMaterial({ color: def.stem, roughness: 0.32, metalness: 0.15 })
     );
-    halo.position.set(0, 0.58, -0.10);
-    cow.add(halo);
+    bottomPlate.position.y = 0.045;
+    root.add(bottomPlate);
 
-    // Rotate body slightly so the cow looks squarely at the player
-    body.rotation.y = Math.PI / 2;
-    cow.userData = { headGroup, leftEar, rightEar, halo, cowbell };
-    return cow;
+    // Gold Keychain Loop on the corner (like real collectible fidget clicker keychains!)
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.028, 10, 22), goldToyMat);
+    ring.position.set(0.56, 0.18, -0.34);
+    ring.rotation.y = Math.PI * 0.25;
+    root.add(ring);
+
+    // Visible bright MX Cross-Stem peeking underneath the keycap!
+    const stemMat = new THREE.MeshStandardMaterial({
+      color: def.stem,
+      emissive: new THREE.Color(def.stem),
+      emissiveIntensity: 0.35,
+      roughness: 0.25
+    });
+    const stemA = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.28, 0.08), stemMat);
+    stemA.position.y = 0.44;
+    root.add(stemA);
+    const stemB = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.28, 0.26), stemMat);
+    stemB.position.y = 0.44;
+    root.add(stemB);
+
+    // 2. Pressable Cartoon Keycap Moving Group!
+    const capPivot = new THREE.Group();
+    const restY = 0.66;
+    capPivot.position.y = restY;
+    root.add(capPivot);
+
+    const capMat = new THREE.MeshStandardMaterial({
+      color: def.hex,
+      roughness: 0.26,
+      metalness: 0.06
+    });
+    const capMesh = new THREE.Mesh(keycapCapGeo, capMat);
+    capMesh.castShadow = true;
+    capMesh.receiveShadow = true;
+    capPivot.add(capMesh);
+
+    // Glossy Kawaii Cartoon Face Plate sitting flush on the top of the keycap
+    const facePlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.84, 0.84),
+      new THREE.MeshBasicMaterial({ map: getKeyFaceTexture(def) })
+    );
+    facePlane.rotation.x = -Math.PI / 2;
+    facePlane.position.y = 0.278;
+    capPivot.add(facePlane);
+
+    // Adorable 3D Sculpted Cartoon Toppers!
+    const accentMat = new THREE.MeshStandardMaterial({ color: def.accent, roughness: 0.3, metalness: 0.12 });
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.28 });
+
+    if (def.topper === 'cow') {
+      // Cute 3D Cow Ears + Tiny Golden Horns!
+      [-1, 1].forEach((side) => {
+        const ear = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 10), accentMat);
+        ear.scale.set(1.3, 0.55, 0.7);
+        ear.position.set(side * 0.46, 0.24, -0.34);
+        ear.rotation.z = -side * 0.35;
+        capPivot.add(ear);
+
+        const horn = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.24, 10), goldToyMat);
+        horn.position.set(side * 0.26, 0.37, -0.34);
+        horn.rotation.z = -side * 0.32;
+        capPivot.add(horn);
+      });
+    } else if (def.topper === 'kitty') {
+      [-1, 1].forEach((side) => {
+        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.17, 0.30, 4), capMat);
+        ear.position.set(side * 0.30, 0.36, -0.30);
+        ear.rotation.z = -side * 0.22;
+        ear.rotation.y = Math.PI / 4;
+        capPivot.add(ear);
+        const inner = new THREE.Mesh(new THREE.ConeGeometry(0.095, 0.18, 4), accentMat);
+        inner.position.set(side * 0.30, 0.35, -0.25);
+        inner.rotation.z = -side * 0.22;
+        inner.rotation.y = Math.PI / 4;
+        capPivot.add(inner);
+      });
+    } else if (def.topper === 'unicorn') {
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.46, 12), goldToyMat);
+      horn.position.set(0, 0.46, -0.28);
+      horn.rotation.x = 0.2;
+      capPivot.add(horn);
+      [-1, 1].forEach((side) => {
+        const ear = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.24, 8), capMat);
+        ear.position.set(side * 0.32, 0.35, -0.30);
+        ear.rotation.z = -side * 0.35;
+        capPivot.add(ear);
+      });
+    } else if (def.topper === 'bunny') {
+      [-1, 1].forEach((side) => {
+        const ear = new THREE.Mesh(new THREE.CapsuleGeometry(0.09, 0.34, 8, 12), capMat);
+        ear.position.set(side * 0.23, 0.48, -0.28);
+        ear.rotation.z = -side * 0.18;
+        ear.rotation.x = -0.15;
+        capPivot.add(ear);
+        const inner = new THREE.Mesh(new THREE.CapsuleGeometry(0.048, 0.24, 6, 10), accentMat);
+        inner.position.set(side * 0.23, 0.48, -0.22);
+        inner.rotation.z = -side * 0.18;
+        inner.rotation.x = -0.15;
+        capPivot.add(inner);
+      });
+    } else if (def.topper === 'froggy') {
+      [-1, 1].forEach((side) => {
+        const bump = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 12), capMat);
+        bump.position.set(side * 0.27, 0.34, -0.28);
+        capPivot.add(bump);
+        const sclera = new THREE.Mesh(new THREE.SphereGeometry(0.105, 12, 10), whiteMat);
+        sclera.position.set(side * 0.27, 0.37, -0.18);
+        capPivot.add(sclera);
+        const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.058, 10, 8), cartoonOutlineMat);
+        pupil.position.set(side * 0.27, 0.38, -0.10);
+        capPivot.add(pupil);
+      });
+    } else if (def.topper === 'teddy') {
+      [-1, 1].forEach((side) => {
+        const ear = new THREE.Mesh(new THREE.SphereGeometry(0.15, 14, 12), capMat);
+        ear.position.set(side * 0.34, 0.35, -0.30);
+        capPivot.add(ear);
+        const inEar = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), accentMat);
+        inEar.position.set(side * 0.34, 0.35, -0.21);
+        capPivot.add(inEar);
+      });
+    } else if (def.topper === 'crown') {
+      const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.17, 0.24, 6), goldToyMat);
+      crown.position.set(0, 0.38, -0.24);
+      capPivot.add(crown);
+      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.08, 0), accentMat);
+      gem.position.set(0, 0.42, -0.06);
+      capPivot.add(gem);
+    } else {
+      // Puffy 3D Rainbow Arch topper!
+      const archColors = [0xff6fb5, 0xffd166, 0x52e5a8, 0x4cc9f0];
+      archColors.forEach((col, i) => {
+        const arc = new THREE.Mesh(
+          new THREE.TorusGeometry(0.32 - i * 0.05, 0.032, 8, 20, Math.PI),
+          new THREE.MeshStandardMaterial({ color: col, roughness: 0.25 })
+        );
+        arc.position.set(0, 0.26, -0.26);
+        capPivot.add(arc);
+      });
+    }
+
+    // Generous invisible click hitbox so 7-year-old clicks ALWAYS register cleanly!
+    const hitBox = new THREE.Mesh(
+      new THREE.BoxGeometry(1.18, 1.15, 1.18),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hitBox.position.y = 0.55;
+    hitBox.userData = interactiveMeta;
+    root.add(hitBox);
+
+    root.userData = {
+      def,
+      capPivot,
+      restY,
+      hitBox,
+      pressOffset: 0,
+      pressVel: 0
+    };
+
+    return root;
   }
 
   // ---------------------------------------------------------------------------
-  // Custom 3D Helical Spring Curve for Tall Clickers
+  // 3D Crinkly Shiny Silver Foil Package Factory (pops out of the Tall Box!)
   // ---------------------------------------------------------------------------
-  class HelixCurve extends THREE.Curve {
-    constructor(radius = 0.16, height = 0.44, turns = 5.5) {
-      super();
-      this.radius = radius;
-      this.height = height;
-      this.turns = turns;
+  const silverFoilTex = createSilverFoilTextures();
+  const silverFoilMat = new THREE.MeshStandardMaterial({
+    map: silverFoilTex.map,
+    bumpMap: silverFoilTex.bumpMap,
+    bumpScale: 0.04,
+    color: 0xffffff,
+    metalness: 0.72,
+    roughness: 0.22,
+    envMapIntensity: 1.45,
+    emissive: new THREE.Color(0xc8d4e6),
+    emissiveIntensity: 0.18,
+    side: THREE.DoubleSide
+  });
+
+  function createInflatedFoilPillowGeometry(w, h, bulge) {
+    const geo = new THREE.BoxGeometry(w, h, 0.08, 14, 18, 2);
+    const pos = geo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const y = pos.getY(i);
+      const z = pos.getZ(i);
+      const nx = x / (w * 0.5);
+      const ny = y / (h * 0.5);
+      // Smooth pillow puff in center, pinched flat at top/bottom crimp seals & sides!
+      const puff = Math.max(0, Math.cos(nx * Math.PI * 0.48) * Math.cos(ny * Math.PI * 0.48));
+      const crinkle = Math.sin(x * 13 + y * 9) * 0.012 + Math.cos(y * 17 - x * 7) * 0.009;
+      const signZ = z >= 0 ? 1 : -1;
+      pos.setZ(i, z + signZ * (puff * bulge + crinkle));
     }
-    getPoint(t, optionalTarget = new THREE.Vector3()) {
-      const angle = t * Math.PI * 2 * this.turns;
-      return optionalTarget.set(
-        Math.cos(angle) * this.radius,
-        t * this.height,
-        Math.sin(angle) * this.radius
-      );
+    geo.computeVertexNormals();
+    return geo;
+  }
+
+  const pouchBodyGeo = createInflatedFoilPillowGeometry(1.28, 1.46, 0.28);
+  const tearStripGeo = new THREE.BoxGeometry(1.32, 0.28, 0.08, 12, 3, 1);
+  // Subtle serrated zigzag notches on left/right edges of top tear strip
+  {
+    const tp = tearStripGeo.attributes.position;
+    for (let i = 0; i < tp.count; i++) {
+      const x = tp.getX(i);
+      const y = tp.getY(i);
+      if (Math.abs(y) > 0.10) {
+        tp.setY(i, y + Math.sin(x * 38) * 0.022);
+      }
     }
+    tearStripGeo.computeVertexNormals();
+  }
+
+  function buildSilverPackageMesh(boxIndex, isMoo) {
+    const group = new THREE.Group();
+    group.name = 'SilverFoilPackage';
+
+    const bodyMesh = new THREE.Mesh(pouchBodyGeo, silverFoilMat);
+    bodyMesh.position.y = -0.12;
+    bodyMesh.castShadow = true;
+    bodyMesh.userData = { action: 'ripPackage' };
+    group.add(bodyMesh);
+
+    // Inner bright golden/pastel mystery light glow hidden inside the top of the pouch!
+    const peekGlow = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.06, 0.22),
+      new THREE.MeshBasicMaterial({
+        color: isMoo ? 0xffe066 : 0xff9de2,
+        transparent: true,
+        opacity: 0,
+        side: THREE.DoubleSide
+      })
+    );
+    peekGlow.position.set(0, 0.62, 0.04);
+    group.add(peekGlow);
+
+    // Top Silver Foil Tear Strip (hinged on right side so first click rips left->right!)
+    const topStripPivot = new THREE.Group();
+    topStripPivot.position.set(0.64, 0.62, 0);
+    group.add(topStripPivot);
+
+    const topStripMesh = new THREE.Mesh(tearStripGeo, silverFoilMat);
+    topStripMesh.position.set(-0.64, 0.12, 0);
+    topStripMesh.castShadow = true;
+    topStripMesh.userData = { action: 'ripPackage' };
+    topStripPivot.add(topStripMesh);
+
+    // Generous invisible hitbox covering the whole silver package for effortless clicking/swiping
+    const hitProxy = new THREE.Mesh(
+      new THREE.BoxGeometry(1.65, 2.15, 0.95),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hitProxy.position.y = 0.05;
+    hitProxy.userData = { action: 'ripPackage' };
+    group.add(hitProxy);
+
+    return {
+      boxIndex,
+      isMoo,
+      ripStage: 0, // 0 = sealed, 1 = half-ripped, 2 = ripped open!
+      group,
+      bodyMesh,
+      topStripPivot,
+      topStripMesh,
+      peekGlow,
+      hitProxy,
+      interactiveList: [bodyMesh, topStripMesh, hitProxy],
+      popProgress: 0,
+      startPos: new THREE.Vector3(),
+      targetPos: new THREE.Vector3(),
+      shake: 0,
+      stripFlyVel: new THREE.Vector3(),
+      stripDetached: false,
+      dismissTimer: -1
+    };
   }
 
   // ---------------------------------------------------------------------------
-  // Build the 5 Tall Mystery Boxes + 5 Tall Clickers in a Grand Semicircle
+  // Build the 5 Tall Cartoonish Mystery Boxes!
   // ---------------------------------------------------------------------------
   const interactiveMeshes = [];
-  const pillars = [];
-  const activeEnergyPulses = [];
-  const activeSonicRings = [];
+  const boxes = [];
   const activeBills = [];
-  const activeFireworks = [];
+  const activeConfetti = [];
+  const activeDecoyPops = [];
+  const activeSpeechPopups = [];
+  const shelfKeyObjects = [];
 
   const arenaGroup = new THREE.Group();
-  arenaGroup.name = 'TallMysteryArena';
   scene.add(arenaGroup);
 
-  const brassMatShared = new THREE.MeshStandardMaterial({
-    color: 0xe6b93d,
-    roughness: 0.28,
-    metalness: 0.85
-  });
-  const steelMatShared = new THREE.MeshStandardMaterial({
-    color: 0x1e293b,
-    roughness: 0.34,
-    metalness: 0.78
-  });
-  const springMatShared = new THREE.MeshStandardMaterial({
-    color: 0xe2e8f0,
-    roughness: 0.22,
-    metalness: 0.92
-  });
+  const ARC_RADIUS = 5.6;
+  const ARC_CENTER_Z = 0.55;
 
-  const ARC_RADIUS = 5.75;
-  const ARC_CENTER_Z = 0.65;
-
-  PILLAR_CONFIGS.forEach((cfg, index) => {
+  BOX_CONFIGS.forEach((cfg, index) => {
     const rad = THREE.MathUtils.degToRad(cfg.angleDeg);
-    const boxX = Math.sin(rad) * ARC_RADIUS;
-    const boxZ = ARC_CENTER_Z - Math.cos(rad) * ARC_RADIUS;
+    const bx = Math.sin(rad) * ARC_RADIUS;
+    const bz = ARC_CENTER_Z - Math.cos(rad) * ARC_RADIUS;
 
-    const unitGroup = new THREE.Group();
-    unitGroup.name = 'TallMysteryUnit_' + index;
-    unitGroup.position.set(boxX, 0, boxZ);
-    // Face inward toward the player at (0, 0, ARC_CENTER_Z)
-    unitGroup.lookAt(0, 0, ARC_CENTER_Z + 1.8);
-    arenaGroup.add(unitGroup);
+    const unit = new THREE.Group();
+    unit.position.set(bx, 0, bz);
+    unit.lookAt(0, 0, ARC_CENTER_Z + 1.8);
+    arenaGroup.add(unit);
 
-    // 1. Stepped Octagonal Pedestal for the Tall Mystery Box
-    const pedBase = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.84, 0.96, 0.24, 8),
-      steelMatShared
+    // Cute Pastel Pedestal Cushion
+    const ped = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.84, 0.96, 0.24, 16),
+      new THREE.MeshStandardMaterial({ color: 0xfff5fb, roughness: 0.35, metalness: 0.1 })
     );
-    pedBase.position.y = 0.12;
-    pedBase.receiveShadow = true;
-    pedBase.castShadow = true;
-    unitGroup.add(pedBase);
+    ped.position.y = 0.12;
+    ped.receiveShadow = true;
+    ped.castShadow = true;
+    unit.add(ped);
 
-    const pedGlowRing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.88, 0.032, 10, 32),
-      new THREE.MeshBasicMaterial({ color: cfg.accentHex })
+    const pedTrim = new THREE.Mesh(
+      new THREE.TorusGeometry(0.90, 0.04, 10, 32),
+      new THREE.MeshBasicMaterial({ color: cfg.hex })
     );
-    pedGlowRing.rotation.x = Math.PI / 2;
-    pedGlowRing.position.y = 0.24;
-    unitGroup.add(pedGlowRing);
+    pedTrim.rotation.x = Math.PI / 2;
+    pedTrim.position.y = 0.24;
+    unit.add(pedTrim);
 
-    // 2. THE TALL MYSTERY BOX MONOLITH (3.7m - 5.1m tall!)
+    // TALL CARTOON MYSTERY BOX BODY
     const boxPivot = new THREE.Group();
-    boxPivot.position.set(0, 0.24, 0);
-    unitGroup.add(boxPivot);
+    boxPivot.position.y = 0.24;
+    unit.add(boxPivot);
 
-    const boxH = cfg.boxHeight;
-    const boxW = 1.08;
-    const boxD = 1.08;
-    const boxTex = createMysteryBoxTextures(cfg.accent, cfg.darkHex);
+    const boxH = cfg.height;
+    const boxW = 1.14;
+    const boxD = 1.14;
+    const boxTex = createCartoonBoxTexture(cfg.color, cfg.stripe, cfg.ribbon);
 
-    const boxSideMat = new THREE.MeshStandardMaterial({
-      map: boxTex.map,
-      emissive: new THREE.Color(0xffffff),
-      emissiveMap: boxTex.emissiveMap,
-      emissiveIntensity: 0.65,
-      roughness: 0.34,
-      metalness: 0.45
+    const boxMat = new THREE.MeshStandardMaterial({
+      map: boxTex,
+      roughness: 0.32,
+      metalness: 0.08,
+      emissive: new THREE.Color(cfg.hex),
+      emissiveIntensity: 0.06
     });
-
-    const boxBody = new THREE.Mesh(new THREE.BoxGeometry(boxW, boxH, boxD), boxSideMat);
+    const boxBody = new THREE.Mesh(new THREE.BoxGeometry(boxW, boxH, boxD), boxMat);
     boxBody.position.y = boxH * 0.5;
     boxBody.castShadow = true;
     boxBody.receiveShadow = true;
-    boxBody.userData = { pillarIndex: index, part: 'mysteryBox', label: cfg.name + ' (Tall Mystery Box)' };
+    boxBody.userData = { action: 'openBox', boxIndex: index };
     boxPivot.add(boxBody);
     interactiveMeshes.push(boxBody);
 
-    // Tall corner brass pilasters emphasizing vertical height
-    [
-      [-boxW * 0.5, -boxD * 0.5],
-      [ boxW * 0.5, -boxD * 0.5],
-      [-boxW * 0.5,  boxD * 0.5],
-      [ boxW * 0.5,  boxD * 0.5]
-    ].forEach(([cx, cz]) => {
-      const cornerBar = new THREE.Mesh(new THREE.BoxGeometry(0.085, boxH + 0.04, 0.085), brassMatShared);
-      cornerBar.position.set(cx, boxH * 0.5, cz);
-      boxPivot.add(cornerBar);
-    });
+    // Soft glowing interior top plane (shines out when lid pops open!)
+    const innerGlowMat = new THREE.MeshBasicMaterial({ color: 0xfff5b8, transparent: true, opacity: 0.2 });
+    const innerGlow = new THREE.Mesh(new THREE.PlaneGeometry(boxW * 0.86, boxD * 0.86), innerGlowMat);
+    innerGlow.rotation.x = -Math.PI / 2;
+    innerGlow.position.y = boxH + 0.008;
+    boxPivot.add(innerGlow);
 
-    // Glowing inner vault light plane right beneath the lid
-    const innerGlowMat = new THREE.MeshBasicMaterial({
-      color: 0xffea80,
-      transparent: true,
-      opacity: 0.35
-    });
-    const innerGlowTop = new THREE.Mesh(new THREE.PlaneGeometry(boxW * 0.86, boxD * 0.86), innerGlowMat);
-    innerGlowTop.rotation.x = -Math.PI / 2;
-    innerGlowTop.position.y = boxH + 0.006;
-    boxPivot.add(innerGlowTop);
-
-    // Hinged Tall Mystery Box Lid (hinged at back edge z = -boxD/2 so it flips open toward back!)
+    // Hinged Gift Box Lid + Big Cute Cartoon Satin Bow on top!
     const lidPivot = new THREE.Group();
     lidPivot.position.set(0, boxH, -boxD * 0.5);
     boxPivot.add(lidPivot);
 
-    const lidSlab = new THREE.Mesh(new THREE.BoxGeometry(boxW + 0.14, 0.22, boxD + 0.14), brassMatShared);
-    lidSlab.position.set(0, 0.11, boxD * 0.5);
+    const lidMat = new THREE.MeshStandardMaterial({
+      color: cfg.hex,
+      roughness: 0.28,
+      metalness: 0.08
+    });
+    const lidSlab = new THREE.Mesh(new THREE.BoxGeometry(boxW + 0.16, 0.26, boxD + 0.16), lidMat);
+    lidSlab.position.set(0, 0.13, boxD * 0.5);
     lidSlab.castShadow = true;
-    lidSlab.userData = { pillarIndex: index, part: 'mysteryBox', label: cfg.name + ' Lid' };
+    lidSlab.userData = { action: 'openBox', boxIndex: index };
     lidPivot.add(lidSlab);
     interactiveMeshes.push(lidSlab);
 
-    const lidCrown = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.32, 0.56, 0.28, 4),
-      new THREE.MeshStandardMaterial({
-        color: cfg.accentHex,
-        roughness: 0.26,
-        metalness: 0.65,
-        emissive: new THREE.Color(cfg.accentHex),
-        emissiveIntensity: 0.32
-      })
-    );
-    lidCrown.rotation.y = Math.PI / 4;
-    lidCrown.position.set(0, 0.34, boxD * 0.5);
-    lidPivot.add(lidCrown);
-
-    // Floating spinning golden diamond beacon above the tall mystery box
-    const beaconCrystal = new THREE.Mesh(
-      new THREE.OctahedronGeometry(0.24, 0),
-      new THREE.MeshStandardMaterial({
-        color: 0xffe46b,
-        emissive: new THREE.Color(cfg.accentHex),
-        emissiveIntensity: 0.85,
-        roughness: 0.15,
-        metalness: 0.8
-      })
-    );
-    beaconCrystal.position.set(0, boxH + 0.92, 0);
-    boxPivot.add(beaconCrystal);
-
-    // Golden Prize Cow tucked inside the top of the tall mystery box (rises out on MOO!)
-    const cowGroup = buildGoldenCow();
-    cowGroup.position.set(0, boxH - 0.55, 0);
-    cowGroup.scale.setScalar(1.18);
-    cowGroup.visible = false;
-    boxPivot.add(cowGroup);
-
-    // Volumetric Golden Jackpot Beam shooting from the open tall mystery box
-    const beamMat = new THREE.MeshBasicMaterial({
-      color: 0xffe066,
-      transparent: true,
-      opacity: 0,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false,
-      side: THREE.DoubleSide
+    const ribbonMat = new THREE.MeshStandardMaterial({
+      color: cfg.ribbon,
+      roughness: 0.25,
+      metalness: 0.22
     });
-    const jackpotBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.82, 0.42, 4.2, 20, 1, true), beamMat);
-    jackpotBeam.position.set(0, boxH + 2.1, 0);
-    jackpotBeam.visible = false;
-    boxPivot.add(jackpotBeam);
+    // Cross ribbons on lid
+    const rStripA = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.28, boxD + 0.18), ribbonMat);
+    rStripA.position.set(0, 0.135, boxD * 0.5);
+    lidPivot.add(rStripA);
+    const rStripB = new THREE.Mesh(new THREE.BoxGeometry(boxW + 0.18, 0.28, 0.24), ribbonMat);
+    rStripB.position.set(0, 0.135, boxD * 0.5);
+    lidPivot.add(rStripB);
 
-    // 3. THE TALL SPRING-LOADED CLICKER COLUMN (2.15m - 2.75m tall, standing right in front!)
-    const clickerZ = 1.34;
-    const clickerH = cfg.clickerHeight;
-    const clickerGroup = new THREE.Group();
-    clickerGroup.position.set(0, 0, clickerZ);
-    unitGroup.add(clickerGroup);
-
-    // Clicker Base Flange
-    const cBase = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.46, 0.18, 16), steelMatShared);
-    cBase.position.y = 0.09;
-    cBase.castShadow = true;
-    cBase.receiveShadow = true;
-    clickerGroup.add(cBase);
-
-    const cBaseRing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.42, 0.026, 8, 24),
-      new THREE.MeshBasicMaterial({ color: cfg.accentHex })
-    );
-    cBaseRing.rotation.x = Math.PI / 2;
-    cBaseRing.position.y = 0.18;
-    clickerGroup.add(cBaseRing);
-
-    // Tall Fluted Mechanical Clicker Shaft
-    const shaftH = clickerH - 0.62;
-    const cShaft = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.17, 0.21, shaftH, 16),
-      steelMatShared
-    );
-    cShaft.position.y = 0.18 + shaftH * 0.5;
-    cShaft.castShadow = true;
-    cShaft.userData = { pillarIndex: index, part: 'clicker', label: 'Tall Clicker #' + (index + 1) + ' (' + cfg.name + ')' };
-    clickerGroup.add(cShaft);
-    interactiveMeshes.push(cShaft);
-
-    // 10 Stacked Glowing LED Charge Rings climbing up the tall clicker column!
-    const ledRings = [];
-    const ledCount = 10;
-    for (let k = 0; k < ledCount; k++) {
-      const ledMat = new THREE.MeshStandardMaterial({
-        color: 0x1e293b,
-        emissive: new THREE.Color(cfg.accentHex),
-        emissiveIntensity: 0.12,
-        roughness: 0.25,
-        metalness: 0.5
-      });
-      const ledRing = new THREE.Mesh(new THREE.TorusGeometry(0.215, 0.022, 8, 20), ledMat);
-      ledRing.rotation.x = Math.PI / 2;
-      ledRing.position.y = 0.34 + (k / (ledCount - 1)) * (shaftH - 0.34);
-      clickerGroup.add(ledRing);
-      ledRings.push(ledMat);
-    }
-
-    // Upper Brass Collar
-    const collarY = 0.18 + shaftH;
-    const cCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.22, 0.14, 16), brassMatShared);
-    cCollar.position.y = collarY + 0.05;
-    clickerGroup.add(cCollar);
-
-    // Visible 3D Procedural Helical Coil Spring (dynamically compresses on click!)
-    const springBaseY = collarY + 0.11;
-    const springRestHeight = 0.38;
-    const springGeo = new THREE.TubeGeometry(new HelixCurve(0.15, springRestHeight, 5.5), 72, 0.022, 8, false);
-    const springMesh = new THREE.Mesh(springGeo, springMatShared);
-    springMesh.position.y = springBaseY;
-    clickerGroup.add(springMesh);
-
-    // Plunger Piston & Oversized Glowing Clicker Button Cap!
-    const plungerGroup = new THREE.Group();
-    const plungerRestY = springBaseY + springRestHeight;
-    plungerGroup.position.y = plungerRestY;
-    clickerGroup.add(plungerGroup);
-
-    const pistonRod = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.44, 12), brassMatShared);
-    pistonRod.position.y = -0.20;
-    plungerGroup.add(pistonRod);
-
-    const capBezel = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.32, 0.12, 24), brassMatShared);
-    capBezel.position.y = 0.05;
-    capBezel.castShadow = true;
-    plungerGroup.add(capBezel);
-
-    const capMat = new THREE.MeshStandardMaterial({
-      color: cfg.accentHex,
-      emissive: new THREE.Color(cfg.accentHex),
-      emissiveIntensity: 0.55,
-      roughness: 0.18,
-      metalness: 0.25
+    // Big Puffy Cartoon Gift Bow Loops!
+    [-1, 1].forEach((side) => {
+      const bowLoop = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.075, 10, 20), ribbonMat);
+      bowLoop.position.set(side * 0.21, 0.42, boxD * 0.5);
+      bowLoop.rotation.z = -side * 0.45;
+      bowLoop.scale.set(1.15, 0.8, 0.8);
+      lidPivot.add(bowLoop);
     });
-    const capButton = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.34, 0.15, 24), capMat);
-    capButton.position.y = 0.15;
-    capButton.castShadow = true;
-    capButton.userData = { pillarIndex: index, part: 'clicker', label: 'Press Tall Clicker #' + (index + 1) + ' (' + cfg.name + ')' };
-    plungerGroup.add(capButton);
-    interactiveMeshes.push(capButton);
+    const bowKnot = new THREE.Mesh(new THREE.SphereGeometry(0.11, 12, 10), ribbonMat);
+    bowKnot.position.set(0, 0.34, boxD * 0.5);
+    lidPivot.add(bowKnot);
 
-    // Glossy Dome Top on the Tall Clicker Plunger
-    const capDome = new THREE.Mesh(
-      new THREE.SphereGeometry(0.30, 20, 12, 0, Math.PI * 2, 0, Math.PI * 0.48),
-      capMat
-    );
-    capDome.position.y = 0.20;
-    capDome.userData = { pillarIndex: index, part: 'clicker', label: 'Press Tall Clicker #' + (index + 1) + ' (' + cfg.name + ')' };
-    plungerGroup.add(capDome);
-    interactiveMeshes.push(capDome);
-
-    // Invisible slightly generous touch/raycast hit cylinder around the top of the tall clicker
-    const hitProxy = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.46, 0.40, 0.72, 12),
-      new THREE.MeshBasicMaterial({ visible: false })
-    );
-    hitProxy.position.y = 0.05;
-    hitProxy.userData = { pillarIndex: index, part: 'clicker', label: 'Press Tall Clicker #' + (index + 1) + ' (' + cfg.name + ')' };
-    plungerGroup.add(hitProxy);
-    interactiveMeshes.push(hitProxy);
-
-    // 4. Curved Glowing Pneumatic Energy Conduit Tube connecting Tall Clicker -> Tall Mystery Box
-    const tubeCurve = new THREE.CatmullRomCurve3([
-      new THREE.Vector3(0, collarY, clickerZ - 0.12),
-      new THREE.Vector3(0, collarY - 0.18, clickerZ * 0.62),
-      new THREE.Vector3(0, boxH * 0.58, boxD * 0.62),
-      new THREE.Vector3(0, boxH * 0.78, boxD * 0.48)
-    ]);
-    const conduitMesh = new THREE.Mesh(
-      new THREE.TubeGeometry(tubeCurve, 28, 0.042, 10, false),
-      new THREE.MeshStandardMaterial({
-        color: 0x334155,
-        emissive: new THREE.Color(cfg.accentHex),
-        emissiveIntensity: 0.35,
-        roughness: 0.25,
-        metalness: 0.7
-      })
-    );
-    unitGroup.add(conduitMesh);
-
-    pillars.push({
+    boxes.push({
       index,
       cfg,
-      unitGroup,
+      unit,
       boxPivot,
-      boxSideMat,
+      boxMat,
       lidPivot,
-      beaconCrystal,
       innerGlowMat,
-      cowGroup,
-      jackpotBeam,
-      beamMat,
-      plungerGroup,
-      plungerRestY,
-      springMesh,
-      springRestHeight,
-      capMat,
-      ledRings,
-      tubeCurve,
       boxHeight: boxH,
-      // Dynamic Animation State
-      pressOffset: 0,
-      pressVel: 0,
-      shakeIntensity: 0,
       lidAngle: 0,
       lidTarget: 0,
-      lidPeekTimer: 0,
-      chargeLevel: 0,
+      shake: 0,
       hovered: false,
-      cowRise: 0,
-      wonActive: false
+      openedThisRound: false
     });
   });
 
   // ---------------------------------------------------------------------------
-  // 3D Floating Holographic Scoreboard & In-XR "NEXT ROUND" Button
+  // Foreground 3D Collectible Cartoonish Clicker Key Display Shelf!
+  // Every won Cartoonish Keyboard Clicker Key lands here and stays clickable forever!
   // ---------------------------------------------------------------------------
-  const holoCanvas = document.createElement('canvas');
-  holoCanvas.width = 1024;
-  holoCanvas.height = 256;
-  const holoCtx = holoCanvas.getContext('2d');
-  const holoTexture = new THREE.CanvasTexture(holoCanvas);
-  holoTexture.colorSpace = THREE.SRGBColorSpace;
+  const shelfGroup = new THREE.Group();
+  shelfGroup.position.set(0, 0.22, 1.35);
+  scene.add(shelfGroup);
 
-  const holoBoardGroup = new THREE.Group();
-  holoBoardGroup.position.set(0, 7.15, -5.4);
-  holoBoardGroup.scale.setScalar(0.84);
-  scene.add(holoBoardGroup);
-
-  const holoMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(5.6, 1.4),
-    new THREE.MeshBasicMaterial({
-      map: holoTexture,
-      transparent: true,
-      side: THREE.DoubleSide
+  const shelfBase = new THREE.Mesh(
+    new THREE.BoxGeometry(6.8, 0.16, 1.25),
+    new THREE.MeshStandardMaterial({
+      color: 0x3b2475,
+      roughness: 0.32,
+      metalness: 0.25,
+      emissive: 0x24124d,
+      emissiveIntensity: 0.4
     })
   );
-  holoBoardGroup.add(holoMesh);
+  shelfBase.position.y = -0.08;
+  shelfBase.receiveShadow = true;
+  shelfBase.visible = false; // Appears automatically the moment she wins her first key!
+  shelfGroup.add(shelfBase);
 
-  // 3D Clickable XR "NEXT ROUND" Pill (visible in XR after a win so VR/AR players stay immersed!)
-  const xrNextCanvas = document.createElement('canvas');
-  xrNextCanvas.width = 512;
-  xrNextCanvas.height = 128;
-  const xnc = xrNextCanvas.getContext('2d');
-  xnc.fillStyle = '#059669';
-  xnc.beginPath();
-  xnc.roundRect(10, 10, 492, 108, 34);
-  xnc.fill();
-  xnc.lineWidth = 6;
-  xnc.strokeStyle = '#ffd700';
-  xnc.stroke();
-  xnc.fillStyle = '#ffffff';
-  xnc.font = '900 44px "Segoe UI", system-ui, sans-serif';
-  xnc.textAlign = 'center';
-  xnc.textBaseline = 'middle';
-  xnc.fillText('NEXT MYSTERY ROUND', 256, 66);
+  function addKeyToForegroundShelf(keyId, animateIn = false) {
+    const def = CARTOON_KEY_CATALOG.find((c) => c.id === keyId) || CARTOON_KEY_CATALOG[0];
+    shelfBase.visible = true;
 
-  const xrNextTex = new THREE.CanvasTexture(xrNextCanvas);
-  xrNextTex.colorSpace = THREE.SRGBColorSpace;
-  const xrNextBtnMesh = new THREE.Mesh(
-    new THREE.PlaneGeometry(2.1, 0.52),
-    new THREE.MeshBasicMaterial({ map: xrNextTex, transparent: true, side: THREE.DoubleSide })
-  );
-  xrNextBtnMesh.position.set(0, 1.45, -2.55);
-  xrNextBtnMesh.visible = false;
-  xrNextBtnMesh.userData = { action: 'nextRound', label: 'Start Next Mystery Round' };
-  scene.add(xrNextBtnMesh);
-  interactiveMeshes.push(xrNextBtnMesh);
-
-  let holoHeadline = 'TALL MYSTERY BOX XR CLICKER';
-  let holoSubtitle = 'Click a Tall Clicker — Hear a MOO to win $1,000!';
-  let holoWinHighlight = false;
-
-  updateHoloBoard = function drawHoloBoard(headline, subtitle, isWin) {
-    if (headline !== undefined) holoHeadline = headline;
-    if (subtitle !== undefined) holoSubtitle = subtitle;
-    if (isWin !== undefined) holoWinHighlight = isWin;
-
-    const w = holoCanvas.width;
-    const h = holoCanvas.height;
-    holoCtx.clearRect(0, 0, w, h);
-
-    const bgGrad = holoCtx.createLinearGradient(0, 0, w, h);
-    if (holoWinHighlight) {
-      bgGrad.addColorStop(0, 'rgba(6, 95, 70, 0.94)');
-      bgGrad.addColorStop(0.5, 'rgba(180, 83, 9, 0.92)');
-      bgGrad.addColorStop(1, 'rgba(6, 78, 59, 0.94)');
-    } else {
-      bgGrad.addColorStop(0, 'rgba(10, 18, 40, 0.90)');
-      bgGrad.addColorStop(1, 'rgba(15, 23, 42, 0.88)');
+    const slotCount = shelfKeyObjects.length;
+    if (slotCount >= 8) {
+      // If she already filled all 8 shelf slots, replace the oldest slot with sparkles
+      const old = shelfKeyObjects.shift();
+      shelfGroup.remove(old.mesh);
+      const hitIdx = interactiveMeshes.indexOf(old.mesh.userData.hitBox);
+      if (hitIdx >= 0) interactiveMeshes.splice(hitIdx, 1);
     }
 
-    holoCtx.fillStyle = bgGrad;
-    holoCtx.beginPath();
-    holoCtx.roundRect(10, 10, w - 20, h - 20, 28);
-    holoCtx.fill();
+    const slotMeta = { action: 'pressShelfKey', keyRef: null };
+    const keyMesh = buildCartoonKeyboardKey(def, slotMeta);
+    keyMesh.scale.setScalar(0.72);
+    // Tilt nicely toward the player so every adorable cartoon face beams right out!
+    keyMesh.rotation.x = 0.64;
 
-    holoCtx.lineWidth = 6;
-    holoCtx.strokeStyle = holoWinHighlight ? '#ffd700' : 'rgba(255, 215, 0, 0.65)';
-    holoCtx.stroke();
+    const entry = {
+      id: def.id,
+      mesh: keyMesh,
+      targetX: 0,
+      popScale: animateIn ? 0.1 : 0.68
+    };
+    slotMeta.keyRef = entry;
+    shelfGroup.add(keyMesh);
+    interactiveMeshes.push(keyMesh.userData.hitBox);
+    shelfKeyObjects.push(entry);
 
-    // Top cash & stats strip
-    holoCtx.fillStyle = '#34d399';
-    holoCtx.font = '900 42px "Segoe UI", system-ui, sans-serif';
-    holoCtx.textAlign = 'left';
-    holoCtx.textBaseline = 'middle';
-    holoCtx.fillText('WON: ' + formatDollars(state.bankroll), 46, 62);
+    // Re-center all won cartoon keys gracefully across the foreground shelf
+    const total = shelfKeyObjects.length;
+    const spacing = 0.84;
+    shelfKeyObjects.forEach((item, idx) => {
+      item.targetX = (idx - (total - 1) / 2) * spacing;
+      if (!animateIn || item !== entry) {
+        item.mesh.position.set(item.targetX, 0.02, 0);
+      } else {
+        item.mesh.position.set(item.targetX, 1.35, -1.2);
+      }
+    });
+  }
 
-    holoCtx.fillStyle = '#fde68a';
-    holoCtx.font = '800 32px "Segoe UI", system-ui, sans-serif';
-    holoCtx.textAlign = 'right';
-    holoCtx.fillText('MOO WINS: ' + state.mooWins + '   |   CLICKS: ' + state.totalClicks, w - 46, 62);
-
-    // Center headline
-    holoCtx.fillStyle = holoWinHighlight ? '#ffffff' : '#ffd700';
-    holoCtx.font = '900 48px "Segoe UI", system-ui, sans-serif';
-    holoCtx.textAlign = 'center';
-    holoCtx.fillText(holoHeadline, w / 2, 138);
-
-    // Subtitle
-    holoCtx.fillStyle = '#e2e8f0';
-    holoCtx.font = '700 30px "Segoe UI", system-ui, sans-serif';
-    holoCtx.fillText(holoSubtitle, w / 2, 202);
-
-    holoTexture.needsUpdate = true;
-  };
-
-  updateHoloBoard();
+  // Restore any previously won cartoon keys onto the shelf on load
+  state.wonKeys.slice(-8).forEach((id) => addKeyToForegroundShelf(id, false));
 
   // ---------------------------------------------------------------------------
-  // Dynamic 3D VFX Spawners: Energy Pulses, Sonic Rings, $1,000 Bills, Fireworks
+  // 3D VFX Spawners: Silver Foil Shreds, Pastel Confetti, $1,000 Bills, Decoy Puffs, "MOO!" Burst
   // ---------------------------------------------------------------------------
   const billTex = createDollarBillTexture();
   const billGeo = new THREE.PlaneGeometry(0.56, 0.25, 6, 1);
-  // Subtle crisp banknote wave bend
-  const bPos = billGeo.attributes.position;
-  for (let i = 0; i < bPos.count; i++) {
-    const bx = bPos.getX(i);
-    bPos.setZ(i, Math.sin(bx * 6.5) * 0.025);
+  {
+    const bp = billGeo.attributes.position;
+    for (let i = 0; i < bp.count; i++) {
+      bp.setZ(i, Math.sin(bp.getX(i) * 6.5) * 0.024);
+    }
+    billGeo.computeVertexNormals();
   }
-  billGeo.computeVertexNormals();
-  const billMat = new THREE.MeshStandardMaterial({
-    map: billTex,
-    roughness: 0.42,
-    metalness: 0.12,
-    side: THREE.DoubleSide
-  });
+  const billMat = new THREE.MeshStandardMaterial({ map: billTex, roughness: 0.4, side: THREE.DoubleSide });
+  const mooBurstTex = createMooBurstTexture();
 
-  function spawnEnergyPulse(pillar, isWin) {
-    const orb = new THREE.Mesh(
-      new THREE.SphereGeometry(isWin ? 0.13 : 0.09, 12, 10),
-      new THREE.MeshBasicMaterial({ color: isWin ? 0xffe066 : pillar.cfg.accentHex })
-    );
-    pillar.unitGroup.add(orb);
-    activeEnergyPulses.push({
-      mesh: orb,
-      pillar,
-      t: 0,
-      speed: isWin ? 2.8 : 2.3
-    });
-  }
+  function spawnConfettiBurst(origin, count = 36, silverMode = false) {
+    const pastelPalette = silverMode
+      ? [0xffffff, 0xe2e8f0, 0xcbd5e1, 0xf8fafc]
+      : [0xff6fb5, 0xffe066, 0x52e5a8, 0x4cc9f0, 0xc084fc, 0xffffff];
 
-  function spawnSonicRing(pillar, isMoo) {
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: isMoo ? 0xffd700 : pillar.cfg.accentHex,
-      transparent: true,
-      opacity: 0.92,
-      side: THREE.DoubleSide
-    });
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.35, isMoo ? 0.54 : 0.44, 36), ringMat);
-    ring.rotation.x = -Math.PI / 2;
-    ring.position.set(0, pillar.boxHeight + 0.35, 0);
-    pillar.boxPivot.add(ring);
-
-    activeSonicRings.push({
-      mesh: ring,
-      mat: ringMat,
-      parent: pillar.boxPivot,
-      age: 0,
-      maxAge: isMoo ? 1.45 : 0.72,
-      growSpeed: isMoo ? 4.8 : 2.8,
-      riseSpeed: isMoo ? 1.8 : 1.1
-    });
-  }
-
-  function spawnDollarBillShower(worldOrigin, count = 56) {
     for (let i = 0; i < count; i++) {
-      const bill = new THREE.Mesh(billGeo, billMat);
-      bill.position.copy(worldOrigin);
-      bill.position.x += (Math.random() - 0.5) * 0.65;
-      bill.position.z += (Math.random() - 0.5) * 0.65;
-      bill.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
-      scene.add(bill);
+      const col = pastelPalette[i % pastelPalette.length];
+      const mesh = new THREE.Mesh(
+        silverMode ? new THREE.PlaneGeometry(0.16, 0.09) : new THREE.OctahedronGeometry(0.085, 0),
+        new THREE.MeshStandardMaterial({
+          color: col,
+          metalness: silverMode ? 0.9 : 0.2,
+          roughness: silverMode ? 0.18 : 0.3,
+          emissive: new THREE.Color(col),
+          emissiveIntensity: silverMode ? 0.1 : 0.35,
+          side: THREE.DoubleSide
+        })
+      );
+      mesh.position.copy(origin);
+      scene.add(mesh);
 
-      const angle = Math.random() * Math.PI * 2;
-      const spread = 1.6 + Math.random() * 3.8;
-      activeBills.push({
-        mesh: bill,
-        vel: new THREE.Vector3(
-          Math.cos(angle) * spread,
-          3.2 + Math.random() * 4.4,
-          Math.sin(angle) * spread
-        ),
-        spin: new THREE.Vector3(
-          (Math.random() - 0.5) * 6,
-          (Math.random() - 0.5) * 6,
-          (Math.random() - 0.5) * 6
-        ),
-        flutterPhase: Math.random() * Math.PI * 2,
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 1.4 + Math.random() * 3.4;
+      activeConfetti.push({
+        mesh,
+        vel: new THREE.Vector3(Math.cos(ang) * spd, 2.0 + Math.random() * 3.6, Math.sin(ang) * spd),
+        spin: new THREE.Vector3((Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9),
         age: 0,
-        maxAge: 5.5 + Math.random() * 2.5
+        maxAge: 1.4 + Math.random() * 0.9
       });
     }
   }
 
-  function spawnJackpotFirework(worldCenter, hexColor) {
-    const count = 64;
-    const positions = new Float32Array(count * 3);
-    const velocities = [];
+  function spawnDollarBills(origin, count = 56) {
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = worldCenter.x;
-      positions[i * 3 + 1] = worldCenter.y;
-      positions[i * 3 + 2] = worldCenter.z;
+      const bill = new THREE.Mesh(billGeo, billMat);
+      bill.position.copy(origin);
+      bill.position.x += (Math.random() - 0.5) * 0.7;
+      bill.position.z += (Math.random() - 0.5) * 0.7;
+      bill.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+      scene.add(bill);
 
-      const u = Math.random();
-      const v = Math.random();
-      const theta = u * Math.PI * 2;
-      const phi = Math.acos(2 * v - 1);
-      const speed = 2.0 + Math.random() * 3.4;
-      velocities.push(
-        new THREE.Vector3(
-          Math.sin(phi) * Math.cos(theta) * speed,
-          Math.cos(phi) * speed + 1.0,
-          Math.sin(phi) * Math.sin(theta) * speed
-        )
-      );
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 1.5 + Math.random() * 3.8;
+      activeBills.push({
+        mesh: bill,
+        vel: new THREE.Vector3(Math.cos(ang) * spd, 2.8 + Math.random() * 4.2, Math.sin(ang) * spd),
+        spin: new THREE.Vector3((Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6),
+        phase: Math.random() * Math.PI * 2,
+        age: 0,
+        maxAge: 5.0 + Math.random() * 2.2
+      });
     }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    const mat = new THREE.PointsMaterial({
-      color: hexColor,
-      map: glowSpriteTex,
-      size: 0.28,
-      transparent: true,
-      opacity: 1,
-      blending: THREE.AdditiveBlending,
-      depthWrite: false
-    });
-    const points = new THREE.Points(geo, mat);
-    scene.add(points);
-    activeFireworks.push({ points, geo, mat, velocities, age: 0, maxAge: 1.85 });
   }
 
-  // Wire 3D animation callbacks for the core game logic
-  animatePillarClick3D = function (index, localClicks, isMoo) {
-    const p = pillars[index];
-    if (!p) return;
-    p.pressOffset = 0.30;
-    p.pressVel = -0.9;
-    p.shakeIntensity = isMoo ? 0.14 : 0.085;
-    p.chargeLevel = Math.min(10, localClicks * 3);
-    if (!isMoo) {
-      p.lidTarget = 0.42;
-      p.lidPeekTimer = 0.55;
-    }
-    spawnEnergyPulse(p, isMoo);
-    spawnSonicRing(p, isMoo);
-  };
+  function spawnMooComicPopup(origin) {
+    const mat = new THREE.MeshBasicMaterial({ map: mooBurstTex, transparent: true, opacity: 1, side: THREE.DoubleSide });
+    const plane = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.3), mat);
+    plane.position.copy(origin).add(new THREE.Vector3(0, 1.45, 0.25));
+    plane.scale.setScalar(0.1);
+    scene.add(plane);
+    activeSpeechPopups.push({ mesh: plane, mat, age: 0, maxAge: 2.75 });
+  }
 
-  animatePillarWin3D = function (index) {
-    const p = pillars[index];
-    if (!p) return;
-    p.wonActive = true;
-    p.chargeLevel = 10;
-    p.lidTarget = 2.05; // Wide open lid!
-    p.lidPeekTimer = 999;
-    p.cowGroup.visible = true;
-    p.jackpotBeam.visible = true;
-
-    const topWorld = new THREE.Vector3(0, p.boxHeight + 0.55, 0);
-    p.boxPivot.localToWorld(topWorld);
-
-    jackpotLight.position.set(topWorld.x, topWorld.y + 0.8, topWorld.z + 0.8);
-    jackpotLight.intensity = 6.0;
-
-    // Triple expanding golden moo soundwaves
-    spawnSonicRing(p, true);
-    setTimeout(() => { if (p.wonActive) spawnSonicRing(p, true); }, 240);
-    setTimeout(() => { if (p.wonActive) spawnSonicRing(p, true); }, 500);
-
-    // Rain of 3D $1,000 bills & golden fireworks!
-    spawnDollarBillShower(topWorld, 60);
-    spawnJackpotFirework(topWorld.clone().add(new THREE.Vector3(0, 1.3, 0)), 0xffd700);
-    setTimeout(() => {
-      spawnJackpotFirework(topWorld.clone().add(new THREE.Vector3(-1.1, 1.7, 0.2)), 0x34d399);
-      spawnJackpotFirework(topWorld.clone().add(new THREE.Vector3(1.1, 1.6, 0.2)), 0xffe066);
-    }, 320);
-
-    if (state.isInXR) {
-      xrNextBtnMesh.visible = true;
-    }
-  };
-
-  resetPillars3D = function () {
-    pillars.forEach((p) => {
-      p.wonActive = false;
-      p.chargeLevel = 0;
-      p.lidTarget = 0;
-      p.lidPeekTimer = 0;
-      p.cowRise = 0;
-      p.cowGroup.visible = false;
-      p.jackpotBeam.visible = false;
-      p.beamMat.opacity = 0;
-      p.shakeIntensity = 0.04;
+  function spawnPlayfulDecoyPop(origin) {
+    // Cute bouncing pastel star-cloud toy that pops out of non-moo silver packages!
+    const grp = new THREE.Group();
+    grp.position.copy(origin);
+    const colors = [0x4cc9f0, 0xff8ed4, 0xffe066, 0x9ef0b8];
+    const col = colors[Math.floor(Math.random() * colors.length)];
+    const core = new THREE.Mesh(
+      new THREE.DodecahedronGeometry(0.42, 0),
+      new THREE.MeshStandardMaterial({ color: col, roughness: 0.28, emissive: new THREE.Color(col), emissiveIntensity: 0.25 })
+    );
+    grp.add(core);
+    // Cute cartoon eyes on the decoy puff!
+    [-0.14, 0.14].forEach((ex) => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.06, 10, 10), cartoonOutlineMat);
+      eye.position.set(ex, 0.08, 0.36);
+      grp.add(eye);
     });
-    jackpotLight.intensity = 0;
-    xrNextBtnMesh.visible = false;
-  };
+    scene.add(grp);
+    activeDecoyPops.push({ mesh: grp, age: 0, maxAge: 1.35, startY: origin.y });
+  }
 
   // ---------------------------------------------------------------------------
-  // Desktop & Mobile Pointer Raycasting + Responsive Camera Framing
+  // Core Unboxing & Ripping Flow (Zero Text Tutorials — Pure Interactive Joy!)
+  // ---------------------------------------------------------------------------
+  function cleanupActivePackage() {
+    const pkg = state.activePackage;
+    if (!pkg) return;
+    pkg.interactiveList.forEach((m) => {
+      const idx = interactiveMeshes.indexOf(m);
+      if (idx >= 0) interactiveMeshes.splice(idx, 1);
+    });
+    scene.remove(pkg.group);
+    state.activePackage = null;
+  }
+
+  function dockCelebrationKeyToShelf() {
+    const ck = state.celebrationKey;
+    if (!ck) return;
+    const hitIdx = interactiveMeshes.indexOf(ck.mesh.userData.hitBox);
+    if (hitIdx >= 0) interactiveMeshes.splice(hitIdx, 1);
+    scene.remove(ck.mesh);
+    addKeyToForegroundShelf(ck.def.id, true);
+    state.celebrationKey = null;
+  }
+
+  function resetRoundBoxes(prevWinIdx) {
+    const candidates = BOX_CONFIGS.map((_, i) => i).filter((i) => i !== prevWinIdx);
+    state.winningBoxIndex = candidates[Math.floor(Math.random() * candidates.length)];
+    state.boxesOpenedThisRound = 0;
+    state.roundNumber += 1;
+    boxes.forEach((b) => {
+      b.openedThisRound = false;
+      b.lidTarget = 0;
+    });
+  }
+
+  function openTallMysteryBox(boxIndex) {
+    if (boxIndex < 0 || boxIndex >= boxes.length) return;
+    audio.unlock();
+
+    // If a celebration key is still floating, dock it happily onto the foreground shelf!
+    if (state.celebrationKey) {
+      dockCelebrationKeyToShelf();
+    }
+    // If an old package is floating, close its box & remove it cleanly
+    if (state.activePackage) {
+      const prevBox = boxes[state.activePackage.boxIndex];
+      if (prevBox) prevBox.lidTarget = 0;
+      cleanupActivePackage();
+    }
+
+    const box = boxes[boxIndex];
+    box.lidTarget = 2.05;
+    box.shake = 0.11;
+
+    // Decide whether the silver package inside this tall box holds the MOO!
+    // Guarantees a Moo within 3 boxes at most so a 7-year-old always wins frequently!
+    let isMoo = boxIndex === state.winningBoxIndex;
+    if (!isMoo && !box.openedThisRound) {
+      state.boxesOpenedThisRound += 1;
+      if (state.boxesOpenedThisRound >= 3) {
+        state.winningBoxIndex = boxIndex;
+        isMoo = true;
+      }
+    }
+    box.openedThisRound = true;
+
+    audio.playBoxPopOpen(box.cfg.pan);
+
+    // Spawn the Shiny Metallic Silver Foil Package rising out of the tall mystery box!
+    const pkg = buildSilverPackageMesh(boxIndex, isMoo);
+    const boxTopWorld = new THREE.Vector3(0, box.boxHeight + 0.1, 0);
+    box.boxPivot.localToWorld(boxTopWorld);
+    pkg.startPos.copy(boxTopWorld);
+    pkg.group.position.copy(boxTopWorld);
+    pkg.group.scale.setScalar(0.25);
+
+    // Float right in front of the player so it's super big, shiny & fun to rip!
+    pkg.targetPos.set(0, state.isInXR ? 1.55 : 2.35, state.isInXR ? -1.9 : 1.9);
+
+    scene.add(pkg.group);
+    pkg.interactiveList.forEach((m) => interactiveMeshes.push(m));
+    state.activePackage = pkg;
+
+    spawnConfettiBurst(boxTopWorld, 16, true);
+  }
+
+  function ripActiveSilverPackage(instantFullRip = false) {
+    const pkg = state.activePackage;
+    if (!pkg || pkg.ripStage >= 2) return;
+    audio.unlock();
+
+    const box = boxes[pkg.boxIndex];
+    const pan = box ? box.cfg.pan : 0;
+
+    if (pkg.ripStage === 0 && !instantFullRip) {
+      // STAGE 1: Half-Rip! Silver top strip peels back with metallic crinkle & sparkles peek out!
+      pkg.ripStage = 1;
+      pkg.shake = 0.22;
+      pkg.peekGlow.material.opacity = 0.85;
+      audio.playFoilRip(1, pan);
+      spawnConfettiBurst(pkg.group.position.clone().add(new THREE.Vector3(0, 0.72, 0.1)), 18, true);
+      return;
+    }
+
+    // STAGE 2: FULL RIP OPEN! Top strip rips completely off & flies away!
+    pkg.ripStage = 2;
+    pkg.stripDetached = true;
+    pkg.stripFlyVel.set(2.4, 3.6, 1.2);
+    pkg.shake = 0.28;
+    pkg.peekGlow.material.opacity = 1.0;
+    state.totalRips += 1;
+
+    audio.playFoilRip(2, pan);
+    spawnConfettiBurst(pkg.group.position.clone().add(new THREE.Vector3(0, 0.65, 0.15)), 28, true);
+
+    const revealOrigin = pkg.group.position.clone();
+
+    if (pkg.isMoo) {
+      // MOO WIN! Award a Cartoonish Keyboard Clicker Key + $1,000!
+      state.lastHeardMoo = true;
+      state.bankroll += JACKPOT_PRIZE;
+      const nextKeyDef = CARTOON_KEY_CATALOG[state.wonKeys.length % CARTOON_KEY_CATALOG.length];
+      state.wonKeys.push(nextKeyDef.id);
+      saveStats();
+
+      audio.playMoo(pan, false);
+      audio.playJackpotFanfare();
+
+      // Pop the big adorable Cartoonish Keyboard Clicker Key right out of the ripped silver pouch!
+      const keyMeta = { action: 'pressCelebrationKey' };
+      const bigKey = buildCartoonKeyboardKey(nextKeyDef, keyMeta);
+      bigKey.position.copy(revealOrigin).add(new THREE.Vector3(0, 0.12, 0.35));
+      bigKey.scale.setScalar(0.15);
+      // Tilt proudly toward player so the big sparkly cartoon face beams right at her!
+      bigKey.rotation.x = 0.88;
+      scene.add(bigKey);
+      interactiveMeshes.push(bigKey.userData.hitBox);
+
+      state.celebrationKey = {
+        def: nextKeyDef,
+        mesh: bigKey,
+        age: 0,
+        targetScale: state.isInXR ? 0.95 : 1.48,
+        clicks: 0
+      };
+
+      // Burst of $1,000 bills + pastel sparkles + comic "MOO! +$1,000!" pop!
+      spawnDollarBills(revealOrigin.clone().add(new THREE.Vector3(0, 0.4, 0)), 58);
+      spawnConfettiBurst(revealOrigin.clone().add(new THREE.Vector3(0, 0.35, 0)), 44, false);
+      spawnMooComicPopup(revealOrigin);
+      syncTopHud(true, true);
+
+      // Ripped silver pouch drops away after 0.55s so the giant cartoonish keycap takes center stage!
+      pkg.dismissTimer = 0.55;
+      resetRoundBoxes(pkg.boxIndex);
+    } else {
+      // Non-Moo Silver Package -> playful cartoon decoy sound & cute bouncing puff!
+      state.lastHeardMoo = false;
+      audio.playDecoySound(state.decoyCursor++, pan);
+      spawnPlayfulDecoyPop(revealOrigin.clone().add(new THREE.Vector3(0, 0.5, 0.1)));
+      spawnConfettiBurst(revealOrigin.clone().add(new THREE.Vector3(0, 0.4, 0)), 22, false);
+      pkg.dismissTimer = 0.95;
+    }
+  }
+
+  function pressCartoonKey(keyMesh, isCelebration = false) {
+    if (!keyMesh || !keyMesh.userData) return;
+    audio.unlock();
+    const ud = keyMesh.userData;
+    ud.pressOffset = 0.22;
+    ud.pressVel = -0.8;
+    state.totalKeyClicks += 1;
+
+    const slotIndex = CARTOON_KEY_CATALOG.findIndex((c) => c.id === ud.def.id);
+    audio.playKeyboardKeyClick(ud.def.id, slotIndex);
+    if (ud.def.id === 'cow') {
+      // Pressing the won Moo Cow keyboard key gives a cute happy mini-moo!
+      audio.playMoo(0, true);
+    }
+
+    const worldPos = new THREE.Vector3();
+    keyMesh.getWorldPosition(worldPos);
+    spawnConfettiBurst(worldPos.add(new THREE.Vector3(0, 0.55, 0)), 10, false);
+
+    if (isCelebration && state.celebrationKey) {
+      state.celebrationKey.clicks += 1;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pointer / Touch Raycasting (Supports Click AND Swipe-to-Rip on Silver Package!)
   // ---------------------------------------------------------------------------
   const raycaster = new THREE.Raycaster();
   const pointerNdc = new THREE.Vector2();
-  let hoveredPillarIndex = -1;
   let pointerDownX = 0;
   let pointerDownY = 0;
   let pointerDownTime = 0;
+  let pointerStartedOnPackage = false;
+  let hoveredBoxIdx = -1;
 
   function setPointerFromEvent(e) {
     const rect = canvas.getBoundingClientRect();
@@ -1666,7 +1752,7 @@ import { createClickerAudioEngine } from './clicker_audio.js';
     raycaster.setFromCamera(pointerNdc, camera);
     const hits = raycaster.intersectObjects(interactiveMeshes, false);
     for (let i = 0; i < hits.length; i++) {
-      if (hits[i].object.visible) {
+      if (hits[i].object.visible || hits[i].object.material?.visible === false) {
         return hits[i].object;
       }
     }
@@ -1676,16 +1762,25 @@ import { createClickerAudioEngine } from './clicker_audio.js';
   canvas.addEventListener('pointermove', (e) => {
     if (state.isInXR) return;
     setPointerFromEvent(e);
-    const hit = pickInteractiveAtPointer();
-    const nextHover = hit && typeof hit.userData.pillarIndex === 'number' ? hit.userData.pillarIndex : -1;
-    if (nextHover !== hoveredPillarIndex) {
-      if (hoveredPillarIndex >= 0) pillars[hoveredPillarIndex].hovered = false;
-      hoveredPillarIndex = nextHover;
-      if (hoveredPillarIndex >= 0) pillars[hoveredPillarIndex].hovered = true;
+
+    // Swipe-to-rip! Dragging across the shiny silver foil package rips it right open!
+    if (pointerStartedOnPackage && state.activePackage && state.activePackage.ripStage < 2) {
+      const swipeDist = Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY);
+      if (swipeDist > 38) {
+        pointerStartedOnPackage = false;
+        ripActiveSilverPackage(true);
+        return;
+      }
     }
+
+    const hit = pickInteractiveAtPointer();
     canvas.classList.toggle('is-hovering-target', !!hit);
-    if (targetHintEl) {
-      targetHintEl.textContent = hit && hit.userData.label ? hit.userData.label : '';
+
+    const nextHoverBox = hit && hit.userData.action === 'openBox' ? hit.userData.boxIndex : -1;
+    if (nextHoverBox !== hoveredBoxIdx) {
+      if (hoveredBoxIdx >= 0) boxes[hoveredBoxIdx].hovered = false;
+      hoveredBoxIdx = nextHoverBox;
+      if (hoveredBoxIdx >= 0) boxes[hoveredBoxIdx].hovered = true;
     }
   });
 
@@ -1694,26 +1789,43 @@ import { createClickerAudioEngine } from './clicker_audio.js';
     pointerDownX = e.clientX;
     pointerDownY = e.clientY;
     pointerDownTime = performance.now();
+    setPointerFromEvent(e);
+    const hit = pickInteractiveAtPointer();
+    pointerStartedOnPackage = Boolean(hit && hit.userData.action === 'ripPackage');
+    if (pointerStartedOnPackage) {
+      // Prevent camera orbit from stealing a swipe-to-rip gesture on the silver foil package!
+      controls.enabled = false;
+    }
   });
 
   canvas.addEventListener('pointerup', (e) => {
     if (state.isInXR) return;
+    if (!state.isInXR) controls.enabled = true;
+    const wasOnPkg = pointerStartedOnPackage;
+    pointerStartedOnPackage = false;
+
     const dist = Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY);
     const elapsed = performance.now() - pointerDownTime;
-    // Only register tap/click if user did not orbit-drag the camera
-    if (dist > 14 || elapsed > 550) return;
+    if (dist > 18 && !wasOnPkg) return;
+    if (elapsed > 650 && !wasOnPkg) return;
 
     setPointerFromEvent(e);
     const hit = pickInteractiveAtPointer();
     if (!hit) return;
 
-    if (hit.userData.action === 'nextRound') {
-      startNewRound(false);
-    } else if (typeof hit.userData.pillarIndex === 'number') {
-      handlePillarPress(hit.userData.pillarIndex);
+    const act = hit.userData.action;
+    if (act === 'ripPackage') {
+      ripActiveSilverPackage(false);
+    } else if (act === 'pressCelebrationKey') {
+      if (state.celebrationKey) pressCartoonKey(state.celebrationKey.mesh, true);
+    } else if (act === 'pressShelfKey' && hit.userData.keyRef) {
+      pressCartoonKey(hit.userData.keyRef.mesh, false);
+    } else if (act === 'openBox') {
+      openTallMysteryBox(hit.userData.boxIndex);
     }
   });
 
+  // Responsive Framing (Desktop & Mobile Portrait)
   function updateResponsiveFraming() {
     const w = window.innerWidth;
     const h = Math.max(window.innerHeight, 1);
@@ -1723,20 +1835,17 @@ import { createClickerAudioEngine } from './clicker_audio.js';
 
     if (!state.isInXR) {
       if (aspect < 0.72) {
-        // Tall portrait phones: wide & pulled back so all 5 tall mystery boxes fit edge-to-edge
-        camera.fov = 62;
-        camera.position.set(0, 3.8, 15.2);
-        controls.target.set(0, 2.5, -3.4);
+        camera.fov = 60;
+        camera.position.set(0, 3.3, 14.2);
+        controls.target.set(0, 2.2, -3.2);
       } else if (aspect < 1.15) {
-        // Square / small tablet viewports
-        camera.fov = 54;
-        camera.position.set(0, 3.55, 12.2);
-        controls.target.set(0, 2.55, -3.4);
+        camera.fov = 52;
+        camera.position.set(0, 3.1, 11.4);
+        controls.target.set(0, 2.2, -3.2);
       } else {
-        // Desktop widescreen: frames all 5 towering boxes, tall clickers & overhead holo board cleanly between HUD bars
-        camera.fov = 50;
-        camera.position.set(0, 3.5, 11.4);
-        controls.target.set(0, 2.95, -3.5);
+        camera.fov = 48;
+        camera.position.set(0, 2.95, 9.8);
+        controls.target.set(0, 2.15, -3.2);
       }
       camera.updateProjectionMatrix();
       controls.update();
@@ -1749,83 +1858,77 @@ import { createClickerAudioEngine } from './clicker_audio.js';
   updateResponsiveFraming();
 
   // ---------------------------------------------------------------------------
-  // WebXR Session Management + Dual Controller Laser Raycasting
+  // WebXR Session Management & Dual Controller Raycasting
   // ---------------------------------------------------------------------------
   const controllerModelFactory = new XRControllerModelFactory();
   const xrControllers = [];
   const tempMatrix = new THREE.Matrix4();
-
-  function setupXRController(slot) {
-    const controller = renderer.xr.getController(slot);
-
-    // Visible glowing laser beam
-    const rayGeo = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0, 0, -10)
-    ]);
-    const rayMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 });
-    const rayLine = new THREE.Line(rayGeo, rayMat);
-    rayLine.name = 'XRControllerRay';
-    controller.add(rayLine);
-
-    // Laser hit reticle dot
-    const reticle = new THREE.Mesh(
-      new THREE.SphereGeometry(0.045, 10, 10),
-      new THREE.MeshBasicMaterial({ color: 0xffd700 })
-    );
-    reticle.visible = false;
-    controller.add(reticle);
-
-    controller.addEventListener('selectstart', () => {
-      audio.unlock();
-      rayMat.color.setHex(0xffd700);
-      const hit = raycastFromXRController(controller);
-      if (!hit) return;
-      if (hit.object.userData.action === 'nextRound') {
-        startNewRound(false);
-      } else if (typeof hit.object.userData.pillarIndex === 'number') {
-        handlePillarPress(hit.object.userData.pillarIndex);
-      }
-    });
-
-    controller.addEventListener('selectend', () => {
-      rayMat.color.setHex(0x38bdf8);
-    });
-
-    cameraRig.add(controller);
-
-    const grip = renderer.xr.getControllerGrip(slot);
-    grip.add(controllerModelFactory.createControllerModel(grip));
-    cameraRig.add(grip);
-
-    xrControllers.push({ controller, rayLine, reticle });
-  }
-
-  setupXRController(0);
-  setupXRController(1);
 
   function raycastFromXRController(controller) {
     tempMatrix.identity().extractRotation(controller.matrixWorld);
     raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
     raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
     const hits = raycaster.intersectObjects(interactiveMeshes, false);
-    for (let i = 0; i < hits.length; i++) {
-      if (hits[i].object.visible) return hits[i];
-    }
-    return null;
+    return hits.length > 0 ? hits[0] : null;
   }
 
-  let activeXrSession = null;
+  function setupXRController(slot) {
+    const controller = renderer.xr.getController(slot);
+    const rayGeo = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0, 0, -10)
+    ]);
+    const rayMat = new THREE.LineBasicMaterial({ color: 0xff8ed4, transparent: true, opacity: 0.9 });
+    const rayLine = new THREE.Line(rayGeo, rayMat);
+    controller.add(rayLine);
 
-  startXRSession = async function (mode) {
+    const reticle = new THREE.Mesh(
+      new THREE.SphereGeometry(0.045, 10, 10),
+      new THREE.MeshBasicMaterial({ color: 0xffe066 })
+    );
+    reticle.visible = false;
+    controller.add(reticle);
+
+    controller.addEventListener('selectstart', () => {
+      audio.unlock();
+      rayMat.color.setHex(0xffe066);
+      const hit = raycastFromXRController(controller);
+      if (!hit) return;
+      const act = hit.object.userData.action;
+      if (act === 'ripPackage') {
+        ripActiveSilverPackage(false);
+      } else if (act === 'pressCelebrationKey') {
+        if (state.celebrationKey) pressCartoonKey(state.celebrationKey.mesh, true);
+      } else if (act === 'pressShelfKey' && hit.object.userData.keyRef) {
+        pressCartoonKey(hit.object.userData.keyRef.mesh, false);
+      } else if (act === 'openBox') {
+        openTallMysteryBox(hit.object.userData.boxIndex);
+      }
+    });
+
+    controller.addEventListener('selectend', () => {
+      rayMat.color.setHex(0xff8ed4);
+    });
+
+    cameraRig.add(controller);
+    const grip = renderer.xr.getControllerGrip(slot);
+    grip.add(controllerModelFactory.createControllerModel(grip));
+    cameraRig.add(grip);
+
+    xrControllers.push({ controller, reticle });
+  }
+
+  setupXRController(0);
+  setupXRController(1);
+
+  let activeXrSession = null;
+  async function startXRSession(mode) {
     if (!navigator.xr) return;
     audio.unlock();
-
     if (activeXrSession) {
       await activeXrSession.end().catch(() => {});
       return;
     }
-
     try {
       const session = await navigator.xr.requestSession(mode, {
         optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking']
@@ -1836,7 +1939,6 @@ import { createClickerAudioEngine } from './clicker_audio.js';
       controls.enabled = false;
 
       if (state.xrMode === 'ar') {
-        // Transparent passthrough in AR so the towering mystery boxes stand in your real room!
         environmentGroup.visible = false;
         scene.fog = null;
         renderer.setClearAlpha(0);
@@ -1846,10 +1948,8 @@ import { createClickerAudioEngine } from './clicker_audio.js';
         renderer.setClearAlpha(1);
       }
 
-      // Stand user cleanly at floor level in the center of the tall mystery arc
-      cameraRig.position.set(0, 0, 1.35);
-      holoBoardGroup.position.set(0, 7.05, -5.2);
-      xrNextBtnMesh.visible = state.roundWon;
+      cameraRig.position.set(0, 0, 1.45);
+      shelfGroup.position.set(0, 0.88, -0.35);
 
       session.addEventListener('end', () => {
         activeXrSession = null;
@@ -1860,16 +1960,15 @@ import { createClickerAudioEngine } from './clicker_audio.js';
         scene.fog = baseFog;
         renderer.setClearAlpha(1);
         cameraRig.position.set(0, 0, 0);
-        holoBoardGroup.position.set(0, 7.15, -5.4);
-        xrNextBtnMesh.visible = false;
+        shelfGroup.position.set(0, 0.22, 1.35);
         updateResponsiveFraming();
       });
 
       await renderer.xr.setSession(session);
     } catch (err) {
-      console.warn('[ClickerXR] Failed to start ' + mode + ':', err);
+      console.warn('[CartoonClickerXR] XR start error:', err);
     }
-  };
+  }
 
   async function detectWebXRSupport() {
     let vrOk = false;
@@ -1884,25 +1983,57 @@ import { createClickerAudioEngine } from './clicker_audio.js';
     state.arSupported = arOk;
     if (btnEnterVr) btnEnterVr.hidden = !vrOk;
     if (btnEnterAr) btnEnterAr.hidden = !arOk;
-    if (xrBadgeEl) {
-      xrBadgeEl.textContent = vrOk || arOk ? 'WebXR Ready' : '3D WebXR';
-    }
   }
 
   if (btnEnterVr) btnEnterVr.addEventListener('click', () => startXRSession('immersive-vr'));
   if (btnEnterAr) btnEnterAr.addEventListener('click', () => startXRSession('immersive-ar'));
   detectWebXRSupport();
 
-  // WebGL context loss resilience
-  canvas.addEventListener('webglcontextlost', (e) => {
-    e.preventDefault();
-  });
+  // Diagnostic handle for automated verification
+  window.CalmChessClickerXR = {
+    openBox: (idx) => openTallMysteryBox(idx),
+    ripPackage: (instant = false) => ripActiveSilverPackage(instant),
+    pressCelebrationKey: () => state.celebrationKey && pressCartoonKey(state.celebrationKey.mesh, true),
+    pressShelfKey: (i = 0) => shelfKeyObjects[i] && pressCartoonKey(shelfKeyObjects[i].mesh, false),
+    dockKey: () => dockCelebrationKeyToShelf(),
+    getState: () => ({
+      bankroll: state.bankroll,
+      displayedBankroll: state.displayedBankroll,
+      wonKeys: [...state.wonKeys],
+      winningBoxIndex: state.winningBoxIndex,
+      hasActivePackage: Boolean(state.activePackage),
+      packageRipStage: state.activePackage ? state.activePackage.ripStage : -1,
+      hasCelebrationKey: Boolean(state.celebrationKey),
+      shelfKeyCount: shelfKeyObjects.length,
+      lastHeardMoo: state.lastHeardMoo,
+      totalRips: state.totalRips,
+      totalKeyClicks: state.totalKeyClicks,
+      webglReady: state.webglReady,
+      audioState: audio.getContextState()
+    })
+  };
 
   // ---------------------------------------------------------------------------
-  // Master WebXR Procedural Animation Loop
+  // Master Animation Loop
   // ---------------------------------------------------------------------------
   let simTime = 0;
   let lastTs = 0;
+
+  function stepKeySpringPhysics(keyMesh, dt) {
+    const ud = keyMesh.userData;
+    const force = -160 * ud.pressOffset - 15 * ud.pressVel;
+    ud.pressVel += force * dt;
+    ud.pressOffset += ud.pressVel * dt;
+    if (Math.abs(ud.pressOffset) < 0.0008 && Math.abs(ud.pressVel) < 0.005) {
+      ud.pressOffset = 0;
+      ud.pressVel = 0;
+    }
+    const clamped = Math.max(-0.04, Math.min(0.24, ud.pressOffset));
+    ud.capPivot.position.y = ud.restY - clamped;
+    // Playful cartoon squash-and-stretch on click!
+    const squash = 1 + clamped * 0.35;
+    ud.capPivot.scale.set(squash, 1 - clamped * 0.28, squash);
+  }
 
   renderer.setAnimationLoop((timestamp) => {
     const rawDt = lastTs ? (timestamp - lastTs) * 0.001 : 0.016;
@@ -1910,203 +2041,198 @@ import { createClickerAudioEngine } from './clicker_audio.js';
     const dt = Math.min(rawDt, 0.05);
     simTime += dt;
 
-    // Smooth rolling bankroll counter animation
+    // Smooth cash counter roll-up
     if (state.displayedBankroll < state.bankroll) {
       const diff = state.bankroll - state.displayedBankroll;
-      state.displayedBankroll = Math.min(state.bankroll, state.displayedBankroll + Math.max(25, diff * 7.5 * dt));
-      syncHudStats();
+      state.displayedBankroll = Math.min(state.bankroll, state.displayedBankroll + Math.max(30, diff * 7.5 * dt));
+      syncTopHud(false, false);
     }
 
-    // Update sky shader & floating dust motes
+    // Sky aurora & drifting pastel stars
     skyUniforms.uTime.value = simTime;
-    const dArr = dustGeo.attributes.position.array;
-    for (let i = 0; i < dustCount; i++) {
-      dArr[i * 3 + 1] += dt * 0.16;
-      dArr[i * 3] += Math.sin(simTime * 0.8 + dustSeed[i]) * dt * 0.08;
-      if (dArr[i * 3 + 1] > 8.6) dArr[i * 3 + 1] = 0.4;
+    const sArr = starGeo.attributes.position.array;
+    for (let i = 0; i < starCount; i++) {
+      sArr[i * 3 + 1] += dt * 0.14;
+      sArr[i * 3] += Math.sin(simTime * 0.7 + starSeed[i]) * dt * 0.08;
+      if (sArr[i * 3 + 1] > 8.6) sArr[i * 3 + 1] = 0.5;
     }
-    dustGeo.attributes.position.needsUpdate = true;
+    starGeo.attributes.position.needsUpdate = true;
 
-    // Subtle floating motion for holographic scoreboard
-    holoBoardGroup.position.y = (state.isInXR ? 7.05 : 7.15) + Math.sin(simTime * 1.4) * 0.08;
-    if (xrNextBtnMesh.visible) {
-      xrNextBtnMesh.position.y = 1.45 + Math.sin(simTime * 2.5) * 0.05;
-    }
+    // Animate 5 Tall Cartoon Mystery Boxes
+    for (let i = 0; i < boxes.length; i++) {
+      const b = boxes[i];
+      b.lidAngle += (b.lidTarget - b.lidAngle) * Math.min(1, dt * 8.5);
+      b.lidPivot.rotation.x = -b.lidAngle;
 
-    // Animate all 5 Tall Mystery Boxes & Tall Clickers
-    for (let i = 0; i < pillars.length; i++) {
-      const p = pillars[i];
-
-      // 1. Tall Clicker plunger spring-damper physics
-      const stiffness = 135;
-      const damping = 13;
-      const springForce = -stiffness * p.pressOffset - damping * p.pressVel;
-      p.pressVel += springForce * dt;
-      p.pressOffset += p.pressVel * dt;
-      if (Math.abs(p.pressOffset) < 0.0008 && Math.abs(p.pressVel) < 0.005) {
-        p.pressOffset = 0;
-        p.pressVel = 0;
-      }
-      const clampedPress = Math.max(-0.04, Math.min(0.32, p.pressOffset));
-      p.plungerGroup.position.y = p.plungerRestY - clampedPress;
-
-      // Dynamically compress & stretch the 3D helical spring!
-      const springScaleY = Math.max(0.24, (p.springRestHeight - clampedPress) / p.springRestHeight);
-      p.springMesh.scale.set(1 + clampedPress * 0.25, springScaleY, 1 + clampedPress * 0.25);
-
-      // Cap hover & active glow
-      const capPulse = 0.50 + 0.25 * Math.sin(simTime * 3.0 + i * 1.1);
-      p.capMat.emissiveIntensity = p.wonActive ? 1.4 : p.hovered ? 1.05 : capPulse;
-
-      // 10-segment LED ladder up the tall clicker column
-      for (let k = 0; k < p.ledRings.length; k++) {
-        const lit = k < p.chargeLevel;
-        const wave = 0.55 + 0.45 * Math.sin(simTime * 6.0 - k * 0.65 + i);
-        p.ledRings[k].emissiveIntensity = p.wonActive
-          ? 1.5 * wave
-          : lit
-            ? 0.95 + 0.35 * wave
-            : p.hovered
-              ? 0.26
-              : 0.08;
-      }
-
-      // 2. Tall Mystery Box shake & lid hinge animation
-      if (p.shakeIntensity > 0.001) {
-        p.boxPivot.rotation.z = Math.sin(simTime * 48) * p.shakeIntensity;
-        p.boxPivot.rotation.x = Math.cos(simTime * 42) * p.shakeIntensity * 0.6;
-        p.shakeIntensity = Math.max(0, p.shakeIntensity - dt * 0.24);
+      if (b.shake > 0.001) {
+        b.boxPivot.rotation.z = Math.sin(simTime * 42) * b.shake;
+        b.shake = Math.max(0, b.shake - dt * 0.25);
       } else {
-        p.boxPivot.rotation.z *= 0.85;
-        p.boxPivot.rotation.x *= 0.85;
+        // Subtle playful idle wiggle when hovered
+        const targetRot = b.hovered ? Math.sin(simTime * 8.5) * 0.032 : Math.sin(simTime * 1.4 + i) * 0.008;
+        b.boxPivot.rotation.z += (targetRot - b.boxPivot.rotation.z) * Math.min(1, dt * 10);
       }
 
-      if (!p.wonActive && p.lidPeekTimer > 0) {
-        p.lidPeekTimer -= dt;
-        if (p.lidPeekTimer <= 0) {
-          p.lidTarget = 0;
+      const targetEmissive = b.hovered ? 0.26 : 0.06;
+      b.boxMat.emissiveIntensity += (targetEmissive - b.boxMat.emissiveIntensity) * Math.min(1, dt * 10);
+      b.innerGlowMat.opacity = 0.16 + b.lidAngle * 0.42;
+    }
+
+    // Animate Floating Shiny Silver Foil Package!
+    const pkg = state.activePackage;
+    if (pkg) {
+      pkg.popProgress = Math.min(1, pkg.popProgress + dt * 2.6);
+      const ease = 1 - Math.pow(1 - pkg.popProgress, 3);
+      pkg.group.position.lerpVectors(pkg.startPos, pkg.targetPos, ease);
+      pkg.group.position.y += Math.sin(simTime * 3.2) * 0.08 * ease;
+
+      const targetSc = state.isInXR ? 0.78 : 1.05;
+      const sc = 0.25 + (targetSc - 0.25) * ease;
+      pkg.group.scale.setScalar(sc);
+
+      // Tempting glint rotation so metallic silver foil catches studio light!
+      if (pkg.shake > 0.001) {
+        pkg.group.rotation.z = Math.sin(simTime * 55) * pkg.shake;
+        pkg.shake = Math.max(0, pkg.shake - dt * 0.6);
+      } else {
+        pkg.group.rotation.z = Math.sin(simTime * 2.2) * 0.05;
+      }
+      pkg.group.rotation.y = Math.sin(simTime * 1.55) * 0.24;
+
+      // Top Silver Tear Strip Ripping Animation!
+      if (pkg.ripStage === 1 && !pkg.stripDetached) {
+        // Peels partway open like a real foil blind-bag tear strip!
+        pkg.topStripPivot.rotation.z += (-0.62 - pkg.topStripPivot.rotation.z) * Math.min(1, dt * 11);
+        pkg.topStripPivot.rotation.x += (0.28 - pkg.topStripPivot.rotation.x) * Math.min(1, dt * 11);
+      } else if (pkg.stripDetached) {
+        pkg.topStripPivot.position.addScaledVector(pkg.stripFlyVel, dt);
+        pkg.stripFlyVel.y -= 9.5 * dt;
+        pkg.topStripPivot.rotation.z -= 8.0 * dt;
+        pkg.topStripPivot.rotation.x += 5.5 * dt;
+      }
+
+      if (pkg.dismissTimer > 0) {
+        pkg.dismissTimer -= dt;
+        pkg.bodyMesh.scale.y = Math.max(0.05, pkg.bodyMesh.scale.y - dt * 1.1);
+        if (pkg.dismissTimer <= 0) {
+          const parentBox = boxes[pkg.boxIndex];
+          if (parentBox) parentBox.lidTarget = 0;
+          cleanupActivePackage();
         }
       }
-      p.lidAngle += (p.lidTarget - p.lidAngle) * Math.min(1, dt * 8.5);
-      p.lidPivot.rotation.x = -p.lidAngle;
+    }
 
-      // Emissive '?' glow pulse
-      const isWarmSecret = !state.roundWon && i === state.winningIndex && state.roundClicks >= 2;
-      const boxGlowBase = p.wonActive ? 1.35 : p.hovered ? 0.95 : isWarmSecret ? 0.82 : 0.58;
-      p.boxSideMat.emissiveIntensity = boxGlowBase + Math.sin(simTime * 2.6 + i) * 0.14;
-      p.innerGlowMat.opacity = p.wonActive ? 0.95 : 0.25 + p.lidAngle * 0.5;
+    // Animate Big Newly-Won Cartoonish Keyboard Clicker Key!
+    const ck = state.celebrationKey;
+    if (ck) {
+      ck.age += dt;
+      const curScale = ck.mesh.scale.x;
+      const nextScale = curScale + (ck.targetScale - curScale) * Math.min(1, dt * 8.5);
+      ck.mesh.scale.setScalar(nextScale);
+      ck.mesh.position.y = (state.isInXR ? 1.55 : 2.38) + Math.sin(simTime * 3.0) * 0.09;
+      ck.mesh.rotation.y = Math.sin(simTime * 1.4) * 0.26;
+      stepKeySpringPhysics(ck.mesh, dt);
 
-      // Rotating beacon crystal
-      p.beaconCrystal.rotation.y = simTime * 1.4 + i;
-      p.beaconCrystal.position.y = p.boxHeight + (p.wonActive ? 2.45 : 0.92) + Math.sin(simTime * 2.4 + i) * 0.14;
-
-      // 3. Golden Prize Cow triumph animation when this Tall Mystery Box mooed!
-      if (p.wonActive) {
-        p.cowRise = Math.min(1, p.cowRise + dt * 2.1);
-        const easeOutBack = 1 + 1.4 * Math.pow(p.cowRise - 1, 3) + 0.6 * Math.pow(p.cowRise - 1, 2);
-        p.cowGroup.position.y = p.boxHeight - 0.45 + easeOutBack * 0.95 + Math.sin(simTime * 5.2) * 0.08;
-        p.cowGroup.rotation.y = Math.sin(simTime * 2.4) * 0.28;
-        p.cowGroup.userData.headGroup.rotation.x = Math.sin(simTime * 6.5) * 0.16;
-        p.cowGroup.userData.leftEar.rotation.z = 0.25 + Math.sin(simTime * 11) * 0.22;
-        p.cowGroup.userData.rightEar.rotation.z = -0.25 - Math.sin(simTime * 11) * 0.22;
-        p.cowGroup.userData.halo.rotation.z = simTime * 1.8;
-        p.cowGroup.userData.cowbell.rotation.z = Math.sin(simTime * 12) * 0.35;
-
-        p.beamMat.opacity = 0.24 + 0.10 * Math.sin(simTime * 4.5);
-        p.jackpotBeam.rotation.y = simTime * 0.9;
+      // Automatically glide down onto her foreground clickable shelf after 5.5s (or earlier when opening a new box!)
+      if (ck.age > 5.8) {
+        dockCelebrationKeyToShelf();
       }
     }
 
-    // Energy pulses racing up the pneumatic tubes
-    for (let i = activeEnergyPulses.length - 1; i >= 0; i--) {
-      const ep = activeEnergyPulses[i];
-      ep.t += dt * ep.speed;
-      if (ep.t >= 1) {
-        ep.pillar.unitGroup.remove(ep.mesh);
-        ep.mesh.geometry.dispose();
-        ep.mesh.material.dispose();
-        activeEnergyPulses.splice(i, 1);
+    // Animate All Won Cartoonish Keys Sitting on the Foreground Clickable Shelf!
+    for (let i = 0; i < shelfKeyObjects.length; i++) {
+      const sk = shelfKeyObjects[i];
+      sk.mesh.position.x += (sk.targetX - sk.mesh.position.x) * Math.min(1, dt * 7);
+      sk.mesh.position.y += (0.04 - sk.mesh.position.y) * Math.min(1, dt * 7);
+      sk.mesh.position.z += (0 - sk.mesh.position.z) * Math.min(1, dt * 7);
+      sk.popScale += (0.72 - sk.popScale) * Math.min(1, dt * 7);
+      sk.mesh.scale.setScalar(sk.popScale);
+      stepKeySpringPhysics(sk.mesh, dt);
+    }
+
+    // Animate "MOO! +$1,000!" Comic Speech Burst
+    for (let i = activeSpeechPopups.length - 1; i >= 0; i--) {
+      const sp = activeSpeechPopups[i];
+      sp.age += dt;
+      if (sp.age >= sp.maxAge) {
+        scene.remove(sp.mesh);
+        sp.mesh.geometry.dispose();
+        sp.mat.dispose();
+        activeSpeechPopups.splice(i, 1);
       } else {
-        ep.pillar.tubeCurve.getPointAt(ep.t, ep.mesh.position);
+        const popT = Math.min(1, sp.age * 5.2);
+        const overshoot = 1 + 1.1 * Math.pow(popT - 1, 3) + 0.5 * Math.pow(popT - 1, 2);
+        sp.mesh.scale.setScalar(Math.max(0.01, overshoot));
+        sp.mesh.position.y += dt * 0.35;
+        sp.mesh.lookAt(camera.position);
+        if (sp.age > sp.maxAge - 0.6) {
+          sp.mat.opacity = Math.max(0, (sp.maxAge - sp.age) / 0.6);
+        }
       }
     }
 
-    // Expanding 3D sonic rings
-    for (let i = activeSonicRings.length - 1; i >= 0; i--) {
-      const sr = activeSonicRings[i];
-      sr.age += dt;
-      if (sr.age >= sr.maxAge) {
-        sr.parent.remove(sr.mesh);
-        sr.mesh.geometry.dispose();
-        sr.mat.dispose();
-        activeSonicRings.splice(i, 1);
+    // Animate Playful Decoy Puffs
+    for (let i = activeDecoyPops.length - 1; i >= 0; i--) {
+      const dp = activeDecoyPops[i];
+      dp.age += dt;
+      if (dp.age >= dp.maxAge) {
+        scene.remove(dp.mesh);
+        activeDecoyPops.splice(i, 1);
       } else {
-        const frac = sr.age / sr.maxAge;
-        const sc = 1 + frac * sr.growSpeed;
-        sr.mesh.scale.set(sc, sc, 1);
-        sr.mesh.position.y += dt * sr.riseSpeed;
-        sr.mat.opacity = (1 - frac) * 0.88;
+        const frac = dp.age / dp.maxAge;
+        dp.mesh.position.y = dp.startY + Math.sin(frac * Math.PI) * 1.25;
+        dp.mesh.rotation.y += dt * 5.5;
+        dp.mesh.scale.setScalar(Math.sin(frac * Math.PI));
       }
     }
 
-    // Fluttering 3D $1,000 Dollar Bills
+    // Animate Confetti & Silver Foil Shreds
+    for (let i = activeConfetti.length - 1; i >= 0; i--) {
+      const cf = activeConfetti[i];
+      cf.age += dt;
+      if (cf.age >= cf.maxAge) {
+        scene.remove(cf.mesh);
+        cf.mesh.geometry.dispose();
+        cf.mesh.material.dispose();
+        activeConfetti.splice(i, 1);
+      } else {
+        cf.vel.y -= 5.4 * dt;
+        cf.mesh.position.addScaledVector(cf.vel, dt);
+        cf.mesh.rotation.x += cf.spin.x * dt;
+        cf.mesh.rotation.y += cf.spin.y * dt;
+        cf.mesh.rotation.z += cf.spin.z * dt;
+        const fade = 1 - cf.age / cf.maxAge;
+        cf.mesh.scale.setScalar(Math.max(0.01, fade));
+      }
+    }
+
+    // Animate Fluttering $1,000 Dollar Bills
     for (let i = activeBills.length - 1; i >= 0; i--) {
       const b = activeBills[i];
       b.age += dt;
       if (b.age >= b.maxAge) {
         scene.remove(b.mesh);
         activeBills.splice(i, 1);
-        continue;
-      }
-      b.vel.y -= 2.4 * dt;
-      // Aerodynamic fluttering drag
-      b.vel.x *= 0.985;
-      b.vel.z *= 0.985;
-      if (b.vel.y < -1.1) b.vel.y = -1.1;
-
-      b.mesh.position.x += (b.vel.x + Math.sin(simTime * 4.2 + b.flutterPhase) * 0.45) * dt;
-      b.mesh.position.y += b.vel.y * dt;
-      b.mesh.position.z += (b.vel.z + Math.cos(simTime * 3.6 + b.flutterPhase) * 0.45) * dt;
-
-      if (b.mesh.position.y < 0.04) {
-        b.mesh.position.y = 0.04;
-        b.vel.set(0, 0, 0);
-        b.spin.multiplyScalar(0.8);
       } else {
-        b.mesh.rotation.x += b.spin.x * dt;
-        b.mesh.rotation.y += b.spin.y * dt;
-        b.mesh.rotation.z += b.spin.z * dt;
+        b.vel.y = Math.max(-1.15, b.vel.y - 2.3 * dt);
+        b.vel.x *= 0.985;
+        b.vel.z *= 0.985;
+        b.mesh.position.x += (b.vel.x + Math.sin(simTime * 4.2 + b.phase) * 0.45) * dt;
+        b.mesh.position.y += b.vel.y * dt;
+        b.mesh.position.z += (b.vel.z + Math.cos(simTime * 3.6 + b.phase) * 0.45) * dt;
+        if (b.mesh.position.y < 0.04) {
+          b.mesh.position.y = 0.04;
+          b.vel.set(0, 0, 0);
+          b.spin.multiplyScalar(0.8);
+        } else {
+          b.mesh.rotation.x += b.spin.x * dt;
+          b.mesh.rotation.y += b.spin.y * dt;
+          b.mesh.rotation.z += b.spin.z * dt;
+        }
       }
     }
 
-    // Golden Fireworks
-    for (let i = activeFireworks.length - 1; i >= 0; i--) {
-      const fw = activeFireworks[i];
-      fw.age += dt;
-      if (fw.age >= fw.maxAge) {
-        scene.remove(fw.points);
-        fw.geo.dispose();
-        fw.mat.dispose();
-        activeFireworks.splice(i, 1);
-        continue;
-      }
-      const posAttr = fw.geo.attributes.position;
-      for (let k = 0; k < fw.velocities.length; k++) {
-        const vel = fw.velocities[k];
-        vel.multiplyScalar(0.975);
-        vel.y -= 2.2 * dt;
-        posAttr.setXYZ(
-          k,
-          posAttr.getX(k) + vel.x * dt,
-          posAttr.getY(k) + vel.y * dt,
-          posAttr.getZ(k) + vel.z * dt
-        );
-      }
-      posAttr.needsUpdate = true;
-      fw.mat.opacity = Math.max(0, 1 - fw.age / fw.maxAge);
-    }
-
-    // XR Controller hover laser reticles
+    // XR Controller reticles or Desktop OrbitControls
     if (state.isInXR) {
       for (let i = 0; i < xrControllers.length; i++) {
         const xc = xrControllers[i];

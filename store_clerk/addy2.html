@@ -8,8 +8,11 @@
   <meta name="description" content="Addy's Walmart Store Clerk XR (Meshy 3D Edition) — Walk in from the parking lot at 11:30 AM, restock 10 aisles with Meshy 3D assets, scan items as the checkout clerk, reunite lost kids on the PA mic for $100,000 tips and free food, take an 11:00 PM lunch break, and lock up with your keys at 11:46 AM.">
   <title>Addy's Walmart Shift XR (Meshy 3D) | Calm Chess Games</title>
 
-  <!-- Resource Hints -->
+  <!-- Resource Hints & Module Preloads -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
+  <link rel="modulepreload" href="js/addy2_game.js?v=20261126_meshy_anim_mobile">
 
   <!-- Favicon & Web Icons -->
   <link rel="icon" type="image/x-icon" href="../favicon.ico">
@@ -67,6 +70,7 @@
       width: 100%;
       height: 100%;
       z-index: 1;
+      contain: strict;
     }
 
     #xr-canvas {
@@ -133,6 +137,7 @@
       right: 0;
       z-index: 12;
       pointer-events: none;
+      contain: layout style;
       display: flex;
       align-items: flex-start;
       justify-content: space-between;
@@ -641,6 +646,41 @@
       }
     }
 
+    /* Mobile GPU Compositor Optimization: remove expensive backdrop-filter blur over WebGL canvas */
+    @media (pointer: coarse), (max-width: 900px) {
+      .hud-pill {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      }
+      .hud-pill:not(.hud-pill--clock):not(.hud-pill--tips):not(.hud-pill--xr) {
+        background: rgba(255, 255, 255, 0.95);
+      }
+      .pa-banner {
+        background: rgba(0, 79, 154, 0.96);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: 0 6px 14px rgba(0, 0, 0, 0.3);
+      }
+      .virtual-stick-zone {
+        background: rgba(0, 79, 154, 0.48);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      .virtual-stick-knob {
+        will-change: transform;
+      }
+      .touch-action-btn {
+        background: rgba(0, 113, 206, 0.92);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.32);
+      }
+      .touch-action-btn--secondary {
+        background: rgba(15, 23, 42, 0.82);
+      }
+    }
+
     .sr-only {
       position: absolute;
       width: 1px;
@@ -802,7 +842,7 @@
     </div>
   </dialog>
 
-  <script type="module" src="js/addy2_game.js?v=20261126_meshy_xr"></script>
+  <script type="module" src="js/addy2_game.js?v=20261126_meshy_anim_mobile"></script>
   <script src="../js/analytics.js" defer></script>
 </body>
 </html>

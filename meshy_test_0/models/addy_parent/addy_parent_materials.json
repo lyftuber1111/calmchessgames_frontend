@@ -1,6 +1,7 @@
 {
   "model_name": "addy_parent",
   "model_path": "./meshy_test_0/models/addy_parent/addy_parent.glb",
+  "walk_animation_path": "./meshy_test_0/models/addy_parent/addy_parent_walk.glb",
   "textures_dir": "./meshy_test_0/models/addy_parent/addy_parent_textures",
   "textures": {
     "thumbnail": "./meshy_test_0/models/addy_parent/addy_parent_textures/thumbnail.png",
@@ -9,7 +10,23 @@
     "normal": "./meshy_test_0/models/addy_parent/addy_parent_textures/texture_0_normal.png",
     "roughness": "./meshy_test_0/models/addy_parent/addy_parent_textures/texture_0_roughness.png"
   },
-  "preview_task_id": "01a219e9-6368-71b3-a1e2-947a9670e482",
-  "refine_task_id": "01a219ea-0d71-752e-8cfa-7c77d75f5bfa",
-  "prompt": "Stylized friendly adult parent character wearing a teal casual sweater, dark slate pants, and sneakers, standing upright facing forward with a warm smile, clean Pixar-inspired game character"
+  "rigged": true,
+  "pose_mode": "a-pose",
+  "animations": {
+    "idle": {
+      "action_id": 0,
+      "key": "Idle",
+      "file": "./meshy_test_0/models/addy_parent/addy_parent.glb"
+    },
+    "walk": {
+      "action_id": 613,
+      "key": "Casual_Walk_inplace",
+      "file": "./meshy_test_0/models/addy_parent/addy_parent_walk.glb"
+    }
+  },
+  "preview_task_id": "01a21a01-f733-7257-8ef7-f1e6f4def492",
+  "refine_task_id": "01a21a02-b212-7773-a1dc-eba9fa1ac627",
+  "rig_task_id": "01a21a03-11a0-7742-b100-6188b6d22516",
+  "idle_anim_task_id": "01a21a03-53bb-76f2-8c2f-162c9461755d",
+  "walk_anim_task_id": "01a21a03-550b-71d1-bde6-ed9e267a0179"
 }

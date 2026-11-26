@@ -1,14 +1,11 @@
 /**
- * Calm Chess Games — Addy's Walmart Store Clerk XR (Meshy 3D Edition) Object Pool
+ * Calm Chess Games — Addy's Walmart Store Clerk XR (Meshy 3D + Rigged Animations + Mobile Optimized) Pool
  * Duplicated from addy_pool.js for store_clerk/addy2.html
- *
- * Pre-allocates all Meshy 3D GLB cloned instances after preloadMeshyAssets() completes,
- * sharing GPU geometries & PBR textures so the scene runs with zero runtime GC pauses
- * or shader stalls during restocking, checkout, lost-kid reunions, and VFX!
  */
 
 import * as THREE from 'three';
 import {
+  PERF_PROFILE,
   ITEM_LIST,
   createRestockItem,
   createPersonCharacter,
@@ -20,9 +17,6 @@ import {
 
 const OFFSCREEN_PARK_Y = -1000;
 
-/**
- * Deduplicates deterministic static textures across pooled instances so VRAM stays lean.
- */
 export function deduplicateStaticProceduralTextures(rootObj, categoryKey, sharedTexMap) {
   if (!rootObj || !sharedTexMap || typeof rootObj.traverse !== 'function') return;
   const slots = ['map', 'bumpMap', 'roughnessMap', 'emissiveMap'];
@@ -38,7 +32,6 @@ export function deduplicateStaticProceduralTextures(rootObj, categoryKey, shared
         const slot = slots[s];
         const tex = m[slot];
         if (!tex || !tex.isTexture || !tex.name) continue;
-        // Do not dispose shared GLB template textures
         if (m.userData && m.userData.meshyAsset) continue;
         const key = `${categoryKey}::${tex.name}`;
         if (sharedTexMap.has(key)) {
@@ -61,9 +54,6 @@ export function deduplicateStaticProceduralTextures(rootObj, categoryKey, shared
   }
 }
 
-/**
- * Generic Pre-Allocated Three.js Object Pool
- */
 export class ProceduralMeshPool {
   constructor(scene, poolName, initialSize, factoryFn, sharedTexMap = null) {
     this.scene = scene;
@@ -159,50 +149,47 @@ export class ProceduralMeshPool {
   }
 }
 
-/**
- * WalmartObjectPool — Dedicated Pre-Allocated Meshy 3D Pools for Addy2's Walmart XR
- */
 export class WalmartObjectPool {
   constructor(scene) {
     this.scene = scene;
     this.sharedTextures = new Map();
     this.itemPools = new Map();
 
-    // 1. Pre-allocate 6 dedicated Meshy item pools (14 instances each = 84 ready items!)
+    // 1. Pre-allocate 6 dedicated Meshy item pools (mobile: 7 each = 42, desktop: 14 each = 84)
     for (const itemType of ITEM_LIST) {
       const pool = new ProceduralMeshPool(
         scene,
         `walmart_meshy_item_${itemType}`,
-        14,
+        PERF_PROFILE.poolItemSize,
         (idx) => createRestockItem(itemType, idx),
         this.sharedTextures
       );
       this.itemPools.set(itemType, pool);
     }
 
-    // 2. Pre-allocate Meshy Lost Kid Pool
+    // 2. Pre-allocate Meshy Rigged & Animated Lost Kid Pool
     this.lostKidPool = new ProceduralMeshPool(
       scene,
       'walmart_meshy_lost_kid',
-      3,
+      PERF_PROFILE.isMobile ? 2 : 3,
       (idx) => createPersonCharacter({ isKid: true, name: 'Kid', seed: idx + 1 }),
       this.sharedTextures
     );
 
-    // 3. Pre-allocate Meshy Parent Pool
+    // 3. Pre-allocate Meshy Rigged & Animated Parent Pool
     this.parentPool = new ProceduralMeshPool(
       scene,
       'walmart_meshy_parent',
-      3,
+      PERF_PROFILE.isMobile ? 2 : 3,
       (idx) => createPersonCharacter({ isKid: false, isParent: true, name: 'Parent', seed: idx + 5 }),
       this.sharedTextures
     );
 
-    // 4. Pre-allocate Meshy Checkout Shopper Pool
+    // 4. Pre-allocate Meshy Rigged & Animated Checkout Shopper Pool
     this.shopperPool = new ProceduralMeshPool(
       scene,
       'walmart_meshy_shopper',
-      5,
+      PERF_PROFILE.isMobile ? 3 : 5,
       (idx) => createPersonCharacter({ isKid: false, name: '', seed: idx + 11 }),
       this.sharedTextures
     );
@@ -211,7 +198,7 @@ export class WalmartObjectPool {
     this.freeFoodPool = new ProceduralMeshPool(
       scene,
       'walmart_free_food',
-      3,
+      2,
       () => createFreeFoodTray(),
       this.sharedTextures
     );
@@ -219,26 +206,26 @@ export class WalmartObjectPool {
     this.tipBundlePool = new ProceduralMeshPool(
       scene,
       'walmart_tip_100k',
-      3,
+      2,
       () => createHundredKTipModel(),
       this.sharedTextures
     );
 
-    // 6. Pre-allocate Meshy Filled Blue Walmart Shopping Bags for Checked-out Shoppers
+    // 6. Pre-allocate Meshy Filled Blue Walmart Shopping Bags
     this.shoppingBagPool = new ProceduralMeshPool(
       scene,
       'walmart_shopping_bag',
-      5,
+      PERF_PROFILE.isMobile ? 3 : 5,
       () => createShoppingBagModel(),
       this.sharedTextures
     );
 
-    // 7. Pre-allocate 120 Sparkle / Confetti / Money-Rain Particle Pool
+    // 7. Pre-allocate Sparkle Particle Pool (mobile: 48, desktop: 120)
     this.sharedParticleGeo = new THREE.OctahedronGeometry(0.068, 0);
     this.particlePool = new ProceduralMeshPool(
       scene,
       'walmart_particles',
-      120,
+      PERF_PROFILE.poolParticleSize,
       () => {
         const mat = new THREE.MeshBasicMaterial({ color: 0xffc220, transparent: true, opacity: 1 });
         return new THREE.Mesh(this.sharedParticleGeo, mat);
@@ -265,6 +252,11 @@ export class WalmartObjectPool {
       delete mesh.userData.kind;
       delete mesh.userData.cartEntry;
       delete mesh.userData.checkoutItem;
+      if (mesh.userData.hitProxy) {
+        delete mesh.userData.hitProxy.userData.interactable;
+        delete mesh.userData.hitProxy.userData.kind;
+        delete mesh.userData.hitProxy.userData.cartEntry;
+      }
       pool.despawn(mesh);
     }
   }
@@ -274,6 +266,9 @@ export class WalmartObjectPool {
     if (charObj.modelRoot) {
       charObj.modelRoot.position.y = 0;
       charObj.modelRoot.rotation.set(0, 0, 0);
+    }
+    if (typeof charObj.setAnimState === 'function') {
+      charObj.setAnimState('idle', 1.0);
     }
     charObj.leftLeg.rotation.set(0, 0, 0);
     charObj.rightLeg.rotation.set(0, 0, 0);

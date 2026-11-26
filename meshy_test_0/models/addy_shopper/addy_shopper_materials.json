@@ -1,6 +1,7 @@
 {
   "model_name": "addy_shopper",
   "model_path": "./meshy_test_0/models/addy_shopper/addy_shopper.glb",
+  "walk_animation_path": "./meshy_test_0/models/addy_shopper/addy_shopper_walk.glb",
   "textures_dir": "./meshy_test_0/models/addy_shopper/addy_shopper_textures",
   "textures": {
     "thumbnail": "./meshy_test_0/models/addy_shopper/addy_shopper_textures/thumbnail.png",
@@ -9,7 +10,23 @@
     "normal": "./meshy_test_0/models/addy_shopper/addy_shopper_textures/texture_0_normal.png",
     "roughness": "./meshy_test_0/models/addy_shopper/addy_shopper_textures/texture_0_roughness.png"
   },
-  "preview_task_id": "01a219e9-7aec-77b9-bd80-43e7956205dd",
-  "refine_task_id": "01a219ea-280c-7309-98cc-d4a60a798fe9",
-  "prompt": "Stylized friendly retail shopper character wearing a casual purple jacket over white shirt, blue jeans, and sneakers, standing upright facing forward, clean Pixar-inspired game character"
+  "rigged": true,
+  "pose_mode": "a-pose",
+  "animations": {
+    "idle": {
+      "action_id": 0,
+      "key": "Idle",
+      "file": "./meshy_test_0/models/addy_shopper/addy_shopper.glb"
+    },
+    "walk": {
+      "action_id": 613,
+      "key": "Casual_Walk_inplace",
+      "file": "./meshy_test_0/models/addy_shopper/addy_shopper_walk.glb"
+    }
+  },
+  "preview_task_id": "01a21a0a-1cd6-7363-83c8-0826714a40f5",
+  "refine_task_id": "01a21a0a-c8fc-7308-9908-9a8c29c29c57",
+  "rig_task_id": "01a21a0b-27b6-744c-bd92-d7bd084a982e",
+  "idle_anim_task_id": "01a21a0b-6c9d-727e-a41e-26fc8b2a523e",
+  "walk_anim_task_id": "01a21a0b-6ddd-76f9-abae-4677eb02d3df"
 }

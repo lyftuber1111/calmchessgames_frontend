@@ -10,6 +10,13 @@ export function createAddy2AudioEngine() {
   let compressor = null;
   let noiseBuffer = null;
   let muted = false;
+  let activeVoices = 0;
+
+  const isMobile = typeof window !== 'undefined' && (
+    (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+    /Android|iPhone|iPad|iPod|Mobile/i.test((typeof navigator !== 'undefined' && navigator.userAgent) || '')
+  );
+  const MAX_VOICES = isMobile ? 10 : 18;
 
   if (typeof navigator !== 'undefined' && navigator.audioSession && 'type' in navigator.audioSession) {
     try {
@@ -18,7 +25,7 @@ export function createAddy2AudioEngine() {
   }
 
   function buildNoiseBuffer(audioCtx) {
-    const length = Math.floor(audioCtx.sampleRate * 1.2);
+    const length = Math.floor(audioCtx.sampleRate * (isMobile ? 0.35 : 1.0));
     const buffer = audioCtx.createBuffer(1, length, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < length; i++) {
@@ -78,9 +85,10 @@ export function createAddy2AudioEngine() {
 
   function playTone(freq, duration, type = 'sine', volume = 0.22, delay = 0, freqEnd = null) {
     const audioCtx = ensureContext();
-    if (!audioCtx || muted) return;
+    if (!audioCtx || muted || activeVoices >= MAX_VOICES) return;
     if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
 
+    activeVoices++;
     const now = audioCtx.currentTime + delay;
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -96,15 +104,17 @@ export function createAddy2AudioEngine() {
 
     osc.connect(gain);
     gain.connect(compressor);
+    osc.onended = () => { activeVoices = Math.max(0, activeVoices - 1); };
     osc.start(now);
     osc.stop(now + duration + 0.02);
   }
 
   function playNoiseBurst(duration = 0.06, filterFreq = 1800, filterType = 'bandpass', volume = 0.25, delay = 0) {
     const audioCtx = ensureContext();
-    if (!audioCtx || !noiseBuffer || muted) return;
+    if (!audioCtx || !noiseBuffer || muted || activeVoices >= MAX_VOICES) return;
     if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
 
+    activeVoices++;
     const now = audioCtx.currentTime + delay;
     const src = audioCtx.createBufferSource();
     src.buffer = noiseBuffer;
@@ -122,7 +132,9 @@ export function createAddy2AudioEngine() {
     src.connect(filter);
     filter.connect(gain);
     gain.connect(compressor);
-    src.start(now, Math.random() * 0.5, duration + 0.02);
+    src.onended = () => { activeVoices = Math.max(0, activeVoices - 1); };
+    const maxOffset = Math.max(0, (noiseBuffer.duration || 0.35) - duration - 0.05);
+    src.start(now, Math.random() * maxOffset, duration + 0.02);
   }
 
   let activeSpeechFallbackTimer = null;

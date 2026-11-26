@@ -1,6 +1,7 @@
 {
   "model_name": "addy_lost_kid",
   "model_path": "./meshy_test_0/models/addy_lost_kid/addy_lost_kid.glb",
+  "walk_animation_path": "./meshy_test_0/models/addy_lost_kid/addy_lost_kid_walk.glb",
   "textures_dir": "./meshy_test_0/models/addy_lost_kid/addy_lost_kid_textures",
   "textures": {
     "thumbnail": "./meshy_test_0/models/addy_lost_kid/addy_lost_kid_textures/thumbnail.png",
@@ -9,7 +10,23 @@
     "normal": "./meshy_test_0/models/addy_lost_kid/addy_lost_kid_textures/texture_0_normal.png",
     "roughness": "./meshy_test_0/models/addy_lost_kid/addy_lost_kid_textures/texture_0_roughness.png"
   },
-  "preview_task_id": "01a219e9-62c4-7241-bad4-ae3d3fa64d94",
-  "refine_task_id": "01a219e9-fc39-77c5-909c-34b839072ab9",
-  "prompt": "Stylized friendly cartoon young child character wearing a bright red t-shirt, blue jeans, and white sneakers, standing upright facing forward in a relaxed friendly pose, clean Pixar-inspired game character"
+  "rigged": true,
+  "pose_mode": "a-pose",
+  "animations": {
+    "idle": {
+      "action_id": 0,
+      "key": "Idle",
+      "file": "./meshy_test_0/models/addy_lost_kid/addy_lost_kid.glb"
+    },
+    "walk": {
+      "action_id": 613,
+      "key": "Casual_Walk_inplace",
+      "file": "./meshy_test_0/models/addy_lost_kid/addy_lost_kid_walk.glb"
+    }
+  },
+  "preview_task_id": "01a21a01-f729-718a-8951-c73a826e6617",
+  "refine_task_id": "01a21a02-9340-745e-a56a-1bf687fa7d71",
+  "rig_task_id": "01a21a02-f40a-7052-a059-2d1cf73c5700",
+  "idle_anim_task_id": "01a21a03-35e4-7022-8822-8cbce62cf9fd",
+  "walk_anim_task_id": "01a21a03-375b-774e-9697-a21297057bf1"
 }

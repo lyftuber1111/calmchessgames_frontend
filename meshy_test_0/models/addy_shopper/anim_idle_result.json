@@ -1,0 +1,20 @@
+{
+  "id": "01a21a0b-6c9d-727e-a41e-26fc8b2a523e",
+  "type": "animate",
+  "name": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795733286206,
+  "progress": 100,
+  "started_at": 1795733286216,
+  "finished_at": 1795733298296,
+  "expires_at": 1795992498296,
+  "task_error": null,
+  "result": {
+    "animation_glb_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a0b-6c9d-727e-a41e-26fc8b2a523e/output/Animation_Idle_withSkin.glb?Expires=1795992498&Signature=O1wsZ0c80nE0FUT1ExHSWgumxhy0~vdVRJwOobav8wZOWD9aF7K1B-AAA34blZgxRdJrPmCs4H5cHIccL-w3ks3RMMRONuCtFvwZOe0ElhlGc4QRoisNXf0ZErOEobmeuAmMkQG~D0rukV04VOV~-vzvc7izynnuEv1WM2qBfaxSAH3KbcNl5AW~oL-f~bLK742B03MD7exw8J0V0gZmXFno5Lu4e-O75UnrKXOtcJ8UGDTgV7Sl4yrRp2gwRayUeODPAyfLAKUe8AFl2v9GcOWTePGJYkqm1gf4Fj4sCd6ipuhx58iLQkA-UNMVpkTOQ4wms3-VgT~uDNPUc4TpZg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "animation_fbx_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a0b-6c9d-727e-a41e-26fc8b2a523e/output/Animation_Idle_withSkin.fbx?Expires=1795992498&Signature=T4FBMDU5VfFQDXMYtE91BXWTcf3CaPfG1I2iuqGwUQ2U6Xl66Fk7nFrDB2l3vXjXVr676S9LW1qJPdzkDuQdenlKTe1aDqFGM6YwRjIE-NCTAv3v1itkZVb7rypIqLggtxI6vHAtOZB135ykfleooPUSKir5jtE5s22OMiwtGbJwzfSg~qiuRkxdnYSZxpKH0vfxpoGc4R2s-tbcYHgH4HD~CYDoW7-0olRdaiiU6MPY6FbD3gRMJAq~wBB~zNBKdoZNFZCWWC3cdWuEU~TXBt9JpPpF0UTvkRz5HkTW~0lB6o4YqIudNmgxPss0K8NOsRYYwbd4KqaK4co7EM-AnQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "processed_usdz_url": "",
+    "processed_armature_fbx_url": "",
+    "processed_animation_fps_fbx_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a21a0b-6c9d-727e-a41e-26fc8b2a523e/output/processed_30fps.fbx?Expires=1795992498&Signature=Pw4UbUGskLdKg~4ytKLtA1c7lw9ESmP2LA6AZsHgUTbkoklphyZ8DRC4GdcZjOCqsSks0zGhQudR~xJspzU8XzXGKesXO9vsmKO1KO-Ekg6IWmpG17kDZGO9DN1-pisri2Fkmg4XCwEsFmP5w2VjQDhJFnG44HnHyn7VpDX2hoxjEeG1sMMoBhfDXquD4H25ob-ucLAsbYnkApTi1aVOKyOqJ551ZtF3lhyb8j5XI9hppFD3uJHfSJAvYYRhPKS9PlVa6b2Ys5gxyzFOrS3Jdb1R3Ti-uTBB-qHG4FeTmGOo~841oEvt8zfv3PPVpN0EZnB0DtqYoJhqXihBEI8jFg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "consumed_credits": 3
+}

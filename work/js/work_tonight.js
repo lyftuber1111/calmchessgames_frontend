@@ -45,7 +45,69 @@ import {
   const summaryKidsEl = document.getElementById('summary-kids');
   const btnPlayAgain = document.getElementById('btn-play-again');
 
+  // Mobile Touch Control Elements (Lower-Left Move + Upper-Right Look/Tap + Lower-Right Actions)
+  const mobileTouchControlsEl = document.getElementById('mobile-touch-controls');
+  const touchMoveZone = document.getElementById('touch-move-zone');
+  const touchMoveKnob = document.getElementById('touch-move-knob');
+  const touchLookZone = document.getElementById('touch-look-zone');
+  const touchLookKnob = document.getElementById('touch-look-knob');
+  const touchBtnInteract = document.getElementById('touch-btn-interact');
+  const touchBtnSquish = document.getElementById('touch-btn-squish');
+  const touchBtnTurn180 = document.getElementById('touch-btn-turn180');
+
   const audio = createWorkAudioEngine();
+
+  // ---------------------------------------------------------------------------
+  // Mobile Device Detection (wormhole0-style UA + pointer/hover + touch checks)
+  // ---------------------------------------------------------------------------
+  let hasTouchInteraction = false;
+
+  function isVrHeadsetUA() {
+    const ua = navigator.userAgent || '';
+    return /Quest|Oculus|Vision|Pico|Vive|Wolvic/i.test(ua);
+  }
+
+  function detectMobileInUse() {
+    if (state.isInXR || isVrHeadsetUA()) return false;
+
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('mobile') === '1') return true;
+      if (params.get('mobile') === '0') return false;
+    } catch (_) {}
+
+    const ua = navigator.userAgent || '';
+    const isMobileUA =
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobi/i.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+      Boolean(navigator.userAgentData && navigator.userAgentData.mobile);
+
+    if (isMobileUA) return true;
+
+    const hasCoarsePointer = Boolean(
+      window.matchMedia && window.matchMedia('(pointer: coarse), (hover: none)').matches
+    );
+    if (hasCoarsePointer) return true;
+
+    const hasTouchPoints = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+    if (hasTouchPoints && (hasTouchInteraction || Math.min(window.innerWidth, window.innerHeight) <= 1024)) {
+      return true;
+    }
+
+    return hasTouchInteraction;
+  }
+
+  function updateMobileTouchVisibility() {
+    const isMobile = detectMobileInUse();
+    state.isMobile = isMobile;
+    document.body.classList.toggle('show-touch-controls', isMobile);
+    document.body.classList.toggle('is-mobile-device', isMobile);
+    document.body.classList.toggle('hide-touch-controls', !isMobile);
+    if (!isMobile) {
+      resetTouchControls();
+    }
+    return isMobile;
+  }
 
   // ---------------------------------------------------------------------------
   // Shift State & Timeline Constants
@@ -79,6 +141,10 @@ import {
     xrMode: null,
     vrSupported: false,
     arSupported: false,
+    isMobile: false,
+    touchMove: { x: 0, y: 0 },
+    touchLook: { x: 0, y: 0 },
+    quickTurnRemaining: 0,
     moveTarget: null,      // Click-to-walk floor target (desktop/touch convenience)
     footstepAccum: 0,
     celebrationFireworks: 0
@@ -592,6 +658,7 @@ import {
 
     if (summaryStockedEl) summaryStockedEl.textContent = String(state.stockedCount);
     if (summaryKidsEl) summaryKidsEl.textContent = String(state.kidsReunited);
+    resetTouchControls();
 
     if (shiftDialog && !shiftDialog.open) {
       if (state.isInXR && renderer.xr.getSession()) {
@@ -643,6 +710,8 @@ import {
     state.nextKidShiftMin = 11;
     state.doorOpenAmount = 0;
     state.moveTarget = null;
+    state.quickTurnRemaining = 0;
+    resetTouchControls();
 
     playerRig.position.set(0, 0, 3.6);
     lookYaw = 0;
@@ -943,8 +1012,8 @@ import {
     keysPressed.delete(e.code);
   });
 
-  // Smooth Pointer Drag-to-Look + Tap/Click-to-Interact (No forced pointer lock needed!)
-  let pointerDown = false;
+  // Smooth Pointer Drag-to-Look + Tap/Click-to-Interact (Multi-touch safe!)
+  let activeCanvasPointerId = null;
   let pointerDragged = false;
   let downX = 0;
   let downY = 0;
@@ -953,15 +1022,20 @@ import {
 
   canvas.addEventListener('pointerdown', (e) => {
     audio.unlock();
-    pointerDown = true;
+    if (e.pointerType === 'touch' && !hasTouchInteraction && !isVrHeadsetUA()) {
+      hasTouchInteraction = true;
+      updateMobileTouchVisibility();
+    }
+    if (activeCanvasPointerId !== null) return;
+    activeCanvasPointerId = e.pointerId;
     pointerDragged = false;
     downX = lastX = e.clientX;
     downY = lastY = e.clientY;
-    canvas.setPointerCapture(e.pointerId);
+    try { canvas.setPointerCapture(e.pointerId); } catch (_) {}
   });
 
   canvas.addEventListener('pointermove', (e) => {
-    if (!pointerDown || state.isInXR) return;
+    if (e.pointerId !== activeCanvasPointerId || state.isInXR) return;
     const dx = e.clientX - lastX;
     const dy = e.clientY - lastY;
     lastX = e.clientX;
@@ -970,18 +1044,19 @@ import {
     if (Math.hypot(e.clientX - downX, e.clientY - downY) > 7) {
       pointerDragged = true;
       state.moveTarget = null;
+      state.quickTurnRemaining = 0;
     }
 
     lookYaw -= dx * 0.0042;
     lookPitch = Math.max(-0.95, Math.min(0.85, lookPitch - dy * 0.0036));
   });
 
-  canvas.addEventListener('pointerup', (e) => {
-    if (!pointerDown) return;
-    pointerDown = false;
+  function endCanvasPointer(e, isCancel) {
+    if (e.pointerId !== activeCanvasPointerId) return;
+    activeCanvasPointerId = null;
     try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
 
-    if (!pointerDragged && !state.isInXR) {
+    if (!isCancel && !pointerDragged && !state.isInXR) {
       // Cast ray from exact tapped/clicked screen coordinate!
       const rect = canvas.getBoundingClientRect();
       const ndc = new THREE.Vector2(
@@ -991,7 +1066,262 @@ import {
       raycaster.setFromCamera(ndc, camera);
       performPrimaryInteraction(raycaster.ray.clone(), true);
     }
+  }
+
+  canvas.addEventListener('pointerup', (e) => endCanvasPointer(e, false));
+  canvas.addEventListener('pointercancel', (e) => endCanvasPointer(e, true));
+
+  // ---------------------------------------------------------------------------
+  // Mobile Virtual Touch Joysticks (Wormhole0-style: Lower-Left Move + Upper-Right Look/Tap)
+  // ---------------------------------------------------------------------------
+  let moveStickPointerId = null;
+  let moveStickCenter = { x: 0, y: 0 };
+  let moveStickMaxRadius = 36;
+
+  let lookStickPointerId = null;
+  let lookStickCenter = { x: 0, y: 0 };
+  let lookStickMaxRadius = 36;
+  let lookStickStartX = 0;
+  let lookStickStartY = 0;
+  let lookStickStartTime = 0;
+  let lookStickMoved = false;
+  let lookTapFlashTimer = null;
+
+  function resetTouchControls() {
+    moveStickPointerId = null;
+    lookStickPointerId = null;
+    if (state) {
+      state.touchMove.x = 0;
+      state.touchMove.y = 0;
+      state.touchLook.x = 0;
+      state.touchLook.y = 0;
+    }
+    if (touchMoveKnob) touchMoveKnob.style.transform = 'translate(0px, 0px)';
+    if (touchLookKnob) touchLookKnob.style.transform = 'translate(0px, 0px)';
+    if (touchMoveZone) touchMoveZone.classList.remove('is-active');
+    if (touchLookZone) touchLookZone.classList.remove('is-active');
+  }
+
+  function updateMoveStick(clientX, clientY) {
+    const dx = clientX - moveStickCenter.x;
+    const dy = clientY - moveStickCenter.y;
+    const dist = Math.hypot(dx, dy);
+    const angle = Math.atan2(dy, dx);
+    const clampedDist = Math.min(dist, moveStickMaxRadius);
+    const knobX = Math.cos(angle) * clampedDist;
+    const knobY = Math.sin(angle) * clampedDist;
+
+    if (touchMoveKnob) {
+      touchMoveKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+    }
+
+    const deadzonePx = moveStickMaxRadius * 0.14;
+    if (clampedDist < deadzonePx) {
+      state.touchMove.x = 0;
+      state.touchMove.y = 0;
+    } else {
+      const normMag = (clampedDist - deadzonePx) / (moveStickMaxRadius - deadzonePx);
+      state.touchMove.x = Math.cos(angle) * normMag;
+      state.touchMove.y = Math.sin(angle) * normMag;
+      state.moveTarget = null;
+    }
+  }
+
+  function updateLookStick(clientX, clientY) {
+    const dx = clientX - lookStickCenter.x;
+    const dy = clientY - lookStickCenter.y;
+    const dist = Math.hypot(dx, dy);
+    const angle = Math.atan2(dy, dx);
+    const clampedDist = Math.min(dist, lookStickMaxRadius);
+    const knobX = Math.cos(angle) * clampedDist;
+    const knobY = Math.sin(angle) * clampedDist;
+
+    if (touchLookKnob) {
+      touchLookKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+    }
+
+    if (Math.hypot(clientX - lookStickStartX, clientY - lookStickStartY) > 14) {
+      lookStickMoved = true;
+    }
+
+    const deadzonePx = lookStickMaxRadius * 0.16;
+    if (clampedDist < deadzonePx) {
+      state.touchLook.x = 0;
+      state.touchLook.y = 0;
+    } else {
+      const normMag = (clampedDist - deadzonePx) / (lookStickMaxRadius - deadzonePx);
+      state.touchLook.x = Math.cos(angle) * normMag;
+      state.touchLook.y = Math.sin(angle) * normMag;
+      state.quickTurnRemaining = 0;
+    }
+  }
+
+  function flashLookStickTap() {
+    if (!touchLookZone) return;
+    touchLookZone.classList.add('tap-flash');
+    if (lookTapFlashTimer) clearTimeout(lookTapFlashTimer);
+    lookTapFlashTimer = setTimeout(() => {
+      touchLookZone.classList.remove('tap-flash');
+    }, 180);
+  }
+
+  if (touchMoveZone) {
+    touchMoveZone.addEventListener('contextmenu', (e) => e.preventDefault());
+    touchMoveZone.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      audio.unlock();
+      if (moveStickPointerId !== null) return;
+      const rect = touchMoveZone.getBoundingClientRect();
+      moveStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      moveStickMaxRadius = Math.max(26, rect.width * 0.34);
+      moveStickPointerId = e.pointerId;
+      touchMoveZone.classList.add('is-active');
+      try { touchMoveZone.setPointerCapture(e.pointerId); } catch (_) {}
+      updateMoveStick(e.clientX, e.clientY);
+    });
+
+    touchMoveZone.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== moveStickPointerId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      updateMoveStick(e.clientX, e.clientY);
+    });
+
+    const releaseMoveStick = (e) => {
+      if (e.pointerId !== moveStickPointerId) return;
+      e.stopPropagation();
+      moveStickPointerId = null;
+      state.touchMove.x = 0;
+      state.touchMove.y = 0;
+      touchMoveZone.classList.remove('is-active');
+      if (touchMoveKnob) touchMoveKnob.style.transform = 'translate(0px, 0px)';
+      try { touchMoveZone.releasePointerCapture(e.pointerId); } catch (_) {}
+    };
+
+    touchMoveZone.addEventListener('pointerup', releaseMoveStick);
+    touchMoveZone.addEventListener('pointercancel', releaseMoveStick);
+  }
+
+  if (touchLookZone) {
+    touchLookZone.addEventListener('contextmenu', (e) => e.preventDefault());
+    touchLookZone.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      audio.unlock();
+      if (lookStickPointerId !== null) return;
+      const rect = touchLookZone.getBoundingClientRect();
+      lookStickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+      lookStickMaxRadius = Math.max(26, rect.width * 0.34);
+      lookStickPointerId = e.pointerId;
+      lookStickStartX = e.clientX;
+      lookStickStartY = e.clientY;
+      lookStickStartTime = performance.now();
+      lookStickMoved = false;
+      touchLookZone.classList.add('is-active');
+      try { touchLookZone.setPointerCapture(e.pointerId); } catch (_) {}
+      updateLookStick(e.clientX, e.clientY);
+    });
+
+    touchLookZone.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== lookStickPointerId) return;
+      e.preventDefault();
+      e.stopPropagation();
+      updateLookStick(e.clientX, e.clientY);
+    });
+
+    const releaseLookStick = (e, isCancel) => {
+      if (e.pointerId !== lookStickPointerId) return;
+      e.stopPropagation();
+      const duration = performance.now() - lookStickStartTime;
+      const dragDelta = Math.hypot(e.clientX - lookStickStartX, e.clientY - lookStickStartY);
+      const wasQuickTap = !isCancel && !lookStickMoved && duration < 360 && dragDelta < 24;
+
+      lookStickPointerId = null;
+      state.touchLook.x = 0;
+      state.touchLook.y = 0;
+      touchLookZone.classList.remove('is-active');
+      if (touchLookKnob) touchLookKnob.style.transform = 'translate(0px, 0px)';
+      try { touchLookZone.releasePointerCapture(e.pointerId); } catch (_) {}
+
+      // Quick tap on upper-right joystick performs primary interact (just like wormhole0 tap-to-fire!)
+      if (wasQuickTap) {
+        flashLookStickTap();
+        performPrimaryInteraction(null, false);
+      }
+    };
+
+    touchLookZone.addEventListener('pointerup', (e) => releaseLookStick(e, false));
+    touchLookZone.addEventListener('pointercancel', (e) => releaseLookStick(e, true));
+  }
+
+  function bindTouchActionButton(btn, onPress) {
+    if (!btn) return;
+    let lastTriggerAt = 0;
+    const trigger = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const now = performance.now();
+      if (now - lastTriggerAt < 120) return;
+      lastTriggerAt = now;
+      audio.unlock();
+      btn.classList.add('is-pressed');
+      setTimeout(() => btn.classList.remove('is-pressed'), 140);
+      onPress();
+    };
+    btn.addEventListener('pointerdown', trigger);
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (performance.now() - lastTriggerAt > 250) trigger(e);
+    });
+  }
+
+  bindTouchActionButton(touchBtnInteract, () => {
+    performPrimaryInteraction(null, false);
   });
+
+  bindTouchActionButton(touchBtnSquish, () => {
+    if (state.heldItem) {
+      playWithHeldItem();
+    }
+  });
+
+  bindTouchActionButton(touchBtnTurn180, () => {
+    if (state.isInXR) {
+      playerRig.rotation.y += Math.PI;
+    } else {
+      state.quickTurnRemaining += Math.PI;
+    }
+  });
+
+  // Dynamic Mobile Detection Listeners (also reacts to Chrome DevTools device emulation & touch)
+  window.addEventListener('pointerdown', (e) => {
+    if (e.pointerType === 'touch' && !hasTouchInteraction && !isVrHeadsetUA()) {
+      hasTouchInteraction = true;
+      updateMobileTouchVisibility();
+    }
+  }, { passive: true });
+
+  if (window.matchMedia) {
+    const mobileMQ = window.matchMedia('(pointer: coarse), (hover: none)');
+    const onMQChange = () => updateMobileTouchVisibility();
+    if (typeof mobileMQ.addEventListener === 'function') {
+      mobileMQ.addEventListener('change', onMQChange);
+    } else if (typeof mobileMQ.addListener === 'function') {
+      mobileMQ.addListener(onMQChange);
+    }
+  }
+
+  window.addEventListener('orientationchange', () => {
+    resetTouchControls();
+    setTimeout(updateMobileTouchVisibility, 120);
+  });
+  window.addEventListener('blur', resetTouchControls);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) resetTouchControls();
+  });
+
+  updateMobileTouchVisibility();
 
   function clampPlayerPosition() {
     const maxZ = state.phase === 'clock_out_ready' ? 10.2 : 8.5;
@@ -1102,6 +1432,8 @@ import {
       });
       state.isInXR = true;
       state.xrMode = mode;
+      document.body.classList.add('in-xr-session');
+      resetTouchControls();
       if (mode === 'immersive-ar') {
         scene.background = null;
         scene.fog = null;
@@ -1109,6 +1441,8 @@ import {
       session.addEventListener('end', () => {
         state.isInXR = false;
         state.xrMode = null;
+        document.body.classList.remove('in-xr-session');
+        updateMobileTouchVisibility();
         scene.background = new THREE.Color(0x0b1022);
         scene.fog = new THREE.FogExp2(0x161c2e, 0.014);
         if (state.heldItem) {
@@ -1149,6 +1483,7 @@ import {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight, false);
+    updateMobileTouchVisibility();
   });
 
   // ---------------------------------------------------------------------------
@@ -1167,6 +1502,23 @@ import {
     if (keysPressed.has('KeyS') || keysPressed.has('ArrowDown')) moveZ += 1;
     if (keysPressed.has('KeyA') || keysPressed.has('ArrowLeft')) moveX -= 1;
     if (keysPressed.has('KeyD') || keysPressed.has('ArrowRight')) moveX += 1;
+
+    // Mobile Virtual Touch Joysticks (Lower-Left Move + Upper-Right Look)
+    if (!state.isInXR) {
+      moveX += state.touchMove.x;
+      moveZ += state.touchMove.y;
+
+      if (Math.abs(state.touchLook.x) > 0.001 || Math.abs(state.touchLook.y) > 0.001) {
+        lookYaw -= state.touchLook.x * 2.15 * dt;
+        lookPitch = Math.max(-0.95, Math.min(0.85, lookPitch - state.touchLook.y * 1.45 * dt));
+      }
+
+      if (state.quickTurnRemaining > 0.001) {
+        const turnStep = Math.min(state.quickTurnRemaining, Math.PI * 3.2 * dt);
+        lookYaw += turnStep;
+        state.quickTurnRemaining -= turnStep;
+      }
+    }
 
     // Xbox Gamepad Polling!
     const pad = getActiveGamepad();
@@ -1595,6 +1947,12 @@ import {
         }
       }
       reticleEl.classList.toggle('is-active', isTarget);
+      if (touchBtnInteract) {
+        touchBtnInteract.classList.toggle('is-ready', isTarget);
+      }
+    }
+    if (touchBtnSquish) {
+      touchBtnSquish.hidden = !state.heldItem;
     }
   }
 

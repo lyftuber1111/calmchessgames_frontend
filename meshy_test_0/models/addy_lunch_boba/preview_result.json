@@ -1,0 +1,49 @@
+{
+  "id": "01a219eb-0efe-74c3-8190-3573bc2b9b2b",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 4218242038,
+  "prompt": "Cute pink strawberry boba milk tea cup with dark tapioca pearls at the bottom, clear dome lid, and wide black boba straw, stylized 3D drink prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731167202,
+  "progress": 100,
+  "started_at": 1795731167212,
+  "finished_at": 1795731198933,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/model.glb?Expires=4949251200&Signature=e8eRiwO6ccURFse82gI56mRfL3Gvj6MaTmq0O417wnNZUgJ4jFy0hRuAAMaQKWD9qE68eZ85sJ1I9ff2bzws1uAIj~k-4wzutNXARXuj~zJr4ka3ZEHEpdRojeYkpbkMJj1lKV2DTuFQdUBlszPJ1U4nbfblr7peaQC2sHt4gERrTBZpD8LmyerRrJZKIb1RqZZBuagvi1o0R-gxYi4ejLaX5RVt~NTMwrLgknNoyC6QORtz62JwU3YIciQWEbwVYF-LJQRP2hFT9Vvid9kQzvY~pZEYVAj1NYmF4RSevGt0fGqxzQ3RSXCl8Kj-r04vD-fdnmbAJxlM54D15O9jMQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/model.fbx?Expires=4949251200&Signature=j-K7nUXvBDsHCPKKOaZHyFWOmCzjUXqmC9wvDKniumwSGuqLhgreahFx106nqLxHU-KqYZmAJ4JnbuaVJ4ckfq4tti1xuUbyvxFFq5ZjlcpCqgiulx18QdH0KRe5ApC9VnXOONAJYLkC3VRHVABjUXi2ytBCOJ8DyQFAT5w-b-sbVEwYFTrTkB5jy-QhrvCMNE-4SYuwcbABPWNnDyNnAmsYEqIb8RxDV6oiShbdTRNV7j5hP9gb4~n--t7PDndZTT2bK0A3XnIdACWxXi3ZsVq4tILMauA8e0EWqx5UhA1oDXjnYolGZWz5tYN7ibjmuVyU5EF-C-L1JTBggsWe1Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/model.usdz?Expires=4949251200&Signature=Umd1lZDewQiPnOQdllNLrprMEcZjKu0rstR7ebEPBJId3DXFPM64p3nlRBUYHBoDER0nOu98AsTB8APE8VZEtTTdnAZK50kvs5zuIPz~7H37TnH0nFPyBeosdidpO0DKfIERHBSCFsiHT6SsAhP4imAmTWAkqgNvPD89s2nWEm7jm4o~XgOlboO7qyMGGBZemDER03pHqmSIQXG2M7tt~5jwsypdYP96T3ZR6eCZ~AKrKIiUGviJzR~ifGWyBSF3EYg2WA1niDcwQGhU-b~U9w1P-gq8gGvRULh4jX4wTXw13SXnkYxQVCi58d-5qei2H5PCXATIkuWLIh7XcDzswQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/model.obj?Expires=4949251200&Signature=goadxnK6tFqEnVrIFYeRKoL~6xbFQfFKdnobHYGEUCAjHR7vtjvp7ozuzEwARiqgE2XWaQ0RFKp3soAeXrjppUHNJCDTQmrznKHtAZ6W9fg0uG-Vi7FM~tGcGXakPqFZGM-EHO1hB-eS3Bn3ESN40t9p-cErH6GVSTGbSAAxkmn3AxjlZnnM0qXgWiMVo3zriu7Xkcack7LOXq-Aa94cfmzK6R8fhYJKnefXLr3ynaADq6R9vR8OM29KPwJa87aIVDsyDlml8~rAg-tf78m-nsu9jBmbF1~kOIegNXtLW1c~8DHbTWa2WRBkTyWQf1GyHb82oBjGOZplpohwmJgeQg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/model.stl?Expires=4949251200&Signature=GA9Noq3PAT563TgfNQc85UooUdX6Hd5qc6cy18YND3bNZ8sKUSPbViHMBcfxO685YJ3ZL3uE9VRhqYMxxem9TcUzT~sJHQIBAlXy2wHxqj8GrYcEm7Lu5pcEiBFG-LDnhUCg7CTbSM1u5L3VxP1B8WXepZXMxzXX2Uut1sFKIwiVykLwd9w53n31x7mJY31KJOlbLnkmLbU6PMaMgumfmIXHXH1CsMLoLRgOVxv47SJCz8clHItVeh4tgWxMkzdIHAea3h9QvKOMxq47REmG~tDoU6TYzk4mBh1VwkiRVXhBipFLvm-rx7Xh-BMEc92F7fIJgVUz0tOuUdVvLstLnA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/preview.png?Expires=4949251200&Signature=G5BeMeOibl0ziFoyS8oQeIt7K~Y8-vzkdIE~nvOnFF6UMA350XfY5S6t81iAFJFhwPMi7fN9pmFA3KNs9btIcZstSQas-wU7kT03j-O1qdHU1KNf9qm5f6xsZGtHZowemq9Mq1JDvwi8LRG1qUH00Un4sEvhkZvjf0OI9o5LzZIKgaqR2TPNYgEriob-NL3y0kKt0asAMwCHQ9NIhWENL3vUaP~W4MzWYoD88Q5c9ERFI3V5n3CduMbu4op~esV28feliyAEIF1kgxZ4nwLVsSKP88smsrtbBFw38Aa5XAoDoPT07JMMsfiQbEBBjmqdXEN1uqUFvvZJ0l40FBVTTg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Cute pink strawberry boba milk tea cup with dark tapioca pearls at the bottom, clear dome lid, and wide black boba straw, stylized 3D drink prop",
+    "should_remesh": true,
+    "target_polycount": 5000,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 4218242038,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/model.fbx?Expires=4949251200&Signature=j-K7nUXvBDsHCPKKOaZHyFWOmCzjUXqmC9wvDKniumwSGuqLhgreahFx106nqLxHU-KqYZmAJ4JnbuaVJ4ckfq4tti1xuUbyvxFFq5ZjlcpCqgiulx18QdH0KRe5ApC9VnXOONAJYLkC3VRHVABjUXi2ytBCOJ8DyQFAT5w-b-sbVEwYFTrTkB5jy-QhrvCMNE-4SYuwcbABPWNnDyNnAmsYEqIb8RxDV6oiShbdTRNV7j5hP9gb4~n--t7PDndZTT2bK0A3XnIdACWxXi3ZsVq4tILMauA8e0EWqx5UhA1oDXjnYolGZWz5tYN7ibjmuVyU5EF-C-L1JTBggsWe1Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/model.glb?Expires=4949251200&Signature=e8eRiwO6ccURFse82gI56mRfL3Gvj6MaTmq0O417wnNZUgJ4jFy0hRuAAMaQKWD9qE68eZ85sJ1I9ff2bzws1uAIj~k-4wzutNXARXuj~zJr4ka3ZEHEpdRojeYkpbkMJj1lKV2DTuFQdUBlszPJ1U4nbfblr7peaQC2sHt4gERrTBZpD8LmyerRrJZKIb1RqZZBuagvi1o0R-gxYi4ejLaX5RVt~NTMwrLgknNoyC6QORtz62JwU3YIciQWEbwVYF-LJQRP2hFT9Vvid9kQzvY~pZEYVAj1NYmF4RSevGt0fGqxzQ3RSXCl8Kj-r04vD-fdnmbAJxlM54D15O9jMQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/model.obj?Expires=4949251200&Signature=goadxnK6tFqEnVrIFYeRKoL~6xbFQfFKdnobHYGEUCAjHR7vtjvp7ozuzEwARiqgE2XWaQ0RFKp3soAeXrjppUHNJCDTQmrznKHtAZ6W9fg0uG-Vi7FM~tGcGXakPqFZGM-EHO1hB-eS3Bn3ESN40t9p-cErH6GVSTGbSAAxkmn3AxjlZnnM0qXgWiMVo3zriu7Xkcack7LOXq-Aa94cfmzK6R8fhYJKnefXLr3ynaADq6R9vR8OM29KPwJa87aIVDsyDlml8~rAg-tf78m-nsu9jBmbF1~kOIegNXtLW1c~8DHbTWa2WRBkTyWQf1GyHb82oBjGOZplpohwmJgeQg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/model.stl?Expires=4949251200&Signature=GA9Noq3PAT563TgfNQc85UooUdX6Hd5qc6cy18YND3bNZ8sKUSPbViHMBcfxO685YJ3ZL3uE9VRhqYMxxem9TcUzT~sJHQIBAlXy2wHxqj8GrYcEm7Lu5pcEiBFG-LDnhUCg7CTbSM1u5L3VxP1B8WXepZXMxzXX2Uut1sFKIwiVykLwd9w53n31x7mJY31KJOlbLnkmLbU6PMaMgumfmIXHXH1CsMLoLRgOVxv47SJCz8clHItVeh4tgWxMkzdIHAea3h9QvKOMxq47REmG~tDoU6TYzk4mBh1VwkiRVXhBipFLvm-rx7Xh-BMEc92F7fIJgVUz0tOuUdVvLstLnA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/model.usdz?Expires=4949251200&Signature=Umd1lZDewQiPnOQdllNLrprMEcZjKu0rstR7ebEPBJId3DXFPM64p3nlRBUYHBoDER0nOu98AsTB8APE8VZEtTTdnAZK50kvs5zuIPz~7H37TnH0nFPyBeosdidpO0DKfIERHBSCFsiHT6SsAhP4imAmTWAkqgNvPD89s2nWEm7jm4o~XgOlboO7qyMGGBZemDER03pHqmSIQXG2M7tt~5jwsypdYP96T3ZR6eCZ~AKrKIiUGviJzR~ifGWyBSF3EYg2WA1niDcwQGhU-b~U9w1P-gq8gGvRULh4jX4wTXw13SXnkYxQVCi58d-5qei2H5PCXATIkuWLIh7XcDzswQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-0efe-74c3-8190-3573bc2b9b2b/output/preview.png?Expires=4949251200&Signature=G5BeMeOibl0ziFoyS8oQeIt7K~Y8-vzkdIE~nvOnFF6UMA350XfY5S6t81iAFJFhwPMi7fN9pmFA3KNs9btIcZstSQas-wU7kT03j-O1qdHU1KNf9qm5f6xsZGtHZowemq9Mq1JDvwi8LRG1qUH00Un4sEvhkZvjf0OI9o5LzZIKgaqR2TPNYgEriob-NL3y0kKt0asAMwCHQ9NIhWENL3vUaP~W4MzWYoD88Q5c9ERFI3V5n3CduMbu4op~esV28feliyAEIF1kgxZ4nwLVsSKP88smsrtbBFw38Aa5XAoDoPT07JMMsfiQbEBBjmqdXEN1uqUFvvZJ0l40FBVTTg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

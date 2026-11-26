@@ -1,0 +1,49 @@
+{
+  "id": "01a219e9-6368-71b3-a1e2-947a9670e482",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 4131573832,
+  "prompt": "Stylized friendly adult parent character wearing a teal casual sweater, dark slate pants, and sneakers, standing upright facing forward with a warm smile, clean Pixar-inspired game character",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731057275,
+  "progress": 100,
+  "started_at": 1795731057284,
+  "finished_at": 1795731094215,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/model.glb?Expires=4949251200&Signature=B~N8Rm4ln42M~YY8BSMR-GiKqEuNMtWZQcOGvFZ-oA5Un2JCKWbRVOZPFBIR9-LpETbNyQlRomJ2op1zFlHLY-yT68eqrTgpHZjNUQ2hhaz7L5KG8heVCGcbTTsIG7e-cY-VgNQJG9LKzPPA0HdU~w2HNMCyN2k34TvvPRxprJ9exq7v19YlEORitbiA6gJmOSXd2wLHmLc62TPbK-lYluyAIE95udM~7bUc1UpY0~XMhqXsXNNS2DPpAltH9Gva6LaEH3HKhY0G-Y41cisxUM3y9eO5q3nHHp4ptwyoIhq~g0aKL6zUddtcvnxdWAYH9HOeE1B-wXmGqqObR~K70g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/model.fbx?Expires=4949251200&Signature=MxBKYfAeZCmkwxvzfPz7YR5KcVqtxOGjiuqBIEqdyoFqEDigD8SC5ONwPQWxM5djQRyaezw--5wI2pjW0-GXs2PUuGmKjVyZkgSkdeDw6zqIRAL0gq-GhVqR98hVt7uJMsaMpUIjROBhak3m9Us2Ta5Scr1n55z8nzEWN-iqCjaMKNM6juMOzTf-jFqk1S1ozIUQNpifpvaeXjWQFV0J3xpGipfdaELwgbOKSgRMGS9CiWMQwAP3YEIcq~kGW3WyZ46wDZErcXIz503k8njgRv4J6Z5zIMHouPmU1-9ejbdl2ClQAAK7scSvi5kECYbdooENL5X-zud-ZC-LfI6U9w__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/model.usdz?Expires=4949251200&Signature=QGwLEWqJD3S8a08jifjlAc0TexSD33DaUa2Su1u4M1ViYE0c0mi2BZZ9a7bkg-F9A5V66ErvH5BIXcbKQ5DUcLvpJIc7DT2RLLkZowuD2nyd7ocIERZzFbnCyq0od7P8IHXk0BtenZ54Lxjfh9eAO2eIdrikAGaG4vfE2uZ355RGXNyugdJ~bWAWaY7FLp7b0ZxGEOEK0rNG3cSvnSXJSUtFogkxu0k3-bp9YigG~LF9AEaSzte4iyme7VI915u4x5vu~coID6dzKeJMJsujAlD-FPaZzhMtz9G~sMNwkMEqcZCYuVy7uXNC4~IOJXWyNBXPkGib3ZcK6e6Td27wBw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/model.obj?Expires=4949251200&Signature=A~kmuhegbb-gLA7PuAncSO7KXgwDRHXllWgVdxz0IMPCDqQPv43qE~liWJSSooaifrZLS9NwqqfyV5HkGGPefAYRAggtYn97BfzTAOc7R01phCPBDFRRNsLgCljLmvSWQvoKgrMmGsNdHS7MpGTXVeskoept70XmKz4iNQ-L0oTlGddEg1~e9tWHs3tJaXAgpKGuoQnW42g7r5BMesmPb4QZTaOEUsttXWS4MsKm2mY2F~UbkFclfNDlzGDw~gicIVWFOBaME63cZGV-u3HqWCLiUIXdwMthRmpRjrvSk~XG3H0isrb2aGrGWykNKQ6Fp-GK9dH~3Tgvuzy7RBR8KA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/model.stl?Expires=4949251200&Signature=FiiwQ8ZiXQ6UvMeRpx~mwy1OG1~WKL36UghBOc6JRk~Z~13MOR~sLjEqjeMROzy0Pq46pF7~y07ts7DWGsKSL1IfwImn2NdKOZa2INulxtRuUngKD718wblVrxCWaXn41QcKOWafnumvY1QLlUnFq5nCcC9RNplQKj-BsP4wHq3tPSJWKlvjQyhlESPHX30XCHNdM91sVs2nmB81XB9JuiyAoIkZhhF4M4cHtjA8vJjVXJlkSU63oQntaUiKDPaFcnwEMj-tx7b4sczQCykhThvg4eOK7mIV-86Y8Ie~dxlKvn2i4JfqMvlWmX2J2pubMACvgFZsOsE0CEEU5T8~-A__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/preview.png?Expires=4949251200&Signature=fVQfTb7dzJTh7C2sMRedMi2RvMJb~T0rzJT9JzzWxBFGHnX1ACRETgHPASF9QtHeJ4~ynXvZr4d0C~mBcqtGN0md4qjaZ7hWlE5B4vt~enumKkYt9InYOzaeGYSssTmq9SRsWzYY-bhH1hRxHS6CFVMbH~kmBtfrySLA83eZVVIwWb3SJz83ndbuuaFKON10CjHK0EOVMhgu6yZOWyk5upLCpr4qaUqtWFhQrGgKpzSN5H8ZKPXNO0mCBN-Bha8H8cV47RbEtwKsuhg2S4TRQJ2zuJeFMvrc97vt4S4kyvMmO-fLR4Bv2ChKKW9p-JkNMLaSCH0yHCwvgqk3ik~~YA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Stylized friendly adult parent character wearing a teal casual sweater, dark slate pants, and sneakers, standing upright facing forward with a warm smile, clean Pixar-inspired game character",
+    "should_remesh": true,
+    "target_polycount": 8000,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 4131573832,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/model.fbx?Expires=4949251200&Signature=MxBKYfAeZCmkwxvzfPz7YR5KcVqtxOGjiuqBIEqdyoFqEDigD8SC5ONwPQWxM5djQRyaezw--5wI2pjW0-GXs2PUuGmKjVyZkgSkdeDw6zqIRAL0gq-GhVqR98hVt7uJMsaMpUIjROBhak3m9Us2Ta5Scr1n55z8nzEWN-iqCjaMKNM6juMOzTf-jFqk1S1ozIUQNpifpvaeXjWQFV0J3xpGipfdaELwgbOKSgRMGS9CiWMQwAP3YEIcq~kGW3WyZ46wDZErcXIz503k8njgRv4J6Z5zIMHouPmU1-9ejbdl2ClQAAK7scSvi5kECYbdooENL5X-zud-ZC-LfI6U9w__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/model.glb?Expires=4949251200&Signature=B~N8Rm4ln42M~YY8BSMR-GiKqEuNMtWZQcOGvFZ-oA5Un2JCKWbRVOZPFBIR9-LpETbNyQlRomJ2op1zFlHLY-yT68eqrTgpHZjNUQ2hhaz7L5KG8heVCGcbTTsIG7e-cY-VgNQJG9LKzPPA0HdU~w2HNMCyN2k34TvvPRxprJ9exq7v19YlEORitbiA6gJmOSXd2wLHmLc62TPbK-lYluyAIE95udM~7bUc1UpY0~XMhqXsXNNS2DPpAltH9Gva6LaEH3HKhY0G-Y41cisxUM3y9eO5q3nHHp4ptwyoIhq~g0aKL6zUddtcvnxdWAYH9HOeE1B-wXmGqqObR~K70g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/model.obj?Expires=4949251200&Signature=A~kmuhegbb-gLA7PuAncSO7KXgwDRHXllWgVdxz0IMPCDqQPv43qE~liWJSSooaifrZLS9NwqqfyV5HkGGPefAYRAggtYn97BfzTAOc7R01phCPBDFRRNsLgCljLmvSWQvoKgrMmGsNdHS7MpGTXVeskoept70XmKz4iNQ-L0oTlGddEg1~e9tWHs3tJaXAgpKGuoQnW42g7r5BMesmPb4QZTaOEUsttXWS4MsKm2mY2F~UbkFclfNDlzGDw~gicIVWFOBaME63cZGV-u3HqWCLiUIXdwMthRmpRjrvSk~XG3H0isrb2aGrGWykNKQ6Fp-GK9dH~3Tgvuzy7RBR8KA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/model.stl?Expires=4949251200&Signature=FiiwQ8ZiXQ6UvMeRpx~mwy1OG1~WKL36UghBOc6JRk~Z~13MOR~sLjEqjeMROzy0Pq46pF7~y07ts7DWGsKSL1IfwImn2NdKOZa2INulxtRuUngKD718wblVrxCWaXn41QcKOWafnumvY1QLlUnFq5nCcC9RNplQKj-BsP4wHq3tPSJWKlvjQyhlESPHX30XCHNdM91sVs2nmB81XB9JuiyAoIkZhhF4M4cHtjA8vJjVXJlkSU63oQntaUiKDPaFcnwEMj-tx7b4sczQCykhThvg4eOK7mIV-86Y8Ie~dxlKvn2i4JfqMvlWmX2J2pubMACvgFZsOsE0CEEU5T8~-A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/model.usdz?Expires=4949251200&Signature=QGwLEWqJD3S8a08jifjlAc0TexSD33DaUa2Su1u4M1ViYE0c0mi2BZZ9a7bkg-F9A5V66ErvH5BIXcbKQ5DUcLvpJIc7DT2RLLkZowuD2nyd7ocIERZzFbnCyq0od7P8IHXk0BtenZ54Lxjfh9eAO2eIdrikAGaG4vfE2uZ355RGXNyugdJ~bWAWaY7FLp7b0ZxGEOEK0rNG3cSvnSXJSUtFogkxu0k3-bp9YigG~LF9AEaSzte4iyme7VI915u4x5vu~coID6dzKeJMJsujAlD-FPaZzhMtz9G~sMNwkMEqcZCYuVy7uXNC4~IOJXWyNBXPkGib3ZcK6e6Td27wBw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-6368-71b3-a1e2-947a9670e482/output/preview.png?Expires=4949251200&Signature=fVQfTb7dzJTh7C2sMRedMi2RvMJb~T0rzJT9JzzWxBFGHnX1ACRETgHPASF9QtHeJ4~ynXvZr4d0C~mBcqtGN0md4qjaZ7hWlE5B4vt~enumKkYt9InYOzaeGYSssTmq9SRsWzYY-bhH1hRxHS6CFVMbH~kmBtfrySLA83eZVVIwWb3SJz83ndbuuaFKON10CjHK0EOVMhgu6yZOWyk5upLCpr4qaUqtWFhQrGgKpzSN5H8ZKPXNO0mCBN-Bha8H8cV47RbEtwKsuhg2S4TRQJ2zuJeFMvrc97vt4S4kyvMmO-fLR4Bv2ChKKW9p-JkNMLaSCH0yHCwvgqk3ik~~YA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

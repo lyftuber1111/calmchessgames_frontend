@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_parked_car",
+  "model_path": "./meshy_test_0/models/addy_parked_car/addy_parked_car.glb",
+  "textures_dir": "./meshy_test_0/models/addy_parked_car/addy_parked_car_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_parked_car/addy_parked_car_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_parked_car/addy_parked_car_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_parked_car/addy_parked_car_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_parked_car/addy_parked_car_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_parked_car/addy_parked_car_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219eb-a478-734a-90b1-6d121efd0d92",
+  "refine_task_id": "01a219ec-b438-7547-912f-85e4e41d2d0f",
+  "prompt": "Clean stylized modern compact SUV crossover car with glossy white-silver neutral paintable body, tinted sky-blue windows, bright headlights, and four black rubber tires, 3D game vehicle prop"
+}

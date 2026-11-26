@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_lunch_boba",
+  "model_path": "./meshy_test_0/models/addy_lunch_boba/addy_lunch_boba.glb",
+  "textures_dir": "./meshy_test_0/models/addy_lunch_boba/addy_lunch_boba_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_lunch_boba/addy_lunch_boba_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_lunch_boba/addy_lunch_boba_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_lunch_boba/addy_lunch_boba_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_lunch_boba/addy_lunch_boba_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_lunch_boba/addy_lunch_boba_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219eb-0efe-74c3-8190-3573bc2b9b2b",
+  "refine_task_id": "01a219eb-a670-74fc-b6f4-353a8ab09df8",
+  "prompt": "Cute pink strawberry boba milk tea cup with dark tapioca pearls at the bottom, clear dome lid, and wide black boba straw, stylized 3D drink prop"
+}

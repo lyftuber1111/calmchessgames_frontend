@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_store_keys",
+  "model_path": "./meshy_test_0/models/addy_store_keys/addy_store_keys.glb",
+  "textures_dir": "./meshy_test_0/models/addy_store_keys/addy_store_keys_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_store_keys/addy_store_keys_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_store_keys/addy_store_keys_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_store_keys/addy_store_keys_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_store_keys/addy_store_keys_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_store_keys/addy_store_keys_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219ea-6ff5-7039-8b36-55a0f9faed4c",
+  "refine_task_id": "01a219eb-08ab-778d-89ee-09973ff32c8a",
+  "prompt": "Detailed silver metal keyring keychain holding a shiny golden master store key, a silver key, and a round royal blue plastic key fob with a bright yellow star spark emblem, stylized 3D prop"
+}

@@ -1,0 +1,49 @@
+{
+  "id": "01a219ed-5f64-70e9-952f-f4a5b7fe210a",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 4226878408,
+  "prompt": "Modern employee breakroom round white cafe bistro table with sleek royal blue pedestal leg and round base, stylized 3D furniture prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731318443,
+  "progress": 100,
+  "started_at": 1795731318457,
+  "finished_at": 1795731356148,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/model.glb?Expires=4949251200&Signature=d3nbP4MBTAzs7bTjy8HzAK-AGgNqi7MNFtTbM1M9wVGHQqwMsS~Z9BmeWXIyyp3kyxMVd15oicqJYOi4aJ-c~nWeynaFPyo~XMRTAV6sZ~X4AMd85tcBq7QlH2CHEnxIYPDl0YlOm5LH-czqJvXK3-VEg6Ijg5E0B-AO2XTGfNrw3J5oiCeZ9ZIrVfTTaXLLI2cBt~4llELiqJaVTF1ZiNqvERnjvYzs9PBtlZgsFt8LSSH8-HEZrowoN2IQFFu5beLxi04j5X9RLhVtctojSciiAi1-j-NbMdp3JQ8vQWLFznOsIuTK7tExyRRJHaJsUeo53sXhE4MjlA8ZsryGbQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/model.fbx?Expires=4949251200&Signature=HnCaDrOkjnNeet6MCCdlWyL8xizW3kRgNVE1dlAbzQbm1gceY-tVjduLVr3KHBV0irft9I0bNWNyo8B4SqeH7l6qLmQFmW7uKD7P0zlKAti1V67YNq0fxDSyOQVmL-zwCfs7bRQsvYIzcTybdZKyr0CfF-yvgf5qmXlkSnNo-6GFtlYyCc8F4lz0zGT6pxJBChW63fvlZhTv3dFpWNT4WckwdKOHEqIMCbEeEl0zWgCJqt0MxEz3jchf6wd-PMrXZJBGBL58b7Wx2hKy1XQ2EMgFSHDYh0q5bErpqO3Arvbr9bWz4qWgXV32jWTTFUeUGz~85Dbo2WvslbTB3t0GBg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/model.usdz?Expires=4949251200&Signature=Iacn06lH3TSCGEtfU0GtwvUam45dxjD5ns~yNpMxDSVPPxy3AHseVOcWQn6bZhT~tIE8M4NS1Ejqa5BdP1YzTJOanzKDpJQSKHt5TJnF89hmOcWaITMkHT6myCkz7Rmm-YSKj6-qEBeXiek6BkN1yqtfCUWgGjwn6fGcQWKJ~C9xMXev8gN60Qc1ZOrMtpozxyyJzTWlDLw~2sLr-N1sbIO68VhDiWfm9KkY07bWwFN8qTZocrHOjnUt7Yzp30-qIo9XxyUaTOhrImvChBXmm~adiTIt~tBHFBC~rNaO06Q4cOCAEBEtRBSNI2xojUw4SmA7fr9UREhpXcBmGqNeyw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/model.obj?Expires=4949251200&Signature=QPmra-Uq9L0awgX5NS3ld3upS8S6jFbSGRjmnxHXVdi90SgQuzBXi3Z3C8K5OFwC0xIlUxRQJLVyDXnkgSy4GecMJQlAoLOaJkcYGQBQLqYmaBySim2xVQjGoO7H0a8Si97nwEXcXFadPplIaI-HEnPHE1Hmzi9NWqw4poHbrWevR7okl4Z9bZAt5LwAeAH65PTNY6sbcSUEPCu5WynzFD3whqx7h6BO3ld20np~PRHxaD8Sni6D7gUn382pHVMUifFlGrDdPMCQ2ulBw~QA4FbCtPI-~soJTYzatyxIvRRjRf112gBOcNY96d36p6AfKQ19bcoR09MHcCG-xi8fGw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/model.stl?Expires=4949251200&Signature=Zmk7huQB3EknQD6LhChwYvhmQUT5Q8uC9xtgOs3QIS8JreH~E4wEzhos3bF53aU00Q272s9tDStyfpoiufZCFuzl4UzlFstnM1i-Yw2zMZLDsqal0KUqjsUsDxwonaGbts5T9K247lTmfzHnU0qIW9Sz0T7YZ7sXeRocuLzUcL4-xQs9imJiBqMETf~c7ke2~RfX8iKJHSxzNMS9R~AHyzbDH0PvhD5BmZ8LKofmG29d-nNlAU9nyyry1CPgDMpWNnnWY~vrRq9wceMaOjQY-yXnypEL~VB2wWzgIrimnpu0lpNihdVcIl6IdMBacDBVQoX~AYguwvwW1SO5KtRIaA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/preview.png?Expires=4949251200&Signature=HpX~yHTcdLp3nmdT8dtE5NdK21zLWstJe--yEswBHzYgmnigBSptMUXM5Eu3ELY5awOQCtpX9c56y-wBbJ0BwA2Ndn2JTWG5IH~CaIgLA-fcTTY4lSpQxJdnIbFCGU85Wo5SrT~w5WjgXyYf5cJdJqABdP5f6i77Zmazv5Lozm9GfTz3KliZpR5zd67jt1HA7HYPVcbpNyl7yfg6yyxixxF1XxUbWNlBuTMgYVgriCxls~xj98jf18QQcRO3sS6PeERCKbjUkFYIfD0FAzggbsL8uYOCGPhPXGzIrnnbqZ5V~y9LSsnKH7u5J2rGlpKKZjtHZ~wKucfXSFQGctD88g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Modern employee breakroom round white cafe bistro table with sleek royal blue pedestal leg and round base, stylized 3D furniture prop",
+    "should_remesh": true,
+    "target_polycount": 5000,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 4226878408,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/model.fbx?Expires=4949251200&Signature=HnCaDrOkjnNeet6MCCdlWyL8xizW3kRgNVE1dlAbzQbm1gceY-tVjduLVr3KHBV0irft9I0bNWNyo8B4SqeH7l6qLmQFmW7uKD7P0zlKAti1V67YNq0fxDSyOQVmL-zwCfs7bRQsvYIzcTybdZKyr0CfF-yvgf5qmXlkSnNo-6GFtlYyCc8F4lz0zGT6pxJBChW63fvlZhTv3dFpWNT4WckwdKOHEqIMCbEeEl0zWgCJqt0MxEz3jchf6wd-PMrXZJBGBL58b7Wx2hKy1XQ2EMgFSHDYh0q5bErpqO3Arvbr9bWz4qWgXV32jWTTFUeUGz~85Dbo2WvslbTB3t0GBg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/model.glb?Expires=4949251200&Signature=d3nbP4MBTAzs7bTjy8HzAK-AGgNqi7MNFtTbM1M9wVGHQqwMsS~Z9BmeWXIyyp3kyxMVd15oicqJYOi4aJ-c~nWeynaFPyo~XMRTAV6sZ~X4AMd85tcBq7QlH2CHEnxIYPDl0YlOm5LH-czqJvXK3-VEg6Ijg5E0B-AO2XTGfNrw3J5oiCeZ9ZIrVfTTaXLLI2cBt~4llELiqJaVTF1ZiNqvERnjvYzs9PBtlZgsFt8LSSH8-HEZrowoN2IQFFu5beLxi04j5X9RLhVtctojSciiAi1-j-NbMdp3JQ8vQWLFznOsIuTK7tExyRRJHaJsUeo53sXhE4MjlA8ZsryGbQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/model.obj?Expires=4949251200&Signature=QPmra-Uq9L0awgX5NS3ld3upS8S6jFbSGRjmnxHXVdi90SgQuzBXi3Z3C8K5OFwC0xIlUxRQJLVyDXnkgSy4GecMJQlAoLOaJkcYGQBQLqYmaBySim2xVQjGoO7H0a8Si97nwEXcXFadPplIaI-HEnPHE1Hmzi9NWqw4poHbrWevR7okl4Z9bZAt5LwAeAH65PTNY6sbcSUEPCu5WynzFD3whqx7h6BO3ld20np~PRHxaD8Sni6D7gUn382pHVMUifFlGrDdPMCQ2ulBw~QA4FbCtPI-~soJTYzatyxIvRRjRf112gBOcNY96d36p6AfKQ19bcoR09MHcCG-xi8fGw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/model.stl?Expires=4949251200&Signature=Zmk7huQB3EknQD6LhChwYvhmQUT5Q8uC9xtgOs3QIS8JreH~E4wEzhos3bF53aU00Q272s9tDStyfpoiufZCFuzl4UzlFstnM1i-Yw2zMZLDsqal0KUqjsUsDxwonaGbts5T9K247lTmfzHnU0qIW9Sz0T7YZ7sXeRocuLzUcL4-xQs9imJiBqMETf~c7ke2~RfX8iKJHSxzNMS9R~AHyzbDH0PvhD5BmZ8LKofmG29d-nNlAU9nyyry1CPgDMpWNnnWY~vrRq9wceMaOjQY-yXnypEL~VB2wWzgIrimnpu0lpNihdVcIl6IdMBacDBVQoX~AYguwvwW1SO5KtRIaA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/model.usdz?Expires=4949251200&Signature=Iacn06lH3TSCGEtfU0GtwvUam45dxjD5ns~yNpMxDSVPPxy3AHseVOcWQn6bZhT~tIE8M4NS1Ejqa5BdP1YzTJOanzKDpJQSKHt5TJnF89hmOcWaITMkHT6myCkz7Rmm-YSKj6-qEBeXiek6BkN1yqtfCUWgGjwn6fGcQWKJ~C9xMXev8gN60Qc1ZOrMtpozxyyJzTWlDLw~2sLr-N1sbIO68VhDiWfm9KkY07bWwFN8qTZocrHOjnUt7Yzp30-qIo9XxyUaTOhrImvChBXmm~adiTIt~tBHFBC~rNaO06Q4cOCAEBEtRBSNI2xojUw4SmA7fr9UREhpXcBmGqNeyw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-5f64-70e9-952f-f4a5b7fe210a/output/preview.png?Expires=4949251200&Signature=HpX~yHTcdLp3nmdT8dtE5NdK21zLWstJe--yEswBHzYgmnigBSptMUXM5Eu3ELY5awOQCtpX9c56y-wBbJ0BwA2Ndn2JTWG5IH~CaIgLA-fcTTY4lSpQxJdnIbFCGU85Wo5SrT~w5WjgXyYf5cJdJqABdP5f6i77Zmazv5Lozm9GfTz3KliZpR5zd67jt1HA7HYPVcbpNyl7yfg6yyxixxF1XxUbWNlBuTMgYVgriCxls~xj98jf18QQcRO3sS6PeERCKbjUkFYIfD0FAzggbsL8uYOCGPhPXGzIrnnbqZ5V~y9LSsnKH7u5J2rGlpKKZjtHZ~wKucfXSFQGctD88g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

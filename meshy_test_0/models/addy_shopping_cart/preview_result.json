@@ -1,0 +1,49 @@
+{
+  "id": "01a219eb-f1aa-7659-b004-3942a433e363",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 753626468,
+  "prompt": "Classic metal chrome supermarket wire shopping cart with bright blue plastic push handle, child seat flap, and four caster wheels, stylized 3D retail prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731224977,
+  "progress": 100,
+  "started_at": 1795731224988,
+  "finished_at": 1795731276091,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/model.glb?Expires=4949251200&Signature=nZAbfm5U1gaxxor8tFwI762B1df6v8JgShmG0bFMArrtRlA26D~X-RoxNsarUKhn2WDLwqzpnhia5Im57mMz4~vR1XEpcF542xZLEzK6HXE7wgUpzPegyTRLiVmWBFvKzEVFQyNIBtUcoOsCqFlLh0PC-i4YZEasNtMC5uOFMi6ybT5C3QtiS~p0Kf3LPrpL-JppUlrVAFQnzhPzu-49LQvzQrkYi3ROC0ha7n5Gxy9BJPEXD6TN9WUyhXP6OLqnYttRaz45OTzK99unmYRR~vkKzO9-bdUgU-ZcRZFKssghr4C7cmBscKw6rscMk5j~Qkx1w61kVkH0P1sVUFhlyw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/model.fbx?Expires=4949251200&Signature=G0lfFV4a9H~Y4N2yoUTvNljKQd4fPl4mvzB7rmbgmFOa9zQY71AG-5Bs9waT6jni1TSHCsZrdiEpg-0vu27VkMHvg~deMrBGxkxMcutluiPoPD2GB6ckaEdZ6NeeTfuxGl49U~H4ht5K5W3w1GQXEBTKk7fa7YptjZCZ5BvFZ90LOoJuAyITvBrfkR~sba0X13Xm5UOQovuEybtm~8v-F9vNUjAhBD~faq0f4JCREyiQ4JD4bNw9Wkws8Ftihqbd2efhy09jlTVdKU8D1zGE8pBK13AD-5~o4WuY~9AJ31I9ne48z555Wq1jdsNvLZRwexwS8Kk3pNJl5IvyzMwbDA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/model.usdz?Expires=4949251200&Signature=Wyc5G9tsaYw8bbMLkObsuW1XYWiA9MVRkv~ruAtXnAkqf66v5StfwF4BY4kCaEOoVCE1IXyvrdZnIvHoFw7Juy~6iK6ee5LGsovvZnFSMo-n3W-C3cetMCBChnJZkB2IuTJFOTQ6eVJtKgjFAwoE2hXPpcLkJ0YoWXBbgnp0Gakzg3BV1xq30iSw7krp8L50MapccweY8sEgjpxXBzkBTAUg6hX0~fPg7MQL8Miqk1Ly33sNZ3qnQU4MKOC0Adnu9w2-6G67qjlChHuVD0tb7D1I9LDTxAIBaErMfiLLpNUsLq6Y13HA5wm8eRyZdvITs994tgvPsO5g6f3BpvHvYQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/model.obj?Expires=4949251200&Signature=Kud7teBO16Tu8v88B-wpGT12HeoNYTmrleSM8~Mdez5CRfyCz9-eMzMfr5omecA8NO5~5XSLhBNGsrssdtjIGYrwq3pL6P~pq6bmbKQVS~nBHU0TgBaGfV0c~pVykF63kMWtl8H4~R876BuHUDbpJ0~RIvk8wGU1OuXg~gEvLY4PO0Je9Rju27UfLluRrxtVUMl-Qg77vZ3qu81Yx3EXgHXQ85jlhedGsMFYQB6H4Wr-AtmXqYiQluK4Obu69NgkiwT7-PLL85k4B0rcLGGK1sz~lWihFlgeBagQEw1MhxXs7zuJsl2niQ1jN2bBe8WTnTTtJhoYU~FnRoKmJtPMzw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/model.stl?Expires=4949251200&Signature=g8MTxdLwnCEhUteJ9uSo-FslPilxh4i2DF7wPIvVMVCT8jA96FiXslnVq1NzcD1Ymdz6kwI1Fz3AivDhQl61NRJKuvZjHrjyfnhRbwNSKVj2FjVUiyePBBqgRgWfA095Nd8V6ZP-6xwsbdDwTTra5TXZweS44TvPvVjYUb7nifGqAUWKv~0fDA8faFnP~OisfEdF12~rOs0ZOVU-F01qs4gVN61lsCHoQa8uzsptO4q5ow8tPoS2O3RJR-DczxlHYHgAgOqgOizVcwg-Vvzl6NV7tamlSnrq~rPz8fLg4sGP1C7sNDWTASosjXX~zP4JPhfgMbT0eDyjs~GoKnCzAQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/preview.png?Expires=4949251200&Signature=b~D4ZmkBu3wuab8Z0xSAsDCZ3AQtvmxJGpJtVfOzK76LNGI4vIb2JnnIOz~IblAm6pmORPufObSMSFLMbBl4kYejiPENctgoT6hYfNu2C--tXmUuPliqZak3hJ4-VonzixD4hRH0hET-Q1J1SaPsEMazqXHyQYtIxX~6Gc5J3~FT~uq7bdjtPFWB95n9CeJUiSLExyHMorvs3jJgoUpEmTmDnaanYASSB-4eC49KEG-UQcUwYZjL9LOn6ysAEaR6YjPcM~GH-YtzYO3v0zVhsR~ePxpUWeUx7ysPbdxbM3YiEXBsC5IMBP8kcwGTqoV3XLp49rOsyYXE2uPUeVQviQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Classic metal chrome supermarket wire shopping cart with bright blue plastic push handle, child seat flap, and four caster wheels, stylized 3D retail prop",
+    "should_remesh": true,
+    "target_polycount": 7000,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 753626468,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/model.fbx?Expires=4949251200&Signature=G0lfFV4a9H~Y4N2yoUTvNljKQd4fPl4mvzB7rmbgmFOa9zQY71AG-5Bs9waT6jni1TSHCsZrdiEpg-0vu27VkMHvg~deMrBGxkxMcutluiPoPD2GB6ckaEdZ6NeeTfuxGl49U~H4ht5K5W3w1GQXEBTKk7fa7YptjZCZ5BvFZ90LOoJuAyITvBrfkR~sba0X13Xm5UOQovuEybtm~8v-F9vNUjAhBD~faq0f4JCREyiQ4JD4bNw9Wkws8Ftihqbd2efhy09jlTVdKU8D1zGE8pBK13AD-5~o4WuY~9AJ31I9ne48z555Wq1jdsNvLZRwexwS8Kk3pNJl5IvyzMwbDA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/model.glb?Expires=4949251200&Signature=nZAbfm5U1gaxxor8tFwI762B1df6v8JgShmG0bFMArrtRlA26D~X-RoxNsarUKhn2WDLwqzpnhia5Im57mMz4~vR1XEpcF542xZLEzK6HXE7wgUpzPegyTRLiVmWBFvKzEVFQyNIBtUcoOsCqFlLh0PC-i4YZEasNtMC5uOFMi6ybT5C3QtiS~p0Kf3LPrpL-JppUlrVAFQnzhPzu-49LQvzQrkYi3ROC0ha7n5Gxy9BJPEXD6TN9WUyhXP6OLqnYttRaz45OTzK99unmYRR~vkKzO9-bdUgU-ZcRZFKssghr4C7cmBscKw6rscMk5j~Qkx1w61kVkH0P1sVUFhlyw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/model.obj?Expires=4949251200&Signature=Kud7teBO16Tu8v88B-wpGT12HeoNYTmrleSM8~Mdez5CRfyCz9-eMzMfr5omecA8NO5~5XSLhBNGsrssdtjIGYrwq3pL6P~pq6bmbKQVS~nBHU0TgBaGfV0c~pVykF63kMWtl8H4~R876BuHUDbpJ0~RIvk8wGU1OuXg~gEvLY4PO0Je9Rju27UfLluRrxtVUMl-Qg77vZ3qu81Yx3EXgHXQ85jlhedGsMFYQB6H4Wr-AtmXqYiQluK4Obu69NgkiwT7-PLL85k4B0rcLGGK1sz~lWihFlgeBagQEw1MhxXs7zuJsl2niQ1jN2bBe8WTnTTtJhoYU~FnRoKmJtPMzw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/model.stl?Expires=4949251200&Signature=g8MTxdLwnCEhUteJ9uSo-FslPilxh4i2DF7wPIvVMVCT8jA96FiXslnVq1NzcD1Ymdz6kwI1Fz3AivDhQl61NRJKuvZjHrjyfnhRbwNSKVj2FjVUiyePBBqgRgWfA095Nd8V6ZP-6xwsbdDwTTra5TXZweS44TvPvVjYUb7nifGqAUWKv~0fDA8faFnP~OisfEdF12~rOs0ZOVU-F01qs4gVN61lsCHoQa8uzsptO4q5ow8tPoS2O3RJR-DczxlHYHgAgOqgOizVcwg-Vvzl6NV7tamlSnrq~rPz8fLg4sGP1C7sNDWTASosjXX~zP4JPhfgMbT0eDyjs~GoKnCzAQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/model.usdz?Expires=4949251200&Signature=Wyc5G9tsaYw8bbMLkObsuW1XYWiA9MVRkv~ruAtXnAkqf66v5StfwF4BY4kCaEOoVCE1IXyvrdZnIvHoFw7Juy~6iK6ee5LGsovvZnFSMo-n3W-C3cetMCBChnJZkB2IuTJFOTQ6eVJtKgjFAwoE2hXPpcLkJ0YoWXBbgnp0Gakzg3BV1xq30iSw7krp8L50MapccweY8sEgjpxXBzkBTAUg6hX0~fPg7MQL8Miqk1Ly33sNZ3qnQU4MKOC0Adnu9w2-6G67qjlChHuVD0tb7D1I9LDTxAIBaErMfiLLpNUsLq6Y13HA5wm8eRyZdvITs994tgvPsO5g6f3BpvHvYQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-f1aa-7659-b004-3942a433e363/output/preview.png?Expires=4949251200&Signature=b~D4ZmkBu3wuab8Z0xSAsDCZ3AQtvmxJGpJtVfOzK76LNGI4vIb2JnnIOz~IblAm6pmORPufObSMSFLMbBl4kYejiPENctgoT6hYfNu2C--tXmUuPliqZak3hJ4-VonzixD4hRH0hET-Q1J1SaPsEMazqXHyQYtIxX~6Gc5J3~FT~uq7bdjtPFWB95n9CeJUiSLExyHMorvs3jJgoUpEmTmDnaanYASSB-4eC49KEG-UQcUwYZjL9LOn6ysAEaR6YjPcM~GH-YtzYO3v0zVhsR~ePxpUWeUx7ysPbdxbM3YiEXBsC5IMBP8kcwGTqoV3XLp49rOsyYXE2uPUeVQviQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

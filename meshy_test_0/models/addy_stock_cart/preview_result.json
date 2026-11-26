@@ -1,0 +1,49 @@
+{
+  "id": "01a219ec-17f9-739b-8bdb-cf6a35a857dd",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 583023399,
+  "prompt": "Industrial rolling retail stock U-boat utility flatbed cart with silver flat shelving decks, tall blue metal upright push handle frames on both ends, and heavy black caster wheels, stylized 3D retail prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731235073,
+  "progress": 100,
+  "started_at": 1795731235092,
+  "finished_at": 1795731271077,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/model.glb?Expires=4949251200&Signature=QhhBUyWyTsTCYDDRxRZF7vBAVoJEHoOBlvow3DA6l8HeNKmkc9DfYvqYhDyRUbKG9RfVsSbWVqinkDR-52svtGrUvoFlXNQGwcG8ikuDqs8GSCtbB1CPRq6ymNIihxhUCLN9EsoWO56rFb4XZYpkOFnZQ7HZINryO7iOHMT3y9i7hNAzLhna~81dfVh1mtG9QcXjOTKZKwX~fsAKlHRPmYNUsiE~pdDn5FPaKDvF0APva5hnRzs-iYxy1u-IErAvsxQ-CFHNBkMhHbKXM25AFQZ4Y4jrWZLkm-TpMJS2yQP~DiZIBtmmSkbrsQ8AqRecEFpKJg952F91ihF5hADBog__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/model.fbx?Expires=4949251200&Signature=FKpF60Gy1Dwx3G4FiqVnfvcN9ksA4N8ki-nCexgWHDLq5XS-dY4tWBEvKbd437ydvdazelA5TlrkFPy5Qwmi3fR~MjpBxBlQm6tFydHqD0b0NbTHao8Jjb5gQ461tQ6gjirbuJz~YOTAEeC8JsDnSaqNWU5HjP-6~0aYVzO7iOOdDzRM0JkiO62d4HZSid3EpqA7SvtRVeUN~4mWQiffVQpgYcpNJwhHLWRiSwbie7MMHF9SUJbBVqiCz17WO--eDphGoF9bXJb-yrlGyhRDn~vG3c59Wz8DoUDJNmVNbxOjpNlc8SpDPnWzMQiacmoF~jTVmPCrK9rQe6xMc4kPxg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/model.usdz?Expires=4949251200&Signature=QhqWzD4pxmqq1gzEaKn3xnL5F3d0YyFTcjVD71YUtahkMqPvDNM02O~yamxWhgxohkT3IryHPcHsbOkPq4WZ0PBOXYmgq-avDE5-fI1kV-pnJu0fr4VMlPH~SISdxCr6a38g~RiWL36Vd01pt3idbbQ3B79EH2qwzSrRoBSNJ7QOgotaO1y8Ha3tuqWLJSNqtox3hHL14KVKx484qakTR8n1XeqhC25ccYefP2-AeItRiXjoPtsJ7anGSg6QD2mYJx-FszNZ8BZEl4U7QGlC99zqvFMv0XpCEeM20Ty3wuyj7Fco6gUV1Gp8wWIFa9x-pv1HsOEe~VR9nOnvKUwbxw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/model.obj?Expires=4949251200&Signature=Z~B63P0UMMBe5EjAiUNxTXXyLrJoeI0NSIPofbcu8qUMw6gLNhiCPVvKlV2rQSBFkZNE~llHtajoF9prDZ43DP1QVWNuiexGgquKJWmi39dfcPBkzAu6kvuPk-rm5J4uYNIsLbDova0bTat5pEwAAekTv24capO4pzHlWhjMiBrxX~42sGSqf0Chhz~1LBE2QHlu9AEYkfOw~Gk6QP6s5-hKt6S86wqyBUytBJzFo4avAJ9JzeGknd9-F8DCbL8HOF21Y5p6zf~TfmdTb1jq53WCxanz5-Bwb4b4DpE8ePmnem102uKoMdDX2dnoRhNPbgRdJ27nqgEJEtk1lm63cg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/model.stl?Expires=4949251200&Signature=SMu1pO0v5cvP5qVOg144EMToPrUrUesW3f3YNuULmUmdZjR1bwNxB~N4ilmagwTv~lvszCZh-KWTgf-tgclKJIQJwaCqZu-cnZ0ECTKSzQ9s1zTG2vmlEQ~fyTxEYZjmMW0DpeWUfBRqDduCkCaD-O5vVVkzGwxwEexidRuOP1MM0WKJyietgjzByEtkiHqBobaWYjAuBqLyi0nA3a46J5T8DAXIi8MyEPhO-ueMQ0uFAPqFT5m1E~S7pfpP2S-YhgCp1~rsDMpMSRqN1Qe~ma8KklhVcoQhKnjxNJyRbHSMf5~lrpAnLbw35JXv9mCwu8aaMo1wIuRRyvsxgWmHTQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/preview.png?Expires=4949251200&Signature=MX8faaGu-CMnLuqob1x24hO-83jL9UKl0PBbVi2D8679A2AFN5bQZ~HhAoKRFqxD4KOHVXDRw8g-o2SG2tTzAbaTXsyb8Z4uIjNCX9CAT3hx3p5dfFIQq8DdVwgZ5v0JcFPmcxnnEgsoSi5FAqR66IEJo8rWa8Qpd32U55MZQSCs-WUK6XE84qkY4dimRsYfOOZHEdFybnHg73cvUtWKMGWdrqI16aJQ8w3BonsENGCTdA~VEdWfuSGR2tFM41dhSJXJDt~tsrC0442wzAEchaQz0iIZ7Jw6uiO0LMjkuilsrISIjmFY-mCYRD1n6N~TRwKGGMkEyZ1sT1ZI-QkQ4A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Industrial rolling retail stock U-boat utility flatbed cart with silver flat shelving decks, tall blue metal upright push handle frames on both ends, and heavy black caster wheels, stylized 3D retail prop",
+    "should_remesh": true,
+    "target_polycount": 6500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 583023399,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/model.fbx?Expires=4949251200&Signature=FKpF60Gy1Dwx3G4FiqVnfvcN9ksA4N8ki-nCexgWHDLq5XS-dY4tWBEvKbd437ydvdazelA5TlrkFPy5Qwmi3fR~MjpBxBlQm6tFydHqD0b0NbTHao8Jjb5gQ461tQ6gjirbuJz~YOTAEeC8JsDnSaqNWU5HjP-6~0aYVzO7iOOdDzRM0JkiO62d4HZSid3EpqA7SvtRVeUN~4mWQiffVQpgYcpNJwhHLWRiSwbie7MMHF9SUJbBVqiCz17WO--eDphGoF9bXJb-yrlGyhRDn~vG3c59Wz8DoUDJNmVNbxOjpNlc8SpDPnWzMQiacmoF~jTVmPCrK9rQe6xMc4kPxg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/model.glb?Expires=4949251200&Signature=QhhBUyWyTsTCYDDRxRZF7vBAVoJEHoOBlvow3DA6l8HeNKmkc9DfYvqYhDyRUbKG9RfVsSbWVqinkDR-52svtGrUvoFlXNQGwcG8ikuDqs8GSCtbB1CPRq6ymNIihxhUCLN9EsoWO56rFb4XZYpkOFnZQ7HZINryO7iOHMT3y9i7hNAzLhna~81dfVh1mtG9QcXjOTKZKwX~fsAKlHRPmYNUsiE~pdDn5FPaKDvF0APva5hnRzs-iYxy1u-IErAvsxQ-CFHNBkMhHbKXM25AFQZ4Y4jrWZLkm-TpMJS2yQP~DiZIBtmmSkbrsQ8AqRecEFpKJg952F91ihF5hADBog__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/model.obj?Expires=4949251200&Signature=Z~B63P0UMMBe5EjAiUNxTXXyLrJoeI0NSIPofbcu8qUMw6gLNhiCPVvKlV2rQSBFkZNE~llHtajoF9prDZ43DP1QVWNuiexGgquKJWmi39dfcPBkzAu6kvuPk-rm5J4uYNIsLbDova0bTat5pEwAAekTv24capO4pzHlWhjMiBrxX~42sGSqf0Chhz~1LBE2QHlu9AEYkfOw~Gk6QP6s5-hKt6S86wqyBUytBJzFo4avAJ9JzeGknd9-F8DCbL8HOF21Y5p6zf~TfmdTb1jq53WCxanz5-Bwb4b4DpE8ePmnem102uKoMdDX2dnoRhNPbgRdJ27nqgEJEtk1lm63cg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/model.stl?Expires=4949251200&Signature=SMu1pO0v5cvP5qVOg144EMToPrUrUesW3f3YNuULmUmdZjR1bwNxB~N4ilmagwTv~lvszCZh-KWTgf-tgclKJIQJwaCqZu-cnZ0ECTKSzQ9s1zTG2vmlEQ~fyTxEYZjmMW0DpeWUfBRqDduCkCaD-O5vVVkzGwxwEexidRuOP1MM0WKJyietgjzByEtkiHqBobaWYjAuBqLyi0nA3a46J5T8DAXIi8MyEPhO-ueMQ0uFAPqFT5m1E~S7pfpP2S-YhgCp1~rsDMpMSRqN1Qe~ma8KklhVcoQhKnjxNJyRbHSMf5~lrpAnLbw35JXv9mCwu8aaMo1wIuRRyvsxgWmHTQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/model.usdz?Expires=4949251200&Signature=QhqWzD4pxmqq1gzEaKn3xnL5F3d0YyFTcjVD71YUtahkMqPvDNM02O~yamxWhgxohkT3IryHPcHsbOkPq4WZ0PBOXYmgq-avDE5-fI1kV-pnJu0fr4VMlPH~SISdxCr6a38g~RiWL36Vd01pt3idbbQ3B79EH2qwzSrRoBSNJ7QOgotaO1y8Ha3tuqWLJSNqtox3hHL14KVKx484qakTR8n1XeqhC25ccYefP2-AeItRiXjoPtsJ7anGSg6QD2mYJx-FszNZ8BZEl4U7QGlC99zqvFMv0XpCEeM20Ty3wuyj7Fco6gUV1Gp8wWIFa9x-pv1HsOEe~VR9nOnvKUwbxw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-17f9-739b-8bdb-cf6a35a857dd/output/preview.png?Expires=4949251200&Signature=MX8faaGu-CMnLuqob1x24hO-83jL9UKl0PBbVi2D8679A2AFN5bQZ~HhAoKRFqxD4KOHVXDRw8g-o2SG2tTzAbaTXsyb8Z4uIjNCX9CAT3hx3p5dfFIQq8DdVwgZ5v0JcFPmcxnnEgsoSi5FAqR66IEJo8rWa8Qpd32U55MZQSCs-WUK6XE84qkY4dimRsYfOOZHEdFybnHg73cvUtWKMGWdrqI16aJQ8w3BonsENGCTdA~VEdWfuSGR2tFM41dhSJXJDt~tsrC0442wzAEchaQz0iIZ7Jw6uiO0LMjkuilsrISIjmFY-mCYRD1n6N~TRwKGGMkEyZ1sT1ZI-QkQ4A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

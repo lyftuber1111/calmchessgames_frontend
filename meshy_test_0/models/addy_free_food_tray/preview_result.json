@@ -1,0 +1,49 @@
+{
+  "id": "01a219e9-7937-75c7-9829-f88cfcaf86d6",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 1950166270,
+  "prompt": "Bright yellow fast food cafeteria tray holding a slice of pepperoni pizza, a cheeseburger, and a blue iced soda cup with a red straw, stylized 3D game prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731062718,
+  "progress": 100,
+  "started_at": 1795731062727,
+  "finished_at": 1795731125151,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/model.glb?Expires=4949251200&Signature=E27Cyxy~Owi7DfUJF1zlb6qKUioC76PcJub0DPfo-DsZCDa6b5HqC4qCo8t5pwYgoL0MCB3uW9Ssl1gT49J4tpV3TlwRWgAWSotOAK94HiA98ptfFn4zU8lc-Ac8aoU01G4NHf0mJJnDbV~q1gJWAX5L16zPMtzaoJoq8T7wJw2EiNuZzE3bXFs9~VsJfTw~I5vaJYp6A3hoMnRiYXaa64sCBWWIGjkjAevBDi9SJeQOYxnmvBQBEuIyJYWkhGCA56Oikj7JPfhqDra3F5HREJ7jkS0G5F4I9gfvxTlmBHAFXGCySIq~jA6oZaX3OZGyXwd019HIfxOXX2IWUYzdnA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/model.fbx?Expires=4949251200&Signature=ACQJMOsMaZw0QsyOba3cYc6C7-Qn8-nJSDLkDVCl6okn4U8cujrNEdhoe0jIAy6F1IoH5II-bjoQ-nldmoYB8tuhvFODmuNmCs4S5v3yKCZ86R30JYiJh55ZXRNpjfDJQbW4e5RO12xB3wHVWCDrptWIKLbgLoBvSdEFwTm1VtWmqYGhj5bmtRBDYfCFdd34~XpGgnQ10aIlPBaOCM30Bes~DjvrDhrjwvV7TS9snKF8seImJBwcOXhfhUxvBb2KHZzxupV7r2Rh9PnkC8DfteNnE~l23vkkisE1LHGNZjFATZMXW4o~zSFupO0eYVEe~uYgqc1PMmRf59lfXUz1Zg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/model.usdz?Expires=4949251200&Signature=HTpAcnAw0nbK0-SF8IUb9Y-9FTmyWMYYBGDq8egqxLjOJrAsVZOx72Cd-dqe~Uzr3nrcHSXxv12xyeLecveA5lrSUodho-VHmrQ6olWRJ1ck7jdjqMxor~Xir4rBX8jhByHxLFxr3ZxHQA25NwcN7A9SDCexXGda2XniHPMbREhSrUFbu5pdJT61IwkKSqdzIXiC4KOVaNUEDXkNjYkyHMy1ywZjkfw1ob1JoRJXND5bacnFc2eJUDc1GmGkR-8~cik5qEQBPvaTjDYaJ5PW~tUaeOu0~X3kpchp7MFS~EPDTjnfzte7ejLwuia~IU8Ave6TYqb64oXxrMTjkUn-Kw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/model.obj?Expires=4949251200&Signature=ghyXyLwm392xhAAa3D94aBqmy-fE8hwdczB-MrLvlEVdw0k6pCfJoFzqeYBr3X55ryF1ke4E6Qlu9zjsviKrgMezuM10RG17UVj~ZAz0nZmpLgoVNQDm9dtSvjX2bg90-DD2ch8~0wbTLw6TGOdbkVqbRf-Ot4bcQDzPol7pyLDHK6CjR2zswJG3YV5UPLfaRuxuCat~W57gj88CaZG4zmiEby-MaT3I31yLi75F6zBD8q3UsNDs4plqJQo-rov~iFeLUdPJ0rTRcavT7VW3tf-K4wmlt2hqc2VGr0rATEfDE6WDIaF~NJY1Ja1gywcGioZvCErbsJqBdB-t4zl7bA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/model.stl?Expires=4949251200&Signature=btvOqSOahYMVMw8OnFpoCAn8nIuuFVxji72J865YEYO18dg~GrySBG0KCogsoxDOysirJfird6o6CT22HYVKw7LGDIS9HQAxObZyM0DMJLuSdZqh7RQJN3Vx1fliPMPZb2~TUCJDVs9gqrLzmfhXs2C5w73UqiYrZF5h5HGA5wWXz08NRTF0erbr9p1sDoz4QrpM~yweVBxGujXP9265Ga263ZtIUq3K7~0u2Mvs31fogQAXez~hS7tHAg~9ERrsjSg55nYtBhv9CGYfVfHS4-ASf19jW-M-OrIATbOBB46C8Cr4TavGm8Zrez5ceOmrteUJ8cHWgntB4lv~YFOZvg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/preview.png?Expires=4949251200&Signature=LyTUS6xk7v9pPW1WAXfwMd-8HEsQ56Yfi7g7vbZJhvE-J7Y0tvbys0bATTfurTyAOvOh-U8JXNKk-J157lGhmIJMV3jefaPBJUHSjH-nZHWMaXFTzNfy09xT8YOPxTl-~dx8uLxDqKCu2bAg8Ulpnh5L5~rtsPWGismDf75jG2yRrGQ6cioG-nwaWNm-e3rAfFZCoLoo8xPNBWBzWCL3mxtilZu9PDfkv91na55i2dtpGRvff34jjusRZ32E2QxO~Uv4XEzA1dn2-Kki9DeeHsnzhnBJSOcX8V4N~Mzyid8LgxzXcHLKbbiKhkNNPy8S-M0IcffVfwcQxZQRZGt63Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Bright yellow fast food cafeteria tray holding a slice of pepperoni pizza, a cheeseburger, and a blue iced soda cup with a red straw, stylized 3D game prop",
+    "should_remesh": true,
+    "target_polycount": 6500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 1950166270,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/model.fbx?Expires=4949251200&Signature=ACQJMOsMaZw0QsyOba3cYc6C7-Qn8-nJSDLkDVCl6okn4U8cujrNEdhoe0jIAy6F1IoH5II-bjoQ-nldmoYB8tuhvFODmuNmCs4S5v3yKCZ86R30JYiJh55ZXRNpjfDJQbW4e5RO12xB3wHVWCDrptWIKLbgLoBvSdEFwTm1VtWmqYGhj5bmtRBDYfCFdd34~XpGgnQ10aIlPBaOCM30Bes~DjvrDhrjwvV7TS9snKF8seImJBwcOXhfhUxvBb2KHZzxupV7r2Rh9PnkC8DfteNnE~l23vkkisE1LHGNZjFATZMXW4o~zSFupO0eYVEe~uYgqc1PMmRf59lfXUz1Zg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/model.glb?Expires=4949251200&Signature=E27Cyxy~Owi7DfUJF1zlb6qKUioC76PcJub0DPfo-DsZCDa6b5HqC4qCo8t5pwYgoL0MCB3uW9Ssl1gT49J4tpV3TlwRWgAWSotOAK94HiA98ptfFn4zU8lc-Ac8aoU01G4NHf0mJJnDbV~q1gJWAX5L16zPMtzaoJoq8T7wJw2EiNuZzE3bXFs9~VsJfTw~I5vaJYp6A3hoMnRiYXaa64sCBWWIGjkjAevBDi9SJeQOYxnmvBQBEuIyJYWkhGCA56Oikj7JPfhqDra3F5HREJ7jkS0G5F4I9gfvxTlmBHAFXGCySIq~jA6oZaX3OZGyXwd019HIfxOXX2IWUYzdnA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/model.obj?Expires=4949251200&Signature=ghyXyLwm392xhAAa3D94aBqmy-fE8hwdczB-MrLvlEVdw0k6pCfJoFzqeYBr3X55ryF1ke4E6Qlu9zjsviKrgMezuM10RG17UVj~ZAz0nZmpLgoVNQDm9dtSvjX2bg90-DD2ch8~0wbTLw6TGOdbkVqbRf-Ot4bcQDzPol7pyLDHK6CjR2zswJG3YV5UPLfaRuxuCat~W57gj88CaZG4zmiEby-MaT3I31yLi75F6zBD8q3UsNDs4plqJQo-rov~iFeLUdPJ0rTRcavT7VW3tf-K4wmlt2hqc2VGr0rATEfDE6WDIaF~NJY1Ja1gywcGioZvCErbsJqBdB-t4zl7bA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/model.stl?Expires=4949251200&Signature=btvOqSOahYMVMw8OnFpoCAn8nIuuFVxji72J865YEYO18dg~GrySBG0KCogsoxDOysirJfird6o6CT22HYVKw7LGDIS9HQAxObZyM0DMJLuSdZqh7RQJN3Vx1fliPMPZb2~TUCJDVs9gqrLzmfhXs2C5w73UqiYrZF5h5HGA5wWXz08NRTF0erbr9p1sDoz4QrpM~yweVBxGujXP9265Ga263ZtIUq3K7~0u2Mvs31fogQAXez~hS7tHAg~9ERrsjSg55nYtBhv9CGYfVfHS4-ASf19jW-M-OrIATbOBB46C8Cr4TavGm8Zrez5ceOmrteUJ8cHWgntB4lv~YFOZvg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/model.usdz?Expires=4949251200&Signature=HTpAcnAw0nbK0-SF8IUb9Y-9FTmyWMYYBGDq8egqxLjOJrAsVZOx72Cd-dqe~Uzr3nrcHSXxv12xyeLecveA5lrSUodho-VHmrQ6olWRJ1ck7jdjqMxor~Xir4rBX8jhByHxLFxr3ZxHQA25NwcN7A9SDCexXGda2XniHPMbREhSrUFbu5pdJT61IwkKSqdzIXiC4KOVaNUEDXkNjYkyHMy1ywZjkfw1ob1JoRJXND5bacnFc2eJUDc1GmGkR-8~cik5qEQBPvaTjDYaJ5PW~tUaeOu0~X3kpchp7MFS~EPDTjnfzte7ejLwuia~IU8Ave6TYqb64oXxrMTjkUn-Kw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7937-75c7-9829-f88cfcaf86d6/output/preview.png?Expires=4949251200&Signature=LyTUS6xk7v9pPW1WAXfwMd-8HEsQ56Yfi7g7vbZJhvE-J7Y0tvbys0bATTfurTyAOvOh-U8JXNKk-J157lGhmIJMV3jefaPBJUHSjH-nZHWMaXFTzNfy09xT8YOPxTl-~dx8uLxDqKCu2bAg8Ulpnh5L5~rtsPWGismDf75jG2yRrGQ6cioG-nwaWNm-e3rAfFZCoLoo8xPNBWBzWCL3mxtilZu9PDfkv91na55i2dtpGRvff34jjusRZ32E2QxO~Uv4XEzA1dn2-Kki9DeeHsnzhnBJSOcX8V4N~Mzyid8LgxzXcHLKbbiKhkNNPy8S-M0IcffVfwcQxZQRZGt63Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

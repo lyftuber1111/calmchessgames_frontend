@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_squishy",
+  "model_path": "./meshy_test_0/models/addy_squishy/addy_squishy.glb",
+  "textures_dir": "./meshy_test_0/models/addy_squishy/addy_squishy_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_squishy/addy_squishy_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_squishy/addy_squishy_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_squishy/addy_squishy_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_squishy/addy_squishy_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_squishy/addy_squishy_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219e8-4567-730e-be1b-91c9ee6d697b",
+  "refine_task_id": "01a219e8-dc37-74d0-b212-0e60f39dc0c7",
+  "prompt": "Kawaii pastel pink chubby cat squishy plush toy with cute pointed cat ears, big sparkly kawaii eyes and happy cat smile, soft rounded toy, stylized 3D game prop"
+}

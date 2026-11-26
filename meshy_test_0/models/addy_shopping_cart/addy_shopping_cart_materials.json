@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_shopping_cart",
+  "model_path": "./meshy_test_0/models/addy_shopping_cart/addy_shopping_cart.glb",
+  "textures_dir": "./meshy_test_0/models/addy_shopping_cart/addy_shopping_cart_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_shopping_cart/addy_shopping_cart_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_shopping_cart/addy_shopping_cart_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_shopping_cart/addy_shopping_cart_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_shopping_cart/addy_shopping_cart_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_shopping_cart/addy_shopping_cart_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219eb-f1aa-7659-b004-3942a433e363",
+  "refine_task_id": "01a219ec-c49b-7406-ba2f-1465788ca79e",
+  "prompt": "Classic metal chrome supermarket wire shopping cart with bright blue plastic push handle, child seat flap, and four caster wheels, stylized 3D retail prop"
+}

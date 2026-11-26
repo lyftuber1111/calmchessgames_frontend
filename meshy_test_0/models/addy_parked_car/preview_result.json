@@ -1,0 +1,49 @@
+{
+  "id": "01a219eb-a478-734a-90b1-6d121efd0d92",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 3834113186,
+  "prompt": "Clean stylized modern compact SUV crossover car with glossy white-silver neutral paintable body, tinted sky-blue windows, bright headlights, and four black rubber tires, 3D game vehicle prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731205303,
+  "progress": 100,
+  "started_at": 1795731205313,
+  "finished_at": 1795731270648,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/model.glb?Expires=4949251200&Signature=MNqxwk5OZWuaBKv96BWl~HaDLscX0jjTmf5RbVEgU9STN8zMpVvpTyE6lHS9hdF9WePnezqjKamI22UOfYz57iXYnE2e78aIpPrkGdfU6dZQlK9GM9neIVjodkjjR6zJO0HFq1eY4BnPcDxIlWiDrxzve~19GR2ftjMKP9MeKzZfjiJ2FnOyEioSRMpYqQBeCOUCwFlouJDEv04aoCLE6ZSKuj3UP4YF1cAFkYMRgqApa-b0QsWtAdMQVqXDXKtqVPo6ozUpOv6SPfobYNLlKi7HxAXVUU7T11gOm7I9RewckTXQ~xXRClQkhyTvCybRbZpYJE1QzCAuSg4FMrZg2Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/model.fbx?Expires=4949251200&Signature=LJaGZHNot-f2IPLV4qoKrDXwnkLIqmnbL1Kru9wdK53K4lVJv8VhgQZSgNlyveP581tyrK-1B-VLnfvjMshzEdNLsDF0bxdZqfPesjMvJ208dayO73KfmOuda4ovpyuwhSfOsEdhWKSwocC18c1EhXbTExsA2COY3tbrxYlkKxRkFaWMkPr7BI801u3unqUxm7NQ-YQX7R5LMoSvcVBp85qrdT~O1R3DLTdjSc5mH54shSRSdUE8uU-9bSpuMu-yp7fXqapIfN2NkoQXcmy~PpmZde2SyDViojuFOcW8j2rBeYjzrGWvp1eKokaEWeQDylXPi3jaFWNl-tRORGXR4g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/model.usdz?Expires=4949251200&Signature=RvlqsK7NBqnARfaGainJUEEcGRG~4TpK93Gfsz-qQW~OFkORguDtkZpNCtW7kpGYn8u4U~6Ksy1rszYimu9TJmYsuVcWz3rqaL55YrvdWX~OWqIgIfFmBu144FqVSo3GATTiBBHWmP3tkrxqlAjFwyupjOmk7fsARadSqlJIo-dArE2k5GPyiNArKKC5sf-j5DrxVLPSe2SgqO4Cjcalslh2RZVIseZ8DsFTBeWFSVjai3IFwRR637hAl1pZzaL6SXZwVJ8h6fE8hiYembTTcTzBpidBGDYp6STMH-BB864Xtj~G8~QCVMHs5DjTVT8c6kwOseqVhOIP8JeJQLQnIg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/model.obj?Expires=4949251200&Signature=brIkhGxZCVT8ABxjkzA6Xg9pNApSxUlKA~GKeaFXT2BAuvzVgwmJ-dNNOV8ujlRuPKVl82keO5GtBI4j2Fq-ZK8KfA6pY0UFAROmx9O1pxYsN-Wr4wPyCe4zzlGPItFBJbg561D6R0vZuQQABA2gYBoPsz8hZFJhUSPFU6zZ6kt74BUfU9FWMBbsw2byklavrgMQQRZ2i2F36HaPTDGNWqnkH5RZCZgARAcNvqCLRa3jC7lp~-GsUiiXpXvX4554DbY9sXK6kevLWez3fOyVYLcJivKlJTwmrJq9FucH9qzI0nrKLgWn796Sg9kUoswQXwwS-K3BLRnDjvp0vhrGqg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/model.stl?Expires=4949251200&Signature=PisdgykKsO8T4NjmR1BbweF2XLHE-APFMr3lXka~GKmokMyxTPUBCSTvVVAoF1cRgapp1UKGtJujzlB0GJ8xfWNbmuPKSg~GWviMTSJIS7rajVF1FSjrYaKrdq5~GF~rUwqnBmWpxeF~W64mbq4B0UuCSiYIj2NeBGJkmwuKA-M4kVNntCbnZyTVSbtRSdokIrV2GjQUyetU4QhjeuJwFQAPGOPtNImiLUsOeGQhTZwsbp-2pS3Gl2w7fmX5-4~NvDrK~R4P-p0CGWjJj31Lvn1WDnfpAG~LDIv~XvD2ZizOf2k8qcClIU8ml9HJzvf5PFWcXI85nNbm6B4ne9D~YA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/preview.png?Expires=4949251200&Signature=grxEDhzz46Ho99DV6T3NlIXtS82OJrhbpDPWJdp88O2f3~ns7ozIkIOVHYjFCowL0hXm9YzEO2TFCDFCKKcs0hcd7AQUq9f9-vQ8ztRezTdWY-losxDYNf6rCxlrmJBY1yXFuX4mhxVEIFx5WEXzNQnSkurCsx6c3PZDZ0CnrPjsqMu61kGaiUKtwPdwJ9zghSsKROj-QbBlkSG0HTH7YExIU-xQMThQ56TtaGJaoumNeOLZJ9XTXec2dGIfBYRojoaoduPBlI-fIWR68BvEOwzjJXzZss2u-s1YKUat2Dde0heVAUW2S2oKn9tyNeBRenhH~APD7KJintNT6ohjyw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Clean stylized modern compact SUV crossover car with glossy white-silver neutral paintable body, tinted sky-blue windows, bright headlights, and four black rubber tires, 3D game vehicle prop",
+    "should_remesh": true,
+    "target_polycount": 8000,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 3834113186,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/model.fbx?Expires=4949251200&Signature=LJaGZHNot-f2IPLV4qoKrDXwnkLIqmnbL1Kru9wdK53K4lVJv8VhgQZSgNlyveP581tyrK-1B-VLnfvjMshzEdNLsDF0bxdZqfPesjMvJ208dayO73KfmOuda4ovpyuwhSfOsEdhWKSwocC18c1EhXbTExsA2COY3tbrxYlkKxRkFaWMkPr7BI801u3unqUxm7NQ-YQX7R5LMoSvcVBp85qrdT~O1R3DLTdjSc5mH54shSRSdUE8uU-9bSpuMu-yp7fXqapIfN2NkoQXcmy~PpmZde2SyDViojuFOcW8j2rBeYjzrGWvp1eKokaEWeQDylXPi3jaFWNl-tRORGXR4g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/model.glb?Expires=4949251200&Signature=MNqxwk5OZWuaBKv96BWl~HaDLscX0jjTmf5RbVEgU9STN8zMpVvpTyE6lHS9hdF9WePnezqjKamI22UOfYz57iXYnE2e78aIpPrkGdfU6dZQlK9GM9neIVjodkjjR6zJO0HFq1eY4BnPcDxIlWiDrxzve~19GR2ftjMKP9MeKzZfjiJ2FnOyEioSRMpYqQBeCOUCwFlouJDEv04aoCLE6ZSKuj3UP4YF1cAFkYMRgqApa-b0QsWtAdMQVqXDXKtqVPo6ozUpOv6SPfobYNLlKi7HxAXVUU7T11gOm7I9RewckTXQ~xXRClQkhyTvCybRbZpYJE1QzCAuSg4FMrZg2Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/model.obj?Expires=4949251200&Signature=brIkhGxZCVT8ABxjkzA6Xg9pNApSxUlKA~GKeaFXT2BAuvzVgwmJ-dNNOV8ujlRuPKVl82keO5GtBI4j2Fq-ZK8KfA6pY0UFAROmx9O1pxYsN-Wr4wPyCe4zzlGPItFBJbg561D6R0vZuQQABA2gYBoPsz8hZFJhUSPFU6zZ6kt74BUfU9FWMBbsw2byklavrgMQQRZ2i2F36HaPTDGNWqnkH5RZCZgARAcNvqCLRa3jC7lp~-GsUiiXpXvX4554DbY9sXK6kevLWez3fOyVYLcJivKlJTwmrJq9FucH9qzI0nrKLgWn796Sg9kUoswQXwwS-K3BLRnDjvp0vhrGqg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/model.stl?Expires=4949251200&Signature=PisdgykKsO8T4NjmR1BbweF2XLHE-APFMr3lXka~GKmokMyxTPUBCSTvVVAoF1cRgapp1UKGtJujzlB0GJ8xfWNbmuPKSg~GWviMTSJIS7rajVF1FSjrYaKrdq5~GF~rUwqnBmWpxeF~W64mbq4B0UuCSiYIj2NeBGJkmwuKA-M4kVNntCbnZyTVSbtRSdokIrV2GjQUyetU4QhjeuJwFQAPGOPtNImiLUsOeGQhTZwsbp-2pS3Gl2w7fmX5-4~NvDrK~R4P-p0CGWjJj31Lvn1WDnfpAG~LDIv~XvD2ZizOf2k8qcClIU8ml9HJzvf5PFWcXI85nNbm6B4ne9D~YA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/model.usdz?Expires=4949251200&Signature=RvlqsK7NBqnARfaGainJUEEcGRG~4TpK93Gfsz-qQW~OFkORguDtkZpNCtW7kpGYn8u4U~6Ksy1rszYimu9TJmYsuVcWz3rqaL55YrvdWX~OWqIgIfFmBu144FqVSo3GATTiBBHWmP3tkrxqlAjFwyupjOmk7fsARadSqlJIo-dArE2k5GPyiNArKKC5sf-j5DrxVLPSe2SgqO4Cjcalslh2RZVIseZ8DsFTBeWFSVjai3IFwRR637hAl1pZzaL6SXZwVJ8h6fE8hiYembTTcTzBpidBGDYp6STMH-BB864Xtj~G8~QCVMHs5DjTVT8c6kwOseqVhOIP8JeJQLQnIg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-a478-734a-90b1-6d121efd0d92/output/preview.png?Expires=4949251200&Signature=grxEDhzz46Ho99DV6T3NlIXtS82OJrhbpDPWJdp88O2f3~ns7ozIkIOVHYjFCowL0hXm9YzEO2TFCDFCKKcs0hcd7AQUq9f9-vQ8ztRezTdWY-losxDYNf6rCxlrmJBY1yXFuX4mhxVEIFx5WEXzNQnSkurCsx6c3PZDZ0CnrPjsqMu61kGaiUKtwPdwJ9zghSsKROj-QbBlkSG0HTH7YExIU-xQMThQ56TtaGJaoumNeOLZJ9XTXec2dGIfBYRojoaoduPBlI-fIWR68BvEOwzjJXzZss2u-s1YKUat2Dde0heVAUW2S2oKn9tyNeBRenhH~APD7KJintNT6ohjyw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

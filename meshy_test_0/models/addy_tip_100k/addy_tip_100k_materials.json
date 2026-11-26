@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_tip_100k",
+  "model_path": "./meshy_test_0/models/addy_tip_100k/addy_tip_100k.glb",
+  "textures_dir": "./meshy_test_0/models/addy_tip_100k/addy_tip_100k_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_tip_100k/addy_tip_100k_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_tip_100k/addy_tip_100k_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_tip_100k/addy_tip_100k_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_tip_100k/addy_tip_100k_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_tip_100k/addy_tip_100k_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219ea-6e9f-72c8-afe4-b8aee8d6d381",
+  "refine_task_id": "01a219eb-55b5-7473-8ea8-16deea66b485",
+  "prompt": "Thick stacked bundle of crisp green hundred dollar cash bills tightly wrapped with shiny metallic golden money bands, stylized 3D treasure reward prop"
+}

@@ -1,0 +1,49 @@
+{
+  "id": "01a219ed-37dd-75b2-9cbc-39d5f29c99b7",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 897438887,
+  "prompt": "Modern supermarket POS checkout register terminal with dark metallic base, angled touchscreen display monitor on stand, and cash drawer, stylized 3D retail prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731308098,
+  "progress": 100,
+  "started_at": 1795731308114,
+  "finished_at": 1795731342740,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/model.glb?Expires=4949251200&Signature=IkPjGUwwjaTeAEA8ueAdEFpcMg3tkU-wWpVUgNpf2lGmYCVONFxtyWtBiAlfXa834Ghn04kika5aY5XRmyLAnDWZJnHI3EbI52LFFuLVPlJ7XcZbnsdQATBMsgHDQG7E~6X1CjHQtZYrjUOervrEhOYdg4bn3w8LTz-Lgwqaxqa5D2pbd6DRj5-My6q1E13giJJMtswz~vtc0jyI2~tgAhZKHM9OYhR5wnBBgu4iIzzjdAolOTa~zJB~2yem23gKqKIZzBz8aH2Q4eSzDAfoL7Me3Ltqo32mHXfw1bcZpVrIXzIjVv5M7WSAftab0XFTcsFe6f629LGkUVWdRDeB1Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/model.fbx?Expires=4949251200&Signature=cmImDVUeLifBcLKfXkklkAoZ9cGmfJrXVjAceJpGbTNLXxGsnw9pSanbUGKZ2JGlMdRW7l59iY1PvuiX1bTqsXOxTPiW6NhQuB~vvwKUs6WbN1a9Uvj7aJ0qOcjNvc2Jd1LmafFxQz0DJmxPZwkr8yo9ptOtTJq~-wDpfWXcVHm8iDg6YvrAfBIAjRT9MZNEY4kChFedk3LT4rCSMPy-x3KkQIzaT3uVjYSsUdPYgrxkYD6TqVuEyZj2HckcNZocYosNYfhad~9DL1kBpKbZ3~Zs40HH5So3bKyBj~NCJuOL~dOvhzgDvjAg4fzpQctCHtuQAprqkDIjUFdY7v--PA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/model.usdz?Expires=4949251200&Signature=a8~SPNfJY0fMmd2lRnCCvsyNtGHRB9fW1Snp2c1K92kcM-cjto11LCny9GYJxdnkLpntV0DFab-dU9jcYsezMzuDVRujdndpqqZWVQ27Aq61Ki0naQheEP6kpHJlbHQUxtTXELcDqunSoUXWtiioWIwTnvEOpR6QSu9HozLBBUkioW6Lxb4JJow9cytsMogzVbcr7gpMrVzF88TdchI6BbyC5eT1Yt1NcnkfRBRjoxTcpP95SBsty~7nk8v73O~bVQPrwBjYDZuLx-ZUd8HkmtUN-UkTLh7rtOsTCx~spHyTeBSddhP~69gMJDx2rSCsl~zy3RU96-3V8xkQXSTxsA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/model.obj?Expires=4949251200&Signature=hSJFsOTDx9snFghBrpFRC2mMAvWvV-Hn5HNMBj~ragkzpG26ry3Tete4qQOO6CXbd6kF~FcrKDrjK6Bb2FsySCEvbE9BkCE43D8c5KcGlhYdjq7Nx39j6dxzi9RyOlPSJ67Xo1zmTrlu92lomlM2PjbRUppvztgAm~IsGsoyt3YnGCCMRYwO8Yat8WICkS64AWBkKlUs3xGin8m~-yAQZT643Hcd~Pf5DCaFyDeZH7R6XzJrKl17WfC2JnZjNkwGIS6pyDvYpzlv6PFekCmzsM9PI9ER4BfONeUgIRGLneMZWlXcMDbxUIYPIEyc6E30~2ci7IbtaL0wB09QftGdIw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/model.stl?Expires=4949251200&Signature=nMPfPa6hXTeN4TACBygbAYm3A7OTwivIkQJ2Lpapso3tLkSg5sudrcMGjdo-d5XfLRd~JpRX3bq1JHhjpH0jIK-CJw-Vnu~sVCNiYncS0KBXXStZst6WH65aZYKBCgwFgrcBUZIEFc~6QYzrTjWRonnH9tnRUtVCNc68xxu4XBuYJb-UtBOV~7ShLSEZ6q75xMOWtqg60RC5Sdha5LFDdGuqMOrjWySS-Q1YocX-eidfsHx2bLXLFPSuFjXIjLY~t6GXgyXUJQDpii~0bfhoknoIsg3VEqgD~wz3~VDpTwZrb4DQD4CV8O~j27D-dvTN9bVUjMOxo6pGJSZxOIOlzg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/preview.png?Expires=4949251200&Signature=V61-zXyM5NKt2f-ZtqUVW4yQhjSTfO11bSEYwl-UZfJqtiLrFORectmFqR3btoKLlEzSs~fga4-Hu8uXbnSh-DTxHJGgqKXNoL3OePBKb~Y~sBuFejX-BZfmQa7akT9MZshSpQQVcu--EFAIRdJzrFnszdYIuKgpllchQlcMcyd2-dP4qAOFVlxW5CRBNdsGKIzcpjjOwpQlm49iYO1FkXVJlJZ9LXg7ptvKGbC7nRXWo9PhgHX2ovKEE3NH0tOjShM~KUfJggNY6XdiHrAgq2VsfLfTRA6rETwYr6MctaJrNSqbkLVNoj0qgJWFotOvRxHeTPuc7qoYLEegbz4PtQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Modern supermarket POS checkout register terminal with dark metallic base, angled touchscreen display monitor on stand, and cash drawer, stylized 3D retail prop",
+    "should_remesh": true,
+    "target_polycount": 6500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 897438887,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/model.fbx?Expires=4949251200&Signature=cmImDVUeLifBcLKfXkklkAoZ9cGmfJrXVjAceJpGbTNLXxGsnw9pSanbUGKZ2JGlMdRW7l59iY1PvuiX1bTqsXOxTPiW6NhQuB~vvwKUs6WbN1a9Uvj7aJ0qOcjNvc2Jd1LmafFxQz0DJmxPZwkr8yo9ptOtTJq~-wDpfWXcVHm8iDg6YvrAfBIAjRT9MZNEY4kChFedk3LT4rCSMPy-x3KkQIzaT3uVjYSsUdPYgrxkYD6TqVuEyZj2HckcNZocYosNYfhad~9DL1kBpKbZ3~Zs40HH5So3bKyBj~NCJuOL~dOvhzgDvjAg4fzpQctCHtuQAprqkDIjUFdY7v--PA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/model.glb?Expires=4949251200&Signature=IkPjGUwwjaTeAEA8ueAdEFpcMg3tkU-wWpVUgNpf2lGmYCVONFxtyWtBiAlfXa834Ghn04kika5aY5XRmyLAnDWZJnHI3EbI52LFFuLVPlJ7XcZbnsdQATBMsgHDQG7E~6X1CjHQtZYrjUOervrEhOYdg4bn3w8LTz-Lgwqaxqa5D2pbd6DRj5-My6q1E13giJJMtswz~vtc0jyI2~tgAhZKHM9OYhR5wnBBgu4iIzzjdAolOTa~zJB~2yem23gKqKIZzBz8aH2Q4eSzDAfoL7Me3Ltqo32mHXfw1bcZpVrIXzIjVv5M7WSAftab0XFTcsFe6f629LGkUVWdRDeB1Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/model.obj?Expires=4949251200&Signature=hSJFsOTDx9snFghBrpFRC2mMAvWvV-Hn5HNMBj~ragkzpG26ry3Tete4qQOO6CXbd6kF~FcrKDrjK6Bb2FsySCEvbE9BkCE43D8c5KcGlhYdjq7Nx39j6dxzi9RyOlPSJ67Xo1zmTrlu92lomlM2PjbRUppvztgAm~IsGsoyt3YnGCCMRYwO8Yat8WICkS64AWBkKlUs3xGin8m~-yAQZT643Hcd~Pf5DCaFyDeZH7R6XzJrKl17WfC2JnZjNkwGIS6pyDvYpzlv6PFekCmzsM9PI9ER4BfONeUgIRGLneMZWlXcMDbxUIYPIEyc6E30~2ci7IbtaL0wB09QftGdIw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/model.stl?Expires=4949251200&Signature=nMPfPa6hXTeN4TACBygbAYm3A7OTwivIkQJ2Lpapso3tLkSg5sudrcMGjdo-d5XfLRd~JpRX3bq1JHhjpH0jIK-CJw-Vnu~sVCNiYncS0KBXXStZst6WH65aZYKBCgwFgrcBUZIEFc~6QYzrTjWRonnH9tnRUtVCNc68xxu4XBuYJb-UtBOV~7ShLSEZ6q75xMOWtqg60RC5Sdha5LFDdGuqMOrjWySS-Q1YocX-eidfsHx2bLXLFPSuFjXIjLY~t6GXgyXUJQDpii~0bfhoknoIsg3VEqgD~wz3~VDpTwZrb4DQD4CV8O~j27D-dvTN9bVUjMOxo6pGJSZxOIOlzg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/model.usdz?Expires=4949251200&Signature=a8~SPNfJY0fMmd2lRnCCvsyNtGHRB9fW1Snp2c1K92kcM-cjto11LCny9GYJxdnkLpntV0DFab-dU9jcYsezMzuDVRujdndpqqZWVQ27Aq61Ki0naQheEP6kpHJlbHQUxtTXELcDqunSoUXWtiioWIwTnvEOpR6QSu9HozLBBUkioW6Lxb4JJow9cytsMogzVbcr7gpMrVzF88TdchI6BbyC5eT1Yt1NcnkfRBRjoxTcpP95SBsty~7nk8v73O~bVQPrwBjYDZuLx-ZUd8HkmtUN-UkTLh7rtOsTCx~spHyTeBSddhP~69gMJDx2rSCsl~zy3RU96-3V8xkQXSTxsA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-37dd-75b2-9cbc-39d5f29c99b7/output/preview.png?Expires=4949251200&Signature=V61-zXyM5NKt2f-ZtqUVW4yQhjSTfO11bSEYwl-UZfJqtiLrFORectmFqR3btoKLlEzSs~fga4-Hu8uXbnSh-DTxHJGgqKXNoL3OePBKb~Y~sBuFejX-BZfmQa7akT9MZshSpQQVcu--EFAIRdJzrFnszdYIuKgpllchQlcMcyd2-dP4qAOFVlxW5CRBNdsGKIzcpjjOwpQlm49iYO1FkXVJlJZ9LXg7ptvKGbC7nRXWo9PhgHX2ovKEE3NH0tOjShM~KUfJggNY6XdiHrAgq2VsfLfTRA6rETwYr6MctaJrNSqbkLVNoj0qgJWFotOvRxHeTPuc7qoYLEegbz4PtQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

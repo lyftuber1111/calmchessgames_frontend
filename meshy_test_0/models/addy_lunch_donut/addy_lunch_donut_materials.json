@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_lunch_donut",
+  "model_path": "./meshy_test_0/models/addy_lunch_donut/addy_lunch_donut.glb",
+  "textures_dir": "./meshy_test_0/models/addy_lunch_donut/addy_lunch_donut_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_lunch_donut/addy_lunch_donut_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_lunch_donut/addy_lunch_donut_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_lunch_donut/addy_lunch_donut_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_lunch_donut/addy_lunch_donut_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_lunch_donut/addy_lunch_donut_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219eb-90af-70b3-8435-7380455ef48b",
+  "refine_task_id": "01a219ec-3ae3-7446-ac44-9bb445937c0d",
+  "prompt": "Delicious pink frosted glazed ring donut topped with colorful rainbow sprinkles, stylized 3D bakery food prop"
+}

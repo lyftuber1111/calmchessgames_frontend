@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_cup",
+  "model_path": "./meshy_test_0/models/addy_cup/addy_cup.glb",
+  "textures_dir": "./meshy_test_0/models/addy_cup/addy_cup_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_cup/addy_cup_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_cup/addy_cup_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_cup/addy_cup_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_cup/addy_cup_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_cup/addy_cup_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219e8-4561-7442-a52e-7e778848ba58",
+  "refine_task_id": "01a219e8-c6fd-77b1-a537-2975ec5c6f7e",
+  "prompt": "Modern insulated pastel sky-blue tumbler cup with ergonomic side handle, polished stainless steel rim, white lid, and yellow reusable drinking straw, stylized 3D retail product"
+}

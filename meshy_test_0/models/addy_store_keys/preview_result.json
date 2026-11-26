@@ -1,0 +1,49 @@
+{
+  "id": "01a219ea-6ff5-7039-8b36-55a0f9faed4c",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 1412265082,
+  "prompt": "Detailed silver metal keyring keychain holding a shiny golden master store key, a silver key, and a round royal blue plastic key fob with a bright yellow star spark emblem, stylized 3D prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731126833,
+  "progress": 100,
+  "started_at": 1795731126841,
+  "finished_at": 1795731158767,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/model.glb?Expires=4949251200&Signature=cJmrWHr3uf7oR4t4OX4phN9ruPR3s0YXnIUYDhpy52O8BohNaCEd~5rST-otX~axNIUdEwPftQ9le4TA7eGzBIgvFXPgE6yf3qDTn5kp2tFy9Ic2yhwjDdexZVuBZVg3TUkV9uULRStDdEojJMOErSSQddWT6V2SADQapVnG8GKpco1xH~116B23noWldBpXEaTNY8pBfkIcgwMp-xcwvmGm~Har6vFO8okyU4n2yydepHettz~qjOQ9eDCHwvgkAcpV4NQFBGWgpGgHFiGVHk56UO2pV3Ysz2OSotaTCFl2gvMCFpMdq0BG7OYs4iH4I2DZJ8l3wKk3cAeExuY5bQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/model.fbx?Expires=4949251200&Signature=CR9O1zeVNA78MlchUy57feQCDorTLd1dStWkyf746Ok1cLY7BcQhd~9M8ssD9upEA3hYoVZ2xdQPmAUn1bE468ZXNK3XFGwV0dgfjZ4PHHPBAOseb2IG74A~bRDabFpSrCvP7kYyQKYTBc7KHZwvSKqHRKeL~JNmuoyOavWa~dM~AndQ0fK2hztAEofPN3~2zzIRRTrRP2jMNJ~GtW2CS4AXVE~aFUBWSMf~kt0w2FhN3-iGG9Dk6L0G-JIH-m1ZAsYkDiQzrFJJ3Dy49uMICKTFM8TYHZm0VMcPi1MhXlYUCztVfGvrvZ8pfSAXU~EUlYfhM1uHajOr9eAu~OmGow__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/model.usdz?Expires=4949251200&Signature=XyeDyFI49EO2VIJmeoEuov3JxExFg1NDB~Z07A7D9iYWwFfqRmO5B7zIBujDwJb7Ad2q0o00ImphuUtTUiXOSS8KAKCqf7iiPIVateKgOWgrrM3LnTs3nDyJfJxMxjiwMdUiXHq0Tknh7Qzv3RQ4lRC~kynO29U1jfwjdwLHCGykgHokpEzT5RSRPiTTzlaScMNHMM82VKBVVoza2198bqApqLV2t2znAq-sNj8Engv4CJvDN0m5R6Jj5lHq3KjgKDdJn28bGdaagNPt8H3VcaaMA-N389o~q5v1kpZGpDErNF0fWGhLqsJ6Y7tm295ZEdg-Fx0X7PJx9MJNG3yBvg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/model.obj?Expires=4949251200&Signature=AMxcgkKiauHmCZbswsaeinLctBFxVcCEGeHuQX7J3oDCy7164Nrwt2uE9x4BDIHNe3JZIyWxXe745DLUoNlTZkAKLUx8Ls7YFVCtI7cjf-cRzk-P7r8lhlwcultE60dPoMBEPMUtQO1GnuarU~lnC0Q0UWOlGoEO3I4KFopY3WLbjQ55Ed5oACk26iTxn2KxojBiJAE-NvQ14Y0sKZchknjYQ7BMvmsaYpyxgnP4lZlOiavwd3De0B0ko4DP~s4qxLBen1DfaulE1KT70xlH8SWvxnDNTPCZRU4ZpgYm0q6EHs7OtMUXhURK99pNJ5H~q3yPp09LBS3zNwvsqElNrg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/model.stl?Expires=4949251200&Signature=HhbPstCv9ZloyXfxgv9xTBQxorZZuBY3bt6EJDYLstlcx7knoTbtVaTHtSRz50Uv6u4fnl7xlwD7gQ8SMoWCNUcUM~7E3mYwEXapPeMMR1bthcYEOb~JjJFhXMUY1HOBUnE-YcEGhYPyMMzBmqaZUYmRR89hzwwM5s8bgmrOKTx5kXR3cd7Otq5bDuj6WKptMgtdXuiJzGA3jyGwQbJxFO2Pn~0XVSY4BuMUG~K3L-E-lEVi9BniS1dkZErTeWFFBPpZVakqhyGyQg63AFvJtmuEafzwblGXZbKvLEHc2vCQK9U1cE~xHcW2Exq46gmFjHSYO5fqYGR9eHTwm94uPA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/preview.png?Expires=4949251200&Signature=K2-IKnf9PgjDQC14YwIA1mUwRYBxR6odFXqwma~6fVDxzaeC7nK9C9dUrq~DAc5q8-ScVA3b-EWYnd4d38zW6CZOliemMhzR6xwu2JRqqPDYonnv6DHuJsyrmanyzZfuV1-PY1anoa2hnu4YVQT7m43MaIJDxIH-RoXSKKARmkxKfXD1lTSGZOAU~NoDKZme3wHkz-ZiZj2TxQRRub3jzz-03WNYoix-MZF1jF6w8AsSb0proOggLiYdOoxBxq85pSSWO2ODqPLrvgOG57T3jMHCE1yqpkTWkuApLyErV7dBjNciHlaa7w5K3S1xi1Z~kK--Ih8rcL5amR8GG-q4~g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Detailed silver metal keyring keychain holding a shiny golden master store key, a silver key, and a round royal blue plastic key fob with a bright yellow star spark emblem, stylized 3D prop",
+    "should_remesh": true,
+    "target_polycount": 5500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 1412265082,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/model.fbx?Expires=4949251200&Signature=CR9O1zeVNA78MlchUy57feQCDorTLd1dStWkyf746Ok1cLY7BcQhd~9M8ssD9upEA3hYoVZ2xdQPmAUn1bE468ZXNK3XFGwV0dgfjZ4PHHPBAOseb2IG74A~bRDabFpSrCvP7kYyQKYTBc7KHZwvSKqHRKeL~JNmuoyOavWa~dM~AndQ0fK2hztAEofPN3~2zzIRRTrRP2jMNJ~GtW2CS4AXVE~aFUBWSMf~kt0w2FhN3-iGG9Dk6L0G-JIH-m1ZAsYkDiQzrFJJ3Dy49uMICKTFM8TYHZm0VMcPi1MhXlYUCztVfGvrvZ8pfSAXU~EUlYfhM1uHajOr9eAu~OmGow__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/model.glb?Expires=4949251200&Signature=cJmrWHr3uf7oR4t4OX4phN9ruPR3s0YXnIUYDhpy52O8BohNaCEd~5rST-otX~axNIUdEwPftQ9le4TA7eGzBIgvFXPgE6yf3qDTn5kp2tFy9Ic2yhwjDdexZVuBZVg3TUkV9uULRStDdEojJMOErSSQddWT6V2SADQapVnG8GKpco1xH~116B23noWldBpXEaTNY8pBfkIcgwMp-xcwvmGm~Har6vFO8okyU4n2yydepHettz~qjOQ9eDCHwvgkAcpV4NQFBGWgpGgHFiGVHk56UO2pV3Ysz2OSotaTCFl2gvMCFpMdq0BG7OYs4iH4I2DZJ8l3wKk3cAeExuY5bQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/model.obj?Expires=4949251200&Signature=AMxcgkKiauHmCZbswsaeinLctBFxVcCEGeHuQX7J3oDCy7164Nrwt2uE9x4BDIHNe3JZIyWxXe745DLUoNlTZkAKLUx8Ls7YFVCtI7cjf-cRzk-P7r8lhlwcultE60dPoMBEPMUtQO1GnuarU~lnC0Q0UWOlGoEO3I4KFopY3WLbjQ55Ed5oACk26iTxn2KxojBiJAE-NvQ14Y0sKZchknjYQ7BMvmsaYpyxgnP4lZlOiavwd3De0B0ko4DP~s4qxLBen1DfaulE1KT70xlH8SWvxnDNTPCZRU4ZpgYm0q6EHs7OtMUXhURK99pNJ5H~q3yPp09LBS3zNwvsqElNrg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/model.stl?Expires=4949251200&Signature=HhbPstCv9ZloyXfxgv9xTBQxorZZuBY3bt6EJDYLstlcx7knoTbtVaTHtSRz50Uv6u4fnl7xlwD7gQ8SMoWCNUcUM~7E3mYwEXapPeMMR1bthcYEOb~JjJFhXMUY1HOBUnE-YcEGhYPyMMzBmqaZUYmRR89hzwwM5s8bgmrOKTx5kXR3cd7Otq5bDuj6WKptMgtdXuiJzGA3jyGwQbJxFO2Pn~0XVSY4BuMUG~K3L-E-lEVi9BniS1dkZErTeWFFBPpZVakqhyGyQg63AFvJtmuEafzwblGXZbKvLEHc2vCQK9U1cE~xHcW2Exq46gmFjHSYO5fqYGR9eHTwm94uPA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/model.usdz?Expires=4949251200&Signature=XyeDyFI49EO2VIJmeoEuov3JxExFg1NDB~Z07A7D9iYWwFfqRmO5B7zIBujDwJb7Ad2q0o00ImphuUtTUiXOSS8KAKCqf7iiPIVateKgOWgrrM3LnTs3nDyJfJxMxjiwMdUiXHq0Tknh7Qzv3RQ4lRC~kynO29U1jfwjdwLHCGykgHokpEzT5RSRPiTTzlaScMNHMM82VKBVVoza2198bqApqLV2t2znAq-sNj8Engv4CJvDN0m5R6Jj5lHq3KjgKDdJn28bGdaagNPt8H3VcaaMA-N389o~q5v1kpZGpDErNF0fWGhLqsJ6Y7tm295ZEdg-Fx0X7PJx9MJNG3yBvg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6ff5-7039-8b36-55a0f9faed4c/output/preview.png?Expires=4949251200&Signature=K2-IKnf9PgjDQC14YwIA1mUwRYBxR6odFXqwma~6fVDxzaeC7nK9C9dUrq~DAc5q8-ScVA3b-EWYnd4d38zW6CZOliemMhzR6xwu2JRqqPDYonnv6DHuJsyrmanyzZfuV1-PY1anoa2hnu4YVQT7m43MaIJDxIH-RoXSKKARmkxKfXD1lTSGZOAU~NoDKZme3wHkz-ZiZj2TxQRRub3jzz-03WNYoix-MZF1jF6w8AsSb0proOggLiYdOoxBxq85pSSWO2ODqPLrvgOG57T3jMHCE1yqpkTWkuApLyErV7dBjNciHlaa7w5K3S1xi1Z~kK--Ih8rcL5amR8GG-q4~g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "01a219e8-4569-70f3-a45b-3de704c38e10",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 3001572220,
+  "prompt": "Neatly folded vibrant orange coral kids pullover hoodie sweatshirt with cozy hood on top and white drawstrings, soft cotton fleece texture, retail shelf display clothing prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795730984323,
+  "progress": 100,
+  "started_at": 1795730984332,
+  "finished_at": 1795731016585,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/model.glb?Expires=4949251200&Signature=PmBJcXt1q-u0db~OTcAwo-K~oc4L7cafbxRzrcbct32Cb8yZCSwIAuMqbsMR7g-ytKWCBnam71KvodCfxF29Ah5nVEvHjzll8Ech6pZrHGFF8sLkoM4tKqT33Yhuj-aUoMsweetdvSE7vwgPpei7LnejfMBtLXjDshpmwCxiQmka6-YqXB6vc8PckU8QtxhOeD37mjTo5aGKutd~uq8f5pQMdFUO6EQjCi-JN2cqfRyjib1tDW8jkGtphyiUfAPee0kJuGI8qMNNK-uIF-AGcvAPfKwRHE7-lbgWN8eyzztqfEMC2f7Yjr3prtfKkWE6XZ03~9iHFE6TfrH0OOG6rQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/model.fbx?Expires=4949251200&Signature=OA8Q~aFgfwt2CjuW0cNR5H6QCWQKomZomNC9qVSv9wV8DXgZduRYUidKmeJET8VI5kWdEDrah4UULTXhJdxycVlrfI7LqmR4tAgOjCkUX3If0n0LzbJ1jVjZdbo6hn8J3C3mnuhRF5bu-rbc6sEOSvka8ByWGwkAWUPTV15~Jyl6iMD7U-YGULZ~3lCB0rN8Ah-xAKmTTFqaJmyuhA8HgrcJfQf8-IUDR8dIRGNhR27SRX2LOzxPunc6Xdfa10M2mSPyUW1RgGq-~GMBWx3J0RZV1KkO1akIsIlkA6WsG2E30VbrZt9QXYsfQ5tIwKzYdoodteOT~KiI6TCuQFWQ4Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/model.usdz?Expires=4949251200&Signature=LyIkFOni~nX2qhsnbyYLe8FMN2aSQuVQ8cArC9fXkiJeOm7KcT2TDQbuhsOug42V1l~kfVlcUvuXCUeXl8ZUi0wBgRK4dd2P5RtAxu86gXSUk1Eo7KgRmyk5wRDH2UHQPZz5p06PWLfMfetwgQ0~sX4UL6YZASvfI-rwiz-x55vNHq~eh26ccPv8dxWZHIFil-aaQZqAaGXdz0lxgbYaeQZpYAdTINuz78Pk2~MOnHO6Bxg8K4g3Bw15KTLeS1rOX4Ja2hvOwxNOU21X0s9kYFNRZbPqgt9XOBjw2mIKoF~2tXdaHEIHrpho6ofNiCiWTnOTJsquuVdoJt-FiJ92aQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/model.obj?Expires=4949251200&Signature=KTkQB5iQM~toZqh~X5GnstFGKZkp~5VaRPAq2ygSCN5SL9~FItHsVvhLWkOoQAwbrdD3kiWf6jAlcUc6lhLBsLeOb3iXXjkNyMt7tvTmMVQJ1Byh9aHse6J4CG~sy~3C71MiLvoQPH34xKLNhX6P25LUvNpJa0k3BPTchVnzhbL8t7HpOQbiLQEADs~0sOj~LEz-FdW9jMQWJ0D14tH4-qzU9BrnJbry~3ibCCtLdQ9GrGAZlkkVB1KkTGhUIO48CZzXNttio4-dGORrSrCpY7LCY7tl9MiOBgi5VYvkMH53vB5HC4oh6eIu6QFC10VB8Z0W7rM2o8TDTuhDu7LM7g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/model.stl?Expires=4949251200&Signature=cpkOllDRO7S0eFUSLf5gXWf0NzOrt425ceXvuotPhkw0J4B2xMkREaPOxoLyrzDEJhsRSUL7PHp7rJweRwT0dQetRF3GF6ixFjmAfWoXurBrzZiv7-ZBXvtgD1foKVKB0a29TEnlzJD~9ri8UUODAhC8IjGwle1O6Y0XQF1uFHJyIY4mLGaL9JmPbxJNXtc4Eg5xPMNnyYa5Jd6xyuPm09tr1FZ0LMFht~Q2lhYViDJbXhkU3x8AB3snj86wwyNBjZBG7eYxPjGtfSc8ynIFH2j3~nkLQzDR0MyyzZjatjFOk099N6hVo42mGSDjjWMhBH5TZ9jv2xsz~FDB-dFdDA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/preview.png?Expires=4949251200&Signature=W27vKk9N45vZEQcxfwefv611Yf5ohmH2NqMPwWmk7~oXoMz8JO7kW57EQc~4tNQmstOBaMMydcfW90cFLXgn1JURkXNKv9EXveiE8yYi1szXpVuPr8d2JMqCDW4oU6Sqa1ZHioSoNK5~H-85RmCtQtYbfd6LkZ8p8ESodeOhcpQwxI03Lhf1Bon4Tii1i6tI5370LVY6ZnrlqBrtWs1ywblYTsjmS5T~u2WZr7BcPxHoX21PH4Q389deZg-ZLmlVIiO0yUOommZrtEIXuQpcsP7ArtPk4dhaQNnAok3eyRW0RnHFUnepR7Orsa~N1wWTwS-O7K--ZzHYCzhwfSAcCA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Neatly folded vibrant orange coral kids pullover hoodie sweatshirt with cozy hood on top and white drawstrings, soft cotton fleece texture, retail shelf display clothing prop",
+    "should_remesh": true,
+    "target_polycount": 5500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 3001572220,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/model.fbx?Expires=4949251200&Signature=OA8Q~aFgfwt2CjuW0cNR5H6QCWQKomZomNC9qVSv9wV8DXgZduRYUidKmeJET8VI5kWdEDrah4UULTXhJdxycVlrfI7LqmR4tAgOjCkUX3If0n0LzbJ1jVjZdbo6hn8J3C3mnuhRF5bu-rbc6sEOSvka8ByWGwkAWUPTV15~Jyl6iMD7U-YGULZ~3lCB0rN8Ah-xAKmTTFqaJmyuhA8HgrcJfQf8-IUDR8dIRGNhR27SRX2LOzxPunc6Xdfa10M2mSPyUW1RgGq-~GMBWx3J0RZV1KkO1akIsIlkA6WsG2E30VbrZt9QXYsfQ5tIwKzYdoodteOT~KiI6TCuQFWQ4Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/model.glb?Expires=4949251200&Signature=PmBJcXt1q-u0db~OTcAwo-K~oc4L7cafbxRzrcbct32Cb8yZCSwIAuMqbsMR7g-ytKWCBnam71KvodCfxF29Ah5nVEvHjzll8Ech6pZrHGFF8sLkoM4tKqT33Yhuj-aUoMsweetdvSE7vwgPpei7LnejfMBtLXjDshpmwCxiQmka6-YqXB6vc8PckU8QtxhOeD37mjTo5aGKutd~uq8f5pQMdFUO6EQjCi-JN2cqfRyjib1tDW8jkGtphyiUfAPee0kJuGI8qMNNK-uIF-AGcvAPfKwRHE7-lbgWN8eyzztqfEMC2f7Yjr3prtfKkWE6XZ03~9iHFE6TfrH0OOG6rQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/model.obj?Expires=4949251200&Signature=KTkQB5iQM~toZqh~X5GnstFGKZkp~5VaRPAq2ygSCN5SL9~FItHsVvhLWkOoQAwbrdD3kiWf6jAlcUc6lhLBsLeOb3iXXjkNyMt7tvTmMVQJ1Byh9aHse6J4CG~sy~3C71MiLvoQPH34xKLNhX6P25LUvNpJa0k3BPTchVnzhbL8t7HpOQbiLQEADs~0sOj~LEz-FdW9jMQWJ0D14tH4-qzU9BrnJbry~3ibCCtLdQ9GrGAZlkkVB1KkTGhUIO48CZzXNttio4-dGORrSrCpY7LCY7tl9MiOBgi5VYvkMH53vB5HC4oh6eIu6QFC10VB8Z0W7rM2o8TDTuhDu7LM7g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/model.stl?Expires=4949251200&Signature=cpkOllDRO7S0eFUSLf5gXWf0NzOrt425ceXvuotPhkw0J4B2xMkREaPOxoLyrzDEJhsRSUL7PHp7rJweRwT0dQetRF3GF6ixFjmAfWoXurBrzZiv7-ZBXvtgD1foKVKB0a29TEnlzJD~9ri8UUODAhC8IjGwle1O6Y0XQF1uFHJyIY4mLGaL9JmPbxJNXtc4Eg5xPMNnyYa5Jd6xyuPm09tr1FZ0LMFht~Q2lhYViDJbXhkU3x8AB3snj86wwyNBjZBG7eYxPjGtfSc8ynIFH2j3~nkLQzDR0MyyzZjatjFOk099N6hVo42mGSDjjWMhBH5TZ9jv2xsz~FDB-dFdDA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/model.usdz?Expires=4949251200&Signature=LyIkFOni~nX2qhsnbyYLe8FMN2aSQuVQ8cArC9fXkiJeOm7KcT2TDQbuhsOug42V1l~kfVlcUvuXCUeXl8ZUi0wBgRK4dd2P5RtAxu86gXSUk1Eo7KgRmyk5wRDH2UHQPZz5p06PWLfMfetwgQ0~sX4UL6YZASvfI-rwiz-x55vNHq~eh26ccPv8dxWZHIFil-aaQZqAaGXdz0lxgbYaeQZpYAdTINuz78Pk2~MOnHO6Bxg8K4g3Bw15KTLeS1rOX4Ja2hvOwxNOU21X0s9kYFNRZbPqgt9XOBjw2mIKoF~2tXdaHEIHrpho6ofNiCiWTnOTJsquuVdoJt-FiJ92aQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4569-70f3-a45b-3de704c38e10/output/preview.png?Expires=4949251200&Signature=W27vKk9N45vZEQcxfwefv611Yf5ohmH2NqMPwWmk7~oXoMz8JO7kW57EQc~4tNQmstOBaMMydcfW90cFLXgn1JURkXNKv9EXveiE8yYi1szXpVuPr8d2JMqCDW4oU6Sqa1ZHioSoNK5~H-85RmCtQtYbfd6LkZ8p8ESodeOhcpQwxI03Lhf1Bon4Tii1i6tI5370LVY6ZnrlqBrtWs1ywblYTsjmS5T~u2WZr7BcPxHoX21PH4Q389deZg-ZLmlVIiO0yUOommZrtEIXuQpcsP7ArtPk4dhaQNnAok3eyRW0RnHFUnepR7Orsa~N1wWTwS-O7K--ZzHYCzhwfSAcCA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

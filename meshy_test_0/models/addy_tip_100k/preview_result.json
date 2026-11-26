@@ -1,0 +1,49 @@
+{
+  "id": "01a219ea-6e9f-72c8-afe4-b8aee8d6d381",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2505484299,
+  "prompt": "Thick stacked bundle of crisp green hundred dollar cash bills tightly wrapped with shiny metallic golden money bands, stylized 3D treasure reward prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731125826,
+  "progress": 100,
+  "started_at": 1795731125835,
+  "finished_at": 1795731178353,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/model.glb?Expires=4949251200&Signature=kSB3uOXvWE4i0dxXyEo6Q26rDiXdPyIG7UW1SrbsMzQMZZ8z4L3JDOeJHoykjcF01i0JVbMb8g~F4u1dLVmuZc5WaqJJ2nr~jr0sbCZiMpmmvP-QAh~SM1LUyf1QFPIz6tv~FyWXN~hwCYx37WjD87m7PoUItn0xrsandofn6xhOeOWdGsDm3wYCPZlmpPeaL4iU942Rok2ktZbzOypgt6jDinQ9QRMdOq-JVrURT7xDlT0SXUnQ1Uk4ajuEiB7R2nGMP7zhYDdeb4ZW73-pQX7cTZkNRwMBmebeHbV0tNydDO9~~p3gpG2Sb9AYnzT~CFX0U6UXijNDi-n27doydg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/model.fbx?Expires=4949251200&Signature=GGtUKBw0FiAidxl96NthtXB1uYRBXsgJ~4QO0f6-IYK3zrrYnoTED8sRdhZ34HCNCtXdskXmQlAbkE3opY6gmNJk4XdteSe~7775GyUlD--eYUXB3pPqQYjz89vpV7RoEndmWlOARksc~wBJfKVFR-NLpPVYaNoycCjm0daeiHUiXhn4qcK9QwTKhkIsz~OCcMZ-YH4xoUkcU7rkaJuvSO~fYuca1QRfIeupkxmLEO~3F4JZszbLHGgrc9fx3oxobLMNZP6J1DGIfRKkG2XUp6jaY7xXk9wRPUmf7yKmPXyWaq1kcEebjOcnjK-ufhX-tJmvjcPcGPJgoOmuOryUUw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/model.usdz?Expires=4949251200&Signature=UhrrwkqtIB4aywr~iTY79FjAVX49lnjjWWOofPlbNBK7mBJUuZsTCQgcbJ44RgffubNpcyMc60LEMtW03-abWkC~DlwMs3chW7svubEURnjARXQMoDd7fXyeNYsoDMzAzmqpxgXAbEnuZ8JfMtw6fxjRe9ddWPRJ~3lI7z7Hlf3UE8DRcwlB9Yzf8G1ZdpXzX6dpd47eerjzO7qoQ7l395nxWSrwvV1SWc0kCk9y3innBQYTMwRpBZdMZDD6yjTCdsaKA8VcWQMCkcUXY3rLIULL2RRCptLHbX8~xpjdYWuWzkgzfQ2Kp5sb97l8Jptdtkj5Hz69IJD9IaI8KZ2q3Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/model.obj?Expires=4949251200&Signature=Cw3nhQ6tYp-lT~pmeEguYwhUX1fdHnjJ6roamwo7G8jnIYyKGTfVYGndmm4Fx7alNimMmTBB6ILNfbtnj7558GyEVmb3zOqOXZ6zMFlrzsqv4sqsY2rYdaFMAzgfYPT8V0cA9yc7~dSdtp65~mhMHo2CsNHreYSWF7QOZtF~KR6MqNm9oOLwANV~2BVSjDNEv88DKaRRm1671eeLvpOerG5wG~~pQ1yulLrymxSbl7HmdZpd~6nOlsPjCOQLEf92rp0~TASxd2X2TzTzQJvU31TA1HBQlfCJ0QqsbVHUo3R19AJ2aA9Z1QQgH5GsiRJIPvkyqo9IiNug0TfuhgeeIQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/model.stl?Expires=4949251200&Signature=mDqXZ95BZ2m2YVUP2eclsVPQmB-UmCJZ8GUdnWcw6BmZAJDyeC6MXiZCN34JPm-rSgxQQA62upvOxU7ZmOMsCs1JkZLInLhTXpHB6AHR9gh5~pwfltEoxfK0~V7e3MvqlDmV6q6PzHxMv5caSoE8BavziYW2my0vDAIb2RzFrQIVPvPhSsY0bD7wBbfm-dDiGLhju~~xVrRlmL04rj5KMpLrIWAfUZm4M~m2sUrOZ7xdwukG-9IFYQjpoQAklvZQtHzASDaAEslhZ9dum42ozYMainPDARI6PVpCYEsoNLUi4rob-3tdQZGjFXK1fiLm5R~IFska53hMlVAsjKQ54A__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/preview.png?Expires=4949251200&Signature=YCgeuVw9TbNEAZ0QqoBsXHu5pT7G5BeIL-VpiftVakBiNewL-kDaDg6jJvU8H00i8Ps2gdgKKtU3NW~cCMtEUT7eD2cQ2186iGHuroTM-XJOzMZWuSUIe9j0YL2Mv02c-LHBCzkuJCnkMcYgrb0pSyGVVB2d8uFU9zw63NTUx0NwU3Ju1484E0mcFgcGfpi3i6EOoVK6iDPOAl49W66jPgqe-We6SWryFgmoKlyuvYin2QyzGgjoTAoKNb3FhXTI66cNVlBL~V~gGGT0kZLcfQGWYpTVTU4dJgSGhLjjZrVCL7eiAOElnLVZuIxZ6~vU3mLhbrORMZ3Zm1Njqqa-ZA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Thick stacked bundle of crisp green hundred dollar cash bills tightly wrapped with shiny metallic golden money bands, stylized 3D treasure reward prop",
+    "should_remesh": true,
+    "target_polycount": 5000,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 2505484299,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/model.fbx?Expires=4949251200&Signature=GGtUKBw0FiAidxl96NthtXB1uYRBXsgJ~4QO0f6-IYK3zrrYnoTED8sRdhZ34HCNCtXdskXmQlAbkE3opY6gmNJk4XdteSe~7775GyUlD--eYUXB3pPqQYjz89vpV7RoEndmWlOARksc~wBJfKVFR-NLpPVYaNoycCjm0daeiHUiXhn4qcK9QwTKhkIsz~OCcMZ-YH4xoUkcU7rkaJuvSO~fYuca1QRfIeupkxmLEO~3F4JZszbLHGgrc9fx3oxobLMNZP6J1DGIfRKkG2XUp6jaY7xXk9wRPUmf7yKmPXyWaq1kcEebjOcnjK-ufhX-tJmvjcPcGPJgoOmuOryUUw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/model.glb?Expires=4949251200&Signature=kSB3uOXvWE4i0dxXyEo6Q26rDiXdPyIG7UW1SrbsMzQMZZ8z4L3JDOeJHoykjcF01i0JVbMb8g~F4u1dLVmuZc5WaqJJ2nr~jr0sbCZiMpmmvP-QAh~SM1LUyf1QFPIz6tv~FyWXN~hwCYx37WjD87m7PoUItn0xrsandofn6xhOeOWdGsDm3wYCPZlmpPeaL4iU942Rok2ktZbzOypgt6jDinQ9QRMdOq-JVrURT7xDlT0SXUnQ1Uk4ajuEiB7R2nGMP7zhYDdeb4ZW73-pQX7cTZkNRwMBmebeHbV0tNydDO9~~p3gpG2Sb9AYnzT~CFX0U6UXijNDi-n27doydg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/model.obj?Expires=4949251200&Signature=Cw3nhQ6tYp-lT~pmeEguYwhUX1fdHnjJ6roamwo7G8jnIYyKGTfVYGndmm4Fx7alNimMmTBB6ILNfbtnj7558GyEVmb3zOqOXZ6zMFlrzsqv4sqsY2rYdaFMAzgfYPT8V0cA9yc7~dSdtp65~mhMHo2CsNHreYSWF7QOZtF~KR6MqNm9oOLwANV~2BVSjDNEv88DKaRRm1671eeLvpOerG5wG~~pQ1yulLrymxSbl7HmdZpd~6nOlsPjCOQLEf92rp0~TASxd2X2TzTzQJvU31TA1HBQlfCJ0QqsbVHUo3R19AJ2aA9Z1QQgH5GsiRJIPvkyqo9IiNug0TfuhgeeIQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/model.stl?Expires=4949251200&Signature=mDqXZ95BZ2m2YVUP2eclsVPQmB-UmCJZ8GUdnWcw6BmZAJDyeC6MXiZCN34JPm-rSgxQQA62upvOxU7ZmOMsCs1JkZLInLhTXpHB6AHR9gh5~pwfltEoxfK0~V7e3MvqlDmV6q6PzHxMv5caSoE8BavziYW2my0vDAIb2RzFrQIVPvPhSsY0bD7wBbfm-dDiGLhju~~xVrRlmL04rj5KMpLrIWAfUZm4M~m2sUrOZ7xdwukG-9IFYQjpoQAklvZQtHzASDaAEslhZ9dum42ozYMainPDARI6PVpCYEsoNLUi4rob-3tdQZGjFXK1fiLm5R~IFska53hMlVAsjKQ54A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/model.usdz?Expires=4949251200&Signature=UhrrwkqtIB4aywr~iTY79FjAVX49lnjjWWOofPlbNBK7mBJUuZsTCQgcbJ44RgffubNpcyMc60LEMtW03-abWkC~DlwMs3chW7svubEURnjARXQMoDd7fXyeNYsoDMzAzmqpxgXAbEnuZ8JfMtw6fxjRe9ddWPRJ~3lI7z7Hlf3UE8DRcwlB9Yzf8G1ZdpXzX6dpd47eerjzO7qoQ7l395nxWSrwvV1SWc0kCk9y3innBQYTMwRpBZdMZDD6yjTCdsaKA8VcWQMCkcUXY3rLIULL2RRCptLHbX8~xpjdYWuWzkgzfQ2Kp5sb97l8Jptdtkj5Hz69IJD9IaI8KZ2q3Q__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-6e9f-72c8-afe4-b8aee8d6d381/output/preview.png?Expires=4949251200&Signature=YCgeuVw9TbNEAZ0QqoBsXHu5pT7G5BeIL-VpiftVakBiNewL-kDaDg6jJvU8H00i8Ps2gdgKKtU3NW~cCMtEUT7eD2cQ2186iGHuroTM-XJOzMZWuSUIe9j0YL2Mv02c-LHBCzkuJCnkMcYgrb0pSyGVVB2d8uFU9zw63NTUx0NwU3Ju1484E0mcFgcGfpi3i6EOoVK6iDPOAl49W66jPgqe-We6SWryFgmoKlyuvYin2QyzGgjoTAoKNb3FhXTI66cNVlBL~V~gGGT0kZLcfQGWYpTVTU4dJgSGhLjjZrVCL7eiAOElnLVZuIxZ6~vU3mLhbrORMZ3Zm1Njqqa-ZA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

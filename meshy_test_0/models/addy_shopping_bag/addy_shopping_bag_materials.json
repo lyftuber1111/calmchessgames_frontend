@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_shopping_bag",
+  "model_path": "./meshy_test_0/models/addy_shopping_bag/addy_shopping_bag.glb",
+  "textures_dir": "./meshy_test_0/models/addy_shopping_bag/addy_shopping_bag_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_shopping_bag/addy_shopping_bag_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_shopping_bag/addy_shopping_bag_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_shopping_bag/addy_shopping_bag_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_shopping_bag/addy_shopping_bag_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_shopping_bag/addy_shopping_bag_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219ea-8881-716e-ac97-35e44bcefae7",
+  "refine_task_id": "01a219eb-0a14-7299-95db-aa58c2334f5f",
+  "prompt": "Filled bright blue retail grocery shopping bag with yellow horizontal accent stripe and colorful boxed goodies peeking out the top, stylized 3D game prop"
+}

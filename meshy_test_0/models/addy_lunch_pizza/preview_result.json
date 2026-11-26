@@ -1,0 +1,49 @@
+{
+  "id": "01a219ea-a494-7436-a0f1-ac1ca192692a",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 3437506236,
+  "prompt": "Appetizing triangular pepperoni pizza slice with crispy golden crust, melted golden mozzarella cheese, and red pepperoni slices, stylized 3D food prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731140407,
+  "progress": 100,
+  "started_at": 1795731140417,
+  "finished_at": 1795731170339,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/model.glb?Expires=4949251200&Signature=gfCNE5lV5gasZtnjGyuRN~6wTJyY~kn4l-5fSXdOl-715CNtNOYu6l38FA3xwJDe7dQYWYIobMJjUvBzWyrnjGjTtPMoJwTEc7Y00MSocig4ySGlVQJdtmYJv8nfZmE06x8O8PP6bjFvnPG0gCiN4FuayVULH5n5Y-EyWW4da7cUG2seyOWWxomhgNgg05IljQjH9Ip1FgJTt1uUmUm~GyiVOZoMRyhKOJLXJREFSKHvsTJLvWwtbguzcUgTzscrODoN89TM0o8PCdxmehxYO9kZOJgic7~I6Eqq~qhO0jR4yGmNOsSdIAi1OiqvUQXm7mRoRe4VVuBn643eRt1dLQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/model.fbx?Expires=4949251200&Signature=ITO0gxkg12v5o4S9CXYTstulJD38SFfeeFNmt-LtZXaiIvYcMz-M~WsWhGZ59vAn0GIZQQXY9VxrwSD~2XwBGjbpkkW2z5nOBqpTD~kPLJ0tvHXDIpjBroOElNUok33XkJ6s1ZZ8XIxDODVGl2TI22DoHRzl4-ZXHTP2PbVhh~5qnRxho4j5MjCusq8vyOMrTOy5IYN6k8bS7xjpF0bRIJZU2RKsUN~VEXQvHtYFpFV2qhCFY7qsWICjqa6hSIJreoQ6QFoTv-ZIh-KWnZTRtNl66d4sSuO~RnDcZUc-fTgYYkNWPPM4Z5MVclWFZ6RtyiIbU~FTq0KIecUfKjC4HQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/model.usdz?Expires=4949251200&Signature=I24RvQZvQc9xpjgyOUcud6M7YVujoLaZ9G6I8b6VtSdS~NM0Vn71FwHuOr6te3Gf0D2SkDcyU8lDQ-gcy9k~OMpUrac8ZonZme4qpsuasLxioiW9gqN269FUV4udAvrOXVpCisjG-Ewdd1C-yRGtJXPOUj5~W2wFydQhqtaHyU2S6d-3vOeVZCTGqRE53-96QVUXO7x0DpZLb~CLRJCkMtAcQpO6xG45YVcaHjI5V1Z4EyeWVN4xOrXWg43MnrCddePbGBKodZ6HNuhNcSgHwvlSo-KDHE2fKp5BFqzxiRsGqA6F4wAI~gT7oBAtZ9qLJBvlzRL0RK7yd9HviRaaQQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/model.obj?Expires=4949251200&Signature=M0uaF3H7BRfD1D1A3fd7IOatx3prebqcNas0BxXHVNoQXvHumGn-xZ3MncCSkqDUddiYGhYdoJYTbfXN~t3d5jG1wET71Dk8hMvSLec~zVEk9Q8uiJnQoky8Q80VCtW4TBqZWYM2ZqDz48lvqymPDc0KjWNZhxjo7ehoTzp1Pbc15A1wxq451KHvS16-0UiOyc5Uq509pHcSCVdj7y5z8nNlAWj8wTSTF1LPSFfZ1DkthbMgskgg3kyc8Tus9DvrVKTyvgkwphpFxN0lU15DfYNkpvxJJhj3G~bZbOw0BNyaYDte5~LIHlhYJcOIAh3u4JbvOEjsp409USiUWz4EqQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/model.stl?Expires=4949251200&Signature=UDQOT6H~WVrwMdZ22BdcbeECPUjfoB7gAEPLkyBKVItF6e88uj0AXWDHAxNsHYqBG0NKv9NR10xadiAi2j5MYlagdWmriK4WSPC1s5ksX6dMziR1x9NxKjzrqh8IAdOld6QwOxd-pGtihsGen~WRhUz8heVAzwL6S358DILOuOkohIdTj9G2T~98fepwOjvn478SEyAKWPQXTBF9a9vLZsVw1Kw9Ul37PwXprUnq3sHv9tgMSBhhtTBBdkm7M~rNxANjvzs~j78MEGqVK8xORKr07i79AGUkumUWvmlit3QlDrPGeppozK2izerbz8VrGFmJSTlyuzbQkD5gR8RGVw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/preview.png?Expires=4949251200&Signature=qluW~SXCGZ8gj3CFDUUgfgbhQNijCsytgqvCu6mqLwxWLRqTv1VoclXfm4XL-I2zR-KrB-RfvXIY5RpRaUl9PTXApxbKF76~EGIQGvI7gEimdtAUAt3q8QXAW5upcm6JIvvj04CLK28y4qM1yBokdn~rEo8RkQxGVncx0eoq9OFKKptlpSQTRWVPV86j07nPD4pBM63whjrbt7qtSP63ZXnxNKdANa0h8sDc-k~I0VtuDxP7Kaamau1KzzY0p65m~euyL4vuZweL7ENETBI2Z2ahG7Sq2OazgyzWlMHedOwlzWsKIREBm~bAN89bSVWHxFoSA734QyLpldFpRc64ag__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Appetizing triangular pepperoni pizza slice with crispy golden crust, melted golden mozzarella cheese, and red pepperoni slices, stylized 3D food prop",
+    "should_remesh": true,
+    "target_polycount": 4500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 3437506236,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/model.fbx?Expires=4949251200&Signature=ITO0gxkg12v5o4S9CXYTstulJD38SFfeeFNmt-LtZXaiIvYcMz-M~WsWhGZ59vAn0GIZQQXY9VxrwSD~2XwBGjbpkkW2z5nOBqpTD~kPLJ0tvHXDIpjBroOElNUok33XkJ6s1ZZ8XIxDODVGl2TI22DoHRzl4-ZXHTP2PbVhh~5qnRxho4j5MjCusq8vyOMrTOy5IYN6k8bS7xjpF0bRIJZU2RKsUN~VEXQvHtYFpFV2qhCFY7qsWICjqa6hSIJreoQ6QFoTv-ZIh-KWnZTRtNl66d4sSuO~RnDcZUc-fTgYYkNWPPM4Z5MVclWFZ6RtyiIbU~FTq0KIecUfKjC4HQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/model.glb?Expires=4949251200&Signature=gfCNE5lV5gasZtnjGyuRN~6wTJyY~kn4l-5fSXdOl-715CNtNOYu6l38FA3xwJDe7dQYWYIobMJjUvBzWyrnjGjTtPMoJwTEc7Y00MSocig4ySGlVQJdtmYJv8nfZmE06x8O8PP6bjFvnPG0gCiN4FuayVULH5n5Y-EyWW4da7cUG2seyOWWxomhgNgg05IljQjH9Ip1FgJTt1uUmUm~GyiVOZoMRyhKOJLXJREFSKHvsTJLvWwtbguzcUgTzscrODoN89TM0o8PCdxmehxYO9kZOJgic7~I6Eqq~qhO0jR4yGmNOsSdIAi1OiqvUQXm7mRoRe4VVuBn643eRt1dLQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/model.obj?Expires=4949251200&Signature=M0uaF3H7BRfD1D1A3fd7IOatx3prebqcNas0BxXHVNoQXvHumGn-xZ3MncCSkqDUddiYGhYdoJYTbfXN~t3d5jG1wET71Dk8hMvSLec~zVEk9Q8uiJnQoky8Q80VCtW4TBqZWYM2ZqDz48lvqymPDc0KjWNZhxjo7ehoTzp1Pbc15A1wxq451KHvS16-0UiOyc5Uq509pHcSCVdj7y5z8nNlAWj8wTSTF1LPSFfZ1DkthbMgskgg3kyc8Tus9DvrVKTyvgkwphpFxN0lU15DfYNkpvxJJhj3G~bZbOw0BNyaYDte5~LIHlhYJcOIAh3u4JbvOEjsp409USiUWz4EqQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/model.stl?Expires=4949251200&Signature=UDQOT6H~WVrwMdZ22BdcbeECPUjfoB7gAEPLkyBKVItF6e88uj0AXWDHAxNsHYqBG0NKv9NR10xadiAi2j5MYlagdWmriK4WSPC1s5ksX6dMziR1x9NxKjzrqh8IAdOld6QwOxd-pGtihsGen~WRhUz8heVAzwL6S358DILOuOkohIdTj9G2T~98fepwOjvn478SEyAKWPQXTBF9a9vLZsVw1Kw9Ul37PwXprUnq3sHv9tgMSBhhtTBBdkm7M~rNxANjvzs~j78MEGqVK8xORKr07i79AGUkumUWvmlit3QlDrPGeppozK2izerbz8VrGFmJSTlyuzbQkD5gR8RGVw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/model.usdz?Expires=4949251200&Signature=I24RvQZvQc9xpjgyOUcud6M7YVujoLaZ9G6I8b6VtSdS~NM0Vn71FwHuOr6te3Gf0D2SkDcyU8lDQ-gcy9k~OMpUrac8ZonZme4qpsuasLxioiW9gqN269FUV4udAvrOXVpCisjG-Ewdd1C-yRGtJXPOUj5~W2wFydQhqtaHyU2S6d-3vOeVZCTGqRE53-96QVUXO7x0DpZLb~CLRJCkMtAcQpO6xG45YVcaHjI5V1Z4EyeWVN4xOrXWg43MnrCddePbGBKodZ6HNuhNcSgHwvlSo-KDHE2fKp5BFqzxiRsGqA6F4wAI~gT7oBAtZ9qLJBvlzRL0RK7yd9HviRaaQQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-a494-7436-a0f1-ac1ca192692a/output/preview.png?Expires=4949251200&Signature=qluW~SXCGZ8gj3CFDUUgfgbhQNijCsytgqvCu6mqLwxWLRqTv1VoclXfm4XL-I2zR-KrB-RfvXIY5RpRaUl9PTXApxbKF76~EGIQGvI7gEimdtAUAt3q8QXAW5upcm6JIvvj04CLK28y4qM1yBokdn~rEo8RkQxGVncx0eoq9OFKKptlpSQTRWVPV86j07nPD4pBM63whjrbt7qtSP63ZXnxNKdANa0h8sDc-k~I0VtuDxP7Kaamau1KzzY0p65m~euyL4vuZweL7ENETBI2Z2ahG7Sq2OazgyzWlMHedOwlzWsKIREBm~bAN89bSVWHxFoSA734QyLpldFpRc64ag__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "01a219e9-7aec-77b9-bd80-43e7956205dd",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 1330350697,
+  "prompt": "Stylized friendly retail shopper character wearing a casual purple jacket over white shirt, blue jeans, and sneakers, standing upright facing forward, clean Pixar-inspired game character",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731064054,
+  "progress": 100,
+  "started_at": 1795731064063,
+  "finished_at": 1795731102108,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/model.glb?Expires=4949251200&Signature=C7OMRZvIQHDdkk~kkSOcIA0yuqqpAdQHeu~XCPR8I4TG66zGCdyUgTfVeiUNTj~POm08TB-Nn-WBacj4K45426xP9qBP~M85EfxI5SLwQ01bqlsZTSnxUmelFI3Ze6prUBVT0bspUP44VzFpYuw0PzBLlgJ0~tmBy4uY4djoQUKUMy4wzokOi27vnfulqNLO7KjWUAXofa3DhSp-Q~d~acMnHxU5WX5xSp~7m8dSPEQjNx-QFp5~Wp54QrGNAc92ZGE7q~244C3Doj12aV8FobclpWQUafngNNkHbE0ZdcFG8b8KZqSdwqtEYwJLEspfx0YAz8YOCuirm2NAI1KXWA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/model.fbx?Expires=4949251200&Signature=Q8BRZ0itxJaA57kJ5HuTDqJtH836PdW5h6s0WnJY6vjiwV7ZocYipbYtPiwhe-JUnAQM7LAssYo5rXIoXNcm925QlLTHeTHTLL7wzlGlWx2vt8PL-XHJzEZgTpKnc33DqqAQnuKYHh~S5Wu55nQvZGd21SNziG0x4-8dpUZ~mJM~uh6c6ZJW4ubo~ZOzD3Ut-hyajYKKWARd7UAFbSY3Ufh5oR-L41VR9Q3k9uJ-tjUfa~L6j0CZ2fBLWFqN-3MANqx1k2RF4sDoxrDmJCjkWWv3Uu4EEViq9MfKQSmnh7TOPUzGFiVQoAklnyVa~HERlBqEWtty9qMWvxqUfC0RSA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/model.usdz?Expires=4949251200&Signature=XxODfF2R7QvaNN~qChTxio7FB8SfF0Mk6aBlOYk2NkRaF0KQORdw1JeS~gAdAI4Hiru78343f2LhRNL7vlFlQdhWUUpDNP7r3Uiol9Q7dp-e43pAHl46bE-P1ptNVUqU4bNmJC~fvy6fISPAlQo9Er4lMCjbranK7bFL-HwnAmd3tPPDMN~M0x-6x1HyOxCeCNuwKnWvNZzF22Umnk9YC~dEx~W2w9d2AYimwhCqUnu-e9to2Fca8YL7H7N-dq7lHfv7cUelgEG9mlpHiN2br24oTUycxxlYQwbUCGc~kyyQIQt24074E4NWuMlAUcWRoStCoZT~HFuv2yDnx5Wr8g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/model.obj?Expires=4949251200&Signature=qPRa0Yq4k7N-f9tSfW0tmpidl497fZKpQ0wGodngLH0KniilBNkJhnzqgj-mBSdhOFDjJRtP5jIi0ceBqoi5hzuIkw0xMaX2Mh1yxSVW8yATlj7buahIBxyO6wf1GdqlAWg5BJerz4RVqU85DRx960WpI6pbK8GB6l5FabE0~2NFotbj11ZMJ9mcG74mARaYd0ho6ImxfCJEMDjuKwMZX3v3wYgmXKi01ys~brWVtrp0GLRpXklaWX7tvGNUl1a7TaAg1T4RrS8eOTSlxcMUD6boNkgL94doz4uc7K1ef9t~1Q04ZnFon0kXK8pX1-uXUIa4dV9V~ATlkcMIHuRwsQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/model.stl?Expires=4949251200&Signature=bjqZE0l1nqWDjOb8G2xseqPBusAGodPBKa0aacpvHulDq1qhfJ9RDFPPuAGEyhCJq6LwO0Z7VEk0ffTL-1Hq2QxB8hVfdOlDT2VTUi~3ZptIzoxRL219a-kuWZHG~Qj0yougFR874c61AYpbdmpXmWBHYbfJW0DUsqCY1j9OJrxzfmLVfq9o75FFezxZgikR1ppBxhLkSuK119o8P7tj3o9gOceZGyrDmLufyH-W5n8Lpk-O68-etbBTBY4JHohnIv-f8AKvCGTLBaueshg~7rm-EbKpeG1bpd15Qoij0Kl1Stg7Ggkj05gotzafO3UDZ8oUGiKdhvGcCtIXVxdlig__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/preview.png?Expires=4949251200&Signature=Gz6X7Lm4csnoMwpTBppXDGb6TQLVen4oDPaLfAlYX7Oz7XvGTn1Fq7smPe7-8DJ5rVzdhNAOknzKBdcwHcd5LOpONeAadokJ2s~7wPCOW4dArtiOp4yUwWnSCwU0mN686sVqaVZg65rNKiYsY5PG-cKyg4HKoHbztFfuRPLW1KI1z9hD3~o4OaUR30MjRBCH2jQPCaxB2tFmMMQsIo-olhKllsQeFOkGC6fiCqqVIQBWdQo30Xb2Z-sztY1Xw9G3AG7RIVHq5utllsF6qjFiDuH3nHf5Y7~Iu2s63Bf9cdsPO5GXfyYYvYzfhaLBvoTkZ6SoiewefnKHtn7miOfTdg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Stylized friendly retail shopper character wearing a casual purple jacket over white shirt, blue jeans, and sneakers, standing upright facing forward, clean Pixar-inspired game character",
+    "should_remesh": true,
+    "target_polycount": 8000,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 1330350697,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/model.fbx?Expires=4949251200&Signature=Q8BRZ0itxJaA57kJ5HuTDqJtH836PdW5h6s0WnJY6vjiwV7ZocYipbYtPiwhe-JUnAQM7LAssYo5rXIoXNcm925QlLTHeTHTLL7wzlGlWx2vt8PL-XHJzEZgTpKnc33DqqAQnuKYHh~S5Wu55nQvZGd21SNziG0x4-8dpUZ~mJM~uh6c6ZJW4ubo~ZOzD3Ut-hyajYKKWARd7UAFbSY3Ufh5oR-L41VR9Q3k9uJ-tjUfa~L6j0CZ2fBLWFqN-3MANqx1k2RF4sDoxrDmJCjkWWv3Uu4EEViq9MfKQSmnh7TOPUzGFiVQoAklnyVa~HERlBqEWtty9qMWvxqUfC0RSA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/model.glb?Expires=4949251200&Signature=C7OMRZvIQHDdkk~kkSOcIA0yuqqpAdQHeu~XCPR8I4TG66zGCdyUgTfVeiUNTj~POm08TB-Nn-WBacj4K45426xP9qBP~M85EfxI5SLwQ01bqlsZTSnxUmelFI3Ze6prUBVT0bspUP44VzFpYuw0PzBLlgJ0~tmBy4uY4djoQUKUMy4wzokOi27vnfulqNLO7KjWUAXofa3DhSp-Q~d~acMnHxU5WX5xSp~7m8dSPEQjNx-QFp5~Wp54QrGNAc92ZGE7q~244C3Doj12aV8FobclpWQUafngNNkHbE0ZdcFG8b8KZqSdwqtEYwJLEspfx0YAz8YOCuirm2NAI1KXWA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/model.obj?Expires=4949251200&Signature=qPRa0Yq4k7N-f9tSfW0tmpidl497fZKpQ0wGodngLH0KniilBNkJhnzqgj-mBSdhOFDjJRtP5jIi0ceBqoi5hzuIkw0xMaX2Mh1yxSVW8yATlj7buahIBxyO6wf1GdqlAWg5BJerz4RVqU85DRx960WpI6pbK8GB6l5FabE0~2NFotbj11ZMJ9mcG74mARaYd0ho6ImxfCJEMDjuKwMZX3v3wYgmXKi01ys~brWVtrp0GLRpXklaWX7tvGNUl1a7TaAg1T4RrS8eOTSlxcMUD6boNkgL94doz4uc7K1ef9t~1Q04ZnFon0kXK8pX1-uXUIa4dV9V~ATlkcMIHuRwsQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/model.stl?Expires=4949251200&Signature=bjqZE0l1nqWDjOb8G2xseqPBusAGodPBKa0aacpvHulDq1qhfJ9RDFPPuAGEyhCJq6LwO0Z7VEk0ffTL-1Hq2QxB8hVfdOlDT2VTUi~3ZptIzoxRL219a-kuWZHG~Qj0yougFR874c61AYpbdmpXmWBHYbfJW0DUsqCY1j9OJrxzfmLVfq9o75FFezxZgikR1ppBxhLkSuK119o8P7tj3o9gOceZGyrDmLufyH-W5n8Lpk-O68-etbBTBY4JHohnIv-f8AKvCGTLBaueshg~7rm-EbKpeG1bpd15Qoij0Kl1Stg7Ggkj05gotzafO3UDZ8oUGiKdhvGcCtIXVxdlig__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/model.usdz?Expires=4949251200&Signature=XxODfF2R7QvaNN~qChTxio7FB8SfF0Mk6aBlOYk2NkRaF0KQORdw1JeS~gAdAI4Hiru78343f2LhRNL7vlFlQdhWUUpDNP7r3Uiol9Q7dp-e43pAHl46bE-P1ptNVUqU4bNmJC~fvy6fISPAlQo9Er4lMCjbranK7bFL-HwnAmd3tPPDMN~M0x-6x1HyOxCeCNuwKnWvNZzF22Umnk9YC~dEx~W2w9d2AYimwhCqUnu-e9to2Fca8YL7H7N-dq7lHfv7cUelgEG9mlpHiN2br24oTUycxxlYQwbUCGc~kyyQIQt24074E4NWuMlAUcWRoStCoZT~HFuv2yDnx5Wr8g__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e9-7aec-77b9-bd80-43e7956205dd/output/preview.png?Expires=4949251200&Signature=Gz6X7Lm4csnoMwpTBppXDGb6TQLVen4oDPaLfAlYX7Oz7XvGTn1Fq7smPe7-8DJ5rVzdhNAOknzKBdcwHcd5LOpONeAadokJ2s~7wPCOW4dArtiOp4yUwWnSCwU0mN686sVqaVZg65rNKiYsY5PG-cKyg4HKoHbztFfuRPLW1KI1z9hD3~o4OaUR30MjRBCH2jQPCaxB2tFmMMQsIo-olhKllsQeFOkGC6fiCqqVIQBWdQo30Xb2Z-sztY1Xw9G3AG7RIVHq5utllsF6qjFiDuH3nHf5Y7~Iu2s63Bf9cdsPO5GXfyYYvYzfhaLBvoTkZ6SoiewefnKHtn7miOfTdg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

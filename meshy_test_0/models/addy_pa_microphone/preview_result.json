@@ -1,0 +1,49 @@
+{
+  "id": "01a219ec-d490-72c2-ab7f-747bf222cb64",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 4055998200,
+  "prompt": "Retail customer service desktop gooseneck PA intercom microphone with black weighted round base, glowing red push-to-talk button, curved chrome gooseneck stem, and silver mesh mic head, stylized 3D prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731283246,
+  "progress": 100,
+  "started_at": 1795731283262,
+  "finished_at": 1795731315378,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/model.glb?Expires=4949251200&Signature=HH3Jjhnc3CS~9FzjhmQPPe1riXAJZ9olRsOAjWh-3m-qsvjmKNSXYqmtl3MUAmO4Wows4bAjltr2Nj~FQuKfpXXPO0N1UP5L6y5vsIuTdH~7DeaQdY1iPfRf~cmKIueG3aBexG3clcucYQBOE035tRGjLGBAvaeXrB78HyHHUJmQLd98cmBk2-EyAQy55jnaJxzDbihYc4Khe84-rcvZVpC8bPc7OCeM5dnG6FAiK08yEVEbLwgfxV2AP528tevTgjaPtjpoyxS9QD1LdTygqM-TEXYY~kCUK7ihownjEROLWwDvCS~hRp0pXtwMvlEcZnNzPaNU1voAF4k48Frr~A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/model.fbx?Expires=4949251200&Signature=Qm25aOXF8b5mKw2imTidtp~Aj7FLO1~X-56YGuPLKwjSo9NRfR0DDAxM8gmY0zA7sBCGsp4o1dVRx6YrUMnbi~qcuizLSJIUzIFo553VCwnfy5oIWzyfSVtCeiwHNHpJNk2~lu7iNoVkta6yWTRZcZb0DaxvAkKrh1ATCNT4mpMByY-3G~MXg3MZdXX~Om4ldIMZD5UxeShZZs1c8T~-7tVMQeLRFPPMkZmcUGHEX-7GWpP5FleHQj~Ym2vTtUzA0NTo3vHdFkfETVCnwmbTxsbzpOGfvyKV-74uDxRQmif1G3TEvsn4-EX6Zy1XcEMj8WLtGZAt3XGEWboRYMeg0g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/model.usdz?Expires=4949251200&Signature=g8VtIeqtOkmDw1lzu~3vhKAqP0XhcKEPayu0zs2-0QxHc~rUDjeaLX6sfr8aQLL72fgrpkAhCDl7ig7G-i86qOH5vWqFOBy8cE4P8iyDxxzg1MuC3u5fxCMTxqfaLFREc-0-M6IGJxOHjJnUI91XyC4CZosDekekcaw3x0qepF6v2ZHginKNzK00olTVyTzNyagR9-3Z~MooYLCq9n-MJOO0kaupc3ZQqWBp-UWGWZ3YMO7wJwSsbdC4HSf6egBJjEybyZ6O0nrr3YsjkvkBjtudEKgv5uiD~2qYptMmxIe6~IVhB~f9ttSwyPrUjJ0ZAXHkUNNrkyrl0gLuiaG8Ww__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/model.obj?Expires=4949251200&Signature=Q-b9pRU9bhXEAD9W0V~Xf-8o9A3HvlnVbKoKUwUSkqLPKxUCWPfkS4cprhamc5F26R1iqc1qRk2W7EhDxJvB7Kg7WOGDWG~W3m5OZbMCBXDQqE3UnPduTzBriTKNremwfE7EVjYRV~yq~faUpkPA32flIIRDj8wvvWVRNLgHisOj6YyYjJJXkY-Hr0p6pOeOGmmb7NE~aEjEgkZ2bobDlP2hgtgCbIfp1iCaGU0iF~FCUC~PS96xEmPq-5ZsGVDMRNH-rrB3-iIXMIbXLmyZHDi-jaovKZ~JYoYtRy~RkhHeSGXjIZGz1d7VD999yPxLI~h9dkAjP1Xabes4lZlwFQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/model.stl?Expires=4949251200&Signature=IzkjzYX~H6Ie-7gF-fp9i-j1MIbFhlPf~HOnVFetnYLrpjeF4m54QVQmAozNWSdNxkdmnvyGTJtVudSvMawFw~WtOuDUWXrNZIXmsrJcYfhKcXbxjNA0Ru4wQG4ID3witcR-x8Jbf3cG8peDaXVOK6suCeO6syr4vi3kVn0RqlJpIAfltxBvO5ZF6TL38DRR8uwLgyNqZIlG7baGbV0OpXfPWxOyooTqhPGCj8FjQHS70H5gvKLHfcY2fkobK~GzS2SyXM-n8f4yXqom25z6Lp9uGqqHTK5nxrcn~CdimUkuarHd0ygI~l-HNmOOL7fYFEEHiheCN~OGwSU3XynafA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/preview.png?Expires=4949251200&Signature=TTk7bPb~2YSfovIM5gWmfrq2AizeezE1veE-4WMV6EGQ6hDddm0Mdmf8GJ1f8T7VPi3K7fLecxUISGVJX3-RHLj1vEX06-vngHAm8QNpFyzBcROxI1inwsvGLg6Q~4SSyITmxzbey1JBiIevfgJATn7OcThTckDNGvrggXkoE~z0wLILtU5h3KSFIY~E67TvmzBVJFsPby-pBApS8cTtDacF7y23nN9j782xSUBiQ26MMfx69Mx7jWtj65eDJAIfPTTo0Ua8HD-WlpM2SFKEBtINJ5BWXlMmkXACw74PfpB-VN2QRs2X1IBVSd5OPdneCTEvtcJF9G5ZlpriX2vAhw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Retail customer service desktop gooseneck PA intercom microphone with black weighted round base, glowing red push-to-talk button, curved chrome gooseneck stem, and silver mesh mic head, stylized 3D prop",
+    "should_remesh": true,
+    "target_polycount": 5500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 4055998200,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/model.fbx?Expires=4949251200&Signature=Qm25aOXF8b5mKw2imTidtp~Aj7FLO1~X-56YGuPLKwjSo9NRfR0DDAxM8gmY0zA7sBCGsp4o1dVRx6YrUMnbi~qcuizLSJIUzIFo553VCwnfy5oIWzyfSVtCeiwHNHpJNk2~lu7iNoVkta6yWTRZcZb0DaxvAkKrh1ATCNT4mpMByY-3G~MXg3MZdXX~Om4ldIMZD5UxeShZZs1c8T~-7tVMQeLRFPPMkZmcUGHEX-7GWpP5FleHQj~Ym2vTtUzA0NTo3vHdFkfETVCnwmbTxsbzpOGfvyKV-74uDxRQmif1G3TEvsn4-EX6Zy1XcEMj8WLtGZAt3XGEWboRYMeg0g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/model.glb?Expires=4949251200&Signature=HH3Jjhnc3CS~9FzjhmQPPe1riXAJZ9olRsOAjWh-3m-qsvjmKNSXYqmtl3MUAmO4Wows4bAjltr2Nj~FQuKfpXXPO0N1UP5L6y5vsIuTdH~7DeaQdY1iPfRf~cmKIueG3aBexG3clcucYQBOE035tRGjLGBAvaeXrB78HyHHUJmQLd98cmBk2-EyAQy55jnaJxzDbihYc4Khe84-rcvZVpC8bPc7OCeM5dnG6FAiK08yEVEbLwgfxV2AP528tevTgjaPtjpoyxS9QD1LdTygqM-TEXYY~kCUK7ihownjEROLWwDvCS~hRp0pXtwMvlEcZnNzPaNU1voAF4k48Frr~A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/model.obj?Expires=4949251200&Signature=Q-b9pRU9bhXEAD9W0V~Xf-8o9A3HvlnVbKoKUwUSkqLPKxUCWPfkS4cprhamc5F26R1iqc1qRk2W7EhDxJvB7Kg7WOGDWG~W3m5OZbMCBXDQqE3UnPduTzBriTKNremwfE7EVjYRV~yq~faUpkPA32flIIRDj8wvvWVRNLgHisOj6YyYjJJXkY-Hr0p6pOeOGmmb7NE~aEjEgkZ2bobDlP2hgtgCbIfp1iCaGU0iF~FCUC~PS96xEmPq-5ZsGVDMRNH-rrB3-iIXMIbXLmyZHDi-jaovKZ~JYoYtRy~RkhHeSGXjIZGz1d7VD999yPxLI~h9dkAjP1Xabes4lZlwFQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/model.stl?Expires=4949251200&Signature=IzkjzYX~H6Ie-7gF-fp9i-j1MIbFhlPf~HOnVFetnYLrpjeF4m54QVQmAozNWSdNxkdmnvyGTJtVudSvMawFw~WtOuDUWXrNZIXmsrJcYfhKcXbxjNA0Ru4wQG4ID3witcR-x8Jbf3cG8peDaXVOK6suCeO6syr4vi3kVn0RqlJpIAfltxBvO5ZF6TL38DRR8uwLgyNqZIlG7baGbV0OpXfPWxOyooTqhPGCj8FjQHS70H5gvKLHfcY2fkobK~GzS2SyXM-n8f4yXqom25z6Lp9uGqqHTK5nxrcn~CdimUkuarHd0ygI~l-HNmOOL7fYFEEHiheCN~OGwSU3XynafA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/model.usdz?Expires=4949251200&Signature=g8VtIeqtOkmDw1lzu~3vhKAqP0XhcKEPayu0zs2-0QxHc~rUDjeaLX6sfr8aQLL72fgrpkAhCDl7ig7G-i86qOH5vWqFOBy8cE4P8iyDxxzg1MuC3u5fxCMTxqfaLFREc-0-M6IGJxOHjJnUI91XyC4CZosDekekcaw3x0qepF6v2ZHginKNzK00olTVyTzNyagR9-3Z~MooYLCq9n-MJOO0kaupc3ZQqWBp-UWGWZ3YMO7wJwSsbdC4HSf6egBJjEybyZ6O0nrr3YsjkvkBjtudEKgv5uiD~2qYptMmxIe6~IVhB~f9ttSwyPrUjJ0ZAXHkUNNrkyrl0gLuiaG8Ww__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ec-d490-72c2-ab7f-747bf222cb64/output/preview.png?Expires=4949251200&Signature=TTk7bPb~2YSfovIM5gWmfrq2AizeezE1veE-4WMV6EGQ6hDddm0Mdmf8GJ1f8T7VPi3K7fLecxUISGVJX3-RHLj1vEX06-vngHAm8QNpFyzBcROxI1inwsvGLg6Q~4SSyITmxzbey1JBiIevfgJATn7OcThTckDNGvrggXkoE~z0wLILtU5h3KSFIY~E67TvmzBVJFsPby-pBApS8cTtDacF7y23nN9j782xSUBiQ26MMfx69Mx7jWtj65eDJAIfPTTo0Ua8HD-WlpM2SFKEBtINJ5BWXlMmkXACw74PfpB-VN2QRs2X1IBVSd5OPdneCTEvtcJF9G5ZlpriX2vAhw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

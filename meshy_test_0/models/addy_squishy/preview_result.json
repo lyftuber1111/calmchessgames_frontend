@@ -1,0 +1,49 @@
+{
+  "id": "01a219e8-4567-730e-be1b-91c9ee6d697b",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 3148737492,
+  "prompt": "Kawaii pastel pink chubby cat squishy plush toy with cute pointed cat ears, big sparkly kawaii eyes and happy cat smile, soft rounded toy, stylized 3D game prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795730984345,
+  "progress": 100,
+  "started_at": 1795730984353,
+  "finished_at": 1795731017646,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/model.glb?Expires=4949251200&Signature=dfEtw8aAMx7~LSLm8MkKEnZvbFKLSXXD4ikdw5XanyfXZ16EjHES9Si7IKaB5NnG4GstOVFsWgicHIbeOLiLGSxpDTUwAdnk2SvDBl5ciAU~z1wa3GdsmjbAK6lmh2kcvMTEQV6VVSaBDMAgiwAdcDt-SCgvkuDMpmTSJS6XLNnd91BzHmOC-qpF8g4i7Jc7EKDaiJVLy5xgqvzOy9woi9tfC601g31So~xwc6aVrdwGZykEb6O2B8dOyPpa4sIdbPkfyGbgl6krQVvsh-7rEmHxq3KGjc1cTV7T4hwAR3cDw7GDRKLWG4mC5XNBX7AtQNR9IRmsOaM49qnEFk7S0g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/model.fbx?Expires=4949251200&Signature=GQvUA-tIGWJ1M1ttFYx68kPLOLYUfdxv8aqCSYOOKnQRk7U0AkM61tIVmi5wSHassQj6ywgtzmTUiR8ceqy55yi6sMBwXYXuUdR6M~37sZsefn6miaxvRBpsSTIBiBQJ2tfBCAP2JzjDxVmZ5Wvl3NSNVFnofZwKAz81MwNHfAYuF0ZtC2m7Y3RFmxe7OaJsGC1BOlulJbSb~sb2a36t1H70taFEfBT6gaoeKZuvOwbuc~P8O9VwRu9rBl7sTV7KVP6lB4-zfS46bARElYyQDiw40Ukgtfw5XMWgLwm~nHEPcBJDAkBIOiSjCZqNFgqps08onfBRPePeQkja8hDEqg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/model.usdz?Expires=4949251200&Signature=BwkSW1UETguUJ4scKHSdgWt9aoeDwVWp38oFd4PJl~BhrnJfX-VY9T2TYITKs0G~nEepV1znfKuh271coF8GOxPwksGy4RzT2GTN6V~hecZXCArW~4cazNAA7GlIgwtnKjuv8HKioaBobLghD5aSyTONyvCZ~Pwck80D1nCXLzIIBKZSu8~DBzv2tvfVOCRJ6ls6hS25yzAg8Bw38tAiX4EGF1bEYlc5B27ukhSCstfLt1kf7wa22J4OOH15x1-KC8PnUl4j9-CTlgoUCkhCbztTdjWZvUKSwE6OTtbM51xipDcmgruYM1vfAL84juueAeMS305D4E0StxcNdM7mxA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/model.obj?Expires=4949251200&Signature=R2mF0f--VhBGHrA~18E6Oy68k6qKTesZdUHX0eOKXbpJGcQCz-zriOyGQdu0Iw5QVhDnDCwWoE2AQhVWBDJArF6juxtBWmw6Y2hTWS0yrCl9yW~IYZmN26szMLMz7vX56KSjNvNxRZwidex4mto0C2ZKC3Frw80MWObP9uz-eVTpxGLpg6mNZ~-K8JtsXOLeX1wFpCE0W0KFQTUYb03VADhWtSCoNPItKzZficJLRPoc19eCZn27OgRd0PIVcuVIgBUUf~GmRIgPpWNbgPWbj3xaLClpRtr62ZfdBNGGGd1UMgE7jtirZVUEHS02IH1sjJULnKjpOFgNM4DDcDSdeA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/model.stl?Expires=4949251200&Signature=AmO676m8LQ0HF8mXFBSf9NIgek6zYSnVpfAIZTqY0Jq8XmrUY~qFs9AP74KCUKyctGzrd5yFRM4dHwMIvqhEnilpndL-PRIpmxaPYhcgr5WQ031Q1QcC-L12CyJHYxmR9itDWDfGqt2MuZ-wPab7OOEiu85sMRW8UCHhGbhoRV20PEFRFUmCdVMDsGjrcsMsDASKrlZtuLHkUQhNV1ZGDXJsl3s0h314hCP9od69AUThxultOTfy4bwJOTdvZrchZHOKyMAFsAoJL-bI0QXvQK~LoLXX59zZCRUJqnefIa3-NjMg1HnR3erXikc46myJhwr7-mEVgbTkgmeJ2znQdQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/preview.png?Expires=4949251200&Signature=c~QsWrv08kjhJJ2H64etY2NPvSgnXuP92J-iQ5ggCn1wcTtvZScMN17GMdWZR1AM~rewSyJnYHOLocskc23PrrHsIjPFsUwTZt2FWLJ6c-kwu93MhKCOZRTeVXMjlDSyX2mTBMqMpLKHvEXWPZsLNMVcz1EoOeN1nk8hxc8eDbZ9JfSVydpTV8LkzpkidMdK6pdCluoL7YX~bkthTMgRrK7GXP~OJJUQsrZ8DWx8b1ZLu-pgzwxZmdJb8~RMV7KNgbAlm2mTE-pclV1ESvoz3d65ksztDGKZCD6FaL~WoI3Ynn9d-OzfiKeEg-Z9n~vXYFwHDeLg1efoQequL4dIlg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Kawaii pastel pink chubby cat squishy plush toy with cute pointed cat ears, big sparkly kawaii eyes and happy cat smile, soft rounded toy, stylized 3D game prop",
+    "should_remesh": true,
+    "target_polycount": 5500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 3148737492,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/model.fbx?Expires=4949251200&Signature=GQvUA-tIGWJ1M1ttFYx68kPLOLYUfdxv8aqCSYOOKnQRk7U0AkM61tIVmi5wSHassQj6ywgtzmTUiR8ceqy55yi6sMBwXYXuUdR6M~37sZsefn6miaxvRBpsSTIBiBQJ2tfBCAP2JzjDxVmZ5Wvl3NSNVFnofZwKAz81MwNHfAYuF0ZtC2m7Y3RFmxe7OaJsGC1BOlulJbSb~sb2a36t1H70taFEfBT6gaoeKZuvOwbuc~P8O9VwRu9rBl7sTV7KVP6lB4-zfS46bARElYyQDiw40Ukgtfw5XMWgLwm~nHEPcBJDAkBIOiSjCZqNFgqps08onfBRPePeQkja8hDEqg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/model.glb?Expires=4949251200&Signature=dfEtw8aAMx7~LSLm8MkKEnZvbFKLSXXD4ikdw5XanyfXZ16EjHES9Si7IKaB5NnG4GstOVFsWgicHIbeOLiLGSxpDTUwAdnk2SvDBl5ciAU~z1wa3GdsmjbAK6lmh2kcvMTEQV6VVSaBDMAgiwAdcDt-SCgvkuDMpmTSJS6XLNnd91BzHmOC-qpF8g4i7Jc7EKDaiJVLy5xgqvzOy9woi9tfC601g31So~xwc6aVrdwGZykEb6O2B8dOyPpa4sIdbPkfyGbgl6krQVvsh-7rEmHxq3KGjc1cTV7T4hwAR3cDw7GDRKLWG4mC5XNBX7AtQNR9IRmsOaM49qnEFk7S0g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/model.obj?Expires=4949251200&Signature=R2mF0f--VhBGHrA~18E6Oy68k6qKTesZdUHX0eOKXbpJGcQCz-zriOyGQdu0Iw5QVhDnDCwWoE2AQhVWBDJArF6juxtBWmw6Y2hTWS0yrCl9yW~IYZmN26szMLMz7vX56KSjNvNxRZwidex4mto0C2ZKC3Frw80MWObP9uz-eVTpxGLpg6mNZ~-K8JtsXOLeX1wFpCE0W0KFQTUYb03VADhWtSCoNPItKzZficJLRPoc19eCZn27OgRd0PIVcuVIgBUUf~GmRIgPpWNbgPWbj3xaLClpRtr62ZfdBNGGGd1UMgE7jtirZVUEHS02IH1sjJULnKjpOFgNM4DDcDSdeA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/model.stl?Expires=4949251200&Signature=AmO676m8LQ0HF8mXFBSf9NIgek6zYSnVpfAIZTqY0Jq8XmrUY~qFs9AP74KCUKyctGzrd5yFRM4dHwMIvqhEnilpndL-PRIpmxaPYhcgr5WQ031Q1QcC-L12CyJHYxmR9itDWDfGqt2MuZ-wPab7OOEiu85sMRW8UCHhGbhoRV20PEFRFUmCdVMDsGjrcsMsDASKrlZtuLHkUQhNV1ZGDXJsl3s0h314hCP9od69AUThxultOTfy4bwJOTdvZrchZHOKyMAFsAoJL-bI0QXvQK~LoLXX59zZCRUJqnefIa3-NjMg1HnR3erXikc46myJhwr7-mEVgbTkgmeJ2znQdQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/model.usdz?Expires=4949251200&Signature=BwkSW1UETguUJ4scKHSdgWt9aoeDwVWp38oFd4PJl~BhrnJfX-VY9T2TYITKs0G~nEepV1znfKuh271coF8GOxPwksGy4RzT2GTN6V~hecZXCArW~4cazNAA7GlIgwtnKjuv8HKioaBobLghD5aSyTONyvCZ~Pwck80D1nCXLzIIBKZSu8~DBzv2tvfVOCRJ6ls6hS25yzAg8Bw38tAiX4EGF1bEYlc5B27ukhSCstfLt1kf7wa22J4OOH15x1-KC8PnUl4j9-CTlgoUCkhCbztTdjWZvUKSwE6OTtbM51xipDcmgruYM1vfAL84juueAeMS305D4E0StxcNdM7mxA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4567-730e-be1b-91c9ee6d697b/output/preview.png?Expires=4949251200&Signature=c~QsWrv08kjhJJ2H64etY2NPvSgnXuP92J-iQ5ggCn1wcTtvZScMN17GMdWZR1AM~rewSyJnYHOLocskc23PrrHsIjPFsUwTZt2FWLJ6c-kwu93MhKCOZRTeVXMjlDSyX2mTBMqMpLKHvEXWPZsLNMVcz1EoOeN1nk8hxc8eDbZ9JfSVydpTV8LkzpkidMdK6pdCluoL7YX~bkthTMgRrK7GXP~OJJUQsrZ8DWx8b1ZLu-pgzwxZmdJb8~RMV7KNgbAlm2mTE-pclV1ESvoz3d65ksztDGKZCD6FaL~WoI3Ynn9d-OzfiKeEg-Z9n~vXYFwHDeLg1efoQequL4dIlg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_sweatshirt_kids",
+  "model_path": "./meshy_test_0/models/addy_sweatshirt_kids/addy_sweatshirt_kids.glb",
+  "textures_dir": "./meshy_test_0/models/addy_sweatshirt_kids/addy_sweatshirt_kids_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_sweatshirt_kids/addy_sweatshirt_kids_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_sweatshirt_kids/addy_sweatshirt_kids_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_sweatshirt_kids/addy_sweatshirt_kids_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_sweatshirt_kids/addy_sweatshirt_kids_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_sweatshirt_kids/addy_sweatshirt_kids_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219e8-4569-70f3-a45b-3de704c38e10",
+  "refine_task_id": "01a219e8-dbde-75d3-8a98-3e8e4d563a07",
+  "prompt": "Neatly folded vibrant orange coral kids pullover hoodie sweatshirt with cozy hood on top and white drawstrings, soft cotton fleece texture, retail shelf display clothing prop"
+}

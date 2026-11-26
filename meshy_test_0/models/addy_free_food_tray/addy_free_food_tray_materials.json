@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_free_food_tray",
+  "model_path": "./meshy_test_0/models/addy_free_food_tray/addy_free_food_tray.glb",
+  "textures_dir": "./meshy_test_0/models/addy_free_food_tray/addy_free_food_tray_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_free_food_tray/addy_free_food_tray_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_free_food_tray/addy_free_food_tray_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_free_food_tray/addy_free_food_tray_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_free_food_tray/addy_free_food_tray_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_free_food_tray/addy_free_food_tray_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219e9-7937-75c7-9829-f88cfcaf86d6",
+  "refine_task_id": "01a219ea-87b4-7646-8102-637fe6acbc25",
+  "prompt": "Bright yellow fast food cafeteria tray holding a slice of pepperoni pizza, a cheeseburger, and a blue iced soda cup with a red straw, stylized 3D game prop"
+}

@@ -1,0 +1,49 @@
+{
+  "id": "01a219e8-4561-7442-a52e-7e778848ba58",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 3584578257,
+  "prompt": "Modern insulated pastel sky-blue tumbler cup with ergonomic side handle, polished stainless steel rim, white lid, and yellow reusable drinking straw, stylized 3D retail product",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795730984063,
+  "progress": 100,
+  "started_at": 1795730984075,
+  "finished_at": 1795731014454,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/model.glb?Expires=4949251200&Signature=ZgML8iT7dp-GflVYtkOYCUdcnQesAWjoHU63M~kM4vOlSTI-ZDDBm70Umv4i7kUchCyYs1VH961EHbjG3550l5csDG6k~mWmVmx6rBma7JO16b9mV3xOqobiGzyKs2IkaM376WrWsz-hCbCCPPDx1sk2MxIrmWs9tz5BOmnFS0xkcZa9jjmpUmL0f4UQD-DuDqsKXY-HtWgTKdZJuP1PGWluv6K~UH-YNBALB2BKwa2EyeDEpG9mfho7TeGk70rT5omzQKRD-4u2azHcC5Tls3tG3nIDS-HZ1Glvp8DqjgGOz2DurEnobMsQmFwbJmpKJDHEGbt3yGco2fuwDPW2Pg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/model.fbx?Expires=4949251200&Signature=A3Kwnc5G3VlzRJ2eA8kixis5URtbEVJBMZIWpCgQyWwGP8nk3Wc4xI3X0C4HWcL2ADYcze6i26R0FyM54GCySqzdwXc8SbK7pG14dmghAaIoCg~9kDg10IJVl2TaFLVQMB~HmMaeT5A8b-YIMSbDx4neblWfU8ro7g4cB3ti~GKsI22WiGx0OFn1kf1z5Jn4eKRg-XqcOX-TY1LClnDHMcK6vFNjvWNmFYGK6jdfwf9h~vETbYE~PN~niPMtCc2hFjalaJAlf-Y4B-TpP1pmyApNePclUvSdSzLzop6E-nWps17n43AtsLVm3IGmqj2NRJf9V7DDFOPHTYqbJBXE~g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/model.usdz?Expires=4949251200&Signature=V8BwPbhlbH8ST6W7iFRr9EphWm23Y53xdv1V~wD8ZzHTWhHn9hB-qgI7cLR6Kx4xiNDrpqlB~oxGj8ahqEmSIjq~10HTvT~M6yuZj6MJUPUWkEWkdiaY49Hg4~8xF-aprMwUOMJSpGKdLgsv35tTHZQg7btorgAg7X2Rc3rVW0FIs7~BG8MchvgVvbOk7FcOi0L-juvqvKfJXU9ovsmoXAzaOZrmigydGDNDVR~PLRxLSqybFOkNQd2kh1y9mxX~4hvSzxz-dQl01CIpktQGW37u1EgwV48N7r~b7llIwZXXbvwRwgel3l8QKBncj-Xhofuo3ESSMJdq281djFX6zw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/model.obj?Expires=4949251200&Signature=TfFoCxWPKia5Sbe7XrDUKi77jx43EvZtwArmBz-xKUHoGj9CeuQZjP8Hd8C6U3OWXDJbXb15bkviXP1vM~os1WqPS0zcxWELPmeEKObKGSodRSJ4acIdPk3BXG21n3fzt9MNqN7KouyXGrRVfXUlJysOW4LROnjSW7WxDuxQ6XfxgGB18qMjG1HoHc8W~-nr2W5OhoaiwHEjX4s2tEv~8ckdgkuqJ4-gpMXHr8XRr3nXNirEf7RGA6uUrhMp45FWn5YHyqOwGLgGsFYqAevB2R5rKeHqWJ4BRIVSHI5oIs7IfR6J0Jc3iky~jS7A3Z84kEUQMev8rJeD7mDvu2tR7Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/model.stl?Expires=4949251200&Signature=GZF0DUfA~PNYfAh3jAuKZTmF6YSVFoQu3BAPlPbjG-wEhd0fQCd8OeHI-YbbDfZMw79fsmUa4TZjF3eyI~qePiLbUZEqPv9Yd2ELZfO80G-LFtWrYSPZFneY9qHMh9jD1wERzv2WvRxj4u~MtviX57G26qGSsIVkXPNobaTb~kG8iQzSKYherQcYe0X6GA6p1A0ed55W8SwJkRQUhP07d0w7qTxxOjS5DVsXFwUSuaxEwuBOynm7NQnPJcjgRIISjyhB~OEiPZIZsEvvU7wGbikKAL7mblX-jIRiDfkFVykpP0mmLYy4Z1Y4c4jymwpvEpdpCRJvgz4BNaZ~Nir7Xw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/preview.png?Expires=4949251200&Signature=PEtMQEMDs0mq3guKnqovSMYJRNGXG14nREDOBSa6dQlMZ66aQTV5fQkm-aZZiyShn~ykwk6MHlv4q81d-TiA3DBP8QyeYmpKYAnEUepSTz8cisNIjdn9kEZDfYhJLCACs2rkZ6iqS5sYQBtyxhuqWqxTEbpUh4RVoTI8Tr4qsC7kLBEMZl-979NtdH06ebvLe7~v41Pp7grbrcR4~2wdvZIv~qneLpHpcJDyfhr70uMYPs6-w-Rn8qFORhY1M22GCT48fhuLAhlSk20X-6d6wJTip1bVOyRvwinIJdcI7pFV4ETvdbHpxnlb0jhZ9CUWh9FRIeWuuzQaoSbCwYVFug__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Modern insulated pastel sky-blue tumbler cup with ergonomic side handle, polished stainless steel rim, white lid, and yellow reusable drinking straw, stylized 3D retail product",
+    "should_remesh": true,
+    "target_polycount": 5500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 3584578257,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/model.fbx?Expires=4949251200&Signature=A3Kwnc5G3VlzRJ2eA8kixis5URtbEVJBMZIWpCgQyWwGP8nk3Wc4xI3X0C4HWcL2ADYcze6i26R0FyM54GCySqzdwXc8SbK7pG14dmghAaIoCg~9kDg10IJVl2TaFLVQMB~HmMaeT5A8b-YIMSbDx4neblWfU8ro7g4cB3ti~GKsI22WiGx0OFn1kf1z5Jn4eKRg-XqcOX-TY1LClnDHMcK6vFNjvWNmFYGK6jdfwf9h~vETbYE~PN~niPMtCc2hFjalaJAlf-Y4B-TpP1pmyApNePclUvSdSzLzop6E-nWps17n43AtsLVm3IGmqj2NRJf9V7DDFOPHTYqbJBXE~g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/model.glb?Expires=4949251200&Signature=ZgML8iT7dp-GflVYtkOYCUdcnQesAWjoHU63M~kM4vOlSTI-ZDDBm70Umv4i7kUchCyYs1VH961EHbjG3550l5csDG6k~mWmVmx6rBma7JO16b9mV3xOqobiGzyKs2IkaM376WrWsz-hCbCCPPDx1sk2MxIrmWs9tz5BOmnFS0xkcZa9jjmpUmL0f4UQD-DuDqsKXY-HtWgTKdZJuP1PGWluv6K~UH-YNBALB2BKwa2EyeDEpG9mfho7TeGk70rT5omzQKRD-4u2azHcC5Tls3tG3nIDS-HZ1Glvp8DqjgGOz2DurEnobMsQmFwbJmpKJDHEGbt3yGco2fuwDPW2Pg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/model.obj?Expires=4949251200&Signature=TfFoCxWPKia5Sbe7XrDUKi77jx43EvZtwArmBz-xKUHoGj9CeuQZjP8Hd8C6U3OWXDJbXb15bkviXP1vM~os1WqPS0zcxWELPmeEKObKGSodRSJ4acIdPk3BXG21n3fzt9MNqN7KouyXGrRVfXUlJysOW4LROnjSW7WxDuxQ6XfxgGB18qMjG1HoHc8W~-nr2W5OhoaiwHEjX4s2tEv~8ckdgkuqJ4-gpMXHr8XRr3nXNirEf7RGA6uUrhMp45FWn5YHyqOwGLgGsFYqAevB2R5rKeHqWJ4BRIVSHI5oIs7IfR6J0Jc3iky~jS7A3Z84kEUQMev8rJeD7mDvu2tR7Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/model.stl?Expires=4949251200&Signature=GZF0DUfA~PNYfAh3jAuKZTmF6YSVFoQu3BAPlPbjG-wEhd0fQCd8OeHI-YbbDfZMw79fsmUa4TZjF3eyI~qePiLbUZEqPv9Yd2ELZfO80G-LFtWrYSPZFneY9qHMh9jD1wERzv2WvRxj4u~MtviX57G26qGSsIVkXPNobaTb~kG8iQzSKYherQcYe0X6GA6p1A0ed55W8SwJkRQUhP07d0w7qTxxOjS5DVsXFwUSuaxEwuBOynm7NQnPJcjgRIISjyhB~OEiPZIZsEvvU7wGbikKAL7mblX-jIRiDfkFVykpP0mmLYy4Z1Y4c4jymwpvEpdpCRJvgz4BNaZ~Nir7Xw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/model.usdz?Expires=4949251200&Signature=V8BwPbhlbH8ST6W7iFRr9EphWm23Y53xdv1V~wD8ZzHTWhHn9hB-qgI7cLR6Kx4xiNDrpqlB~oxGj8ahqEmSIjq~10HTvT~M6yuZj6MJUPUWkEWkdiaY49Hg4~8xF-aprMwUOMJSpGKdLgsv35tTHZQg7btorgAg7X2Rc3rVW0FIs7~BG8MchvgVvbOk7FcOi0L-juvqvKfJXU9ovsmoXAzaOZrmigydGDNDVR~PLRxLSqybFOkNQd2kh1y9mxX~4hvSzxz-dQl01CIpktQGW37u1EgwV48N7r~b7llIwZXXbvwRwgel3l8QKBncj-Xhofuo3ESSMJdq281djFX6zw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4561-7442-a52e-7e778848ba58/output/preview.png?Expires=4949251200&Signature=PEtMQEMDs0mq3guKnqovSMYJRNGXG14nREDOBSa6dQlMZ66aQTV5fQkm-aZZiyShn~ykwk6MHlv4q81d-TiA3DBP8QyeYmpKYAnEUepSTz8cisNIjdn9kEZDfYhJLCACs2rkZ6iqS5sYQBtyxhuqWqxTEbpUh4RVoTI8Tr4qsC7kLBEMZl-979NtdH06ebvLe7~v41Pp7grbrcR4~2wdvZIv~qneLpHpcJDyfhr70uMYPs6-w-Rn8qFORhY1M22GCT48fhuLAhlSk20X-6d6wJTip1bVOyRvwinIJdcI7pFV4ETvdbHpxnlb0jhZ9CUWh9FRIeWuuzQaoSbCwYVFug__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

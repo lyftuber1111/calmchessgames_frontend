@@ -1,0 +1,49 @@
+{
+  "id": "01a219ed-8401-7717-9fc0-97c650217dec",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2301881700,
+  "prompt": "Bright sunny yellow modern round breakroom bar stool chair with cushioned circular seat and polished chrome pedestal base, stylized 3D furniture prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731327904,
+  "progress": 100,
+  "started_at": 1795731327917,
+  "finished_at": 1795731356711,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/model.glb?Expires=4949251200&Signature=VXPt3zu4tFnsLYS9pc~sO3oUycbAPSItew3E19gWZ~vbGAGftu2tmX0FYvPs9fUAWsBw3xyK3OGedWcL31Ep5vBHfv0MXC24cQ6Wst5vInre~~p4fSLhDnvpCy8wCINRcSwkjKETBLPk-Adubz2nUO6KYnkAJq4D32gM2Dmbr~lnLMvYK6bAYqQgxUGddt~OYhlrethhu4qSBYOrXUJDpNhaUk4QQWxCfc2gJ4raD7XNys3AVikReaXp7ATeWq7JxHbQ18SOnPL~6BhcLnJhWqE~UeE7~sS6iP1V34ziPyHdcJAy5rpBFKIJGjEsZcbmuR2p4Qwyp4jtu-he4Vm2DA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/model.fbx?Expires=4949251200&Signature=HbwcKEWsQnJ8tD5~E8OT4AYLzpU6MRktGmVhAVqQv8NtiG-DzfKX7YASGjLOEOnOyHg6aFPEyq8FdIvQ8Ts0l3Oz15jKDnnvZhT767aqnU2n6qYiUa63FXHhJFofYXw2wvD3ZVJbu-UkobFyteDxiE0sXMKJKUFPtj1Wt3MdgDLret-T6uLdutb52QAFNyHz-sKYkprLztoVsme0uWzK8hp7~a6tLgMHlqUF~E3rb7UeRmGir7C2LgGNfyXdtA8ZHVtmQMvZJ3gzdls50ntTBU24ZYP0CIeZaTbqwIDxiwWnapfrdaFjUp3NthZ0X8oHgQWJ6DMK~jA1ZnnProiGWQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/model.usdz?Expires=4949251200&Signature=gh9qOQePyZm0LDV8yUj0nDxbImTlLyT6GDW9PXMzA47JB0~ItjHOo9VkOW7UJqSRDgrG4SBT7Hs3fymPiNZZMtdnwB8GQjBDOmfwr3M01pyAbklcsc7kl9GXshdiagdadzC-Is1Ua2gmh6uPCMgd6M8aDAF2gbny80cn3ZD9sJqygyQctLo37vNxKkP2VUm1Ek0ZnKvPuR3I6oEsZDAlDqik6Wdo-HWrNHaFezbYa4mlWax8xxLwklixmqP5BngBBkxwBtbFrdRDHnJKEiIS69xFXWounJrp8J78oXyGvGpOQfKONo-8SAXSAL4-RhZfq7CIz1HDBvmPC6ZnDLt82A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/model.obj?Expires=4949251200&Signature=XvbaJzY47Ci8LCWUbj4Yty135MM-XEFMNOgz1p2P-soo2HXdjH3aNp7czttbG2wG1uGK-BfyRPCarXGs~BVvo26icyO0lioDm~z7CAzK45JOe3J33gMKusQKxTq1VtxyB8lre7Dy6ZtzHoqtoHJLKpuYJC4Ojr12qo0LAltCwCeTT4yTSUJL4WWbCSLLoC5gpZbir~s8cdkIStsr-nQGqLV~WRPYCp7GiVB5CxI4ombqtB48zqckQmVaShKFYvCcQdc7-ouxMGgpyOV4deY1Ks7yKAJEmc2KlHnWfSwxQ84Erkk73G3yNcXNTK2kIpDA4Redua0obEfOmP5~BvrPow__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/model.stl?Expires=4949251200&Signature=AI9Wz4zktGl9y9izNZ8LVZp~DHRXeH~VsEM2CaVe2P2xBUsOfbyq5WB8Q~i0PC35RhflD3J~dzpINyHbuka6R1nMZedh5Dum6xMgujNfXfJA19WbIgo9NWMsw7OzI3ybICbFVoRbi-0KYs29tb5v9TjZ5Ok3y3vzrhI-Tw5zw9itakVUYb3tkgv-rmTRq~uCyTSMA1QsnjUTRcBK9IMqyiUabMd9gRxS1Oc2~hyg1KswO93VLG7wWsQwcjEUhMGeVLnHRgKncGJvWGPVa9CBtE6ws-rMTln71Pf7lnLdD2hLi7GMqosTKPZ5gFUdBoKYmkC1kodlAQ1YGaMjsKyl2Q__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/preview.png?Expires=4949251200&Signature=K1TfBE5hE989nL0DpMeiYYcsQ114RXB8ume4qivV2a8SnkeUf0O1zMKs5LXrC1rYNFWCyEy9iQkbak3ju0aCFeRIwDyOui3sHUWzFFOkM87AcUMqJ08ELk2oqGXearKXFtU3LTJx3t-s~3KTp6GbyHz8wGcmtT-oEwlrHvRDdEaHmwVUHY3YOCuqkLwPq7Y2hHE6FOjH88m4NkL5yc9eXuMgjd4-maZi-A3g~wAlJSvVbMKGLml6TA66-yNajHwUlDI9j1uu0Xx1CInGsKw~WKpGjZIomLvmRM8JxjOgzJnSkQEJa2AZYFX-g7SG0Uj0uxwnN9RsI1mFewF46ED5xw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Bright sunny yellow modern round breakroom bar stool chair with cushioned circular seat and polished chrome pedestal base, stylized 3D furniture prop",
+    "should_remesh": true,
+    "target_polycount": 5000,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 2301881700,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/model.fbx?Expires=4949251200&Signature=HbwcKEWsQnJ8tD5~E8OT4AYLzpU6MRktGmVhAVqQv8NtiG-DzfKX7YASGjLOEOnOyHg6aFPEyq8FdIvQ8Ts0l3Oz15jKDnnvZhT767aqnU2n6qYiUa63FXHhJFofYXw2wvD3ZVJbu-UkobFyteDxiE0sXMKJKUFPtj1Wt3MdgDLret-T6uLdutb52QAFNyHz-sKYkprLztoVsme0uWzK8hp7~a6tLgMHlqUF~E3rb7UeRmGir7C2LgGNfyXdtA8ZHVtmQMvZJ3gzdls50ntTBU24ZYP0CIeZaTbqwIDxiwWnapfrdaFjUp3NthZ0X8oHgQWJ6DMK~jA1ZnnProiGWQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/model.glb?Expires=4949251200&Signature=VXPt3zu4tFnsLYS9pc~sO3oUycbAPSItew3E19gWZ~vbGAGftu2tmX0FYvPs9fUAWsBw3xyK3OGedWcL31Ep5vBHfv0MXC24cQ6Wst5vInre~~p4fSLhDnvpCy8wCINRcSwkjKETBLPk-Adubz2nUO6KYnkAJq4D32gM2Dmbr~lnLMvYK6bAYqQgxUGddt~OYhlrethhu4qSBYOrXUJDpNhaUk4QQWxCfc2gJ4raD7XNys3AVikReaXp7ATeWq7JxHbQ18SOnPL~6BhcLnJhWqE~UeE7~sS6iP1V34ziPyHdcJAy5rpBFKIJGjEsZcbmuR2p4Qwyp4jtu-he4Vm2DA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/model.obj?Expires=4949251200&Signature=XvbaJzY47Ci8LCWUbj4Yty135MM-XEFMNOgz1p2P-soo2HXdjH3aNp7czttbG2wG1uGK-BfyRPCarXGs~BVvo26icyO0lioDm~z7CAzK45JOe3J33gMKusQKxTq1VtxyB8lre7Dy6ZtzHoqtoHJLKpuYJC4Ojr12qo0LAltCwCeTT4yTSUJL4WWbCSLLoC5gpZbir~s8cdkIStsr-nQGqLV~WRPYCp7GiVB5CxI4ombqtB48zqckQmVaShKFYvCcQdc7-ouxMGgpyOV4deY1Ks7yKAJEmc2KlHnWfSwxQ84Erkk73G3yNcXNTK2kIpDA4Redua0obEfOmP5~BvrPow__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/model.stl?Expires=4949251200&Signature=AI9Wz4zktGl9y9izNZ8LVZp~DHRXeH~VsEM2CaVe2P2xBUsOfbyq5WB8Q~i0PC35RhflD3J~dzpINyHbuka6R1nMZedh5Dum6xMgujNfXfJA19WbIgo9NWMsw7OzI3ybICbFVoRbi-0KYs29tb5v9TjZ5Ok3y3vzrhI-Tw5zw9itakVUYb3tkgv-rmTRq~uCyTSMA1QsnjUTRcBK9IMqyiUabMd9gRxS1Oc2~hyg1KswO93VLG7wWsQwcjEUhMGeVLnHRgKncGJvWGPVa9CBtE6ws-rMTln71Pf7lnLdD2hLi7GMqosTKPZ5gFUdBoKYmkC1kodlAQ1YGaMjsKyl2Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/model.usdz?Expires=4949251200&Signature=gh9qOQePyZm0LDV8yUj0nDxbImTlLyT6GDW9PXMzA47JB0~ItjHOo9VkOW7UJqSRDgrG4SBT7Hs3fymPiNZZMtdnwB8GQjBDOmfwr3M01pyAbklcsc7kl9GXshdiagdadzC-Is1Ua2gmh6uPCMgd6M8aDAF2gbny80cn3ZD9sJqygyQctLo37vNxKkP2VUm1Ek0ZnKvPuR3I6oEsZDAlDqik6Wdo-HWrNHaFezbYa4mlWax8xxLwklixmqP5BngBBkxwBtbFrdRDHnJKEiIS69xFXWounJrp8J78oXyGvGpOQfKONo-8SAXSAL4-RhZfq7CIz1HDBvmPC6ZnDLt82A__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-8401-7717-9fc0-97c650217dec/output/preview.png?Expires=4949251200&Signature=K1TfBE5hE989nL0DpMeiYYcsQ114RXB8ume4qivV2a8SnkeUf0O1zMKs5LXrC1rYNFWCyEy9iQkbak3ju0aCFeRIwDyOui3sHUWzFFOkM87AcUMqJ08ELk2oqGXearKXFtU3LTJx3t-s~3KTp6GbyHz8wGcmtT-oEwlrHvRDdEaHmwVUHY3YOCuqkLwPq7Y2hHE6FOjH88m4NkL5yc9eXuMgjd4-maZi-A3g~wAlJSvVbMKGLml6TA66-yNajHwUlDI9j1uu0Xx1CInGsKw~WKpGjZIomLvmRM8JxjOgzJnSkQEJa2AZYFX-g7SG0Uj0uxwnN9RsI1mFewF46ED5xw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

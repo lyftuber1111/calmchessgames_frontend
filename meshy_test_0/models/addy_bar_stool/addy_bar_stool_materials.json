@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_bar_stool",
+  "model_path": "./meshy_test_0/models/addy_bar_stool/addy_bar_stool.glb",
+  "textures_dir": "./meshy_test_0/models/addy_bar_stool/addy_bar_stool_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_bar_stool/addy_bar_stool_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_bar_stool/addy_bar_stool_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_bar_stool/addy_bar_stool_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_bar_stool/addy_bar_stool_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_bar_stool/addy_bar_stool_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219ed-8401-7717-9fc0-97c650217dec",
+  "refine_task_id": "01a219ee-05ca-7275-94f8-aea0ad689f14",
+  "prompt": "Bright sunny yellow modern round breakroom bar stool chair with cushioned circular seat and polished chrome pedestal base, stylized 3D furniture prop"
+}

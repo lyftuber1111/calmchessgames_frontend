@@ -1,0 +1,15 @@
+{
+  "model_name": "addy_tree",
+  "model_path": "./meshy_test_0/models/addy_tree/addy_tree.glb",
+  "textures_dir": "./meshy_test_0/models/addy_tree/addy_tree_textures",
+  "textures": {
+    "thumbnail": "./meshy_test_0/models/addy_tree/addy_tree_textures/thumbnail.png",
+    "base_color": "./meshy_test_0/models/addy_tree/addy_tree_textures/texture_0_base_color.png",
+    "metallic": "./meshy_test_0/models/addy_tree/addy_tree_textures/texture_0_metallic.png",
+    "normal": "./meshy_test_0/models/addy_tree/addy_tree_textures/texture_0_normal.png",
+    "roughness": "./meshy_test_0/models/addy_tree/addy_tree_textures/texture_0_roughness.png"
+  },
+  "preview_task_id": "01a219ed-3cc8-778a-ac6a-e27caffeb6ad",
+  "refine_task_id": "01a219ef-01f8-71f9-a3a6-8d4ab129ee85",
+  "prompt": "Stylized lush green parking lot ornamental tree with textured brown wood bark trunk and full rounded vibrant green leafy canopy, clean 3D environment prop"
+}

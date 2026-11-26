@@ -1,0 +1,49 @@
+{
+  "id": "01a219e8-4566-734f-b330-6f794df18f7d",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2314847800,
+  "prompt": "Kawaii glossy pastel turquoise squishy stress ball toy with cute smiling eyes and rosy cheeks sitting on a clean round white display collar, vibrant stylized 3D game prop, smooth clean geometry",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795730984250,
+  "progress": 100,
+  "started_at": 1795730984259,
+  "finished_at": 1795731019173,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/model.glb?Expires=4949251200&Signature=DLO6qYtuKPby4148HN9GfQ0hg9RUV-aLGcsvYd34sAF2Hys-~eL3JdToDkXOaoJZFII9BiLBGqgOCOgoYXVQ1MfnIPGbUO8s3Psw6CRcAXS7G4oyUmttmbtcNuXknGQynydZ-PPcF7RFviM7xJ9Dq4kqS7x9HpfTHy6y4u3EaSoQ~DYtgMgE5DYEi4Vjm6H2~g5IJL4NXizUCss3qOckbXWTNT71onI1xKVdfnbU2MjfpB6H2ldZFrg4SjoWuNm6nMSj6ph3LvhCgCCNUPjMHEZwJRK5RaGvXpgwjBtFYzG7i0gE13pmhEm2oplZDdiT4vfCMK1tB00hQRK~m31b3w__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/model.fbx?Expires=4949251200&Signature=Ez9-szeazlYDi6Zb93izxGsYlaNcSru7FPo70E~A-60FUA44tv9KLmjEcJdonCSwLTlaPAbkZoY5sWERsrzjxfRMiOO2lvDdMQOd9EZKt-s1E7nQvpIqjdJclti4hOD2UmDWxxlYVsjQrJPUJ6DPkFDhifsbwxi50xxiuQNFI7OB7B0SvVQUtwh0raru5JyUoTbTl1OKmDi0vt~mF5DOMAFOWK1WqLZHPPCOXs7WmqV5nMOVMyvbqhqBaTq-~pE7nv8-KC8lowF04sCxmRRx2A1wKbyMmIjBXdRl7H5e7qlujf12w7pd1Hyi6ssSIYOUTSNO4KCbHXNYYJH9rh7ubg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/model.usdz?Expires=4949251200&Signature=Ga2v-4kmiPbiMIautWmvCDmgdJpRl55k77w1hER50cu3VGPKl7vqGrUt2DBJo7tIp7pytKyu3Fob~4iWFYd1UGDr8yVtYxvVHASDAH-LAOdnJ~Uo7yPVnFML9NJBLJD64HrTJvK~KJb7~-ws12fEZ~k76PSAj6RwlmW~FOupVn6xvwVPkL4rKsPQy1L6cZAyw77ftdbhryTuktLLyk2ZSfPXiuj~kHGmC~l7nry6-DkC4cXv1nB~IlpjCRTd2DiktuHrO51sn72id0mJ~LrwCMxUnNVHFeuJyAqilowxvtdCUA1Kx9iH2A~OfVxdIIaEfw6w~B1l8Vf1OJXHYT3~bA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/model.obj?Expires=4949251200&Signature=l-qyl-jBsqw8av0pXh0vXFKmLS36-R5A307EAPnrn9ybEk1AH~U9O72b1nzKDTQedcinNc5qdAr4ONUIC-8rtwF5SJlL5o4o-9sbxkP7yeB3va02IDhI7rZupNucQilhdZzDPy4k8P09PgN0gxRSxkm0KpPRatWoibt3f-cAYrCzUZf7oTD92uAq2toU65Efoyg2ESkVx1BgdOyU6KEcSTDOOmV8S6cneFIW93R0ZWAgQgsZ6REi9sAj~I1yNQJFAqHBp5G3Z1fu7LDhxSZQBzLjmftej7sZyeIEEFkPdytTuAktxn0PB9kqoExkhjZxq4nyuz3QKq1sms9MfJthZA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/model.stl?Expires=4949251200&Signature=hbfdW3vkV~Xmqaga6-qte7jcURHySf-V0Cv0izcRkRqyR0GcdXdqdmEaxmlj0I84uWfay73X8si6JLXRN~kEiISwuZrUBU4yyG0X3zJdV5daitYkrAg5aP1yPYfevs2YXBNiYc-SzgKy6J5WDmjDo~5bFPlXsqc5eDinit0DdQ6kuiqs2wFBlMgyNhzWoJIxPCzK542G1Sf5H69baClvuHY6f4nuUq4iZS3tYPA10jvUjHBKdaHNVLUcFHdRdSu5PVSRAk0CmINICAhyWRj7lE9u4PO~veGMbPrcFz-f-uYotO1MktjJ~kMunuV3RyKa9FmHs4bKGBfvJ8bjQtR0wQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/preview.png?Expires=4949251200&Signature=FA3tLQpY1EuSORHtvZ~ySkSXlLrScojJ5tWSY2rcUuJM9rLXcQjaflVZwaD0PIcirAynKuBuNsynHSQKQUvw0kShD9apA8e1z634EUT9UNBK8Bc63SZ4kFacQslwr~ucFEObmeuAD3-2oOy0z3gJdYz2foeAosjd2nLzzJ-2UFVASI1PZXj1LsnmskDs-b9XMWzfEfIzDM26jYRDA-mE6ZH7~-NsMp6ASOoWRqP1n4cQVo~CncoyYHWnidLiO3rhY~2T9tIHAlhbZg77p46JLzA7mEFD68ESe4ZpBuRYFVjzVe1ja40OPe4NaO-xvWbeGZIqbjS7ryYzJzOedBj1Bg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Kawaii glossy pastel turquoise squishy stress ball toy with cute smiling eyes and rosy cheeks sitting on a clean round white display collar, vibrant stylized 3D game prop, smooth clean geometry",
+    "should_remesh": true,
+    "target_polycount": 5000,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 2314847800,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/model.fbx?Expires=4949251200&Signature=Ez9-szeazlYDi6Zb93izxGsYlaNcSru7FPo70E~A-60FUA44tv9KLmjEcJdonCSwLTlaPAbkZoY5sWERsrzjxfRMiOO2lvDdMQOd9EZKt-s1E7nQvpIqjdJclti4hOD2UmDWxxlYVsjQrJPUJ6DPkFDhifsbwxi50xxiuQNFI7OB7B0SvVQUtwh0raru5JyUoTbTl1OKmDi0vt~mF5DOMAFOWK1WqLZHPPCOXs7WmqV5nMOVMyvbqhqBaTq-~pE7nv8-KC8lowF04sCxmRRx2A1wKbyMmIjBXdRl7H5e7qlujf12w7pd1Hyi6ssSIYOUTSNO4KCbHXNYYJH9rh7ubg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/model.glb?Expires=4949251200&Signature=DLO6qYtuKPby4148HN9GfQ0hg9RUV-aLGcsvYd34sAF2Hys-~eL3JdToDkXOaoJZFII9BiLBGqgOCOgoYXVQ1MfnIPGbUO8s3Psw6CRcAXS7G4oyUmttmbtcNuXknGQynydZ-PPcF7RFviM7xJ9Dq4kqS7x9HpfTHy6y4u3EaSoQ~DYtgMgE5DYEi4Vjm6H2~g5IJL4NXizUCss3qOckbXWTNT71onI1xKVdfnbU2MjfpB6H2ldZFrg4SjoWuNm6nMSj6ph3LvhCgCCNUPjMHEZwJRK5RaGvXpgwjBtFYzG7i0gE13pmhEm2oplZDdiT4vfCMK1tB00hQRK~m31b3w__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/model.obj?Expires=4949251200&Signature=l-qyl-jBsqw8av0pXh0vXFKmLS36-R5A307EAPnrn9ybEk1AH~U9O72b1nzKDTQedcinNc5qdAr4ONUIC-8rtwF5SJlL5o4o-9sbxkP7yeB3va02IDhI7rZupNucQilhdZzDPy4k8P09PgN0gxRSxkm0KpPRatWoibt3f-cAYrCzUZf7oTD92uAq2toU65Efoyg2ESkVx1BgdOyU6KEcSTDOOmV8S6cneFIW93R0ZWAgQgsZ6REi9sAj~I1yNQJFAqHBp5G3Z1fu7LDhxSZQBzLjmftej7sZyeIEEFkPdytTuAktxn0PB9kqoExkhjZxq4nyuz3QKq1sms9MfJthZA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/model.stl?Expires=4949251200&Signature=hbfdW3vkV~Xmqaga6-qte7jcURHySf-V0Cv0izcRkRqyR0GcdXdqdmEaxmlj0I84uWfay73X8si6JLXRN~kEiISwuZrUBU4yyG0X3zJdV5daitYkrAg5aP1yPYfevs2YXBNiYc-SzgKy6J5WDmjDo~5bFPlXsqc5eDinit0DdQ6kuiqs2wFBlMgyNhzWoJIxPCzK542G1Sf5H69baClvuHY6f4nuUq4iZS3tYPA10jvUjHBKdaHNVLUcFHdRdSu5PVSRAk0CmINICAhyWRj7lE9u4PO~veGMbPrcFz-f-uYotO1MktjJ~kMunuV3RyKa9FmHs4bKGBfvJ8bjQtR0wQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/model.usdz?Expires=4949251200&Signature=Ga2v-4kmiPbiMIautWmvCDmgdJpRl55k77w1hER50cu3VGPKl7vqGrUt2DBJo7tIp7pytKyu3Fob~4iWFYd1UGDr8yVtYxvVHASDAH-LAOdnJ~Uo7yPVnFML9NJBLJD64HrTJvK~KJb7~-ws12fEZ~k76PSAj6RwlmW~FOupVn6xvwVPkL4rKsPQy1L6cZAyw77ftdbhryTuktLLyk2ZSfPXiuj~kHGmC~l7nry6-DkC4cXv1nB~IlpjCRTd2DiktuHrO51sn72id0mJ~LrwCMxUnNVHFeuJyAqilowxvtdCUA1Kx9iH2A~OfVxdIIaEfw6w~B1l8Vf1OJXHYT3~bA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4566-734f-b330-6f794df18f7d/output/preview.png?Expires=4949251200&Signature=FA3tLQpY1EuSORHtvZ~ySkSXlLrScojJ5tWSY2rcUuJM9rLXcQjaflVZwaD0PIcirAynKuBuNsynHSQKQUvw0kShD9apA8e1z634EUT9UNBK8Bc63SZ4kFacQslwr~ucFEObmeuAD3-2oOy0z3gJdYz2foeAosjd2nLzzJ-2UFVASI1PZXj1LsnmskDs-b9XMWzfEfIzDM26jYRDA-mE6ZH7~-NsMp6ASOoWRqP1n4cQVo~CncoyYHWnidLiO3rhY~2T9tIHAlhbZg77p46JLzA7mEFD68ESe4ZpBuRYFVjzVe1ja40OPe4NaO-xvWbeGZIqbjS7ryYzJzOedBj1Bg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

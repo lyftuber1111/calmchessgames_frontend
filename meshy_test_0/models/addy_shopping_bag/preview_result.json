@@ -1,0 +1,49 @@
+{
+  "id": "01a219ea-8881-716e-ac97-35e44bcefae7",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2297199069,
+  "prompt": "Filled bright blue retail grocery shopping bag with yellow horizontal accent stripe and colorful boxed goodies peeking out the top, stylized 3D game prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731132377,
+  "progress": 100,
+  "started_at": 1795731132385,
+  "finished_at": 1795731161595,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/model.glb?Expires=4949251200&Signature=gBML4tvK2-E1-kJSHsTsqCGZxACs1NRd4BRwBsDHzDI3IE9m1C6LTwHWTdga5tlKthiElU1cYyxzR~rxa4IMdbLJIJ~PYX3GONPZiUvEmeqcBjKXu88bUs6dMTqE~yyrVfrde0ktdBWHejfmJx6-QUbwiURaCfrxB99S8amldghqoAxy7OlcsZ~jAkik9BRXcj~hb4AuUornDWZo~aeJi9vpRTaOA~1f~nikSGsYawi5vB74PdzzHpc2MDrF2r3VOPZ8B9lza0yF5bZq6BKV-iVhKMhKYdj2lhjmZXgpw1y1LjXiADFEAe4wC4avQAMj-Od6BzQL8Aj17fD4SWksSw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/model.fbx?Expires=4949251200&Signature=old53JQP2cJzR73HKXCpa7pnCf7DXgVYxrnQEgMH0jjbu5WvsCG0-j7PoroeIl5G6A6DMrmFOo6jYzNp1qIj~TiXwfuEVnpaSSB~GPFwCsYCxP--P0PCwt3dxDvVTAxrj7msSjtlJ6Q~DcIMGEbHSk3kQs-q0~xKujr-EIPE4XPmrbldIMI3eheAbu722NPRUO73KjYREW-HVnITVD8rSfCYGOGIzSywfopQR34DFsL416honD4VHbDLKKA06xxfbaH7y4zgsXh7Q-bJG~CGG2pH1PR87Bk8PcbgmDcZcSZK9-ho9hc5BoCsYt1DATIehN~T7ku55cJymYv1zdS5HA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/model.usdz?Expires=4949251200&Signature=QYK3lKnlASMoagA40mzLwhK6MZVJRGW26rkRdQl0nD~sLOFpXoymuqXwrVUNP9yXf5trLUwUcHYxsjINJdkVPjzRSruEZH~i7APkOdk-~0kvaUpPUOwlRy5~JphkWDUp6Tmfcow2iGQuWlhnfQ-dUB2dkezazwvtN8WTKNq9XQfjLwEI9JvjsIWXTn2fErgZN1sP7sZvn7rG3GgueZL6C-8x~9Hh6XQjbeSf-xh~2zdUWuvZlEccJ3CxUhnWKF7WCv~4VIS-vsZwhBNZ18U~fsFVjN2jo35slNRPTgWPgQAzC2tGTnITXr5oTB-bW1d0Ox0UgOjmJCwAB5LHrPMcTA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/model.obj?Expires=4949251200&Signature=VKss3dCH5WZ1n5k8Ee~6GuJqcJsM8cjsprJZCODDos9mUetZWJnFAzrGlmJRy75-vlQG8btZ~7x5fomOUCH1jUQydmIRnCK7EB6vUZZoVN7ojB7RbaB0jZAmf86aLLyspSlg0oJ5aolG7jYaropJOgiZByG6MoulUG599Arsm13p4gLqicgzjxILw4mKSJAtiDXv8Enng5iPGZUt3YV5rY9VBhAPbjKThcjwIeeqb7DRmmzkHYtTcLzTZomWT9risqdDgC5xEoVggunib7HrPNu2PHUVt3gwtcuAeu4yxLnc2wg4k5CUqjuyjlL1~pdu~Nte~qRmokkV7CYsImXbBA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/model.stl?Expires=4949251200&Signature=jkJDZQOPnzeTpNo5yJILmO1tH~PnIa1DZXJ34lkD1Sylrt4dWQuMqlQRilzSEUI3~QgnTMVxGvQAJX6G6LO0hkEMKLRVKxt~5t2ug7hjS8iVV4dPxQGgCbNmDetmrjYYDtr4CRPqKzDEc5XPGQYeeYoCt2tQMnonEpfskeKrBOoyjoE8Qf4rNTI~lt7K8Ry23~Tms-57WUHKDZTNNSpOeYHKXW2yH6X5asMfLsH1fcfpsE~xLXNGo8enjQGoVXqOLv13cD3APjV09GiwcVViV58EeGkeuujo2hLTNawN4agAAoHYKh55V9kyTeoFapImhdpjs~iJvkwwbe8rySpk0A__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/preview.png?Expires=4949251200&Signature=MSz-wXEMUng8uCKKhkLxHAPtixh0mx3lAvaZpl68gj71oEtAw4FLKVOvTKq4xmHeBGSYYsHc2cV5doqNbY05XIyv~j8Dphy9LHb3XwtEYpU7tUwvkBf4rT6Gev-BziQ5tAYt72FpFbrJiNvWyWwRAsTvF0z1m5hGwTFS4ZkM5t40xfBu4umDM7re9eazTu1cvfT0TU0vG0kQjm~3vGh9THZdaLc4xrnf7moIoz2~LU553n1PdpC4hupCViX2md6HWMd00tzVItvzJqh7yukLMtWyhAsYtnQpRTIeS6~Hsl9ljW9I4zJno~aIVDjrIEKaXXEe-s5zcbEP~DNRZ4RtBw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Filled bright blue retail grocery shopping bag with yellow horizontal accent stripe and colorful boxed goodies peeking out the top, stylized 3D game prop",
+    "should_remesh": true,
+    "target_polycount": 5000,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 2297199069,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/model.fbx?Expires=4949251200&Signature=old53JQP2cJzR73HKXCpa7pnCf7DXgVYxrnQEgMH0jjbu5WvsCG0-j7PoroeIl5G6A6DMrmFOo6jYzNp1qIj~TiXwfuEVnpaSSB~GPFwCsYCxP--P0PCwt3dxDvVTAxrj7msSjtlJ6Q~DcIMGEbHSk3kQs-q0~xKujr-EIPE4XPmrbldIMI3eheAbu722NPRUO73KjYREW-HVnITVD8rSfCYGOGIzSywfopQR34DFsL416honD4VHbDLKKA06xxfbaH7y4zgsXh7Q-bJG~CGG2pH1PR87Bk8PcbgmDcZcSZK9-ho9hc5BoCsYt1DATIehN~T7ku55cJymYv1zdS5HA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/model.glb?Expires=4949251200&Signature=gBML4tvK2-E1-kJSHsTsqCGZxACs1NRd4BRwBsDHzDI3IE9m1C6LTwHWTdga5tlKthiElU1cYyxzR~rxa4IMdbLJIJ~PYX3GONPZiUvEmeqcBjKXu88bUs6dMTqE~yyrVfrde0ktdBWHejfmJx6-QUbwiURaCfrxB99S8amldghqoAxy7OlcsZ~jAkik9BRXcj~hb4AuUornDWZo~aeJi9vpRTaOA~1f~nikSGsYawi5vB74PdzzHpc2MDrF2r3VOPZ8B9lza0yF5bZq6BKV-iVhKMhKYdj2lhjmZXgpw1y1LjXiADFEAe4wC4avQAMj-Od6BzQL8Aj17fD4SWksSw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/model.obj?Expires=4949251200&Signature=VKss3dCH5WZ1n5k8Ee~6GuJqcJsM8cjsprJZCODDos9mUetZWJnFAzrGlmJRy75-vlQG8btZ~7x5fomOUCH1jUQydmIRnCK7EB6vUZZoVN7ojB7RbaB0jZAmf86aLLyspSlg0oJ5aolG7jYaropJOgiZByG6MoulUG599Arsm13p4gLqicgzjxILw4mKSJAtiDXv8Enng5iPGZUt3YV5rY9VBhAPbjKThcjwIeeqb7DRmmzkHYtTcLzTZomWT9risqdDgC5xEoVggunib7HrPNu2PHUVt3gwtcuAeu4yxLnc2wg4k5CUqjuyjlL1~pdu~Nte~qRmokkV7CYsImXbBA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/model.stl?Expires=4949251200&Signature=jkJDZQOPnzeTpNo5yJILmO1tH~PnIa1DZXJ34lkD1Sylrt4dWQuMqlQRilzSEUI3~QgnTMVxGvQAJX6G6LO0hkEMKLRVKxt~5t2ug7hjS8iVV4dPxQGgCbNmDetmrjYYDtr4CRPqKzDEc5XPGQYeeYoCt2tQMnonEpfskeKrBOoyjoE8Qf4rNTI~lt7K8Ry23~Tms-57WUHKDZTNNSpOeYHKXW2yH6X5asMfLsH1fcfpsE~xLXNGo8enjQGoVXqOLv13cD3APjV09GiwcVViV58EeGkeuujo2hLTNawN4agAAoHYKh55V9kyTeoFapImhdpjs~iJvkwwbe8rySpk0A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/model.usdz?Expires=4949251200&Signature=QYK3lKnlASMoagA40mzLwhK6MZVJRGW26rkRdQl0nD~sLOFpXoymuqXwrVUNP9yXf5trLUwUcHYxsjINJdkVPjzRSruEZH~i7APkOdk-~0kvaUpPUOwlRy5~JphkWDUp6Tmfcow2iGQuWlhnfQ-dUB2dkezazwvtN8WTKNq9XQfjLwEI9JvjsIWXTn2fErgZN1sP7sZvn7rG3GgueZL6C-8x~9Hh6XQjbeSf-xh~2zdUWuvZlEccJ3CxUhnWKF7WCv~4VIS-vsZwhBNZ18U~fsFVjN2jo35slNRPTgWPgQAzC2tGTnITXr5oTB-bW1d0Ox0UgOjmJCwAB5LHrPMcTA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ea-8881-716e-ac97-35e44bcefae7/output/preview.png?Expires=4949251200&Signature=MSz-wXEMUng8uCKKhkLxHAPtixh0mx3lAvaZpl68gj71oEtAw4FLKVOvTKq4xmHeBGSYYsHc2cV5doqNbY05XIyv~j8Dphy9LHb3XwtEYpU7tUwvkBf4rT6Gev-BziQ5tAYt72FpFbrJiNvWyWwRAsTvF0z1m5hGwTFS4ZkM5t40xfBu4umDM7re9eazTu1cvfT0TU0vG0kQjm~3vGh9THZdaLc4xrnf7moIoz2~LU553n1PdpC4hupCViX2md6HWMd00tzVItvzJqh7yukLMtWyhAsYtnQpRTIeS6~Hsl9ljW9I4zJno~aIVDjrIEKaXXEe-s5zcbEP~DNRZ4RtBw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

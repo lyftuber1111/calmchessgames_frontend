@@ -1,0 +1,49 @@
+{
+  "id": "01a219eb-90af-70b3-8435-7380455ef48b",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 860112515,
+  "prompt": "Delicious pink frosted glazed ring donut topped with colorful rainbow sprinkles, stylized 3D bakery food prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731199981,
+  "progress": 100,
+  "started_at": 1795731199999,
+  "finished_at": 1795731241325,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/model.glb?Expires=4949251200&Signature=OoGn~1JIyMl0PXULstjCsBhoGWhoeU8B4B-Y4zv6uoZg-PZwJT8nPvV4oWFQl3CDLLg6xFLD8Y5z3voPlSXmXEsukdmHOpmprEId2muE4Oga02cU4QeQzGEoo8x0rUs9sED9Xgi7Ew813SuVYre1QW1NlrgLkZ-jbQ3Kk-LV~fCPo9iWTXu0SaAbOKILiJifV12XPeBnv4HqREE7nSxzv3w5omoLhQBm-fKUwTNuoSDYhhoc5LuXgpJioS2v3pvQ7jgwfcTXDtjLZJ5NyoHfSqendoPUYSbU5G-2TumzPIQqOowcrWBRY1hpxcyFrqOLdxmJfmAoK4KIsqJ2RnteLQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/model.fbx?Expires=4949251200&Signature=cPqkieRNakt5POxXzPMBefTfboW-KzQaRx9hFYfcRUBflOx7IJ8J38-WJ2A1o~Kwzl~sabuUSweJXccj6KbOLH65tOFYq5D0gR6Z6qsalBn0thmSDaa28wGkYEHfoVYxF1IBMbczWiWvffkV6FGL8Z-xIEvQGp4aPJGELkMWCgHIfEAXgNPwCzzchj2uEJb4t4pWpFLIxo00nlSXcQ9KmLDUjRI3bWDe3DH4KeoEB9TxyqFnSTIBwGOHrnlWvGGy6x0hGYFa6DI2iQc6pdjYSX4P03bVqGu8WX1x7jplOirX4ixjKxdxBIAJzLWsffRTQevEZkxBcVl1uEClQ5fPTw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/model.usdz?Expires=4949251200&Signature=bD2Z-RMscajA83zjFCp4LEd1AbKJ8bBXm9~KfWnAqoFxC~cX8W72mEcj~p7aA1WW9ljZoN~pzoi6W34GQyzHLzmriGMMW7UlJHsTIa1YFVh8Z0lc1QBbJXnECxeur981D22YcAEKVKBC0JwIz55PPEjAraMm40odQIjdhns7CxKzMNW8RKIzCQ418sYTFdWo-sJjRR2BWWRp7eE0vOikNI4SldrwDQ4K1DYEnPFDLsExNjwzempIPCenMfribLJ5F6~M10betoLhC1E52nVEy1l7n7bYuwCYANqFRVidLpJdzBzVvy29kV8rPACSfzN5EXu7h3-uVDLFtjl3w1ZtsQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/model.obj?Expires=4949251200&Signature=X3jKZoo1Wc1kFspnYet8nhrFewRLuj2-sCNC5RU317If0FP43gQbTazfRZiR3M0im0cvFutZlV8PuNHZHWdNBQ7tQuDozQR844pluldi7yALWnKtbviMZh5rajRsK44wkPOXfOW7zr0UewZCeAajB6KgOyvJHThk~lzpshE4ak7yrK3Fpa7~EIruDdXXCxqfIxVyY9K1lqPSU3AHLpQKrxf~gTqnlGatTeYYiejpZH7BLZUC3RyM57HLEA9DQvmzJIoPoBmgMmoGLSoRA-rtMix4oVuLnAoVc7T~fXQiclXetHh2BFQe-IahQKms8hUBaxAa5woOi0kPAvnTLLS7JQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/model.stl?Expires=4949251200&Signature=K92N0~qxSoXvQ9GWGJ40SGtH9cLMqJU87I-wCrE3jaSMLjUUm8iUyTBdaCPXlgcvx1fH74jYJpLnOvUnGxjajbkTsROj5RPMqO1DXDtUu~NjrCmODnqBn6a3aW8VeohUWvBpbwxcMofph8V4vtWu~gIzGJi7Y8vTAsbtgtrTZ~5OUkiT1HyW11Eqq4SY5PyfizduwMpui4gX15B~pgiGvLyMvZt4G5Yhk~a308BZrE1~Ot6nytXJyRq2CfRBXkcOmEeRVyTltGuErWgDW-5MChMIQoXfzCSm73EgyJWv0T-6sIUtCf3th4G6C5WrvSAZPQFK1Vh3szZQU4sefV9Eew__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/preview.png?Expires=4949251200&Signature=CsKGu~68a7nsG3YL0yYOrymfWmF2rLAIenMp5BozgNq9zjzC1BLwYZ3YEfzqhiy6k2cDBQjEFwzqr2f8TaPs2VSXdgfLkwrXhMvKVqMmjpOqZz3P7lCQLQhFUQRlPvPaV7fusrRow~rA87ZcGvJ~YOSVYBj5AOJ5eta21NHES2QD4LRC6DRkzaSe9~waJzSup~~pNp6DD6QMe7GyalamgBoL9Ojo6jNZrfSYdVRRZaGtbffUziOPdspnsjSd1lOB~Nhrb5XJ2BL5YvDHwk2Bnr8Ms5UlMjRe29dVjgpIbuervOJViaKrv4o86ATshoJZmEwsTFZoM0taFkg7pUTPdA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Delicious pink frosted glazed ring donut topped with colorful rainbow sprinkles, stylized 3D bakery food prop",
+    "should_remesh": true,
+    "target_polycount": 4500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 860112515,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/model.fbx?Expires=4949251200&Signature=cPqkieRNakt5POxXzPMBefTfboW-KzQaRx9hFYfcRUBflOx7IJ8J38-WJ2A1o~Kwzl~sabuUSweJXccj6KbOLH65tOFYq5D0gR6Z6qsalBn0thmSDaa28wGkYEHfoVYxF1IBMbczWiWvffkV6FGL8Z-xIEvQGp4aPJGELkMWCgHIfEAXgNPwCzzchj2uEJb4t4pWpFLIxo00nlSXcQ9KmLDUjRI3bWDe3DH4KeoEB9TxyqFnSTIBwGOHrnlWvGGy6x0hGYFa6DI2iQc6pdjYSX4P03bVqGu8WX1x7jplOirX4ixjKxdxBIAJzLWsffRTQevEZkxBcVl1uEClQ5fPTw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/model.glb?Expires=4949251200&Signature=OoGn~1JIyMl0PXULstjCsBhoGWhoeU8B4B-Y4zv6uoZg-PZwJT8nPvV4oWFQl3CDLLg6xFLD8Y5z3voPlSXmXEsukdmHOpmprEId2muE4Oga02cU4QeQzGEoo8x0rUs9sED9Xgi7Ew813SuVYre1QW1NlrgLkZ-jbQ3Kk-LV~fCPo9iWTXu0SaAbOKILiJifV12XPeBnv4HqREE7nSxzv3w5omoLhQBm-fKUwTNuoSDYhhoc5LuXgpJioS2v3pvQ7jgwfcTXDtjLZJ5NyoHfSqendoPUYSbU5G-2TumzPIQqOowcrWBRY1hpxcyFrqOLdxmJfmAoK4KIsqJ2RnteLQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/model.obj?Expires=4949251200&Signature=X3jKZoo1Wc1kFspnYet8nhrFewRLuj2-sCNC5RU317If0FP43gQbTazfRZiR3M0im0cvFutZlV8PuNHZHWdNBQ7tQuDozQR844pluldi7yALWnKtbviMZh5rajRsK44wkPOXfOW7zr0UewZCeAajB6KgOyvJHThk~lzpshE4ak7yrK3Fpa7~EIruDdXXCxqfIxVyY9K1lqPSU3AHLpQKrxf~gTqnlGatTeYYiejpZH7BLZUC3RyM57HLEA9DQvmzJIoPoBmgMmoGLSoRA-rtMix4oVuLnAoVc7T~fXQiclXetHh2BFQe-IahQKms8hUBaxAa5woOi0kPAvnTLLS7JQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/model.stl?Expires=4949251200&Signature=K92N0~qxSoXvQ9GWGJ40SGtH9cLMqJU87I-wCrE3jaSMLjUUm8iUyTBdaCPXlgcvx1fH74jYJpLnOvUnGxjajbkTsROj5RPMqO1DXDtUu~NjrCmODnqBn6a3aW8VeohUWvBpbwxcMofph8V4vtWu~gIzGJi7Y8vTAsbtgtrTZ~5OUkiT1HyW11Eqq4SY5PyfizduwMpui4gX15B~pgiGvLyMvZt4G5Yhk~a308BZrE1~Ot6nytXJyRq2CfRBXkcOmEeRVyTltGuErWgDW-5MChMIQoXfzCSm73EgyJWv0T-6sIUtCf3th4G6C5WrvSAZPQFK1Vh3szZQU4sefV9Eew__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/model.usdz?Expires=4949251200&Signature=bD2Z-RMscajA83zjFCp4LEd1AbKJ8bBXm9~KfWnAqoFxC~cX8W72mEcj~p7aA1WW9ljZoN~pzoi6W34GQyzHLzmriGMMW7UlJHsTIa1YFVh8Z0lc1QBbJXnECxeur981D22YcAEKVKBC0JwIz55PPEjAraMm40odQIjdhns7CxKzMNW8RKIzCQ418sYTFdWo-sJjRR2BWWRp7eE0vOikNI4SldrwDQ4K1DYEnPFDLsExNjwzempIPCenMfribLJ5F6~M10betoLhC1E52nVEy1l7n7bYuwCYANqFRVidLpJdzBzVvy29kV8rPACSfzN5EXu7h3-uVDLFtjl3w1ZtsQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-90af-70b3-8435-7380455ef48b/output/preview.png?Expires=4949251200&Signature=CsKGu~68a7nsG3YL0yYOrymfWmF2rLAIenMp5BozgNq9zjzC1BLwYZ3YEfzqhiy6k2cDBQjEFwzqr2f8TaPs2VSXdgfLkwrXhMvKVqMmjpOqZz3P7lCQLQhFUQRlPvPaV7fusrRow~rA87ZcGvJ~YOSVYBj5AOJ5eta21NHES2QD4LRC6DRkzaSe9~waJzSup~~pNp6DD6QMe7GyalamgBoL9Ojo6jNZrfSYdVRRZaGtbffUziOPdspnsjSd1lOB~Nhrb5XJ2BL5YvDHwk2Bnr8Ms5UlMjRe29dVjgpIbuervOJViaKrv4o86ATshoJZmEwsTFZoM0taFkg7pUTPdA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

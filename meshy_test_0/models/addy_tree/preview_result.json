@@ -1,0 +1,49 @@
+{
+  "id": "01a219ed-3cc8-778a-ac6a-e27caffeb6ad",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 942586506,
+  "prompt": "Stylized lush green parking lot ornamental tree with textured brown wood bark trunk and full rounded vibrant green leafy canopy, clean 3D environment prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731309653,
+  "progress": 100,
+  "started_at": 1795731309666,
+  "finished_at": 1795731421378,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/model.glb?Expires=4949251200&Signature=o5GjDvK-D2qavWbc0xeTuYNNB6~5NNGDlOOwqAerfzEUfdH8ylPrgNB2A11ocErbkrhq2~tngpht~aHL5UJa9Vfo-2cVuY7DGcNuV8OukfHpW3cjr8wYcZWyBcQ4IINf20NcZRBy~E8g8foElSPd9-twa7~qz~v7ttpSQXomq42LyZl43-0EO0oxQffXwtvgDvhvTdF8gUMwLVdeYixvF6oO8q5Z1puy5HUhgIdKCmC2DrhzbVduUCEqSydxbgbyJjvQZi466MwpEjUIAK2dbrvCE1njf92-6olV9x5Bz3evbYFyRtRI0I2i-GZQraPJfNqCK~-JKzbwI5eI3ccKCg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/model.fbx?Expires=4949251200&Signature=g15094FsRc-Ed~8a5Xl3ho6P4Nso-uxjQb2Pn-BmLv~DU6TXY6hWJhImCKqZxnzChXIw6Qj692rFVmQWVhz2uP8t37rWUS63F~5bq~bLclgWhubwCsPMi63z793qDiz2sGHXOd990aj4YgX2S24-CQadiJxODl1N2VCZtboBMo2nZ4l9evRfP0rwmtYr-aeKS12rZENRSTPMEqyN3~10jK4QV4kZ02kx8X76varQKGzX8AvT~zeubX5P5NSnr0PfrCBoav8-5lcw4iqcUki0T4xQragdK8XOKHa4cnBea99pL5AH7sB5uMJd0x7IcaNyLDnuaUcpZEJNL4ofOQOVTQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/model.usdz?Expires=4949251200&Signature=YyHs6-gQoR7J6BftP7BSR4OM68FaqrbQMBihDfRHnwc0KAbPDj~b3pCx-iUhjxxc0STDRrAiivIX7Z1RcR9Jih9hx1A2YTUah4Z8lcSEAKrcT3lX7OHuS1x1UxKci2Drwmsz~mfZCRKGRzCN2flXl7dI90d6YGVkrysd9NgILZ7JerCoafawrUnCeMZyL94P2rjg4qZyptOdhN~OnmT-MLoUHLTmQZFlFsSFPpiffpKDrBRLi8DvTSCIOPhXpsRiH2p5X~3nFsGjjGKDFPQusToVtKucpKY3dbx0DJtkcMJNFiTI-r8hZOzEA1JGj6dX7eKWlLEKbGI8-MzadAN7Lw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/model.obj?Expires=4949251200&Signature=FWBZ5v8bwEHjUFidz-3IqlMKhA9Bgsv4TXT1KG-miPcIeoyqfwHwQN6k1tJ-cKJ0V42kvIC-60MXOyoI1L7azkDrlHIyEgSxmgj8uQKZIfNtVR871IKf5bEOW0ex1yLz9gMv9oV5zwZwEH3HfNlq8kpRTcEZWNZ-tK9q2HRzYsSKL7lzFOmceoTCMJCsqVwzZTvcuvI2gW972iicilxOsrBxKOtT4VDwxZBnH8bPTrlcgX8obusIWYS-aZVZFTOZkHG1KyrF6dxvJnGBmRICblQ35qdCONNHP~YdGQvg1Rmc-5C~jRFDP0WmIBD6F~EnemIsEgizWzHYncRoEeOmQA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/model.stl?Expires=4949251200&Signature=jdlHo4Ej6OY-bRRnAtVaCZP~0K06YgD50xz4dqR-5vgIfJHxAkk~QTMrrSPL06hZIcz7Nni4t57eKa7wlXffTSDNzJ209zgLUbT57YsIqt0Bogk2ZWbRT5e9XL4AHuyhqVhnkRMGHGtl8LJSD7pcmadUTmQwDjSv4X0maX9lWc-7QOe4xSddaCpgfreREC7R7FsobrjmwKsIqRqnHstDBEHey7yDUQ~fLEwxTAuxu5fa7aSR8gDnWan7tw4FwhMXgOWhVg9U7OWL3oNRSuC6eC8D9bueCR9RAzttEqqS9GxiljSg6qtFMHMPGTQ43V4zT~e-YwQoe-RHhhD6un8NbA__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/preview.png?Expires=4949251200&Signature=LsnPrcNEUBhakD8t31xFsW5EuvyLdIaf1DBKpXjcGG21M8k8UkG10ee5zYiHJjg~YA6vo0Fj3KW~r6b83UmrAQzJ5xSsI6B-UhTr~2j67mMYQzsLW7jTn8I~QWwRwTAsOCjDN-wt9dFVSorp~gBCufby0clSIujEbPJ3tn09XgtcxTNaml1cZbxhDQxoVZCP7U981NBUQstc9yT5Xyon~CS~Qlzu8eIoUpa34qPFg0PUXxTnzzS2QYNnWbBHOx7-~eYI449YIeppc~Nwq7l0PGMiLHYmtJbjohEPp6BLPFddk99dnhTwv9TYvbHDIEdTPuq9BEn1VgQxEs6FoGseHg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Stylized lush green parking lot ornamental tree with textured brown wood bark trunk and full rounded vibrant green leafy canopy, clean 3D environment prop",
+    "should_remesh": true,
+    "target_polycount": 6500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 942586506,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/model.fbx?Expires=4949251200&Signature=g15094FsRc-Ed~8a5Xl3ho6P4Nso-uxjQb2Pn-BmLv~DU6TXY6hWJhImCKqZxnzChXIw6Qj692rFVmQWVhz2uP8t37rWUS63F~5bq~bLclgWhubwCsPMi63z793qDiz2sGHXOd990aj4YgX2S24-CQadiJxODl1N2VCZtboBMo2nZ4l9evRfP0rwmtYr-aeKS12rZENRSTPMEqyN3~10jK4QV4kZ02kx8X76varQKGzX8AvT~zeubX5P5NSnr0PfrCBoav8-5lcw4iqcUki0T4xQragdK8XOKHa4cnBea99pL5AH7sB5uMJd0x7IcaNyLDnuaUcpZEJNL4ofOQOVTQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/model.glb?Expires=4949251200&Signature=o5GjDvK-D2qavWbc0xeTuYNNB6~5NNGDlOOwqAerfzEUfdH8ylPrgNB2A11ocErbkrhq2~tngpht~aHL5UJa9Vfo-2cVuY7DGcNuV8OukfHpW3cjr8wYcZWyBcQ4IINf20NcZRBy~E8g8foElSPd9-twa7~qz~v7ttpSQXomq42LyZl43-0EO0oxQffXwtvgDvhvTdF8gUMwLVdeYixvF6oO8q5Z1puy5HUhgIdKCmC2DrhzbVduUCEqSydxbgbyJjvQZi466MwpEjUIAK2dbrvCE1njf92-6olV9x5Bz3evbYFyRtRI0I2i-GZQraPJfNqCK~-JKzbwI5eI3ccKCg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/model.obj?Expires=4949251200&Signature=FWBZ5v8bwEHjUFidz-3IqlMKhA9Bgsv4TXT1KG-miPcIeoyqfwHwQN6k1tJ-cKJ0V42kvIC-60MXOyoI1L7azkDrlHIyEgSxmgj8uQKZIfNtVR871IKf5bEOW0ex1yLz9gMv9oV5zwZwEH3HfNlq8kpRTcEZWNZ-tK9q2HRzYsSKL7lzFOmceoTCMJCsqVwzZTvcuvI2gW972iicilxOsrBxKOtT4VDwxZBnH8bPTrlcgX8obusIWYS-aZVZFTOZkHG1KyrF6dxvJnGBmRICblQ35qdCONNHP~YdGQvg1Rmc-5C~jRFDP0WmIBD6F~EnemIsEgizWzHYncRoEeOmQA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/model.stl?Expires=4949251200&Signature=jdlHo4Ej6OY-bRRnAtVaCZP~0K06YgD50xz4dqR-5vgIfJHxAkk~QTMrrSPL06hZIcz7Nni4t57eKa7wlXffTSDNzJ209zgLUbT57YsIqt0Bogk2ZWbRT5e9XL4AHuyhqVhnkRMGHGtl8LJSD7pcmadUTmQwDjSv4X0maX9lWc-7QOe4xSddaCpgfreREC7R7FsobrjmwKsIqRqnHstDBEHey7yDUQ~fLEwxTAuxu5fa7aSR8gDnWan7tw4FwhMXgOWhVg9U7OWL3oNRSuC6eC8D9bueCR9RAzttEqqS9GxiljSg6qtFMHMPGTQ43V4zT~e-YwQoe-RHhhD6un8NbA__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/model.usdz?Expires=4949251200&Signature=YyHs6-gQoR7J6BftP7BSR4OM68FaqrbQMBihDfRHnwc0KAbPDj~b3pCx-iUhjxxc0STDRrAiivIX7Z1RcR9Jih9hx1A2YTUah4Z8lcSEAKrcT3lX7OHuS1x1UxKci2Drwmsz~mfZCRKGRzCN2flXl7dI90d6YGVkrysd9NgILZ7JerCoafawrUnCeMZyL94P2rjg4qZyptOdhN~OnmT-MLoUHLTmQZFlFsSFPpiffpKDrBRLi8DvTSCIOPhXpsRiH2p5X~3nFsGjjGKDFPQusToVtKucpKY3dbx0DJtkcMJNFiTI-r8hZOzEA1JGj6dX7eKWlLEKbGI8-MzadAN7Lw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219ed-3cc8-778a-ac6a-e27caffeb6ad/output/preview.png?Expires=4949251200&Signature=LsnPrcNEUBhakD8t31xFsW5EuvyLdIaf1DBKpXjcGG21M8k8UkG10ee5zYiHJjg~YA6vo0Fj3KW~r6b83UmrAQzJ5xSsI6B-UhTr~2j67mMYQzsLW7jTn8I~QWwRwTAsOCjDN-wt9dFVSorp~gBCufby0clSIujEbPJ3tn09XgtcxTNaml1cZbxhDQxoVZCP7U981NBUQstc9yT5Xyon~CS~Qlzu8eIoUpa34qPFg0PUXxTnzzS2QYNnWbBHOx7-~eYI449YIeppc~Nwq7l0PGMiLHYmtJbjohEPp6BLPFddk99dnhTwv9TYvbHDIEdTPuq9BEn1VgQxEs6FoGseHg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

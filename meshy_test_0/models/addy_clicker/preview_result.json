@@ -1,0 +1,49 @@
+{
+  "id": "01a219e8-4559-7097-bbe8-338c9ffa78a6",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 2328283020,
+  "prompt": "Cute rainbow 4-key mechanical fidget clicker toy with glossy pink, sky blue, sunny yellow, and lime green square keycaps arranged in a 2x2 grid on a compact dark indigo base, stylized 3D game prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795730984224,
+  "progress": 100,
+  "started_at": 1795730984232,
+  "finished_at": 1795731018960,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/model.glb?Expires=4949251200&Signature=Q5~9OBLl21v9Oe2W7fx8cpLTxMnz4IhOgRFtUoPUQE-q71RvohIA05xeh-GCWSOXmSvq3PA5MC7HH3nHy82yGtY0N6Bn6508uVWh6ChNKi63DPr-26LibsLBM6uXGDeU9Fnh8Qy7SDW-LrOBTcjxoaKVBEoEw4o1e5mq7SpZEGzaFybLquVP2me12SBgghcZHbyBk3f6M~Lmo9OHF3Ju7jFXMYlZGxV2x1Gf1Gv9sugkcd22nuzB63-fbOfYlwgt7bOsnJQNKKqB6U~5c0UYRz2Sxq1nGFN1pcoGFpwAN5rB126OZ74T4~dN7-qt-bnqWFY3N9~wsgNvvZpWFfGxXg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/model.fbx?Expires=4949251200&Signature=LRS8tZaR6axyr~8tEXWsV7Yc0sg0EfmR24vHnnmOKwgrovvQNFwLrFdRAfIQ1--vxACbyx9BTHMtzbaIZF2bAAn8Ns2ZUxKBHpO2b0ufPFHlM1Qo2kM5nNlPqMc7xRG31Pc1lCJa~V42wPaVqT318aBqR4GU6WHCqM~949-MvHCeGb-rpb0Lwfo7c~PvJaD~BNvptvXaOgHzmFT9R9u9smfxSqJNhPrT2ysyqPNKLmGewgtXYaULkJda3az0F87weugU8N2S495AnL~Mqs7xKmHoJCKvanDb6xluAVZs63sM9cYCbgXmpEtZ01GLAxykuqPXXgVk1kOlCOrcKqKp2A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/model.usdz?Expires=4949251200&Signature=cZ1TDMcC5IraoFreGUzk~iSu04ue0NpEZtEOgu1xj3mxUcvDBelBfv3Uizp1YEZJ5GTIQJQSb-9bguIVfhJIzxElgc3OkVGjdCgxWzrqUBZe6McnLv1NT23Qh7XxlHnGb2qoJJv~7CVZZZDvNAy08qC0tVcyiyfA4Lk7UxEctTFK9SCQecgr3RDk07AQ1dEZyImR6ErCAOoiZb6AOPqhOOykBqPwPsMDSc3GWY8BkFGl0OjJspKIX7B59M1KnZt-jTw7NYBRMN2jWTwBhPjCp9CyRRqwVb9wM-GJxXC-82D0ALshYHxoM1Nx6h-VDQb62DEYmFAai~R8cLvJZkQtQg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/model.obj?Expires=4949251200&Signature=V1DsLmqgqW4wvYeXaAq-jTXQVL5Np9lPpDDNfXEmblenuHm96IBeLsY2nttG9sqQwhdWEbwqzuKoClB6Y732KjYcwncMGvXLAAW2yzEj4kYMUK4V6f3-pTmhq0Wuk5e-cyOroZaLx6nwv38dvuK7Xc7UuVysjvIBq8DL-RFgiiGQVuHSIAb5DTwEX6BMmk6ruQzA6H7C9i94DlvISF0F4FtHfHRZgS-AYGmnj7IW3ovpLZiyrZibN0lnV2Z3mTsz4IloBsMYIRH2TgpSxcmuDbaO4-Tgk3rNwnMGjLG8PX0iNd806jpp8CF86Htz5lNVH~h8NLAR-LsDpHSC5-Iv7Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/model.stl?Expires=4949251200&Signature=Gri~SHFNMBn6L6Lq0RoXTnMbaDM0fUDl3nB2RbgDvfs6MHT2Joi8hbCYx4T8IUy~DHDJyz7UTRM0~mk7il0wRUZubHRJElsUKGlc7LiwOXHZndxLvL0EKtfGSaqjrJwPhqw5SPAsNNt8haDEPgp7acwb9Ayy3c~BSU3AU3WufH7Lve~NxZvg20tHEt7twzcngJ~uaxByW7TTZBQM9~jZTVT-gc7LF5WPGIPIuyTMrqFG8zfAlkeo1J3bAga7ms7A0aea8NJawGi4tK4EiyzdQHIub2pzpYcLbYJw-hryLTuJ38URfr6gQv6kaoSXUOXgDRTuVfCCuB-5xOipxnugZw__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/preview.png?Expires=4949251200&Signature=S3Z9c2l9vLkdI8UYz1NpRTedh-IHfIQkJnUX9RND0Ct-zyrtcgdACzG4bTeIVsTljFQa46ZyyxEBdS5b5YVhW1QaEK3suREq63yu32xEugvvdHC1rxpjMyi3SuuBZ6rfytsrbtf7d8EiKp3elExW0l4x0ZQq2tHiv~LaBM0lseO6DIGu9j5AblMqq4daewb09xvfndQO8BcvvqJOSE~Wm-lUSe3HU5rTuNUtG5iPvssGnSAsbqkg1bchL~oiIRW8RGvEW6AjHs9F8kqnYqy3W0GffdqU6Ta9A6Boqz1dtXjtEP1DXoUTR~e1r~HvLRfpRbnt-RfIuvQtiSLF6BAcDw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Cute rainbow 4-key mechanical fidget clicker toy with glossy pink, sky blue, sunny yellow, and lime green square keycaps arranged in a 2x2 grid on a compact dark indigo base, stylized 3D game prop",
+    "should_remesh": true,
+    "target_polycount": 5500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 2328283020,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/model.fbx?Expires=4949251200&Signature=LRS8tZaR6axyr~8tEXWsV7Yc0sg0EfmR24vHnnmOKwgrovvQNFwLrFdRAfIQ1--vxACbyx9BTHMtzbaIZF2bAAn8Ns2ZUxKBHpO2b0ufPFHlM1Qo2kM5nNlPqMc7xRG31Pc1lCJa~V42wPaVqT318aBqR4GU6WHCqM~949-MvHCeGb-rpb0Lwfo7c~PvJaD~BNvptvXaOgHzmFT9R9u9smfxSqJNhPrT2ysyqPNKLmGewgtXYaULkJda3az0F87weugU8N2S495AnL~Mqs7xKmHoJCKvanDb6xluAVZs63sM9cYCbgXmpEtZ01GLAxykuqPXXgVk1kOlCOrcKqKp2A__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/model.glb?Expires=4949251200&Signature=Q5~9OBLl21v9Oe2W7fx8cpLTxMnz4IhOgRFtUoPUQE-q71RvohIA05xeh-GCWSOXmSvq3PA5MC7HH3nHy82yGtY0N6Bn6508uVWh6ChNKi63DPr-26LibsLBM6uXGDeU9Fnh8Qy7SDW-LrOBTcjxoaKVBEoEw4o1e5mq7SpZEGzaFybLquVP2me12SBgghcZHbyBk3f6M~Lmo9OHF3Ju7jFXMYlZGxV2x1Gf1Gv9sugkcd22nuzB63-fbOfYlwgt7bOsnJQNKKqB6U~5c0UYRz2Sxq1nGFN1pcoGFpwAN5rB126OZ74T4~dN7-qt-bnqWFY3N9~wsgNvvZpWFfGxXg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/model.obj?Expires=4949251200&Signature=V1DsLmqgqW4wvYeXaAq-jTXQVL5Np9lPpDDNfXEmblenuHm96IBeLsY2nttG9sqQwhdWEbwqzuKoClB6Y732KjYcwncMGvXLAAW2yzEj4kYMUK4V6f3-pTmhq0Wuk5e-cyOroZaLx6nwv38dvuK7Xc7UuVysjvIBq8DL-RFgiiGQVuHSIAb5DTwEX6BMmk6ruQzA6H7C9i94DlvISF0F4FtHfHRZgS-AYGmnj7IW3ovpLZiyrZibN0lnV2Z3mTsz4IloBsMYIRH2TgpSxcmuDbaO4-Tgk3rNwnMGjLG8PX0iNd806jpp8CF86Htz5lNVH~h8NLAR-LsDpHSC5-Iv7Q__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/model.stl?Expires=4949251200&Signature=Gri~SHFNMBn6L6Lq0RoXTnMbaDM0fUDl3nB2RbgDvfs6MHT2Joi8hbCYx4T8IUy~DHDJyz7UTRM0~mk7il0wRUZubHRJElsUKGlc7LiwOXHZndxLvL0EKtfGSaqjrJwPhqw5SPAsNNt8haDEPgp7acwb9Ayy3c~BSU3AU3WufH7Lve~NxZvg20tHEt7twzcngJ~uaxByW7TTZBQM9~jZTVT-gc7LF5WPGIPIuyTMrqFG8zfAlkeo1J3bAga7ms7A0aea8NJawGi4tK4EiyzdQHIub2pzpYcLbYJw-hryLTuJ38URfr6gQv6kaoSXUOXgDRTuVfCCuB-5xOipxnugZw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/model.usdz?Expires=4949251200&Signature=cZ1TDMcC5IraoFreGUzk~iSu04ue0NpEZtEOgu1xj3mxUcvDBelBfv3Uizp1YEZJ5GTIQJQSb-9bguIVfhJIzxElgc3OkVGjdCgxWzrqUBZe6McnLv1NT23Qh7XxlHnGb2qoJJv~7CVZZZDvNAy08qC0tVcyiyfA4Lk7UxEctTFK9SCQecgr3RDk07AQ1dEZyImR6ErCAOoiZb6AOPqhOOykBqPwPsMDSc3GWY8BkFGl0OjJspKIX7B59M1KnZt-jTw7NYBRMN2jWTwBhPjCp9CyRRqwVb9wM-GJxXC-82D0ALshYHxoM1Nx6h-VDQb62DEYmFAai~R8cLvJZkQtQg__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219e8-4559-7097-bbe8-338c9ffa78a6/output/preview.png?Expires=4949251200&Signature=S3Z9c2l9vLkdI8UYz1NpRTedh-IHfIQkJnUX9RND0Ct-zyrtcgdACzG4bTeIVsTljFQa46ZyyxEBdS5b5YVhW1QaEK3suREq63yu32xEugvvdHC1rxpjMyi3SuuBZ6rfytsrbtf7d8EiKp3elExW0l4x0ZQq2tHiv~LaBM0lseO6DIGu9j5AblMqq4daewb09xvfndQO8BcvvqJOSE~Wm-lUSe3HU5rTuNUtG5iPvssGnSAsbqkg1bchL~oiIRW8RGvEW6AjHs9F8kqnYqy3W0GffdqU6Ta9A6Boqz1dtXjtEP1DXoUTR~e1r~HvLRfpRbnt-RfIuvQtiSLF6BAcDw__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

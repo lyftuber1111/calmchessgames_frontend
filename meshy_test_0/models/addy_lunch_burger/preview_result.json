@@ -1,0 +1,49 @@
+{
+  "id": "01a219eb-9c36-7360-bf26-cfd7400e4b61",
+  "type": "text-to-3d-preview",
+  "mode": "preview",
+  "name": "",
+  "model_type": "standard",
+  "seed": 55624913,
+  "prompt": "Tasty gourmet cheeseburger with golden sesame seed bun, melted cheddar cheese, grilled beef patty, crisp green lettuce, and tomato slice, stylized 3D food prop",
+  "texture_prompt": "",
+  "texture_image_url": "",
+  "status": "SUCCEEDED",
+  "created_at": 1795731203122,
+  "progress": 100,
+  "started_at": 1795731203133,
+  "finished_at": 1795731275970,
+  "model_urls": {
+    "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/model.glb?Expires=4949251200&Signature=A3dAx3vGhhLbhcLt7aNMXYcfq-rDWNFIjZhZqPka6558ypSNuVLusfQoP2Bwnt9Gcx4lGO67wZVRxRmToUbd1uU-BoWX1U3oD1TsRBKIvIJz4b0yvmuCyCJyR5~sQ5YRKak6HowS7sFGi1mi3-7XEpPsTQOL8IuZFKbWfYA90irbs4VDfzBHJc35D-4NKCLxuNm2Yxvk05m5Jr1ha3WtbsRJKFVek1-qdF7p0hUI8PMHbgLHa0vPoEb8WuzATZSL3kkrwMnRmOLjWs5habzztebCd6nbP7B-mA6UAjbvWTuuUHsYrbOlQQjh-GAoNWXZIIakrLWzHLvLTQiD~Wr0SQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/model.fbx?Expires=4949251200&Signature=aMld2r86aBB2aXxIXDbVnlIWgHAvPXr4jKCX167qDD6h8CwQs17u8G7GPJYztPueyKuTAtea~aZHsSj6kOGEL79OnMcK0k1GT7HKndtbPWGIB-YQbhDUR2eCIiHzEmZOiTOQChyY6xccnqKAnrYWuhw23oZLtpiEtTtCC~kNicdPQAIGSCDWAvJi2wLahaeHqOmmucyiVpdVE~xi7nO0DuwKI51EkrcdGsbxnkBGN~VczqSvEySPMVP5hahs2d9YInWd~16rIOL4FraJtQJOxIpy7Okxn3UlK-RqUQV3ToY3ImfPVRTW4dk-qqT51-nELcCn-P2QqkEQKDyXOvY~7g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/model.usdz?Expires=4949251200&Signature=L7kvUvJ9oHzNBFyXTjeD9lOo-0nUzHU0Cwzt-DecpT8sV02N72-aqolkRJ2buuDFBlsgrbaqd30FI89DEj3xlopA5Mm--XPgztywOWJf4dEOSRvnxow23TOo4A4NKbFfTUo9UbbiQ2Aco0j0~r2G64LX5VxX~KLQ1632tKqQpWyWVAOncZTs7~HDWVCI3givx29qPKAliWLsSGfybHCMBXCmfN27EOYssJGik6huZADFGCJ52ys87iTxrvFUXJeXBV1quOmkwMGDif9qTLbj9-4uxZGiWifEAPpUakPQifgqJEGNLTvfLFDw1ivnxHpsFgL7fy2BoXL9nxqFB47ppQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/model.obj?Expires=4949251200&Signature=QMiQjIf3YZkHqIrgH2OIEUU3HdpsJ~RTcOcb7FL54Ua4zZlZ8iNy1I7JFcE4NvR861mLhLObtIrGRF3O93Nap3cs0uDe8Rz3wRlRgS50Fs8eetiNFyd6EkoAXizEAKlsF4TBjOqiNfqIcnRBLTZzij1tWrlOIvFow4atctFLYtH1lJW8Lu5MbLOGqJ9bO~NtehR~ZsvKEJXzVXVAlxVmz1tua6Rd~tyfTTtKaMV71tFHCYiWP3UHde~rNsvHwcQ-qzwhUQUnU4IASk3yh8-~AuMn9JqN2iGZXbmDkE1RtGjiItrPMb2jNv7qGPRX2pCUlREVBK7-pCjyUPyFNencPg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/model.stl?Expires=4949251200&Signature=oqlNu7mJTHUgGpLKXjBIOa8kWR~j0hZYh7rftMHZnIuGsHsn1VHwOpskgfcxydRLjvYB88doYgbNR-JdCp1505zGfpEf07VIjgG8icFAvZG7qMmUmjCNbRh-0ggWRAmowEODWfU3Mf5pic065iE-m07o48RNXHZl176uqzu6fOxmNrwi-VRHnl3oAW5Mz4sXTUCHeI86jMh6LSzj2lsbRgiZI-AAScOvxZRUrJD8D-4Op3v5yAfLV7G8yZeahBolkX3iT2m6iahRWT0mdEXSDCWUbBe8m44CTDGT4Ht7zsWFcM2lefm1gqHnP4zHGa-LN0u8j1SLXBQLT-f2wD1P-g__&Key-Pair-Id=K1VGYTHIYLM9UM"
+  },
+  "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/preview.png?Expires=4949251200&Signature=jVK-JEmqY1~dlToBzfSZ7uafMQQUnxAGaCNFmWGD~aNRvmq7zWNJVr6Jl01B-vmFgX3OlZry2gNJh2wfYTe1UCp6XHziSFPDymB5JW6M-o66Jfss7XGqKq7eeT1-OhmG6zN8xK9KdUNvG5ETbqd3Y6iWs55RT~KIpUkrRFOQsBG1G1Z~WmZ67fxodv8cpK8c5HwZLX3i3kttQSvHCPaQQJ687B4CY5r7SF3L9-gA4rSyZU7l0Ayhs7vQCZtVe-2EDyeNc1Udfllf-xHzgXThLzgxS3AuVlNogb9i8KbS1MWjSGy5WfQSYsiW0tCSh5h11sH1o2iMOBltuJILG1z2EQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+  "texture_urls": [],
+  "consumed_credits": 20,
+  "task_error": null,
+  "expires_at": null,
+  "input": {
+    "ai_model": "latest",
+    "mode": "preview",
+    "prompt": "Tasty gourmet cheeseburger with golden sesame seed bun, melted cheddar cheese, grilled beef patty, crisp green lettuce, and tomato slice, stylized 3D food prop",
+    "should_remesh": true,
+    "target_polycount": 5500,
+    "topology": "triangle"
+  },
+  "output": {
+    "seed": 55624913,
+    "model_urls": {
+      "fbx": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/model.fbx?Expires=4949251200&Signature=aMld2r86aBB2aXxIXDbVnlIWgHAvPXr4jKCX167qDD6h8CwQs17u8G7GPJYztPueyKuTAtea~aZHsSj6kOGEL79OnMcK0k1GT7HKndtbPWGIB-YQbhDUR2eCIiHzEmZOiTOQChyY6xccnqKAnrYWuhw23oZLtpiEtTtCC~kNicdPQAIGSCDWAvJi2wLahaeHqOmmucyiVpdVE~xi7nO0DuwKI51EkrcdGsbxnkBGN~VczqSvEySPMVP5hahs2d9YInWd~16rIOL4FraJtQJOxIpy7Okxn3UlK-RqUQV3ToY3ImfPVRTW4dk-qqT51-nELcCn-P2QqkEQKDyXOvY~7g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "glb": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/model.glb?Expires=4949251200&Signature=A3dAx3vGhhLbhcLt7aNMXYcfq-rDWNFIjZhZqPka6558ypSNuVLusfQoP2Bwnt9Gcx4lGO67wZVRxRmToUbd1uU-BoWX1U3oD1TsRBKIvIJz4b0yvmuCyCJyR5~sQ5YRKak6HowS7sFGi1mi3-7XEpPsTQOL8IuZFKbWfYA90irbs4VDfzBHJc35D-4NKCLxuNm2Yxvk05m5Jr1ha3WtbsRJKFVek1-qdF7p0hUI8PMHbgLHa0vPoEb8WuzATZSL3kkrwMnRmOLjWs5habzztebCd6nbP7B-mA6UAjbvWTuuUHsYrbOlQQjh-GAoNWXZIIakrLWzHLvLTQiD~Wr0SQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "obj": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/model.obj?Expires=4949251200&Signature=QMiQjIf3YZkHqIrgH2OIEUU3HdpsJ~RTcOcb7FL54Ua4zZlZ8iNy1I7JFcE4NvR861mLhLObtIrGRF3O93Nap3cs0uDe8Rz3wRlRgS50Fs8eetiNFyd6EkoAXizEAKlsF4TBjOqiNfqIcnRBLTZzij1tWrlOIvFow4atctFLYtH1lJW8Lu5MbLOGqJ9bO~NtehR~ZsvKEJXzVXVAlxVmz1tua6Rd~tyfTTtKaMV71tFHCYiWP3UHde~rNsvHwcQ-qzwhUQUnU4IASk3yh8-~AuMn9JqN2iGZXbmDkE1RtGjiItrPMb2jNv7qGPRX2pCUlREVBK7-pCjyUPyFNencPg__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "stl": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/model.stl?Expires=4949251200&Signature=oqlNu7mJTHUgGpLKXjBIOa8kWR~j0hZYh7rftMHZnIuGsHsn1VHwOpskgfcxydRLjvYB88doYgbNR-JdCp1505zGfpEf07VIjgG8icFAvZG7qMmUmjCNbRh-0ggWRAmowEODWfU3Mf5pic065iE-m07o48RNXHZl176uqzu6fOxmNrwi-VRHnl3oAW5Mz4sXTUCHeI86jMh6LSzj2lsbRgiZI-AAScOvxZRUrJD8D-4Op3v5yAfLV7G8yZeahBolkX3iT2m6iahRWT0mdEXSDCWUbBe8m44CTDGT4Ht7zsWFcM2lefm1gqHnP4zHGa-LN0u8j1SLXBQLT-f2wD1P-g__&Key-Pair-Id=K1VGYTHIYLM9UM",
+      "usdz": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/model.usdz?Expires=4949251200&Signature=L7kvUvJ9oHzNBFyXTjeD9lOo-0nUzHU0Cwzt-DecpT8sV02N72-aqolkRJ2buuDFBlsgrbaqd30FI89DEj3xlopA5Mm--XPgztywOWJf4dEOSRvnxow23TOo4A4NKbFfTUo9UbbiQ2Aco0j0~r2G64LX5VxX~KLQ1632tKqQpWyWVAOncZTs7~HDWVCI3givx29qPKAliWLsSGfybHCMBXCmfN27EOYssJGik6huZADFGCJ52ys87iTxrvFUXJeXBV1quOmkwMGDif9qTLbj9-4uxZGiWifEAPpUakPQifgqJEGNLTvfLFDw1ivnxHpsFgL7fy2BoXL9nxqFB47ppQ__&Key-Pair-Id=K1VGYTHIYLM9UM"
+    },
+    "thumbnail_url": "https://assets.meshy.ai/7fb659ce-c503-48e0-8a39-b50dd78aec33/tasks/01a219eb-9c36-7360-bf26-cfd7400e4b61/output/preview.png?Expires=4949251200&Signature=jVK-JEmqY1~dlToBzfSZ7uafMQQUnxAGaCNFmWGD~aNRvmq7zWNJVr6Jl01B-vmFgX3OlZry2gNJh2wfYTe1UCp6XHziSFPDymB5JW6M-o66Jfss7XGqKq7eeT1-OhmG6zN8xK9KdUNvG5ETbqd3Y6iWs55RT~KIpUkrRFOQsBG1G1Z~WmZ67fxodv8cpK8c5HwZLX3i3kttQSvHCPaQQJ687B4CY5r7SF3L9-gA4rSyZU7l0Ayhs7vQCZtVe-2EDyeNc1Udfllf-xHzgXThLzgxS3AuVlNogb9i8KbS1MWjSGy5WfQSYsiW0tCSh5h11sH1o2iMOBltuJILG1z2EQ__&Key-Pair-Id=K1VGYTHIYLM9UM",
+    "alpha_thumbnail_url": null,
+    "texture_urls": []
+  }
+}

@@ -1312,7 +1312,7 @@ async function yieldToMain() {
   canvas.addEventListener('pointercancel', (e) => endCanvasPointer(e, true));
 
   // Mobile Virtual Touch Joysticks
-  const LOOK_STICK_HOLD_DELAY_MS = 2000;
+  const LOOK_STICK_HOLD_DELAY_MS = 1000;
   let moveStickPointerId = null;
   let moveStickCenter = { x: 0, y: 0 };
   let moveStickMaxRadius = 36;
@@ -1375,7 +1375,7 @@ async function yieldToMain() {
     lookStickLastX = clientX;
     lookStickLastY = clientY;
 
-    // Hold-delay gate: do NOT move up/down/left/right for the first 2 seconds so the button can be tapped cleanly!
+    // Hold-delay gate: do NOT move up/down/left/right for the first 1 second so the button can be tapped cleanly!
     if (!lookStickUnlocked) {
       if ((performance.now() - lookStickStartTime) < LOOK_STICK_HOLD_DELAY_MS) {
         state.touchLook.x = 0;

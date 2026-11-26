@@ -20,6 +20,7 @@
   <!-- Resource Hints & ES Module Preloads -->
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
   <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+  <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" crossorigin>
   <link rel="modulepreload" href="js/clicker_game.js">
   <link rel="modulepreload" href="js/clicker_audio.js">
 
@@ -72,8 +73,7 @@
       width: 100%;
       height: 100%;
       z-index: 1;
-      content-visibility: auto;
-      contain-intrinsic-size: auto 100vw auto 100vh;
+      contain: strict;
     }
 
     #xr-canvas {
@@ -99,6 +99,7 @@
       right: 0;
       z-index: 10;
       pointer-events: none;
+      contain: layout style;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -129,9 +130,9 @@
       border-radius: 999px;
       background: var(--pill-bg);
       border: 2.5px solid var(--pill-border);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      box-shadow: 0 8px 20px rgba(214, 45, 132, 0.18);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 6px 16px rgba(214, 45, 132, 0.16);
       color: var(--text-main);
       font-family: inherit;
       font-weight: 800;
@@ -139,7 +140,16 @@
       font-variant-numeric: tabular-nums;
       text-decoration: none;
       cursor: pointer;
-      transition: transform 0.14s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.14s ease, background-color 0.2s ease;
+    }
+
+    @media (pointer: coarse), (max-width: 900px) {
+      .top-pill {
+        background: rgba(255, 255, 255, 0.90);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        box-shadow: 0 4px 12px rgba(214, 45, 132, 0.16);
+      }
     }
 
     .top-pill:hover,
@@ -186,12 +196,12 @@
     }
 
     .top-pill.is-pop {
-      animation: pillPop 0.36s cubic-bezier(0.22, 1.6, 0.36, 1);
+      animation: pillPop 0.28s cubic-bezier(0.22, 1.6, 0.36, 1);
     }
 
     @keyframes pillPop {
       0% { transform: scale(1); }
-      45% { transform: scale(1.18); box-shadow: 0 0 24px rgba(255, 92, 168, 0.55); }
+      45% { transform: scale(1.16); }
       100% { transform: scale(1); }
     }
 

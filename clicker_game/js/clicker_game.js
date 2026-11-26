@@ -17,9 +17,48 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { XRControllerModelFactory } from 'three/addons/webxr/XRControllerModelFactory.js';
-import { XRHandModelFactory } from 'three/addons/webxr/XRHandModelFactory.js';
 import { createClickerAudioEngine } from './clicker_audio.js';
+
+// ---------------------------------------------------------------------------
+// Adaptive Mobile / Device Performance Profile
+// ---------------------------------------------------------------------------
+const IS_COARSE_POINTER = typeof window !== 'undefined' && Boolean(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+const IS_MOBILE_UA = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || '');
+const IS_MOBILE = IS_COARSE_POINTER || IS_MOBILE_UA || (typeof window !== 'undefined' && window.innerWidth <= 768);
+
+const PERF_PROFILE = {
+  isMobile: IS_MOBILE,
+  maxDpr: IS_MOBILE ? 1.25 : 2.0,
+  minDpr: IS_MOBILE ? 0.85 : 1.0,
+  useShadows: !IS_MOBILE,
+  shadowMapSize: IS_MOBILE ? 512 : 1024,
+  usePhysicalMaterials: !IS_MOBILE,
+  useEnvMap: !IS_MOBILE,
+  useLightweightShaders: IS_MOBILE,
+  batchStaticSwitches: IS_MOBILE,
+  hideHiddenStems: IS_MOBILE,
+  faceTexSize: IS_MOBILE ? 256 : 512,
+  deskTexSize: IS_MOBILE ? 256 : 512,
+  anisotropy: IS_MOBILE ? 1 : 4,
+  keycapSegXZ: IS_MOBILE ? 7 : 10,
+  keycapSegY: IS_MOBILE ? 4 : 6,
+  faceSeg: IS_MOBILE ? 5 : 8,
+  switchCurveSegs: IS_MOBILE ? 3 : 6,
+  switchBevelSegs: IS_MOBILE ? 1 : 2,
+  caseCurveSegs: IS_MOBILE ? 6 : 10,
+  caseBevelSegs: IS_MOBILE ? 2 : 4,
+  heartCurveSegs: IS_MOBILE ? 5 : 8,
+  heartBevelSegs: IS_MOBILE ? 1 : 2,
+  cloudCount: IS_MOBILE ? 6 : 8,
+  ambientStars: IS_MOBILE ? 44 : 90,
+  particlePoolSize: IS_MOBILE ? 36 : 80,
+  maxActiveParticles: IS_MOBILE ? 32 : 84,
+  clickBurstCount: IS_MOBILE ? 4 : 7,
+  waveBurstCount: IS_MOBILE ? 1 : 2
+};
+
+// Static neighbor offsets (avoids per-click array/closure allocations)
+const NEIGHBOR_OFFSETS = [[-1, 0], [1, 0], [0, -1], [0, 1]];
 
 // ---------------------------------------------------------------------------
 // Constants & Board Configuration
@@ -206,6 +245,50 @@ function markSharedAsset(asset, name = '') {
   asset.userData = asset.userData || {};
   asset.userData._isSharedAsset = true;
   return asset;
+}
+
+// Lightweight zero-dependency BufferGeometry merger (merges static sub-parts into 1 draw call!)
+const _mergePos = new THREE.Vector3();
+const _mergeQuat = new THREE.Quaternion();
+const _mergeEuler = new THREE.Euler();
+const _mergeScale = new THREE.Vector3();
+const _mergeMat4 = new THREE.Matrix4();
+
+function bakeGeometryPart(srcGeo, px = 0, py = 0, pz = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) {
+  const g = srcGeo.index ? srcGeo.toNonIndexed() : srcGeo.clone();
+  _mergePos.set(px, py, pz);
+  _mergeEuler.set(rx, ry, rz);
+  _mergeQuat.setFromEuler(_mergeEuler);
+  _mergeScale.set(sx, sy, sz);
+  _mergeMat4.compose(_mergePos, _mergeQuat, _mergeScale);
+  g.applyMatrix4(_mergeMat4);
+  if (!g.attributes.normal) g.computeVertexNormals();
+  return g;
+}
+
+function mergeBakedGeometries(parts, name = '') {
+  if (!parts || parts.length === 0) return null;
+  let totalVerts = 0;
+  for (let i = 0; i < parts.length; i++) {
+    totalVerts += parts[i].attributes.position.count;
+  }
+  const positions = new Float32Array(totalVerts * 3);
+  const normals = new Float32Array(totalVerts * 3);
+  let offset = 0;
+  for (let i = 0; i < parts.length; i++) {
+    const g = parts[i];
+    const posArr = g.attributes.position.array;
+    const normArr = g.attributes.normal ? g.attributes.normal.array : null;
+    positions.set(posArr, offset);
+    if (normArr) normals.set(normArr, offset);
+    offset += posArr.length;
+    g.dispose();
+  }
+  const merged = new THREE.BufferGeometry();
+  merged.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+  merged.computeBoundingSphere();
+  return markSharedAsset(merged, name);
 }
 
 // ---------------------------------------------------------------------------
@@ -537,20 +620,20 @@ function drawFlower(ctx, cx, cy, r, petalCol, centerCol) {
 
 function createStudioEnvironmentMap(renderer) {
   const envCanvas = document.createElement('canvas');
-  envCanvas.width = 512;
-  envCanvas.height = 256;
+  envCanvas.width = 256;
+  envCanvas.height = 128;
   const ectx = envCanvas.getContext('2d');
-  const eg = ectx.createLinearGradient(0, 0, 0, 256);
+  const eg = ectx.createLinearGradient(0, 0, 0, 128);
   eg.addColorStop(0.0, '#d8c2ff');
   eg.addColorStop(0.35, '#f0d9ff');
   eg.addColorStop(0.68, '#b8a8e8');
   eg.addColorStop(1.0, '#6d549e');
   ectx.fillStyle = eg;
-  ectx.fillRect(0, 0, 512, 256);
+  ectx.fillRect(0, 0, 256, 128);
 
   ectx.fillStyle = '#ffffff';
-  ectx.fillRect(56, 26, 130, 50);
-  ectx.fillRect(320, 34, 130, 52);
+  ectx.fillRect(28, 13, 65, 25);
+  ectx.fillRect(160, 17, 65, 26);
 
   const envTex = new THREE.CanvasTexture(envCanvas);
   envTex.mapping = THREE.EquirectangularReflectionMapping;
@@ -563,10 +646,13 @@ function createStudioEnvironmentMap(renderer) {
 }
 
 function createPastelDeskTexture() {
+  const S = PERF_PROFILE.deskTexSize;
+  const scale = S / 512;
   const c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 512;
+  c.width = S;
+  c.height = S;
   const ctx = c.getContext('2d');
+  ctx.scale(scale, scale);
   const g = ctx.createRadialGradient(256, 256, 20, 256, 256, 280);
   g.addColorStop(0, '#dfd0ff');
   g.addColorStop(0.55, '#cbb6f7');
@@ -592,11 +678,43 @@ function createPastelDeskTexture() {
   return markSharedAsset(tex, 'pastel_desk_mat');
 }
 
-function createSparkleTexture() {
+function createCaseContactShadowTexture() {
   const c = document.createElement('canvas');
   c.width = 128;
   c.height = 128;
   const ctx = c.getContext('2d');
+  ctx.clearRect(0, 0, 128, 128);
+  // Soft layered rounded drop shadow for mobile (zero dynamic shadow-map render pass!)
+  for (let i = 0; i < 6; i++) {
+    const pad = 10 + i * 3.5;
+    const w = 128 - pad * 2;
+    const h = 128 - pad * 2;
+    const r = 18;
+    ctx.fillStyle = 'rgba(110, 48, 130, 0.055)';
+    ctx.beginPath();
+    ctx.moveTo(pad + r, pad);
+    ctx.lineTo(pad + w - r, pad);
+    ctx.quadraticCurveTo(pad + w, pad, pad + w, pad + r);
+    ctx.lineTo(pad + w, pad + h - r);
+    ctx.quadraticCurveTo(pad + w, pad + h, pad + w - r, pad + h);
+    ctx.lineTo(pad + r, pad + h);
+    ctx.quadraticCurveTo(pad, pad + h, pad, pad + h - r);
+    ctx.lineTo(pad, pad + r);
+    ctx.quadraticCurveTo(pad, pad, pad + r, pad);
+    ctx.closePath();
+    ctx.fill();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return markSharedAsset(tex, 'case_contact_shadow');
+}
+
+function createSparkleTexture() {
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 64;
+  const ctx = c.getContext('2d');
+  ctx.scale(0.5, 0.5);
   const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 58);
   g.addColorStop(0.0, 'rgba(255,255,255,1)');
   g.addColorStop(0.35, 'rgba(255,190,235,0.65)');
@@ -617,11 +735,13 @@ function createSparkleTexture() {
 }
 
 function createKawaiiFaceTexture(def) {
+  const OUT_S = PERF_PROFILE.faceTexSize;
   const S = 512;
   const c = document.createElement('canvas');
-  c.width = S;
-  c.height = S;
+  c.width = OUT_S;
+  c.height = OUT_S;
   const ctx = c.getContext('2d');
+  ctx.scale(OUT_S / S, OUT_S / S);
 
   // Soft glossy pastel base with delicate lighter cheek-center glow
   const bgGrad = ctx.createRadialGradient(S * 0.5, S * 0.45, 30, S * 0.5, S * 0.5, S * 0.62);
@@ -952,7 +1072,7 @@ function createKawaiiFaceTexture(def) {
 
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
+  tex.anisotropy = PERF_PROFILE.anisotropy;
   return markSharedAsset(tex, `kawaii_face_${def.id}`);
 }
 
@@ -973,7 +1093,7 @@ function createRoundedRectShape(w, h, r) {
 }
 
 function createPuffyKeycapGeometry() {
-  const geo = new THREE.BoxGeometry(0.92, 0.50, 0.92, 16, 10, 16);
+  const geo = new THREE.BoxGeometry(0.92, 0.50, 0.92, PERF_PROFILE.keycapSegXZ, PERF_PROFILE.keycapSegY, PERF_PROFILE.keycapSegXZ);
   const pos = geo.attributes.position;
   const v = new THREE.Vector3();
   for (let i = 0; i < pos.count; i++) {
@@ -1016,7 +1136,7 @@ function createPuffyKeycapGeometry() {
 }
 
 function createDomedFaceCapGeometry() {
-  const geo = new THREE.PlaneGeometry(0.84, 0.84, 14, 14);
+  const geo = new THREE.PlaneGeometry(0.84, 0.84, PERF_PROFILE.faceSeg, PERF_PROFILE.faceSeg);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
@@ -1050,10 +1170,11 @@ function createHeart3DGeometry(scale = 0.15, name = '') {
   hs.bezierCurveTo(0.55 * scale, 0.9 * scale, 0.9 * scale, 0.25 * scale, 0, -0.35 * scale);
   const g = new THREE.ExtrudeGeometry(hs, {
     depth: 0.06,
+    curveSegments: PERF_PROFILE.heartCurveSegs,
     bevelEnabled: true,
     bevelThickness: 0.025,
     bevelSize: 0.02,
-    bevelSegments: 3
+    bevelSegments: PERF_PROFILE.heartBevelSegs
   });
   g.rotateX(-Math.PI / 2);
   g.center();
@@ -1152,8 +1273,52 @@ export class ClickerGameObjectPool {
   }
 
   initSharedProceduralAssets() {
-    // 1. Procedural Studio Softbox Environment Map
-    if (this.renderer) {
+    const usePhys = PERF_PROFILE.usePhysicalMaterials;
+    const useLight = PERF_PROFILE.useLightweightShaders;
+    const makeGlossyMat = (opts) => {
+      if (usePhys) {
+        return new THREE.MeshPhysicalMaterial(opts);
+      }
+      if (useLight) {
+        const isGold = opts.metalness && opts.metalness > 0.4;
+        const isFaceTex = Boolean(opts.map);
+        const phongOpts = {
+          color: opts.color !== undefined ? opts.color : 0xffffff,
+          specular: new THREE.Color(isGold ? 0xffe27a : (isFaceTex ? 0x4a3e54 : 0x72607a)),
+          shininess: isFaceTex ? 48 : (opts.roughness !== undefined ? Math.round(Math.max(24, (1 - opts.roughness) * 90)) : 68)
+        };
+        if (opts.map) phongOpts.map = opts.map;
+        if (opts.emissive !== undefined) phongOpts.emissive = opts.emissive;
+        if (opts.emissiveIntensity !== undefined) phongOpts.emissiveIntensity = opts.emissiveIntensity;
+        return new THREE.MeshPhongMaterial(phongOpts);
+      }
+      const stdOpts = {
+        color: opts.color !== undefined ? opts.color : 0xffffff,
+        roughness: opts.roughness !== undefined ? Math.max(0.14, opts.roughness - 0.04) : 0.2,
+        metalness: opts.metalness !== undefined ? opts.metalness : 0.04,
+        envMapIntensity: opts.envMapIntensity !== undefined ? opts.envMapIntensity * 1.15 : 0.85
+      };
+      if (opts.map) stdOpts.map = opts.map;
+      if (opts.emissive !== undefined) stdOpts.emissive = opts.emissive;
+      if (opts.emissiveIntensity !== undefined) stdOpts.emissiveIntensity = opts.emissiveIntensity;
+      return new THREE.MeshStandardMaterial(stdOpts);
+    };
+
+    const makeSoftMat = (opts) => {
+      if (useLight) {
+        const lambertOpts = {
+          color: opts.color !== undefined ? opts.color : 0xffffff
+        };
+        if (opts.map) lambertOpts.map = opts.map;
+        if (opts.emissive !== undefined) lambertOpts.emissive = opts.emissive;
+        if (opts.emissiveIntensity !== undefined) lambertOpts.emissiveIntensity = opts.emissiveIntensity;
+        return new THREE.MeshLambertMaterial(lambertOpts);
+      }
+      return new THREE.MeshStandardMaterial(opts);
+    };
+
+    // 1. Procedural Studio Softbox Environment Map (skip PMREM compilation on mobile lightweight shader path!)
+    if (this.renderer && PERF_PROFILE.useEnvMap) {
       this.studioEnvMap = this.getSharedTexture('studio_env_pmrem', () => createStudioEnvironmentMap(this.renderer));
     } else {
       this.studioEnvMap = null;
@@ -1162,6 +1327,9 @@ export class ClickerGameObjectPool {
     // 2. Shared Procedural Textures (deduplicated across all pools)
     this.getSharedTexture('pastel_desk_mat', () => createPastelDeskTexture());
     this.getSharedTexture('sparkle_4pt', () => createSparkleTexture());
+    if (!PERF_PROFILE.useShadows) {
+      this.getSharedTexture('case_contact_shadow', () => createCaseContactShadowTexture());
+    }
     for (const def of CHARACTER_CATALOG) {
       this.getSharedTexture(`kawaii_face_${def.id}`, () => createKawaiiFaceTexture(def));
     }
@@ -1169,39 +1337,64 @@ export class ClickerGameObjectPool {
     // 3. Shared Sculpted Keycap, Switch, Silicone Case, Environment & Particle Geometries
     this.getSharedGeometry('puffy_keycap', () => createPuffyKeycapGeometry());
     this.getSharedGeometry('domed_face_cap', () => createDomedFaceCapGeometry());
-    this.getSharedGeometry('switch_base', () => {
+    const switchBaseGeo = this.getSharedGeometry('switch_base', () => {
       const geo = new THREE.ExtrudeGeometry(createRoundedRectShape(0.96, 0.96, 0.14), {
         depth: 0.28,
+        curveSegments: PERF_PROFILE.switchCurveSegs,
         bevelEnabled: true,
         bevelThickness: 0.035,
         bevelSize: 0.035,
-        bevelSegments: 3
+        bevelSegments: PERF_PROFILE.switchBevelSegs
       });
       geo.rotateX(-Math.PI / 2);
       geo.center();
       return geo;
     });
+    const puzzleTabGeo = this.getSharedGeometry('puzzle_tab', () => new THREE.BoxGeometry(0.11, 0.16, 0.20));
+    this.getSharedGeometry('switch_base_tabbed', () => mergeBakedGeometries([
+      bakeGeometryPart(switchBaseGeo, 0, 0, 0),
+      bakeGeometryPart(puzzleTabGeo, 0.51, -0.01, -0.18),
+      bakeGeometryPart(puzzleTabGeo, 0.51, -0.01, 0.18)
+    ], 'switch_base_tabbed'));
+
     this.getSharedGeometry('switch_crystal_collar', () => new THREE.BoxGeometry(0.68, 0.22, 0.68));
-    this.getSharedGeometry('puzzle_tab', () => new THREE.BoxGeometry(0.11, 0.16, 0.20));
-    this.getSharedGeometry('stem_arm_a', () => new THREE.BoxGeometry(0.28, 0.30, 0.085));
-    this.getSharedGeometry('stem_arm_b', () => new THREE.BoxGeometry(0.085, 0.30, 0.28));
+    const stemArmAGeo = this.getSharedGeometry('stem_arm_a', () => new THREE.BoxGeometry(0.28, 0.30, 0.085));
+    const stemArmBGeo = this.getSharedGeometry('stem_arm_b', () => new THREE.BoxGeometry(0.085, 0.30, 0.28));
+    this.getSharedGeometry('stem_cross', () => mergeBakedGeometries([
+      bakeGeometryPart(stemArmAGeo, 0, 0, 0),
+      bakeGeometryPart(stemArmBGeo, 0, 0, 0)
+    ], 'stem_cross'));
+
     this.getSharedGeometry('led_glow_plane', () => new THREE.PlaneGeometry(0.76, 0.76));
     this.getSharedGeometry('hit_box', () => new THREE.BoxGeometry(1.04, 1.10, 1.04));
 
-    this.getSharedGeometry('sky_dome', () => new THREE.SphereGeometry(62, 32, 24));
-    this.getSharedGeometry('desk_mat', () => new THREE.CircleGeometry(24, 64));
-    this.getSharedGeometry('cloud_puff_0.72', () => new THREE.SphereGeometry(0.72, 12, 10));
-    this.getSharedGeometry('cloud_puff_0.95', () => new THREE.SphereGeometry(0.95, 12, 10));
-    this.getSharedGeometry('cloud_puff_0.70', () => new THREE.SphereGeometry(0.70, 12, 10));
-    this.getSharedGeometry('cloud_puff_0.65', () => new THREE.SphereGeometry(0.65, 12, 10));
+    this.getSharedGeometry('sky_dome', () => new THREE.SphereGeometry(62, PERF_PROFILE.isMobile ? 16 : 24, PERF_PROFILE.isMobile ? 12 : 18));
+    this.getSharedGeometry('desk_mat', () => new THREE.CircleGeometry(24, PERF_PROFILE.isMobile ? 32 : 48));
+    const cSeg = PERF_PROFILE.isMobile ? 8 : 12;
+    const cRing = PERF_PROFILE.isMobile ? 6 : 10;
+    this.getSharedGeometry('cloud_merged', () => {
+      const s0 = new THREE.SphereGeometry(0.72, cSeg, cRing);
+      const s1 = new THREE.SphereGeometry(0.95, cSeg, cRing);
+      const s2 = new THREE.SphereGeometry(0.70, cSeg, cRing);
+      const s3 = new THREE.SphereGeometry(0.65, cSeg, cRing);
+      const merged = mergeBakedGeometries([
+        bakeGeometryPart(s0, -0.8, 0, 0),
+        bakeGeometryPart(s1, 0, 0.22, 0),
+        bakeGeometryPart(s2, 0.85, 0.02, 0),
+        bakeGeometryPart(s3, 0.25, -0.1, 0.35)
+      ], 'cloud_merged');
+      s0.dispose(); s1.dispose(); s2.dispose(); s3.dispose();
+      return merged;
+    });
 
     this.getSharedGeometry('case_tray_base', () => {
       const geo = new THREE.ExtrudeGeometry(createRoundedRectShape(this.outerW, this.outerD, 0.72), {
         depth: 0.36,
+        curveSegments: PERF_PROFILE.caseCurveSegs,
         bevelEnabled: true,
         bevelThickness: 0.12,
         bevelSize: 0.10,
-        bevelSegments: 5
+        bevelSegments: PERF_PROFILE.caseBevelSegs
       });
       geo.rotateX(-Math.PI / 2);
       geo.translate(0, -0.34, 0);
@@ -1212,21 +1405,37 @@ export class ClickerGameObjectPool {
       bumperShape.holes.push(createRoundedRectShape(this.innerW, this.innerD, 0.34));
       const geo = new THREE.ExtrudeGeometry(bumperShape, {
         depth: 0.62,
+        curveSegments: PERF_PROFILE.caseCurveSegs,
         bevelEnabled: true,
         bevelThickness: 0.15,
         bevelSize: 0.12,
-        bevelSegments: 6
+        bevelSegments: PERF_PROFILE.caseBevelSegs
       });
       geo.rotateX(-Math.PI / 2);
       geo.translate(0, -0.02, 0);
       return geo;
     });
     this.getSharedGeometry('case_well_floor', () => new THREE.PlaneGeometry(this.innerW + 0.08, this.innerD + 0.08));
-    this.getSharedGeometry('case_mini_heart', () => createHeart3DGeometry(0.18, 'case_mini_heart'));
-    this.getSharedGeometry('case_mini_bead', () => new THREE.SphereGeometry(0.085, 12, 10));
-    this.getSharedGeometry('case_carry_loop', () => new THREE.TorusGeometry(0.36, 0.11, 12, 24, Math.PI * 1.4));
-    this.getSharedGeometry('case_charm_ring', () => new THREE.TorusGeometry(0.14, 0.032, 10, 20));
-    this.getSharedGeometry('case_charm_bead', () => new THREE.SphereGeometry(0.13, 14, 12));
+    this.getSharedGeometry('case_contact_shadow', () => new THREE.PlaneGeometry(this.outerW + 1.4, this.outerD + 1.4));
+    const miniHeartGeo = this.getSharedGeometry('case_mini_heart', () => createHeart3DGeometry(0.18, 'case_mini_heart'));
+    const miniBeadGeo = this.getSharedGeometry('case_mini_bead', () => new THREE.SphereGeometry(0.085, PERF_PROFILE.isMobile ? 8 : 12, PERF_PROFILE.isMobile ? 6 : 10));
+    this.getSharedGeometry('case_emboss_merged', () => {
+      const parts = [];
+      const rimZ = this.innerD * 0.5 + this.wallThickness * 0.52;
+      [-1.6, 0, 1.6].forEach((hx, idx) => {
+        [-1, 1].forEach((sideZ) => {
+          if (idx === 1) {
+            parts.push(bakeGeometryPart(miniHeartGeo, hx, 0.745, sideZ * rimZ));
+          } else {
+            parts.push(bakeGeometryPart(miniBeadGeo, hx, 0.745, sideZ * rimZ, 0, 0, 0, 1.2, 0.45, 1.2));
+          }
+        });
+      });
+      return mergeBakedGeometries(parts, 'case_emboss_merged');
+    });
+    this.getSharedGeometry('case_carry_loop', () => new THREE.TorusGeometry(0.36, 0.11, PERF_PROFILE.isMobile ? 8 : 12, PERF_PROFILE.isMobile ? 16 : 24, Math.PI * 1.4));
+    this.getSharedGeometry('case_charm_ring', () => new THREE.TorusGeometry(0.14, 0.032, PERF_PROFILE.isMobile ? 6 : 10, PERF_PROFILE.isMobile ? 12 : 20));
+    this.getSharedGeometry('case_charm_bead', () => new THREE.SphereGeometry(0.13, PERF_PROFILE.isMobile ? 10 : 14, PERF_PROFILE.isMobile ? 8 : 12));
     this.getSharedGeometry('case_big_heart_charm', () => createHeart3DGeometry(0.46, 'case_big_heart_charm'));
 
     this.getSharedGeometry('particle_heart', () => createHeart3DGeometry(0.24, 'particle_heart'));
@@ -1238,79 +1447,131 @@ export class ClickerGameObjectPool {
     ]));
     this.getSharedGeometry('xr_reticle_sphere', () => new THREE.SphereGeometry(0.025, 10, 10));
 
-    // 4. Shared Procedural Materials
-    this.getSharedMaterial('clear_crystal', () => new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      roughness: 0.12,
-      metalness: 0.05,
-      transmission: 0.52,
-      transparent: true,
-      opacity: 0.78
-    }));
-    this.getSharedMaterial('white_gloss', () => new THREE.MeshPhysicalMaterial({
+    // 4. Shared Procedural Materials (NO transmission pass! Lightweight Phong/Lambert on mobile!)
+    this.getSharedMaterial('clear_crystal', () => useLight
+      ? new THREE.MeshPhongMaterial({
+        color: 0xffffff,
+        specular: 0xffffff,
+        shininess: 90,
+        transparent: true,
+        opacity: 0.44,
+        depthWrite: false
+      })
+      : new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        roughness: 0.14,
+        metalness: 0.08,
+        transparent: true,
+        opacity: 0.46,
+        depthWrite: false,
+        envMapIntensity: 0.9
+      })
+    );
+    this.getSharedMaterial('white_gloss', () => makeGlossyMat({
       color: 0xffffff,
       roughness: 0.22,
       clearcoat: 0.7,
       clearcoatRoughness: 0.18
     }));
-    this.getSharedMaterial('gold_gloss', () => new THREE.MeshPhysicalMaterial({
+    this.getSharedMaterial('gold_gloss', () => makeGlossyMat({
       color: 0xffd74a,
       roughness: 0.20,
       metalness: 0.65,
       clearcoat: 0.8
     }));
     this.getSharedMaterial('invisible_hit', () => new THREE.MeshBasicMaterial({ visible: false }));
-    this.getSharedMaterial('cloud_pastel', () => new THREE.MeshStandardMaterial({
+    this.getSharedMaterial('cloud_pastel', () => makeSoftMat({
       color: 0xffffff,
       roughness: 0.8,
       metalness: 0.0,
       emissive: 0xffe6f7,
       emissiveIntensity: 0.25
     }));
-    this.getSharedMaterial('desk_mat', () => new THREE.MeshStandardMaterial({
+    this.getSharedMaterial('desk_mat', () => makeSoftMat({
       map: this.sharedTextures.get('pastel_desk_mat'),
       roughness: 0.72,
       metalness: 0.02
     }));
-    this.getSharedMaterial('ambient_stars', () => new THREE.PointsMaterial({
-      map: this.sharedTextures.get('sparkle_4pt'),
-      size: 0.34,
-      transparent: true,
-      opacity: 0.85,
-      depthWrite: false
-    }));
+    if (!PERF_PROFILE.useShadows) {
+      this.getSharedMaterial('case_contact_shadow', () => new THREE.MeshBasicMaterial({
+        map: this.sharedTextures.get('case_contact_shadow'),
+        transparent: true,
+        depthWrite: false
+      }));
+    }
 
-    this.getSharedMaterial('pink_silicone_main', () => new THREE.MeshPhysicalMaterial({
-      color: 0xff3b9d,
-      roughness: 0.56,
-      metalness: 0.0,
-      sheen: 0.9,
-      sheenRoughness: 0.52,
-      sheenColor: new THREE.Color(0xffb8de),
-      envMapIntensity: 0.42
-    }));
-    this.getSharedMaterial('pink_silicone_lip', () => new THREE.MeshPhysicalMaterial({
-      color: 0xff52a8,
-      roughness: 0.50,
-      metalness: 0.0,
-      sheen: 0.95,
-      sheenRoughness: 0.45,
-      sheenColor: new THREE.Color(0xffd6ec),
-      envMapIntensity: 0.45
-    }));
-    this.getSharedMaterial('pink_silicone_inner', () => new THREE.MeshStandardMaterial({
+    this.getSharedMaterial('pink_silicone_main', () => usePhys
+      ? new THREE.MeshPhysicalMaterial({
+        color: 0xff3b9d,
+        roughness: 0.56,
+        metalness: 0.0,
+        sheen: 0.9,
+        sheenRoughness: 0.52,
+        sheenColor: new THREE.Color(0xffb8de),
+        envMapIntensity: 0.42
+      })
+      : makeSoftMat({
+        color: 0xff4ea9,
+        roughness: 0.48,
+        metalness: 0.0,
+        emissive: 0xff3b9d,
+        emissiveIntensity: 0.14
+      })
+    );
+    this.getSharedMaterial('pink_silicone_lip', () => usePhys
+      ? new THREE.MeshPhysicalMaterial({
+        color: 0xff52a8,
+        roughness: 0.50,
+        metalness: 0.0,
+        sheen: 0.95,
+        sheenRoughness: 0.45,
+        sheenColor: new THREE.Color(0xffd6ec),
+        envMapIntensity: 0.45
+      })
+      : makeSoftMat({
+        color: 0xff62b3,
+        roughness: 0.44,
+        metalness: 0.0,
+        emissive: 0xff52a8,
+        emissiveIntensity: 0.16
+      })
+    );
+    this.getSharedMaterial('pink_silicone_inner', () => makeSoftMat({
       color: 0xb81d6d,
       roughness: 0.68,
       metalness: 0.02
     }));
-    this.getSharedMaterial('pink_silicone_emboss', () => new THREE.MeshPhysicalMaterial({
-      color: 0xff94cb,
-      roughness: 0.42,
-      sheen: 0.85,
-      sheenColor: new THREE.Color(0xffffff),
-      envMapIntensity: 0.5
+    this.getSharedMaterial('pink_silicone_emboss', () => usePhys
+      ? new THREE.MeshPhysicalMaterial({
+        color: 0xff94cb,
+        roughness: 0.42,
+        sheen: 0.85,
+        sheenColor: new THREE.Color(0xffffff),
+        envMapIntensity: 0.5
+      })
+      : makeSoftMat({
+        color: 0xffa6d6,
+        roughness: 0.36,
+        metalness: 0.0,
+        emissive: 0xff80c4,
+        emissiveIntensity: 0.18
+      })
+    );
+    this.getSharedMaterial('row_dot_instanced', () => makeSoftMat({
+      color: 0xffffff,
+      roughness: 0.32,
+      metalness: 0.02
     }));
-    this.getSharedMaterial('big_heart_charm', () => new THREE.MeshPhysicalMaterial({
+    this.getSharedMaterial('switch_housing_instanced', () => makeGlossyMat({
+      color: 0xffffff,
+      roughness: 0.34
+    }));
+    this.getSharedMaterial('charm_bead_instanced', () => makeGlossyMat({
+      color: 0xffffff,
+      roughness: 0.2,
+      clearcoat: 0.85
+    }));
+    this.getSharedMaterial('big_heart_charm', () => makeGlossyMat({
       color: 0xff5ca8,
       roughness: 0.18,
       clearcoat: 0.9,
@@ -1319,262 +1580,206 @@ export class ClickerGameObjectPool {
     }));
     this.getSharedMaterial('xr_reticle', () => new THREE.MeshBasicMaterial({ color: 0xffe066 }));
 
-    // Per-row shared housing, stem & silicone row-marker dot materials
+    // Shared opaque particle materials (zero transparent overdraw & zero per-particle material allocations!)
+    const allParticleColors = new Set(PARTICLE_PALETTE);
+    ROW_THEMES.forEach((rt) => allParticleColors.add(rt.ledHex));
+    for (const hex of allParticleColors) {
+      this.getSharedMaterial(`particle_mat_${hex}`, () => new THREE.MeshBasicMaterial({ color: hex }));
+    }
+
+    // Per-row shared housing & stem materials
     ROW_THEMES.forEach((rowTheme, row) => {
-      this.getSharedMaterial(`row_housing_${row}`, () => new THREE.MeshPhysicalMaterial({
+      this.getSharedMaterial(`row_housing_${row}`, () => makeGlossyMat({
         color: rowTheme.housingHex,
         roughness: 0.32,
         metalness: 0.04,
-        clearcoat: 0.35
+        envMapIntensity: 0.65
       }));
-      this.getSharedMaterial(`row_stem_${row}`, () => new THREE.MeshStandardMaterial({
+      this.getSharedMaterial(`row_stem_${row}`, () => makeSoftMat({
         color: rowTheme.stemHex,
         emissive: new THREE.Color(rowTheme.stemHex),
         emissiveIntensity: 0.25,
         roughness: 0.25
       }));
-      this.getSharedMaterial(`row_dot_${row}`, () => new THREE.MeshPhysicalMaterial({
-        color: rowTheme.housingHex,
-        roughness: 0.35,
-        sheen: 0.6,
-        emissive: new THREE.Color(rowTheme.ledHex),
-        emissiveIntensity: 0.12
-      }));
     });
 
-    // Per-character shared face, accent & cheek materials
+    // Per-character shared face, accent & cheek materials + pre-merged topper geometries!
+    this.characterMergedGeos = new Map();
     CHARACTER_CATALOG.forEach((def) => {
-      this.getSharedMaterial(`char_face_${def.id}`, () => new THREE.MeshPhysicalMaterial({
+      this.getSharedMaterial(`char_face_${def.id}`, () => makeGlossyMat({
         map: this.sharedTextures.get(`kawaii_face_${def.id}`),
         roughness: 0.22,
         metalness: 0.0,
         clearcoat: 0.78,
         clearcoatRoughness: 0.16,
-        envMapIntensity: 0.58
+        envMapIntensity: 0.62
       }));
-      this.getSharedMaterial(`char_accent_${def.id}`, () => new THREE.MeshPhysicalMaterial({
+      this.getSharedMaterial(`char_accent_${def.id}`, () => makeGlossyMat({
         color: def.accent,
         roughness: 0.24,
         clearcoat: 0.72,
         clearcoatRoughness: 0.2
       }));
-      this.getSharedMaterial(`char_cheek_${def.id}`, () => new THREE.MeshPhysicalMaterial({
+      this.getSharedMaterial(`char_cheek_${def.id}`, () => makeGlossyMat({
         color: def.cheek,
         roughness: 0.28,
         clearcoat: 0.65
       }));
+
+      this.characterMergedGeos.set(def.id, this.buildMergedCharacterGeometries(def));
     });
   }
 
-  buildCharacter3DTopper(capPivot, def, capMat) {
-    const accentMat = this.sharedMaterials.get(`char_accent_${def.id}`);
-    const cheekMat = this.sharedMaterials.get(`char_cheek_${def.id}`);
-    const whiteGlossMat = this.sharedMaterials.get('white_gloss');
-    const goldGlossMat = this.sharedMaterials.get('gold_gloss');
+  buildMergedCharacterGeometries(def) {
+    const puffyGeo = this.sharedGeometries.get('puffy_keycap');
+    const capParts = [bakeGeometryPart(puffyGeo, 0, 0, 0)];
+    const extraByMatKey = new Map();
+    const addExtra = (matKey, bakedGeo) => {
+      if (!extraByMatKey.has(matKey)) extraByMatKey.set(matKey, []);
+      extraByMatKey.get(matKey).push(bakedGeo);
+    };
+
+    const sMed = PERF_PROFILE.isMobile ? 9 : 12;
+    const rMed = PERF_PROFILE.isMobile ? 7 : 10;
+    const sSm = PERF_PROFILE.isMobile ? 7 : 10;
+    const rSm = PERF_PROFILE.isMobile ? 6 : 10;
 
     switch (def.topper) {
       case 'roundEarsBlueDots': {
-        const earGeo = this.getSharedGeometry('topper_sphere_0.15_14_12', () => new THREE.SphereGeometry(0.15, 14, 12));
-        const dotGeo = this.getSharedGeometry('topper_sphere_0.068_10_10', () => new THREE.SphereGeometry(0.068, 10, 10));
+        const earGeo = this.getSharedGeometry('topper_sphere_0.15', () => new THREE.SphereGeometry(0.15, sMed, rMed));
+        const dotGeo = this.getSharedGeometry('topper_sphere_0.068', () => new THREE.SphereGeometry(0.068, sSm, rSm));
         [-1, 1].forEach((s) => {
-          const ear = new THREE.Mesh(earGeo, capMat);
-          ear.scale.set(1.05, 0.78, 0.9);
-          ear.position.set(s * 0.34, 0.30, -0.34);
-          capPivot.add(ear);
-          const dot = new THREE.Mesh(dotGeo, accentMat);
-          dot.position.set(s * 0.34, 0.36, -0.29);
-          capPivot.add(dot);
+          capParts.push(bakeGeometryPart(earGeo, s * 0.34, 0.30, -0.34, 0, 0, 0, 1.05, 0.78, 0.9));
+          addExtra(`char_accent_${def.id}`, bakeGeometryPart(dotGeo, s * 0.34, 0.36, -0.29));
         });
         break;
       }
       case 'owlTufts': {
-        const tuftGeo = this.getSharedGeometry('topper_cone_0.11_0.22_8', () => new THREE.ConeGeometry(0.11, 0.22, 8));
-        const crownDotGeo = this.getSharedGeometry('topper_sphere_0.075_10_10', () => new THREE.SphereGeometry(0.075, 10, 10));
+        const tuftGeo = this.getSharedGeometry('topper_cone_0.11_0.22', () => new THREE.ConeGeometry(0.11, 0.22, 8));
+        const crownDotGeo = this.getSharedGeometry('topper_sphere_0.075', () => new THREE.SphereGeometry(0.075, sSm, rSm));
         [-1, 1].forEach((s) => {
-          const tuft = new THREE.Mesh(tuftGeo, capMat);
-          tuft.position.set(s * 0.31, 0.35, -0.32);
-          tuft.rotation.z = -s * 0.38;
-          capPivot.add(tuft);
+          capParts.push(bakeGeometryPart(tuftGeo, s * 0.31, 0.35, -0.32, 0, 0, -s * 0.38));
         });
-        const crownDot = new THREE.Mesh(crownDotGeo, cheekMat);
-        crownDot.scale.set(1.2, 0.55, 1.2);
-        crownDot.position.set(0, 0.35, -0.32);
-        capPivot.add(crownDot);
+        addExtra(`char_cheek_${def.id}`, bakeGeometryPart(crownDotGeo, 0, 0.35, -0.32, 0, 0, 0, 1.2, 0.55, 1.2));
         break;
       }
       case 'bowPuppy': {
-        const earGeo = this.getSharedGeometry('topper_sphere_0.14_12_10', () => new THREE.SphereGeometry(0.14, 12, 10));
-        const bowLoopGeo = this.getSharedGeometry('topper_sphere_0.08_10_10', () => new THREE.SphereGeometry(0.08, 10, 10));
-        const bowKnotGeo = this.getSharedGeometry('topper_sphere_0.055_10_10', () => new THREE.SphereGeometry(0.055, 10, 10));
+        const earGeo = this.getSharedGeometry('topper_sphere_0.14', () => new THREE.SphereGeometry(0.14, sMed, rMed));
+        const bowLoopGeo = this.getSharedGeometry('topper_sphere_0.08', () => new THREE.SphereGeometry(0.08, sSm, rSm));
+        const bowKnotGeo = this.getSharedGeometry('topper_sphere_0.055', () => new THREE.SphereGeometry(0.055, sSm, rSm));
         [-1, 1].forEach((s) => {
-          const ear = new THREE.Mesh(earGeo, capMat);
-          ear.scale.set(1.1, 0.7, 0.85);
-          ear.position.set(s * 0.35, 0.30, -0.33);
-          capPivot.add(ear);
-          const bowLoop = new THREE.Mesh(bowLoopGeo, whiteGlossMat);
-          bowLoop.scale.set(1.3, 0.65, 0.8);
-          bowLoop.position.set(s * 0.09, 0.32, 0.33);
-          capPivot.add(bowLoop);
+          capParts.push(bakeGeometryPart(earGeo, s * 0.35, 0.30, -0.33, 0, 0, 0, 1.1, 0.7, 0.85));
+          addExtra('white_gloss', bakeGeometryPart(bowLoopGeo, s * 0.09, 0.32, 0.33, 0, 0, 0, 1.3, 0.65, 0.8));
         });
-        const bowKnot = new THREE.Mesh(bowKnotGeo, whiteGlossMat);
-        bowKnot.position.set(0, 0.33, 0.33);
-        capPivot.add(bowKnot);
+        addExtra('white_gloss', bakeGeometryPart(bowKnotGeo, 0, 0.33, 0.33));
         break;
       }
       case 'lambCurls': {
-        const puffGeo = this.getSharedGeometry('topper_sphere_0.115_12_10', () => new THREE.SphereGeometry(0.115, 12, 10));
+        const puffGeo = this.getSharedGeometry('topper_sphere_0.115', () => new THREE.SphereGeometry(0.115, sMed, rMed));
         [-1, 1].forEach((s) => {
           [-0.22, 0.0, 0.22].forEach((zOff, idx) => {
-            const puff = new THREE.Mesh(puffGeo, capMat);
-            puff.position.set(s * 0.44, 0.14 + (idx === 1 ? 0.03 : 0), zOff);
-            capPivot.add(puff);
+            capParts.push(bakeGeometryPart(puffGeo, s * 0.44, 0.14 + (idx === 1 ? 0.03 : 0), zOff));
           });
         });
         break;
       }
       case 'kittyBlossom': {
-        const earGeo = this.getSharedGeometry('topper_cone_0.145_0.26_4', () => new THREE.ConeGeometry(0.145, 0.26, 4));
-        const innerGeo = this.getSharedGeometry('topper_cone_0.08_0.16_4', () => new THREE.ConeGeometry(0.08, 0.16, 4));
+        const earGeo = this.getSharedGeometry('topper_cone_0.145_0.26', () => new THREE.ConeGeometry(0.145, 0.26, 4));
+        const innerGeo = this.getSharedGeometry('topper_cone_0.08_0.16', () => new THREE.ConeGeometry(0.08, 0.16, 4));
         [-1, 1].forEach((s) => {
-          const ear = new THREE.Mesh(earGeo, capMat);
-          ear.position.set(s * 0.29, 0.36, -0.30);
-          ear.rotation.z = -s * 0.24;
-          ear.rotation.y = Math.PI / 4;
-          capPivot.add(ear);
-          const inner = new THREE.Mesh(innerGeo, accentMat);
-          inner.position.set(s * 0.29, 0.35, -0.26);
-          inner.rotation.z = -s * 0.24;
-          inner.rotation.y = Math.PI / 4;
-          capPivot.add(inner);
+          capParts.push(bakeGeometryPart(earGeo, s * 0.29, 0.36, -0.30, 0, Math.PI / 4, -s * 0.24));
+          addExtra(`char_accent_${def.id}`, bakeGeometryPart(innerGeo, s * 0.29, 0.35, -0.26, 0, Math.PI / 4, -s * 0.24));
         });
         break;
       }
       case 'glassesSprout': {
-        const earGeo = this.getSharedGeometry('topper_sphere_0.125_12_10', () => new THREE.SphereGeometry(0.125, 12, 10));
-        const leafGeo = this.getSharedGeometry('topper_sphere_0.075_10_8', () => new THREE.SphereGeometry(0.075, 10, 8));
+        const earGeo = this.getSharedGeometry('topper_sphere_0.125', () => new THREE.SphereGeometry(0.125, sMed, rMed));
+        const leafGeo = this.getSharedGeometry('topper_sphere_0.075_leaf', () => new THREE.SphereGeometry(0.075, sSm, rSm));
         [-1, 1].forEach((s) => {
-          const ear = new THREE.Mesh(earGeo, capMat);
-          ear.position.set(s * 0.33, 0.31, -0.32);
-          capPivot.add(ear);
-          const leaf = new THREE.Mesh(leafGeo, accentMat);
-          leaf.scale.set(1.4, 0.5, 0.75);
-          leaf.position.set(s * 0.08, 0.37, -0.30);
-          leaf.rotation.z = -s * 0.35;
-          capPivot.add(leaf);
+          capParts.push(bakeGeometryPart(earGeo, s * 0.33, 0.31, -0.32));
+          addExtra(`char_accent_${def.id}`, bakeGeometryPart(leafGeo, s * 0.08, 0.37, -0.30, 0, 0, -s * 0.35, 1.4, 0.5, 0.75));
         });
         break;
       }
       case 'octoSwirls': {
-        const nubGeo = this.getSharedGeometry('topper_sphere_0.115_12_10', () => new THREE.SphereGeometry(0.115, 12, 10));
-        const pearlGeo = this.getSharedGeometry('topper_sphere_0.075_12_10', () => new THREE.SphereGeometry(0.075, 12, 10));
+        const nubGeo = this.getSharedGeometry('topper_sphere_0.115', () => new THREE.SphereGeometry(0.115, sMed, rMed));
+        const pearlGeo = this.getSharedGeometry('topper_sphere_0.075', () => new THREE.SphereGeometry(0.075, sSm, rSm));
         [-1, 1].forEach((s) => {
-          const nub = new THREE.Mesh(nubGeo, capMat);
-          nub.scale.set(1.15, 0.75, 1.15);
-          nub.position.set(s * 0.39, 0.12, 0.34);
-          capPivot.add(nub);
+          capParts.push(bakeGeometryPart(nubGeo, s * 0.39, 0.12, 0.34, 0, 0, 0, 1.15, 0.75, 1.15));
         });
-        const pearl = new THREE.Mesh(pearlGeo, accentMat);
-        pearl.scale.set(1.1, 0.65, 1.1);
-        pearl.position.set(0, 0.36, -0.27);
-        capPivot.add(pearl);
+        addExtra(`char_accent_${def.id}`, bakeGeometryPart(pearlGeo, 0, 0.36, -0.27, 0, 0, 0, 1.1, 0.65, 1.1));
         break;
       }
       case 'spikyTufts': {
-        const spikeGeo = this.getSharedGeometry('topper_cone_0.12_0.25_6', () => new THREE.ConeGeometry(0.12, 0.25, 6));
-        const gemGeo = this.getSharedGeometry('topper_octa_0.075_0', () => new THREE.OctahedronGeometry(0.075, 0));
+        const spikeGeo = this.getSharedGeometry('topper_cone_0.12_0.25', () => new THREE.ConeGeometry(0.12, 0.25, 6));
+        const gemGeo = this.getSharedGeometry('topper_octa_0.075', () => new THREE.OctahedronGeometry(0.075, 0));
         [-1, 1].forEach((s) => {
-          const spike = new THREE.Mesh(spikeGeo, capMat);
-          spike.position.set(s * 0.30, 0.36, -0.30);
-          spike.rotation.z = -s * 0.32;
-          capPivot.add(spike);
+          capParts.push(bakeGeometryPart(spikeGeo, s * 0.30, 0.36, -0.30, 0, 0, -s * 0.32));
         });
-        const starGem = new THREE.Mesh(gemGeo, goldGlossMat);
-        starGem.scale.set(1, 0.6, 1);
-        starGem.position.set(0, 0.36, -0.29);
-        capPivot.add(starGem);
+        addExtra('gold_gloss', bakeGeometryPart(gemGeo, 0, 0.36, -0.29, 0, 0, 0, 1, 0.6, 1));
         break;
       }
       case 'hoodCub': {
-        const earGeo = this.getSharedGeometry('topper_sphere_0.13_12_10', () => new THREE.SphereGeometry(0.13, 12, 10));
-        [-1, 1].forEach((s) => {
-          const ear = new THREE.Mesh(earGeo, s > 0 ? accentMat : capMat);
-          ear.position.set(s * 0.32, 0.32, -0.32);
-          capPivot.add(ear);
-        });
+        const earGeo = this.getSharedGeometry('topper_sphere_0.13', () => new THREE.SphereGeometry(0.13, sMed, rMed));
+        capParts.push(bakeGeometryPart(earGeo, -0.32, 0.32, -0.32));
+        addExtra(`char_accent_${def.id}`, bakeGeometryPart(earGeo, 0.32, 0.32, -0.32));
         break;
       }
       case 'bunnyLeaf': {
-        const earGeo = this.getSharedGeometry('topper_capsule_0.078_0.22_6_10', () => new THREE.CapsuleGeometry(0.078, 0.22, 6, 10));
-        const leafGeo = this.getSharedGeometry('topper_cone_0.10_0.14_5', () => new THREE.ConeGeometry(0.10, 0.14, 5));
+        const earGeo = this.getSharedGeometry('topper_capsule_0.078', () => new THREE.CapsuleGeometry(0.078, 0.22, PERF_PROFILE.isMobile ? 4 : 6, PERF_PROFILE.isMobile ? 7 : 10));
+        const leafGeo = this.getSharedGeometry('topper_cone_0.10_0.14', () => new THREE.ConeGeometry(0.10, 0.14, 5));
         [-1, 1].forEach((s) => {
-          const ear = new THREE.Mesh(earGeo, capMat);
-          ear.position.set(s * 0.22, 0.42, -0.30);
-          ear.rotation.z = -s * 0.2;
-          ear.rotation.x = -0.22;
-          capPivot.add(ear);
+          capParts.push(bakeGeometryPart(earGeo, s * 0.22, 0.42, -0.30, -0.22, 0, -s * 0.2));
         });
-        const berryLeaf = new THREE.Mesh(leafGeo, accentMat);
-        berryLeaf.position.set(0, 0.37, -0.30);
-        capPivot.add(berryLeaf);
+        addExtra(`char_accent_${def.id}`, bakeGeometryPart(leafGeo, 0, 0.37, -0.30));
         break;
       }
       case 'chickTuft': {
-        const tuftGeo = this.getSharedGeometry('topper_sphere_0.095_10_10', () => new THREE.SphereGeometry(0.095, 10, 10));
-        const wingGeo = this.getSharedGeometry('topper_sphere_0.11_10_8', () => new THREE.SphereGeometry(0.11, 10, 8));
-        const tuft = new THREE.Mesh(tuftGeo, capMat);
-        tuft.scale.set(0.85, 1.35, 0.85);
-        tuft.position.set(0, 0.38, -0.28);
-        capPivot.add(tuft);
+        const tuftGeo = this.getSharedGeometry('topper_sphere_0.095', () => new THREE.SphereGeometry(0.095, sSm, rSm));
+        const wingGeo = this.getSharedGeometry('topper_sphere_0.11', () => new THREE.SphereGeometry(0.11, sSm, rSm));
+        capParts.push(bakeGeometryPart(tuftGeo, 0, 0.38, -0.28, 0, 0, 0, 0.85, 1.35, 0.85));
         [-1, 1].forEach((s) => {
-          const wing = new THREE.Mesh(wingGeo, capMat);
-          wing.scale.set(0.7, 0.65, 1.35);
-          wing.position.set(s * 0.44, 0.14, 0.04);
-          capPivot.add(wing);
+          capParts.push(bakeGeometryPart(wingGeo, s * 0.44, 0.14, 0.04, 0, 0, 0, 0.7, 0.65, 1.35));
         });
         break;
       }
       case 'unicornHorn': {
-        const hornGeo = this.getSharedGeometry('topper_cone_0.09_0.34_12', () => new THREE.ConeGeometry(0.09, 0.34, 12));
-        const earGeo = this.getSharedGeometry('topper_cone_0.10_0.20_6', () => new THREE.ConeGeometry(0.10, 0.20, 6));
-        const horn = new THREE.Mesh(hornGeo, goldGlossMat);
-        horn.position.set(0, 0.44, -0.28);
-        horn.rotation.x = 0.22;
-        capPivot.add(horn);
+        const hornGeo = this.getSharedGeometry('topper_cone_0.09_0.34', () => new THREE.ConeGeometry(0.09, 0.34, PERF_PROFILE.isMobile ? 8 : 12));
+        const earGeo = this.getSharedGeometry('topper_cone_0.10_0.20', () => new THREE.ConeGeometry(0.10, 0.20, 6));
+        addExtra('gold_gloss', bakeGeometryPart(hornGeo, 0, 0.44, -0.28, 0.22, 0, 0));
         [-1, 1].forEach((s) => {
-          const ear = new THREE.Mesh(earGeo, capMat);
-          ear.position.set(s * 0.30, 0.34, -0.31);
-          ear.rotation.z = -s * 0.34;
-          capPivot.add(ear);
+          capParts.push(bakeGeometryPart(earGeo, s * 0.30, 0.34, -0.31, 0, 0, -s * 0.34));
         });
         break;
       }
       case 'axolotlGills': {
-        const gillGeo = this.getSharedGeometry('topper_capsule_0.048_0.12_6_8', () => new THREE.CapsuleGeometry(0.048, 0.12, 6, 8));
+        const gillGeo = this.getSharedGeometry('topper_capsule_0.048', () => new THREE.CapsuleGeometry(0.048, 0.12, PERF_PROFILE.isMobile ? 4 : 6, PERF_PROFILE.isMobile ? 6 : 8));
         [-1, 1].forEach((s) => {
           [-0.14, 0.04, 0.20].forEach((zOff, i) => {
-            const gill = new THREE.Mesh(gillGeo, accentMat);
-            gill.position.set(s * 0.46, 0.18 + (i === 1 ? 0.04 : 0), zOff - 0.04);
-            gill.rotation.z = s * 1.15;
-            capPivot.add(gill);
+            addExtra(`char_accent_${def.id}`, bakeGeometryPart(gillGeo, s * 0.46, 0.18 + (i === 1 ? 0.04 : 0), zOff - 0.04, 0, 0, s * 1.15));
           });
         });
         break;
       }
       case 'teddyCrown':
       default: {
-        const earGeo = this.getSharedGeometry('topper_sphere_0.135_12_10', () => new THREE.SphereGeometry(0.135, 12, 10));
-        const crownGeo = this.getSharedGeometry('topper_cyl_0.14_0.10_0.15_6', () => new THREE.CylinderGeometry(0.14, 0.10, 0.15, 6));
+        const earGeo = this.getSharedGeometry('topper_sphere_0.135', () => new THREE.SphereGeometry(0.135, sMed, rMed));
+        const crownGeo = this.getSharedGeometry('topper_cyl_0.14', () => new THREE.CylinderGeometry(0.14, 0.10, 0.15, 6));
         [-1, 1].forEach((s) => {
-          const ear = new THREE.Mesh(earGeo, capMat);
-          ear.position.set(s * 0.32, 0.32, -0.31);
-          capPivot.add(ear);
+          capParts.push(bakeGeometryPart(earGeo, s * 0.32, 0.32, -0.31));
         });
-        const crown = new THREE.Mesh(crownGeo, goldGlossMat);
-        crown.position.set(0, 0.38, -0.29);
-        capPivot.add(crown);
+        addExtra('gold_gloss', bakeGeometryPart(crownGeo, 0, 0.38, -0.29));
         break;
       }
     }
+
+    const bodyGeo = this.getSharedGeometry(`merged_keycap_body_${def.id}`, () => mergeBakedGeometries(capParts, `merged_keycap_body_${def.id}`));
+    const extras = [];
+    for (const [matKey, parts] of extraByMatKey.entries()) {
+      const mergedExtra = this.getSharedGeometry(`merged_topper_${def.id}_${matKey}`, () => mergeBakedGeometries(parts, `merged_topper_${def.id}_${matKey}`));
+      extras.push({ matKey, geo: mergedExtra });
+    }
+    return { bodyGeo, extras };
   }
 
   initEnvironmentPools() {
@@ -1639,47 +1844,36 @@ export class ClickerGameObjectPool {
           this.sharedMaterials.get('desk_mat')
         );
         mesh.name = 'PooledPastelDeskMat';
-        mesh.receiveShadow = true;
+        mesh.receiveShadow = PERF_PROFILE.useShadows;
         return mesh;
       }
     });
     this.environmentPools.set('desk_mat', deskMatPool);
 
-    // 3. Floating Pastel Clouds Pool (8 pre-allocated cloud assemblies using shared puff geometries!)
+    // 3. Floating Pastel Clouds Pool (1 merged mesh per cloud — 4x fewer draw calls!)
     const cloudMat = this.sharedMaterials.get('cloud_pastel');
-    const puffSpecs = [
-      [-0.8, 0, 0, 'cloud_puff_0.72'],
-      [0, 0.22, 0, 'cloud_puff_0.95'],
-      [0.85, 0.02, 0, 'cloud_puff_0.70'],
-      [0.25, -0.1, 0.35, 'cloud_puff_0.65']
-    ];
+    const cloudMergedGeo = this.sharedGeometries.get('cloud_merged');
     const cloudPool = new ClickerProceduralAssetPool(this.environmentGroup, 'pastel_cloud', {
       poolName: PROCEDURAL_ENVIRONMENT_POOL_NAMES.pastel_cloud,
       poolCategory: 'procedural_environment',
-      initialSize: 8,
+      initialSize: PERF_PROFILE.cloudCount,
       sharedTextures: this.sharedTextures,
       createAssetFn: () => {
-        const cg = new THREE.Group();
-        cg.name = 'PooledPastelCloud';
-        for (let p = 0; p < puffSpecs.length; p++) {
-          const [x, y, z, geoKey] = puffSpecs[p];
-          const puff = new THREE.Mesh(this.sharedGeometries.get(geoKey), cloudMat);
-          puff.position.set(x, y, z);
-          cg.add(puff);
-        }
-        return cg;
+        const mesh = new THREE.Mesh(cloudMergedGeo, cloudMat);
+        mesh.name = 'PooledPastelCloud';
+        return mesh;
       }
     });
     this.environmentPools.set('pastel_cloud', cloudPool);
 
-    // 4. Floating Pastel 4-Point Sparkle Starfield Pool
+    // 4. Floating Pastel 4-Point Sparkle Starfield Pool (100% GPU-animated — zero CPU vertex uploads!)
     const ambientStarsPool = new ClickerProceduralAssetPool(this.environmentGroup, 'ambient_stars', {
       poolName: PROCEDURAL_ENVIRONMENT_POOL_NAMES.ambient_stars,
       poolCategory: 'procedural_environment',
       initialSize: 1,
       sharedTextures: this.sharedTextures,
       createAssetFn: () => {
-        const ambientStarCount = 90;
+        const ambientStarCount = PERF_PROFILE.ambientStars;
         const starPos = new Float32Array(ambientStarCount * 3);
         const starSeed = new Float32Array(ambientStarCount);
         for (let i = 0; i < ambientStarCount; i++) {
@@ -1692,10 +1886,46 @@ export class ClickerGameObjectPool {
         }
         const starGeo = new THREE.BufferGeometry();
         starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
-        const points = new THREE.Points(starGeo, this.sharedMaterials.get('ambient_stars'));
+        starGeo.setAttribute('aSeed', new THREE.BufferAttribute(starSeed, 1));
+
+        const starUniforms = {
+          uTime: { value: 0 },
+          uPointSize: { value: PERF_PROFILE.isMobile ? 22.0 : 30.0 },
+          uMap: { value: this.sharedTextures.get('sparkle_4pt') }
+        };
+        const starMat = new THREE.ShaderMaterial({
+          transparent: true,
+          depthWrite: false,
+          uniforms: starUniforms,
+          vertexShader: `
+            attribute float aSeed;
+            uniform float uTime;
+            uniform float uPointSize;
+            varying float vAlpha;
+            void main() {
+              vec3 p = position;
+              p.y = 0.2 + mod(p.y - 0.2 + uTime * 0.14, 6.6);
+              p.x += sin(uTime * 0.8 + aSeed) * 0.22;
+              vec4 mv = modelViewMatrix * vec4(p, 1.0);
+              gl_Position = projectionMatrix * mv;
+              gl_PointSize = clamp(uPointSize / max(-mv.z, 1.0) * 5.0, 4.0, 28.0);
+              vAlpha = 0.58 + 0.32 * sin(uTime * 2.1 + aSeed * 2.0);
+            }
+          `,
+          fragmentShader: `
+            uniform sampler2D uMap;
+            varying float vAlpha;
+            void main() {
+              vec4 tex = texture2D(uMap, gl_PointCoord);
+              if (tex.a < 0.04) discard;
+              gl_FragColor = vec4(tex.rgb, tex.a * vAlpha);
+            }
+          `
+        });
+
+        const points = new THREE.Points(starGeo, starMat);
         points.name = 'PooledAmbientSparkles';
-        points.userData.starGeo = starGeo;
-        points.userData.starSeed = starSeed;
+        points.userData.starUniforms = starUniforms;
         points.userData.ambientStarCount = ambientStarCount;
         return points;
       }
@@ -1708,20 +1938,13 @@ export class ClickerGameObjectPool {
     const pinkSiliconeLipMat = this.sharedMaterials.get('pink_silicone_lip');
     const pinkSiliconeInnerMat = this.sharedMaterials.get('pink_silicone_inner');
     const pinkSiliconeEmbossMat = this.sharedMaterials.get('pink_silicone_emboss');
+    const rowDotInstancedMat = this.sharedMaterials.get('row_dot_instanced');
+    const charmBeadInstancedMat = this.sharedMaterials.get('charm_bead_instanced');
     const goldGlossMat = this.sharedMaterials.get('gold_gloss');
     const bigHeartCharmMat = this.sharedMaterials.get('big_heart_charm');
-    const miniHeartGeo = this.sharedGeometries.get('case_mini_heart');
     const miniBeadGeo = this.sharedGeometries.get('case_mini_bead');
     const charmBeadGeo = this.sharedGeometries.get('case_charm_bead');
-
     const beadColors = [0xffe066, 0x99e9f2, 0xd8b4fe];
-    const beadMats = beadColors.map((col, idx) =>
-      this.getSharedMaterial(`charm_bead_mat_${idx}`, () => new THREE.MeshPhysicalMaterial({
-        color: col,
-        roughness: 0.2,
-        clearcoat: 0.85
-      }))
-    );
 
     const casePool = new ClickerProceduralAssetPool(this.boardAssembly, 'pink_silicone_case', {
       poolName: PROCEDURAL_CASE_POOL_NAME,
@@ -1734,51 +1957,67 @@ export class ClickerGameObjectPool {
 
         // 1. Thick Rounded Pink Silicone Bottom Tray
         const trayBaseMesh = new THREE.Mesh(this.sharedGeometries.get('case_tray_base'), pinkSiliconeMainMat);
-        trayBaseMesh.castShadow = true;
-        trayBaseMesh.receiveShadow = true;
+        trayBaseMesh.castShadow = PERF_PROFILE.useShadows;
+        trayBaseMesh.receiveShadow = PERF_PROFILE.useShadows;
         siliconeCaseGroup.add(trayBaseMesh);
+
+        // 1b. Mobile Baked Soft Contact Shadow beneath the tray (0 dynamic shadow passes!)
+        if (!PERF_PROFILE.useShadows) {
+          const contactShadow = new THREE.Mesh(
+            this.sharedGeometries.get('case_contact_shadow'),
+            this.sharedMaterials.get('case_contact_shadow')
+          );
+          contactShadow.rotation.x = -Math.PI / 2;
+          contactShadow.position.set(0.18, -0.49, 0.24);
+          siliconeCaseGroup.add(contactShadow);
+        }
 
         // 2. Thick Raised Pillowy Pink Silicone Surrounding Bumper Frame
         const bumperMesh = new THREE.Mesh(this.sharedGeometries.get('case_bumper'), pinkSiliconeLipMat);
-        bumperMesh.castShadow = true;
-        bumperMesh.receiveShadow = true;
+        bumperMesh.castShadow = PERF_PROFILE.useShadows;
+        bumperMesh.receiveShadow = PERF_PROFILE.useShadows;
         siliconeCaseGroup.add(bumperMesh);
 
         // 3. Recessed Berry-Pink Silicone Floor Liner inside the case well
         const wellFloor = new THREE.Mesh(this.sharedGeometries.get('case_well_floor'), pinkSiliconeInnerMat);
         wellFloor.rotation.x = -Math.PI / 2;
         wellFloor.position.y = 0.025;
-        wellFloor.receiveShadow = true;
+        wellFloor.receiveShadow = PERF_PROFILE.useShadows;
         siliconeCaseGroup.add(wellFloor);
 
-        // 4. Molded hearts & beads on top and bottom pink silicone rims
-        [-1.6, 0, 1.6].forEach((hx, idx) => {
-          [-1, 1].forEach((sideZ) => {
-            const hMesh = new THREE.Mesh(idx === 1 ? miniHeartGeo : miniBeadGeo, pinkSiliconeEmbossMat);
-            hMesh.position.set(hx, 0.745, sideZ * (this.innerD * 0.5 + this.wallThickness * 0.52));
-            if (idx !== 1) hMesh.scale.set(1.2, 0.45, 1.2);
-            siliconeCaseGroup.add(hMesh);
-          });
-        });
+        // 4. Merged Molded Hearts & Beads on top and bottom pink silicone rims (1 draw call!)
+        const embossMesh = new THREE.Mesh(this.sharedGeometries.get('case_emboss_merged'), pinkSiliconeEmbossMat);
+        siliconeCaseGroup.add(embossMesh);
 
-        // Molded tiny pastel row-marker silicone dots along the left & right edges (1 per row!)
+        // Instanced pastel row-marker silicone dots along left & right edges (14 dots in 1 draw call!)
+        const rowDotsInstanced = new THREE.InstancedMesh(miniBeadGeo, rowDotInstancedMat, NUM_ROWS * 2);
+        const dummy = new THREE.Object3D();
+        const tmpCol = new THREE.Color();
+        let dotIdx = 0;
         for (let r = 0; r < NUM_ROWS; r++) {
           const rz = (r - (NUM_ROWS - 1) / 2) * KEY_PITCH;
-          const rowDotMat = this.sharedMaterials.get(`row_dot_${r}`);
-          [-1, 1].forEach((sideX) => {
-            const dot = new THREE.Mesh(miniBeadGeo, rowDotMat);
-            dot.scale.set(0.95, 0.42, 0.95);
-            dot.position.set(sideX * (this.innerW * 0.5 + this.wallThickness * 0.52), 0.74, rz);
-            siliconeCaseGroup.add(dot);
-          });
+          tmpCol.setHex(ROW_THEMES[r].housingHex);
+          for (let sideIdx = 0; sideIdx < 2; sideIdx++) {
+            const sideX = sideIdx === 0 ? -1 : 1;
+            dummy.position.set(sideX * (this.innerW * 0.5 + this.wallThickness * 0.52), 0.74, rz);
+            dummy.scale.set(0.95, 0.42, 0.95);
+            dummy.rotation.set(0, 0, 0);
+            dummy.updateMatrix();
+            rowDotsInstanced.setMatrixAt(dotIdx, dummy.matrix);
+            rowDotsInstanced.setColorAt(dotIdx, tmpCol);
+            dotIdx++;
+          }
         }
+        rowDotsInstanced.instanceMatrix.needsUpdate = true;
+        if (rowDotsInstanced.instanceColor) rowDotsInstanced.instanceColor.needsUpdate = true;
+        siliconeCaseGroup.add(rowDotsInstanced);
 
         // 5. Molded Pink Silicone Corner Carry Loop + Swinging 3D Pastel Heart Charm!
         const carryLoop = new THREE.Mesh(this.sharedGeometries.get('case_carry_loop'), pinkSiliconeMainMat);
         carryLoop.position.set(this.outerW * 0.5 - 0.15, 0.28, -this.outerD * 0.5 + 0.15);
         carryLoop.rotation.x = Math.PI / 2;
         carryLoop.rotation.z = -Math.PI * 0.42;
-        carryLoop.castShadow = true;
+        carryLoop.castShadow = PERF_PROFILE.useShadows;
         siliconeCaseGroup.add(carryLoop);
 
         const charmPivot = new THREE.Group();
@@ -1789,17 +2028,25 @@ export class ClickerGameObjectPool {
         charmRing.rotation.y = Math.PI * 0.25;
         charmPivot.add(charmRing);
 
-        beadMats.forEach((bMat, i) => {
-          const bead = new THREE.Mesh(charmBeadGeo, bMat);
-          bead.position.set(0.18 + i * 0.24, -0.04, -0.18 - i * 0.24);
-          bead.castShadow = true;
-          charmPivot.add(bead);
-        });
+        // 3 pastel charm beads batched in 1 InstancedMesh!
+        const charmBeadsInst = new THREE.InstancedMesh(charmBeadGeo, charmBeadInstancedMat, beadColors.length);
+        for (let i = 0; i < beadColors.length; i++) {
+          dummy.position.set(0.18 + i * 0.24, -0.04, -0.18 - i * 0.24);
+          dummy.scale.set(1, 1, 1);
+          dummy.rotation.set(0, 0, 0);
+          dummy.updateMatrix();
+          charmBeadsInst.setMatrixAt(i, dummy.matrix);
+          tmpCol.setHex(beadColors[i]);
+          charmBeadsInst.setColorAt(i, tmpCol);
+        }
+        charmBeadsInst.instanceMatrix.needsUpdate = true;
+        if (charmBeadsInst.instanceColor) charmBeadsInst.instanceColor.needsUpdate = true;
+        charmPivot.add(charmBeadsInst);
 
         const bigHeartCharm = new THREE.Mesh(this.sharedGeometries.get('case_big_heart_charm'), bigHeartCharmMat);
         bigHeartCharm.position.set(0.98, -0.02, -0.98);
         bigHeartCharm.rotation.y = -Math.PI * 0.25;
-        bigHeartCharm.castShadow = true;
+        bigHeartCharm.castShadow = PERF_PROFILE.useShadows;
         charmPivot.add(bigHeartCharm);
 
         siliconeCaseGroup.userData.charmPivot = charmPivot;
@@ -1812,11 +2059,9 @@ export class ClickerGameObjectPool {
 
   initProceduralSwitchPools() {
     const switchBaseGeo = this.sharedGeometries.get('switch_base');
-    const puzzleTabGeo = this.sharedGeometries.get('puzzle_tab');
+    const switchBaseTabbedGeo = this.sharedGeometries.get('switch_base_tabbed');
     const ledGlowPlaneGeo = this.sharedGeometries.get('led_glow_plane');
-    const switchCrystalCollarGeo = this.sharedGeometries.get('switch_crystal_collar');
     const hitBoxGeo = this.sharedGeometries.get('hit_box');
-    const clearCrystalMat = this.sharedMaterials.get('clear_crystal');
     const invisibleHitMat = this.sharedMaterials.get('invisible_hit');
 
     for (let row = 0; row < NUM_ROWS; row++) {
@@ -1833,41 +2078,35 @@ export class ClickerGameObjectPool {
           const unit = new THREE.Group();
           unit.name = `PooledSwitchHousing_Row${row}`;
 
-          const baseMesh = new THREE.Mesh(switchBaseGeo, housingMat);
+          // Single merged switch base + interlocking puzzle tabs (batched via InstancedMesh on mobile!)
+          const baseMesh = new THREE.Mesh(switchBaseTabbedGeo, housingMat);
           baseMesh.position.y = 0.16;
-          baseMesh.castShadow = true;
-          baseMesh.receiveShadow = true;
+          baseMesh.receiveShadow = PERF_PROFILE.useShadows;
+          baseMesh.visible = !PERF_PROFILE.batchStaticSwitches;
           unit.add(baseMesh);
-
-          const tabR = new THREE.Mesh(puzzleTabGeo, housingMat);
-          tabR.position.set(0.51, 0.15, -0.18);
-          unit.add(tabR);
-          const tabR2 = new THREE.Mesh(puzzleTabGeo, housingMat);
-          tabR2.position.set(0.51, 0.15, 0.18);
-          unit.add(tabR2);
 
           // Per-instance LED material so each switch glows independently without reallocating
           const ledMat = new THREE.MeshBasicMaterial({
             color: rowTheme.ledHex,
             transparent: true,
-            opacity: 0.22
+            opacity: 0.22,
+            depthWrite: false
           });
           const ledGlow = new THREE.Mesh(ledGlowPlaneGeo, ledMat);
           ledGlow.rotation.x = -Math.PI / 2;
           ledGlow.position.y = 0.335;
+          ledGlow.visible = !PERF_PROFILE.isMobile;
           unit.add(ledGlow);
-
-          const collar = new THREE.Mesh(switchCrystalCollarGeo, clearCrystalMat);
-          collar.position.y = 0.40;
-          unit.add(collar);
 
           const hitMesh = new THREE.Mesh(hitBoxGeo, invisibleHitMat);
           hitMesh.position.y = 0.68;
           unit.add(hitMesh);
 
           unit.userData.rowThemeIndex = row;
-          unit.userData.tabR = tabR;
-          unit.userData.tabR2 = tabR2;
+          unit.userData.baseMesh = baseMesh;
+          unit.userData.switchBaseGeo = switchBaseGeo;
+          unit.userData.switchBaseTabbedGeo = switchBaseTabbedGeo;
+          unit.userData.ledGlow = ledGlow;
           unit.userData.ledMat = ledMat;
           unit.userData.hitMesh = hitMesh;
           return unit;
@@ -1897,15 +2136,15 @@ export class ClickerGameObjectPool {
       }
     }
 
-    const puffyKeycapGeo = this.sharedGeometries.get('puffy_keycap');
     const domedFaceGeo = this.sharedGeometries.get('domed_face_cap');
-    const stemArmAGeo = this.sharedGeometries.get('stem_arm_a');
-    const stemArmBGeo = this.sharedGeometries.get('stem_arm_b');
+    const stemCrossGeo = this.sharedGeometries.get('stem_cross');
     const defaultStemMat = this.sharedMaterials.get('row_stem_0');
+    const usePhys = PERF_PROFILE.usePhysicalMaterials;
 
     for (const def of CHARACTER_CATALOG) {
       const initialSize = Math.max(2, charDemand.get(def.id) || 2);
       const faceMat = this.sharedMaterials.get(`char_face_${def.id}`);
+      const mergedChar = this.characterMergedGeos.get(def.id);
 
       const charPool = new ClickerProceduralAssetPool(this.clickersContainer, def.id, {
         poolName: PROCEDURAL_KEYCAP_POOL_NAMES[def.id],
@@ -1916,41 +2155,65 @@ export class ClickerGameObjectPool {
           const capPivot = new THREE.Group();
           capPivot.name = `PooledKeycap_${def.id}`;
 
-          // Visible MX Cross-Stem (material swapped to row's shared stemMat on spawn)
-          const stemA = new THREE.Mesh(stemArmAGeo, defaultStemMat);
-          stemA.position.y = -0.30;
-          capPivot.add(stemA);
-          const stemB = new THREE.Mesh(stemArmBGeo, defaultStemMat);
-          stemB.position.y = -0.30;
-          capPivot.add(stemB);
+          // Single merged MX Cross-Stem (hidden on mobile where recessed beneath keycap — saves 35 draw calls!)
+          const stemMesh = new THREE.Mesh(stemCrossGeo, defaultStemMat);
+          stemMesh.position.y = -0.30;
+          stemMesh.visible = !PERF_PROFILE.hideHiddenStems;
+          capPivot.add(stemMesh);
 
-          // Glossy Puffy Cushion Keycap Body (per-instance capMat for independent press/hover glow)
-          const capMat = new THREE.MeshPhysicalMaterial({
-            color: def.hex,
-            roughness: 0.24,
-            metalness: 0.0,
-            clearcoat: 0.72,
-            clearcoatRoughness: 0.18,
-            envMapIntensity: 0.62,
-            emissive: new THREE.Color(def.hex),
-            emissiveIntensity: 0.02
-          });
-          const capMesh = new THREE.Mesh(puffyKeycapGeo, capMat);
-          capMesh.castShadow = true;
-          capMesh.receiveShadow = true;
+          // Glossy Puffy Cushion Keycap Body + cap-colored 3D toppers merged into 1 single mesh!
+          const capMat = usePhys
+            ? new THREE.MeshPhysicalMaterial({
+              color: def.hex,
+              roughness: 0.24,
+              metalness: 0.0,
+              clearcoat: 0.72,
+              clearcoatRoughness: 0.18,
+              envMapIntensity: 0.62,
+              emissive: new THREE.Color(def.hex),
+              emissiveIntensity: 0.02
+            })
+            : (PERF_PROFILE.useLightweightShaders
+              ? new THREE.MeshPhongMaterial({
+                color: def.hex,
+                specular: 0x72607a,
+                shininess: 64,
+                emissive: new THREE.Color(def.hex),
+                emissiveIntensity: 0.05
+              })
+              : new THREE.MeshStandardMaterial({
+                color: def.hex,
+                roughness: 0.20,
+                metalness: 0.04,
+                envMapIntensity: 0.85,
+                emissive: new THREE.Color(def.hex),
+                emissiveIntensity: 0.03
+              }));
+
+          const capMesh = new THREE.Mesh(mergedChar.bodyGeo, capMat);
+          capMesh.castShadow = PERF_PROFILE.useShadows;
+          capMesh.receiveShadow = PERF_PROFILE.useShadows;
           capPivot.add(capMesh);
 
           // Domed Glossy Kawaii Cartoon Face using shared faceMat & deduplicated CanvasTexture
           const faceCap = new THREE.Mesh(domedFaceGeo, faceMat);
           capPivot.add(faceCap);
 
-          // Sculpted 3D Character Topper using shared geometries & accent/cheek materials
-          this.buildCharacter3DTopper(capPivot, def, capMat);
+          // Merged accent/gold/white/cheek 3D topper mesh(es) — at most 1 extra draw call!
+          for (let e = 0; e < mergedChar.extras.length; e++) {
+            const ex = mergedChar.extras[e];
+            const extraMat = this.sharedMaterials.get(ex.matKey);
+            if (extraMat && ex.geo) {
+              const extraMesh = new THREE.Mesh(ex.geo, extraMat);
+              capPivot.add(extraMesh);
+            }
+          }
 
           capPivot.userData.characterId = def.id;
           capPivot.userData.capMat = capMat;
-          capPivot.userData.stemA = stemA;
-          capPivot.userData.stemB = stemB;
+          capPivot.userData.stemMesh = stemMesh;
+          capPivot.userData.stemA = stemMesh;
+          capPivot.userData.stemB = null;
           return capPivot;
         },
         resetAssetFn: (capPivot) => {
@@ -1969,28 +2232,23 @@ export class ClickerGameObjectPool {
   initProceduralParticlePools() {
     const particleHeartGeo = this.sharedGeometries.get('particle_heart');
     const particleStarGeo = this.sharedGeometries.get('particle_star');
+    const defaultParticleMat = this.sharedMaterials.get(`particle_mat_${PARTICLE_PALETTE[0]}`);
 
     const createParticleFactory = (geo, kind) => () => {
-      const mat = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 1.0
-      });
-      const mesh = new THREE.Mesh(geo, mat);
+      const mesh = new THREE.Mesh(geo, defaultParticleMat);
       mesh.name = `PooledParticle_${kind}`;
       mesh.userData.particleKind = kind;
-      mesh.userData.mat = mat;
       mesh.userData.vel = new THREE.Vector3();
       mesh.userData.spin = new THREE.Vector3();
       mesh.userData.age = 0;
-      mesh.userData.maxAge = 0.75;
+      mesh.userData.maxAge = 0.72;
+      mesh.userData.baseScale = 1.0;
       return mesh;
     };
 
     const resetParticle = (mesh) => {
       if (mesh.userData) {
         mesh.userData.age = 0;
-        if (mesh.userData.mat) mesh.userData.mat.opacity = 1.0;
         if (mesh.userData.vel) mesh.userData.vel.set(0, 0, 0);
         if (mesh.userData.spin) mesh.userData.spin.set(0, 0, 0);
       }
@@ -1999,7 +2257,7 @@ export class ClickerGameObjectPool {
     const heartPool = new ClickerProceduralAssetPool(this.scene, 'heart', {
       poolName: PROCEDURAL_PARTICLE_POOL_NAMES.heart,
       poolCategory: 'procedural_particle',
-      initialSize: 96,
+      initialSize: PERF_PROFILE.particlePoolSize,
       sharedTextures: this.sharedTextures,
       createAssetFn: createParticleFactory(particleHeartGeo, 'heart'),
       resetAssetFn: resetParticle
@@ -2008,7 +2266,7 @@ export class ClickerGameObjectPool {
     const starPool = new ClickerProceduralAssetPool(this.scene, 'star', {
       poolName: PROCEDURAL_PARTICLE_POOL_NAMES.star,
       poolCategory: 'procedural_particle',
-      initialSize: 96,
+      initialSize: PERF_PROFILE.particlePoolSize,
       sharedTextures: this.sharedTextures,
       createAssetFn: createParticleFactory(particleStarGeo, 'star'),
       resetAssetFn: resetParticle
@@ -2073,10 +2331,11 @@ export class ClickerGameObjectPool {
     const pool = this.proceduralSwitchPools.get(row);
     if (!pool) return null;
     const unit = pool.spawn(position, null, 1.0, this.clickersContainer);
-    if (unit && unit.userData) {
+    if (unit && unit.userData && unit.userData.baseMesh) {
       const showTabs = col < NUM_COLS - 1;
-      if (unit.userData.tabR) unit.userData.tabR.visible = showTabs;
-      if (unit.userData.tabR2) unit.userData.tabR2.visible = showTabs;
+      unit.userData.baseMesh.geometry = showTabs
+        ? unit.userData.switchBaseTabbedGeo
+        : unit.userData.switchBaseGeo;
     }
     return unit;
   }
@@ -2088,8 +2347,7 @@ export class ClickerGameObjectPool {
     if (capPivot && capPivot.userData) {
       const rowStemMat = this.sharedMaterials.get(`row_stem_${row}`);
       if (rowStemMat) {
-        if (capPivot.userData.stemA) capPivot.userData.stemA.material = rowStemMat;
-        if (capPivot.userData.stemB) capPivot.userData.stemB.material = rowStemMat;
+        if (capPivot.userData.stemMesh) capPivot.userData.stemMesh.material = rowStemMat;
       }
     }
     return capPivot;
@@ -2100,9 +2358,11 @@ export class ClickerGameObjectPool {
     const pool = this.proceduralParticlePools.get(resolvedKind);
     if (!pool) return null;
     const mesh = pool.spawn(origin, null, scale, this.scene);
-    if (mesh && mesh.userData && mesh.userData.mat) {
-      mesh.userData.mat.color.setHex(colorHex);
-      mesh.userData.mat.opacity = 1.0;
+    if (mesh) {
+      const sharedMat = this.sharedMaterials.get(`particle_mat_${colorHex}`) ||
+        this.getSharedMaterial(`particle_mat_${colorHex}`, () => new THREE.MeshBasicMaterial({ color: colorHex }));
+      mesh.material = sharedMat;
+      mesh.userData.baseScale = scale;
     }
     return mesh;
   }
@@ -2250,6 +2510,10 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
     waveActiveCount: 0
   };
 
+  let statsSaveTimer = null;
+  let statsDirty = false;
+  let lastPopAt = 0;
+
   function loadStats() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -2261,18 +2525,43 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
     } catch (_) {}
   }
 
-  function saveStats() {
+  function flushStatsNow() {
+    if (!statsDirty) return;
+    statsDirty = false;
+    if (statsSaveTimer !== null) {
+      clearTimeout(statsSaveTimer);
+      statsSaveTimer = null;
+    }
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({ totalClicks: state.totalClicks }));
     } catch (_) {}
   }
 
+  function saveStats() {
+    statsDirty = true;
+    if (statsSaveTimer !== null) return;
+    statsSaveTimer = setTimeout(flushStatsNow, 450);
+  }
+
   function syncHud(pop = false) {
     if (statClicksEl) statClicksEl.textContent = state.totalClicks.toLocaleString('en-US');
     if (pop && clicksPill) {
-      clicksPill.classList.remove('is-pop');
-      void clicksPill.offsetWidth;
-      clicksPill.classList.add('is-pop');
+      const now = performance.now();
+      if (now - lastPopAt < 110) return;
+      lastPopAt = now;
+      if (typeof clicksPill.animate === 'function') {
+        clicksPill.animate(
+          [
+            { transform: 'scale(1)' },
+            { transform: 'scale(1.16)', offset: 0.45 },
+            { transform: 'scale(1)' }
+          ],
+          { duration: 240, easing: 'cubic-bezier(0.22, 1.6, 0.36, 1)' }
+        );
+      } else {
+        clicksPill.classList.remove('is-pop');
+        requestAnimationFrame(() => clicksPill.classList.add('is-pop'));
+      }
     }
   }
 
@@ -2280,15 +2569,17 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   syncHud(false);
 
   // ---------------------------------------------------------------------------
-  // WebGL / Three.js + WebXR Renderer Setup
+  // WebGL / Three.js + WebXR Renderer Setup (Mobile-Adaptive + Dynamic Resolution)
   // ---------------------------------------------------------------------------
+  const hasWebXR = typeof navigator !== 'undefined' && 'xr' in navigator;
   let renderer = null;
   try {
     renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
-      alpha: true,
-      powerPreference: 'high-performance'
+      alpha: hasWebXR,
+      powerPreference: 'high-performance',
+      stencil: false
     });
     state.webglReady = true;
   } catch (err) {
@@ -2296,13 +2587,17 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
     return;
   }
 
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  const nativeDpr = window.devicePixelRatio || 1;
+  let currentDpr = Math.min(nativeDpr, PERF_PROFILE.maxDpr);
+  renderer.setPixelRatio(currentDpr);
   renderer.setSize(window.innerWidth, window.innerHeight, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.94;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMappingExposure = 0.96;
+  renderer.shadowMap.enabled = PERF_PROFILE.useShadows;
+  if (PERF_PROFILE.useShadows) {
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+  }
   renderer.xr.enabled = true;
   renderer.xr.setReferenceSpaceType('local-floor');
 
@@ -2326,30 +2621,34 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   controls.maxPolarAngle = Math.PI * 0.47;
   controls.target.set(0, 0.2, 0.1);
 
-  // Balanced Toy-Studio Lighting (crisp depth, vivid candy colors & velvety hot-pink silicone!)
-  const hemiLight = new THREE.HemisphereLight(0xfff5fb, 0x8b6bb8, 0.68);
+  // Balanced Toy-Studio Lighting (2 directional lights on mobile to cut per-pixel shader math!)
+  const hemiLight = new THREE.HemisphereLight(0xfff5fb, 0x8b6bb8, PERF_PROFILE.isMobile ? 0.82 : 0.68);
   scene.add(hemiLight);
 
-  const keyLight = new THREE.DirectionalLight(0xfffaf2, 1.25);
+  const keyLight = new THREE.DirectionalLight(0xfffaf2, PERF_PROFILE.isMobile ? 1.32 : 1.25);
   keyLight.position.set(6.0, 14.0, 7.5);
-  keyLight.castShadow = true;
-  keyLight.shadow.mapSize.set(2048, 2048);
-  keyLight.shadow.camera.near = 2;
-  keyLight.shadow.camera.far = 32;
-  keyLight.shadow.camera.left = -8.5;
-  keyLight.shadow.camera.right = 8.5;
-  keyLight.shadow.camera.top = 9.5;
-  keyLight.shadow.camera.bottom = -9.5;
-  keyLight.shadow.bias = -0.0005;
+  if (PERF_PROFILE.useShadows) {
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(PERF_PROFILE.shadowMapSize, PERF_PROFILE.shadowMapSize);
+    keyLight.shadow.camera.near = 2;
+    keyLight.shadow.camera.far = 32;
+    keyLight.shadow.camera.left = -8.5;
+    keyLight.shadow.camera.right = 8.5;
+    keyLight.shadow.camera.top = 9.5;
+    keyLight.shadow.camera.bottom = -9.5;
+    keyLight.shadow.bias = -0.0005;
+  }
   scene.add(keyLight);
 
-  const pinkFill = new THREE.DirectionalLight(0xff80c8, 0.36);
+  const pinkFill = new THREE.DirectionalLight(0xff88cc, PERF_PROFILE.isMobile ? 0.44 : 0.36);
   pinkFill.position.set(-7.5, 6.5, 4.0);
   scene.add(pinkFill);
 
-  const aquaRim = new THREE.DirectionalLight(0x7dd3fc, 0.38);
-  aquaRim.position.set(7.0, 5.5, -6.5);
-  scene.add(aquaRim);
+  if (!PERF_PROFILE.isMobile) {
+    const aquaRim = new THREE.DirectionalLight(0x7dd3fc, 0.38);
+    aquaRim.position.set(7.0, 5.5, -6.5);
+    scene.add(aquaRim);
+  }
 
   // Scene hierarchy groups
   const environmentGroup = new THREE.Group();
@@ -2387,14 +2686,16 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   // Spawn Dreamy Pastel Room Environment from Dedicated Environment Pools
   // ---------------------------------------------------------------------------
   const skyDome = graphicsPool.spawnEnvironmentAsset('sky_dome');
+  if (skyDome) skyDome.renderOrder = 2;
   const skyUniforms = (skyDome && skyDome.userData.skyUniforms) || { uTime: { value: 0 } };
 
   const deskQuat = new THREE.Quaternion().setFromEuler(new THREE.Euler(-Math.PI / 2, 0, 0));
-  graphicsPool.spawnEnvironmentAsset('desk_mat', { x: 0, y: -0.58, z: 0 }, deskQuat, 1.0);
+  const deskMatMesh = graphicsPool.spawnEnvironmentAsset('desk_mat', { x: 0, y: -0.58, z: 0 }, deskQuat, 1.0);
+  if (deskMatMesh) deskMatMesh.renderOrder = -1;
 
   const clouds = [];
-  for (let i = 0; i < 8; i++) {
-    const ang = (i / 8) * Math.PI * 2;
+  for (let i = 0; i < PERF_PROFILE.cloudCount; i++) {
+    const ang = (i / PERF_PROFILE.cloudCount) * Math.PI * 2;
     const rad = 19.5 + (i % 2) * 3.0;
     const baseY = 3.6 + (i % 3) * 1.5;
     const scale = 1.0 + (i % 3) * 0.25;
@@ -2410,9 +2711,7 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   }
 
   const starPoints = graphicsPool.spawnEnvironmentAsset('ambient_stars');
-  const starGeo = starPoints ? starPoints.userData.starGeo : null;
-  const starSeed = starPoints ? starPoints.userData.starSeed : null;
-  const ambientStarCount = starPoints ? starPoints.userData.ambientStarCount : 0;
+  const starUniforms = (starPoints && starPoints.userData.starUniforms) || null;
 
   // ---------------------------------------------------------------------------
   // Spawn Thick Pink Silicone Protective Case & Swinging Charm from Case Pool
@@ -2432,9 +2731,42 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   const rowClickedMask = Array.from({ length: NUM_ROWS }, () => new Set());
   const charById = graphicsPool.charById;
 
+  // Batch all 35 static switch crystal collars in 1 single InstancedMesh (saves 34 draw calls!)
+  const crystalCollarInstanced = new THREE.InstancedMesh(
+    graphicsPool.sharedGeometries.get('switch_crystal_collar'),
+    graphicsPool.sharedMaterials.get('clear_crystal'),
+    NUM_ROWS * NUM_COLS
+  );
+  crystalCollarInstanced.name = 'InstancedSwitchCrystalCollars';
+  const collarDummy = new THREE.Object3D();
+  let collarIdx = 0;
+
+  // On mobile, batch all 35 static switch housings into 2 InstancedMeshes (saves 33 more draw calls!)
+  let switchTabbedInstanced = null;
+  let switchEndInstanced = null;
+  let tabbedIdx = 0;
+  let endIdx = 0;
+  const switchTmpColor = new THREE.Color();
+  if (PERF_PROFILE.batchStaticSwitches) {
+    const swInstMat = graphicsPool.sharedMaterials.get('switch_housing_instanced');
+    switchTabbedInstanced = new THREE.InstancedMesh(
+      graphicsPool.sharedGeometries.get('switch_base_tabbed'),
+      swInstMat,
+      NUM_ROWS * (NUM_COLS - 1)
+    );
+    switchTabbedInstanced.name = 'InstancedSwitchHousingsTabbed';
+    switchEndInstanced = new THREE.InstancedMesh(
+      graphicsPool.sharedGeometries.get('switch_base'),
+      swInstMat,
+      NUM_ROWS
+    );
+    switchEndInstanced.name = 'InstancedSwitchHousingsEnd';
+  }
+
   for (let row = 0; row < NUM_ROWS; row++) {
     const rowTheme = ROW_THEMES[row];
     const z = (row - (NUM_ROWS - 1) / 2) * KEY_PITCH;
+    switchTmpColor.setHex(rowTheme.housingHex);
 
     for (let col = 0; col < NUM_COLS; col++) {
       const x = (col - (NUM_COLS - 1) / 2) * KEY_PITCH;
@@ -2444,7 +2776,26 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
       // 1. Spawn interlocking switch housing from this row's dedicated procedural switch pool
       const unit = graphicsPool.spawnSwitchUnit(row, col, { x, y: 0.04, z });
       const ledMat = unit.userData.ledMat;
+      const ledGlow = unit.userData.ledGlow;
       const hitMesh = unit.userData.hitMesh;
+
+      if (PERF_PROFILE.batchStaticSwitches) {
+        collarDummy.position.set(x, 0.20, z);
+        collarDummy.updateMatrix();
+        if (col < NUM_COLS - 1) {
+          switchTabbedInstanced.setMatrixAt(tabbedIdx, collarDummy.matrix);
+          switchTabbedInstanced.setColorAt(tabbedIdx, switchTmpColor);
+          tabbedIdx++;
+        } else {
+          switchEndInstanced.setMatrixAt(endIdx, collarDummy.matrix);
+          switchEndInstanced.setColorAt(endIdx, switchTmpColor);
+          endIdx++;
+        }
+      }
+
+      collarDummy.position.set(x, 0.44, z);
+      collarDummy.updateMatrix();
+      crystalCollarInstanced.setMatrixAt(collarIdx++, collarDummy.matrix);
 
       // 2. Spawn sculpted kawaii chibi keycap + 3D topper from this character's dedicated pool
       const restY = 0.72;
@@ -2460,6 +2811,7 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
         unit,
         capPivot,
         capMat,
+        ledGlow,
         ledMat,
         hitMesh,
         restY,
@@ -2487,6 +2839,16 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
       }
     }
   }
+  if (PERF_PROFILE.batchStaticSwitches) {
+    switchTabbedInstanced.instanceMatrix.needsUpdate = true;
+    if (switchTabbedInstanced.instanceColor) switchTabbedInstanced.instanceColor.needsUpdate = true;
+    switchEndInstanced.instanceMatrix.needsUpdate = true;
+    if (switchEndInstanced.instanceColor) switchEndInstanced.instanceColor.needsUpdate = true;
+    clickersContainer.add(switchTabbedInstanced);
+    clickersContainer.add(switchEndInstanced);
+  }
+  crystalCollarInstanced.instanceMatrix.needsUpdate = true;
+  clickersContainer.add(crystalCollarInstanced);
 
   state.poolReady = true;
   canvas.dataset.poolReady = 'true';
@@ -2497,23 +2859,25 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   const activeParticles = [];
   const tempBurstOrigin = new THREE.Vector3();
 
-  function spawnClickBurst(entry, count = 7) {
+  function spawnClickBurst(entry, count = PERF_PROFILE.clickBurstCount) {
+    if (activeParticles.length >= PERF_PROFILE.maxActiveParticles) return;
+    const allowed = Math.min(count, PERF_PROFILE.maxActiveParticles - activeParticles.length);
     entry.capPivot.getWorldPosition(tempBurstOrigin);
     tempBurstOrigin.y += 0.36;
 
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < allowed; i++) {
       const col = i === 0 ? entry.rowTheme.ledHex : PARTICLE_PALETTE[Math.floor(Math.random() * PARTICLE_PALETTE.length)];
       const kind = i % 2 === 0 ? 'heart' : 'star';
       const initialScale = 0.55 + Math.random() * 0.55;
       const mesh = graphicsPool.spawnParticle(kind, tempBurstOrigin, col, initialScale);
       if (!mesh) continue;
 
-      const ang = (i / count) * Math.PI * 2 + Math.random() * 0.5;
+      const ang = (i / Math.max(allowed, 1)) * Math.PI * 2 + Math.random() * 0.5;
       const spd = 1.0 + Math.random() * 1.9;
       mesh.userData.vel.set(Math.cos(ang) * spd, 2.2 + Math.random() * 2.2, Math.sin(ang) * spd);
       mesh.userData.spin.set((Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9, (Math.random() - 0.5) * 9);
       mesh.userData.age = 0;
-      mesh.userData.maxAge = 0.65 + Math.random() * 0.35;
+      mesh.userData.maxAge = 0.62 + Math.random() * 0.32;
 
       activeParticles.push(mesh);
     }
@@ -2528,7 +2892,6 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   let caseTiltZ = 0;
 
   function triggerRainbowWave(originRow = 3, originCol = 2) {
-    audio.unlock();
     audio.playRainbowWaveChime();
     state.waveActiveCount += 1;
     charmVel += 6.5;
@@ -2542,7 +2905,6 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
 
   function pressClicker(entry, { silentWave = false, hold = true } = {}) {
     if (!entry) return;
-    audio.unlock();
 
     if (hold && entry.isHeld) return;
 
@@ -2561,7 +2923,12 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
 
     audio.playKeyDown(entry.row, entry.col, NUM_COLS, silentWave);
 
-    if (!silentWave && typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+    if (
+      !silentWave &&
+      typeof navigator !== 'undefined' &&
+      typeof navigator.vibrate === 'function' &&
+      (!navigator.userActivation || navigator.userActivation.hasBeenActive)
+    ) {
       try {
         navigator.vibrate(10);
       } catch (_) {}
@@ -2572,21 +2939,17 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
     caseTiltZ -= ((entry.col - 2) / 2) * (silentWave ? 0.002 : 0.011);
     charmVel += (Math.random() > 0.5 ? 1 : -1) * (silentWave ? 0.9 : 3.2);
 
-    const neighbors = [
-      [entry.row - 1, entry.col],
-      [entry.row + 1, entry.col],
-      [entry.row, entry.col - 1],
-      [entry.row, entry.col + 1]
-    ];
-    neighbors.forEach(([nr, nc]) => {
+    for (let n = 0; n < NEIGHBOR_OFFSETS.length; n++) {
+      const nr = entry.row + NEIGHBOR_OFFSETS[n][0];
+      const nc = entry.col + NEIGHBOR_OFFSETS[n][1];
       const nb = clickerGrid[nr]?.[nc];
       if (nb && !nb.isHeld) {
         nb.pressVel += 0.45;
         nb.wiggleAmp = Math.max(nb.wiggleAmp, 0.035);
       }
-    });
+    }
 
-    spawnClickBurst(entry, silentWave ? 3 : 7);
+    spawnClickBurst(entry, silentWave ? PERF_PROFILE.waveBurstCount : PERF_PROFILE.clickBurstCount);
 
     if (!silentWave) {
       state.totalClicks += 1;
@@ -2619,29 +2982,47 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   // ---------------------------------------------------------------------------
   const raycaster = new THREE.Raycaster();
   const pointerNdc = new THREE.Vector2();
+  const raycastHits = [];
   const activePointerKeys = new Map();
   let hoveredClicker = null;
+  let canvasRect = canvas.getBoundingClientRect();
+  let pendingHoverX = 0;
+  let pendingHoverY = 0;
+  let hasPendingHover = false;
 
-  function setPointerNdc(e) {
-    const rect = canvas.getBoundingClientRect();
-    pointerNdc.x = ((e.clientX - rect.left) / Math.max(rect.width, 1)) * 2 - 1;
-    pointerNdc.y = -((e.clientY - rect.top) / Math.max(rect.height, 1)) * 2 + 1;
+  function refreshCanvasRect() {
+    canvasRect = canvas.getBoundingClientRect();
   }
 
-  function pickClickerAtEvent(e) {
-    setPointerNdc(e);
+  function pickClickerAtClientXY(clientX, clientY) {
+    const w = Math.max(canvasRect.width, 1);
+    const h = Math.max(canvasRect.height, 1);
+    pointerNdc.x = ((clientX - canvasRect.left) / w) * 2 - 1;
+    pointerNdc.y = -((clientY - canvasRect.top) / h) * 2 + 1;
     raycaster.setFromCamera(pointerNdc, camera);
-    const hits = raycaster.intersectObjects(interactiveHitMeshes, false);
-    if (hits.length > 0 && hits[0].object.userData.clicker) {
-      return hits[0].object.userData.clicker;
+    raycastHits.length = 0;
+    raycaster.intersectObjects(interactiveHitMeshes, false, raycastHits);
+    if (raycastHits.length > 0 && raycastHits[0].object.userData.clicker) {
+      return raycastHits[0].object.userData.clicker;
     }
     return null;
+  }
+
+  function setHoveredClicker(hit) {
+    if (hit !== hoveredClicker) {
+      if (hoveredClicker) hoveredClicker.hovered = false;
+      hoveredClicker = hit;
+      if (hoveredClicker) hoveredClicker.hovered = true;
+      if (!PERF_PROFILE.isMobile) {
+        canvas.classList.toggle('is-hovering-target', Boolean(hit));
+      }
+    }
   }
 
   canvas.addEventListener('pointerdown', (e) => {
     if (state.isInXR) return;
     audio.unlock();
-    const hit = pickClickerAtEvent(e);
+    const hit = pickClickerAtClientXY(e.clientX, e.clientY);
     if (hit) {
       controls.enabled = false;
       activePointerKeys.set(e.pointerId, hit);
@@ -2649,29 +3030,31 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
       try {
         canvas.setPointerCapture(e.pointerId);
       } catch (_) {}
-    } else {
+    } else if (activePointerKeys.size === 0) {
       controls.enabled = true;
     }
   });
 
   canvas.addEventListener('pointermove', (e) => {
     if (state.isInXR) return;
-    const hit = pickClickerAtEvent(e);
-    canvas.classList.toggle('is-hovering-target', Boolean(hit));
+    const isStrumming = activePointerKeys.has(e.pointerId);
+    // On mobile touch, skip expensive raycasting completely while orbiting (no hover cursor on touch!)
+    if (e.pointerType === 'touch' && !isStrumming) return;
 
-    if (hit !== hoveredClicker) {
-      if (hoveredClicker) hoveredClicker.hovered = false;
-      hoveredClicker = hit;
-      if (hoveredClicker) hoveredClicker.hovered = true;
-    }
-
-    if (activePointerKeys.has(e.pointerId)) {
+    if (isStrumming) {
+      const hit = pickClickerAtClientXY(e.clientX, e.clientY);
       const prev = activePointerKeys.get(e.pointerId);
       if (hit !== prev) {
         if (prev) releaseClicker(prev);
         activePointerKeys.set(e.pointerId, hit);
         if (hit) pressClicker(hit, { hold: true });
       }
+      if (e.pointerType !== 'touch') setHoveredClicker(hit);
+    } else {
+      // Coalesce desktop mouse hover raycasts to 1 per animation frame
+      pendingHoverX = e.clientX;
+      pendingHoverY = e.clientY;
+      hasPendingHover = true;
     }
   });
 
@@ -2684,6 +3067,9 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
         controls.enabled = true;
       }
     }
+    if (e.pointerType === 'touch' && hoveredClicker) {
+      setHoveredClicker(null);
+    }
   }
 
   canvas.addEventListener('pointerup', endPointer);
@@ -2693,6 +3079,7 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   // Physical Keyboard Support
   window.addEventListener('keydown', (e) => {
     if (e.repeat) return;
+    audio.unlock();
     if (e.code === 'Space') {
       e.preventDefault();
       triggerRainbowWave(3, 2);
@@ -2727,18 +3114,28 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
 
   if (btnWave) {
     btnWave.addEventListener('click', () => {
+      audio.unlock();
       triggerRainbowWave(3, 2);
     });
   }
 
   // ---------------------------------------------------------------------------
-  // Responsive Framing
+  // Responsive Framing (rAF-debounced so mobile URL bar resize never thrashes WebGL!)
   // ---------------------------------------------------------------------------
-  function updateResponsiveFraming() {
+  let lastViewportW = 0;
+  let lastViewportH = 0;
+  let resizeRafId = 0;
+
+  function updateResponsiveFraming(force = false) {
     const w = window.innerWidth;
     const h = Math.max(window.innerHeight, 1);
+    if (!force && w === lastViewportW && h === lastViewportH) return;
+    lastViewportW = w;
+    lastViewportH = h;
+
     const aspect = w / h;
     renderer.setSize(w, h, false);
+    refreshCanvasRect();
     camera.aspect = aspect;
 
     if (!state.isInXR) {
@@ -2766,14 +3163,22 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
     }
   }
 
-  window.addEventListener('resize', updateResponsiveFraming);
-  updateResponsiveFraming();
+  function scheduleResize() {
+    if (resizeRafId) return;
+    resizeRafId = requestAnimationFrame(() => {
+      resizeRafId = 0;
+      updateResponsiveFraming(false);
+    });
+  }
+
+  window.addEventListener('resize', scheduleResize, { passive: true });
+  window.addEventListener('orientationchange', () => setTimeout(() => updateResponsiveFraming(true), 120), { passive: true });
+  updateResponsiveFraming(true);
 
   // ---------------------------------------------------------------------------
-  // WebXR Session Management + Dual Controllers (Pooled Rays/Reticles) + Hand Tracking
+  // Lazy WebXR Session Management (zero CDN/factory cost on non-XR phones!)
   // ---------------------------------------------------------------------------
-  const controllerModelFactory = new XRControllerModelFactory();
-  const handModelFactory = new XRHandModelFactory();
+  let xrInputInitialized = false;
   const xrControllers = [];
   const xrHands = [];
   const tempMatrix = new THREE.Matrix4();
@@ -2784,51 +3189,64 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
     tempMatrix.identity().extractRotation(controller.matrixWorld);
     raycaster.ray.origin.setFromMatrixPosition(controller.matrixWorld);
     raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix);
-    const hits = raycaster.intersectObjects(interactiveHitMeshes, false);
-    return hits.length > 0 ? hits[0] : null;
+    raycastHits.length = 0;
+    raycaster.intersectObjects(interactiveHitMeshes, false, raycastHits);
+    return raycastHits.length > 0 ? raycastHits[0] : null;
   }
 
-  function setupXRInput(slot) {
-    const controller = renderer.xr.getController(slot);
-    const rayLine = graphicsPool.spawnXRAsset('xr_ray', controller);
-    const rayMat = rayLine ? rayLine.userData.rayMat : null;
+  async function ensureXRInputsInitialized() {
+    if (xrInputInitialized) return;
+    xrInputInitialized = true;
+    try {
+      const [{ XRControllerModelFactory }, { XRHandModelFactory }] = await Promise.all([
+        import('three/addons/webxr/XRControllerModelFactory.js'),
+        import('three/addons/webxr/XRHandModelFactory.js')
+      ]);
+      const controllerModelFactory = new XRControllerModelFactory();
+      const handModelFactory = new XRHandModelFactory();
 
-    const reticle = graphicsPool.spawnXRAsset('xr_reticle', controller);
-    if (reticle) reticle.visible = false;
+      for (let slot = 0; slot < 2; slot++) {
+        const controller = renderer.xr.getController(slot);
+        const rayLine = graphicsPool.spawnXRAsset('xr_ray', controller);
+        const rayMat = rayLine ? rayLine.userData.rayMat : null;
 
-    let heldKey = null;
-    controller.addEventListener('selectstart', () => {
-      audio.unlock();
-      if (rayMat) rayMat.color.setHex(0xffe066);
-      const hit = raycastFromXRController(controller);
-      if (hit && hit.object.userData.clicker) {
-        heldKey = hit.object.userData.clicker;
-        pressClicker(heldKey, { hold: true });
+        const reticle = graphicsPool.spawnXRAsset('xr_reticle', controller);
+        if (reticle) reticle.visible = false;
+
+        let heldKey = null;
+        controller.addEventListener('selectstart', () => {
+          audio.unlock();
+          if (rayMat) rayMat.color.setHex(0xffe066);
+          const hit = raycastFromXRController(controller);
+          if (hit && hit.object.userData.clicker) {
+            heldKey = hit.object.userData.clicker;
+            pressClicker(heldKey, { hold: true });
+          }
+        });
+        controller.addEventListener('selectend', () => {
+          if (rayMat) rayMat.color.setHex(0xff6fb5);
+          if (heldKey) {
+            releaseClicker(heldKey);
+            heldKey = null;
+          }
+        });
+
+        cameraRig.add(controller);
+        const grip = renderer.xr.getControllerGrip(slot);
+        grip.add(controllerModelFactory.createControllerModel(grip));
+        cameraRig.add(grip);
+
+        const hand = renderer.xr.getHand(slot);
+        hand.add(handModelFactory.createHandModel(hand, 'mesh'));
+        cameraRig.add(hand);
+
+        xrControllers.push({ controller, reticle });
+        xrHands.push(hand);
       }
-    });
-    controller.addEventListener('selectend', () => {
-      if (rayMat) rayMat.color.setHex(0xff6fb5);
-      if (heldKey) {
-        releaseClicker(heldKey);
-        heldKey = null;
-      }
-    });
-
-    cameraRig.add(controller);
-    const grip = renderer.xr.getControllerGrip(slot);
-    grip.add(controllerModelFactory.createControllerModel(grip));
-    cameraRig.add(grip);
-
-    const hand = renderer.xr.getHand(slot);
-    hand.add(handModelFactory.createHandModel(hand, 'mesh'));
-    cameraRig.add(hand);
-
-    xrControllers.push({ controller, reticle });
-    xrHands.push(hand);
+    } catch (err) {
+      console.warn('[KawaiiClickerXR] XR input setup warning:', err);
+    }
   }
-
-  setupXRInput(0);
-  setupXRInput(1);
 
   let activeXrSession = null;
   async function startXRSession(mode) {
@@ -2839,6 +3257,7 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
       return;
     }
     try {
+      await ensureXRInputsInitialized();
       const session = await navigator.xr.requestSession(mode, {
         optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking']
       });
@@ -2866,7 +3285,7 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
         controls.enabled = true;
         environmentGroup.visible = true;
         renderer.setClearAlpha(1);
-        updateResponsiveFraming();
+        updateResponsiveFraming(true);
       });
 
       await renderer.xr.setSession(session);
@@ -2888,6 +3307,9 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
     state.arSupported = arOk;
     if (btnEnterVr) btnEnterVr.hidden = !vrOk;
     if (btnEnterAr) btnEnterAr.hidden = !arOk;
+    if (vrOk || arOk) {
+      ensureXRInputsInitialized();
+    }
   }
 
   if (btnEnterVr) btnEnterVr.addEventListener('click', () => startXRSession('immersive-vr'));
@@ -2895,18 +3317,17 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   detectWebXRSupport();
 
   // ---------------------------------------------------------------------------
-  // Modern Web Guidance: Pause background WebGL loop when tab hidden or skipped
+  // Pause background WebGL loop & flush stats cleanly when tab hidden
   // ---------------------------------------------------------------------------
   document.addEventListener('visibilitychange', () => {
     state.paused = document.hidden && !state.isInXR;
+    if (document.hidden) {
+      flushStatsNow();
+    } else {
+      lastTs = 0;
+    }
   });
-
-  const stageEl = document.querySelector('main.xr-stage');
-  if (stageEl) {
-    stageEl.addEventListener('contentvisibilityautostatechange', (event) => {
-      state.paused = Boolean(event.skipped) && !state.isInXR;
-    });
-  }
+  window.addEventListener('pagehide', flushStatsNow);
 
   // Diagnostic handle for verification
   window.CalmChessClickerXR = {
@@ -2914,6 +3335,18 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
     cols: NUM_COLS,
     pool: graphicsPool,
     getPoolStats: () => graphicsPool.getPoolStats(),
+    getPerfStats: () => ({
+      isMobile: PERF_PROFILE.isMobile,
+      currentDpr,
+      useShadows: PERF_PROFILE.useShadows,
+      usePhysicalMaterials: PERF_PROFILE.usePhysicalMaterials,
+      renderInfo: {
+        calls: renderer.info.render.calls,
+        triangles: renderer.info.render.triangles,
+        geometries: renderer.info.memory.geometries,
+        textures: renderer.info.memory.textures
+      }
+    }),
     clickKey: (r = 0, c = 0) => {
       const k = clickerGrid[r]?.[c];
       if (!k) return false;
@@ -2939,11 +3372,14 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
   };
 
   // ---------------------------------------------------------------------------
-  // Master XR Procedural Animation Loop
+  // Master XR Procedural Animation Loop + Mobile Dynamic Resolution Scaling (DRS)
   // ---------------------------------------------------------------------------
   let simTime = 0;
   let lastTs = 0;
   let nextAutonomousWiggle = 1.8;
+  let drsAccumMs = 0;
+  let drsFrameCount = 0;
+  let drsCooldown = 1.5;
 
   renderer.setAnimationLoop((timestamp) => {
     if (state.paused) {
@@ -2951,25 +3387,49 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
       return;
     }
 
-    const rawDt = lastTs ? (timestamp - lastTs) * 0.001 : 0.016;
+    const rawDtMs = lastTs ? (timestamp - lastTs) : 16.6;
     lastTs = timestamp;
-    const dt = Math.min(rawDt, 0.05);
+    const dt = Math.min(rawDtMs * 0.001, 0.05);
     simTime += dt;
 
-    // 1. Living Pastel Sky, Floating Clouds & Twinkling Stars
+    // Mobile Dynamic Resolution Scaling: smoothly drop pixel ratio if sustained frame time > 28ms
+    if (PERF_PROFILE.isMobile && !state.isInXR) {
+      if (drsCooldown > 0) {
+        drsCooldown -= dt;
+      } else {
+        drsAccumMs += rawDtMs;
+        drsFrameCount += 1;
+        if (drsFrameCount >= 24) {
+          const avgMs = drsAccumMs / drsFrameCount;
+          drsAccumMs = 0;
+          drsFrameCount = 0;
+          if (avgMs > 28 && currentDpr > PERF_PROFILE.minDpr + 0.02) {
+            currentDpr = Math.max(PERF_PROFILE.minDpr, +(currentDpr - 0.15).toFixed(2));
+            renderer.setPixelRatio(currentDpr);
+            renderer.setSize(window.innerWidth, window.innerHeight, false);
+            drsCooldown = 1.2;
+          } else if (avgMs < 15.5 && currentDpr < Math.min(nativeDpr, PERF_PROFILE.maxDpr) - 0.02) {
+            currentDpr = Math.min(Math.min(nativeDpr, PERF_PROFILE.maxDpr), +(currentDpr + 0.1).toFixed(2));
+            renderer.setPixelRatio(currentDpr);
+            renderer.setSize(window.innerWidth, window.innerHeight, false);
+            drsCooldown = 2.0;
+          }
+        }
+      }
+    }
+
+    // Coalesced desktop mouse hover raycast (max 1 per frame)
+    if (hasPendingHover && !state.isInXR) {
+      hasPendingHover = false;
+      setHoveredClicker(pickClickerAtClientXY(pendingHoverX, pendingHoverY));
+    }
+
+    // 1. Living Pastel Sky, Floating Clouds & GPU-Animated Twinkling Stars (zero buffer uploads!)
     skyUniforms.uTime.value = simTime;
+    if (starUniforms) starUniforms.uTime.value = simTime;
     for (let i = 0; i < clouds.length; i++) {
       const cl = clouds[i];
       cl.group.position.y = cl.baseY + Math.sin(simTime * 0.65 + cl.phase) * 0.28;
-    }
-    if (starGeo && starSeed) {
-      const sArr = starGeo.attributes.position.array;
-      for (let i = 0; i < ambientStarCount; i++) {
-        sArr[i * 3 + 1] += dt * 0.14;
-        sArr[i * 3] += Math.sin(simTime * 0.8 + starSeed[i]) * dt * 0.07;
-        if (sArr[i * 3 + 1] > 6.8) sArr[i * 3 + 1] = 0.2;
-      }
-      starGeo.attributes.position.needsUpdate = true;
     }
 
     // 2. Soft Pink Silicone Case Procedural Cushion Physics & Swinging Charm!
@@ -3039,27 +3499,39 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
         k.capPivot.rotation.z = Math.sin(k.wigglePhase) * k.wiggleAmp;
         k.capPivot.rotation.x = Math.cos(k.wigglePhase * 0.8) * k.wiggleAmp * 0.45;
         k.wiggleAmp = Math.max(0, k.wiggleAmp - dt * 0.26);
-      } else {
+      } else if (k.capPivot.rotation.z !== 0 || k.capPivot.rotation.x !== 0) {
         k.capPivot.rotation.z *= 0.85;
         k.capPivot.rotation.x *= 0.85;
+        if (Math.abs(k.capPivot.rotation.z) < 0.0005) k.capPivot.rotation.z = 0;
+        if (Math.abs(k.capPivot.rotation.x) < 0.0005) k.capPivot.rotation.x = 0;
       }
 
       if (k.ledGlowEnergy > 0.005) {
         k.ledGlowEnergy = Math.max(0, k.ledGlowEnergy - dt * 1.9);
       }
-      const baseGlow = k.hovered ? 0.42 : 0.18;
-      k.ledMat.opacity = Math.min(0.95, baseGlow + k.ledGlowEnergy * 0.78);
-      k.capMat.emissiveIntensity = 0.03 + k.ledGlowEnergy * 0.24 + (k.hovered ? 0.06 : 0);
+      if (PERF_PROFILE.isMobile) {
+        const showLed = k.ledGlowEnergy > 0.015 || k.hovered;
+        if (k.ledGlow) k.ledGlow.visible = showLed;
+        if (showLed) {
+          k.ledMat.opacity = Math.min(0.95, 0.22 + k.ledGlowEnergy * 0.75);
+        }
+      } else {
+        const baseGlow = k.hovered ? 0.42 : 0.18;
+        k.ledMat.opacity = Math.min(0.95, baseGlow + k.ledGlowEnergy * 0.78);
+      }
+      k.capMat.emissiveIntensity = (PERF_PROFILE.useLightweightShaders ? 0.05 : 0.03) + k.ledGlowEnergy * 0.24 + (k.hovered ? 0.06 : 0);
     }
 
-    // 5. Pooled Floating 3D Sparkles & Hearts Particles (despawned back to pool — zero dispose!)
+    // 5. Pooled Floating 3D Sparkles & Hearts Particles (opaque shared mats, zero transparent overdraw!)
     for (let i = activeParticles.length - 1; i >= 0; i--) {
       const mesh = activeParticles[i];
       const ud = mesh.userData;
       ud.age += dt;
       if (ud.age >= ud.maxAge) {
         graphicsPool.despawnParticle(mesh);
-        activeParticles.splice(i, 1);
+        // Fast O(1) swap-remove instead of splice() array shift
+        const last = activeParticles.pop();
+        if (i < activeParticles.length) activeParticles[i] = last;
       } else {
         ud.vel.y -= 5.2 * dt;
         mesh.position.addScaledVector(ud.vel, dt);
@@ -3067,8 +3539,8 @@ export function createClickerGraphicsPool(scene, containers = {}, options = {}) 
         mesh.rotation.y += ud.spin.y * dt;
         mesh.rotation.z += ud.spin.z * dt;
         const life = 1 - ud.age / ud.maxAge;
-        ud.mat.opacity = Math.min(1, life * 1.4);
-        mesh.scale.setScalar(Math.max(0.01, life * 0.95));
+        const s = Math.max(0.01, life * life * (ud.baseScale || 0.9));
+        mesh.scale.setScalar(s);
       }
     }
 

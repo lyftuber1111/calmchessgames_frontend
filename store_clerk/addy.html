@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  <meta name="theme-color" content="#0071ce">
+  <meta name="description" content="Addy's Walmart Store Clerk XR — Walk in from the parking lot at 11:30 AM, restock 10 aisles, scan items as the checkout clerk, reunite lost kids on the PA mic for $100,000 tips and free food, take an 11:00 PM lunch break, and lock up with your keys at 11:46 AM.">
+  <title>Addy's Walmart Shift XR | Calm Chess Games</title>
+
+  <!-- Favicon & Web Icons -->
+  <link rel="icon" type="image/x-icon" href="../favicon.ico">
+  <link rel="shortcut icon" href="../favicon.ico">
+  <link rel="icon" type="image/png" sizes="48x48" href="../favicon-48x48.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="../favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../favicon-16x16.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../apple-touch-icon.png">
+  <link rel="manifest" href="../site.webmanifest">
+
+  <!-- Three.js & WebXR Addons Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --wm-blue: #0071ce;
+      --wm-blue-dark: #004f9a;
+      --wm-spark: #ffc220;
+      --wm-green: #16a34a;
+      --glass-bg: rgba(255, 255, 255, 0.9);
+      --glass-border: rgba(0, 113, 206, 0.45);
+      --ink: #0f172a;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      min-height: 100dvh;
+      background: #0b1b36;
+      color: var(--ink);
+      font-family: "Segoe UI Rounded", "Segoe UI", system-ui, -apple-system, sans-serif;
+      overflow: hidden;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    main.xr-stage {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #xr-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: crosshair;
+    }
+
+    /* Minimal Top Bar — ZERO instructional/how-to-play badges */
+    header.top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 12;
+      pointer-events: none;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      padding:
+        calc(clamp(10px, 1.8vw, 16px) + env(safe-area-inset-top, 0px))
+        calc(clamp(10px, 2vw, 18px) + env(safe-area-inset-right, 0px))
+        0
+        calc(clamp(10px, 2vw, 18px) + env(safe-area-inset-left, 0px));
+    }
+
+    .top-left,
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      pointer-events: auto;
+    }
+
+    .top-right {
+      justify-content: flex-end;
+    }
+
+    .hud-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: var(--glass-bg);
+      border: 2px solid var(--glass-border);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
+      color: var(--ink);
+      font-weight: 800;
+      font-size: 0.96rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.14s ease, box-shadow 0.18s ease, background-color 0.16s ease;
+    }
+
+    .hud-pill:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+    }
+
+    .hud-pill:active {
+      transform: scale(0.96);
+    }
+
+    .hud-pill--static {
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .hud-pill--clock {
+      background: linear-gradient(135deg, #0071ce, #004f9a);
+      color: #ffffff;
+      border-color: var(--wm-spark);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: 0.02em;
+    }
+
+    .hud-pill--tips {
+      background: linear-gradient(135deg, #15803d, #166534);
+      color: #fef08a;
+      border-color: #fde047;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hud-pill--tips.is-pop {
+      animation: tipPop 0.55s cubic-bezier(0.22, 1.4, 0.36, 1);
+    }
+
+    @keyframes tipPop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.22); box-shadow: 0 0 24px rgba(253, 224, 71, 0.9); }
+      100% { transform: scale(1); }
+    }
+
+    .hud-pill--xr {
+      background: linear-gradient(135deg, #ffc220, #f59e0b);
+      color: #0f172a;
+      border-color: #ffffff;
+    }
+
+    .hud-pill--xr[hidden] {
+      display: none;
+    }
+
+    /* Official "HELLO my name is Addy" Walmart Name Tag */
+    .name-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      min-width: 132px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #ffffff;
+      border: 2.5px solid var(--wm-blue);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.26);
+      line-height: 1.05;
+    }
+
+    .name-badge__top {
+      background: linear-gradient(135deg, var(--wm-blue), var(--wm-blue-dark));
+      color: #ffffff;
+      padding: 4px 10px 3px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .name-badge__hello {
+      font-size: 0.72rem;
+      font-weight: 900;
+      letter-spacing: 0.14em;
+    }
+
+    .name-badge__sub {
+      font-size: 0.56rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      opacity: 0.94;
+    }
+
+    .name-badge__name {
+      padding: 4px 12px 6px;
+      text-align: center;
+      font-family: "Comic Sans MS", "Chalkboard SE", "Segoe UI Rounded", cursive, sans-serif;
+      font-size: 1.24rem;
+      font-weight: 900;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+    }
+
+    .name-badge__spark {
+      color: var(--wm-spark);
+      text-shadow: 0 1px 2px rgba(0, 79, 154, 0.35);
+      font-size: 1.05rem;
+    }
+
+    .name-badge__stripe {
+      height: 5px;
+      background: var(--wm-spark);
+    }
+
+    /* Live PA Intercom Speech Banner (only appears during PA / milestone announcements) */
+    .pa-banner {
+      position: fixed;
+      top: calc(76px + env(safe-area-inset-top, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 15;
+      pointer-events: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      max-width: min(92vw, 640px);
+      padding: 10px 20px;
+      border-radius: 999px;
+      background: rgba(0, 79, 154, 0.94);
+      border: 2.5px solid var(--wm-spark);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.98rem;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      text-align: center;
+    }
+
+    .pa-banner[hidden] {
+      display: none;
+    }
+
+    /* Subtle Center Aim Reticle (purely visual, no text) */
+    .reticle {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 12px;
+      height: 12px;
+      margin: -6px 0 0 -6px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      background: rgba(0, 113, 206, 0.35);
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.45);
+      z-index: 10;
+      pointer-events: none;
+      transition: transform 0.14s ease, border-color 0.14s ease, background-color 0.14s ease;
+    }
+
+    .reticle.is-active {
+      transform: scale(1.65);
+      border-color: var(--wm-spark);
+      background: rgba(255, 194, 32, 0.55);
+      box-shadow: 0 0 14px rgba(255, 194, 32, 0.9);
+    }
+
+    body.in-xr-session header.top-bar,
+    body.in-xr-session .reticle,
+    body.in-xr-session #mobile-touch-controls {
+      display: none !important;
+    }
+
+    /* Native Modal Shift Complete Dialog */
+    dialog.shift-dialog {
+      border: none;
+      border-radius: 26px;
+      padding: 0;
+      width: min(92vw, 440px);
+      background: #ffffff;
+      color: var(--ink);
+      box-shadow: 0 28px 70px rgba(0, 0, 0, 0.48);
+      overflow: hidden;
+    }
+
+    dialog.shift-dialog:modal {
+      overscroll-behavior: contain;
+    }
+
+    dialog.shift-dialog::backdrop {
+      background: rgba(4, 15, 36, 0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      overflow: hidden;
+      overscroll-behavior: contain;
+    }
+
+    .shift-dialog__head {
+      background: linear-gradient(135deg, var(--wm-blue), var(--wm-blue-dark));
+      color: #ffffff;
+      padding: 22px 24px 18px;
+      text-align: center;
+      border-bottom: 5px solid var(--wm-spark);
+    }
+
+    .shift-dialog__head h1 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 900;
+    }
+
+    .shift-dialog__time {
+      margin: 6px 0 0;
+      font-weight: 700;
+      color: #fef08a;
+      font-size: 0.96rem;
+    }
+
+    .shift-dialog__body {
+      padding: 22px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .shift-stats {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .shift-stat-card {
+      background: #f1f5f9;
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 12px 10px;
+      text-align: center;
+    }
+
+    .shift-stat-card--gold {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, #fef9c3, #fef08a);
+      border-color: #eab308;
+    }
+
+    .shift-stat-card__num {
+      font-size: 1.45rem;
+      font-weight: 900;
+      color: var(--wm-blue-dark);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .shift-stat-card--gold .shift-stat-card__num {
+      color: #15803d;
+      font-size: 1.7rem;
+    }
+
+    .shift-stat-card__label {
+      margin-top: 2px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .shift-dialog__btn {
+      width: 100%;
+      min-height: 50px;
+      border: none;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--wm-blue), var(--wm-blue-dark));
+      color: #ffffff;
+      font-size: 1.08rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 10px 24px rgba(0, 113, 206, 0.35);
+      transition: transform 0.14s ease, filter 0.14s ease;
+    }
+
+    .shift-dialog__btn:hover {
+      filter: brightness(1.08);
+      transform: translateY(-1px);
+    }
+
+    /* Mobile Touch Controls (auto-shown ONLY on touch devices, zero text labels) */
+    #mobile-touch-controls {
+      position: fixed;
+      inset: 0;
+      z-index: 13;
+      pointer-events: none;
+      display: none;
+    }
+
+    body.show-touch-controls #mobile-touch-controls {
+      display: block;
+    }
+
+    .virtual-stick-zone {
+      position: fixed;
+      width: 118px;
+      height: 118px;
+      border-radius: 50%;
+      background: rgba(0, 79, 154, 0.36);
+      border: 2.5px solid rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: auto;
+      touch-action: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .virtual-stick-zone.is-active {
+      border-color: var(--wm-spark);
+      box-shadow: 0 0 22px rgba(255, 194, 32, 0.55);
+    }
+
+    .virtual-stick-zone.tap-flash {
+      border-color: #4ade80;
+      box-shadow: 0 0 26px rgba(74, 222, 128, 0.85);
+    }
+
+    .move-stick-zone {
+      left: calc(clamp(20px, 5vw, 44px) + env(safe-area-inset-left, 0px));
+      bottom: calc(clamp(24px, 6vh, 48px) + env(safe-area-inset-bottom, 0px));
+    }
+
+    .look-stick-zone {
+      right: calc(clamp(20px, 5vw, 44px) + env(safe-area-inset-right, 0px));
+      top: calc(clamp(92px, 16vh, 138px) + env(safe-area-inset-top, 0px));
+    }
+
+    .stick-arrows {
+      position: absolute;
+      inset: 8px;
+      pointer-events: none;
+      color: rgba(255, 255, 255, 0.45);
+      font-size: 0.65rem;
+    }
+
+    .stick-arrows span {
+      position: absolute;
+      line-height: 1;
+    }
+
+    .arr-n { top: 0; left: 50%; transform: translateX(-50%); }
+    .arr-s { bottom: 0; left: 50%; transform: translateX(-50%); }
+    .arr-w { left: 0; top: 50%; transform: translateY(-50%); }
+    .arr-e { right: 0; top: 50%; transform: translateY(-50%); }
+
+    .virtual-stick-knob {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ffffff, #cbd5e1);
+      border: 2.5px solid var(--wm-blue);
+      box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--wm-blue-dark);
+      font-size: 0.9rem;
+      pointer-events: none;
+    }
+
+    .mobile-touch-actions {
+      position: fixed;
+      right: calc(clamp(20px, 5vw, 48px) + env(safe-area-inset-right, 0px));
+      bottom: calc(clamp(26px, 6.5vh, 54px) + env(safe-area-inset-bottom, 0px));
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+      z-index: 14;
+      touch-action: none;
+    }
+
+    .touch-action-btn {
+      width: 54px;
+      height: 54px;
+      min-width: 54px;
+      min-height: 54px;
+      border-radius: 50%;
+      border: 2.5px solid rgba(255, 255, 255, 0.85);
+      background: rgba(0, 113, 206, 0.86);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: #ffffff;
+      font-size: 1.32rem;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.36);
+      cursor: pointer;
+      touch-action: none;
+      transition: transform 0.12s ease, background-color 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+
+    .touch-action-btn[hidden] {
+      display: none !important;
+    }
+
+    .touch-action-btn:active,
+    .touch-action-btn.is-pressed {
+      transform: scale(0.92);
+      background: #0284c7;
+      border-color: var(--wm-spark);
+    }
+
+    .touch-action-btn--secondary {
+      width: 48px;
+      height: 48px;
+      min-width: 48px;
+      min-height: 48px;
+      font-size: 1.12rem;
+      background: rgba(15, 23, 42, 0.68);
+      border-color: rgba(255, 255, 255, 0.72);
+    }
+
+    .touch-action-btn--primary.is-ready {
+      background: #0071ce;
+      border-color: var(--wm-spark);
+      box-shadow: 0 0 22px rgba(255, 194, 32, 0.85), 0 8px 20px rgba(0, 0, 0, 0.38);
+      transform: scale(1.06);
+    }
+
+    .touch-action-btn--squish {
+      background: rgba(236, 72, 153, 0.88);
+      border-color: #fde047;
+    }
+
+    @media (max-width: 720px), (max-height: 500px) {
+      header.top-bar {
+        gap: 6px;
+        padding:
+          calc(8px + env(safe-area-inset-top, 0px))
+          calc(10px + env(safe-area-inset-right, 0px))
+          0
+          calc(10px + env(safe-area-inset-left, 0px));
+      }
+      .top-left, .top-right { gap: 5px; }
+      .hud-pill {
+        min-width: 40px;
+        min-height: 40px;
+        padding: 4px 10px;
+        font-size: 0.84rem;
+      }
+      .name-badge { min-width: 102px; }
+      .name-badge__hello { font-size: 0.6rem; }
+      .name-badge__sub { font-size: 0.48rem; }
+      .name-badge__name { font-size: 1.0rem; padding: 2px 8px 4px; }
+      .pa-banner {
+        top: calc(60px + env(safe-area-inset-top, 0px));
+        padding: 7px 14px;
+        font-size: 0.86rem;
+      }
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <h1 class="sr-only">Addy's Walmart Store Clerk XR</h1>
+
+  <header class="top-bar">
+    <div class="top-left">
+      <a class="hud-pill" href="../index.html" aria-label="Home">&larr;</a>
+      <div class="name-badge" aria-label="Hello my name is Addy">
+        <div class="name-badge__top">
+          <span class="name-badge__hello">HELLO</span>
+          <span class="name-badge__sub">my name is</span>
+        </div>
+        <div class="name-badge__name">
+          <span>Addy</span>
+          <span class="name-badge__spark" aria-hidden="true">&#10035;</span>
+        </div>
+        <div class="name-badge__stripe" aria-hidden="true"></div>
+      </div>
+      <button type="button" class="hud-pill hud-pill--xr" id="btn-enter-vr" hidden>VR</button>
+      <button type="button" class="hud-pill hud-pill--xr" id="btn-enter-ar" hidden>AR</button>
+    </div>
+
+    <div class="top-right">
+      <div class="hud-pill hud-pill--static hud-pill--clock" id="hud-clock" aria-label="Shift clock">11:30 AM</div>
+      <div class="hud-pill hud-pill--static hud-pill--tips" id="hud-tips-pill" aria-label="Tips earned">
+        <span aria-hidden="true">&#128181;</span>
+        <span id="hud-tips">$0.00</span>
+      </div>
+      <div class="hud-pill hud-pill--static" aria-label="Items restocked">
+        <span aria-hidden="true">&#128230;</span>
+        <span id="hud-stocked">0</span>
+      </div>
+      <div class="hud-pill hud-pill--static" aria-label="Customers checked out">
+        <span aria-hidden="true">&#128722;</span>
+        <span id="hud-checkouts">0</span>
+      </div>
+      <div class="hud-pill hud-pill--static" aria-label="Kids reunited">
+        <span aria-hidden="true">&#127908;</span>
+        <span id="hud-kids">0</span>
+      </div>
+      <button type="button" class="hud-pill" id="btn-mute" aria-label="Toggle sound" aria-pressed="true">&#128266;</button>
+    </div>
+  </header>
+
+  <div class="pa-banner" id="pa-banner" role="status" aria-live="polite" hidden>
+    <span aria-hidden="true">&#128226;</span>
+    <span id="pa-text"></span>
+  </div>
+
+  <div class="reticle" id="reticle" aria-hidden="true"></div>
+
+  <!-- Mobile Touch On-Screen Controls (auto-shown ONLY on touch devices) -->
+  <div id="mobile-touch-controls" role="group" aria-label="Mobile touch controls">
+    <div class="virtual-stick-zone move-stick-zone" id="touch-move-zone" role="group" aria-roledescription="virtual joystick" aria-label="Walk joystick" tabindex="0">
+      <div class="stick-arrows" aria-hidden="true">
+        <span class="arr-n">&#9650;</span>
+        <span class="arr-s">&#9660;</span>
+        <span class="arr-w">&#9668;</span>
+        <span class="arr-e">&#9658;</span>
+      </div>
+      <div class="virtual-stick-knob" id="touch-move-knob" aria-hidden="true"></div>
+    </div>
+
+    <div class="virtual-stick-zone look-stick-zone" id="touch-look-zone" role="group" aria-roledescription="virtual joystick" aria-label="Look joystick" tabindex="0">
+      <div class="stick-arrows" aria-hidden="true">
+        <span class="arr-n">&#9650;</span>
+        <span class="arr-s">&#9660;</span>
+        <span class="arr-w">&#9668;</span>
+        <span class="arr-e">&#9658;</span>
+      </div>
+      <div class="virtual-stick-knob" id="touch-look-knob" aria-hidden="true">&#9679;</div>
+    </div>
+
+    <div class="mobile-touch-actions">
+      <button type="button" class="touch-action-btn touch-action-btn--secondary" id="touch-btn-turn180" aria-label="Turn around">&#128260;</button>
+      <button type="button" class="touch-action-btn touch-action-btn--squish" id="touch-btn-squish" aria-label="Play with held item" hidden>&#10024;</button>
+      <button type="button" class="touch-action-btn touch-action-btn--primary" id="touch-btn-interact" aria-label="Interact">&#9995;</button>
+    </div>
+  </div>
+
+  <main class="xr-stage">
+    <canvas id="xr-canvas" aria-label="Interactive 3D Walmart Store Clerk XR Game"></canvas>
+  </main>
+
+  <dialog class="shift-dialog" id="shift-complete-dialog" aria-labelledby="shift-complete-title">
+    <div class="shift-dialog__head">
+      <h1 id="shift-complete-title">11:46 AM &mdash; Doors Locked!</h1>
+      <p class="shift-dialog__time">11:30 AM &ndash; 11:46 AM &bull; Heading Home</p>
+    </div>
+    <div class="shift-dialog__body">
+      <div class="name-badge" aria-hidden="true">
+        <div class="name-badge__top">
+          <span class="name-badge__hello">HELLO</span>
+          <span class="name-badge__sub">my name is</span>
+        </div>
+        <div class="name-badge__name">
+          <span>Addy</span>
+          <span class="name-badge__spark">&#10035;</span>
+        </div>
+        <div class="name-badge__stripe"></div>
+      </div>
+
+      <div class="shift-stats">
+        <div class="shift-stat-card shift-stat-card--gold">
+          <div class="shift-stat-card__num" id="summary-tips">$0.00</div>
+          <div class="shift-stat-card__label">Tips Earned</div>
+        </div>
+        <div class="shift-stat-card">
+          <div class="shift-stat-card__num" id="summary-stocked">0</div>
+          <div class="shift-stat-card__label">Restocked</div>
+        </div>
+        <div class="shift-stat-card">
+          <div class="shift-stat-card__num" id="summary-checkouts">0</div>
+          <div class="shift-stat-card__label">Checked Out</div>
+        </div>
+        <div class="shift-stat-card">
+          <div class="shift-stat-card__num" id="summary-kids">0</div>
+          <div class="shift-stat-card__label">Kids Reunited</div>
+        </div>
+        <div class="shift-stat-card">
+          <div class="shift-stat-card__num" id="summary-food">0</div>
+          <div class="shift-stat-card__label">Free Food Given</div>
+        </div>
+      </div>
+
+      <form method="dialog" style="width: 100%;">
+        <button type="submit" value="again" class="shift-dialog__btn" id="btn-play-again" autofocus>New Shift</button>
+      </form>
+    </div>
+  </dialog>
+
+  <script type="module" src="js/addy_game.js?v=20261126_walmart_xr"></script>
+  <script src="../js/analytics.js" defer></script>
+</body>
+</html>
